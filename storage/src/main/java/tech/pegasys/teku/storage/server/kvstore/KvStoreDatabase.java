@@ -66,23 +66,22 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdater;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
 public class KvStoreDatabase implements Database {
@@ -93,144 +92,116 @@ public class KvStoreDatabase implements Database {
 
   private final StateStorageMode stateStorageMode;
 
-  final KvStoreHotDao hotDao;
-  final KvStoreFinalizedDao finalizedDao;
-  final KvStoreEth1Dao eth1Dao;
-
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  @VisibleForTesting final KvStoreCombinedDao dao;
 
   public static Database createV4(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
+      final SchemaHotAdapter schemaHot,
+      final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeVotesEquivocation,
       final Spec spec) {
-    return createWithStateSnapshots(
-        hotDb,
-        finalizedDb,
-        new V4SchemaHot(spec, storeVotesEquivocation),
-        new V4SchemaFinalized(spec),
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+    final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
+        finalizedStateStorageLogic =
+            new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
+    final V4HotKvStoreDao hotDao = new V4HotKvStoreDao(hotDb, schemaHot);
+    final KvStoreCombinedDao dao =
+        new KvStoreCombinedDaoAdapter(
+            hotDao,
+            new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
+    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createWithStateSnapshots(
-      final KvStoreAccessor hotDb,
-      final KvStoreAccessor finalizedDb,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedSnapshotState schemaFinalized,
+      final KvStoreAccessor db,
+      final SchemaCombinedSnapshotState schema,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final V4FinalizedStateSnapshotStorageLogic finalizedStateStorageLogic =
-        new V4FinalizedStateSnapshotStorageLogic(stateStorageFrequency);
+    final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
+        finalizedStateStorageLogic =
+            new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        hotDb,
-        finalizedDb,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        spec,
-        finalizedStateStorageLogic);
+        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }
 
   public static Database createWithStateTree(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedTreeState schemaFinalized,
+      final SchemaCombinedTreeState schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final Spec spec) {
-    final V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> finalizedStateStorageLogic =
+    final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db,
-        db,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        spec,
-        finalizedStateStorageLogic);
+        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }
 
-  private static <S extends SchemaFinalized> KvStoreDatabase create(
-      final KvStoreAccessor hotDb,
-      final KvStoreAccessor finalizedDb,
-      final SchemaHot schemaHot,
-      final S schemaFinalized,
+  private static <S extends SchemaCombined> KvStoreDatabase create(
+      final KvStoreAccessor db,
+      final S schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
-    final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
-    final KvStoreFinalizedDao finalizedDbDao =
-        new V4FinalizedKvStoreDao<>(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
-    return new KvStoreDatabase(
-        dao, finalizedDbDao, dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    final CombinedKvStoreDao<S> dao =
+        new CombinedKvStoreDao<S>(db, schema, finalizedStateStorageLogic);
+    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
   private KvStoreDatabase(
-      final KvStoreHotDao hotDao,
-      final KvStoreFinalizedDao finalizedDao,
-      final KvStoreEth1Dao eth1Dao,
+      final KvStoreCombinedDao dao,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
+    this.dao = dao;
     checkNotNull(spec);
-    this.finalizedDao = finalizedDao;
-    this.eth1Dao = eth1Dao;
     this.stateStorageMode = stateStorageMode;
-    this.hotDao = hotDao;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.spec = spec;
   }
 
   @Override
   public void storeInitialAnchor(final AnchorPoint anchor) {
-    try (final HotUpdater hotUpdater = hotDao.hotUpdater();
-        final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
+    try (final CombinedUpdater updater = dao.combinedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
       final BeaconState anchorState = anchor.getState();
       final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
 
-      hotUpdater.setAnchor(anchor.getCheckpoint());
-      hotUpdater.setGenesisTime(anchorState.getGenesisTime());
-      hotUpdater.setJustifiedCheckpoint(anchorCheckpoint);
-      hotUpdater.setBestJustifiedCheckpoint(anchorCheckpoint);
-      hotUpdater.setFinalizedCheckpoint(anchorCheckpoint);
-      hotUpdater.setLatestFinalizedState(anchorState);
+      updater.setAnchor(anchor.getCheckpoint());
+      updater.setGenesisTime(anchorState.getGenesisTime());
+      updater.setJustifiedCheckpoint(anchorCheckpoint);
+      updater.setBestJustifiedCheckpoint(anchorCheckpoint);
+      updater.setFinalizedCheckpoint(anchorCheckpoint);
+      updater.setLatestFinalizedState(anchorState);
 
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
       anchorBlock.ifPresent(
           block -> {
             // Save to hot storage
-            hotUpdater.addHotBlock(
+            updater.addHotBlock(
                 new BlockAndCheckpointEpochs(
                     block,
                     new CheckpointEpochs(
                         anchorState.getCurrentJustifiedCheckpoint().getEpoch(),
                         anchorState.getFinalizedCheckpoint().getEpoch())));
             // Save to cold storage
-            finalizedUpdater.addFinalizedBlock(block);
+            updater.addFinalizedBlock(block);
           });
 
-      putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
+      putFinalizedState(updater, anchorRoot, anchorState);
 
-      finalizedUpdater.commit();
-      hotUpdater.commit();
+      updater.commit();
     }
   }
 
@@ -244,8 +215,7 @@ public class KvStoreDatabase implements Database {
 
   public void ingestDatabase(
       final KvStoreDatabase kvStoreDatabase, final int batchSize, final Consumer<String> logger) {
-    hotDao.ingest(kvStoreDatabase.hotDao, batchSize, logger);
-    finalizedDao.ingest(kvStoreDatabase.finalizedDao, batchSize, logger);
+    dao.ingest(kvStoreDatabase.dao, batchSize, logger);
   }
 
   @Override
@@ -274,7 +244,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+    try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
       blocks.forEach(updater::addFinalizedBlock);
       updater.commit();
     }
@@ -282,7 +252,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
       checkpoint.ifPresentOrElse(
           updater::setWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
@@ -297,27 +267,27 @@ public class KvStoreDatabase implements Database {
 
   @VisibleForTesting
   Optional<OnDiskStoreData> createMemoryStore(final Supplier<Long> timeSupplier) {
-    Optional<UInt64> maybeGenesisTime = hotDao.getGenesisTime();
+    Optional<UInt64> maybeGenesisTime = dao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
       return Optional.empty();
     }
     final UInt64 genesisTime = maybeGenesisTime.get();
-    final Optional<Checkpoint> maybeAnchor = hotDao.getAnchor();
-    final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
-    final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
-    final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
-    final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
+    final Optional<Checkpoint> maybeAnchor = dao.getAnchor();
+    final Checkpoint justifiedCheckpoint = dao.getJustifiedCheckpoint().orElseThrow();
+    final Checkpoint finalizedCheckpoint = dao.getFinalizedCheckpoint().orElseThrow();
+    final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
+    final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
 
-    final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
+    final Map<UInt64, VoteTracker> votes = dao.getVotes();
 
     // Build map with block information
     final Map<Bytes32, StoredBlockMetadata> blockInformation = new HashMap<>();
-    try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
+    try (final Stream<SignedBeaconBlock> hotBlocks = dao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
             final Optional<CheckpointEpochs> checkpointEpochs =
-                hotDao.getHotBlockCheckpointEpochs(b.getRoot());
+                dao.getHotBlockCheckpointEpochs(b.getRoot());
             blockInformation.put(
                 b.getRoot(),
                 new StoredBlockMetadata(
@@ -349,13 +319,12 @@ public class KvStoreDatabase implements Database {
     }
 
     final Optional<SignedBeaconBlock> finalizedBlock =
-        hotDao.getHotBlock(finalizedCheckpoint.getRoot());
+        dao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
         AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
     final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload =
-        finalizedDao
-            .getOptimisticTransitionBlockSlot()
-            .flatMap(finalizedDao::getFinalizedBlockAtSlot)
+        dao.getOptimisticTransitionBlockSlot()
+            .flatMap(dao::getFinalizedBlockAtSlot)
             .flatMap(SlotAndExecutionPayload::fromBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
@@ -379,90 +348,89 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public WeakSubjectivityState getWeakSubjectivityState() {
-    return WeakSubjectivityState.create(hotDao.getWeakSubjectivityCheckpoint());
+    return WeakSubjectivityState.create(dao.getWeakSubjectivityCheckpoint());
   }
 
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
-    return hotDao.getVotes();
+    return dao.getVotes();
   }
 
   @Override
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
-    return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
+    return dao.getSlotForFinalizedBlockRoot(blockRoot);
   }
 
   @Override
   public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
-    return finalizedDao.getSlotForFinalizedStateRoot(stateRoot);
+    return dao.getSlotForFinalizedStateRoot(stateRoot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
-    return finalizedDao.getFinalizedBlockAtSlot(slot);
+    return dao.getFinalizedBlockAtSlot(slot);
   }
 
   @Override
   public Optional<UInt64> getEarliestAvailableBlockSlot() {
-    return finalizedDao.getEarliestFinalizedBlockSlot();
+    return dao.getEarliestFinalizedBlockSlot();
   }
 
   @Override
   public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
-    return finalizedDao.getEarliestFinalizedBlock();
+    return dao.getEarliestFinalizedBlock();
   }
 
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    return finalizedDao.getLatestFinalizedBlockAtSlot(slot);
+    return dao.getLatestFinalizedBlockAtSlot(slot);
   }
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
+    return dao.getLatestAvailableFinalizedState(maxSlot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    return hotDao
-        .getHotBlock(root)
-        .or(() -> finalizedDao.getFinalizedBlock(root))
-        .or(() -> finalizedDao.getNonCanonicalBlock(root));
+    return dao.getHotBlock(root)
+        .or(() -> dao.getFinalizedBlock(root))
+        .or(() -> dao.getNonCanonicalBlock(root));
   }
 
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
-    return hotDao.getHotState(root);
+    return dao.getHotState(root);
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
-        .flatMap(root -> hotDao.getHotBlock(root).stream())
+        .flatMap(root -> dao.getHotBlock(root).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
-    return hotDao.getHotBlock(blockRoot);
+    return dao.getHotBlock(blockRoot);
   }
 
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
+    return dao.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
-    return hotDao.getStateRootsBeforeSlot(slot);
+    return dao.getStateRootsBeforeSlot(slot);
   }
 
   @Override
   public void addHotStateRoots(
       final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
       updater.commit();
     }
@@ -471,16 +439,16 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     Optional<SlotAndBlockRoot> maybeSlotAndBlockRoot =
-        hotDao.getSlotAndBlockRootFromStateRoot(stateRoot);
+        dao.getSlotAndBlockRootFromStateRoot(stateRoot);
     if (maybeSlotAndBlockRoot.isPresent()) {
       return maybeSlotAndBlockRoot;
     }
-    return finalizedDao.getSlotAndBlockRootForFinalizedStateRoot(stateRoot);
+    return dao.getSlotAndBlockRootForFinalizedStateRoot(stateRoot);
   }
 
   @Override
   public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.pruneHotStateRoots(stateRoots);
       updater.commit();
     }
@@ -488,23 +456,23 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return eth1Dao.getMinGenesisTimeBlock();
+    return dao.getMinGenesisTimeBlock();
   }
 
   @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
+    return dao.getNonCanonicalBlocksAtSlot(slot);
   }
 
   @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return eth1Dao.streamDepositsFromBlocks();
+    return dao.streamDepositsFromBlocks();
   }
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-    try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);
       updater.commit();
     }
@@ -512,7 +480,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-    try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addDepositsFromBlockEvent(event);
       updater.commit();
     }
@@ -520,7 +488,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {
-    try (final KvStoreHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
+    try (final HotUpdater hotUpdater = dao.hotUpdater()) {
       hotUpdater.addVotes(votes);
       hotUpdater.commit();
     }
@@ -528,9 +496,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void close() throws Exception {
-    hotDao.close();
-    eth1Dao.close();
-    finalizedDao.close();
+    dao.close();
   }
 
   private UpdateResult doUpdate(final StorageUpdate update) {
@@ -545,7 +511,7 @@ public class KvStoreDatabase implements Database {
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
+    try (final HotUpdater updater = dao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
       update
@@ -555,7 +521,7 @@ public class KvStoreDatabase implements Database {
                 updater.setFinalizedCheckpoint(checkpoint);
                 final int slotsPerEpoch = spec.slotsPerEpoch(checkpoint.getEpoch());
                 final UInt64 finalizedSlot = checkpoint.getEpochStartSlot(spec).plus(slotsPerEpoch);
-                updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
+                updater.pruneHotStateRoots(dao.getStateRootsBeforeSlot(finalizedSlot));
                 updater.deleteHotState(checkpoint.getRoot());
               });
 
@@ -624,7 +590,7 @@ public class KvStoreDatabase implements Database {
     if (isFinalizedOptimisticBlockRootSet) {
       final Optional<SignedBeaconBlock> transitionBlock =
           finalizedOptimisticTransitionBlockRoot.flatMap(this::getHotBlock);
-      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
         updater.setOptimisticTransitionBlockSlot(transitionBlock.map(SignedBeaconBlock::getSlot));
         updater.commit();
       }
@@ -640,7 +606,7 @@ public class KvStoreDatabase implements Database {
     while (it.hasNext()) {
       final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       final int start = i;
-      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
         while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
           final SignedBeaconBlock block = it.next();
           LOG.debug("Non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
@@ -664,7 +630,7 @@ public class KvStoreDatabase implements Database {
         BlockProvider.withKnownBlocks(
             roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
-    final Optional<Checkpoint> initialCheckpoint = hotDao.getAnchor();
+    final Optional<Checkpoint> initialCheckpoint = dao.getAnchor();
     final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
     // Get previously finalized block to build on top of
     final BeaconBlockSummary baseBlock = getLatestFinalizedBlockOrSummary();
@@ -681,7 +647,7 @@ public class KvStoreDatabase implements Database {
     UInt64 lastSlot = baseBlock.getSlot();
     while (i < finalizedRoots.size()) {
       final int start = i;
-      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
         final StateRootRecorder recorder =
             new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot, spec);
 
@@ -720,7 +686,7 @@ public class KvStoreDatabase implements Database {
   private void updateFinalizedDataPruneMode(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
-    final Optional<Bytes32> initialBlockRoot = hotDao.getAnchor().map(Checkpoint::getRoot);
+    final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
     final BlockProvider blockProvider =
         BlockProvider.withKnownBlocks(
             roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
@@ -728,7 +694,7 @@ public class KvStoreDatabase implements Database {
     final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
     int i = 0;
     while (i < finalizedRoots.size()) {
-      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
         final int start = i;
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
@@ -750,16 +716,15 @@ public class KvStoreDatabase implements Database {
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {
-    final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
-    return finalizedDao
-        .getFinalizedBlock(baseBlockRoot)
+    final Bytes32 baseBlockRoot = dao.getFinalizedCheckpoint().orElseThrow().getRoot();
+    return dao.getFinalizedBlock(baseBlockRoot)
         .<BeaconBlockSummary>map(a -> a)
         .orElseGet(this::getLatestFinalizedBlockSummary);
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockSummary() {
     final Optional<BeaconBlockSummary> finalizedBlock =
-        hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState);
+        dao.getLatestFinalizedState().map(BeaconBlockHeader::fromState);
     return finalizedBlock.orElseThrow(
         () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
   }

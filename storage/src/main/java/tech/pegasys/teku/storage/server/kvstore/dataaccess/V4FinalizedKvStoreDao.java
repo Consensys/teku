@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,17 +33,17 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 
-public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStoreFinalizedDao {
+public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   private final KvStoreAccessor db;
-  private final S schema;
-  private final V4FinalizedStateStorageLogic<S> stateStorageLogic;
+  private final SchemaFinalizedSnapshotStateAdapter schema;
+  private final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic;
 
   public V4FinalizedKvStoreDao(
       final KvStoreAccessor db,
-      final S schema,
-      final V4FinalizedStateStorageLogic<S> stateStorageLogic) {
+      final SchemaFinalizedSnapshotStateAdapter schema,
+      final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic) {
     this.db = db;
     this.schema = schema;
     this.stateStorageLogic = stateStorageLogic;
@@ -129,84 +127,12 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 
-  @Override
-  public void ingest(
-      final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
-    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
-    Preconditions.checkArgument(
-        finalizedDao instanceof V4FinalizedKvStoreDao,
-        "Expected instance of V4FinalizedKvStoreDao");
-    final V4FinalizedKvStoreDao<?> dao = (V4FinalizedKvStoreDao<?>) finalizedDao;
-
-    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
-    if (newVariables.size() > 0) {
-      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
-      try (final KvStoreTransaction transaction = db.startTransaction()) {
-        for (String key : newVariables.keySet()) {
-          logger.accept(String.format("Copy variable %s", key));
-          dao.getRawVariable(oldVariables.get(key))
-              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
-        }
-        transaction.commit();
-      }
-    }
-    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
-    if (newColumns.size() > 0) {
-      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
-      for (String key : newColumns.keySet()) {
-        final Optional<UInt64> maybeCount = displayCopyColumnMessage(key, oldColumns, dao, logger);
-        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-                dao.streamRawColumn(oldColumns.get(key));
-            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db, maybeCount)) {
-          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
-        }
-      }
-    }
-  }
-
-  private Optional<UInt64> displayCopyColumnMessage(
-      final String key,
-      final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao<?> dao,
-      final Consumer<String> logger) {
-    final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
-    maybeCount.ifPresentOrElse(
-        count -> logger.accept(String.format("Copy column %s - %s objects", key, count)),
-        () -> logger.accept(String.format("Copy column %s", key)));
-
-    return maybeCount;
-  }
-
-  private Optional<UInt64> getObjectCountForColumn(
-      final String key,
-      final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao<?> dao) {
-    switch (key) {
-      case "FINALIZED_STATES_BY_SLOT":
-      case "SLOTS_BY_FINALIZED_STATE_ROOT":
-      case "SLOTS_BY_FINALIZED_ROOT":
-        return getEntityCountFromColumn(oldColumns.get(key), dao);
-      case "FINALIZED_BLOCKS_BY_SLOT":
-        return getEntityCountFromColumn(oldColumns.get("SLOTS_BY_FINALIZED_ROOT"), dao);
-      default:
-        break;
-    }
-    return Optional.empty();
-  }
-
-  Optional<UInt64> getEntityCountFromColumn(
-      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao<?> dao) {
-    try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
-      return Optional.of(UInt64.valueOf(oldEntryStream.count()));
-    }
-  }
-
-  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }
 
   @MustBeClosed
-  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
     return db.streamRaw(kvStoreColumn);
   }
@@ -220,19 +146,31 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
-    return new V4FinalizedKvStoreDao.V4FinalizedUpdater<>(db, schema, stateStorageLogic.updater());
+    return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageLogic.updater());
   }
 
-  static class V4FinalizedUpdater<S extends SchemaFinalized> implements FinalizedUpdater {
+  public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    return schema.getColumnMap();
+  }
+
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
+    return schema.getVariableMap();
+  }
+
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
-    private final S schema;
-    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater;
+    private final SchemaFinalizedSnapshotStateAdapter schema;
+    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<
+            SchemaFinalizedSnapshotStateAdapter>
+        stateStorageUpdater;
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,
-        final S schema,
-        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater) {
+        final SchemaFinalizedSnapshotStateAdapter schema,
+        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<
+                SchemaFinalizedSnapshotStateAdapter>
+            stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;

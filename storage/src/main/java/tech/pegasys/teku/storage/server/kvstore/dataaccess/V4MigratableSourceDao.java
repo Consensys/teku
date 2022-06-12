@@ -14,34 +14,21 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
-import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-/**
- * Provides an abstract "data access object" interface for working with ETH1 data from the
- * underlying database.
- */
-public interface KvStoreEth1Dao extends AutoCloseable {
+public interface V4MigratableSourceDao {
+  Map<String, KvStoreColumn<?, ?>> getColumnMap();
+
+  Map<String, KvStoreVariable<?>> getVariableMap();
+
+  <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var);
 
   @MustBeClosed
-  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
-
-  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
-
-  Eth1Updater eth1Updater();
-
-  interface Eth1Updater extends AutoCloseable {
-    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
-
-    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
-
-    void commit();
-
-    void cancel();
-
-    @Override
-    void close();
-  }
+  <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(final KvStoreColumn<K, V> kvStoreColumn);
 }

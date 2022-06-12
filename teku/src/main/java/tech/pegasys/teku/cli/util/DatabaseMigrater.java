@@ -167,7 +167,7 @@ public class DatabaseMigrater {
       newDatabase.ingestDatabase(originalDatabase, batchSize, statusUpdater);
     } catch (Exception ex) {
       throw new DatabaseMigraterError(
-          "Failed to migrate data into the new database: " + ex.getCause());
+          "Failed to migrate data into the new database: " + ex.getCause(), ex);
     }
   }
 
