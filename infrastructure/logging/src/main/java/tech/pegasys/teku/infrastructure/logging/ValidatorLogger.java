@@ -184,6 +184,15 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
+  public void executionPayloadPreparedUsingBurnAddressForFeeRecipient(final UInt64 slot) {
+    log.error(
+        ColorConsolePrinter.print(
+            "Producing block at slot "
+                + slot
+                + ", no proposer was prepared, and no default fee recipient defined, inclusion fees will be lost",
+            Color.RED));
+  }
+
   public void proposedBlockImportFailed(
       final String failureReason,
       final UInt64 slot,
