@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -61,25 +60,35 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     final UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
 
     final List<ValidatorStatus> statuses =
-        validators.stream()
-            .map(validator -> createValidatorStatus(validator, previousEpoch, currentEpoch))
-            .collect(Collectors.toCollection(() -> new ArrayList<>(validators.size())));
+        createInitialValidatorStatuses(validators, currentEpoch, previousEpoch);
 
     processParticipation(statuses, state, previousEpoch, currentEpoch);
 
     return new ValidatorStatuses(statuses, createTotalBalances(statuses));
   }
 
+  private List<ValidatorStatus> createInitialValidatorStatuses(
+      final SszList<Validator> validators, final UInt64 currentEpoch, final UInt64 previousEpoch) {
+    final int validatorCount = validators.size();
+    final List<ValidatorStatus> statuses = new ArrayList<>(validatorCount);
+    for (Validator validator : validators) {
+      statuses.add(createValidatorStatus(validator, previousEpoch, currentEpoch));
+    }
+    return statuses;
+  }
+
   @Override
   public ValidatorStatus createValidatorStatus(
       final Validator validator, final UInt64 previousEpoch, final UInt64 currentEpoch) {
 
+    final UInt64 activationEpoch = validator.getActivationEpoch();
+    final UInt64 exitEpoch = validator.getExitEpoch();
     return new ValidatorStatus(
         validator.isSlashed(),
         validator.getWithdrawableEpoch().isLessThanOrEqualTo(currentEpoch),
         validator.getEffectiveBalance(),
-        predicates.isActiveValidator(validator, currentEpoch),
-        predicates.isActiveValidator(validator, previousEpoch));
+        predicates.isActiveValidator(activationEpoch, exitEpoch, currentEpoch),
+        predicates.isActiveValidator(activationEpoch, exitEpoch, previousEpoch));
   }
 
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
