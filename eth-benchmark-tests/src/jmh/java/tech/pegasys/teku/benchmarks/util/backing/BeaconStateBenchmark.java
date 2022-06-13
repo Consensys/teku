@@ -33,8 +33,9 @@ public class BeaconStateBenchmark {
 
   private static final BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(0);
   private static final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(0, TestSpecFactory.createDefault()).withPubKeyGenerator(() -> pubkey);
-  private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
+      new DataStructureUtil(0, TestSpecFactory.createMainnetAltair())
+          .withPubKeyGenerator(() -> pubkey);
+  private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(400_000);
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
