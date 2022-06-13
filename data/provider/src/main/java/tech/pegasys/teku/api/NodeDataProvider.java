@@ -38,7 +38,9 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -170,8 +172,12 @@ public class NodeDataProvider {
             });
   }
 
-  public Map<String, Object> getProposersData() {
-    return proposersDataManager.getData();
+  public Map<UInt64, PreparedProposerInfo> getPreparedProposerInfo() {
+    return proposersDataManager.getPreparedProposerInfo();
+  }
+
+  public Map<UInt64, RegisteredValidatorInfo> getValidatorRegistrationInfo() {
+    return proposersDataManager.getValidatorRegistrationInfo();
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {
