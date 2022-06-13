@@ -56,7 +56,7 @@ public class GetProposersData extends MigratingEndpointAdapter {
                     + "considered unstable and the returned data format may change in the future.")
             .tags(TAG_EXPERIMENTAL)
             .response(SC_OK, "Request successful", ProposersData.getJsonTypeDefinition())
-            .withServiceUnavailableResponse() // TODO check if needed
+            .withServiceUnavailableResponse()
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }
