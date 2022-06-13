@@ -27,3 +27,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
 - Fixed issue where sync committee aggregations were skipped, but reported failed because there were no signatures to aggregate.
 - Fixed division by zero when estimating time to TTD during a period with no new PoW blocks.
+- Fixed issue where validator client could receive a 500 rather than 503 when getting duties if the beacon node was syncing.
