@@ -11,12 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.kvstore.schema;
+package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import com.google.errorprone.annotations.MustBeClosed;
+import java.util.function.Consumer;
 
-public interface SchemaFinalizedSnapshotState {
+public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao {
 
-  KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
+  void ingest(KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger);
+
+  @MustBeClosed
+  CombinedUpdater combinedUpdater();
+
+  interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 }

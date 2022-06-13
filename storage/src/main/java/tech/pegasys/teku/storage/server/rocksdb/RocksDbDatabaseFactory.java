@@ -17,8 +17,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -26,11 +24,10 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 
 public class RocksDbDatabaseFactory {
 
@@ -43,51 +40,45 @@ public class RocksDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final Spec spec) {
+
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
+    final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            hotConfiguration,
-            new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns());
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
-            new V4SchemaFinalized(spec).getAllColumns());
+            schemaFinalized.getAllColumns());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeVotesEquivocation,
-        spec);
-  }
-
-  public static Database createV6(
-      final MetricsSystem metricsSystem,
-      final KvStoreConfiguration hotConfiguration,
-      final SchemaHot schemaHot,
-      final SchemaFinalizedSnapshotState schemaFinalized,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
-
-    final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-    allColumns.addAll(schemaFinalized.getAllColumns());
-    final KvStoreAccessor db =
-        RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-
-    return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        db,
         schemaHot,
         schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         spec);
+  }
+
+  public static Database createV6(
+      final MetricsSystem metricsSystem,
+      final KvStoreConfiguration hotConfiguration,
+      final SchemaCombinedSnapshotState schema,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
+      final Spec spec) {
+
+    final KvStoreAccessor db =
+        RocksDbInstanceFactory.create(
+            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
+
+    return KvStoreDatabase.createWithStateSnapshots(
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 }

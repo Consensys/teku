@@ -20,7 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EVENTS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest.BAD_REQUEST_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -42,8 +42,8 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.BadRequest;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class GetEvents implements Handler {
@@ -134,7 +134,7 @@ public class GetEvents implements Handler {
 
   private String getBadRequestString(final String message) {
     try {
-      return JsonUtil.serialize(new BadRequest(SC_BAD_REQUEST, message), BAD_REQUEST_TYPE);
+      return JsonUtil.serialize(HttpErrorResponse.badRequest(message), HTTP_ERROR_RESPONSE_TYPE);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }

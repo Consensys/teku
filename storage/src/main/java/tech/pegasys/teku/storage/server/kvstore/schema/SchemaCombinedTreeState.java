@@ -14,39 +14,33 @@
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface SchemaFinalized extends Schema {
-  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
+public interface SchemaCombinedTreeState extends SchemaCombined {
 
-  KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
+  @Override
+  Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
-  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
-
-  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
-
-  KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
-
-  KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
+  @Override
+  Map<String, KvStoreVariable<?>> getVariableMap();
 
   @Override
   default Collection<KvStoreColumn<?, ?>> getAllColumns() {
     return getColumnMap().values();
   }
 
-  Map<String, KvStoreColumn<?, ?>> getColumnMap();
-
   @Override
   default Collection<KvStoreVariable<?>> getAllVariables() {
-    return List.of(getOptimisticTransitionBlockSlot());
+    return getVariableMap().values();
   }
 
-  default Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
-  }
+  KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves();
+
+  KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches();
 }
