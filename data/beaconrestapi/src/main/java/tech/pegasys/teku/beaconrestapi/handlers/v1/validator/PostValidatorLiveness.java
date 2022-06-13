@@ -13,64 +13,85 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
-import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class PostValidatorLiveness extends AbstractHandler {
-  private static final Logger LOG = LogManager.getLogger();
+public class PostValidatorLiveness extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/liveness";
+
+  private static final SerializableTypeDefinition<List<ValidatorLivenessAtEpoch>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<ValidatorLivenessAtEpoch>>object()
+          .name("PostValidatorLivenessResponse")
+          .withField(
+              "data", listOf(ValidatorLivenessAtEpoch.getJsonTypeDefinition()), Function.identity())
+          .build();
 
   public final ChainDataProvider chainDataProvider;
   public final NodeDataProvider nodeDataProvider;
   public final SyncDataProvider syncDataProvider;
 
-  public PostValidatorLiveness(
-      final ChainDataProvider chainDataProvider,
-      final NodeDataProvider nodeDataProvider,
-      final SyncDataProvider syncDataProvider,
-      final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
-    this.nodeDataProvider = nodeDataProvider;
-    this.syncDataProvider = syncDataProvider;
-  }
-
-  public PostValidatorLiveness(final DataProvider provider, final JsonProvider jsonProvider) {
+  public PostValidatorLiveness(final DataProvider provider) {
     this(
         provider.getChainDataProvider(),
         provider.getNodeDataProvider(),
-        provider.getSyncDataProvider(),
-        jsonProvider);
+        provider.getSyncDataProvider());
+  }
+
+  public PostValidatorLiveness(
+      final ChainDataProvider chainDataProvider,
+      final NodeDataProvider nodeDataProvider,
+      final SyncDataProvider syncDataProvider) {
+    super(
+        EndpointMetadata.post(ROUTE)
+            .operationId("postValidatorLiveness")
+            .summary("Get Validator Liveness")
+            .description(
+                "Requests the beacon node to indicate if a validator has been"
+                    + "observed to be live in a given epoch. The beacon node might detect liveness by"
+                    + "observing messages from the validator on the network, in the beacon chain,"
+                    + "from its API or from any other source. It is important to note that the"
+                    + "values returned by the beacon node are not canonical; they are best-effort"
+                    + "and based upon a subjective view of the network.")
+            .tags(TAG_EXPERIMENTAL)
+            .requestBodyType(ValidatorLivenessRequest.getJsonTypeDefinition())
+            .response(SC_OK, "Successful Response", RESPONSE_TYPE)
+            .withServiceUnavailableResponse()
+            .build());
+    this.chainDataProvider = chainDataProvider;
+    this.nodeDataProvider = nodeDataProvider;
+    this.syncDataProvider = syncDataProvider;
   }
 
   @OpenApi(
@@ -79,7 +100,12 @@ public class PostValidatorLiveness extends AbstractHandler {
       summary = "Get Validator Liveness",
       tags = {TAG_EXPERIMENTAL},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = ValidatorLivenessRequest.class)}),
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    from =
+                        tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest.class)
+              }),
       description =
           "Requests the beacon node to indicate if a validator has been"
               + "    observed to be live in a given epoch. The beacon node might detect liveness by"
@@ -97,35 +123,27 @@ public class PostValidatorLiveness extends AbstractHandler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!chainDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       throw new ServiceUnavailableException();
     }
-    try {
-      final ValidatorLivenessRequest request =
-          parseRequestBody(ctx.body(), ValidatorLivenessRequest.class);
-      SafeFuture<Optional<PostValidatorLivenessResponse>> future =
-          nodeDataProvider.getValidatorLiveness(request, chainDataProvider.getCurrentEpoch());
-      handleOptionalResult(
-          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
-    } catch (IllegalArgumentException ex) {
-      LOG.trace("Illegal argument in PostValidatorLiveness", ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
-  }
 
-  private Optional<String> handleResult(Context ctx, final PostValidatorLivenessResponse response)
-      throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(response));
-  }
+    final ValidatorLivenessRequest requestBody = request.getRequestBody();
+    SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> future =
+        nodeDataProvider.getValidatorLiveness(requestBody, chainDataProvider.getCurrentEpoch());
 
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else {
-      return failedFuture(error);
-    }
+    request.respondAsync(
+        future.thenApply(
+            validatorLivenessAtEpoches -> {
+              if (validatorLivenessAtEpoches.isEmpty()) {
+                return AsyncApiResponse.respondWithError(
+                    SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
+              }
+              return AsyncApiResponse.respondOk(validatorLivenessAtEpoches.get());
+            }));
   }
 }
