@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,6 +39,8 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
+
+  private SszMutableList<SszByte> zeroParticipationFlags = null;
 
   private final SpecConfigAltair specConfigAltair;
   protected final MiscHelpersAltair miscHelpersAltair;
@@ -93,9 +98,29 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
     state.setPreviousEpochParticipation(state.getCurrentEpochParticipation());
 
+    if (zeroParticipationFlags == null) {
+      final List<SszByte> sszByteList =
+          Stream.generate(() -> SszByte.ZERO)
+              .limit(state.getValidators().size())
+              .collect(Collectors.toList());
+      zeroParticipationFlags =
+          state
+              .getCurrentEpochParticipation()
+              .getSchema()
+              .createFromElements(sszByteList)
+              .createWritableCopy();
+    }
     // Reset current epoch participation flags
-    state.getCurrentEpochParticipation().clear();
-    state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
+    if (zeroParticipationFlags.size() > state.getValidators().size()) {
+      // the array is too large to use for reset, do via setAll
+      state.getCurrentEpochParticipation().clear();
+      state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
+    } else {
+      while (zeroParticipationFlags.size() < state.getValidators().size()) {
+        zeroParticipationFlags.append(SszByte.ZERO);
+      }
+      state.setCurrentEpochParticipation(zeroParticipationFlags);
+    }
   }
 
   @Override
