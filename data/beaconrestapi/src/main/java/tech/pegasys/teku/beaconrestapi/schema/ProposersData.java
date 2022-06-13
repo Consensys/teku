@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -92,5 +93,33 @@ public class ProposersData {
         .withField(
             "registered_validators", listOf(validatorsType), ProposersData::getRegisteredValidators)
         .build();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ProposersData that = (ProposersData) o;
+    return Objects.equals(preparedProposers, that.preparedProposers)
+        && Objects.equals(registeredValidators, that.registeredValidators);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(preparedProposers, registeredValidators);
+  }
+
+  @Override
+  public String toString() {
+    return "ProposersData{"
+        + "preparedProposers="
+        + preparedProposers
+        + ", registeredValidators="
+        + registeredValidators
+        + '}';
   }
 }
