@@ -33,9 +33,9 @@ public class MetricRecordingExecutionBuilderClient implements ExecutionBuilderCl
   public static final String REGISTER_VALIDATORS_REQUEST_COUNTER_NAME =
       "builder_register_validators_requests_total";
   public static final String GET_HEADER_REQUEST_COUNTER_NAME =
-      "builder_get_execution_payload_header_requests_total";
+      "builder_get_header_requests_total";
   public static final String GET_PAYLOAD_REQUEST_COUNTER_NAME =
-      "builder_get_execution_payload_requests_total";
+      "builder_get_payload_requests_total";
 
   private final ExecutionBuilderClient delegate;
 
