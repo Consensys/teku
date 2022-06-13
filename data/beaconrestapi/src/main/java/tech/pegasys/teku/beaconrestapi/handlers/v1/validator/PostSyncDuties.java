@@ -131,7 +131,7 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
-      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
+      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
       return;
     }
 
