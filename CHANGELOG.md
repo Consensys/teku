@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fork choice before proposals is now enabled by default for testnets. It can be disabled with `--Xfork-choice-before-proposing-enabled=false` if required.
 - Updated the Ropsten network configuration to include the correct terminal difficulty.
 - Updated to BLST 0.3.8
+- Improve epoch transition speed.
 
 ### Bug Fixes
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
