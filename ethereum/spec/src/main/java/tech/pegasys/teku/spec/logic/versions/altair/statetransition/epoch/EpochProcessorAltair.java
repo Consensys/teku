@@ -169,7 +169,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
         return Optional.empty();
       }
       if (flags.size() < state.getValidators().size()) {
-        // need to take a writable copy to update the list if the zero participation list is too small
+        // need to take a writable copy to update the list if the participation list is too small
         mutableFlags = flags.createWritableCopy();
         while (mutableFlags.size() < state.getValidators().size()) {
           mutableFlags.append(SszByte.ZERO);
