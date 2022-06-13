@@ -11,25 +11,38 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.beaconnode.metrics;
+package tech.pegasys.teku.infrastructure.metrics;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public class BeaconChainRequestCounter {
+public class RequestCounter {
 
   private final LabelledMetric<Counter> counter;
 
-  public BeaconChainRequestCounter(final LabelledMetric<Counter> counter) {
+  private RequestCounter(final LabelledMetric<Counter> counter) {
     this.counter = counter;
   }
 
-  public static BeaconChainRequestCounter create(
+  public static RequestCounter create(
+      final MetricsSystem metricsSystem,
+      final MetricCategory metricCategory,
+      final String name,
+      final String help) {
+    return new RequestCounter(
+        metricsSystem.createLabelledCounter(metricCategory, name, help, "outcome"));
+  }
+
+  public static RequestCounter createForBeaconCategory(
       final MetricsSystem metricsSystem, final String name, final String help) {
-    return new BeaconChainRequestCounter(
-        metricsSystem.createLabelledCounter(TekuMetricCategory.VALIDATOR, name, help, "outcome"));
+    return create(metricsSystem, TekuMetricCategory.BEACON, name, help);
+  }
+
+  public static RequestCounter createForValidatorCategory(
+      final MetricsSystem metricsSystem, final String name, final String help) {
+    return create(metricsSystem, TekuMetricCategory.VALIDATOR, name, help);
   }
 
   public void onSuccess() {

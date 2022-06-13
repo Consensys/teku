@@ -26,6 +26,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.RequestCounter;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -90,17 +91,17 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String REGISTER_VALIDATOR_NAME =
       "beacon_node_register_validator_requests_total";
   private final ValidatorApiChannel delegate;
-  private final BeaconChainRequestCounter genesisTimeRequestCounter;
-  private final BeaconChainRequestCounter attestationDutiesRequestCounter;
-  private final BeaconChainRequestCounter syncCommitteeDutiesRequestCounter;
-  private final BeaconChainRequestCounter proposerDutiesRequestCounter;
-  private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
-  private final BeaconChainRequestCounter attestationDataRequestsCounter;
-  private final BeaconChainRequestCounter aggregateRequestsCounter;
-  private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
-  private final BeaconChainRequestCounter sendAttestationRequestCounter;
-  private final BeaconChainRequestCounter sendAggregateRequestCounter;
-  private final BeaconChainRequestCounter sendSyncCommitteeMessagesRequestCounter;
+  private final RequestCounter genesisTimeRequestCounter;
+  private final RequestCounter attestationDutiesRequestCounter;
+  private final RequestCounter syncCommitteeDutiesRequestCounter;
+  private final RequestCounter proposerDutiesRequestCounter;
+  private final RequestCounter unsignedBlockRequestsCounter;
+  private final RequestCounter attestationDataRequestsCounter;
+  private final RequestCounter aggregateRequestsCounter;
+  private final RequestCounter createSyncCommitteeContributionCounter;
+  private final RequestCounter sendAttestationRequestCounter;
+  private final RequestCounter sendAggregateRequestCounter;
+  private final RequestCounter sendSyncCommitteeMessagesRequestCounter;
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
@@ -115,42 +116,42 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     this.delegate = delegate;
 
     genesisTimeRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             GENESIS_TIME_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for genesis time");
     attestationDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator attestation duties");
     syncCommitteeDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             SYNC_COMMITTEE_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator sync committee duties");
     proposerDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             PROPOSER_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator proposer duties");
     unsignedBlockRequestsCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for unsigned blocks");
     attestationDataRequestsCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             ATTESTATION_DATA_REQUEST_COUNTER_NAME,
             "Counter recording the number of requests for attestation data");
     aggregateRequestsCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             AGGREGATE_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
     createSyncCommitteeContributionCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
@@ -170,12 +171,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             PERSISTENT_SUBSCRIPTION_COUNTER_NAME,
             "Counter recording the number of requests to subscribe to persistent committees");
     sendAttestationRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             PUBLISHED_ATTESTATION_COUNTER_NAME,
             "Counter recording the number of signed attestations sent to the beacon node");
     sendAggregateRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             PUBLISHED_AGGREGATE_COUNTER_NAME,
             "Counter recording the number of signed aggregate attestations sent to the beacon node");
@@ -190,7 +191,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
             "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
     sendSyncCommitteeMessagesRequestCounter =
-        BeaconChainRequestCounter.create(
+        RequestCounter.createForValidatorCategory(
             metricsSystem,
             SYNC_COMMITTEE_SEND_MESSAGES_NAME,
             "Counter recording the number of sync committee messages sent to the beacon node");
@@ -351,7 +352,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   private <T> SafeFuture<List<T>> countSendRequest(
-      final SafeFuture<List<T>> request, final BeaconChainRequestCounter counter) {
+      final SafeFuture<List<T>> request, final RequestCounter counter) {
     return request
         .catchAndRethrow(__ -> counter.onError())
         .thenPeek(
@@ -365,7 +366,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   private <T> SafeFuture<Optional<T>> countDataRequest(
-      final SafeFuture<Optional<T>> request, final BeaconChainRequestCounter counter) {
+      final SafeFuture<Optional<T>> request, final RequestCounter counter) {
     return request
         .catchAndRethrow(__ -> counter.onError())
         .thenPeek(

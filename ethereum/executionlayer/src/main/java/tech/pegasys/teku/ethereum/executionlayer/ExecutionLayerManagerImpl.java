@@ -32,6 +32,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -122,11 +123,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Spec spec,
       final MetricsSystem metricsSystem) {
     return builderRestClient.map(
-        client ->
-            new ThrottlingExecutionBuilderClient(
-                new RestExecutionBuilderClient(client, spec),
-                MAXIMUM_CONCURRENT_EB_REQUESTS,
-                metricsSystem));
+        client -> {
+          final RestExecutionBuilderClient restBuilderClient =
+              new RestExecutionBuilderClient(client, spec);
+          final MetricRecordingExecutionBuilderClient metricRecordingBuilderClient =
+              new MetricRecordingExecutionBuilderClient(restBuilderClient, metricsSystem);
+          return new ThrottlingExecutionBuilderClient(
+              metricRecordingBuilderClient, MAXIMUM_CONCURRENT_EB_REQUESTS, metricsSystem);
+        });
   }
 
   ExecutionLayerManagerImpl(
