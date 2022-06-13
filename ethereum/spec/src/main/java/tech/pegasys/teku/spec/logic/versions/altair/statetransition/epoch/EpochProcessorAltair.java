@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,6 +39,8 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
+
+  private volatile SszList<SszByte> zeroParticipationFlags = null;
 
   private final SpecConfigAltair specConfigAltair;
   protected final MiscHelpersAltair miscHelpersAltair;
@@ -93,9 +98,13 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
     state.setPreviousEpochParticipation(state.getCurrentEpochParticipation());
 
-    // Reset current epoch participation flags
-    state.getCurrentEpochParticipation().clear();
-    state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
+    Optional<SszList<SszByte>> emptyParticipationFlags = getZeroParticipationFlags(state);
+    if (emptyParticipationFlags.isEmpty()) {
+      state.getCurrentEpochParticipation().clear();
+      state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
+    } else {
+      state.setCurrentEpochParticipation(emptyParticipationFlags.get());
+    }
   }
 
   @Override
@@ -145,5 +154,30 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   @Override
   protected int getProportionalSlashingMultiplier() {
     return specConfigAltair.getProportionalSlashingMultiplierAltair();
+  }
+
+  private Optional<SszList<SszByte>> getZeroParticipationFlags(final BeaconStateAltair state) {
+    SszList<SszByte> flags = zeroParticipationFlags;
+    SszMutableList<SszByte> mutableFlags;
+    if (flags == null) {
+      mutableFlags = state.getCurrentEpochParticipation().getSchema().of().createWritableCopy();
+      mutableFlags.setAll(SszByte.ZERO, state.getValidators().size());
+      flags = mutableFlags.commitChanges();
+      zeroParticipationFlags = flags;
+    } else {
+      if (flags.size() > state.getValidators().size()) {
+        return Optional.empty();
+      }
+      if (flags.size() < state.getValidators().size()) {
+        // need to take a writable copy to update the list if the participation list is too small
+        mutableFlags = flags.createWritableCopy();
+        while (mutableFlags.size() < state.getValidators().size()) {
+          mutableFlags.append(SszByte.ZERO);
+        }
+        flags = mutableFlags.commitChanges();
+        zeroParticipationFlags = flags;
+      }
+    }
+    return Optional.of(flags);
   }
 }
