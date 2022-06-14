@@ -46,7 +46,9 @@ public class SpecFactoryTest {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
-    } else if (configName.equals("ropsten") || configName.equals("kiln")) {
+    } else if (configName.equals("ropsten")
+        || configName.equals("kiln")
+        || configName.equals("sepolia")) {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
     } else {
