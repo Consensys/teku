@@ -58,7 +58,7 @@ public class Readiness extends MigratingEndpointAdapter {
       final ChainDataProvider chainDataProvider,
       final NetworkDataProvider networkDataProvider) {
     super(
-        EndpointMetadata.post(ROUTE)
+        EndpointMetadata.get(ROUTE)
             .operationId("readiness")
             .summary("Get node readiness")
             .description("Returns 200 if the node is ready to accept traffic")
