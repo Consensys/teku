@@ -92,7 +92,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   public void onSlot(UInt64 slot) {
     super.onSlot(slot);
     pendingBlocksForEPReexecution.removeIf(
-        block -> block.getSlot().isLessThan(slot.minusMinZero(EXPIRES_IN_SLOT)));
+        block -> block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(slot);
   }
 
   @Override
