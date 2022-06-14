@@ -83,10 +83,12 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
     final UInt64 activationEpoch = validator.getActivationEpoch();
     final UInt64 exitEpoch = validator.getExitEpoch();
+    final UInt64 withdrawableEpoch = validator.getWithdrawableEpoch();
     return new ValidatorStatus(
         validator.isSlashed(),
-        validator.getWithdrawableEpoch().isLessThanOrEqualTo(currentEpoch),
+        withdrawableEpoch.isLessThanOrEqualTo(currentEpoch),
         validator.getEffectiveBalance(),
+        withdrawableEpoch,
         predicates.isActiveValidator(activationEpoch, exitEpoch, currentEpoch),
         predicates.isActiveValidator(activationEpoch, exitEpoch, previousEpoch));
   }
