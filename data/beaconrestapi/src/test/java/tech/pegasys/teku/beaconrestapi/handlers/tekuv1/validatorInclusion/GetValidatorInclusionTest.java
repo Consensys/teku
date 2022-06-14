@@ -65,7 +65,13 @@ class GetValidatorInclusionTest extends AbstractMigratedBeaconHandlerWithChainDa
   @Test
   void metadata_shouldHandle200() throws IOException {
     final ValidatorStatus status =
-        new ValidatorStatus(false, false, UInt64.valueOf(32000000000L), true, true);
+        new ValidatorStatus(
+            false,
+            false,
+            UInt64.valueOf(32000000000L),
+            dataStructureUtil.randomEpoch(),
+            true,
+            true);
     GetValidatorInclusion.GetValidatorInclusionResponseData responseData =
         new GetValidatorInclusion.GetValidatorInclusionResponseData(status);
 

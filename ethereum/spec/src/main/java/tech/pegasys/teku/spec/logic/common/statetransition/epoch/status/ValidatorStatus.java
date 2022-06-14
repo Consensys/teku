@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorStatus {
   private final UInt64 currentEpochEffectiveBalance;
+  final UInt64 withdrawableEpoch;
   private final boolean slashed;
   private final boolean withdrawableInCurrentEpoch;
   private final boolean activeInCurrentEpoch;
@@ -35,11 +36,13 @@ public class ValidatorStatus {
       final boolean slashed,
       final boolean withdrawableInCurrentEpoch,
       final UInt64 currentEpochEffectiveBalance,
+      final UInt64 withdrawableEpoch,
       final boolean activeInCurrentEpoch,
       final boolean activeInPreviousEpoch) {
     this.slashed = slashed;
     this.withdrawableInCurrentEpoch = withdrawableInCurrentEpoch;
     this.currentEpochEffectiveBalance = currentEpochEffectiveBalance;
+    this.withdrawableEpoch = withdrawableEpoch;
     this.activeInCurrentEpoch = activeInCurrentEpoch;
     this.activeInPreviousEpoch = activeInPreviousEpoch;
   }
@@ -172,5 +175,9 @@ public class ValidatorStatus {
       }
     }
     return this;
+  }
+
+  public UInt64 getWithdrawableEpoch() {
+    return withdrawableEpoch;
   }
 }
