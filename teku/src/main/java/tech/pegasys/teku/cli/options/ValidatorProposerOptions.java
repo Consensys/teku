@@ -64,7 +64,7 @@ public class ValidatorProposerOptions {
       names = {"--Xvalidators-registration-default-gas-limit"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enable MEV boost when proposing blocks.",
+      description = "Change the default gas limit used for the validators registration.",
       arity = "0..1",
       hidden = true,
       converter = UInt64Converter.class)
