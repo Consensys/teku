@@ -61,6 +61,11 @@ public class ValidatorsUtil {
         && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
+  public boolean isEligibleForActivation(final UInt64 finalizedEpoch, final Validator validator) {
+    return validator.getActivationEligibilityEpoch().compareTo(finalizedEpoch) <= 0
+        && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
+  }
+
   public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()

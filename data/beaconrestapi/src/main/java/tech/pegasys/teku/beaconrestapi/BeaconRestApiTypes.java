@@ -38,7 +38,10 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
@@ -150,4 +153,8 @@ public class BeaconRestApiTypes {
           BEACON_BLOCK_ROOT,
           BYTES32_TYPE.withDescription(
               "`bytes32` The block root for which to produce the contribution."));
+
+  public static final ParameterMetadata<Integer> TARGET_PEER_COUNT_PARAMETER =
+      new ParameterMetadata<>(
+          TARGET_PEER_COUNT, INTEGER_TYPE.withDescription(TARGET_PEER_COUNT_DESCRIPTION));
 }
