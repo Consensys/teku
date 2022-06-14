@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -51,7 +52,6 @@ class MetricRecordingExecutionBuilderClientTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestArguments")
   public void shouldCountSuccessfulRequest(
-      final String name,
       final Function<ExecutionBuilderClient, SafeFuture<Object>> method,
       final String counterName,
       final Object value) {
@@ -68,10 +68,7 @@ class MetricRecordingExecutionBuilderClientTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestArguments")
   public void shouldCountRequestWithFailedFutureResponse(
-      final String name,
-      final Function<ExecutionBuilderClient, SafeFuture<Object>> method,
-      final String counterName,
-      final Object value) {
+      final Function<ExecutionBuilderClient, SafeFuture<Object>> method, final String counterName) {
     final RuntimeException exception = new RuntimeException("Nope");
     when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(exception));
 
@@ -86,7 +83,6 @@ class MetricRecordingExecutionBuilderClientTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestWithResponseFailureArguments")
   public void shouldCountRequestWithResponseFailure(
-      final String name,
       final Function<ExecutionBuilderClient, SafeFuture<Object>> method,
       final String counterName,
       final Object value) {
@@ -102,7 +98,7 @@ class MetricRecordingExecutionBuilderClientTest {
 
   public static Stream<Arguments> getRequestWithResponseFailureArguments() {
     return getRequestArguments()
-        .peek(arguments -> arguments.get()[3] = Response.withErrorMessage("oopsy"));
+        .peek(arguments -> arguments.get()[2] = Response.withErrorMessage("oopsy"));
   }
 
   public static Stream<Arguments> getRequestArguments() {
@@ -145,7 +141,7 @@ class MetricRecordingExecutionBuilderClientTest {
       final Function<ExecutionBuilderClient, SafeFuture<T>> method,
       final String counterName,
       final T value) {
-    return Arguments.of(name, method, counterName, value);
+    return Arguments.of(Named.of(name, method), counterName, value);
   }
 
   private long getCounterValue(final String counterName, final RequestOutcome outcome) {
