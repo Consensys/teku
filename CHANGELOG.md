@@ -1,4 +1,4 @@
-
+''
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated the Ropsten network configuration to include the correct terminal difficulty.
 - Updated to BLST 0.3.8
 - Improve epoch transition speed.
+- Add configuration for Sepolia testnet.
 
 ### Bug Fixes
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
