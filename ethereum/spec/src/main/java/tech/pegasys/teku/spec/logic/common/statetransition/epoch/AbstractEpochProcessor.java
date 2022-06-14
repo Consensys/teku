@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
@@ -97,7 +96,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());
-    processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators());
+    processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
     processEffectiveBalanceUpdates(state);
     processSlashingsReset(state);
@@ -303,9 +302,12 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   /** Processes slashings */
   @Override
-  public void processSlashings(MutableBeaconState state, final UInt64 totalBalance) {
-    UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
-    UInt64 adjustedTotalSlashingBalance =
+  public void processSlashings(
+      MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
+    final UInt64 totalBalance =
+        validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators();
+    final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 adjustedTotalSlashingBalance =
         state
             .getSlashings()
             .streamUnboxed()
@@ -313,20 +315,19 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             .times(getProportionalSlashingMultiplier())
             .min(totalBalance);
 
-    SszList<Validator> validators = state.getValidators();
-    for (int index = 0; index < validators.size(); index++) {
-      Validator validator = validators.get(index);
-      if (validator.isSlashed()
-          && epoch
-              .plus(specConfig.getEpochsPerSlashingsVector() / 2)
-              .equals(validator.getWithdrawableEpoch())) {
-        UInt64 increment = specConfig.getEffectiveBalanceIncrement();
-        UInt64 penaltyNumerator =
-            validator
-                .getEffectiveBalance()
+    final List<ValidatorStatus> validatorStatusList = validatorStatuses.getStatuses();
+    final int halfEpochsPerSlashingsVector = specConfig.getEpochsPerSlashingsVector() / 2;
+    for (int index = 0; index < validatorStatusList.size(); index++) {
+      final ValidatorStatus status = validatorStatusList.get(index);
+      if (status.isSlashed()
+          && epoch.plus(halfEpochsPerSlashingsVector).equals(status.getWithdrawableEpoch())) {
+        final UInt64 increment = specConfig.getEffectiveBalanceIncrement();
+        final UInt64 penaltyNumerator =
+            status
+                .getCurrentEpochEffectiveBalance()
                 .dividedBy(increment)
                 .times(adjustedTotalSlashingBalance);
-        UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
+        final UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
         beaconStateMutators.decreaseBalance(state, index, penalty);
       }
     }

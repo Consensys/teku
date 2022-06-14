@@ -79,12 +79,7 @@ public class EpochProcessingExecutor {
   }
 
   public void processSlashings(final MutableBeaconState state) {
-    epochProcessor.processSlashings(
-        state,
-        validatorStatusFactory
-            .createValidatorStatuses(state)
-            .getTotalBalances()
-            .getCurrentEpochActiveValidators());
+    epochProcessor.processSlashings(state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
   public void processRegistryUpdates(final MutableBeaconState state)

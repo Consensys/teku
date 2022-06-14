@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
@@ -39,7 +38,7 @@ public interface EpochProcessor {
   void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
       throws EpochProcessingException;
 
-  void processSlashings(MutableBeaconState state, UInt64 totalBalance);
+  void processSlashings(MutableBeaconState state, ValidatorStatuses validatorStatuses);
 
   void processParticipationUpdates(MutableBeaconState genericState);
 
