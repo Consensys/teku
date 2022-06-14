@@ -82,4 +82,9 @@ class Web3jWebsocketClient extends Web3JClient {
         .<SafeFuture<Response<T>>>map(SafeFuture::failedFuture)
         .orElseGet(() -> super.doRequest(web3jRequest, timeout));
   }
+
+  @Override
+  public boolean isWebsocketsClient() {
+    return true;
+  }
 }

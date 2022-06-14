@@ -109,4 +109,8 @@ public abstract class Web3JClient {
     throwIfNotInitialized();
     return eth1Web3j;
   }
+
+  public boolean isWebsocketsClient() {
+    return false;
+  }
 }
