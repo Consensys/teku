@@ -37,7 +37,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled()
+                    .withMiningEnabled(true)
                     .withMergeSupport(true)
                     .withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node.start();

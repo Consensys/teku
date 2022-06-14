@@ -45,7 +45,7 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled()
+                    .withMiningEnabled(true)
                     .withMergeSupport(true)
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json"));

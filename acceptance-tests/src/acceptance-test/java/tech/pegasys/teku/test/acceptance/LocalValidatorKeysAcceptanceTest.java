@@ -28,7 +28,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "less-swift";
-    final BesuNode eth1Node = createBesuNode();
+    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =

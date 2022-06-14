@@ -26,7 +26,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldCreateTheSameGenesisState() throws Exception {
-    final BesuNode eth1Node = createBesuNode();
+    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
     createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
@@ -46,7 +46,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldCreateGenesisFromPartialDeposits() throws Exception {
-    final BesuNode eth1Node = createBesuNode();
+    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
     int numberOfValidators = 4;
 
