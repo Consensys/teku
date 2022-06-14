@@ -98,7 +98,7 @@ public class Readiness extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final Optional<Long> targetPeerCount =
+    final Optional<Integer> targetPeerCount =
         request.getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER);
 
     if (!chainDataProvider.isStoreAvailable()
@@ -110,7 +110,7 @@ public class Readiness extends MigratingEndpointAdapter {
     }
   }
 
-  private boolean belowTargetPeerCount(final Optional<Long> targetPeerCount) {
+  private boolean belowTargetPeerCount(final Optional<Integer> targetPeerCount) {
     return targetPeerCount.isPresent()
         && networkDataProvider.getPeerCount() < targetPeerCount.get();
   }

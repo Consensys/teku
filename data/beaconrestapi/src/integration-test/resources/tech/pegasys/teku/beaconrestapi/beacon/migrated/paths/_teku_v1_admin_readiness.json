@@ -11,7 +11,7 @@
         "type" : "string",
         "description" : "Returns 503 status code when current peer count is below than target",
         "example" : "1",
-        "format" : "long"
+        "format" : "integer"
       }
     } ],
     "responses" : {

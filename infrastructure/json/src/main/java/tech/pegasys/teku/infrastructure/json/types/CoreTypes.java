@@ -89,15 +89,6 @@ public class CoreTypes {
           .format("integer")
           .build();
 
-  public static final StringValueTypeDefinition<Long> LONG_TYPE =
-      DeserializableTypeDefinition.string(Long.class)
-          .formatter(Object::toString)
-          .parser(Long::valueOf)
-          .example("1")
-          .description("long string")
-          .format("long")
-          .build();
-
   public static final DeserializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(HttpErrorResponse.class, HttpErrorResponse.Builder.class)
           .name("HttpErrorResponse")
