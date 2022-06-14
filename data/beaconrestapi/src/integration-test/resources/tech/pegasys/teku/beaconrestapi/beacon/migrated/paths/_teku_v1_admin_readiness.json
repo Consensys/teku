@@ -1,5 +1,5 @@
 {
-  "post" : {
+  "get" : {
     "tags" : [ "Teku" ],
     "operationId" : "readiness",
     "summary" : "Get node readiness",
