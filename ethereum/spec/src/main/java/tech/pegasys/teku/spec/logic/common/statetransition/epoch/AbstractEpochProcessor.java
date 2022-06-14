@@ -315,7 +315,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             .times(getProportionalSlashingMultiplier())
             .min(totalBalance);
 
-    List<ValidatorStatus> validatorStatusList = validatorStatuses.getStatuses();
+    final List<ValidatorStatus> validatorStatusList = validatorStatuses.getStatuses();
     final int halfEpochsPerSlashingsVector = specConfig.getEpochsPerSlashingsVector() / 2;
     for (int index = 0; index < validatorStatusList.size(); index++) {
       final ValidatorStatus status = validatorStatusList.get(index);
@@ -327,7 +327,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                 .getCurrentEpochEffectiveBalance()
                 .dividedBy(increment)
                 .times(adjustedTotalSlashingBalance);
-        UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
+        final UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
         beaconStateMutators.decreaseBalance(state, index, penalty);
       }
     }
