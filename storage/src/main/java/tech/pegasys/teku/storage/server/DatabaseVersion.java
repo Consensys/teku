@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ public enum DatabaseVersion {
 
   static {
     if (isLevelDbSupported()) {
-      DEFAULT_VERSION = LEVELDB_TREE;
+      DEFAULT_VERSION = LEVELDB2;
     } else {
       DEFAULT_VERSION = V5;
     }

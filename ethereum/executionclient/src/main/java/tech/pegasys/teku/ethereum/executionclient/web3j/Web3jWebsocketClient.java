@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -81,5 +81,10 @@ class Web3jWebsocketClient extends Web3JClient {
     return tryToConnect()
         .<SafeFuture<Response<T>>>map(SafeFuture::failedFuture)
         .orElseGet(() -> super.doRequest(web3jRequest, timeout));
+  }
+
+  @Override
+  public boolean isWebsocketsClient() {
+    return true;
   }
 }

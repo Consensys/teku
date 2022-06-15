@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,9 +46,10 @@ import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -159,8 +160,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreHotDao.HotUpdater updater =
-        ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(
@@ -169,18 +169,25 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     }
   }
 
+  private HotUpdater hotUpdater() {
+    return ((KvStoreDatabase) database).dao.hotUpdater();
+  }
+
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreFinalizedDao.FinalizedUpdater updater =
-        ((KvStoreDatabase) database).finalizedDao.finalizedUpdater()) {
+    try (final KvStoreFinalizedDao.FinalizedUpdater updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedBlock(newBlock.getBlock()))
           .isInstanceOf(ShuttingDownException.class);
     }
+  }
+
+  private FinalizedUpdater finalizedUpdater() {
+    return ((KvStoreDatabase) database).dao.finalizedUpdater();
   }
 
   @Test
@@ -190,8 +197,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
 
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createDefault());
-    try (final KvStoreEth1Dao.Eth1Updater updater =
-        ((KvStoreDatabase) database).eth1Dao.eth1Updater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
@@ -229,8 +235,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       createStorage(StateStorageMode.PRUNE);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreHotDao.HotUpdater updater =
-          ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+      try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
         SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
 
         final Thread dbCloserThread =

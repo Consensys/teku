@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,14 +24,14 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 
 public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   private final Set<Bytes32> knownStoredBranchesCache;
   private final Set<Bytes32> newlyStoredBranches = new HashSet<>();
   private final KvStoreTransaction transaction;
-  private final SchemaFinalizedTreeState schema;
+  private final SchemaCombinedTreeState schema;
 
   private int storedBranchNodes = 0;
   private int skippedBranchNodes = 0;
@@ -40,7 +40,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   public KvStoreTreeNodeStore(
       final Set<Bytes32> knownStoredBranchesCache,
       final KvStoreTransaction transaction,
-      final SchemaFinalizedTreeState schema) {
+      final SchemaCombinedTreeState schema) {
     this.knownStoredBranchesCache = knownStoredBranchesCache;
     this.transaction = transaction;
     this.schema = schema;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -141,7 +141,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
-      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
+      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
       return;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -26,7 +27,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface SchemaHot extends Schema {
+public interface SchemaCombined extends Schema {
+  // Columns
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
 
   KvStoreColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot();
@@ -42,21 +44,15 @@ public interface SchemaHot extends Schema {
 
   KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
 
-  @Override
-  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
-    return getColumnMap().values();
-  }
+  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
 
-  default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    return Map.of(
-        "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
-        "CHECKPOINT_STATES", getColumnCheckpointStates(),
-        "VOTES", getColumnVotes(),
-        "DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents(),
-        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot(),
-        "HOT_STATES_BY_ROOT", getColumnHotStatesByRoot(),
-        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot());
-  }
+  KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
+
+  KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
+
+  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
+
+  KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
 
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
@@ -75,20 +71,19 @@ public interface SchemaHot extends Schema {
 
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
 
-  @Override
-  default Collection<KvStoreVariable<?>> getAllVariables() {
-    return getVariableMap().values();
-  }
+  KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
 
-  default Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "GENESIS_TIME", getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
+  Map<String, KvStoreColumn<?, ?>> getColumnMap();
+
+  Map<String, KvStoreVariable<?>> getVariableMap();
+
+  @Override
+  Collection<KvStoreColumn<?, ?>> getAllColumns();
+
+  @Override
+  Collection<KvStoreVariable<?>> getAllVariables();
+
+  default SchemaHotAdapter asSchemaHot() {
+    return new SchemaHotAdapter(this);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -58,6 +58,11 @@ public class ValidatorsUtil {
                 .getActivationEligibilityEpoch()
                 .compareTo(state.getFinalizedCheckpoint().getEpoch())
             <= 0
+        && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
+  }
+
+  public boolean isEligibleForActivation(final UInt64 finalizedEpoch, final Validator validator) {
+    return validator.getActivationEligibilityEpoch().compareTo(finalizedEpoch) <= 0
         && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 

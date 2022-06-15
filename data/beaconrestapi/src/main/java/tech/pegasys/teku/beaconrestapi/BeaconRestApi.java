@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -369,11 +369,11 @@ public class BeaconRestApi {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
-    app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
+    addMigratedEndpoint(new Readiness(provider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
-    app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
+    addMigratedEndpoint(new GetProposersData(provider));
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
@@ -451,7 +451,7 @@ public class BeaconRestApi {
     addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
     addMigratedEndpoint(new PostVoluntaryExit(dataProvider));
     addMigratedEndpoint(new PostSyncCommittees(dataProvider));
-    app.post(PostValidatorLiveness.ROUTE, new PostValidatorLiveness(dataProvider, jsonProvider));
+    addMigratedEndpoint(new PostValidatorLiveness(dataProvider));
   }
 
   private void addEventHandler(

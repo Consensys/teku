@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   private final int initSize;
 
   public ArrayIntCache() {
-    this(16);
+    this(DEFAULT_INITIAL_CACHE_SIZE);
   }
 
   public ArrayIntCache(int initialSize) {
@@ -90,7 +90,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   @Override
   public IntCache<V> transfer() {
     IntCache<V> copy = copy();
-    this.values = createArray(DEFAULT_INITIAL_CACHE_SIZE);
+    this.values = createArray(initSize);
     return copy;
   }
 

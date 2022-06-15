@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,8 +25,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
@@ -228,11 +227,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
       final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
+      final V6SchemaCombinedSnapshot schema =
+          V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          new V4SchemaHot(spec, storeVotesEquivocation),
-          new V6SnapshotSchemaFinalized(spec),
+          schema,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,

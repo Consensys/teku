@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.ROPSTEN;
+import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.util.ArrayList;
@@ -398,6 +399,8 @@ public class Eth2NetworkConfiguration {
           return applyPraterNetworkDefaults();
         case ROPSTEN:
           return applyRopstenNetworkDefaults();
+        case SEPOLIA:
+          return applySepoliaNetworkDefaults();
         case KILN:
           return applyKilnNetworkDefaults();
         case GNOSIS:
@@ -502,6 +505,18 @@ public class Eth2NetworkConfiguration {
           .discoveryBootnodes(
               // Teku bootnode
               "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
+              // EF bootnode
+              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
+    }
+
+    private Builder applySepoliaNetworkDefaults() {
+      return applyTestnetDefaults()
+          .constants(SEPOLIA.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(1273020)
+          .defaultInitialState(
+              "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
+          .discoveryBootnodes(
               // EF bootnode
               "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
     }

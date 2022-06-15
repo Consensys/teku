@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,8 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -34,7 +36,15 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
-public class V4SchemaHot implements SchemaHot {
+public abstract class V6SchemaCombined implements SchemaCombined {
+
+  public static final int V4_FINALIZED_OFFSET = 0;
+  public static final int V6_FINALIZED_OFFSET = 128;
+
+  // column ids should be distinct across different DAOs to make possible using
+  // schemes both for a single and separated DBs
+  protected final int finalizedOffset;
+
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final KvStoreColumn<Checkpoint, BeaconState> checkpointStates;
@@ -66,7 +76,11 @@ public class V4SchemaHot implements SchemaHot {
   private static final KvStoreVariable<Checkpoint> ANCHOR_CHECKPOINT =
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
 
-  public V4SchemaHot(final Spec spec, final boolean storeVotesEquivocation) {
+  private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
+
+  protected V6SchemaCombined(
+      final Spec spec, final boolean storeVotesEquivocation, final int finalizedOffset) {
+    this.finalizedOffset = finalizedOffset;
     final KvStoreSerializer<SignedBeaconBlock> signedBlockSerializer =
         KvStoreSerializer.createSignedBlockSerializer(spec);
     hotBlocksByRoot = KvStoreColumn.create(1, BYTES32_SERIALIZER, signedBlockSerializer);
@@ -79,6 +93,8 @@ public class V4SchemaHot implements SchemaHot {
     final KvStoreSerializer<VoteTracker> voteTrackerSerializer =
         KvStoreSerializer.createVoteTrackerSerializer(storeVotesEquivocation);
     votes = KvStoreColumn.create(3, UINT64_SERIALIZER, voteTrackerSerializer);
+
+    optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
   }
 
   @Override
@@ -154,5 +170,42 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return ANCHOR_CHECKPOINT;
+  }
+
+  @Override
+  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+    return optimisticTransitionBlockSlot;
+  }
+
+  @Override
+  public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
+        .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
+        .put("CHECKPOINT_STATES", getColumnCheckpointStates())
+        .put("VOTES", getColumnVotes())
+        .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
+        .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
+        .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
+        .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
+        .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
+        .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
+        .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
+        .build();
+  }
+
+  @Override
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
+    return Map.of(
+        "GENESIS_TIME", getVariableGenesisTime(),
+        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
+        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
+        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
+        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
+        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
+        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
+        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint(),
+        "OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
   }
 }

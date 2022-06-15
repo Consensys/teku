@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -176,6 +176,8 @@ public class CompatibilityTestData {
 
   public static void verifyDatabaseContentMatches(
       final StorageSystem expectedSystem, final StorageSystem actualSystem) {
+    final Database actualDatabase = actualSystem.database();
+    final Database expectedDatabase = expectedSystem.database();
     for (int slot = MAX_SLOT; slot >= 0; slot--) {
       final Optional<SignedBlockAndState> expected =
           safeJoin(
@@ -189,34 +191,28 @@ public class CompatibilityTestData {
                   .getSignedBlockAndStateInEffectAtSlot(UInt64.valueOf(slot)));
       assertThat(actual).isEqualTo(expected);
 
+      final SignedBlockAndState expectedBlockAndState = expected.orElseThrow();
       // Check we can also get the block by root
-      if (expected.isEmpty()) {
-        continue;
-      }
-      final SignedBlockAndState expectedBlockAndState = expected.get();
-      assertThat(actualSystem.database().getSignedBlock(expectedBlockAndState.getRoot()))
+      assertThat(actualDatabase.getSignedBlock(expectedBlockAndState.getRoot()))
           .contains(expectedBlockAndState.getBlock());
 
-      assertThat(
-              actualSystem
-                  .database()
-                  .getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()))
+      assertThat(actualDatabase.getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()))
           .isEqualTo(
-              expectedSystem
-                  .database()
-                  .getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()));
+              expectedDatabase.getSlotForFinalizedStateRoot(expectedBlockAndState.getStateRoot()));
+
+      assertThat(actualDatabase.getHotState(expectedBlockAndState.getRoot()))
+          .isEqualTo(expectedDatabase.getHotState(expectedBlockAndState.getRoot()));
     }
 
-    assertThat(actualSystem.database().getVotes()).isEqualTo(expectedSystem.database().getVotes());
+    assertThat(actualDatabase.getVotes()).isEqualTo(expectedDatabase.getVotes());
 
-    assertThat(actualSystem.database().getMinGenesisTimeBlock())
-        .contains(EXPECTED_MIN_GENESIS_EVENT);
+    assertThat(actualDatabase.getMinGenesisTimeBlock()).contains(EXPECTED_MIN_GENESIS_EVENT);
     try (final Stream<DepositsFromBlockEvent> actualDeposits =
-        actualSystem.database().streamDepositsFromBlocks()) {
+        actualDatabase.streamDepositsFromBlocks()) {
       assertThat(actualDeposits).containsExactlyElementsOf(EXPECTED_DEPOSITS);
     }
 
-    assertThat(actualSystem.database().getWeakSubjectivityState())
+    assertThat(actualDatabase.getWeakSubjectivityState())
         .isEqualTo(
             WeakSubjectivityState.create(Optional.of(EXPECTED_WEAK_SUBJECTIVITY_CHECKPOINT)));
   }

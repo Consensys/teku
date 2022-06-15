@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -167,7 +167,7 @@ public class DatabaseMigrater {
       newDatabase.ingestDatabase(originalDatabase, batchSize, statusUpdater);
     } catch (Exception ex) {
       throw new DatabaseMigraterError(
-          "Failed to migrate data into the new database: " + ex.getCause());
+          "Failed to migrate data into the new database: " + ex.getCause(), ex);
     }
   }
 

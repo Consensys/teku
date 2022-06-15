@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,8 +33,9 @@ public class BeaconStateBenchmark {
 
   private static final BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(0);
   private static final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(0, TestSpecFactory.createDefault()).withPubKeyGenerator(() -> pubkey);
-  private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
+      new DataStructureUtil(0, TestSpecFactory.createMainnetAltair())
+          .withPubKeyGenerator(() -> pubkey);
+  private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(400_000);
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)

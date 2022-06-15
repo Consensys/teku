@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,6 +35,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
+  private static final Set<String> BELLATRIX_NETWORKS = Set.of("ropsten", "kiln", "sepolia");
+
   @Test
   public void defaultFactoryShouldScheduleAltairForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
@@ -46,7 +49,7 @@ public class SpecFactoryTest {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
-    } else if (configName.equals("ropsten") || configName.equals("kiln")) {
+    } else if (BELLATRIX_NETWORKS.contains(configName)) {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
     } else {

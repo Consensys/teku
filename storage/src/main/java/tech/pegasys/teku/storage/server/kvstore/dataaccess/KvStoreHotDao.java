@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,9 +17,10 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
@@ -67,7 +68,10 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   HotUpdater hotUpdater();
 
-  void ingest(KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger);
+  @MustBeClosed
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+
+  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   interface HotUpdater extends AutoCloseable {
 
@@ -117,5 +121,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     @Override
     void close();
+
+    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
+
+    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
   }
 }

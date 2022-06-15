@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,8 +21,8 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
 
-public class V4FinalizedStateSnapshotStorageLogic
-    implements V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotState> {
+public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnapshotState>
+    implements V4FinalizedStateStorageLogic<S> {
 
   private final UInt64 stateStorageFrequency;
 
@@ -38,12 +38,12 @@ public class V4FinalizedStateSnapshotStorageLogic
   }
 
   @Override
-  public FinalizedStateUpdater<SchemaFinalizedSnapshotState> updater() {
-    return new FinalizedStateSnapshotUpdater(stateStorageFrequency);
+  public FinalizedStateUpdater<S> updater() {
+    return new FinalizedStateSnapshotUpdater<>(stateStorageFrequency);
   }
 
-  private static class FinalizedStateSnapshotUpdater
-      implements V4FinalizedStateStorageLogic.FinalizedStateUpdater<SchemaFinalizedSnapshotState> {
+  private static class FinalizedStateSnapshotUpdater<S extends SchemaFinalizedSnapshotState>
+      implements V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> {
 
     private final UInt64 stateStorageFrequency;
     private Optional<UInt64> lastStateStoredSlot = Optional.empty();

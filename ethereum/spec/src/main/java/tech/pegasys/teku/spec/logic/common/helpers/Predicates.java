@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,15 +24,18 @@ public class Predicates {
   /**
    * Check if (this) validator is active in the given epoch.
    *
+   * @param validator The validator under consideration.
    * @param epoch - The epoch under consideration.
    * @return A boolean indicating if the validator is active.
-   * @see <a>
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
-   *     </a>
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator</a>
    */
   public boolean isActiveValidator(Validator validator, UInt64 epoch) {
-    return validator.getActivationEpoch().compareTo(epoch) <= 0
-        && epoch.compareTo(validator.getExitEpoch()) < 0;
+    return isActiveValidator(validator.getActivationEpoch(), validator.getExitEpoch(), epoch);
+  }
+
+  public boolean isActiveValidator(UInt64 activationEpoch, UInt64 exitEpoch, UInt64 epoch) {
+    return activationEpoch.compareTo(epoch) <= 0 && epoch.compareTo(exitEpoch) < 0;
   }
 
   public boolean isValidMerkleBranch(
@@ -52,11 +55,8 @@ public class Predicates {
   /**
    * Determines if a validator has a balance that can be slashed
    *
-   * @param validator
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator">is_slashable_validator</a>
    */
   public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()

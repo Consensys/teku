@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorStatus {
   private final UInt64 currentEpochEffectiveBalance;
+  final UInt64 withdrawableEpoch;
   private final boolean slashed;
   private final boolean withdrawableInCurrentEpoch;
   private final boolean activeInCurrentEpoch;
@@ -35,11 +36,13 @@ public class ValidatorStatus {
       final boolean slashed,
       final boolean withdrawableInCurrentEpoch,
       final UInt64 currentEpochEffectiveBalance,
+      final UInt64 withdrawableEpoch,
       final boolean activeInCurrentEpoch,
       final boolean activeInPreviousEpoch) {
     this.slashed = slashed;
     this.withdrawableInCurrentEpoch = withdrawableInCurrentEpoch;
     this.currentEpochEffectiveBalance = currentEpochEffectiveBalance;
+    this.withdrawableEpoch = withdrawableEpoch;
     this.activeInCurrentEpoch = activeInCurrentEpoch;
     this.activeInPreviousEpoch = activeInPreviousEpoch;
   }
@@ -172,5 +175,9 @@ public class ValidatorStatus {
       }
     }
     return this;
+  }
+
+  public UInt64 getWithdrawableEpoch() {
+    return withdrawableEpoch;
   }
 }

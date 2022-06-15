@@ -1,4 +1,3 @@
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -16,12 +15,16 @@ For information on changes in released versions of Teku, see the [releases page]
 - The commandline option `--validators-performance-tracking-enabled` has been removed in favour of `--validators-performance-tracking-mode`
 
 ### Additions and Improvements
+- Add configuration for Sepolia testnet.
 - Reduced memory requirements for storing the deposit merkle tree.
 - Enable spec change to ignore weightings from attestations from equivocating validators.
 - Fork choice before proposals is now enabled by default for testnets. It can be disabled with `--Xfork-choice-before-proposing-enabled=false` if required.
 - Updated the Ropsten network configuration to include the correct terminal difficulty.
+- Updated to BLST 0.3.8
+- Improve epoch transition speed.
 
 ### Bug Fixes
 - Fixed issue where the REST API may return content as SSZ instead of JSON if the header `Accept: */*` was specified.
 - Fixed issue where sync committee aggregations were skipped, but reported failed because there were no signatures to aggregate.
 - Fixed division by zero when estimating time to TTD during a period with no new PoW blocks.
+- Fixed issue where validator client could receive a 500 rather than 503 when getting duties if the beacon node was syncing.

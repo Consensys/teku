@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -38,12 +38,17 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -60,6 +65,18 @@ public class BeaconRestApiTypes {
           .example("active_ongoing")
           .description("ValidatorStatus string")
           .format("string")
+          .build();
+
+  public static final DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
+      DeserializableTypeDefinition.string(BLSPublicKey.class)
+          .name("PubKey")
+          .formatter(BLSPublicKey::toString)
+          .parser(value -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)))
+          .pattern("^0x[a-fA-F0-9]{96}$")
+          .example(
+              "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
+          .description(
+              "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
           .build();
 
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
@@ -136,4 +153,8 @@ public class BeaconRestApiTypes {
           BEACON_BLOCK_ROOT,
           BYTES32_TYPE.withDescription(
               "`bytes32` The block root for which to produce the contribution."));
+
+  public static final ParameterMetadata<Integer> TARGET_PEER_COUNT_PARAMETER =
+      new ParameterMetadata<>(
+          TARGET_PEER_COUNT, INTEGER_TYPE.withDescription(TARGET_PEER_COUNT_DESCRIPTION));
 }

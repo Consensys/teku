@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,113 +13,136 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-public class ReadinessTest extends AbstractBeaconHandlerTest {
+public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
+
+  @BeforeEach
+  void setup() {
+    setHandler(new Readiness(syncDataProvider, chainDataProvider, network));
+  }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_OK);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReadyAndTargetPeerCountReached() throws Exception {
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1");
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers())
         .thenReturn(Stream.of(peer1, peer1))
         .thenReturn(Stream.of(peer1, peer1));
-    when(context.queryParamMap()).thenReturn(Map.of(TARGET_PEER_COUNT, List.of("1")));
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_OK);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   public void shouldReturnUnavailableWhenStartingUp() throws Exception {
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
   public void shouldReturnUnavailableWhenSyncing() throws Exception {
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
-  public void shouldReturnBadRequestWhenWrongTargetPeerCountParam() throws Exception {
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
+  public void shouldReturnBadRequestWhenWrongTargetPeerCountParam() {
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "a");
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(context.queryParamMap()).thenReturn(Map.of(TARGET_PEER_COUNT, List.of("a")));
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_BAD_REQUEST);
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldReturnUnavailableWhenTargetPeerCountNotReached() throws Exception {
+    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    final Readiness handler =
-        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers()).thenReturn(Stream.of(peer1)).thenReturn(Stream.of(peer1));
-    when(context.queryParamMap()).thenReturn(Map.of(TARGET_PEER_COUNT, List.of("10")));
 
-    handler.handle(context);
-    verifyCacheStatus(CACHE_NONE);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void metadata_shouldHandle200() {
+    verifyMetadataEmptyResponse(handler, SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

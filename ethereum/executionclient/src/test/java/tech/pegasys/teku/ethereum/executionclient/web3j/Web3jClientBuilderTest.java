@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -60,6 +60,13 @@ public class Web3jClientBuilderTest {
         .timeout(DEFAULT_TIMEOUT)
         .endpoint("abc://localhost");
     assertThatThrownBy(builder::build).isInstanceOf(InvalidConfigurationException.class);
+  }
+
+  @Test
+  public void shouldFailBuildWithNullEndpointScheme() {
+    Web3jClientBuilder builder = new Web3jClientBuilder();
+    builder.timeProvider(mock(TimeProvider.class)).timeout(DEFAULT_TIMEOUT).endpoint("localhost");
+    assertThatThrownBy(builder::build).hasMessageContaining("scheme is not supported");
   }
 
   @Test

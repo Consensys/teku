@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -39,7 +38,7 @@ public interface SszCollectionSchema<
 
   @SuppressWarnings("unchecked")
   default SszCollectionT of(SszElementT... elements) {
-    return createFromElements(Arrays.asList(elements));
+    return createFromElements(List.of(elements));
   }
 
   @SuppressWarnings("unchecked")

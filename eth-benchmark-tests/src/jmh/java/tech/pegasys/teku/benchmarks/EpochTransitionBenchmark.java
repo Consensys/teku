@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -87,7 +87,6 @@ public class EpochTransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.blsVerifyDeposit = false;
 
     spec = TestSpecFactory.createMainnetAltair();
@@ -158,6 +157,15 @@ public class EpochTransitionBenchmark {
     } catch (EpochProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Benchmark
+  public void createValidatorStatuses(Blackhole bh) {
+    final ValidatorStatuses statuses =
+        spec.atSlot(preEpochTransitionState.getSlot())
+            .getValidatorStatusFactory()
+            .createValidatorStatuses(preEpochTransitionState);
+    bh.consume(statuses);
   }
 
   @Benchmark

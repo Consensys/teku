@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.events.SyncState.IN_SYNC;
+import static tech.pegasys.teku.beacon.sync.events.SyncState.SYNCING;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
@@ -65,6 +67,17 @@ public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     Assertions.assertThat(request.getResponseCode()).isEqualTo(HttpServletResponse.SC_OK);
     Assertions.assertThat(request.getResponseBody()).isEqualTo(responseData);
+  }
+
+  @Test
+  void shouldRespondSyncing() throws JsonProcessingException {
+    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SYNCING);
+    handler.handleRequest(request);
+
+    Assertions.assertThat(request.getResponseCode())
+        .isEqualTo(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    Assertions.assertThat(request.getResponseBody()).isInstanceOf(HttpErrorResponse.class);
   }
 
   @Test

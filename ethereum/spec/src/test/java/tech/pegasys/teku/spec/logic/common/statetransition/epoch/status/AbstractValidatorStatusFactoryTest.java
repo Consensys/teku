@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,6 +44,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
   protected abstract AbstractValidatorStatusFactory createFactory();
 
   protected abstract Spec createSpec();
+
+  private final UInt64 withdrawableEpoch = dataStructureUtil.randomEpoch();
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
@@ -154,9 +156,9 @@ public abstract class AbstractValidatorStatusFactoryTest {
   void createTotalBalances_shouldAddCurrentEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, balance(7), true, false),
-            new ValidatorStatus(true, true, balance(5), true, true),
-            new ValidatorStatus(false, false, balance(13), false, false));
+            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, true, false),
+            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true),
+            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false));
     // Should include both statuses active in current epoch for a total of 12.
     assertThat(
             validatorStatusFactory.createTotalBalances(statuses).getCurrentEpochActiveValidators())
@@ -167,9 +169,9 @@ public abstract class AbstractValidatorStatusFactoryTest {
   void createTotalBalances_shouldAddPreviousEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, balance(7), false, true),
-            new ValidatorStatus(true, true, balance(5), true, true),
-            new ValidatorStatus(false, false, balance(13), false, false));
+            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, false, true),
+            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true),
+            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false));
     // Should include both statuses active in previous epoch for a total of 12.
     assertThat(
             validatorStatusFactory.createTotalBalances(statuses).getPreviousEpochActiveValidators())
@@ -248,12 +250,14 @@ public abstract class AbstractValidatorStatusFactoryTest {
   }
 
   private ValidatorStatus createValidator(final int effectiveBalance) {
-    return new ValidatorStatus(false, false, balance(effectiveBalance), true, true);
+    return new ValidatorStatus(
+        false, false, balance(effectiveBalance), withdrawableEpoch, true, true);
   }
 
   private ValidatorStatus createWithAllAttesterFlags(
       final boolean slashed, final int effectiveBalance) {
-    return new ValidatorStatus(slashed, true, balance(effectiveBalance), true, true)
+    return new ValidatorStatus(
+            slashed, true, balance(effectiveBalance), withdrawableEpoch, true, true)
         .updateCurrentEpochSourceAttester(true)
         .updatePreviousEpochSourceAttester(true)
         .updateCurrentEpochTargetAttester(true)

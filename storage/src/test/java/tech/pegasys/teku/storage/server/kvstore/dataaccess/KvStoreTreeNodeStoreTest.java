@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,8 +28,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 class KvStoreTreeNodeStoreTest {
 
@@ -37,7 +37,7 @@ class KvStoreTreeNodeStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Set<Bytes32> knownBranchCache = new HashSet<>();
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
-  private final SchemaFinalizedTreeState schema = new V6TreeSchemaFinalized(spec);
+  private final SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec, true);
 
   private final KvStoreTreeNodeStore store =
       new KvStoreTreeNodeStore(knownBranchCache, transaction, schema);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,8 +15,6 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -28,10 +26,10 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.Schema;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -164,42 +162,21 @@ public class InMemoryStorageSystemBuilder {
     };
   }
 
-  private static <T> List<T> concat(Collection<? extends T> l1, Collection<? extends T> l2) {
-    ArrayList<T> ret = new ArrayList<>(l1);
-    ret.addAll(l2);
-    return ret;
-  }
-
   private Database createLevelDbTreeDatabase() {
     if (hotDb == null) {
-      hotDb =
-          MockKvStoreInstance.createEmpty(
-              concat(
-                  new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns(),
-                  new V6TreeSchemaFinalized(spec).getAllColumns()),
-              concat(
-                  new V4SchemaHot(spec, storeVotesEquivocation).getAllVariables(),
-                  new V6TreeSchemaFinalized(spec).getAllVariables()));
+      final V6SchemaCombinedTreeState schema =
+          new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
+      hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createTree(
-        hotDb,
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeVotesEquivocation,
-        spec);
+        hotDb, storageMode, storeNonCanonicalBlocks, storeVotesEquivocation, spec);
   }
 
   private Database createV6Database() {
     if (hotDb == null) {
-      hotDb =
-          MockKvStoreInstance.createEmpty(
-              concat(
-                  new V4SchemaHot(spec, storeVotesEquivocation).getAllColumns(),
-                  new V6SnapshotSchemaFinalized(spec).getAllColumns()),
-              concat(
-                  new V4SchemaHot(spec, storeVotesEquivocation).getAllVariables(),
-                  new V6SnapshotSchemaFinalized(spec).getAllVariables()));
+      final V6SchemaCombinedSnapshot schema =
+          V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+      hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
         hotDb,
@@ -216,14 +193,17 @@ public class InMemoryStorageSystemBuilder {
   }
 
   private Database createV4Database() {
+    final V6SchemaCombinedSnapshot combinedSchema =
+        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
     if (hotDb == null) {
-      final V4SchemaHot v4SchemaHot = new V4SchemaHot(spec, storeVotesEquivocation);
+      final Schema v4SchemaHot = combinedSchema.asSchemaHot();
       hotDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
     }
     if (coldDb == null) {
-      final V4SchemaFinalized v4SchemaFinalized = new V4SchemaFinalized(spec);
+      final SchemaFinalizedSnapshotStateAdapter v4SchemaFinalized =
+          combinedSchema.asSchemaFinalized();
       coldDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());

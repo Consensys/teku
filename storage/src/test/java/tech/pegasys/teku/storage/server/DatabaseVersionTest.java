@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,7 @@ public class DatabaseVersionTest {
   @Test
   void defaultVersion() {
     if (DatabaseVersion.isLevelDbSupported()) {
-      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB_TREE);
+      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
     } else {
       assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
     }

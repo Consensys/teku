@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,10 +28,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
 
 public class V4FinalizedStateTreeStorageLogic
-    implements V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> {
+    implements V4FinalizedStateStorageLogic<SchemaCombinedTreeState> {
   private static final int MAX_BRANCH_LEVELS_SKIPPED = 5;
   private final LabelledMetric<Counter> branchNodeStoredCounter;
   private final Counter statesStoredCounter;
@@ -63,7 +63,7 @@ public class V4FinalizedStateTreeStorageLogic
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(
-      final KvStoreAccessor db, final SchemaFinalizedTreeState dbSchema, final UInt64 maxSlot) {
+      final KvStoreAccessor db, final SchemaCombinedTreeState dbSchema, final UInt64 maxSlot) {
     return db.getFloorEntry(dbSchema.getColumnFinalizedStateRootsBySlot(), maxSlot)
         .map(
             entry ->
@@ -77,7 +77,7 @@ public class V4FinalizedStateTreeStorageLogic
   }
 
   @Override
-  public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
+  public FinalizedStateUpdater<SchemaCombinedTreeState> updater() {
     return new StateTreeUpdater(
         knownStoredBranchesCache,
         branchNodeStoredCounter,
@@ -85,7 +85,7 @@ public class V4FinalizedStateTreeStorageLogic
         leafNodeStoredCounter);
   }
 
-  private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
+  private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaCombinedTreeState> {
 
     private final Set<Bytes32> knownStoredBranchesCache;
     private final LabelledMetric<Counter> branchNodeStoredCounter;
@@ -109,7 +109,7 @@ public class V4FinalizedStateTreeStorageLogic
     public void addFinalizedState(
         final KvStoreAccessor db,
         final KvStoreTransaction transaction,
-        final SchemaFinalizedTreeState schema,
+        final SchemaCombinedTreeState schema,
         final BeaconState state) {
       if (nodeStore == null) {
         nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, transaction, schema);

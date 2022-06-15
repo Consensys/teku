@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -88,7 +88,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     // Cache baseRewardPerIncrement - while it is also cached in transition caches,
     // looking it up from there for every single validator is quite expensive.
     final UInt64 baseRewardPerIncrement =
-        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state);
+        beaconStateAccessorsAltair.getBaseRewardPerIncrement(stateAltair);
     for (int i = 0; i < statusList.size(); i++) {
       final ValidatorStatus validator = statusList.get(i);
       if (!validator.isEligibleValidator()) {

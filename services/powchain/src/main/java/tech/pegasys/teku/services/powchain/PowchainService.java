@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,6 +50,7 @@ import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -79,16 +80,22 @@ public class PowchainService extends Service {
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     final Eth1ProviderSelector eth1ProviderSelector;
     if (!powConfig.isEnabled()) {
+      final ExecutionWeb3jClientProvider executionWeb3jClientProvider =
+          maybeExecutionWeb3jClientProvider.orElseThrow();
+      if (executionWeb3jClientProvider.getWeb3JClient().isWebsocketsClient()) {
+        throw new InvalidConfigurationException(
+            "Eth1 endpoint fallback is not compatible "
+                + "with Websockets execution engine endpoint");
+      }
       LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
-      this.web3js =
-          Collections.singletonList(maybeExecutionWeb3jClientProvider.orElseThrow().getWeb3j());
+      this.web3js = Collections.singletonList(executionWeb3jClientProvider.getWeb3j());
       eth1ProviderSelector =
           new Eth1ProviderSelector(
               Collections.singletonList(
                   new Web3jEth1Provider(
                       powConfig.getSpec().getGenesisSpecConfig(),
                       serviceConfig.getMetricsSystem(),
-                      maybeExecutionWeb3jClientProvider.get().getEndpoint(),
+                      executionWeb3jClientProvider.getEndpoint(),
                       web3js.get(0),
                       asyncRunner,
                       serviceConfig.getTimeProvider())));

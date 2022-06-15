@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,12 +15,10 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,7 +32,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -226,8 +223,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
       return proposerDefaultFeeRecipient.get();
     }
-    throw new IllegalStateException(
-        "Unable to determine proposer fee recipient address for slot " + blockSlot);
+    VALIDATOR_LOGGER.executionPayloadPreparedUsingBurnAddressForFeeRecipient(blockSlot);
+    return Eth1Address.ZERO;
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
@@ -244,48 +241,12 @@ public class ProposersDataManager implements SlotEventsChannel {
     }
   }
 
-  public Map<String, Object> getData() {
-    return ImmutableMap.<String, Object>builder()
-        // changing the following attributes require a change to
-        // tech.pegasys.teku.api.response.v1.teku.ProposerDataSchema
-        .put(
-            "prepared_proposers",
-            preparedProposerInfoByValidatorIndex.entrySet().stream()
-                .map(
-                    proposerInfoEntry ->
-                        ImmutableMap.<String, Object>builder()
-                            // changing the following attributes require a change to
-                            // tech.pegasys.teku.api.response.v1.teku.PreparedProposerInfoSchema
-                            .put("proposer_index", proposerInfoEntry.getKey())
-                            .put("fee_recipient", proposerInfoEntry.getValue().getFeeRecipient())
-                            .put("expiry_slot", proposerInfoEntry.getValue().getExpirySlot())
-                            .build())
-                .collect(Collectors.toList()))
-        .put(
-            "registered_validators",
-            validatorRegistrationInfoByValidatorIndex.entrySet().stream()
-                .map(
-                    registeredValidatorInfoEntry -> {
-                      final ValidatorRegistration validatorRegistration =
-                          registeredValidatorInfoEntry
-                              .getValue()
-                              .getSignedValidatorRegistration()
-                              .getMessage();
-                      return ImmutableMap.<String, Object>builder()
-                          // changing the following attributes require a change to
-                          // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
-                          .put("proposer_index", registeredValidatorInfoEntry.getKey())
-                          .put("pubkey", validatorRegistration.getPublicKey().toString())
-                          .put("fee_recipient", validatorRegistration.getFeeRecipient())
-                          .put("gas_limit", validatorRegistration.getGasLimit())
-                          .put("timestamp", validatorRegistration.getTimestamp())
-                          .put(
-                              "expiry_slot",
-                              registeredValidatorInfoEntry.getValue().getExpirySlot())
-                          .build();
-                    })
-                .collect(Collectors.toList()))
-        .build();
+  public Map<UInt64, PreparedProposerInfo> getPreparedProposerInfo() {
+    return preparedProposerInfoByValidatorIndex;
+  }
+
+  public Map<UInt64, RegisteredValidatorInfo> getValidatorRegistrationInfo() {
+    return validatorRegistrationInfoByValidatorIndex;
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {

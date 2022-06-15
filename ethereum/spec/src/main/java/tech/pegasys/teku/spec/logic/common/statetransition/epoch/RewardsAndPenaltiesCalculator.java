@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,8 +25,10 @@ public abstract class RewardsAndPenaltiesCalculator {
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
 
-  protected final BeaconState state;
   protected final ValidatorStatuses validatorStatuses;
+
+  private final boolean isInactivityLeak;
+  private final UInt64 finalityDelay;
 
   protected RewardsAndPenaltiesCalculator(
       final SpecConfig specConfig,
@@ -37,14 +39,15 @@ public abstract class RewardsAndPenaltiesCalculator {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.state = state;
     this.validatorStatuses = validatorStatuses;
+    this.finalityDelay = beaconStateAccessors.getFinalityDelay(state);
+    this.isInactivityLeak = beaconStateAccessors.isInactivityLeak(state);
   }
 
   public abstract RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
 
   protected UInt64 getFinalityDelay() {
-    return beaconStateAccessors.getFinalityDelay(state);
+    return finalityDelay;
   }
 
   protected boolean isInactivityLeak(final UInt64 finalityDelay) {
@@ -52,6 +55,6 @@ public abstract class RewardsAndPenaltiesCalculator {
   }
 
   protected boolean isInactivityLeak() {
-    return beaconStateAccessors.isInactivityLeak(state);
+    return isInactivityLeak;
   }
 }
