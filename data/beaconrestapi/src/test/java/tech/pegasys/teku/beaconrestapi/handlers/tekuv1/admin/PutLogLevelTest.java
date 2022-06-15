@@ -16,8 +16,13 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.List;
@@ -67,5 +72,20 @@ public class PutLogLevelTest extends AbstractMigratedBeaconHandlerTest {
     final String data = "{\"level\": \"InfO\", \"log_filter\": [\"a.class.somewhere\"]}";
     assertThat(getRequestBodyFromMetadata(handler, data))
         .isEqualTo(new PutLogLevel.LogLevel("INFO", List.of("a.class.somewhere")));
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 }
