@@ -75,6 +75,9 @@ public class ValidatorRestApi {
             BadRequestException.class,
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .exceptionHandler(
+            IllegalArgumentException.class,
+            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+        .exceptionHandler(
             JsonProcessingException.class,
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))

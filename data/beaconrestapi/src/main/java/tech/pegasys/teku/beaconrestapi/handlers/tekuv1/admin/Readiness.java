@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.TARGET_PEER_COUNT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -23,49 +23,53 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.SingleQueryParameterUtils.getParameterValueAsLong;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalLong;
+import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class Readiness implements Handler {
+public class Readiness extends MigratingEndpointAdapter {
   public static final String ROUTE = "/teku/v1/admin/readiness";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
   private final NetworkDataProvider networkDataProvider;
-  private final JsonProvider jsonProvider;
 
-  public Readiness(final DataProvider provider, final JsonProvider jsonProvider) {
+  public Readiness(final DataProvider provider) {
     this(
         provider.getSyncDataProvider(),
         provider.getChainDataProvider(),
-        provider.getNetworkDataProvider(),
-        jsonProvider);
+        provider.getNetworkDataProvider());
   }
 
   Readiness(
       final SyncDataProvider syncProvider,
       final ChainDataProvider chainDataProvider,
-      final NetworkDataProvider networkDataProvider,
-      final JsonProvider jsonProvider) {
+      final NetworkDataProvider networkDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("readiness")
+            .summary("Get node readiness")
+            .description("Returns 200 if the node is ready to accept traffic")
+            .tags(TAG_TEKU)
+            .queryParam(TARGET_PEER_COUNT_PARAMETER)
+            .response(SC_OK, "Node is ready")
+            .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
+            .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
     this.networkDataProvider = networkDataProvider;
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -88,34 +92,26 @@ public class Readiness implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final OptionalLong targetPeerCount;
-    try {
-      targetPeerCount = parseTargetPeerCountParameter(ctx);
-    } catch (final IllegalArgumentException e) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.json(BadRequest.badRequest(jsonProvider, "Invalid " + TARGET_PEER_COUNT));
-      return;
-    }
+    adapt(ctx);
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
+    final Optional<Integer> targetPeerCount =
+        request.getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER);
+
     if (!chainDataProvider.isStoreAvailable()
         || syncProvider.isSyncing()
         || belowTargetPeerCount(targetPeerCount)) {
-      ctx.status(SC_SERVICE_UNAVAILABLE);
+      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else {
-      ctx.status(SC_OK);
+      request.respondWithCode(SC_OK);
     }
   }
 
-  private OptionalLong parseTargetPeerCountParameter(final Context ctx) {
-    final Map<String, List<String>> parameters = ctx.queryParamMap();
-    if (!parameters.containsKey(TARGET_PEER_COUNT)) {
-      return OptionalLong.empty();
-    }
-    return OptionalLong.of(getParameterValueAsLong(parameters, TARGET_PEER_COUNT));
-  }
-
-  private boolean belowTargetPeerCount(final OptionalLong targetPeerCount) {
+  private boolean belowTargetPeerCount(final Optional<Integer> targetPeerCount) {
     return targetPeerCount.isPresent()
-        && networkDataProvider.getPeerCount() < targetPeerCount.getAsLong();
+        && networkDataProvider.getPeerCount() < targetPeerCount.get();
   }
 }
