@@ -32,7 +32,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   private final int initSize;
 
   public ArrayIntCache() {
-    this(16);
+    this(DEFAULT_INITIAL_CACHE_SIZE);
   }
 
   public ArrayIntCache(int initialSize) {
@@ -90,7 +90,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   @Override
   public IntCache<V> transfer() {
     IntCache<V> copy = copy();
-    this.values = createArray(DEFAULT_INITIAL_CACHE_SIZE);
+    this.values = createArray(initSize);
     return copy;
   }
 
