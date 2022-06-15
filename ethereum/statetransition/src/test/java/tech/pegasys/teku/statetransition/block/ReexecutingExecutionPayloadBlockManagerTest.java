@@ -21,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager.EXPIRES_IN_SLOT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
@@ -69,8 +69,6 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageSystem remoteStorageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-
-  private UInt64 currentSlot = GENESIS_SLOT;
 
   private void forwardBlockImportedNotificationsTo(final BlockManager blockManager) {
     doAnswer(
@@ -151,6 +149,38 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   }
 
   @Test
+  public void onFailedExecutionPayloadExecution_shouldRetryForAtLeast2Slots() {
+    final SignedBeaconBlock nextBlock =
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+
+    // communication error
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
+
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+    asyncRunner.executeQueuedActions();
+
+    // Pass 2 slots
+    blockManager.onSlot(nextBlock.getSlot().plus(1));
+    blockManager.onSlot(nextBlock.getSlot().plus(2));
+    asyncRunner.executeQueuedActions();
+    verify(blockImporter, times(3)).importBlock(nextBlock, Optional.empty());
+
+    // successful imported now
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(nextBlock)));
+
+    asyncRunner.executeQueuedActions();
+    verify(blockImporter, times(4)).importBlock(nextBlock, Optional.empty());
+
+    // should be dequeued now, so no more interactions
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(blockImporter);
+  }
+
+  @Test
   public void onInvalidBlockImport_shouldNotRetry() {
     final SignedBeaconBlock nextBlock =
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
@@ -185,7 +215,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
 
     verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
-    blockManager.onSlot(currentSlot.plus(3));
+    blockManager.onSlot(nextBlock.getSlot().plus(EXPIRES_IN_SLOT + 1));
 
     // should be dequeued now, so no more interactions
     asyncRunner.executeQueuedActions();

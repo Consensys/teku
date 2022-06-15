@@ -13,68 +13,79 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import io.javalin.http.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import java.io.IOException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 
-public class PutLogLevelTest {
-
-  private final JsonProvider jsonProvider = new JsonProvider();
-
-  private Context context = mock(Context.class);
-  private PutLogLevel handler;
+public class PutLogLevelTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void setup() {
-    handler = new PutLogLevel(jsonProvider);
+    setHandler(new PutLogLevel());
   }
 
   @Test
-  public void shouldReturnBadRequestWhenLevelIsMissing() throws Exception {
-    when(context.body()).thenReturn("{\"a\": \"field\"}");
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenLevelIsInvalid() throws Exception {
-    when(context.body()).thenReturn("{\"level\": \"I do not exist\"}");
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
+  public void shouldReturnBadRequestWhenLevelIsInvalid() {
+    assertThatThrownBy(() -> request.setRequestBody(new PutLogLevel.LogLevel("I do not exist")))
+        .hasMessageContaining("Unknown level constant [I DO NOT EXIST].")
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldReturnNoContentWhenLevelIsValid() throws Exception {
-    when(context.body()).thenReturn("{\"level\": \"inFO\"}");
-    handler.handle(context);
+    request.setRequestBody(new PutLogLevel.LogLevel("inFO"));
+    handler.handleRequest(request);
 
-    verify(context).status(SC_NO_CONTENT);
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenLFilterIsInvalidJson() throws Exception {
-    when(context.body())
-        .thenReturn("{\"level\": \"I do not exist\", \"log_filter\": \"a.class.somewhere\"}");
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
+    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
   public void shouldReturnNoContentWhenLevelAndFilterAreValid() throws Exception {
-    when(context.body())
-        .thenReturn("{\"level\": \"InfO\", \"log_filter\": [\"a.class.somewhere\"]}");
-    handler.handle(context);
+    request.setRequestBody(new PutLogLevel.LogLevel("InfO", List.of("a.class.somewhere")));
+    handler.handleRequest(request);
 
-    verify(context).status(SC_NO_CONTENT);
+    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
+  }
+
+  @Test
+  void shouldNotReadInvalidRequestBody() {
+    final String data = "{\"level\": \"I do not exist\", \"log_filter\": \"a.class.somewhere\"}";
+    assertThatThrownBy(() -> getRequestBodyFromMetadata(handler, data))
+        .isInstanceOf(MismatchedInputException.class);
+  }
+
+  @Test
+  void shouldReadRequestBody() throws IOException {
+    final String data = "{\"level\": \"InfO\", \"log_filter\": [\"a.class.somewhere\"]}";
+    assertThat(getRequestBodyFromMetadata(handler, data))
+        .isEqualTo(new PutLogLevel.LogLevel("INFO", List.of("a.class.somewhere")));
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 }
