@@ -229,6 +229,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       // Process activation eligibility and ejections
       SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+      final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
@@ -254,7 +255,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
           beaconStateMutators.initiateValidatorExit(state, index);
         }
       }
-
       // Queue validators eligible for activation and not yet dequeued for activation
       List<Integer> activationQueue =
           IntStream.range(0, state.getValidators().size())
@@ -263,7 +263,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
-                    return validatorsUtil.isEligibleForActivation(state, validator);
+                    return validatorsUtil.isEligibleForActivation(finalizedEpoch, validator);
                   })
               .boxed()
               .sorted(

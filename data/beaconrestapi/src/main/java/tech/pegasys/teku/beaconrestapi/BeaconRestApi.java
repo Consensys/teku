@@ -369,11 +369,11 @@ public class BeaconRestApi {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
-    app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
+    addMigratedEndpoint(new Readiness(provider));
     addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
-    app.get(GetProposersData.ROUTE, new GetProposersData(provider, jsonProvider));
+    addMigratedEndpoint(new GetProposersData(provider));
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));

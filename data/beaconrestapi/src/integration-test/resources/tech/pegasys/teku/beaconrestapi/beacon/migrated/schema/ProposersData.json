@@ -1,0 +1,19 @@
+{
+  "title" : "ProposersData",
+  "type" : "object",
+  "required" : [ "prepared_proposers", "registered_validators" ],
+  "properties" : {
+    "prepared_proposers" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PreparedProposersType"
+      }
+    },
+    "registered_validators" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/RegisteredValidatorsType"
+      }
+    }
+  }
+}
