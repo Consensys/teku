@@ -35,7 +35,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int EXPIRES_IN_SLOT = 2;
+  protected static final int EXPIRES_IN_SLOT = 2;
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
@@ -92,7 +92,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   public void onSlot(UInt64 slot) {
     super.onSlot(slot);
     pendingBlocksForEPReexecution.removeIf(
-        block -> block.getSlot().isLessThan(slot.plus(EXPIRES_IN_SLOT)));
+        block -> block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(slot));
   }
 
   @Override
