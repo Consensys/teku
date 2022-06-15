@@ -27,15 +27,15 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-  private BesuNode eth1Node1;
-  private BesuNode eth1Node2;
+  private BesuNode executionNode1;
+  private BesuNode executionNode2;
   private TekuNode tekuNode1;
   private TekuNode tekuNode2;
 
   @BeforeEach
   void setup() throws Exception {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-    eth1Node1 =
+    executionNode1 =
         createBesuNode(
             config ->
                 config
@@ -43,24 +43,25 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
                     .withMergeSupport(true)
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json"));
-    eth1Node1.start();
-    eth1Node2 =
+    executionNode1.start();
+    executionNode2 =
         createBesuNode(
             config ->
                 config
                     .withMergeSupport(true)
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json")
-                    .withStaticPeers(eth1Node1));
-    eth1Node2.start();
+                    .withStaticPeers(executionNode1));
+    executionNode2.start();
 
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node1, totalValidators);
+        createTekuDepositSender(NETWORK_NAME)
+            .sendValidatorDeposits(executionNode1, totalValidators);
     tekuNode1 =
         createTekuNode(
             config ->
-                configureTekuNode(config, eth1Node1, genesisTime)
+                configureTekuNode(config, executionNode1, genesisTime)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                     .withValidatorKeystores(validatorKeystores));
@@ -68,7 +69,7 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     tekuNode2 =
         createTekuNode(
             config ->
-                configureTekuNode(config, eth1Node2, genesisTime)
+                configureTekuNode(config, executionNode2, genesisTime)
                     .withInteropValidators(0, 0)
                     .withPeers(tekuNode1));
     tekuNode2.start();
@@ -77,17 +78,12 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldSwitchToOptimisticSyncAfterMergeWhenExecutionEngineIsSyncing() throws Exception {
     tekuNode2.waitForGenesis();
-    tekuNode2.waitForLogMessageContaining("MERGE is completed");
-    tekuNode1.waitForNonDefaultExecutionPayload();
+
+    // Reset execution client's DB after the merge and leave it without any chance to sync
     tekuNode2.waitForNonDefaultExecutionPayload();
+    executionNode2.removePeer(executionNode1);
+    executionNode2.waitForRestartWithEmptyDatabase();
 
-    eth1Node2.removePeer(eth1Node1);
-    eth1Node2.waitForRestartWithEmptyDatabase();
-
-    tekuNode2.waitForLogMessageContaining(
-        "Unable to execute the current chain head block payload because "
-            + "the Execution Client is syncing. Activating optimistic sync");
-    tekuNode2.waitForNewFinalization();
     tekuNode2.waitForOptimisticBlock();
   }
 
