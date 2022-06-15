@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -20,7 +22,6 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BesuNode extends Node {
@@ -81,6 +84,23 @@ public class BesuNode extends Node {
     container.start();
   }
 
+  public void waitForRestartWithEmptyDatabase() {
+    Waiter.waitFor(() -> assertThat(restartWithEmptyDatabase()).isCompleted());
+  }
+
+  private SafeFuture<Void> restartWithEmptyDatabase() {
+    SafeFuture<Void> future = new SafeFuture<>();
+    try {
+      container.execInContainer("rm", "-rf", "/opt/besu");
+      container.stop();
+      container.start();
+      future.complete(null);
+    } catch (Exception ex) {
+      future.completeExceptionally(ex);
+    }
+    return future;
+  }
+
   public Eth1Address getDepositContractAddress() {
     return Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
   }
@@ -108,7 +128,7 @@ public class BesuNode extends Node {
         .getIpAddress();
   }
 
-  public String fetchEnodeUrl() throws Exception {
+  private String fetchEnodeUrl() throws Exception {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
         httpClient.post(baseUri, "", jsonProvider.objectToJSON(new Request("admin_nodeInfo")));
@@ -122,7 +142,8 @@ public class BesuNode extends Node {
     return getInternalP2pUrl(nodeInfoResponse.result.id);
   }
 
-  public Boolean removePeer(final String enode) throws Exception {
+  public Boolean removePeer(final BesuNode node) throws Exception {
+    final String enode = node.fetchEnodeUrl();
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
         httpClient.post(
@@ -201,9 +222,17 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withStaticNodes(final String... staticNodes) {
+    public BesuNode.Config withStaticPeers(final BesuNode... staticNodes) {
+      final List<String> nodeEnodes = new ArrayList<>();
+      try {
+        for (BesuNode besuNode : staticNodes) {
+          nodeEnodes.add(besuNode.fetchEnodeUrl());
+        }
+      } catch (Exception ex) {
+        throw new RuntimeException("Failed to fetch enodes, make sure nodes already started", ex);
+      }
       configMap.put("static-nodes-file", BESU_STATIC_NODES_FILE_PATH);
-      this.staticNodes.addAll(Arrays.asList(staticNodes));
+      this.staticNodes.addAll(nodeEnodes);
       return this;
     }
 

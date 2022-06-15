@@ -16,10 +16,8 @@ package tech.pegasys.teku.test.acceptance;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Resources;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -36,7 +34,6 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
   private BesuNode eth1Node2;
   private TekuNode tekuNode1;
   private TekuNode tekuNode2;
-  private String eth1Node1Enode;
 
   @BeforeEach
   void setup() throws Exception {
@@ -50,7 +47,6 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json"));
     eth1Node1.start();
-    eth1Node1Enode = eth1Node1.fetchEnodeUrl();
     eth1Node2 =
         createBesuNode(
             config ->
@@ -58,7 +54,7 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
                     .withMergeSupport(true)
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json")
-                    .withStaticNodes(eth1Node1Enode));
+                    .withStaticPeers(eth1Node1));
     eth1Node2.start();
 
     final int totalValidators = 4;
@@ -86,17 +82,14 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
   void shouldPassMergeOptimisticallyAndBeginFinalizationAfterSafeSlotsToImport() throws Exception {
     tekuNode2.waitForGenesis();
     // Disconnect eth1Node2 from eth1Node1 before the merge
-    assertThat(eth1Node2.removePeer(eth1Node1Enode)).isTrue();
+    assertThat(eth1Node2.removePeer(eth1Node1)).isTrue();
     tekuNode1.waitForLogMessageContaining("MERGE is completed");
 
     tekuNode2.waitForLogMessageContaining("optimistic sync");
     tekuNode2.waitForLogMessageContaining("MERGE is completed");
     tekuNode2.waitForNonDefaultExecutionPayload();
     tekuNode2.waitForNewFinalization();
-    Optional<GetBlockRootResponse> getBlockRootResponse2 = tekuNode2.fetchBeaconRootHead();
-    assertThat(getBlockRootResponse2.get().execution_optimistic).isTrue();
-    Optional<GetBlockRootResponse> getBlockRootResponse1 = tekuNode1.fetchBeaconRootHead();
-    assertThat(getBlockRootResponse1.get().execution_optimistic).isFalse();
+    tekuNode2.waitForOptimisticBlock();
   }
 
   private TekuNode.Config configureTekuNode(
