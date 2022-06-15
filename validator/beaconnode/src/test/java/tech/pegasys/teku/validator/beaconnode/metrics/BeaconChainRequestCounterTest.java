@@ -11,20 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.metrics;
+package tech.pegasys.teku.validator.beaconnode.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.metrics.RequestCounter.RequestOutcome;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.validator.beaconnode.metrics.BeaconChainRequestCounter.RequestOutcome;
 
-class RequestCounterTest {
+class BeaconChainRequestCounterTest {
 
   public static final String METRIC_NAME = "metricName";
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final RequestCounter counter =
-      RequestCounter.create(metricsSystem, TekuMetricCategory.BEACON, METRIC_NAME, "Some help");
+  private final BeaconChainRequestCounter counter =
+      BeaconChainRequestCounter.create(metricsSystem, METRIC_NAME, "Some help");
 
   @Test
   public void shouldIncrementSuccessCounter() {
@@ -52,7 +54,7 @@ class RequestCounterTest {
 
   private long getValue(final RequestOutcome requestOutcome) {
     return metricsSystem
-        .getCounter(TekuMetricCategory.BEACON, METRIC_NAME)
+        .getCounter(TekuMetricCategory.VALIDATOR, METRIC_NAME)
         .getValue(requestOutcome.name());
   }
 }
