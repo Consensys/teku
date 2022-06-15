@@ -182,7 +182,7 @@ public class BeaconRestApiV1Test {
 
   @Test
   void shouldHavePutLogLevel() {
-    verify(app).put(eq(PutLogLevel.ROUTE), any(PutLogLevel.class));
+    verify(app).addHandler(eq(HandlerType.PUT), eq(PutLogLevel.ROUTE), any(PutLogLevel.class));
   }
 
   static Stream<Arguments> getParameters() {

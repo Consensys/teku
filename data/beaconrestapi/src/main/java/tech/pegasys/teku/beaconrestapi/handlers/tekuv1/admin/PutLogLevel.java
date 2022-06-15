@@ -13,33 +13,46 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.api.schema.LogLevel;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class PutLogLevel extends AbstractHandler implements Handler {
-
+public class PutLogLevel extends MigratingEndpointAdapter {
   public static final String ROUTE = "/teku/v1/admin/log_level";
 
-  public PutLogLevel(final JsonProvider jsonProvider) {
-    super(jsonProvider);
+  public PutLogLevel() {
+    super(
+        EndpointMetadata.put(ROUTE)
+            .operationId("putLogLevel")
+            .summary("Changes the log level without restarting.")
+            .description(
+                "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.")
+            .tags(TAG_TEKU)
+            .requestBodyType(LogLevel.getJsonTypeDefinition())
+            .response(SC_NO_CONTENT, "The LogLevel was accepted and applied")
+            .build());
   }
 
   @OpenApi(
@@ -49,7 +62,7 @@ public class PutLogLevel extends AbstractHandler implements Handler {
       tags = {TAG_TEKU},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = LogLevel.class)},
+              content = {@OpenApiContent(from = tech.pegasys.teku.api.schema.LogLevel.class)},
               description =
                   "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n"
                       + "  \"log_filter\": [(String; Optional)]\n}\n```"),
@@ -64,19 +77,94 @@ public class PutLogLevel extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    try {
-      final LogLevel params = parseRequestBody(ctx.body(), LogLevel.class);
+    adapt(ctx);
+  }
 
-      final String[] logFilters = params.getLogFilter().orElseGet(() -> new String[] {""});
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final LogLevel requestBody = request.getRequestBody();
+    final List<String> logFilters = requestBody.getLogFilter().orElse(List.of(""));
 
-      for (final String logFilter : logFilters) {
-        LoggingConfigurator.setAllLevels(logFilter, params.getLevel());
+    for (final String logFilter : logFilters) {
+      LoggingConfigurator.setAllLevels(logFilter, requestBody.getLevel());
+    }
+    request.respondWithCode(SC_NO_CONTENT);
+  }
+
+  static class LogLevel {
+    private Level level;
+    private Optional<List<String>> logFilter = Optional.empty();
+
+    private static final DeserializableTypeDefinition<Level> LEVEL_TYPE =
+        DeserializableTypeDefinition.string(Level.class)
+            .name("Level")
+            .formatter(Level::toString)
+            .parser(Level::toLevel)
+            .example("ERROR")
+            .description("Level string")
+            .format("string")
+            .build();
+
+    private LogLevel() {}
+
+    public LogLevel(final String level) {
+      this.level = Level.valueOf(level);
+    }
+
+    public LogLevel(final String level, final List<String> logFilter) {
+      this.level = Level.valueOf(level);
+      this.logFilter = Optional.of(logFilter);
+    }
+
+    public Level getLevel() {
+      return level;
+    }
+
+    public void setLevel(Level level) {
+      this.level = level;
+    }
+
+    public Optional<List<String>> getLogFilter() {
+      return logFilter;
+    }
+
+    public void setLogFilter(Optional<List<String>> logFilter) {
+      this.logFilter = logFilter;
+    }
+
+    static DeserializableTypeDefinition<LogLevel> getJsonTypeDefinition() {
+      return DeserializableTypeDefinition.object(LogLevel.class)
+          .name("PutLogLevelRequest")
+          .initializer(LogLevel::new)
+          .withField("level", LEVEL_TYPE, LogLevel::getLevel, LogLevel::setLevel)
+          .withOptionalField(
+              "log_filter",
+              DeserializableTypeDefinition.listOf(STRING_TYPE),
+              LogLevel::getLogFilter,
+              LogLevel::setLogFilter)
+          .build();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
       }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      LogLevel logLevel = (LogLevel) o;
+      return Objects.equals(level, logLevel.level) && Objects.equals(logFilter, logLevel.logFilter);
+    }
 
-      ctx.status(SC_NO_CONTENT);
-    } catch (final IllegalArgumentException e) {
-      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
+    @Override
+    public int hashCode() {
+      return Objects.hash(level, logFilter);
+    }
+
+    @Override
+    public String toString() {
+      return "LogLevel{" + "level=" + level + ", logFilter=" + logFilter + '}';
     }
   }
 }

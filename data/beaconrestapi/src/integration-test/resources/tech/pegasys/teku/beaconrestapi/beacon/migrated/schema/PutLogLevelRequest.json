@@ -1,0 +1,16 @@
+{
+  "title" : "PutLogLevelRequest",
+  "type" : "object",
+  "required" : [ "level" ],
+  "properties" : {
+    "level" : {
+      "$ref" : "#/components/schemas/Level"
+    },
+    "log_filter" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    }
+  }
+}

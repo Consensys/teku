@@ -125,6 +125,10 @@ public class EndpointMetadata {
     return new EndpointMetaDataBuilder().method(HandlerType.POST).path(path);
   }
 
+  public static EndpointMetaDataBuilder put(final String path) {
+    return new EndpointMetaDataBuilder().method(HandlerType.PUT).path(path);
+  }
+
   public static EndpointMetaDataBuilder delete(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
   }
