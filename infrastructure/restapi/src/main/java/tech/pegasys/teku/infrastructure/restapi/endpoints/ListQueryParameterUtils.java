@@ -43,6 +43,9 @@ public class ListQueryParameterUtils {
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     final String list = String.join(",", validateQueryParameter(parameterMap, key));
-    return SPLITTER.splitToStream(list).distinct().map(String::trim).collect(Collectors.toList());
+    return SPLITTER.splitToList(list).stream()
+        .distinct()
+        .map(String::trim)
+        .collect(Collectors.toList());
   }
 }

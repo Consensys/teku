@@ -27,10 +27,12 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 
@@ -41,23 +43,38 @@ public class BLSBenchmark {
   @Param({"1", "2", "4", "8", "16", "32", "64", "128"})
   int sigCnt = 128;
 
-  List<BLSKeyPair> keyPairs =
-      IntStream.range(0, sigCnt).mapToObj(BLSTestUtil::randomKeyPair).collect(Collectors.toList());
-  List<Bytes> messages =
-      Stream.generate(Bytes32::random).limit(sigCnt).collect(Collectors.toList());
-  List<BLSSignature> signatures =
-      Streams.zip(
-              keyPairs.stream(),
-              messages.stream(),
-              (keyPair, msg) -> BLS.sign(keyPair.getSecretKey(), msg))
-          .collect(Collectors.toList());
+  List<BLSKeyPair> keyPairs;
+  List<BLSPublicKey> publicKeys;
+  List<List<BLSPublicKey>> batchPublicKeys;
+  List<Bytes> messages;
+  List<BLSSignature> signatures;
+  BLSSignature aggregatedSignature;
+
+  @Setup
+  public void setup() {
+    keyPairs =
+        IntStream.range(0, sigCnt)
+            .mapToObj(BLSTestUtil::randomKeyPair)
+            .collect(Collectors.toList());
+    publicKeys = keyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());
+    batchPublicKeys =
+        publicKeys.stream().map(Collections::singletonList).collect(Collectors.toList());
+    messages = Stream.generate(Bytes32::random).limit(sigCnt).collect(Collectors.toList());
+    signatures =
+        Streams.zip(
+                keyPairs.stream(),
+                messages.stream(),
+                (keyPair, msg) -> BLS.sign(keyPair.getSecretKey(), msg))
+            .collect(Collectors.toList());
+    aggregatedSignature = BLS.aggregate(signatures);
+  }
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void verifySignatureSimple() {
     for (int i = 0; i < sigCnt; i++) {
-      boolean res = BLS.verify(keyPairs.get(i).getPublicKey(), messages.get(i), signatures.get(i));
+      boolean res = BLS.verify(publicKeys.get(i), messages.get(i), signatures.get(i));
       if (!res) {
         throw new IllegalStateException();
       }
@@ -68,16 +85,7 @@ public class BLSBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void verifySignatureBatchedNonParallelSinglePairing() {
-    boolean res =
-        BLS.batchVerify(
-            keyPairs.stream()
-                .map(kp -> Collections.singletonList(kp.getPublicKey()))
-                .limit(sigCnt)
-                .collect(Collectors.toList()),
-            messages.subList(0, sigCnt),
-            signatures.subList(0, sigCnt),
-            false,
-            false);
+    boolean res = BLS.batchVerify(batchPublicKeys, messages, signatures, false, false);
     if (!res) {
       throw new IllegalStateException();
     }
@@ -87,16 +95,7 @@ public class BLSBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void verifySignatureBatchedNonParallelDoublePairing() {
-    boolean res =
-        BLS.batchVerify(
-            keyPairs.stream()
-                .map(kp -> Collections.singletonList(kp.getPublicKey()))
-                .limit(sigCnt)
-                .collect(Collectors.toList()),
-            messages.subList(0, sigCnt),
-            signatures.subList(0, sigCnt),
-            true,
-            false);
+    boolean res = BLS.batchVerify(batchPublicKeys, messages, signatures, true, false);
     if (!res) {
       throw new IllegalStateException();
     }
@@ -106,16 +105,7 @@ public class BLSBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void verifySignatureBatchedParallelDoublePairing() {
-    boolean res =
-        BLS.batchVerify(
-            keyPairs.stream()
-                .map(kp -> Collections.singletonList(kp.getPublicKey()))
-                .limit(sigCnt)
-                .collect(Collectors.toList()),
-            messages.subList(0, sigCnt),
-            signatures.subList(0, sigCnt),
-            true,
-            true);
+    boolean res = BLS.batchVerify(batchPublicKeys, messages, signatures, true, true);
     if (!res) {
       throw new IllegalStateException();
     }
@@ -125,16 +115,17 @@ public class BLSBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void verifySignatureBatchedParallelSinglePairing() {
-    boolean res =
-        BLS.batchVerify(
-            keyPairs.stream()
-                .map(kp -> Collections.singletonList(kp.getPublicKey()))
-                .limit(sigCnt)
-                .collect(Collectors.toList()),
-            messages.subList(0, sigCnt),
-            signatures.subList(0, sigCnt),
-            false,
-            true);
+    boolean res = BLS.batchVerify(batchPublicKeys, messages, signatures, false, true);
+    if (!res) {
+      throw new IllegalStateException();
+    }
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void aggregateVerifySignature() {
+    boolean res = BLS.aggregateVerify(publicKeys, messages, aggregatedSignature);
     if (!res) {
       throw new IllegalStateException();
     }

@@ -791,6 +791,8 @@ subprojects {
     testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'
 
     propertyTestImplementation 'net.jqwik:jqwik'
+
+    annotationProcessor 'com.google.guava:guava-beta-checker'
   }
 
   if (!baseInfrastructureProjects.contains(project.path)) {

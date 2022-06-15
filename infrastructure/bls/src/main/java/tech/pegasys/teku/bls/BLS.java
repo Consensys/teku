@@ -16,7 +16,7 @@ package tech.pegasys.teku.bls;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Streams;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -152,12 +152,11 @@ public class BLS {
       if (publicKeys.isEmpty()) {
         return false;
       }
-      List<PublicKeyMessagePair> publicKeyMessagePairs =
-          Streams.zip(
-                  publicKeys.stream(),
-                  messages.stream(),
-                  (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
-              .collect(Collectors.toList());
+      List<PublicKeyMessagePair> publicKeyMessagePairs = new ArrayList<>();
+      for (int i = 0; i < publicKeys.size(); i++) {
+        publicKeyMessagePairs.add(
+            new PublicKeyMessagePair(publicKeys.get(i).getPublicKey(), messages.get(i)));
+      }
       try {
         return signature.getSignature().verify(publicKeyMessagePairs);
       } catch (BlsException e) {

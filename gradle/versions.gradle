@@ -181,5 +181,7 @@ dependencyManagement {
     }
 
     dependency 'net.jqwik:jqwik:1.6.5'
+
+    dependency 'com.google.guava:guava-beta-checker:1.0'
   }
 }
