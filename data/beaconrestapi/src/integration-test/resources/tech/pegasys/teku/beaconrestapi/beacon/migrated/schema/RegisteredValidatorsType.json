@@ -1,0 +1,40 @@
+{
+  "title" : "RegisteredValidatorsType",
+  "type" : "object",
+  "required" : [ "proposer_index", "pubkey", "fee_recipient", "gas_limit", "timestamp", "expiry_slot" ],
+  "properties" : {
+    "proposer_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "pubkey" : {
+      "$ref" : "#/components/schemas/PubKey"
+    },
+    "fee_recipient" : {
+      "type" : "string",
+      "description" : "Hex encoded deposit contract address with 0x prefix",
+      "example" : "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
+      "format" : "byte"
+    },
+    "gas_limit" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "expiry_slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}
