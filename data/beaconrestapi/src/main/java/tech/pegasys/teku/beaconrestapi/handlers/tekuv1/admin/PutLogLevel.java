@@ -48,7 +48,8 @@ public class PutLogLevel extends MigratingEndpointAdapter {
             .operationId("putLogLevel")
             .summary("Changes the log level without restarting.")
             .description(
-                "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.")
+                "Changes the log level without restarting. You can change the log level"
+                    + " for all logs, or the log level for specific packages or classes.")
             .tags(TAG_TEKU)
             .requestBodyType(LogLevel.getJsonTypeDefinition())
             .response(SC_NO_CONTENT, "The LogLevel was accepted and applied")
