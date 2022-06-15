@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 
@@ -35,7 +35,14 @@ public class SetFeeRecipientTest {
   private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
   private final SetFeeRecipient handler = new SetFeeRecipient(Optional.of(beaconProposerPreparer));
 
-  private final RestApiRequest request = mock(RestApiRequest.class);
+  private final StubRestApiRequest request = new StubRestApiRequest(handler.getMetadata());
+
+  @Test
+  void badPubkey_shouldGiveIllegalArgument() {
+    request.setPathParameter("pubkey", "pubkey");
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
