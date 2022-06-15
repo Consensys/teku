@@ -13,13 +13,23 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class AllBlocksAtSlotData {
   private final SpecMilestone version;
   private final List<SignedBeaconBlock> blocks;
+
+  public AllBlocksAtSlotData(final List<BlockAndMetaData> blocks) {
+    Preconditions.checkArgument(!blocks.isEmpty());
+    this.version = blocks.get(0).getMilestone();
+    this.blocks = blocks.stream().map(ObjectAndMetaData::getData).collect(Collectors.toList());
+  }
 
   public AllBlocksAtSlotData(final SpecMilestone version, final List<SignedBeaconBlock> blocks) {
     this.version = version;

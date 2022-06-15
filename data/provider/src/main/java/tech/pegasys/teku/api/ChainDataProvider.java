@@ -176,13 +176,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .nonCanonicalBlocksSelector(slot)
         .getBlocks()
-        .thenApply(
-            blockList -> {
-              final List<SignedBeaconBlock> blocks =
-                  blockList.stream().map(ObjectAndMetaData::getData).collect(Collectors.toList());
-
-              return new AllBlocksAtSlotData(spec.atSlot(slot).getMilestone(), blocks);
-            });
+        .thenApply(AllBlocksAtSlotData::new);
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(
