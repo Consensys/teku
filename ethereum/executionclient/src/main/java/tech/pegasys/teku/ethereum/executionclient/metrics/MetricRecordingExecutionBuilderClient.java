@@ -46,7 +46,7 @@ public class MetricRecordingExecutionBuilderClient implements ExecutionBuilderCl
   private final ExecutionBuilderClient delegate;
   private final TimeProvider timeProvider;
 
-  private final MetricsCountersByIntervals builderRequestsCounter;
+  private final MetricsCountersByIntervals builderRequestsCountersByIntervals;
 
   public MetricRecordingExecutionBuilderClient(
       final ExecutionBuilderClient delegate,
@@ -55,7 +55,7 @@ public class MetricRecordingExecutionBuilderClient implements ExecutionBuilderCl
     this.delegate = delegate;
     this.timeProvider = timeProvider;
 
-    builderRequestsCounter =
+    builderRequestsCountersByIntervals =
         MetricsCountersByIntervals.create(
             TekuMetricCategory.BEACON,
             metricsSystem,
@@ -117,7 +117,7 @@ public class MetricRecordingExecutionBuilderClient implements ExecutionBuilderCl
   private void recordRequest(
       final UInt64 startTime, final String method, final RequestOutcome requestOutcome) {
     final UInt64 duration = timeProvider.getTimeInMillis().minusMinZero(startTime);
-    builderRequestsCounter.recordValue(duration, method, requestOutcome.name());
+    builderRequestsCountersByIntervals.recordValue(duration, method, requestOutcome.name());
   }
 
   @FunctionalInterface
