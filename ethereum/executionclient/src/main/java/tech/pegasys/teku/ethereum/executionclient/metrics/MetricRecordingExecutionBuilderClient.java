@@ -62,7 +62,7 @@ public class MetricRecordingExecutionBuilderClient implements ExecutionBuilderCl
             BUILDER_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests made to the builder by method, outcome and execution time interval",
             List.of("method", "outcome"),
-            Map.of(List.of(), List.of(100L, 500L, 1000L, 2000L, 3000L, 4000L, 5000L, 8000L)));
+            Map.of(List.of(), List.of(100L, 300L, 500L, 1000L, 2000L, 3000L, 5000L)));
   }
 
   @Override
