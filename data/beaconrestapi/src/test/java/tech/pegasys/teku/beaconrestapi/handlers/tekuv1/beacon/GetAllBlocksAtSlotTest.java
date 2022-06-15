@@ -50,7 +50,7 @@ public class GetAllBlocksAtSlotTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnAttestationInformation() throws JsonProcessingException {
+  public void shouldReturnAllBlocksAtSlot() throws JsonProcessingException {
     when(chainDataProvider.getAllBlocksAtSlot(eq(UInt64.ONE)))
         .thenReturn(SafeFuture.completedFuture(responseData));
 
