@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,6 +65,7 @@ public class Web3jClientBuilder {
     checkNotNull(timeProvider);
     checkNotNull(endpoint);
     checkNotNull(timeout);
+    requireNonNull(endpoint.getScheme(), () -> prepareInvalidSchemeMessage(endpoint));
     switch (endpoint.getScheme()) {
       case "http":
       case "https":
@@ -74,11 +76,14 @@ public class Web3jClientBuilder {
       case "file":
         return new Web3jIpcClient(endpoint, timeProvider, jwtConfigOpt);
       default:
-        throw new InvalidConfigurationException(
-            String.format(
-                "Endpoint \"%s\" scheme is not supported. Use "
-                    + "http://, https://, ws://, wss:// or file: for IPC file path",
-                endpoint));
+        throw new InvalidConfigurationException(prepareInvalidSchemeMessage(endpoint));
     }
+  }
+
+  private String prepareInvalidSchemeMessage(final URI endpoint) {
+    return String.format(
+        "Endpoint \"%s\" scheme is not supported. Use "
+            + "http://, https://, ws://, wss:// or file: for IPC file path",
+        endpoint);
   }
 }

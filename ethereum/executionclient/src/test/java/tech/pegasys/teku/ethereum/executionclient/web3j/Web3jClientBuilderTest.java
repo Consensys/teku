@@ -63,6 +63,13 @@ public class Web3jClientBuilderTest {
   }
 
   @Test
+  public void shouldFailBuildWithNullEndpointScheme() {
+    Web3jClientBuilder builder = new Web3jClientBuilder();
+    builder.timeProvider(mock(TimeProvider.class)).timeout(DEFAULT_TIMEOUT).endpoint("localhost");
+    assertThatThrownBy(builder::build).hasMessageContaining("scheme is not supported");
+  }
+
+  @Test
   public void shouldBuildHttpClientWithHttpEndpoint() {
     Web3jClientBuilder builder = new Web3jClientBuilder();
     builder
