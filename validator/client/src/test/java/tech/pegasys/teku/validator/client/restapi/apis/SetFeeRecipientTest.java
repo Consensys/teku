@@ -73,4 +73,13 @@ public class SetFeeRecipientTest {
             new SetFeeRecipient.SetFeeRecipientBody(
                 Eth1Address.fromHexString("0xabcf8e0d4e9587369b2301d0790347320302cc09")));
   }
+
+  @Test
+  void metadata_shoulThrowInvalidArgument() {
+    assertThatThrownBy(
+            () ->
+                getRequestBodyFromMetadata(
+                    handler, "{\"ethaddress\":\"0xabcF8e0d4E9587369b2301d0790347320302CC09\"}"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 }
