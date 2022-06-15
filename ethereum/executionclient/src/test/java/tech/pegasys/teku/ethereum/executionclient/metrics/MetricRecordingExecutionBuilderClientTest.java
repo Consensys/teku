@@ -17,22 +17,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient.BUILDER_REQUESTS_COUNTER_NAME;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient.RequestOutcome;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.RequestCounter.RequestOutcome;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -43,57 +46,85 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MetricRecordingExecutionBuilderClientTest {
 
+  private static final long RESPONSE_DELAY = 1300;
+  private static final String EXPECTED_TIME_INTERVAL = "[1000,2000)";
+
   private final ExecutionBuilderClient delegate = mock(ExecutionBuilderClient.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final MetricRecordingExecutionBuilderClient executionBuilderClient =
-      new MetricRecordingExecutionBuilderClient(delegate, metricsSystem);
+  private StubTimeProvider stubTimeProvider;
+  private MetricRecordingExecutionBuilderClient executionBuilderClient;
+
+  @BeforeEach
+  void setup() {
+    stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
+    executionBuilderClient =
+        new MetricRecordingExecutionBuilderClient(delegate, stubTimeProvider, metricsSystem);
+  }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestArguments")
   public void shouldCountSuccessfulRequest(
-      final Function<ExecutionBuilderClient, SafeFuture<Object>> method,
-      final String counterName,
+      final Function<ExecutionBuilderClient, SafeFuture<Object>> requestRunner,
+      final String method,
       final Object value) {
-    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(value));
+    setupResponse(requestRunner, SafeFuture.completedFuture(value));
 
-    final SafeFuture<Object> result = method.apply(executionBuilderClient);
+    final SafeFuture<Object> result = requestRunner.apply(executionBuilderClient);
 
     assertThat(result).isCompletedWithValue(value);
 
-    assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isEqualTo(1);
-    assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(method, RequestOutcome.SUCCESS)).isOne();
+    assertThat(getCounterValue(method, RequestOutcome.ERROR)).isZero();
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestArguments")
   public void shouldCountRequestWithFailedFutureResponse(
-      final Function<ExecutionBuilderClient, SafeFuture<Object>> method, final String counterName) {
+      final Function<ExecutionBuilderClient, SafeFuture<Object>> requestRunner,
+      final String method) {
     final RuntimeException exception = new RuntimeException("Nope");
-    when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(exception));
+    setupResponse(requestRunner, SafeFuture.failedFuture(exception));
 
-    final SafeFuture<Object> result = method.apply(executionBuilderClient);
+    final SafeFuture<Object> result = requestRunner.apply(executionBuilderClient);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCause(exception);
 
-    assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isOne();
-    assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(method, RequestOutcome.ERROR)).isOne();
+    assertThat(getCounterValue(method, RequestOutcome.SUCCESS)).isZero();
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestWithResponseFailureArguments")
   public void shouldCountRequestWithResponseFailure(
-      final Function<ExecutionBuilderClient, SafeFuture<Object>> method,
-      final String counterName,
+      final Function<ExecutionBuilderClient, SafeFuture<Object>> requestRunner,
+      final String method,
       final Object value) {
-    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(value));
+    setupResponse(requestRunner, SafeFuture.completedFuture(value));
 
-    final SafeFuture<Object> result = method.apply(executionBuilderClient);
+    final SafeFuture<Object> result = requestRunner.apply(executionBuilderClient);
 
     assertThat(result).isCompletedWithValue(value);
 
-    assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isOne();
-    assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(method, RequestOutcome.ERROR)).isOne();
+    assertThat(getCounterValue(method, RequestOutcome.SUCCESS)).isZero();
+  }
+
+  private void setupResponse(
+      final Function<ExecutionBuilderClient, SafeFuture<Object>> requestRunner,
+      final SafeFuture<Object> response) {
+    when(requestRunner.apply(delegate))
+        .thenAnswer(
+            __ -> {
+              stubTimeProvider.advanceTimeByMillis(RESPONSE_DELAY);
+              return response;
+            });
+  }
+
+  private long getCounterValue(final String method, final RequestOutcome requestOutcome) {
+    return metricsSystem
+        .getCounter(TekuMetricCategory.BEACON, BUILDER_REQUESTS_COUNTER_NAME)
+        .getValue(method, requestOutcome.name(), EXPECTED_TIME_INTERVAL);
   }
 
   public static Stream<Arguments> getRequestWithResponseFailureArguments() {
@@ -117,22 +148,22 @@ class MetricRecordingExecutionBuilderClientTest {
         getArguments(
             "status",
             ExecutionBuilderClient::status,
-            MetricRecordingExecutionBuilderClient.STATUS_REQUEST_COUNTER_NAME,
+            MetricRecordingExecutionBuilderClient.STATUS_METHOD,
             Response.withNullPayload()),
         getArguments(
             "registerValidators",
             client -> client.registerValidators(slot, validatorRegistrations),
-            MetricRecordingExecutionBuilderClient.REGISTER_VALIDATORS_REQUEST_COUNTER_NAME,
+            MetricRecordingExecutionBuilderClient.REGISTER_VALIDATORS_METHOD,
             Response.withNullPayload()),
         getArguments(
             "getHeader",
             client -> client.getHeader(slot, publicKey, parentHash),
-            MetricRecordingExecutionBuilderClient.GET_HEADER_REQUEST_COUNTER_NAME,
+            MetricRecordingExecutionBuilderClient.GET_HEADER_METHOD,
             new Response<>(builderBid)),
         getArguments(
             "getPayload",
             client -> client.getPayload(beaconBlock),
-            MetricRecordingExecutionBuilderClient.GET_PAYLOAD_REQUEST_COUNTER_NAME,
+            MetricRecordingExecutionBuilderClient.GET_PAYLOAD_METHOD,
             new Response<>(executionPayload)));
   }
 
@@ -142,11 +173,5 @@ class MetricRecordingExecutionBuilderClientTest {
       final String counterName,
       final T value) {
     return Arguments.of(Named.of(name, method), counterName, value);
-  }
-
-  private long getCounterValue(final String counterName, final RequestOutcome outcome) {
-    return metricsSystem
-        .getCounter(TekuMetricCategory.BEACON, counterName)
-        .getValue(outcome.name());
   }
 }

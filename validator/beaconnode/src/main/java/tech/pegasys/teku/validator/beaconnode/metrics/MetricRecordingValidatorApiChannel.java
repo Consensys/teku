@@ -95,9 +95,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final RequestCounter attestationDutiesRequestCounter;
   private final RequestCounter syncCommitteeDutiesRequestCounter;
   private final RequestCounter proposerDutiesRequestCounter;
-  private final RequestCounter unsignedBlockRequestsCounter;
-  private final RequestCounter attestationDataRequestsCounter;
-  private final RequestCounter aggregateRequestsCounter;
+  private final RequestCounter unsignedBlockRequestCounter;
+  private final RequestCounter attestationDataRequestCounter;
+  private final RequestCounter aggregateRequestCounter;
   private final RequestCounter createSyncCommitteeContributionCounter;
   private final RequestCounter sendAttestationRequestCounter;
   private final RequestCounter sendAggregateRequestCounter;
@@ -116,43 +116,51 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     this.delegate = delegate;
 
     genesisTimeRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             GENESIS_TIME_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for genesis time");
     attestationDutiesRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator attestation duties");
     syncCommitteeDutiesRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             SYNC_COMMITTEE_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator sync committee duties");
     proposerDutiesRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             PROPOSER_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator proposer duties");
-    unsignedBlockRequestsCounter =
-        RequestCounter.createForValidatorCategory(
+    unsignedBlockRequestCounter =
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for unsigned blocks");
-    attestationDataRequestsCounter =
-        RequestCounter.createForValidatorCategory(
+    attestationDataRequestCounter =
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             ATTESTATION_DATA_REQUEST_COUNTER_NAME,
             "Counter recording the number of requests for attestation data");
-    aggregateRequestsCounter =
-        RequestCounter.createForValidatorCategory(
+    aggregateRequestCounter =
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             AGGREGATE_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
     createSyncCommitteeContributionCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
     getValidatorIndicesRequestCounter =
@@ -171,13 +179,15 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             PERSISTENT_SUBSCRIPTION_COUNTER_NAME,
             "Counter recording the number of requests to subscribe to persistent committees");
     sendAttestationRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             PUBLISHED_ATTESTATION_COUNTER_NAME,
             "Counter recording the number of signed attestations sent to the beacon node");
     sendAggregateRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             PUBLISHED_AGGREGATE_COUNTER_NAME,
             "Counter recording the number of signed aggregate attestations sent to the beacon node");
     sendBlockRequestCounter =
@@ -191,8 +201,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
             "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
     sendSyncCommitteeMessagesRequestCounter =
-        RequestCounter.createForValidatorCategory(
+        RequestCounter.create(
             metricsSystem,
+            TekuMetricCategory.VALIDATOR,
             SYNC_COMMITTEE_SEND_MESSAGES_NAME,
             "Counter recording the number of sync committee messages sent to the beacon node");
     sendContributionAndProofsRequestCounter =
@@ -258,21 +269,21 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final boolean blinded) {
     return countDataRequest(
         delegate.createUnsignedBlock(slot, randaoReveal, graffiti, blinded),
-        unsignedBlockRequestsCounter);
+        unsignedBlockRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return countDataRequest(
-        delegate.createAttestationData(slot, committeeIndex), attestationDataRequestsCounter);
+        delegate.createAttestationData(slot, committeeIndex), attestationDataRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return countDataRequest(
-        delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
+        delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestCounter);
   }
 
   @Override

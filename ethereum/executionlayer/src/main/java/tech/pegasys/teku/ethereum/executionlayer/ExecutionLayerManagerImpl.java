@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -96,13 +97,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Optional<RestClient> builderRestClient,
       final Version version,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator) {
     checkNotNull(version);
 
     return new ExecutionLayerManagerImpl(
         createEngineClient(version, engineWeb3JClient, metricsSystem),
-        createBuilderClient(builderRestClient, spec, metricsSystem),
+        createBuilderClient(builderRestClient, spec, timeProvider, metricsSystem),
         spec,
         EVENT_LOG,
         builderBidValidator);
@@ -121,13 +123,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static Optional<ExecutionBuilderClient> createBuilderClient(
       final Optional<RestClient> builderRestClient,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
     return builderRestClient.map(
         client -> {
           final RestExecutionBuilderClient restBuilderClient =
               new RestExecutionBuilderClient(client, spec);
           final MetricRecordingExecutionBuilderClient metricRecordingBuilderClient =
-              new MetricRecordingExecutionBuilderClient(restBuilderClient, metricsSystem);
+              new MetricRecordingExecutionBuilderClient(
+                  restBuilderClient, timeProvider, metricsSystem);
           return new ThrottlingExecutionBuilderClient(
               metricRecordingBuilderClient, MAXIMUM_CONCURRENT_EB_REQUESTS, metricsSystem);
         });

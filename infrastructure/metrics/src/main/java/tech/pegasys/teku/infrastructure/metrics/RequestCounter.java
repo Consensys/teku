@@ -35,16 +35,6 @@ public class RequestCounter {
         metricsSystem.createLabelledCounter(metricCategory, name, help, "outcome"));
   }
 
-  public static RequestCounter createForBeaconCategory(
-      final MetricsSystem metricsSystem, final String name, final String help) {
-    return create(metricsSystem, TekuMetricCategory.BEACON, name, help);
-  }
-
-  public static RequestCounter createForValidatorCategory(
-      final MetricsSystem metricsSystem, final String name, final String help) {
-    return create(metricsSystem, TekuMetricCategory.VALIDATOR, name, help);
-  }
-
   public void onSuccess() {
     recordRequest(RequestOutcome.SUCCESS);
   }
