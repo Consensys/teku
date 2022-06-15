@@ -89,6 +89,16 @@ public class CoreTypes {
           .format("integer")
           .build();
 
+  public static final StringValueTypeDefinition<Double>
+      DOUBLE_TYPE = // TODO make raw type not string
+      DeserializableTypeDefinition.string(Double.class)
+              .formatter(Object::toString)
+              .parser(Double::valueOf)
+              .example("2.5")
+              .description("double string")
+              .format("double")
+              .build();
+
   public static final DeserializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(HttpErrorResponse.class, HttpErrorResponse.Builder.class)
           .name("HttpErrorResponse")
