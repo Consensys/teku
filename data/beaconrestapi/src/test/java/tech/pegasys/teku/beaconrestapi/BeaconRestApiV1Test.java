@@ -25,7 +25,6 @@ import io.javalin.http.HandlerType;
 import io.javalin.jetty.JettyServer;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -180,11 +179,6 @@ public class BeaconRestApiV1Test {
     }
   }
 
-  @Test
-  void shouldHavePutLogLevel() {
-    verify(app).addHandler(eq(HandlerType.PUT), eq(PutLogLevel.ROUTE), any(PutLogLevel.class));
-  }
-
   static Stream<Arguments> getParameters() {
     Stream.Builder<Arguments> builder = Stream.builder();
 
@@ -257,6 +251,25 @@ public class BeaconRestApiV1Test {
     builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
     builder.add(Arguments.of(Readiness.ROUTE, Readiness.class));
     builder.add(Arguments.of(GetAllBlocksAtSlot.ROUTE, GetAllBlocksAtSlot.class));
+
+    return builder.build();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("putParameters")
+  void putRouteExists(final String route, final Class<Handler> type) {
+    if (MigratingEndpointAdapter.class.isAssignableFrom(type)) {
+      verify(app).addHandler(eq(HandlerType.PUT), eq(route), any(type));
+    } else {
+      verify(app).get(eq(route), any(type));
+    }
+  }
+
+  static Stream<Arguments> putParameters() {
+    Stream.Builder<Arguments> builder = Stream.builder();
+
+    // teku
+    builder.add(Arguments.of(PutLogLevel.ROUTE, PutLogLevel.class));
 
     return builder.build();
   }
