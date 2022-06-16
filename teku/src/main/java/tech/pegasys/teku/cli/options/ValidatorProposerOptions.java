@@ -28,14 +28,14 @@ public class ValidatorProposerOptions {
       paramLabel = "<ADDRESS>",
       description =
           "Default fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
-      arity = "0..1")
+      arity = "1")
   private String proposerDefaultFeeRecipient = null;
 
   @Option(
       names = {"--validators-proposer-config"},
       paramLabel = "<STRING>",
       description = "remote URL or local file path to load proposer configuration from",
-      arity = "0..1")
+      arity = "1")
   private String proposerConfig = null;
 
   @Option(
@@ -65,7 +65,7 @@ public class ValidatorProposerOptions {
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Change the default gas limit used for the validators registration.",
-      arity = "0..1",
+      arity = "1",
       hidden = true,
       converter = UInt64Converter.class)
   private UInt64 registrationDefaultGasLimit =
