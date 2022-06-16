@@ -370,7 +370,7 @@ public class BeaconRestApi {
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
     addMigratedEndpoint(new Readiness(provider));
-    app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
+    addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
     addMigratedEndpoint(new GetProposersData(provider));
