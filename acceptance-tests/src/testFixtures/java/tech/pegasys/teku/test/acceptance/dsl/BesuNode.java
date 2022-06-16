@@ -16,8 +16,10 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,7 +44,7 @@ public class BesuNode extends Node {
 
     container
         .withExposedPorts(JSON_RPC_PORT, ENGINE_JSON_RPC_PORT)
-        .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
+        //        .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
         .waitingFor(new HttpWaitStrategy().forPort(JSON_RPC_PORT).forPath("/liveness"))
         .withCommand("--config-file", BESU_CONFIG_FILE_PATH);
   }
@@ -89,16 +91,23 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
+  public String getInternalEngineWebsocketsRpcUrl() {
+    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
+  }
+
   public String getRichBenefactorKey() {
     return "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
   }
 
   public static class Config {
+    private static final String[] MERGE_RPC_MODULES = new String[] {"ETH,NET,WEB3,ENGINE"};
     private final Map<String, Object> configMap = new HashMap<>();
+    private Optional<URL> maybeJwtFile = Optional.empty();
     private String genesisFilePath = "besu/depositContractGenesis.json";
 
     public Config() {
       configMap.put("rpc-http-enabled", true);
+      configMap.put("rpc-ws-enabled", true);
       configMap.put("rpc-http-port", Integer.toString(JSON_RPC_PORT));
       configMap.put("rpc-http-cors-origins", new String[] {"*"});
       configMap.put("host-allowlist", new String[] {"*"});
@@ -113,11 +122,19 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
-      configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE"});
+      configMap.put("rpc-http-api", MERGE_RPC_MODULES);
+      configMap.put("rpc-ws-api", MERGE_RPC_MODULES);
       configMap.put("Xmerge-support", Boolean.TRUE);
       configMap.put("engine-rpc-enabled", Boolean.TRUE);
       configMap.put("engine-rpc-port", Integer.toString(ENGINE_JSON_RPC_PORT));
       configMap.put("engine-host-allowlist", new String[] {"*"});
+      return this;
+    }
+
+    public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
+      configMap.put("engine-jwt-enabled", Boolean.TRUE);
+      configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
+      this.maybeJwtFile = Optional.of(jwtFile);
       return this;
     }
 
@@ -128,6 +145,10 @@ public class BesuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, BESU_CONFIG_FILE_PATH);
+
+      if (maybeJwtFile.isPresent()) {
+        configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
+      }
 
       return configFiles;
     }

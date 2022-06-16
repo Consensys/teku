@@ -40,6 +40,8 @@ class Web3jWebsocketClient extends Web3JClient {
     final WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
     initWeb3jService(webSocketService);
     setupJwtAuth(jwtConfig, timeProvider);
+    // TODO: remove me, temp hack for test
+    tryToConnect();
   }
 
   private void setupJwtAuth(final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
