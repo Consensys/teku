@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.migrated;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -26,7 +27,7 @@ public class AllBlocksAtSlotData {
   private final List<SignedBeaconBlock> blocks;
 
   public AllBlocksAtSlotData(final List<BlockAndMetaData> blocks) {
-    Preconditions.checkArgument(!blocks.isEmpty());
+    Preconditions.checkArgument(!blocks.isEmpty(), "BlockAndMetaData list must not be empty");
     this.version = blocks.get(0).getMilestone();
     this.blocks = blocks.stream().map(ObjectAndMetaData::getData).collect(Collectors.toList());
   }
@@ -42,5 +43,27 @@ public class AllBlocksAtSlotData {
 
   public List<SignedBeaconBlock> getBlocks() {
     return blocks;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AllBlocksAtSlotData that = (AllBlocksAtSlotData) o;
+    return version == that.version && Objects.equals(blocks, that.blocks);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(version, blocks);
+  }
+
+  @Override
+  public String toString() {
+    return "AllBlocksAtSlotData{" + "version=" + version + ", blocks=" + blocks + '}';
   }
 }
