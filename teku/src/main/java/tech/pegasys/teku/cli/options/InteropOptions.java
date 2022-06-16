@@ -35,7 +35,7 @@ public class InteropOptions {
       names = {"--Xinterop-genesis-payload-header"},
       paramLabel = "<FILE>",
       description = "Payload header to be included in the mocked genesis",
-      arity = "0..1")
+      arity = "1")
   private String interopGenesisPayloadHeader = null;
 
   @Option(
