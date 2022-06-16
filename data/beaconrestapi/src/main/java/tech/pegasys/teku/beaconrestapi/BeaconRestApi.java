@@ -366,11 +366,11 @@ public class BeaconRestApi {
 
   private void addTekuSpecificHandlers(
       final DataProvider provider, final Eth1DataProvider eth1DataProvider) {
-    app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
+    addMigratedEndpoint(new PutLogLevel());
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     addMigratedEndpoint(new Liveness(provider));
     addMigratedEndpoint(new Readiness(provider));
-    app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
+    addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
     addMigratedEndpoint(new GetPeersScore(provider));
     app.get(GetProtoArray.ROUTE, new GetProtoArray(provider, jsonProvider));
     addMigratedEndpoint(new GetProposersData(provider));
