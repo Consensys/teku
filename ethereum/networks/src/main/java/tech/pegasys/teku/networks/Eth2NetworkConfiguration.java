@@ -518,7 +518,9 @@ public class Eth2NetworkConfiguration {
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .discoveryBootnodes(
               // EF bootnode
-              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
+              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
+              // Teku bootnode
+              "enr:-KG4QKB1sosCWgLCHw08KFtyNyOG-zjlXvYxSO0xUaM7vVuwCjGk9RPZSBdbzSoUWvHkK93oI3uCOIga5-SGaywFQOgGhGV0aDKQqP7o7pAAAHAyAAAAAAAAAIJpZIJ2NIJpcIQS2CYxiXNlY3AyNTZrMaECNILo12nPazAG-PDbTKrUk8hyHjWJaY5G2KVicOOj5mGDdGNwgiMog3VkcIIjKA");
     }
 
     public Builder applyKilnNetworkDefaults() {
