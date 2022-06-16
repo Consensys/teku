@@ -23,6 +23,7 @@ class DoubleTypeDefinition extends PrimitiveTypeDefinition<Double> {
   @Override
   public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "number");
+    gen.writeStringField("format", "double");
   }
 
   @Override
