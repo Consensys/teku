@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.DOUBLE_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_DOUBLE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
@@ -49,7 +49,7 @@ public class GetPeersScore extends MigratingEndpointAdapter {
   private static final SerializableTypeDefinition<Eth2Peer> PEER_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
           .withField("peer_id", STRING_TYPE, eth2Peer -> eth2Peer.getId().toBase58())
-          .withField("gossip_score", DOUBLE_TYPE, Peer::getGossipScore)
+          .withField("gossip_score", RAW_DOUBLE_TYPE, Peer::getGossipScore)
           .build();
 
   private static final SerializableTypeDefinition<List<Eth2Peer>> RESPONSE_TYPE =

@@ -72,7 +72,7 @@ public class GetPeersScoreTest extends AbstractMigratedBeaconHandlerTest {
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
-        "{\"data\":[{\"peer_id\":\"1111111111111111111111111111177em\",\"gossip_score\":\"1.0\"}]}";
+        "{\"data\":[{\"peer_id\":\"1111111111111111111111111111177em\",\"gossip_score\":1.0}]}";
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 }

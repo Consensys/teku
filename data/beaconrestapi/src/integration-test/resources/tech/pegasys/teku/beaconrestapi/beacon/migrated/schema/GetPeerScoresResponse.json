@@ -13,10 +13,7 @@
             "type" : "string"
           },
           "gossip_score" : {
-            "type" : "string",
-            "description" : "double string",
-            "example" : "2.5",
-            "format" : "double"
+            "type" : "number"
           }
         }
       }
