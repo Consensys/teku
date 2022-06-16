@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -25,37 +29,59 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.migrated.AllBlocksAtSlotData;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class GetAllBlocksAtSlot implements Handler {
+public class GetAllBlocksAtSlot extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:slot";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
-  private final JsonProvider jsonProvider;
 
-  public GetAllBlocksAtSlot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetAllBlocksAtSlot(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
   public GetAllBlocksAtSlot(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getAllBlocksAtSlot")
+            .summary("Get blocks at slot")
+            .description("Get all blocks (canonical and non-canonical) by slot.")
+            .tags(TAG_TEKU)
+            .pathParam(SLOT_PARAMETER.withDescription("slot of the blocks to retrieve."))
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .withServiceUnavailableResponse()
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -77,27 +103,48 @@ public class GetAllBlocksAtSlot implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    adapt(ctx);
+  }
 
-    try {
-      SafeFuture<GetAllBlocksAtSlotResponse> future =
-          chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
-      ctx.future(
-          future.thenApplyChecked(
-              result -> {
-                if (result.getData().isEmpty()) {
-                  ctx.status(SC_NOT_FOUND);
-                  return BadRequest.serialize(
-                      jsonProvider, SC_NOT_FOUND, "Blocks not found: " + pathParamMap.get(SLOT));
-                }
-                return jsonProvider.objectToJSON(result);
-              }));
-    } catch (NumberFormatException ex) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(
-          BadRequest.badRequest(
-              jsonProvider, "Could not retrieve slot (uint64) from parameter " + ex.getMessage()));
-    }
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
+
+    final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);
+    final SafeFuture<AllBlocksAtSlotData> future = chainDataProvider.getAllBlocksAtSlot(slot);
+
+    request.respondAsync(
+        future.thenApply(
+            result -> {
+              if (result.getBlocks().isEmpty()) {
+                return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Blocks not found: " + slot);
+              }
+
+              return AsyncApiResponse.respondOk(result);
+            }));
+  }
+
+  public static SerializableTypeDefinition<AllBlocksAtSlotData> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableOneOfTypeDefinition<BeaconBlock> messageType =
+        getSchemaDefinitionForAllMilestones(
+            schemaDefinitionCache,
+            "BeaconBlock",
+            SchemaDefinitions::getBeaconBlockSchema,
+            (beaconBlock, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone));
+
+    final SerializableTypeDefinition<SignedBeaconBlock> dataType =
+        SerializableTypeDefinition.object(SignedBeaconBlock.class)
+            .withField("message", messageType, SignedBeaconBlock::getMessage)
+            .withField("signature", SIGNATURE_TYPE, SignedBeaconBlock::getSignature)
+            .withField("root", BYTES32_TYPE, SignedBeaconBlock::getRoot)
+            .build();
+
+    return SerializableTypeDefinition.object(AllBlocksAtSlotData.class)
+        .name("GetAllBlocksAtSlotResponse")
+        .withField("version", MILESTONE_TYPE, AllBlocksAtSlotData::getVersion)
+        .withField("data", listOf(dataType), AllBlocksAtSlotData::getBlocks)
+        .build();
   }
 }
