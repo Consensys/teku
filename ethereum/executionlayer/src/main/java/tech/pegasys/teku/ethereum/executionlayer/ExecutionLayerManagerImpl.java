@@ -251,7 +251,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenPeek(
             executionPayload -> {
               if (!isFallbackCall) {
-                executionPayloadSourceCounter.labels(LOCAL_EL_SOURCE).inc();
+                recordExecutionPayloadSource(LOCAL_EL_SOURCE);
               }
               LOG.trace(
                   "engineGetPayload(payloadId={}, slot={}) -> {}",
@@ -401,7 +401,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
 
-    executionPayloadSourceCounter.labels(BUILDER_LOCAL_EL_FALLBACK_SOURCE).inc();
+    recordExecutionPayloadSource(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+
     return SafeFuture.completedFuture(maybeLocalElFallbackPayload.get());
   }
 
@@ -432,7 +433,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
             executionPayload -> {
-              executionPayloadSourceCounter.labels(BUILDER_SOURCE).inc();
+              recordExecutionPayloadSource(BUILDER_SOURCE);
               LOG.trace(
                   "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
                   signedBlindedBeaconBlock,
@@ -483,5 +484,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
+  }
+
+  private void recordExecutionPayloadSource(final String source) {
+    executionPayloadSourceCounter.labels(source).inc();
   }
 }
