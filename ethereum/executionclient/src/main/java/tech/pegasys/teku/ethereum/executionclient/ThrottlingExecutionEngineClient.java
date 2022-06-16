@@ -53,7 +53,7 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<PowBlock> getPowChainHead() {
-    return taskQueue.queueTask(() -> delegate.getPowChainHead());
+    return taskQueue.queueTask(delegate::getPowChainHead);
   }
 
   @Override
