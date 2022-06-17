@@ -38,10 +38,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public class GetAllBlocksAtSlotTest extends AbstractMigratedBeaconHandlerTest {
-  final List<SignedBeaconBlock> blocks = List.of(dataStructureUtil.randomSignedBeaconBlock(1));
-  final AllBlocksAtSlotData responseData = new AllBlocksAtSlotData(SpecMilestone.ALTAIR, blocks);
+  final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+  final SpecMilestone specMilestone = SpecMilestone.ALTAIR;
+  final AllBlocksAtSlotData responseData = new AllBlocksAtSlotData(specMilestone, List.of(block));
+
+  final List<BlockAndMetaData> blocksAtSlot =
+      List.of(new BlockAndMetaData(block, specMilestone, false, true));
 
   @BeforeEach
   void setup() {
@@ -52,7 +57,7 @@ public class GetAllBlocksAtSlotTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnAllBlocksAtSlot() throws JsonProcessingException {
     when(chainDataProvider.getAllBlocksAtSlot(eq(UInt64.ONE)))
-        .thenReturn(SafeFuture.completedFuture(responseData));
+        .thenReturn(SafeFuture.completedFuture(blocksAtSlot));
 
     handler.handleRequest(request);
 

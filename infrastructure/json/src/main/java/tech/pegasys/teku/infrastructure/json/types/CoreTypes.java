@@ -89,6 +89,9 @@ public class CoreTypes {
           .format("integer")
           .build();
 
+  public static final StringValueTypeDefinition<Double> RAW_DOUBLE_TYPE =
+      new DoubleTypeDefinition();
+
   public static final DeserializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       DeserializableTypeDefinition.object(HttpErrorResponse.class, HttpErrorResponse.Builder.class)
           .name("HttpErrorResponse")
