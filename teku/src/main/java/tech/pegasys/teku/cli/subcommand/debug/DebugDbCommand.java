@@ -28,8 +28,8 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -142,9 +142,10 @@ public class DebugDbCommand implements Runnable {
               description = "File to write the block matching the latest finalized state to")
           final Path blockOutputFile)
       throws Exception {
-    final AsyncRunner asyncRunner =
-        ScheduledExecutorAsyncRunner.create(
-            "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunner asyncRunner = asyncRunnerFactory.create("async", 1);
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<AnchorPoint> finalizedAnchor =
           database
