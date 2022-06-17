@@ -40,6 +40,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -111,16 +113,16 @@ public class GetAllBlocksAtSlot extends MigratingEndpointAdapter {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);
-    final SafeFuture<AllBlocksAtSlotData> future = chainDataProvider.getAllBlocksAtSlot(slot);
+    final SafeFuture<List<BlockAndMetaData>> future = chainDataProvider.getAllBlocksAtSlot(slot);
 
     request.respondAsync(
         future.thenApply(
-            result -> {
-              if (result.getBlocks().isEmpty()) {
+            blockAndMetaDataList -> {
+              if (blockAndMetaDataList.isEmpty()) {
                 return AsyncApiResponse.respondWithError(SC_NOT_FOUND, "Blocks not found: " + slot);
               }
 
-              return AsyncApiResponse.respondOk(result);
+              return AsyncApiResponse.respondOk(new AllBlocksAtSlotData(blockAndMetaDataList));
             }));
   }
 
