@@ -39,7 +39,6 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
-import tech.pegasys.teku.api.migrated.AllBlocksAtSlotData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
@@ -172,11 +171,8 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();
   }
 
-  public SafeFuture<AllBlocksAtSlotData> getAllBlocksAtSlot(final UInt64 slot) {
-    return defaultBlockSelectorFactory
-        .nonCanonicalBlocksSelector(slot)
-        .getBlocks()
-        .thenApply(AllBlocksAtSlotData::new);
+  public SafeFuture<List<BlockAndMetaData>> getAllBlocksAtSlot(final UInt64 slot) {
+    return defaultBlockSelectorFactory.nonCanonicalBlocksSelector(slot).getBlocks();
   }
 
   public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(

@@ -27,11 +27,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -46,7 +49,9 @@ import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClie
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -65,13 +70,13 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
 
-  private final ExecutionEngineClient executionEngineClient;
-  private final Optional<ExecutionBuilderClient> executionBuilderClient;
-
-  private final AtomicBoolean latestBuilderAvailability;
+  static final String LOCAL_EL_SOURCE = "local_el";
+  static final String BUILDER_SOURCE = "builder";
+  static final String BUILDER_LOCAL_EL_FALLBACK_SOURCE = "builder_local_el_fallback";
 
   /**
    * slotToLocalElFallbackPayload usage:
@@ -85,26 +90,31 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final NavigableMap<UInt64, Optional<ExecutionPayload>> slotToLocalElFallbackPayload =
       new ConcurrentSkipListMap<>();
 
+  private final ExecutionEngineClient executionEngineClient;
+  private final Optional<ExecutionBuilderClient> executionBuilderClient;
+  private final AtomicBoolean latestBuilderAvailability;
   private final Spec spec;
-
   private final EventLogger eventLogger;
   private final BuilderBidValidator builderBidValidator;
+  private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
   public static ExecutionLayerManagerImpl create(
       final Web3JClient engineWeb3JClient,
       final Optional<RestClient> builderRestClient,
       final Version version,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator) {
     checkNotNull(version);
 
     return new ExecutionLayerManagerImpl(
         createEngineClient(version, engineWeb3JClient, metricsSystem),
-        createBuilderClient(builderRestClient, spec, metricsSystem),
+        createBuilderClient(builderRestClient, spec, timeProvider, metricsSystem),
         spec,
         EVENT_LOG,
-        builderBidValidator);
+        builderBidValidator,
+        metricsSystem);
   }
 
   private static ExecutionEngineClient createEngineClient(
@@ -120,13 +130,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static Optional<ExecutionBuilderClient> createBuilderClient(
       final Optional<RestClient> builderRestClient,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
     return builderRestClient.map(
-        client ->
-            new ThrottlingExecutionBuilderClient(
-                new RestExecutionBuilderClient(client, spec),
-                MAXIMUM_CONCURRENT_EB_REQUESTS,
-                metricsSystem));
+        client -> {
+          final RestExecutionBuilderClient restBuilderClient =
+              new RestExecutionBuilderClient(client, spec);
+          final MetricRecordingExecutionBuilderClient metricRecordingBuilderClient =
+              new MetricRecordingExecutionBuilderClient(
+                  restBuilderClient, timeProvider, metricsSystem);
+          return new ThrottlingExecutionBuilderClient(
+              metricRecordingBuilderClient, MAXIMUM_CONCURRENT_EB_REQUESTS, metricsSystem);
+        });
   }
 
   ExecutionLayerManagerImpl(
@@ -134,13 +149,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Optional<ExecutionBuilderClient> executionBuilderClient,
       final Spec spec,
       final EventLogger eventLogger,
-      final BuilderBidValidator builderBidValidator) {
+      final BuilderBidValidator builderBidValidator,
+      final MetricsSystem metricsSystem) {
     this.executionEngineClient = executionEngineClient;
     this.executionBuilderClient = executionBuilderClient;
     this.latestBuilderAvailability = new AtomicBoolean(executionBuilderClient.isPresent());
     this.spec = spec;
     this.eventLogger = eventLogger;
     this.builderBidValidator = builderBidValidator;
+    executionPayloadSourceCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "execution_payload_source",
+            "Counter recording the source of the execution payload during block production",
+            "source");
   }
 
   @Override
@@ -227,12 +249,16 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
-            executionPayload ->
-                LOG.trace(
-                    "engineGetPayload(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext.getPayloadId(),
-                    slot,
-                    executionPayload));
+            executionPayload -> {
+              if (!isFallbackCall) {
+                recordExecutionPayloadSource(LOCAL_EL_SOURCE);
+              }
+              LOG.trace(
+                  "engineGetPayload(payloadId={}, slot={}) -> {}",
+                  executionPayloadContext.getPayloadId(),
+                  slot,
+                  executionPayload);
+            });
   }
 
   @Override
@@ -375,6 +401,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
 
+    recordExecutionPayloadSource(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+
     return SafeFuture.completedFuture(maybeLocalElFallbackPayload.get());
   }
 
@@ -404,11 +432,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getPayload(signedBlindedBeaconBlock)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
-            executionPayload ->
-                LOG.trace(
-                    "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
-                    signedBlindedBeaconBlock,
-                    executionPayload));
+            executionPayload -> {
+              recordExecutionPayloadSource(BUILDER_SOURCE);
+              LOG.trace(
+                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
+                  signedBlindedBeaconBlock,
+                  executionPayload);
+            });
   }
 
   boolean isBuilderAvailable() {
@@ -454,5 +484,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
+  }
+
+  private void recordExecutionPayloadSource(final String source) {
+    executionPayloadSourceCounter.labels(source).inc();
   }
 }
