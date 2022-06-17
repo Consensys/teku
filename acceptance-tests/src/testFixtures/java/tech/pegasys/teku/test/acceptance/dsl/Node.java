@@ -29,7 +29,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -97,14 +96,6 @@ public abstract class Node {
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
-  }
-
-  public String getNodeAlias() {
-    return nodeAlias;
-  }
-
-  public void setNodeAlias(final String alias) {
-    container.setNetworkAliases(Collections.singletonList(alias));
   }
 
   public void stop() {
