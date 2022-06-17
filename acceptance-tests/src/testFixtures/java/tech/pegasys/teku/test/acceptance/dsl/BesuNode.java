@@ -21,10 +21,12 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -185,6 +187,7 @@ public class BesuNode extends Node {
 
   public static class Config {
     private final Map<String, Object> configMap = new HashMap<>();
+    private Optional<URL> maybeJwtFile = Optional.empty();
     private String genesisFilePath = "besu/depositContractGenesis.json";
     private final List<String> staticNodes = new ArrayList<>();
 
@@ -210,8 +213,6 @@ public class BesuNode extends Node {
 
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
       configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE,ADMIN"});
-      configMap.put("Xmerge-support", Boolean.TRUE);
-      configMap.put("engine-rpc-enabled", Boolean.TRUE);
       configMap.put("engine-rpc-port", Integer.toString(ENGINE_JSON_RPC_PORT));
       configMap.put("engine-host-allowlist", new String[] {"*"});
       return this;
@@ -236,6 +237,13 @@ public class BesuNode extends Node {
       return this;
     }
 
+    public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
+      configMap.put("engine-jwt-enabled", Boolean.TRUE);
+      configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
+      this.maybeJwtFile = Optional.of(jwtFile);
+      return this;
+    }
+
     public Map<File, String> write() throws Exception {
       final Map<File, String> configFiles = new HashMap<>();
 
@@ -243,6 +251,11 @@ public class BesuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, BESU_CONFIG_FILE_PATH);
+
+      if (maybeJwtFile.isPresent()) {
+        configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
+      }
+
       if (!staticNodes.isEmpty()) {
         final File staticNodesFile = File.createTempFile("static-nodes", ".json");
         staticNodesFile.deleteOnExit();
