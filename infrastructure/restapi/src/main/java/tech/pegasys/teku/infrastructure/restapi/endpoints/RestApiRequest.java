@@ -51,4 +51,6 @@ public interface RestApiRequest {
   <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata);
 
   void header(final String name, final String value);
+
+  void contentType(final String contentType);
 }

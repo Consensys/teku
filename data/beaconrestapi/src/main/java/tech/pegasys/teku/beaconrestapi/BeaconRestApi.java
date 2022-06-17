@@ -177,7 +177,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, eth1DataProvider);
+    addTekuSpecificHandlers(dataProvider, eth1DataProvider, spec);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -365,9 +365,9 @@ public class BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider, final Eth1DataProvider eth1DataProvider) {
+      final DataProvider provider, final Eth1DataProvider eth1DataProvider, final Spec spec) {
     addMigratedEndpoint(new PutLogLevel());
-    app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
+    addMigratedEndpoint(new GetStateByBlockRoot(provider, spec, schemaCache));
     addMigratedEndpoint(new Liveness(provider));
     addMigratedEndpoint(new Readiness(provider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));

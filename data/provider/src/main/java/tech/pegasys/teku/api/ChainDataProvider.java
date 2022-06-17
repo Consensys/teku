@@ -195,6 +195,14 @@ public class ChainDataProvider {
     }
   }
 
+  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>
+      getBeaconStateByBlockRoot(final String blockRootParam) {
+    return defaultStateSelectorFactory
+        .byBlockRootStateSelector(blockRootParam)
+        .getState()
+        .thenApply(maybeState -> maybeState.map(ObjectAndMetaData::getData));
+  }
+
   public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(
       final String blockRootParam) {
     return defaultStateSelectorFactory
