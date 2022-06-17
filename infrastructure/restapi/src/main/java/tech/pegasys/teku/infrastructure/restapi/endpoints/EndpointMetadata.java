@@ -241,10 +241,10 @@ public class EndpointMetadata {
     final String selectedType =
         ContentTypes.getResponseContentType(supportedTypes, acceptHeader)
             .orElse(defaultResponseContentType);
-    if (!supportedTypes.contains(selectedType)) {
-      throw new IllegalArgumentException(
-          "Response content type " + selectedType + " was selected but is not supported.");
-    }
+    checkState(
+        supportedTypes.contains(selectedType),
+        "Response content type %s was selected but is not supported.",
+        selectedType);
     return selectedType;
   }
 

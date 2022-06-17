@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -67,6 +68,7 @@ public class GetStateByBlockRoot extends MigratingEndpointAdapter {
                 "Download the state SSZ object for given identifier - by block root, keyword, or slot.")
             .tags(TAG_TEKU)
             .pathParam(PARAMETER_BLOCK_ID)
+            .defaultResponseType(OCTET_STREAM)
             .response(
                 SC_OK,
                 "Request successful",
