@@ -40,7 +40,6 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled(true)
                     .withMergeSupport(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));

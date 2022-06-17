@@ -110,13 +110,9 @@ public class BesuNode extends Node {
       configMap.put("rpc-http-port", Integer.toString(JSON_RPC_PORT));
       configMap.put("rpc-http-cors-origins", new String[] {"*"});
       configMap.put("host-allowlist", new String[] {"*"});
-      configMap.put("genesis-file", "/genesis.json");
-    }
-
-    public BesuNode.Config withMiningEnabled(final boolean enabled) {
-      configMap.put("miner-enabled", enabled);
+      configMap.put("miner-enabled", true);
       configMap.put("miner-coinbase", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-      return this;
+      configMap.put("genesis-file", "/genesis.json");
     }
 
     public BesuNode.Config withGenesisFile(final String genesisFilePath) {
