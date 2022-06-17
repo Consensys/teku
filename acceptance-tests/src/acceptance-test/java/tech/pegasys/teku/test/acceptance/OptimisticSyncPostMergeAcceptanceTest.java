@@ -85,7 +85,6 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
 
     // Reset execution client's DB after the merge and leave it without any chance to sync
     tekuNode2.waitForNonDefaultExecutionPayload();
-    executionNode2.removePeer(executionNode1);
     executionNode2.restartWithEmptyDatabase();
 
     tekuNode2.waitForOptimisticBlock();
