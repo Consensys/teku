@@ -48,12 +48,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
     return web3JClient
-        .doWeb3JRequest(
-            web3JClient
-                .getEth1Web3j()
-                .ethGetBlockByHash(blockHash.toHexString(), false)
-                .sendAsync())
-        .thenApply(EthBlock::getBlock)
+        .doRequest(
+            web3JClient.getEth1Web3j().ethGetBlockByHash(blockHash.toHexString(), false),
+            EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
+        .thenApply(Response::getPayload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock)
         .thenApply(Optional::ofNullable);
   }
@@ -61,12 +59,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<PowBlock> getPowChainHead() {
     return web3JClient
-        .doWeb3JRequest(
-            web3JClient
-                .getEth1Web3j()
-                .ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
-                .sendAsync())
-        .thenApply(EthBlock::getBlock)
+        .doRequest(
+            web3JClient.getEth1Web3j().ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false),
+            EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
+        .thenApply(Response::getPayload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 

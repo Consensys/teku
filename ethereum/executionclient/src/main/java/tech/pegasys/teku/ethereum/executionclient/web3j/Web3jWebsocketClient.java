@@ -17,7 +17,6 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.websocket.WebSocketClient;
@@ -40,8 +39,6 @@ class Web3jWebsocketClient extends Web3JClient {
     final WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
     initWeb3jService(webSocketService);
     setupJwtAuth(jwtConfig, timeProvider);
-    // TODO: remove me, temp hack for test
-    tryToConnect();
   }
 
   private void setupJwtAuth(final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
@@ -67,13 +64,6 @@ class Web3jWebsocketClient extends Web3JClient {
       handleError(ex);
       return Optional.of(ex);
     }
-  }
-
-  @Override
-  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    return tryToConnect()
-        .<SafeFuture<T>>map(SafeFuture::failedFuture)
-        .orElseGet(() -> super.doWeb3JRequest(web3Request));
   }
 
   @Override

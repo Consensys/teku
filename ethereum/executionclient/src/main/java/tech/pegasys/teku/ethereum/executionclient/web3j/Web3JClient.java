@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
@@ -49,13 +48,6 @@ public abstract class Web3JClient {
     if (!initialized) {
       throw new RuntimeException("Web3JClient is not initialized");
     }
-  }
-
-  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    throwIfNotInitialized();
-    return SafeFuture.of(web3Request)
-        .catchAndRethrow(this::handleError)
-        .thenPeek(__ -> handleSuccess());
   }
 
   public <T> SafeFuture<Response<T>> doRequest(
