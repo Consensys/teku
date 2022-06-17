@@ -84,6 +84,7 @@ public class GetStateByBlockRoot extends MigratingEndpointAdapter {
                 sszResponseType(
                     beaconState ->
                         spec.getForkSchedule().getSpecMilestoneAtSlot(beaconState.getSlot())))
+            .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
