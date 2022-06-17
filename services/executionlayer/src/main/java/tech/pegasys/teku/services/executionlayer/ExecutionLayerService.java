@@ -95,6 +95,7 @@ public class ExecutionLayerService extends Service {
               builderRestClientProvider.map(RestClientProvider::getRestClient),
               config.getEngineVersion(),
               config.getSpec(),
+              timeProvider,
               metricsSystem,
               new BuilderBidValidatorImpl(EVENT_LOG));
     }

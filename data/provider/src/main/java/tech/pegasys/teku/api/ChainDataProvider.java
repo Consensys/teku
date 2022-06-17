@@ -46,10 +46,8 @@ import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -173,26 +171,8 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory.defaultStateSelector(stateIdParam).getState();
   }
 
-  public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
-    if (slot.startsWith("0x")) {
-      throw new BadRequestException(
-          String.format("block roots are not currently supported: %s", slot));
-    } else {
-      return defaultBlockSelectorFactory
-          .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
-          .getBlocks()
-          .thenApply(
-              blockList -> {
-                final Set<SignedBeaconBlockWithRoot> blocks =
-                    blockList.stream()
-                        .map(ObjectAndMetaData::getData)
-                        .map(SignedBeaconBlockWithRoot::new)
-                        .collect(Collectors.toSet());
-
-                return new GetAllBlocksAtSlotResponse(
-                    getVersionAtSlot(UInt64.valueOf(slot)), blocks);
-              });
-    }
+  public SafeFuture<List<BlockAndMetaData>> getAllBlocksAtSlot(final UInt64 slot) {
+    return defaultBlockSelectorFactory.nonCanonicalBlocksSelector(slot).getBlocks();
   }
 
   public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>

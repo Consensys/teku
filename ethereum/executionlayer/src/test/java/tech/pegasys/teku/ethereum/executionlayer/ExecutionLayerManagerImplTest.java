@@ -20,6 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_LOCAL_EL_FALLBACK_SOURCE;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_SOURCE;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.LOCAL_EL_SOURCE;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -31,6 +34,8 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -51,7 +56,10 @@ class ExecutionLayerManagerImplTest {
       Mockito.mock(ExecutionBuilderClient.class);
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
   private final EventLogger eventLogger = mock(EventLogger.class);
 
@@ -72,7 +80,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldBeAvailableWhenBuilderIsOperatingNormally() {
-    SafeFuture<Response<Void>> builderClientResponse =
+    final SafeFuture<Response<Void>> builderClientResponse =
         SafeFuture.completedFuture(Response.withNullPayload());
 
     updateBuilderStatus(builderClientResponse);
@@ -83,7 +91,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldNotBeAvailableWhenBuilderIsNotOperatingNormally() {
-    SafeFuture<Response<Void>> builderClientResponse =
+    final SafeFuture<Response<Void>> builderClientResponse =
         SafeFuture.completedFuture(Response.withErrorMessage("oops"));
 
     updateBuilderStatus(builderClientResponse);
@@ -94,7 +102,7 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void builderShouldNotBeAvailableWhenBuilderStatusCallFails() {
-    SafeFuture<Response<Void>> builderClientResponse =
+    final SafeFuture<Response<Void>> builderClientResponse =
         SafeFuture.failedFuture(new Throwable("oops"));
 
     updateBuilderStatus(builderClientResponse);
@@ -128,6 +136,23 @@ class ExecutionLayerManagerImplTest {
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
     verify(eventLogger).executionBuilderIsBackOnline();
+  }
+
+  @Test
+  public void engineGetPayload_shouldReturnPayloadViaEngine() {
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
+        .isCompletedWithValue(payload);
+
+    // we expect no calls to builder
+    verifyNoInteractions(executionBuilderClient);
+
+    verifySourceCounter(LOCAL_EL_SOURCE);
   }
 
   @Test
@@ -169,6 +194,8 @@ class ExecutionLayerManagerImplTest {
     // we expect both builder and local engine have been called
     verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_SOURCE);
   }
 
   @Test
@@ -216,6 +243,8 @@ class ExecutionLayerManagerImplTest {
     // we expect no additional calls
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
   }
 
   @Test
@@ -265,6 +294,8 @@ class ExecutionLayerManagerImplTest {
     // we expect no additional calls
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
   }
 
   @Test
@@ -304,6 +335,8 @@ class ExecutionLayerManagerImplTest {
     // we expect no additional calls
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
   }
 
   @Test
@@ -344,6 +377,8 @@ class ExecutionLayerManagerImplTest {
     // we expect no additional calls
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
   }
 
   @Test
@@ -384,6 +419,8 @@ class ExecutionLayerManagerImplTest {
     // we expect no additional calls
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
   }
 
   @Test
@@ -430,7 +467,7 @@ class ExecutionLayerManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
+    final SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
 
     when(executionBuilderClient.getHeader(
             slot,
@@ -483,7 +520,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
-      boolean builderEnabled, boolean builderValidatorEnabled) {
+      final boolean builderEnabled, final boolean builderValidatorEnabled) {
     return new ExecutionLayerManagerImpl(
         executionEngineClient,
         builderEnabled ? Optional.of(executionBuilderClient) : Optional.empty(),
@@ -491,10 +528,11 @@ class ExecutionLayerManagerImplTest {
         eventLogger,
         builderValidatorEnabled
             ? new BuilderBidValidatorImpl(eventLogger)
-            : BuilderBidValidator.NOOP);
+            : BuilderBidValidator.NOOP,
+        stubMetricsSystem);
   }
 
-  private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse) {
+  private void updateBuilderStatus(final SafeFuture<Response<Void>> builderClientResponse) {
     updateBuilderStatus(builderClientResponse, UInt64.ONE);
   }
 
@@ -508,19 +546,23 @@ class ExecutionLayerManagerImplTest {
     setBuilderOffline(UInt64.ONE);
   }
 
-  private void setBuilderOffline(UInt64 slot) {
+  private void setBuilderOffline(final UInt64 slot) {
     updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
-    setBuilderOnline(UInt64.ONE);
-  }
-
-  private void setBuilderOnline(UInt64 slot) {
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), slot);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), UInt64.ONE);
     reset(executionBuilderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
+  }
+
+  private void verifySourceCounter(final String source) {
+    final long actualCount =
+        stubMetricsSystem
+            .getCounter(TekuMetricCategory.BEACON, "execution_payload_source")
+            .getValue(source);
+    assertThat(actualCount).isOne();
   }
 }
