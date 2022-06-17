@@ -293,6 +293,10 @@ public class TekuNode extends Node {
     waitForBeaconHead(true);
   }
 
+  public void waitForNonOptimisticBlock() {
+    waitForBeaconHead(false);
+  }
+
   public void waitForNewFinalization() {
     UInt64 startingFinalizedEpoch = waitForChainHead().finalized.epoch;
     LOG.debug("Wait for finalized block");

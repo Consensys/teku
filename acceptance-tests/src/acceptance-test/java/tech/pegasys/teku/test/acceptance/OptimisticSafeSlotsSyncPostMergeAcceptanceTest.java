@@ -103,6 +103,6 @@ public class OptimisticSafeSlotsSyncPostMergeAcceptanceTest extends AcceptanceTe
         .withDepositsFrom(executionEngine)
         .withStartupTargetPeerCount(0)
         .withExecutionEngineEndpoint(executionEngine.getInternalEngineJsonRpcUrl())
-        .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex"));
+        .withJwtSecretFile(Resources.getResource("auth/ee-jwt-secret.hex"));
   }
 }

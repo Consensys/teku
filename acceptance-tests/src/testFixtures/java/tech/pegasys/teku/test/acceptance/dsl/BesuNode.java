@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -34,8 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BesuNode extends Node {
@@ -86,21 +82,10 @@ public class BesuNode extends Node {
     container.start();
   }
 
-  public void waitForRestartWithEmptyDatabase() {
-    Waiter.waitFor(() -> assertThat(restartWithEmptyDatabase()).isCompleted());
-  }
-
-  private SafeFuture<Void> restartWithEmptyDatabase() {
-    SafeFuture<Void> future = new SafeFuture<>();
-    try {
-      container.execInContainer("rm", "-rf", "/opt/besu");
-      container.stop();
-      container.start();
-      future.complete(null);
-    } catch (Exception ex) {
-      future.completeExceptionally(ex);
-    }
-    return future;
+  public void restartWithEmptyDatabase() throws Exception {
+    container.execInContainer("rm", "-rf", "/opt/besu");
+    container.stop();
+    container.start();
   }
 
   public Eth1Address getDepositContractAddress() {
@@ -142,6 +127,20 @@ public class BesuNode extends Node {
     final Response<NodeInfoResponse> nodeInfoResponse =
         objectMapper.readValue(response, nodeInfoResponseType);
     return getInternalP2pUrl(nodeInfoResponse.result.id);
+  }
+
+  public Boolean addPeer(final BesuNode node) throws Exception {
+    final String enode = node.fetchEnodeUrl();
+    final URI baseUri = new URI(getExternalJsonRpcUrl());
+    final String response =
+        httpClient.post(
+            baseUri, "", jsonProvider.objectToJSON(new Request("admin_addPeer", enode)));
+    final ObjectMapper objectMapper = jsonProvider.getObjectMapper();
+    final JavaType removePeerResponseType =
+        objectMapper.getTypeFactory().constructParametricType(Response.class, Boolean.class);
+    final Response<Boolean> removePeerResponse =
+        objectMapper.readValue(response, removePeerResponseType);
+    return removePeerResponse.result;
   }
 
   public Boolean removePeer(final BesuNode node) throws Exception {

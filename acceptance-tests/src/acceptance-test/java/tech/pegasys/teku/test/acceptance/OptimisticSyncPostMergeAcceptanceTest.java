@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
+import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
+  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode executionNode1;
@@ -42,7 +44,8 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
                     .withMiningEnabled(true)
                     .withMergeSupport(true)
                     .withP2pEnabled()
-                    .withGenesisFile("besu/preMergeGenesis.json"));
+                    .withGenesisFile("besu/preMergeGenesis.json")
+                    .withJwtTokenAuthorization(JWT_FILE));
     executionNode1.start();
     executionNode2 =
         createBesuNode(
@@ -51,8 +54,9 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
                     .withMergeSupport(true)
                     .withP2pEnabled()
                     .withGenesisFile("besu/preMergeGenesis.json")
-                    .withStaticPeers(executionNode1));
+                    .withJwtTokenAuthorization(JWT_FILE));
     executionNode2.start();
+    executionNode2.addPeer(executionNode1);
 
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
@@ -82,9 +86,13 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     // Reset execution client's DB after the merge and leave it without any chance to sync
     tekuNode2.waitForNonDefaultExecutionPayload();
     executionNode2.removePeer(executionNode1);
-    executionNode2.waitForRestartWithEmptyDatabase();
+    executionNode2.restartWithEmptyDatabase();
 
     tekuNode2.waitForOptimisticBlock();
+
+    // Be sure we switch back to normal import when execution engine catches up
+    executionNode2.addPeer(executionNode1);
+    tekuNode2.waitForNonOptimisticBlock();
   }
 
   private TekuNode.Config configureTekuNode(
@@ -98,6 +106,6 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
         .withDepositsFrom(executionEngine)
         .withStartupTargetPeerCount(0)
         .withExecutionEngineEndpoint(executionEngine.getInternalEngineJsonRpcUrl())
-        .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex"));
+        .withJwtSecretFile(JWT_FILE);
   }
 }
