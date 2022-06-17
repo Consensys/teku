@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.exceptions.ClientConnectionException;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -59,7 +60,12 @@ public abstract class Web3JClient {
         .handle(
             (response, exception) -> {
               if (exception != null) {
-                handleError(exception);
+                final boolean authError =
+                    exception instanceof ClientConnectionException
+                        && exception.getMessage() != null
+                        // Could be different authorization error codes, depends on client
+                        && exception.getMessage().contains("received: 40");
+                handleError(exception, authError);
                 return Response.withErrorMessage(
                     exception.getMessage() != null
                         ? exception.getMessage()
@@ -76,12 +82,16 @@ public abstract class Web3JClient {
             });
   }
 
-  protected void handleError(Throwable error) {
+  protected void handleError(final Throwable error) {
+    handleError(error, false);
+  }
+
+  protected void handleError(final Throwable error, final boolean couldBeAuthError) {
     final long errorTime = lastError.get();
     if (errorTime == NO_ERROR_TIME
         || timeProvider.getTimeInMillis().longValue() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
       if (lastError.compareAndSet(errorTime, timeProvider.getTimeInMillis().longValue())) {
-        EVENT_LOG.executionClientIsOffline(error);
+        EVENT_LOG.executionClientIsOffline(error, couldBeAuthError);
       }
     }
   }

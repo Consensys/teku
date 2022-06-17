@@ -129,8 +129,12 @@ public class EventLogger {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
 
-  public void executionClientIsOffline(Throwable error) {
-    error("Execution Client is offline", Color.RED, error);
+  public void executionClientIsOffline(final Throwable error, final boolean couldBeAuthError) {
+    error(
+        "Execution Client is offline"
+            + (couldBeAuthError ? ". Make sure you have correct JWT configuration" : ""),
+        Color.RED,
+        error);
   }
 
   public void executionClientIsOnline() {

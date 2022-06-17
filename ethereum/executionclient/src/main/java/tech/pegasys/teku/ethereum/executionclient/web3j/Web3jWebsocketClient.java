@@ -61,7 +61,7 @@ class Web3jWebsocketClient extends Web3JClient {
       return Optional.empty();
     } catch (ConnectException ex) {
       connected.set(false);
-      handleError(ex);
+      handleError(ex, true);
       return Optional.of(ex);
     }
   }
