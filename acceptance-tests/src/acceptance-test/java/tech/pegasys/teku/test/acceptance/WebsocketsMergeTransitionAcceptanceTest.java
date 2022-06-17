@@ -63,7 +63,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
   }
 
   @Test
-  void shouldPassMergeTransitionWithJwtAuthenticatedWebsocketsEngine() {
+  void shouldPassMergeTransitionUsingWebsocketsEngine() {
     tekuNode.waitForGenesis();
     tekuNode.waitForLogMessageContaining("MERGE is completed");
     tekuNode.waitForNonDefaultExecutionPayload();
