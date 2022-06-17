@@ -49,6 +49,11 @@ class CoreTypesTest {
   }
 
   @Test
+  void double_shouldRoundTrip() throws Exception {
+    assertRoundTrip(458.23, CoreTypes.RAW_DOUBLE_TYPE);
+  }
+
+  @Test
   void httpErrorResponse_shouldSerialize() throws Exception {
     final HttpErrorResponse value = new HttpErrorResponse(442, "No good");
     final Map<String, Object> result =

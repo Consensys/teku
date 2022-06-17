@@ -1,0 +1,7 @@
+{
+  "type" : "string",
+  "title" : "Level",
+  "description" : "Level string",
+  "example" : "ERROR",
+  "format" : "string"
+}

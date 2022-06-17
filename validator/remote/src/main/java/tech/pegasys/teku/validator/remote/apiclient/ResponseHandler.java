@@ -38,7 +38,7 @@ public class ResponseHandler<T> {
   private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
-  private Class<T> badReqeustResponseClass;
+  private Class<T> badRequestResponseClass;
 
   public ResponseHandler(final JsonProvider jsonProvider, final Class<T> responseClass) {
     this.jsonProvider = jsonProvider;
@@ -56,7 +56,7 @@ public class ResponseHandler<T> {
   public static <T> ResponseHandler<T> createForEmptyOkAndContentInBadResponse(
       final JsonProvider jsonProvider, final Class<T> badRequestResponseClass) {
     final ResponseHandler<T> handler = new ResponseHandler<>(jsonProvider, null);
-    handler.badReqeustResponseClass = badRequestResponseClass;
+    handler.badRequestResponseClass = badRequestResponseClass;
     return handler;
   }
 
@@ -102,8 +102,8 @@ public class ResponseHandler<T> {
 
   private Optional<T> defaultBadRequestHandler(final Request request, final Response response)
       throws IOException {
-    if (badReqeustResponseClass != null) {
-      return parseResponse(response, badReqeustResponseClass);
+    if (badRequestResponseClass != null) {
+      return parseResponse(response, badRequestResponseClass);
     }
     LOG.debug(
         "Invalid params response from Beacon Node API (url = {}, response = {})",
