@@ -171,7 +171,7 @@ class EndpointMetadataTest {
     final EndpointMetadata metadata =
         validBuilder().response(SC_OK, "Foo").defaultResponseType("baa").build();
     assertThatThrownBy(() -> metadata.createResponseMetadata(SC_OK, Optional.empty(), "foo"))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

@@ -200,9 +200,4 @@ public class JavalinRestApiRequest implements RestApiRequest {
   public void header(String name, String value) {
     context.header(name, value);
   }
-
-  @Override
-  public void contentType(final String contentType) {
-    context.contentType(contentType);
-  }
 }

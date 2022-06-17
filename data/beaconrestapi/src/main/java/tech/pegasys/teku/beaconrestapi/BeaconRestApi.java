@@ -367,7 +367,7 @@ public class BeaconRestApi {
   private void addTekuSpecificHandlers(
       final DataProvider provider, final Eth1DataProvider eth1DataProvider, final Spec spec) {
     addMigratedEndpoint(new PutLogLevel());
-    addMigratedEndpoint(new GetStateByBlockRoot(provider, spec, schemaCache));
+    addMigratedEndpoint(new GetStateByBlockRoot(provider, spec));
     addMigratedEndpoint(new Liveness(provider));
     addMigratedEndpoint(new Readiness(provider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));

@@ -18,19 +18,6 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
-          "application/json" : {
-            "schema" : {
-              "title" : "BeaconState",
-              "type" : "object",
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/BeaconStatePhase0"
-              }, {
-                "$ref" : "#/components/schemas/BeaconStateAltair"
-              }, {
-                "$ref" : "#/components/schemas/BeaconStateBellatrix"
-              } ]
-            }
-          },
           "application/octet-stream" : {
             "schema" : {
               "type" : "string",

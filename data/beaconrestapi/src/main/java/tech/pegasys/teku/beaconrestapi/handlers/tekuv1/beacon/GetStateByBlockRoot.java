@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -44,31 +43,22 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetStateByBlockRoot extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:block_id/state";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateByBlockRoot(
-      final DataProvider dataProvider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getChainDataProvider(), spec, schemaDefinitionCache);
+  public GetStateByBlockRoot(final DataProvider dataProvider, final Spec spec) {
+    this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetStateByBlockRoot(
-      final ChainDataProvider chainDataProvider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
+  public GetStateByBlockRoot(final ChainDataProvider chainDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getStateByBlockRoot")
@@ -80,10 +70,10 @@ public class GetStateByBlockRoot extends MigratingEndpointAdapter {
             .response(
                 SC_OK,
                 "Request successful",
-                getResponseType(schemaDefinitionCache),
                 sszResponseType(
                     beaconState ->
-                        spec.getForkSchedule().getSpecMilestoneAtSlot(beaconState.getSlot())))
+                        spec.getForkSchedule()
+                            .getSpecMilestoneAtSlot(((BeaconState) beaconState).getSlot())))
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -126,23 +116,7 @@ public class GetStateByBlockRoot extends MigratingEndpointAdapter {
                     SC_NOT_FOUND, "State by block root not found: " + blockId);
               }
 
-              final BeaconState state = result.get();
-              request.header(
-                  "Content-Disposition",
-                  "filename=\"" + state.hashTreeRoot().toUnprefixedHexString() + ".ssz\"");
-              request.contentType("application/octet-stream");
-
-              return AsyncApiResponse.respondOk(state);
+              return AsyncApiResponse.respondOk(result.get());
             }));
-  }
-
-  private static SerializableOneOfTypeDefinition<BeaconState> getResponseType(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    return getSchemaDefinitionForAllMilestones(
-        schemaDefinitionCache,
-        "BeaconState",
-        SchemaDefinitions::getBeaconStateSchema,
-        (beaconState, milestone) ->
-            schemaDefinitionCache.milestoneAtSlot(beaconState.getSlot()).equals(milestone));
   }
 }

@@ -56,7 +56,6 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
   private final Map<String, String> headers = new HashMap<>();
-  private String contentType;
 
   private final EndpointMetadata metadata;
 
@@ -236,15 +235,6 @@ public class StubRestApiRequest implements RestApiRequest {
 
   public String getHeader(String name) {
     return headers.get(name);
-  }
-
-  @Override
-  public void contentType(String contentType) {
-    this.contentType = contentType;
-  }
-
-  public String getContentType() {
-    return contentType;
   }
 
   public static Builder builder() {

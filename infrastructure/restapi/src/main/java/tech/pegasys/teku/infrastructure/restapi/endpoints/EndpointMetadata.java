@@ -241,10 +241,10 @@ public class EndpointMetadata {
     final String selectedType =
         ContentTypes.getResponseContentType(supportedTypes, acceptHeader)
             .orElse(defaultResponseContentType);
-    checkState(
-        supportedTypes.contains(selectedType),
-        "Response content type %s was selected but is not supported.",
-        selectedType);
+    if (!supportedTypes.contains(selectedType)) {
+      throw new IllegalArgumentException(
+          "Response content type " + selectedType + " was selected but is not supported.");
+    }
     return selectedType;
   }
 
@@ -550,6 +550,13 @@ public class EndpointMetadata {
           responseCode,
           description,
           List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
+      return response(responseCode, description, List.of(octetStreamTypeDefinition));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
