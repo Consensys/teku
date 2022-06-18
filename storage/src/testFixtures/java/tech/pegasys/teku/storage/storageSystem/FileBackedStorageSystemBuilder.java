@@ -43,6 +43,7 @@ public class FileBackedStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
   private boolean storeVotesEquivocation = false;
+  private boolean storeBlockExecutionPayloadSeparately = false;
 
   private FileBackedStorageSystemBuilder() {}
 
@@ -112,6 +113,12 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
+  public FileBackedStorageSystemBuilder storeBlockExecutionPayloadSeparately(
+      final boolean storeBlockExecutionPayloadSeparately) {
+    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
+    return this;
+  }
+
   public FileBackedStorageSystemBuilder specProvider(final Spec spec) {
     this.spec = spec;
     return this;
@@ -154,6 +161,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
         spec);
   }
@@ -170,6 +178,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -181,6 +190,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
         spec);
   }
@@ -192,6 +202,7 @@ public class FileBackedStorageSystemBuilder {
         configDefault.withDatabaseDir(hotDir),
         storageMode,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         10_000,
         storeVotesEquivocation,
         spec);
@@ -206,6 +217,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -218,6 +230,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 }

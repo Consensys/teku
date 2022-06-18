@@ -48,6 +48,7 @@ public class InMemoryStorageSystemBuilder {
   MockKvStoreInstance unifiedDb;
   private MockKvStoreInstance hotDb;
   private MockKvStoreInstance coldDb;
+  private boolean storeBlockExecutionPayloadSeparately = false;
 
   private InMemoryStorageSystemBuilder() {}
 
@@ -132,6 +133,12 @@ public class InMemoryStorageSystemBuilder {
     return this;
   }
 
+  public InMemoryStorageSystemBuilder storeBlockExecutionPayloadSeparately(
+      final boolean storeBlockExecutionPayloadSeparately) {
+    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
+    return this;
+  }
+
   public InMemoryStorageSystemBuilder storageMode(final StateStorageMode storageMode) {
     checkNotNull(storageMode);
     this.storageMode = storageMode;
@@ -169,7 +176,12 @@ public class InMemoryStorageSystemBuilder {
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createTree(
-        hotDb, storageMode, storeNonCanonicalBlocks, storeVotesEquivocation, spec);
+        hotDb,
+        storageMode,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        storeVotesEquivocation,
+        spec);
   }
 
   private Database createV6Database() {
@@ -183,6 +195,7 @@ public class InMemoryStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
         spec);
   }
@@ -214,6 +227,7 @@ public class InMemoryStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
         spec);
   }
