@@ -31,6 +31,7 @@ import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import java.net.BindException;
+import java.net.InetSocketAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -155,7 +156,10 @@ public class BeaconRestApi {
       // the beaconRestApi test mocks the app object, and will skip this
       app._conf.server(
           () -> {
-            jettyServer = new Server(configuration.getRestApiPort());
+            final InetSocketAddress address =
+                new InetSocketAddress(
+                    configuration.getRestApiInterface(), configuration.getRestApiPort());
+            jettyServer = new Server(address);
             LOG.debug("Setting Max URL length to {}", configuration.getMaxUrlLength());
             for (Connector c : jettyServer.getConnectors()) {
               final HttpConfiguration httpConfiguration =
@@ -169,8 +173,6 @@ public class BeaconRestApi {
           });
     }
     schemaCache = new SchemaDefinitionCache(spec);
-    app.jettyServer().setServerHost(configuration.getRestApiInterface());
-    app.jettyServer().setServerPort(configuration.getRestApiPort());
 
     addHostAllowlistHandler(configuration);
 
