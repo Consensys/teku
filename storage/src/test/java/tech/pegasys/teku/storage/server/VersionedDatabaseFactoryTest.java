@@ -45,7 +45,14 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, false, spec);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            eth1Address,
+            false,
+            false,
+            false,
+            spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -65,7 +72,14 @@ public class VersionedDatabaseFactoryTest {
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, false, spec);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            eth1Address,
+            false,
+            false,
+            false,
+            spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -79,7 +93,14 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, false, spec);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            eth1Address,
+            false,
+            false,
+            false,
+            spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -91,7 +112,14 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, false, spec);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            eth1Address,
+            false,
+            false,
+            false,
+            spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -111,6 +139,7 @@ public class VersionedDatabaseFactoryTest {
             eth1Address,
             false,
             MAX_KNOWN_NODE_CACHE_SIZE,
+            false,
             false,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);

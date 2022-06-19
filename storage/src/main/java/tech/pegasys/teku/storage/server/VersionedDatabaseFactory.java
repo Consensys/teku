@@ -46,6 +46,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
+  private boolean storeBlockExecutionPayloadSeparately;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
@@ -64,6 +65,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Eth1Address depositContractAddress,
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     this(
         metricsSystem,
@@ -75,6 +77,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         storeNonCanonicalBlocks,
         0,
         storeVotesEquivocation,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -88,10 +91,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
+    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
@@ -191,6 +196,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
+          storeBlockExecutionPayloadSeparately,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -216,6 +222,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
+          storeBlockExecutionPayloadSeparately,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -236,6 +243,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeBlockExecutionPayloadSeparately,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -260,6 +268,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeBlockExecutionPayloadSeparately,
           storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
@@ -277,6 +286,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
+          storeBlockExecutionPayloadSeparately,
           storeVotesEquivocation,
           spec);
     } catch (final IOException e) {
@@ -293,6 +303,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,
           storeNonCanonicalBlocks,
+          storeBlockExecutionPayloadSeparately,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
           spec);

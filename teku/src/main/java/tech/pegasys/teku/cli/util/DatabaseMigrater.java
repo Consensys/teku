@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.services.chainstorage.StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -186,6 +187,7 @@ public class DatabaseMigrater {
             true,
             0,
             false,
+            DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY,
             spec);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
