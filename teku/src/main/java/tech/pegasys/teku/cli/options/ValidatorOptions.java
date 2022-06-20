@@ -91,6 +91,15 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
+  @Option(
+      names = {"--Xvalidator-executor-max-queue-size"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Set the maximum queue size of the validator executor",
+      hidden = true,
+      arity = "1")
+  private int executorMaxQueueSize = ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -102,7 +111,8 @@ public class ValidatorOptions {
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .generateEarlyAttestations(generateEarlyAttestations));
+                .generateEarlyAttestations(generateEarlyAttestations)
+                .executorMaxQueueSize(executorMaxQueueSize));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

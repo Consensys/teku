@@ -71,6 +71,17 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean storeNonCanonicalBlocksEnabled =
       StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-store-payload-separately-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Store the execution payload of blocks separate to the rest of the block",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean storeBlockExecutionPayloadSeparately =
+      StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
+
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
    * time. Not that states later in the chain with more validators have more branches so need a
@@ -103,6 +114,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
+                .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
   }
 
@@ -117,5 +129,9 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   public boolean isStoreNonCanonicalBlocks() {
     return storeNonCanonicalBlocksEnabled;
+  }
+
+  public boolean isStoreBlockExecutionPayloadSeparately() {
+    return storeBlockExecutionPayloadSeparately;
   }
 }

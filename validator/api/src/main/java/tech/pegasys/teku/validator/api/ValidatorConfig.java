@@ -37,6 +37,7 @@ public class ValidatorConfig {
   public static final String DEFAULT_BEACON_NODE_API_ENDPOINT =
       "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
+  public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
@@ -70,6 +71,7 @@ public class ValidatorConfig {
   private final boolean validatorsRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
+  private final int executorMaxQueueSize;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -93,7 +95,8 @@ public class ValidatorConfig {
       final boolean validatorsRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
-      final UInt64 validatorsRegistrationDefaultGasLimit) {
+      final UInt64 validatorsRegistrationDefaultGasLimit,
+      final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -119,6 +122,7 @@ public class ValidatorConfig {
     this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
+    this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
   public static Builder builder() {
@@ -208,6 +212,10 @@ public class ValidatorConfig {
     return validatorsRegistrationDefaultEnabled;
   }
 
+  public int getExecutorMaxQueueSize() {
+    return executorMaxQueueSize;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -246,6 +254,7 @@ public class ValidatorConfig {
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+    private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
 
@@ -346,11 +355,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder proposerDefaultFeeRecipient(final Eth1Address proposerDefaultFeeRecipient) {
-      this.proposerDefaultFeeRecipient = Optional.ofNullable(proposerDefaultFeeRecipient);
-      return this;
-    }
-
     public Builder proposerDefaultFeeRecipient(final String proposerDefaultFeeRecipient) {
       if (proposerDefaultFeeRecipient == null) {
         this.proposerDefaultFeeRecipient = Optional.empty();
@@ -394,6 +398,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
+      this.executorMaxQueueSize = executorMaxQueueSize;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -423,7 +432,8 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
-          validatorsRegistrationDefaultGasLimit);
+          validatorsRegistrationDefaultGasLimit,
+          executorMaxQueueSize);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
