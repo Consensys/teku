@@ -104,7 +104,9 @@ public class ValidatorClientService extends Service {
   public static ValidatorClientService create(
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
-    final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
+    final AsyncRunner asyncRunner =
+        services.createAsyncRunnerWithMaxQueueSize(
+            "validator", config.getValidatorConfig().getExecutorMaxQueueSize());
     final boolean generateEarlyAttestations =
         config.getValidatorConfig().generateEarlyAttestations();
     final boolean preferSszBlockEncoding =
