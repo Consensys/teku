@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
