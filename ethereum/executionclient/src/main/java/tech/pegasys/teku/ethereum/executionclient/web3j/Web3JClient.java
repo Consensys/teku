@@ -63,8 +63,8 @@ public abstract class Web3JClient {
                 final boolean authError =
                     exception instanceof ClientConnectionException
                         && exception.getMessage() != null
-                        // Could be different authorization error codes, depends on client
-                        && exception.getMessage().contains("received: 40");
+                        && (exception.getMessage().contains("received: 401")
+                            || exception.getMessage().contains("received: 403"));
                 handleError(exception, authError);
                 return Response.withErrorMessage(
                     exception.getMessage() != null
