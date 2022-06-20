@@ -132,7 +132,9 @@ public class EventLogger {
   public void executionClientIsOffline(final Throwable error, final boolean couldBeAuthError) {
     error(
         "Execution Client is offline"
-            + (couldBeAuthError ? ". Check the same JWT secret is configured for Teku and the execution client." : ""),
+            + (couldBeAuthError
+                ? ". Check the same JWT secret is configured for Teku and the execution client."
+                : ""),
         Color.RED,
         error);
   }
