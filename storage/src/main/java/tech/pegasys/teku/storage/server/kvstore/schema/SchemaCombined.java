@@ -57,7 +57,7 @@ public interface SchemaCombined extends Schema {
 
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot();
 
-  KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot();
+  KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash();
 
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();

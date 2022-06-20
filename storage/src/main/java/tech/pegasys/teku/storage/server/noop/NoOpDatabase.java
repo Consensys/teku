@@ -125,6 +125,16 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<SignedBeaconBlock> streamHotBlocks() {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return Stream.empty();
+  }
+
+  @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     return Collections.emptyList();
   }

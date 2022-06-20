@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -170,6 +171,39 @@ public class DebugDbCommand implements Runnable {
       return result;
     } finally {
       asyncRunner.shutdown();
+    }
+  }
+
+  @Command(
+      name = "get-block-counts",
+      description = "Count blocks in block storage tables",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getBlockCounts(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      try (Stream<SignedBeaconBlock> stream =
+          database.streamFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        System.out.println("Finalized blocks: " + stream.count());
+      }
+      try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
+        System.out.println("Hot blocks: " + stream.count());
+      }
+
+      try (Stream<SignedBeaconBlock> stream = database.streamBlindedBlocks()) {
+        System.out.println("Blinded blocks: " + stream.count());
+      }
+
+      return 0;
     }
   }
 

@@ -98,6 +98,12 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return db.get(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
   }

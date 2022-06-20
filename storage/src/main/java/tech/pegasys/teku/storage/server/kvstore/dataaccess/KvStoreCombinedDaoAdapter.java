@@ -114,6 +114,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return finalizedDao.streamBlindedBlocks();
+  }
+
+  @Override
   public Map<UInt64, VoteTracker> getVotes() {
     return hotDao.getVotes();
   }

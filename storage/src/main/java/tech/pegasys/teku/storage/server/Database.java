@@ -101,6 +101,12 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamHotBlocks();
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamBlindedBlocks();
+
   List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
 
   void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);

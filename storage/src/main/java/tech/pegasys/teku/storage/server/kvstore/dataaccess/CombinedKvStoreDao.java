@@ -108,6 +108,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(schema.getVariableLatestFinalizedState());
   }

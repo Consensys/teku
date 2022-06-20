@@ -446,6 +446,18 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamHotBlocks() {
+    return dao.streamHotBlocks();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return dao.streamBlindedBlocks();
+  }
+
+  @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     return dao.getStateRootsBeforeSlot(slot);
   }
