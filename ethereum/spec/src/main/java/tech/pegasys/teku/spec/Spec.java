@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -262,12 +263,26 @@ public class Spec {
         .sszDeserialize(serializedState);
   }
 
-  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedBlock) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .sszDeserialize(serializedBlock);
+  }
+
+  public ExecutionPayload deserializeExecutionPayload(final Bytes serializedPayload) {
+    final SpecVersion specVersion = forMilestone(SpecMilestone.BELLATRIX);
+    if (specVersion == null) {
+      throw new IllegalStateException("Bellatrix must be scheduled to decode execution payloads");
+    }
+    return specVersion
+        .getSchemaDefinitions()
+        .toVersionBellatrix()
+        .orElseThrow(
+            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
+        .getExecutionPayloadSchema()
+        .sszDeserialize(serializedPayload);
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedState) {
