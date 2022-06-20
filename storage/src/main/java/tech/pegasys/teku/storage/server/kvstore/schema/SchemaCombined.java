@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -53,6 +54,10 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
 
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
+
+  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot();
 
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();

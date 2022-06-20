@@ -16,13 +16,14 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnapshotState {
-
   private final SchemaCombinedSnapshotState snapshotDelegate;
   private final SchemaCombined delegate;
 
@@ -36,6 +37,14 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return snapshotDelegate.getColumnFinalizedStatesBySlot();
   }
 
+  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot() {
+    return delegate.getColumnBlindedBlocksByRoot();
+  }
+
+  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot() {
+    return delegate.getColumnExecutionPayloadByBlockRoot();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
@@ -43,7 +52,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot(),
         "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
         "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
-        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
+        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot(),
+        "BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot(),
+        "EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot());
   }
 
   public Collection<KvStoreColumn<?, ?>> getAllColumns() {
