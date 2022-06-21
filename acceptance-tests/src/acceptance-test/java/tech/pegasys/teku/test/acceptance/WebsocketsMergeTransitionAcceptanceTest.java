@@ -41,6 +41,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
         createBesuNode(
             config ->
                 config
+                    .withMiningEnabled(true)
                     .withMergeSupport(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(jwtFile));
