@@ -75,6 +75,7 @@ public class JwtSecretKeyLoader {
     final Path filePath = Paths.get(jwtSecretFile);
     try {
       final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath).trim());
+      LOG.info("JWT secret loaded from {}", filePath.toAbsolutePath());
       return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());
     } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new InvalidConfigurationException(

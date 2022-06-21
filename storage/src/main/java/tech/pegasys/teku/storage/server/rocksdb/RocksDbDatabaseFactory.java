@@ -39,6 +39,7 @@ public class RocksDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
 
     final V6SchemaCombinedSnapshot combinedSchema =
@@ -62,6 +63,7 @@ public class RocksDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -72,6 +74,7 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
 
     final KvStoreAccessor db =
@@ -79,6 +82,12 @@ public class RocksDbDatabaseFactory {
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        spec);
   }
 }

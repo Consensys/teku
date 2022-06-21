@@ -38,6 +38,7 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
@@ -61,6 +62,7 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -70,6 +72,7 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
       final Spec spec) {
     final V6SchemaCombinedSnapshot schema =
@@ -79,7 +82,13 @@ public class LevelDbDatabaseFactory {
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        spec);
   }
 
   public static Database createLevelDbTree(
@@ -87,6 +96,7 @@ public class LevelDbDatabaseFactory {
       final KvStoreConfiguration hotConfiguration,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
       final Spec spec) {
@@ -102,6 +112,7 @@ public class LevelDbDatabaseFactory {
         schema,
         stateStorageMode,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         maxKnownNodeCacheSize,
         spec);
   }

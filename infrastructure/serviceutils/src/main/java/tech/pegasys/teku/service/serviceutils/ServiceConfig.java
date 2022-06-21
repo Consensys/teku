@@ -67,16 +67,29 @@ public class ServiceConfig {
   }
 
   public AsyncRunner createAsyncRunner(final String name) {
-    // We use a bunch of blocking calls so need to ensure the thread pool is reasonably large
-    // as many threads may be blocked.
-    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 5));
+    return createAsyncRunner(name, calculateMaxThreads());
+  }
+
+  public AsyncRunner createAsyncRunnerWithMaxQueueSize(final String name, final int maxQueueSize) {
+    return createAsyncRunner(name, calculateMaxThreads(), maxQueueSize);
   }
 
   public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
     return asyncRunnerFactory.create(name, maxThreads);
   }
 
+  public AsyncRunner createAsyncRunner(
+      final String name, final int maxThreads, final int maxQueueSize) {
+    return asyncRunnerFactory.create(name, maxThreads, maxQueueSize);
+  }
+
   public AsyncRunnerFactory getAsyncRunnerFactory() {
     return asyncRunnerFactory;
+  }
+
+  private int calculateMaxThreads() {
+    // We use a bunch of blocking calls so need to ensure the thread pool is reasonably large
+    // as many threads may be blocked.
+    return Math.max(Runtime.getRuntime().availableProcessors(), 5);
   }
 }

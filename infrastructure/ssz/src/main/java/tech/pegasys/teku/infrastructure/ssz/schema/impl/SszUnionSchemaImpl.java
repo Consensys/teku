@@ -74,7 +74,8 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
       Suppliers.memoize(this::calcSszLengthBounds);
 
   public SszUnionSchemaImpl(List<SszSchema<?>> childrenSchemas) {
-    checkArgument(childrenSchemas.size() < MAX_SELECTOR, "Too many child types");
+    // Because of zero indexing, the max selector is one less than the maximum list size.
+    checkArgument(childrenSchemas.size() <= MAX_SELECTOR + 1, "Too many child types");
     checkArgument(
         childrenSchemas.stream()
             .skip(1)

@@ -16,3 +16,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Fixed the beacon-rest-api opening a listen port on too many interfaces

@@ -26,9 +26,9 @@ public class DefaultAsyncRunnerFactory implements AsyncRunnerFactory {
   }
 
   @Override
-  public AsyncRunner create(final String name, final int maxThreads) {
+  public AsyncRunner create(final String name, final int maxThreads, final int maxQueueSize) {
     final AsyncRunner asyncRunner =
-        ScheduledExecutorAsyncRunner.create(name, maxThreads, executorFactory);
+        ScheduledExecutorAsyncRunner.create(name, maxThreads, maxQueueSize, executorFactory);
     asyncRunners.add(asyncRunner);
     return asyncRunner;
   }

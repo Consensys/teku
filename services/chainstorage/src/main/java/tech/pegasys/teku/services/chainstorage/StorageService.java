@@ -55,6 +55,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                   config.isStoreNonCanonicalBlocksEnabled(),
                   config.getMaxKnownNodeCacheSize(),
                   config.isStoreVotesEquivocation(),
+                  config.isStoreBlockExecutionPayloadSeparately(),
                   config.getSpec());
           database = dbFactory.createDatabase();
 

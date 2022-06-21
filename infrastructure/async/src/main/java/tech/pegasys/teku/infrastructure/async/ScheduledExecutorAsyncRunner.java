@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 
 public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int QUEUE_CAPACITY = 5000;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
   private final ExecutorService workerPool;
@@ -40,6 +39,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   public static AsyncRunner create(
       final String name,
       final int maxThreads,
+      final int maxQueueSize,
       final MetricTrackingExecutorFactory executorFactory) {
     final ScheduledExecutorService scheduler =
         Executors.newSingleThreadScheduledExecutor(
@@ -51,7 +51,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
         executorFactory.newCachedThreadPool(
             name,
             maxThreads,
-            QUEUE_CAPACITY,
+            maxQueueSize,
             new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(false).build());
 
     return new ScheduledExecutorAsyncRunner(scheduler, workerPool);

@@ -55,6 +55,16 @@ public class AttestationStateSelector {
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
     }
 
+    // If it's a descendant of head and within historic slots, use the chain head
+    final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
+    if (attestationEpoch
+        .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
+        .isGreaterThan(headEpoch)) {
+      if (isAncestorOfChainHead(chainHead, targetBlockRoot, attestationSlot)) {
+        return chainHead.getState().thenApply(Optional::of);
+      }
+    }
+
     final UInt64 earliestSlot =
         spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(attestationEpoch);
     // If the attestation is within the lookahead period for the finalized state, use that
@@ -62,13 +72,6 @@ public class AttestationStateSelector {
     final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
     if (finalizedState.getSlot().isGreaterThanOrEqualTo(earliestSlot)) {
       return completedFuture(Optional.of(finalizedState));
-    }
-
-    // If it's the same epoch as the current head and is a descendant, use the chain head
-    if (attestationEpoch.equals(spec.computeEpochAtSlot(chainHead.getSlot()))) {
-      if (isAncestorOfChainHead(chainHead, targetBlockRoot, attestationSlot)) {
-        return chainHead.getState().thenApply(Optional::of);
-      }
     }
 
     // Otherwise, use the state from the earliest allowed slot.

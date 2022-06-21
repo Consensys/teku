@@ -114,11 +114,6 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void shouldHaveServerPortSet() {
-    verify(server).setServerPort(THE_PORT);
-  }
-
-  @Test
   public void shouldHaveCustomNotFoundError() {
     verify(app, never()).error(eq(SC_NOT_FOUND), any());
   }

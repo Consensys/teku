@@ -104,6 +104,10 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
+  public String getInternalEngineWebsocketsRpcUrl() {
+    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
+  }
+
   private String getInternalP2pUrl(final String nodeId) {
     return "enode://" + nodeId + "@" + getInternalIpAddress() + ":" + P2P_PORT;
   }
@@ -185,6 +189,7 @@ public class BesuNode extends Node {
   }
 
   public static class Config {
+    private static final String[] MERGE_RPC_MODULES = new String[] {"ETH,NET,WEB3,ENGINE"};
     private final Map<String, Object> configMap = new HashMap<>();
     private Optional<URL> maybeJwtFile = Optional.empty();
     private String genesisFilePath = "besu/depositContractGenesis.json";
@@ -192,6 +197,7 @@ public class BesuNode extends Node {
 
     public Config() {
       configMap.put("rpc-http-enabled", true);
+      configMap.put("rpc-ws-enabled", true);
       configMap.put("rpc-http-port", Integer.toString(JSON_RPC_PORT));
       configMap.put("rpc-http-cors-origins", new String[] {"*"});
       configMap.put("host-allowlist", new String[] {"*"});
@@ -211,9 +217,17 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
-      configMap.put("rpc-http-api", new String[] {"ETH,NET,WEB3,ENGINE,ADMIN"});
+      configMap.put("rpc-http-api", MERGE_RPC_MODULES);
+      configMap.put("rpc-ws-api", MERGE_RPC_MODULES);
       configMap.put("engine-rpc-port", Integer.toString(ENGINE_JSON_RPC_PORT));
       configMap.put("engine-host-allowlist", new String[] {"*"});
+      return this;
+    }
+
+    public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
+      configMap.put("engine-jwt-enabled", Boolean.TRUE);
+      configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
+      this.maybeJwtFile = Optional.of(jwtFile);
       return this;
     }
 
@@ -233,13 +247,6 @@ public class BesuNode extends Node {
       }
       configMap.put("static-nodes-file", BESU_STATIC_NODES_FILE_PATH);
       this.staticNodes.addAll(nodeEnodes);
-      return this;
-    }
-
-    public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
-      configMap.put("engine-jwt-enabled", Boolean.TRUE);
-      configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
-      this.maybeJwtFile = Optional.of(jwtFile);
       return this;
     }
 
