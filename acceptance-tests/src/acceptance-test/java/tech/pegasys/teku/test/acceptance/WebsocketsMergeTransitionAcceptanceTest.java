@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,10 +25,9 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
-
+@Disabled("Blocked by Besu#3990")
+public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
-  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode eth1Node;
@@ -35,6 +35,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
 
   @BeforeEach
   void setup() throws Exception {
+    final URL jwtFile = Resources.getResource("auth/ee-jwt-secret.hex");
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     eth1Node =
         createBesuNode(
@@ -42,7 +43,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withMergeSupport(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
-                    .withJwtTokenAuthorization(JWT_FILE));
+                    .withJwtTokenAuthorization(jwtFile));
     eth1Node.start();
 
     final int totalValidators = 4;
@@ -57,13 +58,13 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorKeystores(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
-                    .withJwtSecretFile(JWT_FILE));
+                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineWebsocketsRpcUrl())
+                    .withJwtSecretFile(jwtFile));
     tekuNode.start();
   }
 
   @Test
-  void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
+  void shouldPassMergeTransitionUsingWebsocketsEngine() {
     tekuNode.waitForGenesis();
     tekuNode.waitForLogMessageContaining("MERGE is completed");
     tekuNode.waitForNonDefaultExecutionPayload();

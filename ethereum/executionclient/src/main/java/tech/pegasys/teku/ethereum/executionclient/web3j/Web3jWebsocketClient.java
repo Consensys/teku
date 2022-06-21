@@ -17,7 +17,6 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.websocket.WebSocketClient;
@@ -62,16 +61,9 @@ class Web3jWebsocketClient extends Web3JClient {
       return Optional.empty();
     } catch (ConnectException ex) {
       connected.set(false);
-      handleError(ex);
+      handleError(ex, true);
       return Optional.of(ex);
     }
-  }
-
-  @Override
-  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    return tryToConnect()
-        .<SafeFuture<T>>map(SafeFuture::failedFuture)
-        .orElseGet(() -> super.doWeb3JRequest(web3Request));
   }
 
   @Override

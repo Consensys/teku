@@ -17,11 +17,11 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.exceptions.ClientConnectionException;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -51,13 +51,6 @@ public abstract class Web3JClient {
     }
   }
 
-  public <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
-    throwIfNotInitialized();
-    return SafeFuture.of(web3Request)
-        .catchAndRethrow(this::handleError)
-        .thenPeek(__ -> handleSuccess());
-  }
-
   public <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
       final Duration timeout) {
@@ -67,7 +60,12 @@ public abstract class Web3JClient {
         .handle(
             (response, exception) -> {
               if (exception != null) {
-                handleError(exception);
+                final boolean authError =
+                    exception instanceof ClientConnectionException
+                        && exception.getMessage() != null
+                        && (exception.getMessage().contains("received: 401")
+                            || exception.getMessage().contains("received: 403"));
+                handleError(exception, authError);
                 return Response.withErrorMessage(
                     exception.getMessage() != null
                         ? exception.getMessage()
@@ -84,12 +82,16 @@ public abstract class Web3JClient {
             });
   }
 
-  protected void handleError(Throwable error) {
+  protected void handleError(final Throwable error) {
+    handleError(error, false);
+  }
+
+  protected void handleError(final Throwable error, final boolean couldBeAuthError) {
     final long errorTime = lastError.get();
     if (errorTime == NO_ERROR_TIME
         || timeProvider.getTimeInMillis().longValue() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
       if (lastError.compareAndSet(errorTime, timeProvider.getTimeInMillis().longValue())) {
-        EVENT_LOG.executionClientIsOffline(error);
+        EVENT_LOG.executionClientIsOffline(error, couldBeAuthError);
       }
     }
   }
