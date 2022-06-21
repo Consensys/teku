@@ -49,7 +49,7 @@ public class Constants {
   // Individual durations (per method) before timeout for each builder call. They must be less than
   // or equal to EL_BUILDER_CALL_TIMEOUT
   public static final Duration EL_BUILDER_STATUS_TIMEOUT = Duration.ofSeconds(1);
-  public static final Duration EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT = Duration.ofSeconds(8);
+  public static final Duration EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT = Duration.ofSeconds(30);
   public static final Duration EL_BUILDER_GET_HEADER_TIMEOUT = Duration.ofSeconds(1);
   public static final Duration EL_BUILDER_GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(8);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
