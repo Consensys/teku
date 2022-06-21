@@ -22,11 +22,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
+  private static final int VALIDATORS = 64;
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode executionNode1;
@@ -58,17 +58,11 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     executionNode2.start();
     executionNode2.addPeer(executionNode1);
 
-    final int totalValidators = 4;
-    final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(NETWORK_NAME)
-            .sendValidatorDeposits(executionNode1, totalValidators);
     tekuNode1 =
         createTekuNode(
             config ->
                 configureTekuNode(config, executionNode1, genesisTime)
-                    .withValidatorProposerDefaultFeeRecipient(
-                        "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-                    .withValidatorKeystores(validatorKeystores));
+                    .withInteropValidators(0, VALIDATORS));
     tekuNode1.start();
     tekuNode2 =
         createTekuNode(
@@ -81,28 +75,21 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldSwitchToOptimisticSyncAfterMergeWhenExecutionEngineIsSyncing() throws Exception {
-    tekuNode2.waitForGenesis();
-
     // Reset execution client's DB after the merge and leave it without any chance to sync
     tekuNode2.waitForNonDefaultExecutionPayload();
     executionNode2.restartWithEmptyDatabase();
 
     tekuNode2.waitForOptimisticBlock();
-
-    // Be sure we switch back to normal import when execution engine catches up
-    executionNode2.addPeer(executionNode1);
-    tekuNode2.waitForNonOptimisticBlock();
   }
 
   private TekuNode.Config configureTekuNode(
       final TekuNode.Config config, final BesuNode executionEngine, final int genesisTime) {
     return config
         .withNetwork(NETWORK_NAME)
-        .withBellatrixEpoch(UInt64.ONE)
+        .withBellatrixEpoch(UInt64.ZERO)
         .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
         .withGenesisTime(genesisTime)
         .withRealNetwork()
-        .withDepositsFrom(executionEngine)
         .withStartupTargetPeerCount(0)
         .withExecutionEngineEndpoint(executionEngine.getInternalEngineJsonRpcUrl())
         .withJwtSecretFile(JWT_FILE);

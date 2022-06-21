@@ -189,7 +189,7 @@ public class BesuNode extends Node {
   }
 
   public static class Config {
-    private static final String[] MERGE_RPC_MODULES = new String[] {"ETH,NET,WEB3,ENGINE"};
+    private static final String[] MERGE_RPC_MODULES = new String[] {"ETH,NET,WEB3,ENGINE,ADMIN"};
     private final Map<String, Object> configMap = new HashMap<>();
     private Optional<URL> maybeJwtFile = Optional.empty();
     private String genesisFilePath = "besu/depositContractGenesis.json";
