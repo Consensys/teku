@@ -186,33 +186,33 @@ allprojects {
     options.errorprone {
       enabled = !'true'.equalsIgnoreCase(System.getProperty('avt.disableErrorProne'))
       disableWarningsInGeneratedCode
-      // Our equals need to be symmetric, this checker doesn't respect that.
+
+      // Our equals need to be symmetric, this checker doesn't respect that
       check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      // We use the JSR-305 annotations instead of the Google annotations.
+      // We use the JSR-305 annotations instead of the Google annotations
       check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       // Storing a lambda to avoid code duplication is not a bad thing
       check('UnnecessaryLambda', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       // Generates a ton of false alarms for no real value
       check('LongDoubleConversion', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // We don't apply strict javadoc requirements yet
       check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
-      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-
       // Force strict compliance with Java naming conventions
       check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
-      // these checks are imported from errorprone-checks dependency but not required in Teku
+      // These checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
+      // These are experimental checks that we want enabled
+      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
@@ -220,6 +220,7 @@ allprojects {
       check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
     }
     options.encoding = 'UTF-8'
   }
