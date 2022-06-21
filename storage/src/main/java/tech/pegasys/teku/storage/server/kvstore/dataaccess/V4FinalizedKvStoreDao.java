@@ -22,11 +22,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -150,6 +155,11 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
+    return db.get(schema.getColumnBlindedBlocksByRoot(), root);
+  }
+
+  @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageLogic.updater());
@@ -164,6 +174,7 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   static class V4FinalizedUpdater implements FinalizedUpdater {
+    private static final Logger LOG = LogManager.getLogger();
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalizedSnapshotStateAdapter schema;
@@ -187,6 +198,42 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnSlotsByFinalizedRoot(), block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
+    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      LOG.info("PJH ADD: " + block.getRoot().toHexString());
+      transaction.put(
+          schema.getColumnBlindedBlocksByRoot(),
+          block.getRoot(),
+          block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
+      final Optional<ExecutionPayload> maybePayload =
+          block.getMessage().getBody().getOptionalExecutionPayload();
+      maybePayload.ifPresent(this::addExecutionPayload);
+    }
+
+    @Override
+    public void addExecutionPayload(final ExecutionPayload payload) {
+      LOG.info("PJH PAYLOAD ADD: " + payload.hashTreeRoot().toHexString());
+      transaction.put(
+          schema.getColumnExecutionPayloadByPayloadHash(),
+          payload.hashTreeRoot(),
+          payload.sszSerialize());
+    }
+
+    @Override
+    public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
+      LOG.info("PJH DELETE: " + signedBeaconBlock.getRoot().toHexString());
+      transaction.delete(schema.getColumnBlindedBlocksByRoot(), signedBeaconBlock.getRoot());
+      Optional<ExecutionPayloadHeader> maybeHeader =
+          signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader();
+      maybeHeader.ifPresent(header -> deleteExecutionPayload(header.hashTreeRoot()));
+    }
+
+    @Override
+    public void deleteExecutionPayload(final Bytes32 payloadHash) {
+      LOG.info("PJH PAYLOAD DELETE: " + payloadHash.toHexString());
+      transaction.delete(schema.getColumnExecutionPayloadByPayloadHash(), payloadHash);
     }
 
     @Override

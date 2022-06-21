@@ -68,6 +68,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
+
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
   }

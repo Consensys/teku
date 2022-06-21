@@ -20,8 +20,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /**
@@ -31,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
+
+  Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root);
 
   FinalizedUpdater finalizedUpdater();
 
@@ -65,6 +69,14 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addBlindedBlock(final SignedBeaconBlock block, final Spec spec);
+
+    void addExecutionPayload(final ExecutionPayload payload);
+
+    void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock);
+
+    void deleteExecutionPayload(final Bytes32 payloadHash);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
