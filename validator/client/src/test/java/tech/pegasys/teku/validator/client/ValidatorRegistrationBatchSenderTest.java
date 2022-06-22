@@ -96,7 +96,7 @@ class ValidatorRegistrationBatchSenderTest {
     when(validatorApiChannel.registerValidators(any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    SafeFuture<Void> result =
+    final SafeFuture<Void> result =
         validatorRegistrationBatchSender.sendInBatches(
             dataStructureUtil.randomSignedValidatorRegistrations(5).asList());
 
