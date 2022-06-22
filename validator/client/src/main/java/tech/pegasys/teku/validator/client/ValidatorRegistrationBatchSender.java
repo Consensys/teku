@@ -68,12 +68,13 @@ public class ValidatorRegistrationBatchSender {
               return sendBatch(batch)
                   .thenApply(
                       __ -> {
+                        successfullySentRegistrations.updateAndGet(count -> count + batch.size());
+                        final int currentProcessedBatch = processedBatches.incrementAndGet();
                         LOG.debug(
                             "Batch {}/{} -> {} validator(s) registrations were sent to the Beacon Node.",
-                            processedBatches.incrementAndGet(),
+                            currentProcessedBatch,
                             batchedRegistrations.size(),
                             batch.size());
-                        successfullySentRegistrations.updateAndGet(count -> count + batch.size());
                         return true;
                       });
             })

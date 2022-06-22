@@ -101,6 +101,7 @@ public class ValidatorProposerOptions {
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
                 .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
-                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
+                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
+                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize));
   }
 }
