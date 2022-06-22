@@ -96,8 +96,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
           .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
           .always(
               () -> {
-                cleanupCache(activeValidators);
                 registrationInProgress.set(false);
+                cleanupCache(activeValidators);
               });
     }
   }
