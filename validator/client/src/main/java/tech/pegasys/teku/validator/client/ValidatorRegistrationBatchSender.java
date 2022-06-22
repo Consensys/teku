@@ -41,7 +41,7 @@ public class ValidatorRegistrationBatchSender {
   public SafeFuture<Void> sendInBatches(
       final List<SignedValidatorRegistration> validatorRegistrations) {
     if (validatorRegistrations.isEmpty()) {
-      LOG.debug("No validator(s) registrations required to be sent.");
+      LOG.debug("No validator(s) registrations required to be sent to the Beacon Node.");
       return SafeFuture.completedFuture(null);
     }
 
@@ -52,7 +52,7 @@ public class ValidatorRegistrationBatchSender {
     final AtomicInteger successfullySentRegistrations = new AtomicInteger(0);
 
     LOG.debug(
-        "Going to send {} validator(s) registrations to Beacon Node in {} batches",
+        "Going to send {} validator(s) registrations to the Beacon Node in {} batches",
         validatorRegistrations.size(),
         batchedRegistrations.size());
 
