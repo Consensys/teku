@@ -66,14 +66,8 @@ public class ValidatorRegistrationBatchSender {
               }
               final List<SignedValidatorRegistration> batch = batchedRegistrationsIterator.next();
               final int currentBatch = batchCounter.incrementAndGet();
+              LOG.debug("Starting to send batch {}/{}", currentBatch, batchedRegistrations.size());
               return sendBatch(batch)
-                  .whenException(
-                      throwable ->
-                          LOG.debug(
-                              "Failed processing batch {}/{} : {}",
-                              currentBatch,
-                              batchedRegistrations.size(),
-                              throwable.getMessage()))
                   .thenApply(
                       __ -> {
                         successfullySentRegistrations.updateAndGet(count -> count + batch.size());
