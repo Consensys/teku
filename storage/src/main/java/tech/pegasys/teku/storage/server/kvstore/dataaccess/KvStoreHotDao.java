@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -63,6 +64,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
+
+  @MustBeClosed
+  Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
 
   Map<UInt64, VoteTracker> getVotes();
 
@@ -107,11 +111,17 @@ public interface KvStoreHotDao extends AutoCloseable {
       blocks.values().forEach(this::addHotBlock);
     }
 
+    default void addCheckpointEpochs(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+      blocks.forEach((k, v) -> addHotBlockCheckpointEpochs(k, v.getCheckpointEpochs()));
+    }
+
     void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
     void pruneHotStateRoots(List<Bytes32> stateRoots);
 
     void deleteHotBlock(Bytes32 blockRoot);
+
+    void pruneHotBlockContext(Bytes32 blockRoot);
 
     void deleteHotState(Bytes32 blockRoot);
 

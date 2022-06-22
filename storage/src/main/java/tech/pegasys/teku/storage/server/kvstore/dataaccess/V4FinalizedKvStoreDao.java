@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -174,7 +172,6 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   static class V4FinalizedUpdater implements FinalizedUpdater {
-    private static final Logger LOG = LogManager.getLogger();
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalizedSnapshotStateAdapter schema;
@@ -201,8 +198,12 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     }
 
     @Override
+    public void addFinalizedBlockReference(final SignedBeaconBlock block) {
+      transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
     public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
-      LOG.info("PJH ADD: " + block.getRoot().toHexString());
       transaction.put(
           schema.getColumnBlindedBlocksByRoot(),
           block.getRoot(),
@@ -214,7 +215,6 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
     @Override
     public void addExecutionPayload(final ExecutionPayload payload) {
-      LOG.info("PJH PAYLOAD ADD: " + payload.hashTreeRoot().toHexString());
       transaction.put(
           schema.getColumnExecutionPayloadByPayloadHash(),
           payload.hashTreeRoot(),
@@ -223,7 +223,6 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
     @Override
     public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
-      LOG.info("PJH DELETE: " + signedBeaconBlock.getRoot().toHexString());
       transaction.delete(schema.getColumnBlindedBlocksByRoot(), signedBeaconBlock.getRoot());
       Optional<ExecutionPayloadHeader> maybeHeader =
           signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader();
@@ -232,7 +231,6 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
     @Override
     public void deleteExecutionPayload(final Bytes32 payloadHash) {
-      LOG.info("PJH PAYLOAD DELETE: " + payloadHash.toHexString());
       transaction.delete(schema.getColumnExecutionPayloadByPayloadHash(), payloadHash);
     }
 

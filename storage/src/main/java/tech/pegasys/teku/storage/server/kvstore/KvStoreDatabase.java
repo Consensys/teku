@@ -276,11 +276,13 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    if (!storeBlockExecutionPayloadSeparately) {
-      try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
+    try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
+      if (!storeBlockExecutionPayloadSeparately) {
         blocks.forEach(updater::addFinalizedBlock);
-        updater.commit();
+      } else {
+        blocks.forEach(updater::addFinalizedBlockReference);
       }
+      updater.commit();
     }
   }
 
@@ -317,6 +319,24 @@ public class KvStoreDatabase implements Database {
 
     // Build map with block information
     final Map<Bytes32, StoredBlockMetadata> blockInformation = new HashMap<>();
+    if (storeBlockExecutionPayloadSeparately) {
+      try (final Stream<ColumnEntry<Bytes32, CheckpointEpochs>> checkpoints =
+          dao.streamCheckpointEpochs()) {
+        checkpoints.forEach(
+            (entry) -> {
+              final Optional<SignedBeaconBlock> maybeBlock =
+                  dao.getBlindedBlock(entry.getKey()).or(() -> getHotBlock(entry.getKey()));
+              if (maybeBlock.isPresent()) {
+                blockInformation.put(
+                    entry.getKey(),
+                    StoredBlockMetadata.fromBlockAndCheckpointEpochs(
+                        maybeBlock.get(), entry.getValue()));
+              } else {
+                LOG.debug("Found checkpointEpochs, but block {}  was missing: ", entry.getKey());
+              }
+            });
+      }
+    }
     try (final Stream<SignedBeaconBlock> hotBlocks = dao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
@@ -448,7 +468,9 @@ public class KvStoreDatabase implements Database {
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     if (storeBlockExecutionPayloadSeparately) {
-      LOG.info("HERE");
+      return blockRoots.stream()
+          .flatMap(root -> dao.getBlindedBlock(root).stream())
+          .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
     }
     return blockRoots.stream()
         .flatMap(root -> dao.getHotBlock(root).stream())
@@ -528,6 +550,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return dao.streamCheckpointEpochs();
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -594,6 +622,7 @@ public class KvStoreDatabase implements Database {
               .forEach(block -> finalizedUpdater.addBlindedBlock(block.getBlock(), spec));
           finalizedUpdater.commit();
         }
+        updater.addCheckpointEpochs(update.getHotBlocks());
       } else {
         updater.addHotBlocks(update.getHotBlocks());
       }
@@ -604,7 +633,11 @@ public class KvStoreDatabase implements Database {
       }
 
       // Delete finalized data from hot db
-      update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
+      if (!storeBlockExecutionPayloadSeparately) {
+        update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
+      } else {
+        update.getDeletedHotBlocks().forEach(updater::pruneHotBlockContext);
+      }
 
       LOG.trace("Committing hot db changes");
       updater.commit();
@@ -640,21 +673,17 @@ public class KvStoreDatabase implements Database {
         throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
 
-    if (storeNonCanonicalBlocks) {
+    if (storeNonCanonicalBlocks && !storeBlockExecutionPayloadSeparately) {
       storeNonCanonicalBlocks(
           deletedHotBlocks.stream()
               .filter(root -> !finalizedChildToParentMap.containsKey(root))
               .flatMap(root -> getHotBlock(root).stream())
               .collect(Collectors.toSet()));
-    } else if (storeBlockExecutionPayloadSeparately) {
-      // FIXME need to delete hotblocks that dont make it to finalized if we're not storing non
-      // canonical blocks
-      // !storeNonCanonicalBlocks && storeBlockExecutionPayloadSeparately
-      // need to delete non-canonical blocks from the payload etc
+    } else if (!storeNonCanonicalBlocks && storeBlockExecutionPayloadSeparately) {
       removeNonCanonicalBlocks(
           deletedHotBlocks.stream()
               .filter(root -> !finalizedChildToParentMap.containsKey(root))
-              .flatMap(root -> getHotBlock(root).stream())
+              .flatMap(root -> dao.getBlindedBlock(root).stream())
               .collect(Collectors.toSet()));
     }
 
@@ -681,20 +710,28 @@ public class KvStoreDatabase implements Database {
     int i = 0;
     final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
     while (it.hasNext()) {
-      final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       final int start = i;
       try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
         while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
           final SignedBeaconBlock block = it.next();
           LOG.debug(
               "DELETE non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
-          updater.addNonCanonicalBlock(block);
-          nonCanonicalRootsBySlotBuffer
-              .computeIfAbsent(block.getSlot(), __ -> new HashSet<>())
-              .add(block.getRoot());
+          updater.deleteBlindedBlock(block);
+
+          block
+              .getMessage()
+              .getBody()
+              .getOptionalExecutionPayload()
+              .ifPresent(
+                  payload -> {
+                    LOG.debug(
+                        "DELETE payload({}) from block {}",
+                        payload.hashTreeRoot(),
+                        block.getRoot().toHexString());
+                    updater.deleteExecutionPayload(payload.hashTreeRoot());
+                  });
           i++;
         }
-        nonCanonicalRootsBySlotBuffer.forEach(updater::addNonCanonicalRootAtSlot);
         updater.commit();
       }
     }

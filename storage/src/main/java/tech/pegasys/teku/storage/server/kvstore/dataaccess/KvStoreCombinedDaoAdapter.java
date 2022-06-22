@@ -117,6 +117,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return hotDao.streamCheckpointEpochs();
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return finalizedDao.streamBlindedBlocks();
   }
@@ -376,6 +382,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
+      hotUpdater.pruneHotBlockContext(blockRoot);
+    }
+
+    @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       hotUpdater.deleteHotState(blockRoot);
     }
@@ -383,6 +394,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addFinalizedBlock(block);
+    }
+
+    @Override
+    public void addFinalizedBlockReference(final SignedBeaconBlock block) {
+      finalizedUpdater.addFinalizedBlockReference(block);
     }
 
     @Override

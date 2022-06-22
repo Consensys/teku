@@ -70,6 +70,8 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
+    void addFinalizedBlockReference(final SignedBeaconBlock block);
+
     void addBlindedBlock(final SignedBeaconBlock block, final Spec spec);
 
     void addExecutionPayload(final ExecutionPayload payload);

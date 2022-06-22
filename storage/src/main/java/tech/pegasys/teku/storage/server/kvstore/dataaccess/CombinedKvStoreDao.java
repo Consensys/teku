@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -110,6 +108,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
     return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot());
   }
 
   @Override
@@ -368,7 +372,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
-    private static final Logger LOG = LogManager.getLogger();
     private final KvStoreAccessor db;
     private final S schema;
     private final FinalizedStateUpdater<S> stateStorageUpdater;
@@ -469,6 +472,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
+      deleteHotState(blockRoot);
+    }
+
+    @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
     }
@@ -509,8 +518,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addFinalizedBlockReference(final SignedBeaconBlock block) {
+      transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
     public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
-      LOG.info("PJH ADD: " + block.getRoot().toHexString());
       transaction.put(
           schema.getColumnBlindedBlocksByRoot(),
           block.getRoot(),
@@ -522,7 +535,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void addExecutionPayload(final ExecutionPayload payload) {
-      LOG.info("PJH PAYLOAD ADD: " + payload.hashTreeRoot().toHexString());
       transaction.put(
           schema.getColumnExecutionPayloadByPayloadHash(),
           payload.hashTreeRoot(),
@@ -531,7 +543,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
-      LOG.info("PJH DELETE: " + signedBeaconBlock.getRoot().toHexString());
       transaction.delete(schema.getColumnBlindedBlocksByRoot(), signedBeaconBlock.getRoot());
       Optional<ExecutionPayloadHeader> maybeHeader =
           signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader();
@@ -540,7 +551,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void deleteExecutionPayload(final Bytes32 payloadHash) {
-      LOG.info("PJH PAYLOAD DELETE: " + payloadHash.toHexString());
       transaction.delete(schema.getColumnExecutionPayloadByPayloadHash(), payloadHash);
     }
 

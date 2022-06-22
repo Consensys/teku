@@ -191,19 +191,28 @@ public class DebugDbCommand implements Runnable {
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
+        printIfPresent("Hot blocks", stream.count());
+      }
       try (Stream<SignedBeaconBlock> stream =
           database.streamFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
-        System.out.println("Finalized blocks: " + stream.count());
+        printIfPresent("Finalized blocks", stream.count());
       }
-      try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
-        System.out.println("Hot blocks: " + stream.count());
+      try (Stream<?> stream = database.streamCheckpointEpochs()) {
+        printIfPresent("Checkpoint Epochs", stream.count());
       }
 
       try (Stream<SignedBeaconBlock> stream = database.streamBlindedBlocks()) {
-        System.out.println("Blinded blocks: " + stream.count());
+        printIfPresent("Blinded blocks", stream.count());
       }
-
       return 0;
+    }
+  }
+
+  private void printIfPresent(final String label, final long count) {
+    if (count > 0L) {
+      final String formatString = "%17s: %d%n";
+      System.out.printf(formatString, label, count);
     }
   }
 

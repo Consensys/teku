@@ -95,6 +95,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot());
+  }
+
+  @Override
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(schema.getVariableLatestFinalizedState());
   }
@@ -258,6 +264,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
+      deleteHotState(blockRoot);
+    }
+
+    @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
     }
