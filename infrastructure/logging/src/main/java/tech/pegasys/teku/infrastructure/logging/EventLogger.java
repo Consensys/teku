@@ -129,8 +129,14 @@ public class EventLogger {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
 
-  public void executionClientIsOffline(Throwable error) {
-    error("Execution Client is offline", Color.RED, error);
+  public void executionClientIsOffline(final Throwable error, final boolean couldBeAuthError) {
+    error(
+        "Execution Client is offline"
+            + (couldBeAuthError
+                ? ". Check the same JWT secret is configured for Teku and the execution client."
+                : ""),
+        Color.RED,
+        error);
   }
 
   public void executionClientIsOnline() {

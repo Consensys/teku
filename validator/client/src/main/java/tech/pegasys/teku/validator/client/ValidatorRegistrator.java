@@ -31,8 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -40,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -53,7 +50,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       Maps.newConcurrentMap();
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
-  private final AtomicReference<UInt64> lastProcessedEpoch = new AtomicReference<>();
+  private final AtomicBoolean registrationInProgress = new AtomicBoolean(false);
+  private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
 
   private final Spec spec;
   private final TimeProvider timeProvider;
@@ -61,7 +59,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final ProposerConfigProvider proposerConfigProvider;
   private final ValidatorConfig validatorConfig;
   private final FeeRecipientProvider feeRecipientProvider;
-  private final ValidatorApiChannel validatorApiChannel;
+  private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender;
 
   public ValidatorRegistrator(
       final Spec spec,
@@ -70,13 +68,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final ProposerConfigProvider proposerConfigProvider,
       final ValidatorConfig validatorConfig,
       final FeeRecipientProvider feeRecipientProvider,
-      final ValidatorApiChannel validatorApiChannel) {
+      final ValidatorRegistrationBatchSender validatorRegistrationBatchSender) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
     this.proposerConfigProvider = proposerConfigProvider;
     this.feeRecipientProvider = feeRecipientProvider;
-    this.validatorApiChannel = validatorApiChannel;
+    this.validatorRegistrationBatchSender = validatorRegistrationBatchSender;
     this.validatorConfig = validatorConfig;
   }
 
@@ -85,17 +83,22 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (isNotReadyToRegister()) {
       return;
     }
-    if (firstCallDone.compareAndSet(false, true) || isBeginningOfEpoch(slot)) {
+    if (registrationNeedsToBeRun(slot)) {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
-      lastProcessedEpoch.set(epoch);
+      lastRunEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
       LOG.debug(
           "Checking if registration is required for {} validator(s) at epoch {}",
           activeValidators.size(),
           epoch);
+      registrationInProgress.set(true);
       registerValidators(activeValidators, epoch)
-          .finish(
-              () -> cleanupCache(activeValidators), VALIDATOR_LOGGER::registeringValidatorsFailed);
+          .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
+          .always(
+              () -> {
+                registrationInProgress.set(false);
+                cleanupCache(activeValidators);
+              });
     }
   }
 
@@ -111,7 +114,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onValidatorsAdded() {
-    if (isNotReadyToRegister() || lastProcessedEpoch.get() == null) {
+    if (isNotReadyToRegister() || lastRunEpoch.get() == null) {
       return;
     }
 
@@ -121,7 +124,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
             .collect(Collectors.toList());
 
-    registerValidators(newlyAddedValidators, lastProcessedEpoch.get())
+    registerValidators(newlyAddedValidators, lastRunEpoch.get())
         .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
   }
 
@@ -146,8 +149,19 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return false;
   }
 
-  private boolean isBeginningOfEpoch(final UInt64 slot) {
-    return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
+  private boolean registrationNeedsToBeRun(final UInt64 slot) {
+    final boolean isFirstCall = firstCallDone.compareAndSet(false, true);
+    if (isFirstCall) {
+      return true;
+    }
+    final boolean isBeginningOfEpoch = slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
+    if (isBeginningOfEpoch && registrationInProgress.get()) {
+      LOG.warn(
+          "Validator(s) registration for epoch {} is still in progress. Will skip registration for the current epoch.",
+          lastRunEpoch.get());
+      return false;
+    }
+    return isBeginningOfEpoch;
   }
 
   private SafeFuture<Void> registerValidators(
@@ -169,7 +183,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                       .flatMap(Optional::stream);
 
               return SafeFuture.collectAll(validatorRegistrationsFutures)
-                  .thenCompose(this::sendValidatorRegistrations);
+                  .thenCompose(validatorRegistrationBatchSender::sendInBatches);
             });
   }
 
@@ -217,22 +231,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
               return Optional.of(
                   signAndCacheValidatorRegistration(validatorRegistration, signer, epoch));
             });
-  }
-
-  private SafeFuture<Void> sendValidatorRegistrations(
-      final List<SignedValidatorRegistration> validatorRegistrations) {
-    if (validatorRegistrations.isEmpty()) {
-      LOG.debug("No validator(s) require registering.");
-      return SafeFuture.completedFuture(null);
-    }
-
-    final SszList<SignedValidatorRegistration> sszValidatorRegistrations =
-        SszUtils.toSszList(
-            ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations);
-
-    return validatorApiChannel
-        .registerValidators(sszValidatorRegistrations)
-        .thenPeek(__ -> LOG.info("{} validator(s) registered.", sszValidatorRegistrations.size()));
   }
 
   private boolean registrationIsEnabled(

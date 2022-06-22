@@ -30,6 +30,7 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
       final Spec spec) {
 
@@ -45,6 +46,7 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
         spec);
   }
 
@@ -53,23 +55,38 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
     return KvStoreDatabase.createWithStateSnapshots(
-        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        combinedSchema,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        spec);
   }
 
   public static Database createTree(
       MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema =
         new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
     return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
+        new StubMetricsSystem(),
+        db,
+        schema,
+        storageMode,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        1000,
+        spec);
   }
 }

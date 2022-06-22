@@ -72,6 +72,17 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
 
   @Option(
+      names = {"--Xvalidators-registration-sending-batch-size"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Change the default batch size for sending validator registrations to the Beacon Node.",
+      arity = "1",
+      hidden = true)
+  private int registrationSendingBatchSize =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
+
+  @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -90,6 +101,7 @@ public class ValidatorProposerOptions {
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
                 .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
-                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
+                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
+                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize));
   }
 }

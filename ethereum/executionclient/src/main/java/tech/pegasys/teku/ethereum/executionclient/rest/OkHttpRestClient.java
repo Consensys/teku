@@ -159,8 +159,7 @@ public class OkHttpRestClient implements RestClient {
           @Override
           public void onResponse(
               @NotNull final Call call, @NotNull final okhttp3.Response response) {
-            HttpUrl requestUrl = response.request().url();
-            LOG.trace("{} {} {}", response.request().method(), requestUrl, response.code());
+            LOG.trace("{} {} {}", request.method(), request.url(), response.code());
             if (!response.isSuccessful()) {
               handleFailure(response, futureResponse);
               return;

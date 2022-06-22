@@ -24,6 +24,8 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
+
+  public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
 
   private final Eth1Address eth1DepositContract;
@@ -31,6 +33,7 @@ public class StorageConfiguration {
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
+  private boolean storeBlockExecutionPayloadSeparately;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
@@ -44,6 +47,7 @@ public class StorageConfiguration {
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -52,6 +56,7 @@ public class StorageConfiguration {
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.storeVotesEquivocation = storeVotesEquivocation;
+    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.spec = spec;
   }
 
@@ -87,6 +92,10 @@ public class StorageConfiguration {
     return storeVotesEquivocation;
   }
 
+  public boolean isStoreBlockExecutionPayloadSeparately() {
+    return storeBlockExecutionPayloadSeparately;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -102,6 +111,7 @@ public class StorageConfiguration {
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
+    private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 
     private Builder() {}
 
@@ -169,7 +179,14 @@ public class StorageConfiguration {
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
+          storeBlockExecutionPayloadSeparately,
           spec);
+    }
+
+    public Builder storeBlockExecutionPayloadSeparately(
+        final boolean storeBlockExecutionPayloadSeparately) {
+      this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
+      return this;
     }
   }
 }
