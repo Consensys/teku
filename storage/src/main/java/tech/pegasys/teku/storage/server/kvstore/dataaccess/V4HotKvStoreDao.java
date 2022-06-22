@@ -134,7 +134,7 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
   @Override
   @MustBeClosed
   public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry->entry);
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry -> entry);
   }
 
   @Override
