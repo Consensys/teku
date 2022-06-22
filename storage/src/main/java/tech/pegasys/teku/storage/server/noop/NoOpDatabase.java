@@ -37,7 +37,6 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 public class NoOpDatabase implements Database {
 
@@ -132,7 +131,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
     return Stream.empty();
   }
 

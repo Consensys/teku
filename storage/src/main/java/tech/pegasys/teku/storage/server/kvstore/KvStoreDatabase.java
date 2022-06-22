@@ -453,7 +453,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   @MustBeClosed
-  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
     return dao.streamCheckpointEpochs();
   }
 

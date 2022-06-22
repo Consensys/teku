@@ -35,7 +35,6 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 public interface Database extends AutoCloseable {
 
@@ -107,7 +106,7 @@ public interface Database extends AutoCloseable {
   Stream<SignedBeaconBlock> streamHotBlocks();
 
   @MustBeClosed
-  Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
+  Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
 
   List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
 

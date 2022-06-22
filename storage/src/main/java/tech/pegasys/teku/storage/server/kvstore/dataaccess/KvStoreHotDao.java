@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -73,7 +72,7 @@ public interface KvStoreHotDao extends AutoCloseable {
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
   @MustBeClosed
-  Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
+  Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 

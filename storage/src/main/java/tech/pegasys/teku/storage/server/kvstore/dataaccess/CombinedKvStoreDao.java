@@ -146,8 +146,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
-  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot());
+  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry->entry);
   }
 
   @Override
