@@ -84,7 +84,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return;
     }
     if (registrationNeedsToBeRun(slot)) {
-      registrationInProgress.set(true);
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastRunEpoch.set(epoch);
       final List<Validator> activeValidators = ownedValidators.getActiveValidators();
@@ -92,6 +91,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
           "Checking if registration is required for {} validator(s) at epoch {}",
           activeValidators.size(),
           epoch);
+      registrationInProgress.set(true);
       registerValidators(activeValidators, epoch)
           .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
           .always(
