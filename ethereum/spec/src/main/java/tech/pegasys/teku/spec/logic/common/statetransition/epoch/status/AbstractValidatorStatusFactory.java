@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -69,18 +69,19 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
   private List<ValidatorStatus> createInitialValidatorStatuses(
       final SszList<Validator> validators, final UInt64 currentEpoch, final UInt64 previousEpoch) {
-    final int validatorCount = validators.size();
-    final List<ValidatorStatus> statuses = new ArrayList<>(validatorCount);
-    for (Validator validator : validators) {
-      statuses.add(createValidatorStatus(validator, previousEpoch, currentEpoch));
-    }
-    return statuses;
+    // Note: parallel() here is being used with great care. The iteration of the list is done by a
+    // single thread and then the conversion of individual Validator to ValidatorStatus is done by
+    // worker pools. Thus, each Validator instance is still only accessed by a single thread at a
+    // time. By the time we get the list back we're back to single threaded mode.
+    return validators.stream()
+        .parallel()
+        .map(validator -> createValidatorStatus(validator, previousEpoch, currentEpoch))
+        .collect(Collectors.toList());
   }
 
   @Override
   public ValidatorStatus createValidatorStatus(
       final Validator validator, final UInt64 previousEpoch, final UInt64 currentEpoch) {
-
     final UInt64 activationEpoch = validator.getActivationEpoch();
     final UInt64 exitEpoch = validator.getExitEpoch();
     final UInt64 withdrawableEpoch = validator.getWithdrawableEpoch();

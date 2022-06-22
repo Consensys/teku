@@ -65,7 +65,7 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({"32768"})
+  @Param({"400000"})
   int validatorsCount;
 
   @Setup(Level.Trial)
@@ -79,7 +79,7 @@ public abstract class TransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz";
+    String keysFile = "/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz";
 
     System.out.println("Generating keypairs from " + keysFile);
     List<BLSKeyPair> validatorKeys =
