@@ -72,7 +72,7 @@ public class ValidatorRegistrationBatchSender {
                       __ -> {
                         successfullySentRegistrations.updateAndGet(count -> count + batch.size());
                         LOG.debug(
-                            "Batch {}/{} : {} validator(s) registrations were sent to the Beacon Node.",
+                            "Batch {}/{}: {} validator(s) registrations were sent to the Beacon Node.",
                             currentBatch,
                             batchedRegistrations.size(),
                             batch.size());
