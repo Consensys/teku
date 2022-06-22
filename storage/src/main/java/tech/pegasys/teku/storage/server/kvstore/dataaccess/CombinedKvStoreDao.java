@@ -145,6 +145,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot());
+  }
+
+  @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return db.get(schema.getVariableMinGenesisTimeBlock());
   }

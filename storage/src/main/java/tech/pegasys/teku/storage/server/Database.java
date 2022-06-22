@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 public interface Database extends AutoCloseable {
 
@@ -100,6 +102,12 @@ public interface Database extends AutoCloseable {
    */
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamHotBlocks();
+
+  @MustBeClosed
+  Stream<ColumnEntry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
 
   List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
 
