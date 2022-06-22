@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Optimized epoch transitions
 
 ### Bug Fixes
  - Fixed the beacon-rest-api opening a listen port on too many interfaces
