@@ -48,16 +48,16 @@ public class ValidatorRegistrationBatchSender {
     final List<List<SignedValidatorRegistration>> batchedRegistrations =
         Lists.partition(validatorRegistrations, batchSize);
 
-    final AtomicInteger processedBatches = new AtomicInteger(0);
-    final AtomicInteger successfullySentRegistrations = new AtomicInteger(0);
-
     LOG.debug(
-        "Going to send {} validator(s) registrations to the Beacon Node in {} batches",
+        "Going to send {} validator(s) registrations to the Beacon Node in {} batch(es)",
         validatorRegistrations.size(),
         batchedRegistrations.size());
 
     final Iterator<List<SignedValidatorRegistration>> batchedRegistrationsIterator =
         batchedRegistrations.iterator();
+
+    final AtomicInteger batchCounter = new AtomicInteger(0);
+    final AtomicInteger successfullySentRegistrations = new AtomicInteger(0);
 
     return SafeFuture.asyncDoWhile(
             () -> {
@@ -65,14 +65,21 @@ public class ValidatorRegistrationBatchSender {
                 return SafeFuture.completedFuture(false);
               }
               final List<SignedValidatorRegistration> batch = batchedRegistrationsIterator.next();
+              final int currentBatch = batchCounter.incrementAndGet();
               return sendBatch(batch)
+                  .whenException(
+                      throwable ->
+                          LOG.debug(
+                              "Failed processing batch {}/{} : {}",
+                              currentBatch,
+                              batchedRegistrations.size(),
+                              throwable.getMessage()))
                   .thenApply(
                       __ -> {
                         successfullySentRegistrations.updateAndGet(count -> count + batch.size());
-                        final int currentProcessedBatch = processedBatches.incrementAndGet();
                         LOG.debug(
-                            "Batch {}/{} -> {} validator(s) registrations were sent to the Beacon Node.",
-                            currentProcessedBatch,
+                            "Batch {}/{} : {} validator(s) registrations were sent to the Beacon Node.",
+                            currentBatch,
                             batchedRegistrations.size(),
                             batch.size());
                         return true;
