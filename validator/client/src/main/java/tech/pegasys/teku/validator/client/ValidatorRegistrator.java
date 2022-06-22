@@ -93,9 +93,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
           activeValidators.size(),
           epoch);
       registerValidators(activeValidators, epoch)
-          .whenComplete((__, throwable) -> registrationInProgress.set(false))
-          .finish(
-              () -> cleanupCache(activeValidators), VALIDATOR_LOGGER::registeringValidatorsFailed);
+          .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
+          .always(
+              () -> {
+                cleanupCache(activeValidators);
+                registrationInProgress.set(false);
+              });
     }
   }
 
