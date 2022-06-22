@@ -172,7 +172,7 @@ public class ValidatorClientService extends Service {
                   proposerConfigProvider.get(),
                   config.getValidatorConfig(),
                   beaconProposerPreparer.get(),
-                  validatorApiChannel));
+                  new ValidatorRegistrationBatchSender(100, validatorApiChannel)));
     }
     if (validatorApiConfig.isRestApiEnabled()) {
       validatorRestApi =
