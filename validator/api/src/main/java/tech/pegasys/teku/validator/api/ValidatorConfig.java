@@ -47,6 +47,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
+  public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
   private final List<String> validatorKeys;
@@ -71,6 +72,7 @@ public class ValidatorConfig {
   private final boolean validatorsRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
+  private final int validatorsRegistrationSendingBatchSize;
   private final int executorMaxQueueSize;
 
   private ValidatorConfig(
@@ -96,6 +98,7 @@ public class ValidatorConfig {
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
       final UInt64 validatorsRegistrationDefaultGasLimit,
+      final int validatorsRegistrationSendingBatchSize,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -122,6 +125,7 @@ public class ValidatorConfig {
     this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
+    this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
     this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
@@ -196,6 +200,10 @@ public class ValidatorConfig {
     return validatorsRegistrationDefaultGasLimit;
   }
 
+  public int getValidatorsRegistrationSendingBatchSize() {
+    return validatorsRegistrationSendingBatchSize;
+  }
+
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
   }
@@ -254,6 +262,8 @@ public class ValidatorConfig {
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+    private int validatorsRegistrationSendingBatchSize =
+        DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -398,6 +408,12 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorsRegistrationSendingBatchSize(
+        final int validatorsRegistrationSendingBatchSize) {
+      this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
+      return this;
+    }
+
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
       return this;
@@ -433,6 +449,7 @@ public class ValidatorConfig {
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
           validatorsRegistrationDefaultGasLimit,
+          validatorsRegistrationSendingBatchSize,
           executorMaxQueueSize);
     }
 

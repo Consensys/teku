@@ -263,12 +263,12 @@ public class Spec {
         .sszDeserialize(serializedState);
   }
 
-  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedSignedBlock) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .sszDeserialize(serializedSignedBlock);
   }
 
   public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
@@ -279,12 +279,12 @@ public class Spec {
         .sszDeserialize(serializedState);
   }
 
-  public BeaconBlock deserializeBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractBeaconBlockSlot(serializedState);
+  public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {
+    final UInt64 slot = BeaconBlockInvariants.extractBeaconBlockSlot(serializedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .sszDeserialize(serializedBlock);
   }
 
   public ExecutionPayload deserializeExecutionPayload(

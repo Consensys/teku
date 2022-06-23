@@ -34,7 +34,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
@@ -58,7 +56,8 @@ class ValidatorRegistratorTest {
   private final ProposerConfig proposerConfig = mock(ProposerConfig.class);
   private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
   private final FeeRecipientProvider feeRecipientProvider = mock(FeeRecipientProvider.class);
-  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender =
+      mock(ValidatorRegistrationBatchSender.class);
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
   private final Signer signer = mock(Signer.class);
 
@@ -93,8 +92,8 @@ class ValidatorRegistratorTest {
             proposerConfigProvider,
             validatorConfig,
             feeRecipientProvider,
-            validatorApiChannel);
-    when(validatorApiChannel.registerValidators(any()))
+            validatorRegistrationBatchSender);
+    when(validatorRegistrationBatchSender.sendInBatches(any()))
         .thenReturn(SafeFuture.completedFuture(null));
 
     when(proposerConfigProvider.getProposerConfig())
@@ -120,7 +119,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ONE);
 
-    verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
+    verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
   }
 
   @TestTemplate
@@ -130,12 +129,12 @@ class ValidatorRegistratorTest {
     // initially validators will be registered since it's the first call
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    verify(validatorApiChannel).registerValidators(any());
+    verify(validatorRegistrationBatchSender).sendInBatches(any());
 
     // after the initial call, registration should not occur if not beginning of epoch
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(UInt64.ONE));
 
-    verifyNoMoreInteractions(validatorApiChannel);
+    verifyNoMoreInteractions(validatorRegistrationBatchSender);
   }
 
   @TestTemplate
@@ -145,8 +144,7 @@ class ValidatorRegistratorTest {
     runRegistrationFlowForSlot(UInt64.ZERO);
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
-    final List<SszList<SignedValidatorRegistration>> registrationCalls =
-        captureRegistrationCalls(2);
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     registrationCalls.forEach(
         registrationCall ->
@@ -192,8 +190,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
-    final List<SszList<SignedValidatorRegistration>> registrationCalls =
-        captureRegistrationCalls(2);
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     // first call should use the default fee recipient and gas limit
     verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator2, validator3));
@@ -233,7 +230,7 @@ class ValidatorRegistratorTest {
 
     validatorRegistrator.onValidatorsAdded();
 
-    verifyNoInteractions(ownedValidators, validatorApiChannel, signer);
+    verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
   }
 
   @TestTemplate
@@ -247,8 +244,7 @@ class ValidatorRegistratorTest {
 
     validatorRegistrator.onValidatorsAdded();
 
-    final List<SszList<SignedValidatorRegistration>> registrationCalls =
-        captureRegistrationCalls(2);
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     assertThat(registrationCalls).hasSize(2);
 
@@ -274,21 +270,8 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
-  }
-
-  @TestTemplate
-  void validatorRegistrationsNotSentIfEmpty() {
-    setActiveValidators(validator1, validator2, validator3);
-
-    // all validator registrations disabled
-    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
-        .thenReturn(Optional.of(false));
-
-    runRegistrationFlowForSlot(UInt64.ZERO);
-
-    verifyNoInteractions(validatorApiChannel);
   }
 
   @TestTemplate
@@ -308,7 +291,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
 
     final Consumer<ValidatorRegistration> gasLimitRequirements =
         (validatorRegistration) -> {
@@ -341,7 +324,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
-    final SszList<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
+    final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
   }
 
@@ -354,28 +337,28 @@ class ValidatorRegistratorTest {
     validatorRegistrator.onSlot(slot);
   }
 
-  private SszList<SignedValidatorRegistration> captureRegistrationCall() {
+  private List<SignedValidatorRegistration> captureRegistrationCall() {
     return captureRegistrationCalls(1).get(0);
   }
 
-  private List<SszList<SignedValidatorRegistration>> captureRegistrationCalls(final int times) {
+  private List<List<SignedValidatorRegistration>> captureRegistrationCalls(final int times) {
     @SuppressWarnings("unchecked")
-    final ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
-        ArgumentCaptor.forClass(SszList.class);
+    final ArgumentCaptor<List<SignedValidatorRegistration>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
-    verify(validatorApiChannel, times(times)).registerValidators(argumentCaptor.capture());
+    verify(validatorRegistrationBatchSender, times(times)).sendInBatches(argumentCaptor.capture());
 
     return argumentCaptor.getAllValues();
   }
 
   private void verifyRegistrations(
-      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final List<SignedValidatorRegistration> validatorRegistrations,
       final List<Validator> expectedRegisteredValidators) {
     verifyRegistrations(validatorRegistrations, expectedRegisteredValidators, Optional.empty());
   }
 
   private void verifyRegistrations(
-      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final List<SignedValidatorRegistration> validatorRegistrations,
       final List<Validator> expectedRegisteredValidators,
       final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
 
