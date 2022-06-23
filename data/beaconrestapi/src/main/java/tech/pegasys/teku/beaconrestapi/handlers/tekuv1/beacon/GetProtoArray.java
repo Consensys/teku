@@ -20,9 +20,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
-import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.mapOf;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.mapOfStrings;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
@@ -31,21 +30,22 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.TreeMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.teku.GetProtoArrayResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetProtoArray extends MigratingEndpointAdapter {
   public static final String ROUTE = "/teku/v1/debug/beacon/protoarray";
   private final ChainDataProvider chainDataProvider;
-
-  //  TODO resolve Object type issue
-  //  private static final SerializableTypeDefinition<List<Map<String, Object>>> RESPONSE_TYPE =
-  //      listOf(mapOf(STRING_TYPE, OBJECT_TYPE, TreeMap::new));
 
   public GetProtoArray(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
@@ -60,8 +60,7 @@ public class GetProtoArray extends MigratingEndpointAdapter {
                 "Get the raw data stored in the fork choice protoarray to aid debugging. "
                     + "This API is considered unstable and the returned data format may change in the future.")
             .tags(TAG_TEKU)
-            .response(
-                SC_OK, "Request successful", listOf(mapOf(STRING_TYPE, STRING_TYPE, TreeMap::new)))
+            .response(SC_OK, "Request successful", listOf(mapOfStrings()))
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -90,6 +89,27 @@ public class GetProtoArray extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(chainDataProvider.getProtoArrayData());
+
+    final List<Map<String, String>> data =
+        chainDataProvider.getProtoArrayData().stream()
+            .map(this::mapObjectValuesToString)
+            .collect(Collectors.toList());
+    request.respondOk(data);
+  }
+
+  // TODO check this correct approach to making mapping type work
+  private Map<String, String> mapObjectValuesToString(final Map<String, Object> objectMap) {
+    final Map<String, String> output = new HashMap<>();
+    for (String key : objectMap.keySet()) {
+      final Object value = objectMap.get(key);
+      if (value instanceof UInt64) {
+        output.put(key, value.toString());
+      } else if (value instanceof Bytes32) {
+        output.put(key, ((Bytes32) value).toHexString());
+      } else if (value instanceof String) {
+        output.put(key, (String) value);
+      }
+    }
+    return output;
   }
 }
