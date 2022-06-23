@@ -84,7 +84,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   static final String FALLBACK_REASON_FORCED = "forced";
   static final String FALLBACK_REASON_BUILDER_NOT_AVAILABLE = "builder_not_available";
   static final String FALLBACK_REASON_BUILDER_ERROR = "builder_error";
-  static final String FALLBACK_REASON_NONE = null;
+  static final String FALLBACK_REASON_NONE = "";
 
   /**
    * slotToLocalElFallbackPayload usage:
