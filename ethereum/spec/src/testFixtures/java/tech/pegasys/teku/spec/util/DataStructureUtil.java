@@ -576,8 +576,12 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
+    return randomAttestationData(slot, randomUInt64());
+  }
+
+  public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
     return new AttestationData(
-        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
+        slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
@@ -596,10 +600,17 @@ public final class DataStructureUtil {
         .create(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
-  public Attestation randomAttestation(final long slot) {
+  public Attestation randomAttestation(final long slot, final UInt64 committeeIndex) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
+        .create(
+            randomBitlist(),
+            randomAttestationData(UInt64.valueOf(slot), committeeIndex),
+            randomSignature());
+  }
+
+  public Attestation randomAttestation(final long slot) {
+    return randomAttestation(slot, randomUInt64());
   }
 
   public AggregateAndProof randomAggregateAndProof() {

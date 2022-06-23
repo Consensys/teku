@@ -167,7 +167,16 @@ public class AttestationUtil {
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
             })
-        .thenCompose(att -> isValidIndexedAttestationAsync(fork, state, att, blsSignatureVerifier))
+        .thenCompose(
+            att -> {
+              // An attestation from a non-canonical block does not require signature verification
+              // because its signature already has been verified when the block was part of the
+              // canonical chain
+              boolean requiresSignatureVerification =
+                  !attestation.isProducedFromNonCanonicalBlock();
+              return isValidIndexedAttestationAsync(
+                  fork, state, att, blsSignatureVerifier, requiresSignatureVerification);
+            })
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -218,6 +227,15 @@ public class AttestationUtil {
       BeaconState state,
       IndexedAttestation indexedAttestation,
       AsyncBLSSignatureVerifier signatureVerifier) {
+    return isValidIndexedAttestationAsync(fork, state, indexedAttestation, signatureVerifier, true);
+  }
+
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      Fork fork,
+      BeaconState state,
+      IndexedAttestation indexedAttestation,
+      AsyncBLSSignatureVerifier signatureVerifier,
+      boolean requiresSignatureVerification) {
     SszUInt64List indices = indexedAttestation.getAttestingIndices();
 
     if (indices.isEmpty()
@@ -234,6 +252,10 @@ public class AttestationUtil {
     if (pubkeys.size() < indices.size()) {
       return completedFuture(
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
+    }
+
+    if (!requiresSignatureVerification) {
+      return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
 
     BLSSignature signature = indexedAttestation.getSignature();

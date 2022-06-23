@@ -123,23 +123,24 @@ public class OperationsReOrgManager implements ChainHeadChannel {
     // verified anymore and we need to make sure later on
     // that they're being included on the correct fork.
     attestations.forEach(
-        attestation -> {
-          attestationManager
-              .onAttestation(ValidateableAttestation.from(recentChainData.getSpec(), attestation))
-              .finish(
-                  result ->
-                      result.ifInvalid(
-                          reason ->
-                              LOG.debug(
-                                  "Rejected re-queued attestation from block: {} due to: {}",
-                                  blockRoot,
-                                  reason)),
-                  err ->
-                      LOG.error(
-                          "Failed to process re-queued attestation from block: {}",
-                          blockRoot,
-                          err));
-        });
+        attestation ->
+            attestationManager
+                .onAttestation(
+                    ValidateableAttestation.fromNonCanonicalBlock(
+                        recentChainData.getSpec(), attestation))
+                .finish(
+                    result ->
+                        result.ifInvalid(
+                            reason ->
+                                LOG.debug(
+                                    "Rejected re-queued attestation from block: {} due to: {}",
+                                    blockRoot,
+                                    reason)),
+                    err ->
+                        LOG.error(
+                            "Failed to process re-queued attestation from block: {}",
+                            blockRoot,
+                            err)));
   }
 
   private void processCanonicalBlockOperations(Collection<Bytes32> canonicalBlockRoots) {
