@@ -44,7 +44,7 @@ public interface EpochProcessor {
 
   void processEth1DataReset(MutableBeaconState state);
 
-  void processEffectiveBalanceUpdates(MutableBeaconState state);
+  void processEffectiveBalanceUpdates(MutableBeaconState state, List<ValidatorStatus> statuses);
 
   void processSlashingsReset(MutableBeaconState state);
 
