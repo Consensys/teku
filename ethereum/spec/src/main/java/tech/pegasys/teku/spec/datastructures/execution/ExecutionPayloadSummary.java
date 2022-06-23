@@ -46,4 +46,6 @@ public interface ExecutionPayloadSummary {
   Bytes getLogsBloom();
 
   Bytes getExtraData();
+
+  Bytes32 getPayloadHash();
 }

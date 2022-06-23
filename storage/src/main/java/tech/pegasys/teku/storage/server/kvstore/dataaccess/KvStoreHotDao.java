@@ -112,6 +112,12 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
+    default void addCheckpointEpochs(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+      blocks.forEach((k, v) -> addHotBlockCheckpointEpochs(k, v.getCheckpointEpochs()));
+    }
+
+    void pruneHotBlockContext(Bytes32 blockRoot);
+
     void pruneHotStateRoots(List<Bytes32> stateRoots);
 
     void deleteHotBlock(Bytes32 blockRoot);

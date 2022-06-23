@@ -18,10 +18,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /**
@@ -49,6 +52,20 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamBlindedBlocks();
+
+  @MustBeClosed
+  Stream<Bytes> streamExecutionPayloads();
+
+  Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root);
+
+  Optional<Bytes> getExecutionPayload(final Bytes32 root);
+
+  public Optional<SignedBeaconBlock> getEarliestBlindedBlock();
+
+  public Optional<SignedBeaconBlock> getLatestBlindedBlockAtSlot(final UInt64 slot);
+
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
@@ -62,6 +79,16 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addFinalizedBlockRootBySlot(final SignedBeaconBlock block);
+
+    void addBlindedBlock(final SignedBeaconBlock block, final Spec spec);
+
+    void addExecutionPayload(final ExecutionPayload payload);
+
+    void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock);
+
+    void deleteExecutionPayload(final Bytes32 payloadHash);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 

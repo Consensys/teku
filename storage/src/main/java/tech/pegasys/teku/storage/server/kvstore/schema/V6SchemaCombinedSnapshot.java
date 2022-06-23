@@ -15,12 +15,14 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -37,6 +39,11 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedStateRoot;
   private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
   private final KvStoreColumn<UInt64, BeaconState> finalizedStatesBySlot;
+
+  private final KvStoreColumn<Bytes32, SignedBeaconBlock> blindedBlocksByRoot;
+
+  private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
+  private final KvStoreColumn<UInt64, Bytes32> finalizedBlockRootBySlot;
 
   private V6SchemaCombinedSnapshot(
       final Spec spec, final boolean storeVotesEquivocation, final int finalizedOffset) {
@@ -60,6 +67,15 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             KvStoreSerializer.createSignedBlockSerializer(spec));
     nonCanonicalBlockRootsBySlot =
         KvStoreColumn.create(finalizedOffset + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
+    blindedBlocksByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 7,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedBlockSerializer(spec));
+    executionPayloadByBlockRoot =
+        KvStoreColumn.create(finalizedOffset + 8, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+    finalizedBlockRootBySlot =
+        KvStoreColumn.create(finalizedOffset + 9, UINT64_SERIALIZER, BYTES32_SERIALIZER);
   }
 
   public static V6SchemaCombinedSnapshot createV4(
@@ -103,6 +119,21 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
+  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot() {
+    return blindedBlocksByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash() {
+    return executionPayloadByBlockRoot;
+  }
+
+  @Override
+  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot() {
+    return finalizedBlockRootBySlot;
+  }
+
+  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -118,6 +149,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
+        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
+        .put("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash())
+        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .build();
   }
 

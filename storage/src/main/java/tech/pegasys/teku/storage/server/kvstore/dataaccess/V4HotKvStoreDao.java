@@ -250,6 +250,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     }
 
     @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
+      deleteHotState(blockRoot);
+    }
+
+    @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       stateRoots.forEach(
           (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));

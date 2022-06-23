@@ -201,13 +201,17 @@ public class DebugDbCommand implements Runnable {
       try (Stream<?> stream = database.streamCheckpointEpochs()) {
         printIfPresent("Checkpoint Epochs", stream.count());
       }
+
+      printIfPresent("Blinded blocks", database.countBlindedBlocks());
+      printIfPresent("Execution Payloads", database.countExecutionPayloads());
+
       return 0;
     }
   }
 
   private void printIfPresent(final String label, final long count) {
     if (count > 0L) {
-      final String formatString = "%17s: %d%n";
+      final String formatString = "%18s: %d%n";
       System.out.printf(formatString, label, count);
     }
   }

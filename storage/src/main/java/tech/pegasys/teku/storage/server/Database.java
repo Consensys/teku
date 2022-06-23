@@ -130,4 +130,8 @@ public interface Database extends AutoCloseable {
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
   void storeVotes(Map<UInt64, VoteTracker> votes);
+
+  long countBlindedBlocks();
+
+  long countExecutionPayloads();
 }

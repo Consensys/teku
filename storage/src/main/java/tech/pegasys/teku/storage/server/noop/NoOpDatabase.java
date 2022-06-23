@@ -182,5 +182,15 @@ public class NoOpDatabase implements Database {
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
 
   @Override
+  public long countBlindedBlocks() {
+    return 0;
+  }
+
+  @Override
+  public long countExecutionPayloads() {
+    return 0;
+  }
+
+  @Override
   public void close() {}
 }

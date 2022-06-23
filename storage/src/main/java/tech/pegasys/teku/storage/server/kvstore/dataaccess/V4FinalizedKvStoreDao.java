@@ -25,8 +25,11 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -95,6 +98,43 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes> streamExecutionPayloads() {
+    return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
+    return db.get(schema.getColumnBlindedBlocksByRoot(), root);
+  }
+
+  @Override
+  public Optional<Bytes> getExecutionPayload(final Bytes32 root) {
+    return db.get(schema.getColumnExecutionPayloadByPayloadHash(), root);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getEarliestBlindedBlock() {
+    final Optional<Bytes32> maybeRoot =
+        db.getFirstEntry(schema.getColumnFinalizedBlockRootBySlot()).map(ColumnEntry::getValue);
+    return maybeRoot.flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root));
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getLatestBlindedBlockAtSlot(final UInt64 slot) {
+    final Optional<Bytes32> maybeRoot =
+        db.getFloorEntry(schema.getColumnFinalizedBlockRootBySlot(), slot)
+            .map(ColumnEntry::getValue);
+    return maybeRoot.flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root));
   }
 
   @Override
@@ -181,6 +221,43 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnSlotsByFinalizedRoot(), block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
+    public void addFinalizedBlockRootBySlot(final SignedBeaconBlock block) {
+      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), block.getSlot(), block.getRoot());
+    }
+
+    @Override
+    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      transaction.put(
+          schema.getColumnBlindedBlocksByRoot(),
+          block.getRoot(),
+          block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
+      final Optional<ExecutionPayload> maybePayload =
+          block.getMessage().getBody().getOptionalExecutionPayload();
+      maybePayload.ifPresent(this::addExecutionPayload);
+    }
+
+    @Override
+    public void addExecutionPayload(final ExecutionPayload payload) {
+      transaction.put(
+          schema.getColumnExecutionPayloadByPayloadHash(),
+          payload.hashTreeRoot(),
+          payload.sszSerialize());
+    }
+
+    @Override
+    public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
+      transaction.delete(schema.getColumnBlindedBlocksByRoot(), signedBeaconBlock.getRoot());
+      Optional<ExecutionPayloadHeader> maybeHeader =
+          signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader();
+      maybeHeader.ifPresent(header -> deleteExecutionPayload(header.hashTreeRoot()));
+    }
+
+    @Override
+    public void deleteExecutionPayload(final Bytes32 payloadHash) {
+      transaction.delete(schema.getColumnExecutionPayloadByPayloadHash(), payloadHash);
     }
 
     @Override

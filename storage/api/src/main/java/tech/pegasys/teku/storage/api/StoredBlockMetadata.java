@@ -18,7 +18,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -41,6 +43,21 @@ public class StoredBlockMetadata {
     this.stateRoot = stateRoot;
     this.executionBlockHash = executionBlockHash;
     this.checkpointEpochs = checkpointEpochs;
+  }
+
+  public static StoredBlockMetadata fromBlockAndCheckpointEpochs(
+      final SignedBeaconBlock block, final CheckpointEpochs checkpointEpochs) {
+    return new StoredBlockMetadata(
+        block.getSlot(),
+        block.getRoot(),
+        block.getParentRoot(),
+        block.getStateRoot(),
+        block
+            .getMessage()
+            .getBody()
+            .getOptionalExecutionPayload()
+            .map(ExecutionPayload::getBlockHash),
+        Optional.of(checkpointEpochs));
   }
 
   public static StoredBlockMetadata fromBlockAndState(final StateAndBlockSummary blockAndState) {
