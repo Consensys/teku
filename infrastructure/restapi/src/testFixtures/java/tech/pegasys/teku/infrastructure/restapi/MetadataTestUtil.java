@@ -57,6 +57,13 @@ public class MetadataTestUtil {
     return new String(result, StandardCharsets.UTF_8);
   }
 
+  public static byte[] getResponseSszFromMetadata(
+      final RestApiEndpoint handler, final int code, final Object data)
+      throws JsonProcessingException {
+    final EndpointMetadata metadata = handler.getMetadata();
+    return toBytes(out -> metadata.serialize(code, ContentTypes.OCTET_STREAM, data, out));
+  }
+
   public static Object getRequestBodyFromMetadata(final RestApiEndpoint handler, final String json)
       throws IOException {
     final RequestContentTypeDefinition<?> requestContentTypeDefinition =

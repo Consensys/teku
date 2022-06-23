@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -26,37 +30,54 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.SszResponse;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetStateByBlockRoot implements Handler {
+public class GetStateByBlockRoot extends MigratingEndpointAdapter {
   private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:block_id/state";
   public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
-  private final JsonProvider jsonProvider;
 
-  public GetStateByBlockRoot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetStateByBlockRoot(final DataProvider dataProvider, final Spec spec) {
+    this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetStateByBlockRoot(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  public GetStateByBlockRoot(final ChainDataProvider chainDataProvider, final Spec spec) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getStateByBlockRoot")
+            .summary("Get SSZ State By Block id")
+            .description(
+                "Download the state SSZ object for given identifier - by block root, keyword, or slot.")
+            .tags(TAG_TEKU)
+            .pathParam(PARAMETER_BLOCK_ID)
+            .defaultResponseType(OCTET_STREAM)
+            .response(
+                SC_OK,
+                "Request successful",
+                sszResponseType(
+                    beaconState ->
+                        spec.getForkSchedule()
+                            .getSpecMilestoneAtSlot(((BeaconState) beaconState).getSlot())))
+            .withNotFoundResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -79,26 +100,25 @@ public class GetStateByBlockRoot implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParamMap = ctx.pathParamMap();
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    adapt(ctx);
+  }
 
-    SafeFuture<Optional<SszResponse>> future =
-        chainDataProvider.getBeaconStateSszByBlockRoot(pathParamMap.get(PARAM_BLOCK_ID));
-    ctx.future(
-        future.thenApplyChecked(
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
+
+    final String blockId = request.getPathParameter(PARAMETER_BLOCK_ID);
+    SafeFuture<Optional<BeaconState>> future = chainDataProvider.getBeaconStateByBlockRoot(blockId);
+
+    request.respondAsync(
+        future.thenApply(
             result -> {
               if (result.isEmpty()) {
-                ctx.status(SC_NOT_FOUND);
-                return BadRequest.serialize(
-                    jsonProvider,
-                    SC_NOT_FOUND,
-                    "State by block root not found: " + pathParamMap.get(PARAM_BLOCK_ID));
+                return AsyncApiResponse.respondWithError(
+                    SC_NOT_FOUND, "State by block root not found: " + blockId);
               }
-              final SszResponse sszResponse = result.get();
-              ctx.header(
-                  "Content-Disposition", "filename=\"" + sszResponse.abbreviatedHash + ".ssz\"");
-              ctx.contentType("application/octet-stream");
-              return sszResponse.byteStream;
+
+              return AsyncApiResponse.respondOk(result.get());
             }));
   }
 }
