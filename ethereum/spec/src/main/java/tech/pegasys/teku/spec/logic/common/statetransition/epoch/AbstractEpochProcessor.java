@@ -98,7 +98,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
-    processEffectiveBalanceUpdates(state);
+    processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
     processRandaoMixesReset(state);
     processHistoricalRootsUpdate(state);
@@ -347,20 +347,22 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   }
 
   @Override
-  public void processEffectiveBalanceUpdates(final MutableBeaconState state) {
+  public void processEffectiveBalanceUpdates(
+      final MutableBeaconState state, final List<ValidatorStatus> statuses) {
     // Update effective balances with hysteresis
     SszMutableList<Validator> validators = state.getValidators();
     SszUInt64List balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
-      Validator validator = validators.get(index);
+      ValidatorStatus status = statuses.get(index);
       UInt64 balance = balances.getElement(index);
 
       final UInt64 hysteresisIncrement =
           specConfig.getEffectiveBalanceIncrement().dividedBy(specConfig.getHysteresisQuotient());
-      final UInt64 currentEffectiveBalance = validator.getEffectiveBalance();
+      final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
       if (shouldDecreaseEffectiveBalance(balance, hysteresisIncrement, currentEffectiveBalance)
           || shouldIncreaseEffectiveBalance(
               balance, hysteresisIncrement, currentEffectiveBalance)) {
+        Validator validator = validators.get(index);
         final UInt64 newEffectiveBalance =
             balance
                 .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
