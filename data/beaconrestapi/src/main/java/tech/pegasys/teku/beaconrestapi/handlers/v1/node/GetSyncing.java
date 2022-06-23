@@ -95,12 +95,12 @@ public class GetSyncing extends MigratingEndpointAdapter {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
     request.respondOk(new SyncStatusData(syncProvider));
   }
 

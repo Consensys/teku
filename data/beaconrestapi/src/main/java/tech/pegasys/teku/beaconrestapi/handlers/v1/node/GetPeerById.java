@@ -89,12 +89,12 @@ public class GetPeerById extends MigratingEndpointAdapter {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
     Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");

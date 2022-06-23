@@ -145,7 +145,7 @@ public class PostBlock extends MigratingEndpointAdapter {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    super.adapt(ctx);
+    adapt(ctx);
   }
 
   @Override
