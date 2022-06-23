@@ -338,18 +338,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
     // fallback conditions
-    Optional<String> fallbackReason = Optional.empty();
+    final String fallbackReason;
     if (forceLocalFallback) {
-      fallbackReason = Optional.of(FALLBACK_REASON_FORCED);
+      fallbackReason = FALLBACK_REASON_FORCED;
     } else if (!isBuilderAvailable()) {
-      fallbackReason = Optional.of(FALLBACK_REASON_BUILDER_NOT_AVAILABLE);
+      fallbackReason = FALLBACK_REASON_BUILDER_NOT_AVAILABLE;
     } else if (validatorRegistration.isEmpty()) {
-      fallbackReason = Optional.of(FALLBACK_REASON_VALIDATOR_NOT_REGISTERED);
+      fallbackReason = FALLBACK_REASON_VALIDATOR_NOT_REGISTERED;
+    } else {
+      fallbackReason = null;
     }
 
-    if (fallbackReason.isPresent()) {
+    if (fallbackReason != null) {
       // fallback to local execution engine
-      return doFallbackToLocal(localExecutionPayload, slot, fallbackReason.get());
+      return doFallbackToLocal(localExecutionPayload, slot, fallbackReason);
     }
 
     final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
