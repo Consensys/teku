@@ -104,13 +104,9 @@ public class GetBlockHeader extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeBlockAndMetaData -> {
-              if (maybeBlockAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetaData.get();
-              return AsyncApiResponse.respondOk(blockAndMetaData);
-            }));
+            maybeBlockAndMetaData ->
+                maybeBlockAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

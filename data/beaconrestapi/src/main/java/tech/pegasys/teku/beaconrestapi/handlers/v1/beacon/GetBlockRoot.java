@@ -110,12 +110,9 @@ public class GetBlockRoot extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeRootAndMetaData -> {
-              if (maybeRootAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              return AsyncApiResponse.respondOk(maybeRootAndMetaData.get());
-            }));
+            maybeRootAndMetaData ->
+                maybeRootAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

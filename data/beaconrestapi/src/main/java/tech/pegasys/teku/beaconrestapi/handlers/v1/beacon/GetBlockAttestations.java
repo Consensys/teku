@@ -99,14 +99,10 @@ public class GetBlockAttestations extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeObjectAndMetaData -> {
-              if (maybeObjectAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              ObjectAndMetaData<List<Attestation>> response = maybeObjectAndMetaData.get();
-              return AsyncApiResponse.respondOk(response);
-            }));
+            maybeObjectAndMetaData ->
+                maybeObjectAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(

@@ -144,14 +144,9 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeListObjectAndMetaData -> {
-              if (maybeListObjectAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              ObjectAndMetaData<List<CommitteeAssignment>> listObjectAndMetaData =
-                  maybeListObjectAndMetaData.get();
-              return AsyncApiResponse.respondOk(listObjectAndMetaData);
-            }));
+            maybeListObjectAndMetaData ->
+                maybeListObjectAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

@@ -125,12 +125,9 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeDataList -> {
-              if (maybeDataList.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              return AsyncApiResponse.respondOk(maybeDataList.get());
-            }));
+            maybeDataList ->
+                maybeDataList
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

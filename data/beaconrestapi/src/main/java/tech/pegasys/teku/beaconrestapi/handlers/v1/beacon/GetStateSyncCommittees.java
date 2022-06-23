@@ -144,13 +144,10 @@ public class GetStateSyncCommittees extends MigratingEndpointAdapter {
     request.respondAsync(
         future
             .thenApply(
-                maybeStateSyncCommitteesAndMetaData -> {
-                  if (maybeStateSyncCommitteesAndMetaData.isEmpty()) {
-                    return AsyncApiResponse.respondNotFound();
-                  }
-
-                  return AsyncApiResponse.respondOk(maybeStateSyncCommitteesAndMetaData.get());
-                })
+                maybeStateSyncCommitteesAndMetaData ->
+                    maybeStateSyncCommitteesAndMetaData
+                        .map(AsyncApiResponse::respondOk)
+                        .orElse(AsyncApiResponse.respondNotFound()))
             .exceptionallyCompose(
                 error -> {
                   final Throwable rootCause = Throwables.getRootCause(error);
