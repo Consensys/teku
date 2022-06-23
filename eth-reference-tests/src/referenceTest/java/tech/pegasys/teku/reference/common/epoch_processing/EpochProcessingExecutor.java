@@ -44,7 +44,7 @@ public class EpochProcessingExecutor {
         processJustificationAndFinalization(state);
         break;
       case PROCESS_EFFECTIVE_BALANCE_UPDATES:
-        epochProcessor.processEffectiveBalanceUpdates(state);
+        processEffectiveBalanceUpdates(state);
         break;
       case PROCESS_PARTICIPATION_FLAG_UPDATES:
         epochProcessor.processParticipationUpdates(state);
@@ -98,5 +98,11 @@ public class EpochProcessingExecutor {
       throws EpochProcessingException {
     epochProcessor.processJustificationAndFinalization(
         state, validatorStatusFactory.createValidatorStatuses(state).getTotalBalances());
+  }
+
+  public void processEffectiveBalanceUpdates(final MutableBeaconState state)
+      throws EpochProcessingException {
+    epochProcessor.processEffectiveBalanceUpdates(
+        state, validatorStatusFactory.createValidatorStatuses(state).getStatuses());
   }
 }
