@@ -74,12 +74,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
 
-  // Metrics source labels
+  // Metric - source label values
   static final String LOCAL_EL_SOURCE = "local_el";
   static final String BUILDER_SOURCE = "builder";
   static final String BUILDER_LOCAL_EL_FALLBACK_SOURCE = "builder_local_el_fallback";
 
-  // Metrics fallback reason labels
+  // Metric - fallback reason values
   static final String FALLBACK_REASON_VALIDATOR_NOT_REGISTERED = "validator_not_registered";
   static final String FALLBACK_REASON_FORCED = "forced";
   static final String FALLBACK_REASON_BUILDER_NOT_AVAILABLE = "builder_not_available";
