@@ -70,12 +70,13 @@ class ForkChoiceNotifierTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private StubMetricsSystem metricsSystem;
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
   private ReadOnlyForkChoiceStrategy forkChoiceStrategy;
   private ProposersDataManager proposersDataManager;
+
   private final Optional<Eth1Address> defaultFeeRecipient =
       Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
@@ -103,6 +104,7 @@ class ForkChoiceNotifierTest {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
+    metricsSystem = new StubMetricsSystem();
     proposersDataManager =
         spy(
             new ProposersDataManager(
@@ -136,6 +138,7 @@ class ForkChoiceNotifierTest {
   void reInitializePreMerge() {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
+    metricsSystem = new StubMetricsSystem();
     proposersDataManager =
         spy(
             new ProposersDataManager(
