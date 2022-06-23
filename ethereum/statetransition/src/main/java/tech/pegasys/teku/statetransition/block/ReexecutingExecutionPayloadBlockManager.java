@@ -13,16 +13,22 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import static tech.pegasys.teku.statetransition.util.PendingPoolFactory.BLOCK_HASH_TREE_ROOT_FUNCTION;
+
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,13 +41,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Logger LOG = LogManager.getLogger();
-  protected static final int EXPIRES_IN_SLOT = 2;
+  protected static final int RETRY_SLOTS = 2;
+  private static final int EXPIRES_IN_SLOTS = 50;
+  private volatile UInt64 currentSlot = UInt64.ZERO;
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
-  private final Set<SignedBeaconBlock> pendingBlocksForEPReexecution =
-      LimitedSet.createIterable(10);
+  private final Map<SignedBeaconBlock, UInt64> pendingBlocksForEPReexecution =
+      LimitedMap.createIterable(10);
   private final AsyncRunner asyncRunner;
+  private final PendingPool<SignedBeaconBlock> pendingBlocks;
 
   private Optional<Cancellable> cancellable = Optional.empty();
 
@@ -65,6 +74,8 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
         eventLogger,
         blockImportMetrics);
     this.asyncRunner = asyncRunner;
+    this.pendingBlocks = pendingBlocks;
+    pendingBlocks.subscribeRequiredBlockRoot(this::requireAncestor);
   }
 
   @Override
@@ -89,10 +100,14 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    pendingBlocksForEPReexecution.removeIf(
-        block -> block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(slot));
+    this.currentSlot = slot;
+    final List<SignedBeaconBlock> pendingBlocks =
+        new ArrayList<>(pendingBlocksForEPReexecution.keySet());
+    pendingBlocks.stream()
+        .filter(block -> block.getSlot().plus(EXPIRES_IN_SLOTS).isLessThan(slot))
+        .forEach(pendingBlocksForEPReexecution::remove);
   }
 
   @Override
@@ -101,16 +116,32 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
         .thenPeek(
             blockImportResult -> {
               if (requiresReexecution(blockImportResult)) {
-                pendingBlocksForEPReexecution.add(block);
+                pendingBlocksForEPReexecution.put(block, block.getSlot().plus(RETRY_SLOTS));
               }
             });
+  }
+
+  public void requireAncestor(final Bytes32 root) {
+    if (pendingBlocksForEPReexecution.isEmpty()) {
+      return;
+    }
+    final Bytes32 parentForFirstPending = pendingBlocks.getFirstRequiredAncestor(root);
+    final Optional<SignedBeaconBlock> reExecuteBlock =
+        pendingBlocksForEPReexecution.keySet().stream()
+            .filter(
+                block -> BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block).equals(parentForFirstPending))
+            .findFirst();
+    reExecuteBlock.ifPresent(
+        block -> pendingBlocksForEPReexecution.put(block, currentSlot.plus(RETRY_SLOTS)));
   }
 
   private void execute() {
     if (reexecutingExecutionPayload.compareAndSet(false, true)) {
       LOG.debug("re-executing execution payloads for queued blocks");
       SafeFuture.allOf(
-              pendingBlocksForEPReexecution.stream()
+              pendingBlocksForEPReexecution.entrySet().stream()
+                  .filter(entry -> entry.getValue().isGreaterThanOrEqualTo(currentSlot))
+                  .map(Entry::getKey)
                   .map(this::reexecuteExecutionPayload)
                   .toArray(SafeFuture[]::new))
           .alwaysRun(() -> reexecutingExecutionPayload.set(false))

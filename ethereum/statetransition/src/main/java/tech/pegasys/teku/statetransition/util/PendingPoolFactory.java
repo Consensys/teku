@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.util;
 
 import java.util.Collections;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -26,6 +28,8 @@ public class PendingPoolFactory {
 
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
+  public static final Function<SignedBeaconBlock, Bytes32> BLOCK_HASH_TREE_ROOT_FUNCTION =
+      block -> block.getMessage().hashTreeRoot();
   private final SettableLabelledGauge sizeGauge;
 
   public PendingPoolFactory(final MetricsSystem metricsSystem) {
@@ -58,7 +62,7 @@ public class PendingPoolFactory {
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
-        block -> block.getMessage().hashTreeRoot(),
+        BLOCK_HASH_TREE_ROOT_FUNCTION,
         block -> Collections.singleton(block.getParentRoot()),
         SignedBeaconBlock::getSlot);
   }

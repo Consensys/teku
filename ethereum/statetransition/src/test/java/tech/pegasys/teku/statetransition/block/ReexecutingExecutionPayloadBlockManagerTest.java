@@ -21,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager.EXPIRES_IN_SLOT;
+import static tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager.RETRY_SLOTS;
 
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
@@ -54,6 +55,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
@@ -201,7 +203,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   }
 
   @Test
-  public void onSlot_shouldDequeueExpired() {
+  public void onSlot_shouldStopRetrying() {
     final SignedBeaconBlock nextBlock =
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
@@ -215,10 +217,49 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
 
     verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
 
-    blockManager.onSlot(nextBlock.getSlot().plus(EXPIRES_IN_SLOT + 1));
+    blockManager.onSlot(nextBlock.getSlot().plus(RETRY_SLOTS + 1));
 
     // should be dequeued now, so no more interactions
     asyncRunner.executeQueuedActions();
     verifyNoMoreInteractions(blockImporter);
+  }
+
+  @Test
+  public void onDescendantPendingChainAdvance_shouldRetryParentExecutionAgain() {
+    final SignedBeaconBlock nextBlock =
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+
+    // beginning to build descendant chain
+    final SignedBeaconBlock descendantBlock =
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+    pendingBlocks.add(descendantBlock);
+
+    // syncing
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING));
+
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
+
+    blockManager.onSlot(nextBlock.getSlot().plus(RETRY_SLOTS + 1));
+    // no need for re-execution, retry slots are over
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(blockImporter);
+
+    SignedBeaconBlock anotherChainBlock =
+        dataStructureUtil.randomSignedBeaconBlock(nextBlock.getSlot());
+    pendingBlocks.add(anotherChainBlock);
+    // no need for re-execution, retry slots are over, pending block is not descendant
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(blockImporter);
+
+    final SignedBeaconBlock descendantBlock2 =
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+    pendingBlocks.add(descendantBlock2);
+    // should be re-executed, descendant of chain is added
+    asyncRunner.executeQueuedActions();
+    verify(blockImporter, times(2)).importBlock(nextBlock, Optional.empty());
   }
 }

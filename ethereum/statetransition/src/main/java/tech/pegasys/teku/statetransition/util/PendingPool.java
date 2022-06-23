@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -198,6 +199,26 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
       return getAllItemsDependingOn(blockRoot);
     } else {
       return getItemsDirectlyDependingOn(blockRoot);
+    }
+  }
+
+  public Bytes32 getFirstRequiredAncestor(final Bytes32 blockRoot) {
+    return getRequiredAncestor(blockRoot, 0);
+  }
+
+  private Bytes32 getRequiredAncestor(final Bytes32 blockRoot, final int currentDepth) {
+    if (historicalSlotTolerance.isLessThan(currentDepth)) {
+      return blockRoot;
+    }
+    final Optional<Bytes32> ancestorOptional =
+        pendingItemsByRequiredBlockRoot.entrySet().stream()
+            .filter(entry -> entry.getValue().contains(blockRoot))
+            .findFirst()
+            .map(Entry::getKey);
+    if (ancestorOptional.isPresent()) {
+      return getRequiredAncestor(ancestorOptional.get(), currentDepth + 1);
+    } else {
+      return blockRoot;
     }
   }
 

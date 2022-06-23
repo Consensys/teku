@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.statetransition.util.PendingPoolFactory.BLOCK_HASH_TREE_ROOT_FUNCTION;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -488,5 +489,27 @@ public class PendingPoolTest {
 
     blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
     blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isFalse());
+  }
+
+  @Test
+  public void shouldFindFirstRequiredInChain_withDepth() {
+    SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    pendingPool.add(block1);
+    assertThat(pendingPool.getFirstRequiredAncestor(BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block1)))
+        .isEqualTo(block1.getParentRoot());
+
+    SignedBeaconBlock block2 =
+        dataStructureUtil.randomSignedBeaconBlock(
+            currentSlot.longValue() + 1, BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block1));
+    pendingPool.add(block2);
+    assertThat(pendingPool.getFirstRequiredAncestor(BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block2)))
+        .isEqualTo(block1.getParentRoot());
+
+    SignedBeaconBlock block3 =
+        dataStructureUtil.randomSignedBeaconBlock(
+            currentSlot.longValue() + 2, BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block2));
+    pendingPool.add(block3);
+    assertThat(pendingPool.getFirstRequiredAncestor(BLOCK_HASH_TREE_ROOT_FUNCTION.apply(block3)))
+        .isEqualTo(block1.getParentRoot());
   }
 }
