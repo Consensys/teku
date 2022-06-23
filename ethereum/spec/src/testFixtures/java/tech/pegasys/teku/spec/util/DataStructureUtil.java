@@ -576,12 +576,8 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
-    return randomAttestationData(slot, randomUInt64());
-  }
-
-  public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
     return new AttestationData(
-        slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
+        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
@@ -600,17 +596,10 @@ public final class DataStructureUtil {
         .create(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
-  public Attestation randomAttestation(final long slot, final UInt64 committeeIndex) {
+  public Attestation randomAttestation(final long slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(
-            randomBitlist(),
-            randomAttestationData(UInt64.valueOf(slot), committeeIndex),
-            randomSignature());
-  }
-
-  public Attestation randomAttestation(final long slot) {
-    return randomAttestation(slot, randomUInt64());
+        .create(randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -1281,6 +1270,28 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public BeaconState randomBeaconState(final int validatorCount, final UInt64 slot) {
+    return randomBeaconState(validatorCount).updated(state -> state.setSlot(slot));
+  }
+
+  public BeaconState randomBeaconState(final UInt64 slot) {
+    return randomBeaconState().updated(state -> state.setSlot(slot));
+  }
+
+  public BeaconState randomBeaconStatePreMerge(UInt64 slot) {
+    return randomBeaconState()
+        .updated(state -> state.setSlot(slot))
+        .updated(
+            state ->
+                state
+                    .toMutableVersionBellatrix()
+                    .orElseThrow()
+                    .setLatestExecutionPayloadHeader(
+                        getBellatrixSchemaDefinitions(slot)
+                            .getExecutionPayloadHeaderSchema()
+                            .getDefault()));
+  }
+
   public AbstractBeaconStateBuilder<
           ? extends BeaconState,
           ? extends MutableBeaconState,
@@ -1326,24 +1337,6 @@ public final class DataStructureUtil {
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderBellatrix.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
-  }
-
-  public BeaconState randomBeaconState(UInt64 slot) {
-    return randomBeaconState().updated(state -> state.setSlot(slot));
-  }
-
-  public BeaconState randomBeaconStatePreMerge(UInt64 slot) {
-    return randomBeaconState()
-        .updated(state -> state.setSlot(slot))
-        .updated(
-            state ->
-                state
-                    .toMutableVersionBellatrix()
-                    .orElseThrow()
-                    .setLatestExecutionPayloadHeader(
-                        getBellatrixSchemaDefinitions(slot)
-                            .getExecutionPayloadHeaderSchema()
-                            .getDefault()));
   }
 
   public AnchorPoint randomAnchorPoint(final long epoch) {
