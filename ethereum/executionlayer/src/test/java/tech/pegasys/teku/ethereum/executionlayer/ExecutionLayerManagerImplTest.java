@@ -22,6 +22,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_LOCAL_EL_FALLBACK_SOURCE;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_SOURCE;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_BUILDER_ERROR;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_BUILDER_NOT_AVAILABLE;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_FORCED;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_NONE;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_VALIDATOR_NOT_REGISTERED;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.LOCAL_EL_SOURCE;
 
 import java.util.Optional;
@@ -152,7 +157,7 @@ class ExecutionLayerManagerImplTest {
     // we expect no calls to builder
     verifyNoInteractions(executionBuilderClient);
 
-    verifySourceCounter(LOCAL_EL_SOURCE);
+    verifySourceCounter(LOCAL_EL_SOURCE, FALLBACK_REASON_NONE);
   }
 
   @Test
@@ -195,7 +200,7 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_SOURCE);
+    verifySourceCounter(BUILDER_SOURCE, FALLBACK_REASON_NONE);
   }
 
   @Test
@@ -244,7 +249,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_ERROR);
   }
 
   @Test
@@ -295,7 +300,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_ERROR);
   }
 
   @Test
@@ -336,7 +341,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_NOT_AVAILABLE);
   }
 
   @Test
@@ -378,7 +383,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_FORCED);
   }
 
   @Test
@@ -420,7 +425,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_VALIDATOR_NOT_REGISTERED);
   }
 
   @Test
@@ -558,11 +563,11 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
   }
 
-  private void verifySourceCounter(final String source) {
+  private void verifySourceCounter(final String source, final String reason) {
     final long actualCount =
         stubMetricsSystem
             .getCounter(TekuMetricCategory.BEACON, "execution_payload_source")
-            .getValue(source);
+            .getValue(source, reason);
     assertThat(actualCount).isOne();
   }
 }
