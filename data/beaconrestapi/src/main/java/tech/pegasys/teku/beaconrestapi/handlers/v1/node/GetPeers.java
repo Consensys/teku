@@ -142,8 +142,7 @@ public class GetPeers extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final PeersData peersData = new PeersData(network.getEth2Peers());
-    request.respondOk(peersData, NO_CACHE);
+    request.respondOk(new PeersData(network.getEth2Peers()), NO_CACHE);
   }
 
   static class PeersData {

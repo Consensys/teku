@@ -144,12 +144,9 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeSyncCommitteeDuties -> {
-              if (maybeSyncCommitteeDuties.isEmpty()) {
-                return AsyncApiResponse.respondServiceUnavailable();
-              }
-
-              return AsyncApiResponse.respondOk(maybeSyncCommitteeDuties.get());
-            }));
+            maybeSyncCommitteeDuties ->
+                maybeSyncCommitteeDuties
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 }

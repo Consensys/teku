@@ -138,12 +138,11 @@ public class PostValidatorLiveness extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            validatorLivenessAtEpoches -> {
-              if (validatorLivenessAtEpoches.isEmpty()) {
-                return AsyncApiResponse.respondWithError(
-                    SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
-              }
-              return AsyncApiResponse.respondOk(validatorLivenessAtEpoches.get());
-            }));
+            validatorLivenessAtEpoches ->
+                validatorLivenessAtEpoches
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(
+                        AsyncApiResponse.respondWithError(
+                            SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE))));
   }
 }

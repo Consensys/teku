@@ -39,7 +39,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class PostRegisterValidator extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/register_validator";
-
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostRegisterValidator(final DataProvider provider) {

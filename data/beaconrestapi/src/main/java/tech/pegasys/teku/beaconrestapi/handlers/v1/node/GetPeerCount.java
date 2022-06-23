@@ -95,8 +95,7 @@ public class GetPeerCount extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    List<Eth2Peer> peers = network.getEth2Peers();
-    request.respondOk(new ResponseData(peers));
+    request.respondOk(new ResponseData(network.getEth2Peers()));
   }
 
   static class ResponseData {

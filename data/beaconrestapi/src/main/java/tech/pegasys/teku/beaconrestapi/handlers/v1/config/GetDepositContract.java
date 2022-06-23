@@ -91,8 +91,7 @@ public class GetDepositContract extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final int depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
-    DepositContractData data = new DepositContractData(depositChainId, depositContractAddress);
-    request.respondOk(data);
+    request.respondOk(new DepositContractData(depositChainId, depositContractAddress));
   }
 
   static class DepositContractData {

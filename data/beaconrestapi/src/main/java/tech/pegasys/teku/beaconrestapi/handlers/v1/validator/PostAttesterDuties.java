@@ -180,11 +180,9 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            attesterDuties -> {
-              if (attesterDuties.isEmpty()) {
-                return AsyncApiResponse.respondServiceUnavailable();
-              }
-              return AsyncApiResponse.respondOk(attesterDuties.get());
-            }));
+            attesterDuties ->
+                attesterDuties
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 }
