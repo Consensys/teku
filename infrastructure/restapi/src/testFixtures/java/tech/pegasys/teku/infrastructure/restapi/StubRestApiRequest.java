@@ -196,7 +196,7 @@ public class StubRestApiRequest implements RestApiRequest {
     return contentTypeMap.get(statusCode);
   }
 
-  public void setContentType(final int statusCode, final String contentType) {
+  public void setResponseContentType(final int statusCode, final String contentType) {
     contentTypeMap.put(statusCode, contentType);
   }
 
