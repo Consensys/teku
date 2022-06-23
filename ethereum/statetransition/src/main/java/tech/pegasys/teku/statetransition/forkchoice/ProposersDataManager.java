@@ -22,9 +22,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,9 +62,20 @@ public class ProposersDataManager implements SlotEventsChannel {
   public ProposersDataManager(
       final EventThread eventThread,
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
       final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+    final LabelledGauge labelledGauge =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.BEACON,
+            "proposers_data_total",
+            "Total number proposers/validators under management",
+            "type");
+
+    labelledGauge.labels(preparedProposerInfoByValidatorIndex::size, "prepared_proposers");
+    labelledGauge.labels(validatorRegistrationInfoByValidatorIndex::size, "registered_validators");
+
     this.spec = spec;
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
@@ -110,10 +124,6 @@ public class ProposersDataManager implements SlotEventsChannel {
   public SafeFuture<Void> updateValidatorRegistrations(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
       final UInt64 currentSlot) {
-    // Remove expired validators
-    validatorRegistrationInfoByValidatorIndex
-        .values()
-        .removeIf(info -> info.hasExpired(currentSlot));
 
     return executionLayerChannel
         .builderRegisterValidators(signedValidatorRegistrations, currentSlot)
@@ -176,14 +186,6 @@ public class ProposersDataManager implements SlotEventsChannel {
             maybeState ->
                 calculatePayloadBuildingAttributes(blockSlot, epoch, maybeState, mandatory),
             eventThread);
-  }
-
-  public int getNumberOfPreparedProposers() {
-    return preparedProposerInfoByValidatorIndex.size();
-  }
-
-  public int getNumberOfRegisteredValidators() {
-    return validatorRegistrationInfoByValidatorIndex.size();
   }
 
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(

@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -69,6 +70,7 @@ class ForkChoiceNotifierTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
@@ -106,6 +108,7 @@ class ForkChoiceNotifierTest {
             new ProposersDataManager(
                 eventThread,
                 spec,
+                metricsSystem,
                 executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
@@ -136,7 +139,12 @@ class ForkChoiceNotifierTest {
     proposersDataManager =
         spy(
             new ProposersDataManager(
-                eventThread, spec, executionLayerChannel, recentChainData, defaultFeeRecipient));
+                eventThread,
+                spec,
+                metricsSystem,
+                executionLayerChannel,
+                recentChainData,
+                defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
