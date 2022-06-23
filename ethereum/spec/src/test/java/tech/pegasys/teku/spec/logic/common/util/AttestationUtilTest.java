@@ -1,0 +1,119 @@
+package tech.pegasys.teku.spec.logic.common.util;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
+@TestSpecContext
+class AttestationUtilTest {
+
+  private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
+  private final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
+  private final AsyncBLSSignatureVerifier asyncBLSSignatureVerifier =
+      mock(AsyncBLSSignatureVerifier.class);
+
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+
+  private AttestationUtil attestationUtil;
+
+  @BeforeEach
+  void setUp(SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
+    final IntList beaconCommittee = createBeaconCommittee(specVersion);
+    when(beaconStateAccessors.getBeaconCommittee(any(), any(), any())).thenReturn(beaconCommittee);
+    when(beaconStateAccessors.getValidatorPubKey(any(), any()))
+        .thenReturn(Optional.of(dataStructureUtil.randomPublicKey()));
+    when(beaconStateAccessors.getDomain(any(), any(), any(), any()))
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(miscHelpers.computeSigningRoot(any(Merkleizable.class), any(Bytes32.class)))
+        .thenReturn(dataStructureUtil.randomBytes(10));
+    when(asyncBLSSignatureVerifier.verify(anyList(), any(Bytes.class), any(BLSSignature.class)))
+        .thenReturn(SafeFuture.completedFuture(true));
+    attestationUtil =
+        new AttestationUtil(specVersion.getSchemaDefinitions(), beaconStateAccessors, miscHelpers);
+  }
+
+  @TestTemplate
+  void noValidationIsDoneIfAttestationIsAlreadyValid() {
+    final ValidateableAttestation validateableAttestation =
+        ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
+    validateableAttestation.setValidIndexedAttestation();
+
+    final SafeFuture<AttestationProcessingResult> result =
+        executeValidation(validateableAttestation);
+
+    assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
+  }
+
+  @TestTemplate
+  void validatesAndChecksSignature() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ValidateableAttestation validateableAttestation =
+        ValidateableAttestation.from(spec, attestation);
+
+    final SafeFuture<AttestationProcessingResult> result =
+        executeValidation(validateableAttestation);
+
+    assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
+
+    verify(asyncBLSSignatureVerifier).verify(anyList(), any(Bytes.class), any(BLSSignature.class));
+  }
+
+  @TestTemplate
+  void validatesButDoesNotCheckSignatureIfAttestationIsFromNonCanonicalBlock() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ValidateableAttestation validateableAttestation =
+        ValidateableAttestation.fromNonCanonicalBlock(spec, attestation);
+
+    final SafeFuture<AttestationProcessingResult> result =
+        executeValidation(validateableAttestation);
+
+    assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
+
+    verifyNoInteractions(asyncBLSSignatureVerifier);
+  }
+
+  private SafeFuture<AttestationProcessingResult> executeValidation(
+      final ValidateableAttestation validateableAttestation) {
+    return attestationUtil.isValidIndexedAttestationAsync(
+        dataStructureUtil.randomFork(),
+        dataStructureUtil.randomBeaconState(),
+        validateableAttestation,
+        asyncBLSSignatureVerifier);
+  }
+
+  private IntList createBeaconCommittee(final SpecVersion specVersion) {
+    final int[] committee =
+        IntStream.rangeClosed(0, specVersion.getConfig().getMaxValidatorsPerCommittee() - 1)
+            .toArray();
+    return IntList.of(committee);
+  }
+}

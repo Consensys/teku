@@ -144,7 +144,9 @@ public class OperationsReOrgManagerTest {
         fork1Block2.getBody().getAttestations().stream()
             .map(attestation -> ValidateableAttestation.from(spec, attestation))
             .collect(Collectors.toList()));
-    assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
+    assertThat(argument.getAllValues())
+        .containsExactlyInAnyOrderElementsOf(attestationList)
+        .allMatch(ValidateableAttestation::isProducedFromNonCanonicalBlock);
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttesterSlashings());

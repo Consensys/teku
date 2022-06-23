@@ -38,6 +38,7 @@ public class ValidateableAttestation {
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
+  private final boolean producedFromNonCanonicalBlock;
   private final OptionalInt receivedSubnetId;
 
   private volatile boolean isValidIndexedAttestation = false;
@@ -47,18 +48,24 @@ public class ValidateableAttestation {
 
   public static ValidateableAttestation from(final Spec spec, Attestation attestation) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+        spec, attestation, Optional.empty(), OptionalInt.empty(), false, false);
   }
 
   public static ValidateableAttestation fromValidator(final Spec spec, Attestation attestation) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.empty(), true);
+        spec, attestation, Optional.empty(), OptionalInt.empty(), true, false);
   }
 
   public static ValidateableAttestation fromNetwork(
       final Spec spec, Attestation attestation, int receivedSubnetId) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
+        spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false, false);
+  }
+
+  public static ValidateableAttestation fromNonCanonicalBlock(
+      final Spec spec, Attestation attestation) {
+    return new ValidateableAttestation(
+        spec, attestation, Optional.empty(), OptionalInt.empty(), false, true);
   }
 
   public static ValidateableAttestation aggregateFromValidator(
@@ -68,7 +75,8 @@ public class ValidateableAttestation {
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
-        true);
+        true,
+        false);
   }
 
   public static ValidateableAttestation aggregateFromNetwork(
@@ -78,25 +86,32 @@ public class ValidateableAttestation {
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
+        false,
         false);
   }
 
   private ValidateableAttestation(
       final Spec spec,
-      Attestation attestation,
-      Optional<SignedAggregateAndProof> aggregateAndProof,
-      OptionalInt receivedSubnetId,
-      boolean producedLocally) {
+      final Attestation attestation,
+      final Optional<SignedAggregateAndProof> aggregateAndProof,
+      final OptionalInt receivedSubnetId,
+      final boolean producedLocally,
+      final boolean producedFromNonCanonicalBlock) {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
+    this.producedFromNonCanonicalBlock = producedFromNonCanonicalBlock;
   }
 
   public boolean isProducedLocally() {
     return producedLocally;
+  }
+
+  public boolean isProducedFromNonCanonicalBlock() {
+    return producedFromNonCanonicalBlock;
   }
 
   public boolean isValidIndexedAttestation() {
@@ -200,6 +215,7 @@ public class ValidateableAttestation {
         .add("hashTreeRoot", hashTreeRoot)
         .add("gossiped", gossiped)
         .add("producedLocally", producedLocally)
+        .add("producedFromNonCanonicalBlock", producedFromNonCanonicalBlock)
         .add("isValidIndexedAttestation", isValidIndexedAttestation)
         .add("indexedAttestation", indexedAttestation)
         .add("committeeShufflingSeed", committeeShufflingSeed)
