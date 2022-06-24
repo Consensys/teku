@@ -506,7 +506,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
     LOG.info(
-        "Falling back to local execution payload (Block Number {}, Block Hash = {}, Fallback Reason= {})",
+        "Falling back to locally produced execution payload (Block Number {}, Block Hash = {}, Fallback Reason = {})",
         fallbackData.executionPayload.getBlockNumber(),
         fallbackData.executionPayload.getBlockHash(),
         fallbackData.reason);
