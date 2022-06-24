@@ -68,7 +68,7 @@ public class ValidateableAttestation {
     ValidateableAttestation validateableAttestation =
         new ValidateableAttestation(
             spec, attestation, Optional.empty(), OptionalInt.empty(), false);
-    // An attestation signature from a reorged block is already valid because it already
+    // An attestation signature from a reorged block is valid because it already
     // has been validated when the block was part of the canonical chain
     validateableAttestation.setValidSignature();
     return validateableAttestation;
