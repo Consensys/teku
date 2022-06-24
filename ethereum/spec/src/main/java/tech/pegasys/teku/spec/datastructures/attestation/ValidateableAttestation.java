@@ -65,12 +65,11 @@ public class ValidateableAttestation {
 
   public static ValidateableAttestation fromReorgedBlock(
       final Spec spec, final Attestation attestation) {
-    // An attestation from a reorged block does not require signature
-    // validation because its signature already has been validated when the block was
-    // part of the canonical chain
     ValidateableAttestation validateableAttestation =
         new ValidateableAttestation(
             spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+    // An attestation signature from a reorged block is already valid because it already
+    // has been validated when the block was part of the canonical chain
     validateableAttestation.setValidSignature();
     return validateableAttestation;
   }
