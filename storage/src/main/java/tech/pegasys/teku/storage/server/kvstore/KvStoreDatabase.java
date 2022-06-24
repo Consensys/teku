@@ -550,9 +550,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public long countBlindedBlocks() {
-    try (final Stream<?> stream = dao.streamBlindedBlocks()) {
-      return stream.count();
-    }
+    return dao.countBlindedBlocks();
   }
 
   @Override
@@ -560,6 +558,11 @@ public class KvStoreDatabase implements Database {
     try (final Stream<?> stream = dao.streamExecutionPayloads()) {
       return stream.count();
     }
+  }
+
+  @Override
+  public long countNonCanonicalSlots() {
+    return dao.countNonCanonicalSlots();
   }
 
   @Override

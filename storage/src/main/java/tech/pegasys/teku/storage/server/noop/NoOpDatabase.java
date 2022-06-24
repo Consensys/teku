@@ -192,5 +192,10 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long countNonCanonicalSlots() {
+    return 0;
+  }
+
+  @Override
   public void close() {}
 }

@@ -163,8 +163,23 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return finalizedDao.getBlindedNonCanonicalBlocksAtSlot(slot);
+  }
+
+  @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
+  }
+
+  @Override
+  public long countNonCanonicalSlots() {
+    return finalizedDao.countNonCanonicalSlots();
+  }
+
+  @Override
+  public long countBlindedBlocks() {
+    return finalizedDao.countBlindedBlocks();
   }
 
   @Override
@@ -172,12 +187,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return finalizedDao.streamBlindedBlocks();
   }
 
   @Override

@@ -266,10 +266,21 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+    final Optional<Set<Bytes32>> maybeRoots =
+        db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
     return maybeRoots.stream()
         .flatMap(Collection::stream)
         .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    final Optional<Set<Bytes32>> maybeRoots =
+        db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+    return maybeRoots.stream()
+        .flatMap(Collection::stream)
+        .flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root).stream())
         .collect(Collectors.toList());
   }
 
@@ -279,17 +290,21 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long countNonCanonicalSlots() {
+    return db.size(schema.getColumnNonCanonicalRootsBySlot());
+  }
+
+  @Override
+  public long countBlindedBlocks() {
+    return db.size(schema.getColumnBlindedBlocksByRoot());
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
   @Override

@@ -134,4 +134,6 @@ public interface Database extends AutoCloseable {
   long countBlindedBlocks();
 
   long countExecutionPayloads();
+
+  long countNonCanonicalSlots();
 }

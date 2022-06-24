@@ -47,13 +47,16 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
 
+  List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(UInt64 slot);
+
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
+
+  long countNonCanonicalSlots();
+
+  long countBlindedBlocks();
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<SignedBeaconBlock> streamBlindedBlocks();
 
   @MustBeClosed
   Stream<Bytes> streamExecutionPayloads();

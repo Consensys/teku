@@ -88,8 +88,28 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   @Override
+  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    final Optional<Set<Bytes32>> maybeRoots =
+        db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+    return maybeRoots.stream()
+        .flatMap(Collection::stream)
+        .flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root).stream())
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
+  }
+
+  @Override
+  public long countNonCanonicalSlots() {
+    return db.size(schema.getColumnNonCanonicalRootsBySlot());
+  }
+
+  @Override
+  public long countBlindedBlocks() {
+    return db.size(schema.getColumnNonCanonicalBlocksByRoot());
   }
 
   @Override
@@ -98,12 +118,6 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
   @Override

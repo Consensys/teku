@@ -111,6 +111,14 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public long size(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    try (final Stream<?> rawStream = streamRaw(column)) {
+      return rawStream.count();
+    }
+  }
+
+  @Override
   public <K, V> Map<K, V> getAll(final KvStoreColumn<K, V> column) {
     return withIterator(
         iterator -> {

@@ -204,6 +204,7 @@ public class DebugDbCommand implements Runnable {
 
       printIfPresent("Blinded blocks", database.countBlindedBlocks());
       printIfPresent("Execution Payloads", database.countExecutionPayloads());
+      printIfPresent("Non-canonical Slots", database.countNonCanonicalSlots());
 
       return 0;
     }
@@ -211,7 +212,7 @@ public class DebugDbCommand implements Runnable {
 
   private void printIfPresent(final String label, final long count) {
     if (count > 0L) {
-      final String formatString = "%18s: %d%n";
+      final String formatString = "%19s: %d%n";
       System.out.printf(formatString, label, count);
     }
   }

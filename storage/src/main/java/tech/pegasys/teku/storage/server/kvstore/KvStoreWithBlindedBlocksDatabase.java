@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +50,13 @@ public class KvStoreWithBlindedBlocksDatabase extends KvStoreDatabase {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     super(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+  }
+
+  @Override
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return dao.getBlindedNonCanonicalBlocksAtSlot(slot).stream()
+        .flatMap(block -> getUnblindedBlock(Optional.of(block)).stream())
+        .collect(Collectors.toList());
   }
 
   @Override
