@@ -64,7 +64,7 @@ public class ValidateableAttestation {
 
   public static ValidateableAttestation fromReorgedBlock(
       final Spec spec, final Attestation attestation) {
-    ValidateableAttestation validateableAttestation =
+    final ValidateableAttestation validateableAttestation =
         new ValidateableAttestation(
             spec, attestation, Optional.empty(), OptionalInt.empty(), false);
     // An indexed attestation from a reorged block is valid because it already
@@ -140,7 +140,7 @@ public class ValidateableAttestation {
       return;
     }
 
-    Bytes32 committeeShufflingSeed =
+    final Bytes32 committeeShufflingSeed =
         spec.getSeed(
             state,
             spec.computeEpochAtSlot(attestation.getData().getSlot()),
