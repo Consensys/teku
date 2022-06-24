@@ -972,7 +972,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventThread.start();
     proposersDataManager =
         new ProposersDataManager(
-            eventThread, spec, executionLayer, recentChainData, getProposerDefaultFeeRecipient());
+            eventThread,
+            spec,
+            metricsSystem,
+            executionLayer,
+            recentChainData,
+            getProposerDefaultFeeRecipient());
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
