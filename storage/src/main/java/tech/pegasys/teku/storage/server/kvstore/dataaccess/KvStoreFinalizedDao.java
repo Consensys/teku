@@ -89,7 +89,7 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
     void addExecutionPayload(final ExecutionPayload payload);
 
-    void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock);
+    void deleteBlindedBlock(final Bytes32 root);
 
     void deleteExecutionPayload(final Bytes32 payloadHash);
 

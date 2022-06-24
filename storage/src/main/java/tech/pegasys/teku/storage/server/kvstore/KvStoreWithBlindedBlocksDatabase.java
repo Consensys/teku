@@ -173,6 +173,7 @@ public class KvStoreWithBlindedBlocksDatabase extends KvStoreDatabase {
       addedBlocks
           .values()
           .forEach(block -> finalizedUpdater.addBlindedBlock(block.getBlock(), spec));
+      deletedHotBlockRoots.forEach(finalizedUpdater::deleteBlindedBlock);
       finalizedUpdater.commit();
     }
     updater.addCheckpointEpochs(addedBlocks);
@@ -197,7 +198,7 @@ public class KvStoreWithBlindedBlocksDatabase extends KvStoreDatabase {
             final SignedBeaconBlock block = it.next();
             LOG.debug(
                 "DELETE non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
-            updater.deleteBlindedBlock(block);
+            updater.deleteBlindedBlock(block.getRoot());
 
             block
                 .getMessage()

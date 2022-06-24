@@ -442,8 +442,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
-      finalizedUpdater.deleteBlindedBlock(signedBeaconBlock);
+    public void deleteBlindedBlock(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteBlindedBlock(blockRoot);
     }
 
     @Override

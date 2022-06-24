@@ -262,11 +262,16 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     }
 
     @Override
-    public void deleteBlindedBlock(final SignedBeaconBlock signedBeaconBlock) {
-      transaction.delete(schema.getColumnBlindedBlocksByRoot(), signedBeaconBlock.getRoot());
-      Optional<ExecutionPayloadHeader> maybeHeader =
-          signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader();
-      maybeHeader.ifPresent(header -> deleteExecutionPayload(header.hashTreeRoot()));
+    public void deleteBlindedBlock(final Bytes32 root) {
+      final Optional<SignedBeaconBlock> maybeBlock =
+          db.get(schema.getColumnBlindedBlocksByRoot(), root);
+      maybeBlock.ifPresent(
+          block -> {
+            transaction.delete(schema.getColumnBlindedBlocksByRoot(), root);
+            Optional<ExecutionPayloadHeader> maybeHeader =
+                block.getMessage().getBody().getOptionalExecutionPayloadHeader();
+            maybeHeader.ifPresent(header -> deleteExecutionPayload(header.hashTreeRoot()));
+          });
     }
 
     @Override
