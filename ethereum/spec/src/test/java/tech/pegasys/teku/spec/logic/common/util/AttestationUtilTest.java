@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -75,21 +76,26 @@ class AttestationUtilTest {
   }
 
   @TestTemplate
-  void noValidationIsDoneIfAttestationIsAlreadyValid() {
+  void noValidationIsDoneIfAttestationIsAlreadyValidAndIndexedAttestationIsPresent() {
     final ValidateableAttestation validateableAttestation =
         ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
     validateableAttestation.setValidIndexedAttestation();
+    final IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    validateableAttestation.setIndexedAttestation(indexedAttestation);
 
     final SafeFuture<AttestationProcessingResult> result =
         executeValidation(validateableAttestation);
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
+    assertThat(validateableAttestation.isValidIndexedAttestation()).isTrue();
+    assertThat(validateableAttestation.getIndexedAttestation()).hasValue(indexedAttestation);
+
     verifyNoInteractions(beaconStateAccessors, miscHelpers, asyncBLSSignatureVerifier);
   }
 
   @TestTemplate
-  void validatesAndChecksSignature() {
+  void createsAndValidatesIndexedAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final ValidateableAttestation validateableAttestation =
         ValidateableAttestation.from(spec, attestation);
@@ -99,13 +105,17 @@ class AttestationUtilTest {
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
+    assertThat(validateableAttestation.isValidIndexedAttestation()).isTrue();
+    assertThat(validateableAttestation.getIndexedAttestation()).isPresent();
+
     verify(asyncBLSSignatureVerifier).verify(anyList(), any(Bytes.class), any(BLSSignature.class));
   }
 
   @TestTemplate
-  void validatesButDoesNotCheckSignatureIfAttestationSignatureIsAlreadyValidated() {
+  void createsButDoesNotValidateIndexedAttestationBecauseItHasAlreadyBeenValidated() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    // reorged block does not need signature validation
+    // reorged block does not require indexed attestation validation, however it requires the
+    // creation of it
     final ValidateableAttestation validateableAttestation =
         ValidateableAttestation.fromReorgedBlock(spec, attestation);
 
@@ -113,6 +123,9 @@ class AttestationUtilTest {
         executeValidation(validateableAttestation);
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
+
+    assertThat(validateableAttestation.isValidIndexedAttestation()).isTrue();
+    assertThat(validateableAttestation.getIndexedAttestation()).isPresent();
 
     verifyNoInteractions(miscHelpers, asyncBLSSignatureVerifier);
   }

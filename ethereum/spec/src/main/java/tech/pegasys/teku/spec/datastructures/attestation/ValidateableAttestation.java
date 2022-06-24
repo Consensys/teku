@@ -40,7 +40,6 @@ public class ValidateableAttestation {
   private final boolean producedLocally;
   private final OptionalInt receivedSubnetId;
 
-  private volatile boolean signatureValidated = false;
   private volatile boolean isValidIndexedAttestation = false;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
@@ -68,9 +67,9 @@ public class ValidateableAttestation {
     ValidateableAttestation validateableAttestation =
         new ValidateableAttestation(
             spec, attestation, Optional.empty(), OptionalInt.empty(), false);
-    // An attestation signature from a reorged block is valid because it already
+    // An indexed attestation from a reorged block is valid because it already
     // has been validated when the block was part of the canonical chain
-    validateableAttestation.setValidSignature();
+    validateableAttestation.setValidIndexedAttestation();
     return validateableAttestation;
   }
 
@@ -110,14 +109,6 @@ public class ValidateableAttestation {
 
   public boolean isProducedLocally() {
     return producedLocally;
-  }
-
-  public boolean isSignatureValidated() {
-    return signatureValidated;
-  }
-
-  public void setValidSignature() {
-    this.signatureValidated = true;
   }
 
   public boolean isValidIndexedAttestation() {
@@ -221,7 +212,6 @@ public class ValidateableAttestation {
         .add("hashTreeRoot", hashTreeRoot)
         .add("gossiped", gossiped)
         .add("producedLocally", producedLocally)
-        .add("signatureValidated", signatureValidated)
         .add("isValidIndexedAttestation", isValidIndexedAttestation)
         .add("indexedAttestation", indexedAttestation)
         .add("committeeShufflingSeed", committeeShufflingSeed)

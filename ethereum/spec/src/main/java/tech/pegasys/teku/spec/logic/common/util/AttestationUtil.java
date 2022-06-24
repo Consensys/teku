@@ -158,7 +158,8 @@ public class AttestationUtil {
       final BeaconState state,
       final ValidateableAttestation attestation,
       final AsyncBLSSignatureVerifier blsSignatureVerifier) {
-    if (attestation.isValidIndexedAttestation()) {
+    if (attestation.isValidIndexedAttestation()
+        && attestation.getIndexedAttestation().isPresent()) {
       return completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
 
@@ -172,15 +173,15 @@ public class AttestationUtil {
             })
         .thenCompose(
             att -> {
-              final boolean skipSignatureValidation = attestation.isSignatureValidated();
-              return isValidIndexedAttestationAsync(
-                  fork, state, att, blsSignatureVerifier, skipSignatureValidation);
+              if (attestation.isValidIndexedAttestation()) {
+                return completedFuture(AttestationProcessingResult.SUCCESSFUL);
+              }
+              return isValidIndexedAttestationAsync(fork, state, att, blsSignatureVerifier);
             })
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
                 attestation.saveCommitteeShufflingSeed(state);
-                attestation.setValidSignature();
                 attestation.setValidIndexedAttestation();
               }
               return result;
@@ -227,16 +228,6 @@ public class AttestationUtil {
       final BeaconState state,
       final IndexedAttestation indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
-    return isValidIndexedAttestationAsync(
-        fork, state, indexedAttestation, signatureVerifier, false);
-  }
-
-  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
-      final Fork fork,
-      final BeaconState state,
-      final IndexedAttestation indexedAttestation,
-      final AsyncBLSSignatureVerifier signatureVerifier,
-      final boolean skipSignatureValidation) {
     final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 
     if (indices.isEmpty()
@@ -253,10 +244,6 @@ public class AttestationUtil {
     if (pubkeys.size() < indices.size()) {
       return completedFuture(
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
-    }
-
-    if (skipSignatureValidation) {
-      return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
 
     final BLSSignature signature = indexedAttestation.getSignature();
