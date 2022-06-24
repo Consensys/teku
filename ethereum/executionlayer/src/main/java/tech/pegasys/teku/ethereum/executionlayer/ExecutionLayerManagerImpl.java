@@ -74,9 +74,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
 
+  // Metric - execution payload "source" label values
   static final String LOCAL_EL_SOURCE = "local_el";
   static final String BUILDER_SOURCE = "builder";
   static final String BUILDER_LOCAL_EL_FALLBACK_SOURCE = "builder_local_el_fallback";
+
+  // Metric - fallback "reason" label values
+  static final String FALLBACK_REASON_VALIDATOR_NOT_REGISTERED = "validator_not_registered";
+  static final String FALLBACK_REASON_FORCED = "forced";
+  static final String FALLBACK_REASON_BUILDER_NOT_AVAILABLE = "builder_not_available";
+  static final String FALLBACK_REASON_BUILDER_ERROR = "builder_error";
+  static final String FALLBACK_REASON_NONE = "";
 
   /**
    * slotToLocalElFallbackPayload usage:
@@ -87,7 +95,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
    * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
    * we must call the builder to serve builderGetPayload later
    */
-  private final NavigableMap<UInt64, Optional<ExecutionPayload>> slotToLocalElFallbackPayload =
+  private final NavigableMap<UInt64, Optional<FallbackData>> slotToLocalElFallbackData =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionEngineClient executionEngineClient;
@@ -162,13 +170,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             TekuMetricCategory.BEACON,
             "execution_payload_source",
             "Counter recording the source of the execution payload during block production",
-            "source");
+            "source",
+            "fallback_reason");
   }
 
   @Override
   public void onSlot(UInt64 slot) {
     updateBuilderAvailability();
-    slotToLocalElFallbackPayload
+    slotToLocalElFallbackData
         .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
         .clear();
   }
@@ -251,7 +260,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenPeek(
             executionPayload -> {
               if (!isFallbackCall) {
-                recordExecutionPayloadSource(LOCAL_EL_SOURCE);
+                recordExecutionPayloadSource(LOCAL_EL_SOURCE, FALLBACK_REASON_NONE);
               }
               LOG.trace(
                   "engineGetPayload(payloadId={}, slot={}) -> {}",
@@ -328,9 +337,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
-    if (forceLocalFallback || !isBuilderAvailable() || validatorRegistration.isEmpty()) {
+    // fallback conditions
+    final String fallbackReason;
+    if (forceLocalFallback) {
+      fallbackReason = FALLBACK_REASON_FORCED;
+    } else if (!isBuilderAvailable()) {
+      fallbackReason = FALLBACK_REASON_BUILDER_NOT_AVAILABLE;
+    } else if (validatorRegistration.isEmpty()) {
+      fallbackReason = FALLBACK_REASON_VALIDATOR_NOT_REGISTERED;
+    } else {
+      fallbackReason = null;
+    }
+
+    if (fallbackReason != null) {
       // fallback to local execution engine
-      return doFallbackToLocal(localExecutionPayload, slot);
+      return doFallbackToLocal(localExecutionPayload, slot, fallbackReason);
     }
 
     final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
@@ -360,13 +381,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             signedBuilderBid ->
                 builderBidValidator.validateAndGetPayloadHeader(
                     spec, signedBuilderBid, validatorRegistration.get(), state))
-        .thenPeek(__ -> slotToLocalElFallbackPayload.put(slot, Optional.empty()))
+        .thenPeek(__ -> slotToLocalElFallbackData.put(slot, Optional.empty()))
         .exceptionallyCompose(
             error -> {
               LOG.error(
                   "Unable to obtain a valid payload from builder. Falling back to local execution engine.",
                   error);
-              return doFallbackToLocal(localExecutionPayload, slot);
+              return doFallbackToLocal(localExecutionPayload, slot, FALLBACK_REASON_BUILDER_ERROR);
             });
   }
 
@@ -380,8 +401,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
-    final Optional<Optional<ExecutionPayload>> maybeProcessedSlot =
-        Optional.ofNullable(slotToLocalElFallbackPayload.get(slot));
+    final Optional<Optional<FallbackData>> maybeProcessedSlot =
+        Optional.ofNullable(slotToLocalElFallbackData.get(slot));
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
@@ -389,30 +410,32 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    final Optional<ExecutionPayload> maybeLocalElFallbackPayload = maybeProcessedSlot.get();
+    final Optional<FallbackData> maybeLocalElFallbackData = maybeProcessedSlot.get();
 
-    if (maybeLocalElFallbackPayload.isEmpty()) {
+    if (maybeLocalElFallbackData.isEmpty()) {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    slotToLocalElFallbackPayload.remove(slot);
+    slotToLocalElFallbackData.remove(slot);
 
     // fallback to local execution engine payload
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
 
-    recordExecutionPayloadSource(BUILDER_LOCAL_EL_FALLBACK_SOURCE);
+    recordExecutionPayloadSource(
+        BUILDER_LOCAL_EL_FALLBACK_SOURCE, maybeLocalElFallbackData.get().reason);
 
-    return SafeFuture.completedFuture(maybeLocalElFallbackPayload.get());
+    return SafeFuture.completedFuture(maybeLocalElFallbackData.get().executionPayload);
   }
 
   private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
-      final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot) {
+      final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot, String reason) {
 
     return localExecutionPayload.thenApply(
         executionPayload -> {
           // store the fallback payload for this slot
-          slotToLocalElFallbackPayload.put(slot, Optional.of(executionPayload));
+          slotToLocalElFallbackData.put(
+              slot, Optional.of(new FallbackData(executionPayload, reason)));
 
           return spec.atSlot(slot)
               .getSchemaDefinitions()
@@ -433,7 +456,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
             executionPayload -> {
-              recordExecutionPayloadSource(BUILDER_SOURCE);
+              recordExecutionPayloadSource(BUILDER_SOURCE, FALLBACK_REASON_NONE);
               LOG.trace(
                   "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
                   signedBlindedBeaconBlock,
@@ -486,7 +509,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         payloadHeader.getGasUsed());
   }
 
-  private void recordExecutionPayloadSource(final String source) {
-    executionPayloadSourceCounter.labels(source).inc();
+  private void recordExecutionPayloadSource(final String source, final String fallbackReason) {
+    executionPayloadSourceCounter.labels(source, fallbackReason).inc();
+  }
+
+  private static class FallbackData {
+    final ExecutionPayload executionPayload;
+    final String reason;
+
+    public FallbackData(ExecutionPayload executionPayload, String reason) {
+      this.executionPayload = executionPayload;
+      this.reason = reason;
+    }
   }
 }
