@@ -146,7 +146,7 @@ public class OperationsReOrgManagerTest {
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues())
         .containsExactlyInAnyOrderElementsOf(attestationList)
-        .allMatch(ValidateableAttestation::isProducedFromNonCanonicalBlock);
+        .allMatch(ValidateableAttestation::isSignatureValidated);
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttesterSlashings());

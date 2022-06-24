@@ -84,6 +84,8 @@ class AttestationUtilTest {
         executeValidation(validateableAttestation);
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
+
+    verifyNoInteractions(beaconStateAccessors, miscHelpers, asyncBLSSignatureVerifier);
   }
 
   @TestTemplate
@@ -101,17 +103,18 @@ class AttestationUtilTest {
   }
 
   @TestTemplate
-  void validatesButDoesNotCheckSignatureIfAttestationIsFromNonCanonicalBlock() {
+  void validatesButDoesNotCheckSignatureIfAttestationSignatureIsAlreadyValidated() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
+    // reorged block does not need signature validation
     final ValidateableAttestation validateableAttestation =
-        ValidateableAttestation.fromNonCanonicalBlock(spec, attestation);
+        ValidateableAttestation.fromReorgedBlock(spec, attestation);
 
     final SafeFuture<AttestationProcessingResult> result =
         executeValidation(validateableAttestation);
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
-    verifyNoInteractions(asyncBLSSignatureVerifier);
+    verifyNoInteractions(miscHelpers, asyncBLSSignatureVerifier);
   }
 
   private SafeFuture<AttestationProcessingResult> executeValidation(

@@ -38,7 +38,7 @@ public class ValidateableAttestation {
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
-  private final boolean producedFromNonCanonicalBlock;
+  private final boolean signatureValidated;
   private final OptionalInt receivedSubnetId;
 
   private volatile boolean isValidIndexedAttestation = false;
@@ -46,30 +46,34 @@ public class ValidateableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
-  public static ValidateableAttestation from(final Spec spec, Attestation attestation) {
+  public static ValidateableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false, false);
   }
 
-  public static ValidateableAttestation fromValidator(final Spec spec, Attestation attestation) {
+  public static ValidateableAttestation fromValidator(
+      final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), true, false);
   }
 
   public static ValidateableAttestation fromNetwork(
-      final Spec spec, Attestation attestation, int receivedSubnetId) {
+      final Spec spec, final Attestation attestation, final int receivedSubnetId) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false, false);
   }
 
-  public static ValidateableAttestation fromNonCanonicalBlock(
-      final Spec spec, Attestation attestation) {
+  public static ValidateableAttestation fromReorgedBlock(
+      final Spec spec, final Attestation attestation) {
+    // An attestation from a reorged block does not require signature
+    // validation because its signature already has been verified when the block was
+    // part of the canonical chain
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false, true);
   }
 
   public static ValidateableAttestation aggregateFromValidator(
-      final Spec spec, SignedAggregateAndProof attestation) {
+      final Spec spec, final SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
@@ -80,7 +84,7 @@ public class ValidateableAttestation {
   }
 
   public static ValidateableAttestation aggregateFromNetwork(
-      final Spec spec, SignedAggregateAndProof attestation) {
+      final Spec spec, final SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
@@ -96,22 +100,22 @@ public class ValidateableAttestation {
       final Optional<SignedAggregateAndProof> aggregateAndProof,
       final OptionalInt receivedSubnetId,
       final boolean producedLocally,
-      final boolean producedFromNonCanonicalBlock) {
+      final boolean signatureValidated) {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
-    this.producedFromNonCanonicalBlock = producedFromNonCanonicalBlock;
+    this.signatureValidated = signatureValidated;
   }
 
   public boolean isProducedLocally() {
     return producedLocally;
   }
 
-  public boolean isProducedFromNonCanonicalBlock() {
-    return producedFromNonCanonicalBlock;
+  public boolean isSignatureValidated() {
+    return signatureValidated;
   }
 
   public boolean isValidIndexedAttestation() {
@@ -134,11 +138,11 @@ public class ValidateableAttestation {
     return receivedSubnetId;
   }
 
-  public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
+  public void setIndexedAttestation(final IndexedAttestation indexedAttestation) {
     this.indexedAttestation = Optional.of(indexedAttestation);
   }
 
-  public void saveCommitteeShufflingSeed(BeaconState state) {
+  public void saveCommitteeShufflingSeed(final BeaconState state) {
     if (committeeShufflingSeed.isPresent()) {
       return;
     }
@@ -215,7 +219,7 @@ public class ValidateableAttestation {
         .add("hashTreeRoot", hashTreeRoot)
         .add("gossiped", gossiped)
         .add("producedLocally", producedLocally)
-        .add("producedFromNonCanonicalBlock", producedFromNonCanonicalBlock)
+        .add("signatureValidated", signatureValidated)
         .add("isValidIndexedAttestation", isValidIndexedAttestation)
         .add("indexedAttestation", indexedAttestation)
         .add("committeeShufflingSeed", committeeShufflingSeed)
