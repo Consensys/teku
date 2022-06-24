@@ -107,6 +107,7 @@ class AttestationUtilTest {
 
     assertThat(validateableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validateableAttestation.getIndexedAttestation()).isPresent();
+    assertThat(validateableAttestation.getCommitteeShufflingSeed()).isPresent();
 
     verify(asyncBLSSignatureVerifier).verify(anyList(), any(Bytes.class), any(BLSSignature.class));
   }
@@ -126,6 +127,7 @@ class AttestationUtilTest {
 
     assertThat(validateableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validateableAttestation.getIndexedAttestation()).isPresent();
+    assertThat(validateableAttestation.getCommitteeShufflingSeed()).isPresent();
 
     verifyNoInteractions(miscHelpers, asyncBLSSignatureVerifier);
   }
