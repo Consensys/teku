@@ -180,6 +180,7 @@ public class AttestationUtil {
             result -> {
               if (result.isSuccessful()) {
                 attestation.saveCommitteeShufflingSeed(state);
+                attestation.setValidSignature();
                 attestation.setValidIndexedAttestation();
               }
               return result;

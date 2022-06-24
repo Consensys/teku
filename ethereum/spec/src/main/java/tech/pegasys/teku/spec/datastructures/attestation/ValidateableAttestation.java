@@ -38,9 +38,9 @@ public class ValidateableAttestation {
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
-  private final boolean signatureValidated;
   private final OptionalInt receivedSubnetId;
 
+  private volatile boolean signatureValidated = false;
   private volatile boolean isValidIndexedAttestation = false;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
@@ -48,28 +48,31 @@ public class ValidateableAttestation {
 
   public static ValidateableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.empty(), false, false);
+        spec, attestation, Optional.empty(), OptionalInt.empty(), false);
   }
 
   public static ValidateableAttestation fromValidator(
       final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.empty(), true, false);
+        spec, attestation, Optional.empty(), OptionalInt.empty(), true);
   }
 
   public static ValidateableAttestation fromNetwork(
       final Spec spec, final Attestation attestation, final int receivedSubnetId) {
     return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false, false);
+        spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
   }
 
   public static ValidateableAttestation fromReorgedBlock(
       final Spec spec, final Attestation attestation) {
     // An attestation from a reorged block does not require signature
-    // validation because its signature already has been verified when the block was
+    // validation because its signature already has been validated when the block was
     // part of the canonical chain
-    return new ValidateableAttestation(
-        spec, attestation, Optional.empty(), OptionalInt.empty(), false, true);
+    ValidateableAttestation validateableAttestation =
+        new ValidateableAttestation(
+            spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+    validateableAttestation.setValidSignature();
+    return validateableAttestation;
   }
 
   public static ValidateableAttestation aggregateFromValidator(
@@ -79,8 +82,7 @@ public class ValidateableAttestation {
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
-        true,
-        false);
+        true);
   }
 
   public static ValidateableAttestation aggregateFromNetwork(
@@ -90,7 +92,6 @@ public class ValidateableAttestation {
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
-        false,
         false);
   }
 
@@ -99,15 +100,13 @@ public class ValidateableAttestation {
       final Attestation attestation,
       final Optional<SignedAggregateAndProof> aggregateAndProof,
       final OptionalInt receivedSubnetId,
-      final boolean producedLocally,
-      final boolean signatureValidated) {
+      final boolean producedLocally) {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
-    this.signatureValidated = signatureValidated;
   }
 
   public boolean isProducedLocally() {
@@ -116,6 +115,10 @@ public class ValidateableAttestation {
 
   public boolean isSignatureValidated() {
     return signatureValidated;
+  }
+
+  public void setValidSignature() {
+    this.signatureValidated = true;
   }
 
   public boolean isValidIndexedAttestation() {
