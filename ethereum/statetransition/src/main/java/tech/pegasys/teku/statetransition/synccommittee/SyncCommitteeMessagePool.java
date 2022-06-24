@@ -92,7 +92,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
         message.getSubcommitteeAssignments().orElseThrow();
     final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =
         committeeContributionData.computeIfAbsent(message.getSlot(), __ -> new HashMap<>());
-    IntSet applicableSubnets;
+    final IntSet applicableSubnets;
     if (message.getReceivedSubnetId().isEmpty()) {
       applicableSubnets = assignments.getAssignedSubcommittees();
     } else {
