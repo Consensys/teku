@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -117,7 +118,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     checkNotNull(version);
 
     return new ExecutionLayerManagerImpl(
-        createEngineClient(version, engineWeb3JClient, metricsSystem),
+        createEngineClient(version, engineWeb3JClient, timeProvider, metricsSystem),
         createBuilderClient(builderRestClient, spec, timeProvider, metricsSystem),
         spec,
         EVENT_LOG,
@@ -126,13 +127,19 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private static ExecutionEngineClient createEngineClient(
-      final Version version, final Web3JClient web3JClient, final MetricsSystem metricsSystem) {
+      final Version version,
+      final Web3JClient web3JClient,
+      final TimeProvider timeProvider,
+      final MetricsSystem metricsSystem) {
     LOG.info("Execution Engine version: {}", version);
     if (version != Version.KILNV2) {
       throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
     }
+    final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
+    final ExecutionEngineClient metricEngineClient =
+        new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);
     return new ThrottlingExecutionEngineClient(
-        new Web3JExecutionEngineClient(web3JClient), MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
+        metricEngineClient, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
   }
 
   private static Optional<ExecutionBuilderClient> createBuilderClient(
@@ -230,7 +237,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    return engineGetPayload(executionPayloadContext, slot, false);
+    return engineGetPayload(executionPayloadContext, slot, false)
+        .thenPeek(__ -> recordExecutionPayloadSource(LOCAL_EL_SOURCE, FALLBACK_REASON_NONE));
   }
 
   public SafeFuture<ExecutionPayload> engineGetPayload(
@@ -258,16 +266,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
-            executionPayload -> {
-              if (!isFallbackCall) {
-                recordExecutionPayloadSource(LOCAL_EL_SOURCE, FALLBACK_REASON_NONE);
-              }
-              LOG.trace(
-                  "engineGetPayload(payloadId={}, slot={}) -> {}",
-                  executionPayloadContext.getPayloadId(),
-                  slot,
-                  executionPayload);
-            });
+            executionPayload ->
+                LOG.trace(
+                    "engineGetPayload(payloadId={}, slot={}) -> {}",
+                    executionPayloadContext.getPayloadId(),
+                    slot,
+                    executionPayload));
   }
 
   @Override
@@ -350,8 +354,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     }
 
     if (fallbackReason != null) {
-      // fallback to local execution engine
-      return doFallbackToLocal(localExecutionPayload, slot, fallbackReason);
+      return getHeaderFromLocalExecutionPayload(localExecutionPayload, slot, fallbackReason);
     }
 
     final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
@@ -387,7 +390,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
               LOG.error(
                   "Unable to obtain a valid payload from builder. Falling back to local execution engine.",
                   error);
-              return doFallbackToLocal(localExecutionPayload, slot, FALLBACK_REASON_BUILDER_ERROR);
+              return getHeaderFromLocalExecutionPayload(
+                  localExecutionPayload, slot, FALLBACK_REASON_BUILDER_ERROR);
             });
   }
 
@@ -416,19 +420,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    slotToLocalElFallbackData.remove(slot);
-
-    // fallback to local execution engine payload
-    // note: we don't do any particular consistency check here.
-    // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-
-    recordExecutionPayloadSource(
-        BUILDER_LOCAL_EL_FALLBACK_SOURCE, maybeLocalElFallbackData.get().reason);
-
-    return SafeFuture.completedFuture(maybeLocalElFallbackData.get().executionPayload);
+    return getPayloadFromFallbackData(maybeLocalElFallbackData.get());
   }
 
-  private SafeFuture<ExecutionPayloadHeader> doFallbackToLocal(
+  private SafeFuture<ExecutionPayloadHeader> getHeaderFromLocalExecutionPayload(
       final SafeFuture<ExecutionPayload> localExecutionPayload, final UInt64 slot, String reason) {
 
     return localExecutionPayload.thenApply(
@@ -456,12 +451,23 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
             executionPayload -> {
+              logReceivedBuilderExecutionPayload(executionPayload);
               recordExecutionPayloadSource(BUILDER_SOURCE, FALLBACK_REASON_NONE);
               LOG.trace(
                   "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
                   signedBlindedBeaconBlock,
                   executionPayload);
             });
+  }
+
+  private SafeFuture<ExecutionPayload> getPayloadFromFallbackData(final FallbackData fallbackData) {
+    // note: we don't do any particular consistency check here.
+    // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
+
+    logFallbackToLocalExecutionPayload(fallbackData);
+    recordExecutionPayloadSource(BUILDER_LOCAL_EL_FALLBACK_SOURCE, fallbackData.reason);
+
+    return SafeFuture.completedFuture(fallbackData.executionPayload);
   }
 
   boolean isBuilderAvailable() {
@@ -496,6 +502,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private void markBuilderAsNotAvailable(String errorMessage) {
     latestBuilderAvailability.set(false);
     eventLogger.executionBuilderIsOffline(errorMessage);
+  }
+
+  private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
+    LOG.info(
+        "Falling back to local execution payload (Block Number {}, Block Hash = {}, Fallback Reason= {})",
+        fallbackData.executionPayload.getBlockNumber(),
+        fallbackData.executionPayload.getBlockHash(),
+        fallbackData.reason);
+  }
+
+  private void logReceivedBuilderExecutionPayload(final ExecutionPayload executionPayload) {
+    LOG.info(
+        "Received execution payload from Builder (Block Number {}, Block Hash = {})",
+        executionPayload.getBlockNumber(),
+        executionPayload.getBlockHash());
   }
 
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
