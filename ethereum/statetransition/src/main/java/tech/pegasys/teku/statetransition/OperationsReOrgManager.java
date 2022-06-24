@@ -126,7 +126,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
         attestation ->
             attestationManager
                 .onAttestation(
-                    ValidateableAttestation.fromNonCanonicalBlock(
+                    ValidateableAttestation.fromReorgedBlock(
                         recentChainData.getSpec(), attestation))
                 .finish(
                     result ->
