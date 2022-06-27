@@ -30,18 +30,12 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.teku.GetProtoArrayResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetProtoArray extends MigratingEndpointAdapter {
   public static final String ROUTE = "/teku/v1/debug/beacon/protoarray";
@@ -89,27 +83,6 @@ public class GetProtoArray extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-
-    final List<Map<String, String>> data =
-        chainDataProvider.getProtoArrayData().stream()
-            .map(this::mapObjectValuesToString)
-            .collect(Collectors.toList());
-    request.respondOk(data);
-  }
-
-  // TODO check this correct approach to making mapping type work
-  private Map<String, String> mapObjectValuesToString(final Map<String, Object> objectMap) {
-    final Map<String, String> output = new HashMap<>();
-    for (String key : objectMap.keySet()) {
-      final Object value = objectMap.get(key);
-      if (value instanceof UInt64) {
-        output.put(key, value.toString());
-      } else if (value instanceof Bytes32) {
-        output.put(key, ((Bytes32) value).toHexString());
-      } else if (value instanceof String) {
-        output.put(key, (String) value);
-      }
-    }
-    return output;
+    request.respondOk(chainDataProvider.getProtoArrayData());
   }
 }

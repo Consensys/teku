@@ -29,14 +29,12 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetProtoArrayTest extends AbstractMigratedBeaconHandlerTest {
-  private final Map<String, String> stringResponseMap =
+  private final Map<String, String> responseMap =
       ImmutableMap.<String, String>builder()
           .put("slot", "0")
           .put("blockRoot", "0x4cc1b500e2fc6df06d141972f1494f73c82f8e9d9b66321f7df1dfde969f8eee")
@@ -58,37 +56,12 @@ public class GetProtoArrayTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnProtoArrayInformation() throws JsonProcessingException {
-    final Map<String, Object> protoArrayData =
-        ImmutableMap.<String, Object>builder()
-            .put("slot", UInt64.ZERO)
-            .put(
-                "blockRoot",
-                Bytes32.fromHexString(
-                    "0x4cc1b500e2fc6df06d141972f1494f73c82f8e9d9b66321f7df1dfde969f8eee"))
-            .put(
-                "parentRoot",
-                Bytes32.fromHexString(
-                    "0x0000000000000000000000000000000000000000000000000000000000000000"))
-            .put(
-                "stateRoot",
-                Bytes32.fromHexString(
-                    "0x32342ef26d1db3869388444dfe62eeea91444d5242c43b3fed5c216c2d8c6a5b"))
-            .put("justifiedEpoch", UInt64.ZERO)
-            .put("finalizedEpoch", UInt64.ZERO)
-            .put(
-                "executionBlockHash",
-                Bytes32.fromHexString(
-                    "0x0000000000000000000000000000000000000000000000000000000000000000"))
-            .put("validationStatus", "VALID")
-            .put("weight", UInt64.valueOf("409600000000"))
-            .build();
-
-    when(chainDataProvider.getProtoArrayData()).thenReturn(List.of(protoArrayData));
+    when(chainDataProvider.getProtoArrayData()).thenReturn(List.of(responseMap));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(List.of(stringResponseMap));
+    assertThat(request.getResponseBody()).isEqualTo(List.of(responseMap));
   }
 
   @Test
@@ -108,7 +81,7 @@ public class GetProtoArrayTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, List.of(stringResponseMap));
+    final String data = getResponseStringFromMetadata(handler, SC_OK, List.of(responseMap));
     final String expected =
         Resources.toString(Resources.getResource(GetProtoArray.class, "getProtoArray.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
