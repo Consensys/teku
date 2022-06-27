@@ -37,7 +37,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
@@ -100,7 +99,7 @@ public class GetBlockRoot extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -111,12 +110,9 @@ public class GetBlockRoot extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeRootAndMetaData -> {
-              if (maybeRootAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              return AsyncApiResponse.respondOk(maybeRootAndMetaData.get());
-            }));
+            maybeRootAndMetaData ->
+                maybeRootAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

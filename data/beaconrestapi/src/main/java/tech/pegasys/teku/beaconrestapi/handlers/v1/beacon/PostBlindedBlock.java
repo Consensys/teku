@@ -38,7 +38,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -115,7 +114,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
             description = "Beacon node is currently syncing.")
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 

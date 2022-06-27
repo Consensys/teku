@@ -130,12 +130,10 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
         provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
     request.respondAsync(
         result.thenApplyChecked(
-            maybeBlock -> {
-              if (maybeBlock.isEmpty()) {
-                throw new ChainDataUnavailableException();
-              }
-              return AsyncApiResponse.respondOk(maybeBlock.get());
-            }));
+            maybeBlock ->
+                maybeBlock
+                    .map(AsyncApiResponse::respondOk)
+                    .orElseThrow(ChainDataUnavailableException::new)));
   }
 
   private static EndpointMetadata getEndpointMetaData(

@@ -74,7 +74,8 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_attestation_data</a>
    */
-  public boolean isSlashableAttestationData(AttestationData data1, AttestationData data2) {
+  public boolean isSlashableAttestationData(
+      final AttestationData data1, final AttestationData data2) {
     return (
     // case 1: double vote || case 2: surround vote
     (!data1.equals(data2) && data1.getTarget().getEpoch().equals(data2.getTarget().getEpoch()))
@@ -91,8 +92,9 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
-  public IndexedAttestation getIndexedAttestation(BeaconState state, Attestation attestation) {
-    List<Integer> attestingIndices =
+  public IndexedAttestation getIndexedAttestation(
+      final BeaconState state, final Attestation attestation) {
+    final List<Integer> attestingIndices =
         getAttestingIndices(state, attestation.getData(), attestation.getAggregationBits());
 
     final IndexedAttestationSchema indexedAttestationSchema =
@@ -117,12 +119,13 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
-  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
+  public IntList getAttestingIndices(
+      final BeaconState state, final AttestationData data, final SszBitlist bits) {
     return IntList.of(streamAttestingIndices(state, data, bits).toArray());
   }
 
   public IntStream streamAttestingIndices(
-      BeaconState state, AttestationData data, SszBitlist bits) {
+      final BeaconState state, final AttestationData data, final SszBitlist bits) {
     IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
@@ -134,15 +137,15 @@ public class AttestationUtil {
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      Fork fork, BeaconState state, ValidateableAttestation attestation) {
+      final Fork fork, final BeaconState state, final ValidateableAttestation attestation) {
     return isValidIndexedAttestation(fork, state, attestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      Fork fork,
-      BeaconState state,
-      ValidateableAttestation attestation,
-      BLSSignatureVerifier blsSignatureVerifier) {
+      final Fork fork,
+      final BeaconState state,
+      final ValidateableAttestation attestation,
+      final BLSSignatureVerifier blsSignatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
             fork, state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
@@ -151,23 +154,30 @@ public class AttestationUtil {
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
-      Fork fork,
-      BeaconState state,
-      ValidateableAttestation attestation,
-      AsyncBLSSignatureVerifier blsSignatureVerifier) {
-    if (attestation.isValidIndexedAttestation()) {
+      final Fork fork,
+      final BeaconState state,
+      final ValidateableAttestation attestation,
+      final AsyncBLSSignatureVerifier blsSignatureVerifier) {
+    if (attestation.isValidIndexedAttestation()
+        && attestation.getIndexedAttestation().isPresent()) {
       return completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
 
     return SafeFuture.of(
             () -> {
               // getIndexedAttestation() throws, so wrap it in a future
-              IndexedAttestation indexedAttestation =
+              final IndexedAttestation indexedAttestation =
                   getIndexedAttestation(state, attestation.getAttestation());
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
             })
-        .thenCompose(att -> isValidIndexedAttestationAsync(fork, state, att, blsSignatureVerifier))
+        .thenCompose(
+            att -> {
+              if (attestation.isValidIndexedAttestation()) {
+                return completedFuture(AttestationProcessingResult.SUCCESSFUL);
+              }
+              return isValidIndexedAttestationAsync(fork, state, att, blsSignatureVerifier);
+            })
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -197,15 +207,15 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public AttestationProcessingResult isValidIndexedAttestation(
-      Fork fork, BeaconState state, IndexedAttestation indexedAttestation) {
+      final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {
     return isValidIndexedAttestation(fork, state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      Fork fork,
-      BeaconState state,
-      IndexedAttestation indexedAttestation,
-      BLSSignatureVerifier signatureVerifier) {
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestation indexedAttestation,
+      final BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
             fork, state, indexedAttestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
@@ -214,11 +224,11 @@ public class AttestationUtil {
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
-      Fork fork,
-      BeaconState state,
-      IndexedAttestation indexedAttestation,
-      AsyncBLSSignatureVerifier signatureVerifier) {
-    SszUInt64List indices = indexedAttestation.getAttestingIndices();
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestation indexedAttestation,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 
     if (indices.isEmpty()
         || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
@@ -226,7 +236,7 @@ public class AttestationUtil {
           AttestationProcessingResult.invalid("Attesting indices are not sorted"));
     }
 
-    List<BLSPublicKey> pubkeys =
+    final List<BLSPublicKey> pubkeys =
         indices
             .streamUnboxed()
             .flatMap(i -> beaconStateAccessors.getValidatorPubKey(state, i).stream())
@@ -236,14 +246,14 @@ public class AttestationUtil {
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
     }
 
-    BLSSignature signature = indexedAttestation.getSignature();
-    Bytes32 domain =
+    final BLSSignature signature = indexedAttestation.getSignature();
+    final Bytes32 domain =
         beaconStateAccessors.getDomain(
             Domain.BEACON_ATTESTER,
             indexedAttestation.getData().getTarget().getEpoch(),
             fork,
             state.getGenesisValidatorsRoot());
-    Bytes signingRoot = miscHelpers.computeSigningRoot(indexedAttestation.getData(), domain);
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(indexedAttestation.getData(), domain);
 
     return signatureVerifier
         .verify(pubkeys, signingRoot, signature)
@@ -259,30 +269,22 @@ public class AttestationUtil {
             });
   }
 
-  // Returns the index of the first attester in the Attestation
-  public int getAttesterIndexIntoCommittee(Attestation attestation) {
-    SszBitlist aggregationBits = attestation.getAggregationBits();
-    for (int i = 0; i < aggregationBits.size(); i++) {
-      if (aggregationBits.getBit(i)) {
-        return i;
-      }
-    }
-    throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
-  }
-
   // Get attestation data that does not include attester specific shard or crosslink information
   public AttestationData getGenericAttestationData(
-      UInt64 slot, BeaconState state, BeaconBlockSummary block, final UInt64 committeeIndex) {
-    UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlockSummary block,
+      final UInt64 committeeIndex) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beaconBlockRoot = block.getRoot();
-    UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
-    Bytes32 epochBoundaryBlockRoot =
+    final Bytes32 beaconBlockRoot = block.getRoot();
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    final Bytes32 epochBoundaryBlockRoot =
         startSlot.compareTo(slot) == 0 || state.getSlot().compareTo(startSlot) <= 0
             ? block.getRoot()
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
-    Checkpoint source = state.getCurrentJustifiedCheckpoint();
-    Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
+    final Checkpoint source = state.getCurrentJustifiedCheckpoint();
+    final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
 
     // Set attestation data
     return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
