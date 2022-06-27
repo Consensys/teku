@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -70,10 +71,12 @@ class ForkChoiceNotifierTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
+  private StubMetricsSystem metricsSystem;
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
   private ReadOnlyForkChoiceStrategy forkChoiceStrategy;
   private ProposersDataManager proposersDataManager;
+
   private final Optional<Eth1Address> defaultFeeRecipient =
       Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
@@ -101,11 +104,13 @@ class ForkChoiceNotifierTest {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
+    metricsSystem = new StubMetricsSystem();
     proposersDataManager =
         spy(
             new ProposersDataManager(
                 eventThread,
                 spec,
+                metricsSystem,
                 executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
@@ -133,10 +138,16 @@ class ForkChoiceNotifierTest {
   void reInitializePreMerge() {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
+    metricsSystem = new StubMetricsSystem();
     proposersDataManager =
         spy(
             new ProposersDataManager(
-                eventThread, spec, executionLayerChannel, recentChainData, defaultFeeRecipient));
+                eventThread,
+                spec,
+                metricsSystem,
+                executionLayerChannel,
+                recentChainData,
+                defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);

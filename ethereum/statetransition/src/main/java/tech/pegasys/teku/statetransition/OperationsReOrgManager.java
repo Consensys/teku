@@ -71,10 +71,10 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         reorgContext -> {
-          NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
+          final NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(
                   reorgContext.getCommonAncestorSlot(), reorgContext.getOldBestBlockRoot());
-          NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
+          final NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(
                   reorgContext.getCommonAncestorSlot(), bestBlockRoot);
 
@@ -86,17 +86,18 @@ public class OperationsReOrgManager implements ChainHeadChannel {
         });
   }
 
-  private void processNonCanonicalBlockOperations(Collection<Bytes32> nonCanonicalBlockRoots) {
+  private void processNonCanonicalBlockOperations(
+      final Collection<Bytes32> nonCanonicalBlockRoots) {
     nonCanonicalBlockRoots.forEach(
         root -> {
-          SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+          final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
               recentChainData.retrieveBlockByRoot(root);
           maybeBlockFuture
               .thenAccept(
                   maybeBlock ->
                       maybeBlock.ifPresentOrElse(
                           block -> {
-                            BeaconBlockBody blockBody = block.getBody();
+                            final BeaconBlockBody blockBody = block.getBody();
                             proposerSlashingPool.addAll(blockBody.getProposerSlashings());
                             attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
                             exitPool.addAll(blockBody.getVoluntaryExits());
@@ -117,42 +118,43 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   }
 
   private void processNonCanonicalBlockAttestations(
-      Iterable<Attestation> attestations, Bytes32 blockRoot) {
+      final Iterable<Attestation> attestations, final Bytes32 blockRoot) {
     // Attestations need to get re-processed through AttestationManager
     // because we don't have access to the state with which they were
     // verified anymore and we need to make sure later on
     // that they're being included on the correct fork.
     attestations.forEach(
-        attestation -> {
-          attestationManager
-              .onAttestation(ValidateableAttestation.from(recentChainData.getSpec(), attestation))
-              .finish(
-                  result ->
-                      result.ifInvalid(
-                          reason ->
-                              LOG.debug(
-                                  "Rejected re-queued attestation from block: {} due to: {}",
-                                  blockRoot,
-                                  reason)),
-                  err ->
-                      LOG.error(
-                          "Failed to process re-queued attestation from block: {}",
-                          blockRoot,
-                          err));
-        });
+        attestation ->
+            attestationManager
+                .onAttestation(
+                    ValidateableAttestation.fromReorgedBlock(
+                        recentChainData.getSpec(), attestation))
+                .finish(
+                    result ->
+                        result.ifInvalid(
+                            reason ->
+                                LOG.debug(
+                                    "Rejected re-queued attestation from block: {} due to: {}",
+                                    blockRoot,
+                                    reason)),
+                    err ->
+                        LOG.error(
+                            "Failed to process re-queued attestation from block: {}",
+                            blockRoot,
+                            err)));
   }
 
-  private void processCanonicalBlockOperations(Collection<Bytes32> canonicalBlockRoots) {
+  private void processCanonicalBlockOperations(final Collection<Bytes32> canonicalBlockRoots) {
     canonicalBlockRoots.forEach(
         root -> {
-          SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+          final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
               recentChainData.retrieveBlockByRoot(root);
           maybeBlockFuture
               .thenAccept(
                   maybeBlock ->
                       maybeBlock.ifPresentOrElse(
                           block -> {
-                            BeaconBlockBody blockBody = block.getBody();
+                            final BeaconBlockBody blockBody = block.getBody();
                             proposerSlashingPool.removeAll(blockBody.getProposerSlashings());
                             attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
                             exitPool.removeAll(blockBody.getVoluntaryExits());
