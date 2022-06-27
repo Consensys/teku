@@ -388,7 +388,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .exceptionallyCompose(
             error -> {
               LOG.error(
-                  "Unable to obtain a valid payload from builder. Falling back to local execution engine.",
+                  "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
                   error);
               return getHeaderFromLocalExecutionPayload(
                   localExecutionPayload, slot, FALLBACK_REASON_BUILDER_ERROR);
