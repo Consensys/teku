@@ -36,7 +36,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.PeerResponse;
@@ -89,13 +88,13 @@ public class GetPeerById extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
     Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");

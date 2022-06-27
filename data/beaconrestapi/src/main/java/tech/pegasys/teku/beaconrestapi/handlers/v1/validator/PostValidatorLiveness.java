@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -122,7 +121,7 @@ public class PostValidatorLiveness extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -138,12 +137,9 @@ public class PostValidatorLiveness extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            validatorLivenessAtEpoches -> {
-              if (validatorLivenessAtEpoches.isEmpty()) {
-                return AsyncApiResponse.respondWithError(
-                    SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
-              }
-              return AsyncApiResponse.respondOk(validatorLivenessAtEpoches.get());
-            }));
+            validatorLivenessAtEpoches ->
+                validatorLivenessAtEpoches
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 }

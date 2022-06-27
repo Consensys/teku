@@ -39,7 +39,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
@@ -112,7 +111,7 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -126,12 +125,9 @@ public class GetStateValidatorBalances extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeDataList -> {
-              if (maybeDataList.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              return AsyncApiResponse.respondOk(maybeDataList.get());
-            }));
+            maybeDataList ->
+                maybeDataList
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }
