@@ -100,7 +100,7 @@ class SyncCommitteeScheduledDutiesTest {
   void shouldNotProduceSignaturesWhenChainHeadIsNotAvailable(
       final HeadNotAvailableReason headNotAvailableReason) {
     final UInt64 slot = UInt64.valueOf(25);
-    setupHeadTrackerResponse(headNotAvailableReason);
+    setupHeadTrackerResponse(headNotAvailableReason, slot);
 
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -132,7 +132,7 @@ class SyncCommitteeScheduledDutiesTest {
   void shouldNotPerformDutyWhenNoActiveValidatorsAndChainHeadIsNotAvailable(
       final HeadNotAvailableReason headNotAvailableReason) {
     final UInt64 slot = UInt64.valueOf(25);
-    setupHeadTrackerResponse(headNotAvailableReason);
+    setupHeadTrackerResponse(headNotAvailableReason, slot);
 
     final SyncCommitteeScheduledDuties duties = validBuilder().build();
     final SafeFuture<DutyResult> result = duties.performProductionDuty(slot);
@@ -251,8 +251,8 @@ class SyncCommitteeScheduledDutiesTest {
     return new Validator(dataStructureUtil.randomPublicKey(), mock(Signer.class), Optional::empty);
   }
 
-  private void setupHeadTrackerResponse(final HeadNotAvailableReason headNotAvailableReason) {
-    final UInt64 slot = UInt64.valueOf(25);
+  private void setupHeadTrackerResponse(
+      final HeadNotAvailableReason headNotAvailableReason, final UInt64 slot) {
     doAnswer(
             __ -> {
               if (headNotAvailableReason.equals(HeadNotAvailableReason.NODE_SYNCING)) {
