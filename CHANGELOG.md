@@ -16,6 +16,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
  - Added actual Sepolia TTD configuration
  - Further optimization of epoch transitions
+ - Log a warning if node is syncing while performing sync committee duties instead of a verbose error
 
 ### Bug Fixes
  - Fixed the beacon-rest-api opening a listen port on too many interfaces
