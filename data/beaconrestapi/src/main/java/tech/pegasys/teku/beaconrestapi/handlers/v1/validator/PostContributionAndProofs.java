@@ -27,8 +27,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -90,15 +88,13 @@ public class PostContributionAndProofs extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final List<SignedContributionAndProof> signedContributionAndProofs = request.getRequestBody();
-    final SafeFuture<Void> future = provider.sendContributionAndProofs(signedContributionAndProofs);
-
+    final SafeFuture<Void> future = provider.sendContributionAndProofs(request.getRequestBody());
     request.respondAsync(future.thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK)));
   }
 

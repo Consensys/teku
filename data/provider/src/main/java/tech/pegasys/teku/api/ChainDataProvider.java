@@ -200,7 +200,7 @@ public class ChainDataProvider {
                                 spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public List<Map<String, Object>> getProtoArrayData() {
+  public List<Map<String, String>> getProtoArrayData() {
     return recentChainData
         .getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getNodeData)

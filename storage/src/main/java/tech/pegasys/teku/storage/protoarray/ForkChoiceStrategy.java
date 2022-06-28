@@ -439,7 +439,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public List<Map<String, Object>> getNodeData() {
+  public List<Map<String, String>> getNodeData() {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getNodes().stream().map(ProtoNode::getData).collect(Collectors.toList());
