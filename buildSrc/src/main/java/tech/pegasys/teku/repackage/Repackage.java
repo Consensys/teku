@@ -18,7 +18,11 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -77,6 +81,35 @@ public class Repackage {
         walk.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
       }
     }
+  }
+
+  /**
+   * To support reproducible builds, remove the "report generated at" timestamp from the license
+   * report HTML index file. This will replace the original file.
+   *
+   * @param reportFile The license report file to fix.
+   * @throws IOException
+   */
+  public static void removeTimestampFromLicenseReport(String reportFile) throws IOException {
+    Path reportIndex = Path.of(reportFile);
+    Path tempFile = Files.createTempFile("index", "html");
+    BufferedReader reader = new BufferedReader(new FileReader(reportIndex.toFile()));
+    BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile.toFile()));
+
+    String line;
+    while ((line = reader.readLine()) != null) {
+      if (line.contains("<p>Report Generated at: ")) {
+        continue;
+      }
+      // Use UNIX line separator so it behaves the same on Windows.
+      writer.write(line + "\n");
+    }
+    writer.close();
+    reader.close();
+
+    // Now replace the original and delete the temporary file.
+    Files.copy(tempFile, reportIndex, REPLACE_EXISTING);
+    Files.delete(tempFile);
   }
 
   private static void repackageZip(Path zipDist, FileTime fileTime, Path tempDir)

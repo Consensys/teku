@@ -2,6 +2,7 @@ import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 import static tech.pegasys.teku.repackage.Repackage.repackage
+import static tech.pegasys.teku.repackage.Repackage.removeTimestampFromLicenseReport
 
 import java.text.SimpleDateFormat
 
@@ -417,6 +418,7 @@ distTar {
   dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
+    removeTimestampFromLicenseReport(licenseReport.outputDir + "/index.html")
   }
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
@@ -429,6 +431,7 @@ distZip {
   dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
+    removeTimestampFromLicenseReport(licenseReport.outputDir + "/index.html")
   }
   doLast {
     repackage(archiveFile.get().toString(), lastCommitDate())
