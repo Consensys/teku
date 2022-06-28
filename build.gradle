@@ -1,6 +1,7 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
+import static tech.pegasys.teku.repackage.Repackage.repackageZip
 
 import java.text.SimpleDateFormat
 
@@ -419,24 +420,17 @@ distTar {
   }
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
-  reproducibleFileOrder = true
 }
-task makeReproducibleTar(type: Exec) {
-  commandLine "bash", "scripts/override_dates_in_dist.sh",  distTar.archiveFile.get()
-}
-distTar.finalizedBy(makeReproducibleTar)
 
 distZip {
   dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
-  reproducibleFileOrder = true
+  doLast {
+    repackageZip(archiveFile.get().toString(), lastCommitDate())
+  }
 }
-task makeReproducibleZip(type: Exec) {
-  commandLine "bash", "scripts/override_dates_in_dist.sh",  distZip.archiveFile.get()
-}
-distZip.finalizedBy(makeReproducibleZip)
 
 startScripts {
 
@@ -871,14 +865,14 @@ dependencies {
 distributions {
   main {
     contents {
-      from("./LICENSE") { into "." }
+      from("LICENSE")
       from("build/reports/licenses") {
-        into "./licenses"
+        into "licenses"
         exclude "**/dependencies-without-allowed-license.json"
         exclude "**/project-licenses-for-check-license-task.json"
       }
       from("libs") { into "native" }
-      from("build/teku.autocomplete.sh") { into "." }
+      from("build/teku.autocomplete.sh")
     }
   }
 }
@@ -889,6 +883,11 @@ def buildTime() {
   def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
   df.setTimeZone(TimeZone.getTimeZone("UTC"))
   return df.format(new Date())
+}
+
+// Get the date of the last git commit.
+def lastCommitDate() {
+  return grgit.log(maxCommits: 1).get(0).date
 }
 
 // Calculate the version that this build would be published under (if it is published)
