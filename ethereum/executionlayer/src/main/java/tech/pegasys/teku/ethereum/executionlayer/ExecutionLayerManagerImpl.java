@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
@@ -495,7 +496,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 }
               }
             },
-            throwable -> markBuilderAsNotAvailable(throwable.getMessage()));
+            throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
   }
 
   private void markBuilderAsNotAvailable(String errorMessage) {
