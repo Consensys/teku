@@ -25,7 +25,8 @@ WORKDIR /opt/teku
 # copy application (with libraries inside)
 COPY --chown=teku:teku teku /opt/teku/
 
-ENV LANG="C.UTF-8"
+# Default to UTF-8 locale
+ENV LANG C.UTF-8
 
 ENV TEKU_REST_API_INTERFACE="0.0.0.0"
 ENV TEKU_VALIDATOR_API_INTERFACE="0.0.0.0"
