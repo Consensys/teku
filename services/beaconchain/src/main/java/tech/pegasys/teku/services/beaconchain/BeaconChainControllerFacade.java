@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.beaconchain;
 
 import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.SyncService;
-import tech.pegasys.teku.beaconrestapi.BeaconRestApiType;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
@@ -44,7 +44,7 @@ public interface BeaconChainControllerFacade {
 
   Eth2P2PNetwork getP2pNetwork();
 
-  Optional<BeaconRestApiType> getBeaconRestAPI();
+  Optional<BeaconRestApi> getBeaconRestAPI();
 
   SyncService getSyncService();
 }
