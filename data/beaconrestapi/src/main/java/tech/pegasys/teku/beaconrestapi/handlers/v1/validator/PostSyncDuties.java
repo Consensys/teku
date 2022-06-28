@@ -124,7 +124,7 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -144,12 +144,9 @@ public class PostSyncDuties extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeSyncCommitteeDuties -> {
-              if (maybeSyncCommitteeDuties.isEmpty()) {
-                return AsyncApiResponse.respondServiceUnavailable();
-              }
-
-              return AsyncApiResponse.respondOk(maybeSyncCommitteeDuties.get());
-            }));
+            maybeSyncCommitteeDuties ->
+                maybeSyncCommitteeDuties
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 }

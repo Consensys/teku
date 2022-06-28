@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -97,7 +96,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
     }
 
     @Override
-    public void handle(@NotNull final Context ctx) throws Exception {
+    public void handle(final Context ctx) throws Exception {
       adapt(ctx);
     }
   }

@@ -159,7 +159,7 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -180,11 +180,9 @@ public class PostAttesterDuties extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            attesterDuties -> {
-              if (attesterDuties.isEmpty()) {
-                return AsyncApiResponse.respondServiceUnavailable();
-              }
-              return AsyncApiResponse.respondOk(attesterDuties.get());
-            }));
+            attesterDuties ->
+                attesterDuties
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondServiceUnavailable())));
   }
 }

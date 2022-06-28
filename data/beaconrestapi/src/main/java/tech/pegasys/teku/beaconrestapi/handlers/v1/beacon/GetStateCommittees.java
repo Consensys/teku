@@ -46,7 +46,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
@@ -128,7 +127,7 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
@@ -145,14 +144,9 @@ public class GetStateCommittees extends MigratingEndpointAdapter {
 
     request.respondAsync(
         future.thenApply(
-            maybeListObjectAndMetaData -> {
-              if (maybeListObjectAndMetaData.isEmpty()) {
-                return AsyncApiResponse.respondNotFound();
-              }
-
-              ObjectAndMetaData<List<CommitteeAssignment>> listObjectAndMetaData =
-                  maybeListObjectAndMetaData.get();
-              return AsyncApiResponse.respondOk(listObjectAndMetaData);
-            }));
+            maybeListObjectAndMetaData ->
+                maybeListObjectAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }
