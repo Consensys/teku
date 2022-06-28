@@ -423,7 +423,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private SafeFuture<ExecutionPayloadHeader> getHeaderFromLocalExecutionPayload(
       final SafeFuture<ExecutionPayload> localExecutionPayload,
       final UInt64 slot,
-      FallbackReason reason) {
+      final FallbackReason reason) {
 
     return localExecutionPayload.thenApply(
         executionPayload -> {
