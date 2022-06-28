@@ -40,7 +40,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -134,7 +133,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 

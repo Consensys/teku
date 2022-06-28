@@ -34,7 +34,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
@@ -94,7 +93,7 @@ public class GetBlock extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 

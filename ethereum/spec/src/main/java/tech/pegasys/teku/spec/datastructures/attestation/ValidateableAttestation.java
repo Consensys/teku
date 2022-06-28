@@ -45,24 +45,36 @@ public class ValidateableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
-  public static ValidateableAttestation from(final Spec spec, Attestation attestation) {
+  public static ValidateableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false);
   }
 
-  public static ValidateableAttestation fromValidator(final Spec spec, Attestation attestation) {
+  public static ValidateableAttestation fromValidator(
+      final Spec spec, final Attestation attestation) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), true);
   }
 
   public static ValidateableAttestation fromNetwork(
-      final Spec spec, Attestation attestation, int receivedSubnetId) {
+      final Spec spec, final Attestation attestation, final int receivedSubnetId) {
     return new ValidateableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
   }
 
+  public static ValidateableAttestation fromReorgedBlock(
+      final Spec spec, final Attestation attestation) {
+    final ValidateableAttestation validateableAttestation =
+        new ValidateableAttestation(
+            spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+    // An indexed attestation from a reorged block is valid because it already
+    // has been validated when the block was part of the canonical chain
+    validateableAttestation.setValidIndexedAttestation();
+    return validateableAttestation;
+  }
+
   public static ValidateableAttestation aggregateFromValidator(
-      final Spec spec, SignedAggregateAndProof attestation) {
+      final Spec spec, final SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
@@ -72,7 +84,7 @@ public class ValidateableAttestation {
   }
 
   public static ValidateableAttestation aggregateFromNetwork(
-      final Spec spec, SignedAggregateAndProof attestation) {
+      final Spec spec, final SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
@@ -83,10 +95,10 @@ public class ValidateableAttestation {
 
   private ValidateableAttestation(
       final Spec spec,
-      Attestation attestation,
-      Optional<SignedAggregateAndProof> aggregateAndProof,
-      OptionalInt receivedSubnetId,
-      boolean producedLocally) {
+      final Attestation attestation,
+      final Optional<SignedAggregateAndProof> aggregateAndProof,
+      final OptionalInt receivedSubnetId,
+      final boolean producedLocally) {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
@@ -119,16 +131,16 @@ public class ValidateableAttestation {
     return receivedSubnetId;
   }
 
-  public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
+  public void setIndexedAttestation(final IndexedAttestation indexedAttestation) {
     this.indexedAttestation = Optional.of(indexedAttestation);
   }
 
-  public void saveCommitteeShufflingSeed(BeaconState state) {
+  public void saveCommitteeShufflingSeed(final BeaconState state) {
     if (committeeShufflingSeed.isPresent()) {
       return;
     }
 
-    Bytes32 committeeShufflingSeed =
+    final Bytes32 committeeShufflingSeed =
         spec.getSeed(
             state,
             spec.computeEpochAtSlot(attestation.getData().getSlot()),

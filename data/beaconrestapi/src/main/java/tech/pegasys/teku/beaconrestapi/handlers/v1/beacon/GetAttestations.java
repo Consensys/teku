@@ -38,7 +38,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttestationsResponse;
@@ -93,13 +92,13 @@ public class GetAttestations extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
     final Optional<UInt64> committeeIndex =

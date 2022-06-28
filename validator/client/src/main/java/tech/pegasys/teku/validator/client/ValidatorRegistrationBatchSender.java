@@ -79,8 +79,8 @@ public class ValidatorRegistrationBatchSender {
                         return true;
                       });
             })
-        .whenComplete(
-            (__, throwable) ->
+        .alwaysRun(
+            () ->
                 LOG.info(
                     "{} out of {} validator(s) registrations were successfully sent to the Beacon Node.",
                     successfullySentRegistrations.get(),

@@ -22,9 +22,12 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -45,13 +48,19 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final Optional<Eth1Address> defaultFeeRecipient =
       Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
   private final ProposersDataManager proposersDataManager =
       new ProposersDataManager(
-          eventThread, specMock, executionLayerChannel, recentChainData, defaultFeeRecipient);
+          eventThread,
+          specMock,
+          metricsSystem,
+          executionLayerChannel,
+          recentChainData,
+          defaultFeeRecipient);
 
   private final BeaconState state = dataStructureUtil.randomBeaconState();
 
@@ -80,6 +89,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     // final update
     assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
+    assertRegisteredValidatorsCount(2);
   }
 
   @Test
@@ -99,6 +109,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
 
     assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verifyNoMoreInteractions(executionLayerChannel);
+    assertRegisteredValidatorsCount(0);
   }
 
   @Test
@@ -116,17 +127,16 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
                 dataStructureUtil.randomUInt64(), dataStructureUtil.randomEth1Address())),
         slot);
 
-    assertThat(proposersDataManager.getNumberOfPreparedProposers()).isEqualTo(1);
-    assertThat(proposersDataManager.getNumberOfRegisteredValidators()).isEqualTo(2);
-
     assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
     assertThat(onPreparedProposerUpdatedCalled).isTrue();
+    assertRegisteredValidatorsCount(2);
+    assertPreparedProposersCount(1);
 
     UInt64 futureSlot = UInt64.valueOf(spec.getSlotsPerEpoch(slot) * 3L).increment();
     proposersDataManager.onSlot(futureSlot);
 
-    assertThat(proposersDataManager.getNumberOfRegisteredValidators()).isEqualTo(0);
-    assertThat(proposersDataManager.getNumberOfPreparedProposers()).isEqualTo(0);
+    assertRegisteredValidatorsCount(0);
+    assertPreparedProposersCount(0);
   }
 
   private void prepareRegistrations() {
@@ -141,6 +151,22 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     when(specMock.getSlotsPerEpoch(any())).thenReturn(spec.getSlotsPerEpoch(slot));
 
     proposersDataManager.subscribeToProposersDataChanges(this);
+  }
+
+  private void assertPreparedProposersCount(final int expectedCount) {
+    final OptionalDouble optionalValue =
+        metricsSystem
+            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data_total")
+            .getValue("prepared_proposers");
+    assertThat(optionalValue).hasValue(expectedCount);
+  }
+
+  private void assertRegisteredValidatorsCount(final int expectedCount) {
+    final OptionalDouble optionalValue =
+        metricsSystem
+            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data_total")
+            .getValue("registered_validators");
+    assertThat(optionalValue).hasValue(expectedCount);
   }
 
   @Override

@@ -42,6 +42,8 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
+import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -836,16 +838,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .build();
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
-    beaconRestAPI =
-        Optional.of(
-            new BeaconRestApi(
+    final BeaconRestApi api =
+        beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
+            ? new JsonTypeDefinitionBeaconRestApi()
+            : new ReflectionBasedBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
                 beaconConfig.beaconRestApiConfig(),
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
-                spec));
+                spec);
+    beaconRestAPI = Optional.of(api);
 
     if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
       final int initialValidatorsCount =
@@ -972,7 +976,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventThread.start();
     proposersDataManager =
         new ProposersDataManager(
-            eventThread, spec, executionLayer, recentChainData, getProposerDefaultFeeRecipient());
+            eventThread,
+            spec,
+            metricsSystem,
+            executionLayer,
+            recentChainData,
+            getProposerDefaultFeeRecipient());
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(

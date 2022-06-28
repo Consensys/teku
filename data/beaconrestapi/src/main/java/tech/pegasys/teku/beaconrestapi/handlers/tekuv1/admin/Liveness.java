@@ -79,12 +79,12 @@ public class Liveness extends MigratingEndpointAdapter {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.status(SC_OK);
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
     if (request.getOptionalQueryParameter(FAIL_ON_REJECTED_COUNT).orElse(false)
         && syncProvider.getRejectedExecutionCount() > 0) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE, CacheLength.NO_CACHE);
