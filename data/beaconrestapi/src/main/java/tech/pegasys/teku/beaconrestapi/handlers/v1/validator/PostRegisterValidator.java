@@ -29,7 +29,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.request.v1.validator.PostRegisterValidatorRequest;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class PostRegisterValidator extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/register_validator";
-
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostRegisterValidator(final DataProvider provider) {
@@ -92,7 +90,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 

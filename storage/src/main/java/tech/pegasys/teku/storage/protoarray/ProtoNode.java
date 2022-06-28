@@ -187,17 +187,17 @@ public class ProtoNode {
         validationStatus == ProtoNodeValidationStatus.OPTIMISTIC);
   }
 
-  public Map<String, Object> getData() {
-    return ImmutableMap.<String, Object>builder()
-        .put("slot", blockSlot)
-        .put("blockRoot", blockRoot)
-        .put("parentRoot", parentRoot)
-        .put("stateRoot", stateRoot)
-        .put("justifiedEpoch", justifiedEpoch)
-        .put("finalizedEpoch", finalizedEpoch)
-        .put("executionBlockHash", executionBlockHash)
+  public Map<String, String> getData() {
+    return ImmutableMap.<String, String>builder()
+        .put("slot", blockSlot.toString())
+        .put("blockRoot", blockRoot.toHexString())
+        .put("parentRoot", parentRoot.toHexString())
+        .put("stateRoot", stateRoot.toHexString())
+        .put("justifiedEpoch", justifiedEpoch.toString())
+        .put("finalizedEpoch", finalizedEpoch.toString())
+        .put("executionBlockHash", executionBlockHash.toHexString())
         .put("validationStatus", validationStatus.name())
-        .put("weight", weight)
+        .put("weight", weight.toString())
         .build();
   }
 

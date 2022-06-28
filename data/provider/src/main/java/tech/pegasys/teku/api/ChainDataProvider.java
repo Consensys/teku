@@ -175,6 +175,14 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory.nonCanonicalBlocksSelector(slot).getBlocks();
   }
 
+  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>
+      getBeaconStateByBlockRoot(final String blockRootParam) {
+    return defaultStateSelectorFactory
+        .byBlockRootStateSelector(blockRootParam)
+        .getState()
+        .thenApply(maybeState -> maybeState.map(ObjectAndMetaData::getData));
+  }
+
   public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(
       final String blockRootParam) {
     return defaultStateSelectorFactory
@@ -192,7 +200,7 @@ public class ChainDataProvider {
                                 spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public List<Map<String, Object>> getProtoArrayData() {
+  public List<Map<String, String>> getProtoArrayData() {
     return recentChainData
         .getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getNodeData)

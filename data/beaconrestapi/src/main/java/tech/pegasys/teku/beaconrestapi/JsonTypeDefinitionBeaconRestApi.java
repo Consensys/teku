@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
+package tech.pegasys.teku.beaconrestapi;
 
-import tech.pegasys.teku.spec.TestSpecFactory;
+public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
 
-public class AbstractEpochProcessorAltairTest extends AbstractEpochProcessorTestBase {
+  @Override
+  public void start() {
+    throw new UnsupportedOperationException("Unsupported start operation");
+  }
 
-  public AbstractEpochProcessorAltairTest() {
-    super(TestSpecFactory.createMinimalAltair());
+  @Override
+  public void stop() {
+    throw new UnsupportedOperationException("Unsupported stop operation");
   }
 }

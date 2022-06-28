@@ -71,6 +71,9 @@ public interface KvStoreHotDao extends AutoCloseable {
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
+  @MustBeClosed
+  Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
+
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   interface HotUpdater extends AutoCloseable {

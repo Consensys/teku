@@ -20,9 +20,11 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -114,7 +116,23 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             true);
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
-    runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
+    try {
+      runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
+    } catch (final AssertionError e) {
+      final String protoArrayData =
+          recentChainData.getForkChoiceStrategy().orElseThrow().getNodeData().stream()
+              .map(Object::toString)
+              .collect(Collectors.joining("\n"));
+      throw new AssertionError(
+          e.getMessage()
+              + "\nJustified checkpoint: "
+              + recentChainData.getJustifiedCheckpoint().orElse(null)
+              + "\nFinalized checkpoint: "
+              + recentChainData.getFinalizedCheckpoint().orElse(null)
+              + "\nProtoarray data:\n"
+              + protoArrayData,
+          e);
+    }
   }
 
   /**
@@ -148,7 +166,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
       } else if (step.containsKey("tick")) {
         forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")));
-
+        final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
+        LOG.info("Current slot: {} Epoch: {}", currentSlot, spec.computeEpochAtSlot(currentSlot));
       } else if (step.containsKey("block")) {
         applyBlock(testDefinition, spec, forkChoice, step, executionLayer);
 
@@ -263,72 +282,88 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     assertThat(forkChoice.processHead()).isCompleted();
     final UpdatableStore store = recentChainData.getStore();
     final Map<String, Object> checks = get(step, "checks");
+    final List<AssertionError> failures = new ArrayList<>();
     for (String checkType : checks.keySet()) {
+      try {
+        switch (checkType) {
+          case "genesis_time":
+            assertThat(recentChainData.getGenesisTime()).isEqualTo(getUInt64(checks, checkType));
+            break;
 
-      switch (checkType) {
-        case "genesis_time":
-          assertThat(recentChainData.getGenesisTime()).isEqualTo(getUInt64(checks, checkType));
-          break;
+          case "head":
+            final Map<String, Object> expectedHead = get(checks, checkType);
+            final UInt64 expectedSlot = UInt64.valueOf(expectedHead.get("slot").toString());
+            final Bytes32 expectedRoot = Bytes32.fromHexString(expectedHead.get("root").toString());
+            assertThat(recentChainData.getHeadSlot())
+                .describedAs("best block slot")
+                .isEqualTo(expectedSlot);
+            assertThat(recentChainData.getBestBlockRoot())
+                .describedAs("best block root")
+                .contains(expectedRoot);
+            break;
 
-        case "head":
-          final Map<String, Object> expectedHead = get(checks, checkType);
-          final UInt64 expectedSlot = UInt64.valueOf(expectedHead.get("slot").toString());
-          final Bytes32 expectedRoot = Bytes32.fromHexString(expectedHead.get("root").toString());
-          assertThat(recentChainData.getHeadSlot()).isEqualTo(expectedSlot);
-          assertThat(recentChainData.getBestBlockRoot()).contains(expectedRoot);
-          break;
+          case "time":
+            final UInt64 expectedTime = getUInt64(checks, checkType);
+            assertThat(store.getTimeSeconds()).describedAs("time").isEqualTo(expectedTime);
+            break;
 
-        case "time":
-          final UInt64 expectedTime = getUInt64(checks, checkType);
-          assertThat(store.getTimeSeconds()).isEqualTo(expectedTime);
-          break;
+          case "justified_checkpoint_root":
+            final Bytes32 expectedJustifiedRoot = getBytes32(checks, checkType);
+            assertThat(store.getJustifiedCheckpoint().getRoot())
+                .describedAs("justified checkpoint")
+                .isEqualTo(expectedJustifiedRoot);
+            break;
 
-        case "justified_checkpoint_root":
-          final Bytes32 expectedJustifiedRoot = getBytes32(checks, checkType);
-          assertThat(store.getJustifiedCheckpoint().getRoot())
-              .describedAs("justified checkpoint")
-              .isEqualTo(expectedJustifiedRoot);
-          break;
+          case "justified_checkpoint":
+            assertCheckpoint(
+                "justified checkpoint", store.getJustifiedCheckpoint(), get(checks, checkType));
+            break;
 
-        case "justified_checkpoint":
-          assertCheckpoint(
-              "justified checkpoint", store.getJustifiedCheckpoint(), get(checks, checkType));
-          break;
+          case "best_justified_checkpoint":
+            assertCheckpoint(
+                "best justified checkpoint",
+                store.getBestJustifiedCheckpoint(),
+                get(checks, checkType));
+            break;
 
-        case "best_justified_checkpoint":
-          assertCheckpoint(
-              "best justified checkpoint",
-              store.getBestJustifiedCheckpoint(),
-              get(checks, checkType));
-          break;
+          case "finalized_checkpoint_root":
+            final Bytes32 expectedFinalizedRoot = getBytes32(checks, checkType);
+            assertThat(store.getFinalizedCheckpoint().getRoot())
+                .describedAs("finalized checkpoint")
+                .isEqualTo(expectedFinalizedRoot);
+            break;
 
-        case "finalized_checkpoint_root":
-          final Bytes32 expectedFinalizedRoot = getBytes32(checks, checkType);
-          assertThat(store.getFinalizedCheckpoint().getRoot())
-              .describedAs("finalized checkpoint")
-              .isEqualTo(expectedFinalizedRoot);
-          break;
+          case "finalized_checkpoint":
+            assertCheckpoint(
+                "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
+            break;
 
-        case "finalized_checkpoint":
-          assertCheckpoint(
-              "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
-          break;
+          case "proposer_boost_root":
+            final Optional<Bytes32> boostedRoot = store.getProposerBoostRoot();
+            final Bytes32 expectedBoostedRoot = getBytes32(checks, checkType);
+            if (expectedBoostedRoot.isZero()) {
+              assertThat(boostedRoot).describedAs("proposer_boost_root").isEmpty();
+            } else {
+              assertThat(boostedRoot)
+                  .describedAs("proposer_boost_root")
+                  .contains(expectedBoostedRoot);
+            }
+            break;
 
-        case "proposer_boost_root":
-          final Optional<Bytes32> boostedRoot = store.getProposerBoostRoot();
-          final Bytes32 expectedBoostedRoot = getBytes32(checks, checkType);
-          if (expectedBoostedRoot.isZero()) {
-            assertThat(boostedRoot).describedAs("proposer_boost_root").isEmpty();
-          } else {
-            assertThat(boostedRoot)
-                .describedAs("proposer_boost_root")
-                .contains(expectedBoostedRoot);
-          }
-          break;
-
-        default:
-          throw new UnsupportedOperationException("Unsupported check type: " + checkType);
+          default:
+            throw new UnsupportedOperationException("Unsupported check type: " + checkType);
+        }
+      } catch (final AssertionError failure) {
+        failures.add(failure);
       }
+    }
+
+    if (!failures.isEmpty()) {
+      final AssertionError firstError = failures.get(0);
+      for (int i = 1; i < failures.size(); i++) {
+        firstError.addSuppressed(failures.get(i));
+      }
+      throw firstError;
     }
   }
 

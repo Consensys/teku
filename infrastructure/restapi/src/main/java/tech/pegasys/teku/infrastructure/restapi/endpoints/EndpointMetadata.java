@@ -552,6 +552,13 @@ public class EndpointMetadata {
           List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
     }
 
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
+      return response(responseCode, description, List.of(octetStreamTypeDefinition));
+    }
+
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
       return response(SC_UNAUTHORIZED, "Unauthorized, no token is found", HTTP_ERROR_RESPONSE_TYPE);
     }

@@ -137,6 +137,8 @@ public class EpochTransitionBenchmark {
     }
 
     preEpochTransitionState = safeJoin(recentChainData.getBestState().orElseThrow());
+    preEpochTransitionMutableState =
+        (MutableBeaconState) preEpochTransitionState.createWritableCopy();
 
     validatorStatuses =
         spec.getGenesisSpec()
