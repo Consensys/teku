@@ -295,7 +295,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .keySet()
         .removeIf(
             cachedPublicKey -> {
-              boolean requiresRemoving = !activeValidatorsPublicKeys.contains(cachedPublicKey);
+              final boolean requiresRemoving =
+                  !activeValidatorsPublicKeys.contains(cachedPublicKey);
               if (requiresRemoving) {
                 LOG.debug(
                     "Removing cached registration for {} because validator is no longer active.",
