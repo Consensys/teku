@@ -2,6 +2,7 @@ import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 import static tech.pegasys.teku.repackage.Repackage.repackageZip
+import static tech.pegasys.teku.repackage.Repackage.repackageTarGz
 
 import java.text.SimpleDateFormat
 
@@ -420,6 +421,9 @@ distTar {
   }
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
+  doLast {
+    repackageTarGz(archiveFile.get().toString(), lastCommitDate())
+  }
 }
 
 distZip {

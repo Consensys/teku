@@ -16,9 +16,12 @@ package tech.pegasys.teku.repackage;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -30,6 +33,12 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 public class Repackage {
   /**
@@ -67,7 +76,7 @@ public class Repackage {
       }
 
       FileTime time = FileTime.fromMillis(date.getTime());
-      Optional<Path> distDir = Optional.empty();
+      Optional<Path> distDir;
       try (Stream<Path> files = Files.list(temp)) {
         distDir = files.findFirst();
       }
@@ -105,6 +114,89 @@ public class Repackage {
       Files.setLastModifiedTime(zippedDistDir, time);
       // Replace the original zip file with the repackaged one.
       Files.copy(zippedDistDir, Path.of(zipFile), COPY_ATTRIBUTES, REPLACE_EXISTING);
+    } finally {
+      // Delete the temporary directory.
+      // Thank you, SubOptimal: https://stackoverflow.com/a/35989142
+      try (Stream<Path> walk = Files.walk(temp)) {
+        walk.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+      }
+    }
+  }
+
+  /**
+   * To support reproducible builds, repackage the provided tar.gz file with modification times set
+   * to the provided date. This will replace the original tar.gz file.
+   *
+   * @param tarFile The tar.gz file to repackage.
+   * @param date The files will have modification date.
+   * @throws IOException
+   */
+  static void repackageTarGz(String tarFile, Date date) throws IOException {
+    Path temp = Path.of(Files.createTempDirectory("untar").toFile().getAbsolutePath());
+    Path tarFilePath = Path.of(tarFile);
+
+    try {
+      // Used this website as a resource for doing this:
+      // https://mkyong.com/java/how-to-create-tar-gz-in-java/
+      try (InputStream fi = Files.newInputStream(tarFilePath);
+          BufferedInputStream bi = new BufferedInputStream(fi);
+          GzipCompressorInputStream gzi = new GzipCompressorInputStream(bi);
+          TarArchiveInputStream ti = new TarArchiveInputStream(gzi)) {
+
+        ArchiveEntry entry;
+        while ((entry = ti.getNextEntry()) != null) {
+          Path path = temp.resolve(entry.getName());
+          if (entry.isDirectory()) {
+            Files.createDirectories(path);
+          } else {
+            Files.createDirectories(path.getParent());
+            Files.copy(ti, path);
+          }
+        }
+      }
+
+      FileTime time = FileTime.fromMillis(date.getTime());
+      Optional<Path> distDir;
+      try (Stream<Path> files = Files.list(temp)) {
+        distDir = files.findFirst();
+      }
+      Path tarDistDir = temp.resolve(distDir.orElseThrow() + ".tar.gz");
+      try (OutputStream fOut = Files.newOutputStream(tarDistDir);
+          BufferedOutputStream buffOut = new BufferedOutputStream(fOut);
+          GzipCompressorOutputStream gzOut = new GzipCompressorOutputStream(buffOut);
+          TarArchiveOutputStream tOut = new TarArchiveOutputStream(gzOut)) {
+        try (Stream<Path> walk = Files.walk(distDir.orElseThrow())) {
+          walk.sorted()
+              .forEach(
+                  path -> {
+                    // Force file separators to be UNIX-style so that it's the same on Windows.
+                    String relativePath = temp.relativize(path).toString().replace("\\", "/");
+                    try {
+                      if (Files.isDirectory(path)) {
+                        TarArchiveEntry entry = new TarArchiveEntry(path, relativePath + "/");
+                        entry.setModTime(time);
+                        tOut.putArchiveEntry(entry);
+                        // Do not copy file, it's a directory.
+                        tOut.closeArchiveEntry();
+                      } else {
+                        TarArchiveEntry entry = new TarArchiveEntry(path, relativePath);
+                        entry.setModTime(time);
+                        tOut.putArchiveEntry(entry);
+                        Files.copy(path, tOut);
+                        tOut.closeArchiveEntry();
+                      }
+                    } catch (IOException e) {
+                      e.printStackTrace();
+                    }
+                  });
+        }
+        tOut.finish();
+      }
+
+      // Set the modification date of the final zip file.
+      Files.setLastModifiedTime(tarDistDir, time);
+      // Replace the original zip file with the repackaged one.
+      Files.copy(tarDistDir, tarFilePath, COPY_ATTRIBUTES, REPLACE_EXISTING);
     } finally {
       // Delete the temporary directory.
       // Thank you, SubOptimal: https://stackoverflow.com/a/35989142
