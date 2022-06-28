@@ -50,7 +50,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 @SuppressWarnings("unchecked")
-class BeaconRestApiTest {
+class ReflectionBasedBeaconRestApiTest {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -102,7 +102,7 @@ class BeaconRestApiTest {
             .proposersDataManager(proposersDataManager)
             .build();
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
-    new BeaconRestApi(
+    new ReflectionBasedBeaconRestApi(
         dataProvider,
         eth1DataProvider,
         beaconRestApiConfig,
