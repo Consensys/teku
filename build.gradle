@@ -419,14 +419,24 @@ distTar {
   }
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
+  reproducibleFileOrder = true
 }
+task makeReproducibleTar(type: Exec) {
+  commandLine "bash", "scripts/override_dates_in_dist.sh",  distTar.archiveFile.get()
+}
+distTar.finalizedBy(makeReproducibleTar)
 
 distZip {
   dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
+  reproducibleFileOrder = true
 }
+task makeReproducibleZip(type: Exec) {
+  commandLine "bash", "scripts/override_dates_in_dist.sh",  distZip.archiveFile.get()
+}
+distZip.finalizedBy(makeReproducibleZip)
 
 startScripts {
 
