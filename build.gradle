@@ -1,8 +1,7 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
-import static tech.pegasys.teku.repackage.Repackage.repackageZip
-import static tech.pegasys.teku.repackage.Repackage.repackageTarGz
+import static tech.pegasys.teku.repackage.Repackage.repackage
 
 import java.text.SimpleDateFormat
 
@@ -422,7 +421,7 @@ distTar {
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
   doLast {
-    repackageTarGz(archiveFile.get().toString(), lastCommitDate())
+    repackage(archiveFile.get().toString(), lastCommitDate())
   }
 }
 
@@ -432,7 +431,7 @@ distZip {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
   doLast {
-    repackageZip(archiveFile.get().toString(), lastCommitDate())
+    repackage(archiveFile.get().toString(), lastCommitDate())
   }
 }
 
