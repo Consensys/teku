@@ -42,6 +42,8 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiMigrated;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiType;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -187,7 +189,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlockImporter blockImporter;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
-  protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
+  protected volatile Optional<BeaconRestApiType> beaconRestAPI = Optional.empty();
   protected volatile AggregatingAttestationPool attestationPool;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
@@ -254,7 +256,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     forkChoiceExecutor.start();
     return initialize()
         .thenCompose(
-            (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
+            (__) ->
+                SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApiType::start)));
   }
 
   protected void startServices() {
@@ -298,7 +301,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApiType::stop)),
             syncService.stop(),
             blockManager.stop(),
             attestationManager.stop(),
@@ -836,16 +839,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .build();
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
-    beaconRestAPI =
-        Optional.of(
-            new BeaconRestApi(
+    final BeaconRestApiType api =
+        beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
+            ? new BeaconRestApiMigrated()
+            : new BeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
                 beaconConfig.beaconRestApiConfig(),
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
-                spec));
+                spec);
+    beaconRestAPI = Optional.of(api);
 
     if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
       final int initialValidatorsCount =
@@ -1166,7 +1171,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   @Override
-  public Optional<BeaconRestApi> getBeaconRestAPI() {
+  public Optional<BeaconRestApiType> getBeaconRestAPI() {
     return beaconRestAPI;
   }
 

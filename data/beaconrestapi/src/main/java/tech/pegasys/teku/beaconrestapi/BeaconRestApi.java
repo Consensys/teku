@@ -127,7 +127,7 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
-public class BeaconRestApi {
+public class BeaconRestApi implements BeaconRestApiType {
 
   private Server jettyServer;
   private final Javalin app;
@@ -321,6 +321,7 @@ public class BeaconRestApi {
         spec);
   }
 
+  @Override
   public void start() {
     try {
       app.start();
@@ -472,6 +473,7 @@ public class BeaconRestApi {
             configuration.getMaxPendingEvents()));
   }
 
+  @Override
   public void stop() {
     try {
       if (jettyServer != null) {
