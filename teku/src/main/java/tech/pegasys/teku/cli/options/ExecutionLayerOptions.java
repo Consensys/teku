@@ -48,11 +48,10 @@ public class ExecutionLayerOptions {
   private String engineJwtSecretFile = null;
 
   @Option(
-      names = {"--Xeb-endpoint"},
+      names = {"--eb-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Builder node.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private String executionBuilderEndpoint = null;
 
   public void configure(final Builder builder) {

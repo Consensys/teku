@@ -121,7 +121,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableBlindedBeaconBlocks() {
-    final String[] args = {"--Xvalidators-proposer-blinded-blocks-enabled", "true"};
+    final String[] args = {"--validators-proposer-blinded-blocks-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
         .isTrue();
@@ -137,7 +137,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableValidatorRegistrationtWithBlindedBlocks() {
-    final String[] args = {"--Xvalidators-registration-default-enabled", "true"};
+    final String[] args = {"--validators-registration-default-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
             config.validatorClient().getValidatorConfig().isValidatorsRegistrationDefaultEnabled())

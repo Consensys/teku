@@ -50,13 +50,12 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-registration-default-enabled"},
+      names = {"--validators-registration-default-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enable validators registration to builder infrastructure.",
       arity = "0..1",
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean validatorsRegistrationDefaultEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
 
@@ -83,22 +82,20 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
-      names = {"--Xvalidators-registration-timestamp-override"},
+      names = {"--validators-registration-timestamp-override"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Set a constant timestamp in Unix format to be used in validator registrations against builder infrastructure.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private UInt64 validatorsRegistrationTimestampOverride = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
+      names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Use blinded blocks when in block production duties",
       fallbackValue = "true",
-      hidden = true,
       arity = "0..1")
   private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
