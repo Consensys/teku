@@ -11,7 +11,7 @@ buildscript {
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
   }
   dependencies {
-    classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.0.1'
+    classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
   }
 }
 
@@ -363,7 +363,7 @@ licenseReport {
   ]
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
   filters = [new LicenseBundleNormalizer()]
-  renderers = [new GroupedLicenseHtmlRenderer()]
+  renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
 
 task checkMavenCoordinateCollisions {
