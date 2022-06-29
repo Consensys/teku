@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.logging;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.base.Strings;
+import java.net.URI;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -161,6 +162,15 @@ public class ValidatorLogger {
     log.error(
         ColorConsolePrinter.print(
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
+  }
+
+  public void beaconNodeFailoverRemoteRequestFailed(
+      final URI failedEndpoint, final Throwable error, final URI failoverEndpoint) {
+    final String warningMessage =
+        String.format(
+            "%sRemote request to Beacon Node %s failed. Will try failover to %s",
+            PREFIX, failedEndpoint, failoverEndpoint);
+    log.warn(ColorConsolePrinter.print(warningMessage, Color.YELLOW), error);
   }
 
   public void beaconProposerPreparationFailed(final Throwable error) {

@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toMap;
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,37 +66,44 @@ import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
+import tech.pegasys.teku.validator.api.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
-public class RemoteValidatorApiHandler implements ValidatorApiChannel {
+public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final Spec spec;
+  private final URI endpoint;
   private final ValidatorRestApiClient apiClient;
-  private final AsyncRunner asyncRunner;
-
   private final OkHttpValidatorTypeDefClient typeDefClient;
+  private final AsyncRunner asyncRunner;
 
   public RemoteValidatorApiHandler(
       final Spec spec,
+      final URI endpoint,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner) {
     this.spec = spec;
+    this.endpoint = endpoint;
     this.apiClient = apiClient;
-    this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
+    this.asyncRunner = asyncRunner;
+  }
+
+  @Override
+  public URI getEndpoint() {
+    return endpoint;
   }
 
   @Override
