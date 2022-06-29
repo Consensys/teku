@@ -5,7 +5,6 @@ dependencies {
   implementation project(':data:beaconrestapi')
   implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
-  implementation project(':ethereum:core')
   implementation project(':ethereum:events')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')

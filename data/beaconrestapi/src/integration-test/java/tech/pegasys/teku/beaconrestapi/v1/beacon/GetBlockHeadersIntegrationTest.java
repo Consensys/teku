@@ -29,10 +29,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   final List<SignedBlockAndState> canonicalBlockAndStateList = new ArrayList<>();

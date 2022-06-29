@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 
 public class Validator {
