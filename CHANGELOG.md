@@ -14,7 +14,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
- - Log a warning if node is syncing while performing sync committee duties instead of a verbose error
+ - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
  - Distributions created from the same git commit will have exactly the same contents, *i.e.*, they are reproducible
 
 ### Bug Fixes
+ - Fix not rendering emoticons correctly in graffiti when running in a Docker container
