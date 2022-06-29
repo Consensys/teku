@@ -890,6 +890,9 @@ def buildTime() {
 
 // Get the date of the last git commit.
 def lastCommitDate() {
+  if (!grgit) {
+    return new Date()
+  }
   return grgit.log(maxCommits: 1).get(0).date
 }
 
