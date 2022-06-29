@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
@@ -135,9 +134,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .maxUrlLength(config.getMaxUrlLength())
         .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
         .hostAllowlist(config.getRestApiHostAllowlist())
-        .exceptionHandler( // FIXME should have no content response
-            ChainDataUnavailableException.class,
-            (throwable) -> new HttpErrorResponse(SC_NO_CONTENT, "No content"))
+        .exceptionHandler(
+            ChainDataUnavailableException.class, (throwable) -> HttpErrorResponse.noContent())
         .exceptionHandler(
             NodeSyncingException.class,
             (throwable) -> new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE))

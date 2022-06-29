@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
@@ -166,7 +167,9 @@ public class RestApiBuilder {
             final HttpErrorResponse response =
                 ((RestApiExceptionHandler) handler).handleException(exception);
             ctx.status(response.getCode());
-            ctx.json(JsonUtil.serialize(response, HTTP_ERROR_RESPONSE_TYPE));
+            if (response.getCode() != SC_NO_CONTENT) {
+              ctx.json(JsonUtil.serialize(response, HTTP_ERROR_RESPONSE_TYPE));
+            }
           } catch (final Throwable t) {
             ctx.status(SC_INTERNAL_SERVER_ERROR);
             LOG.error("Exception handler throw exception", t);
