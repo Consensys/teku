@@ -15,5 +15,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
  - Log a warning if node is syncing while performing sync committee duties instead of a verbose error
+ - Distributions created from the same git commit will have exactly the same contents, *i.e.*, they are reproducible
 
 ### Bug Fixes
