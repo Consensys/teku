@@ -37,6 +37,6 @@ public enum SignType {
   @JsonProperty("sync_committee_contribution_and_proof")
   SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
 
-  @JsonProperty("register_validator")
-  REGISTER_VALIDATOR
+  @JsonProperty("validator_registration")
+  VALIDATOR_REGISTRATION
 }

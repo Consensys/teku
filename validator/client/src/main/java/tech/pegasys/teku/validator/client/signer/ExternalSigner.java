@@ -259,9 +259,9 @@ public class ExternalSigner implements Signer {
       final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
     return sign(
         signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch),
-        SignType.REGISTER_VALIDATOR,
+        SignType.VALIDATOR_REGISTRATION,
         Map.of(
-            "register_validator",
+            "validator_registration_request",
             Map.of(
                 "validator_registration",
                 Map.of(
@@ -275,7 +275,7 @@ public class ExternalSigner implements Signer {
                     validatorRegistration.getPublicKey().toString()),
                 "epoch",
                 epoch)),
-        slashableGenericMessage("register validator"));
+        slashableGenericMessage("validator registration"));
   }
 
   @Override
@@ -314,6 +314,7 @@ public class ExternalSigner implements Signer {
                       .header("Content-Type", "application/json")
                       .POST(BodyPublishers.ofString(requestBody))
                       .build();
+              System.out.println(requestBody.toString());
               return httpClient
                   .sendAsync(request, BodyHandlers.ofString())
                   .handleAsync(
