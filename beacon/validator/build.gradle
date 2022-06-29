@@ -13,7 +13,6 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
   implementation project(':ethereum:statetransition')
-  implementation project(':ethereum:core')
   implementation project(':ethereum:events')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:pow:merkletree')
@@ -34,14 +33,13 @@ dependencies {
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
-  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:time'))
 
-  integrationTestImplementation testFixtures(project(':ethereum:core'))
+  integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':infrastructure:async'))
 
   jmhImplementation testFixtures(project(':ethereum:spec'))

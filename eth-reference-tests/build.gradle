@@ -1,7 +1,6 @@
 jar { enabled = false }
 
 dependencies {
-  referenceTestImplementation project(':ethereum:core')
   referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
   referenceTestImplementation testFixtures(project(':ethereum:spec'))

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.duties.attestations;
 
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ValidatorWithCommitteePositionAndIndex {
