@@ -44,7 +44,7 @@ public class BlockManager extends Service
     implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RecentChainData recentChainData;
+  protected final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator validator;

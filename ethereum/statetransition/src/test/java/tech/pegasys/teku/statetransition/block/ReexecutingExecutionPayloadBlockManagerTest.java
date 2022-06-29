@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -106,6 +107,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   public void setup() {
     forwardBlockImportedNotificationsTo(blockManager);
     remoteStorageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    when(recentChainData.getCurrentSlot()).thenReturn(remoteStorageSystem.recentChainData().getCurrentSlot());
     assertThat(blockManager.start()).isCompleted();
   }
 
@@ -149,7 +151,7 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   }
 
   @Test
-  public void onFailedExecutionPayloadExecution_shouldRetryForAtLeast2Slots() {
+  public void onFailedExecutionPayloadExecution_shouldRetryForAtLeast1Slots() {
     final SignedBeaconBlock nextBlock =
         remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
@@ -162,9 +164,8 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
     asyncRunner.executeQueuedActions();
 
-    // Pass 2 slots
+    // Pass 1 slot
     blockManager.onSlot(nextBlock.getSlot().plus(1));
-    blockManager.onSlot(nextBlock.getSlot().plus(2));
     asyncRunner.executeQueuedActions();
     verify(blockImporter, times(3)).importBlock(nextBlock, Optional.empty());
 
@@ -191,6 +192,27 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
             SafeFuture.completedFuture(
                 BlockImportResult.failedStateTransition(new IllegalStateException("invalid"))));
 
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+
+    verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());
+
+    // should not bw queued
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(blockImporter);
+  }
+
+  @Test
+  public void onInvalidBlockImport_shouldNotRetryExpiredBlock() {
+    final SignedBeaconBlock nextBlock =
+            remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+
+    // communication error
+    when(blockImporter.importBlock(nextBlock, Optional.empty()))
+            .thenReturn(
+                    SafeFuture.completedFuture(
+                            BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
+
+    when(recentChainData.getCurrentSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
 
     verify(blockImporter, times(1)).importBlock(nextBlock, Optional.empty());

@@ -35,7 +35,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Logger LOG = LogManager.getLogger();
-  protected static final int EXPIRES_IN_SLOT = 2;
+  protected static final int EXPIRES_IN_SLOT = 1;
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
@@ -92,7 +92,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   public void onSlot(UInt64 slot) {
     super.onSlot(slot);
     pendingBlocksForEPReexecution.removeIf(
-        block -> block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(slot));
+        block -> isReexecutionExpiredForBlock(block, slot));
   }
 
   @Override
@@ -100,10 +100,21 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
     return super.importBlock(block)
         .thenPeek(
             blockImportResult -> {
-              if (requiresReexecution(blockImportResult)) {
-                pendingBlocksForEPReexecution.add(block);
+              if (!requiresReexecution(blockImportResult)) {
+                return;
+              }
+              final Optional<UInt64> currentSlot = recentChainData.getCurrentSlot();
+              if(currentSlot.isEmpty()) {
+                return;
+              }
+              if(!isReexecutionExpiredForBlock(block, currentSlot.get())) {
+                  pendingBlocksForEPReexecution.add(block);
               }
             });
+  }
+
+  private boolean isReexecutionExpiredForBlock(final SignedBeaconBlock block, final UInt64 currentSlot) {
+    return block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(currentSlot);
   }
 
   private void execute() {
@@ -128,11 +139,11 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
             });
   }
 
-  private boolean requiresReexecution(BlockImportResult blockImportResult) {
+  private boolean requiresReexecution(final BlockImportResult blockImportResult) {
     return blockImportResult.hasFailedExecutingExecutionPayload();
   }
 
-  private boolean canBeRemoved(BlockImportResult blockImportResult) {
+  private boolean canBeRemoved(final BlockImportResult blockImportResult) {
     return blockImportResult.isSuccessful()
         || !blockImportResult.hasFailedExecutingExecutionPayload();
   }
