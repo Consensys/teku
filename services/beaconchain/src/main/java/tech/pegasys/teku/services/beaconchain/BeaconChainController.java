@@ -985,7 +985,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            eventThread, spec, executionLayer, recentChainData, proposersDataManager);
+            eventThread, timeProvider, spec, executionLayer, recentChainData, proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

@@ -19,12 +19,14 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdateData.RESEND_AFTER_MILLIS;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -70,6 +73,7 @@ class ForkChoiceNotifierTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
   private StubMetricsSystem metricsSystem;
   private StorageSystem storageSystem;
@@ -116,7 +120,12 @@ class ForkChoiceNotifierTest {
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
-            eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayerChannel,
+            recentChainData,
+            proposersDataManager);
     notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -150,7 +159,12 @@ class ForkChoiceNotifierTest {
                 defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
-            eventThread, spec, executionLayerChannel, recentChainData, proposersDataManager);
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayerChannel,
+            recentChainData,
+            proposersDataManager);
     notifier.onSyncingStatusChanged(true);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -383,6 +397,19 @@ class ForkChoiceNotifierTest {
 
     notifier.onAttestationsDue(headState.getSlot().plus(1));
     verifyNoMoreInteractions(executionLayerChannel);
+  }
+
+  @Test
+  void onAttestationsDue_shouldSendUpdateIfNotChangedButResendLimitPassed() {
+    final BeaconState headState = getHeadState();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    notifyForkChoiceUpdated(forkChoiceState);
+
+    timeProvider.advanceTimeByMillis(RESEND_AFTER_MILLIS.longValue() + 1);
+
+    notifier.onAttestationsDue(headState.getSlot());
+    verify(executionLayerChannel, times(2))
+        .engineForkChoiceUpdated(forkChoiceState, Optional.empty());
   }
 
   @Test
