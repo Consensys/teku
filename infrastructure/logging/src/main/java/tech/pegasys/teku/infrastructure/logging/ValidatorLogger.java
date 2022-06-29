@@ -165,11 +165,16 @@ public class ValidatorLogger {
   }
 
   public void beaconNodeFailoverRemoteRequestFailed(
-      final URI failedEndpoint, final Throwable error, final URI failoverEndpoint) {
+      final URI failedEndpoint, final Throwable error, final Optional<URI> failoverEndpoint) {
+    final String failoverMessage =
+        failoverEndpoint
+            .map(endpoint -> String.format("Will try failover to %s.", endpoint))
+            .orElse("No more failovers available.");
     final String warningMessage =
         String.format(
-            "%sRemote request to Beacon Node %s failed. Will try failover to %s",
-            PREFIX, failedEndpoint, failoverEndpoint);
+            "%sRemote request to Beacon Node %s failed. " + failoverMessage,
+            PREFIX,
+            failedEndpoint);
     log.warn(ColorConsolePrinter.print(warningMessage, Color.YELLOW), error);
   }
 

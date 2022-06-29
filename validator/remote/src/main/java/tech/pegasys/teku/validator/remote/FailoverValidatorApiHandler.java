@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -53,8 +51,6 @@ import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class FailoverValidatorApiHandler implements ValidatorApiChannel {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final List<RemoteValidatorApiChannel> delegates;
   private final ValidatorLogger validatorLogger;
@@ -205,11 +201,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         .exceptionallyCompose(
             throwable -> {
               if (!delegatesIterator.hasNext()) {
+                validatorLogger.beaconNodeFailoverRemoteRequestFailed(
+                    currentDelegate.getEndpoint(), throwable, Optional.empty());
                 return SafeFuture.failedFuture(throwable);
               }
               final RemoteValidatorApiChannel nextDelegate = delegatesIterator.next();
               validatorLogger.beaconNodeFailoverRemoteRequestFailed(
-                  currentDelegate.getEndpoint(), throwable, nextDelegate.getEndpoint());
+                  currentDelegate.getEndpoint(),
+                  throwable,
+                  Optional.of(nextDelegate.getEndpoint()));
               return makeFailoverRequest(delegatesIterator, nextDelegate, request);
             });
   }
