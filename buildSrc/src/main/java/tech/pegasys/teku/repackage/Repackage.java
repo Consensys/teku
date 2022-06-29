@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -102,11 +101,10 @@ public class Repackage {
         final TarArchiveOutputStream target =
             new TarArchiveOutputStream(
                 new GzipCompressorOutputStream(Files.newOutputStream(newTarDist)))) {
-      ArchiveEntry entry;
-      while ((entry = source.getNextEntry()) != null) {
-        final TarArchiveEntry tarEntry = (TarArchiveEntry) entry;
-        tarEntry.setModTime(fileTime);
-        target.putArchiveEntry(tarEntry);
+      TarArchiveEntry entry;
+      while ((entry = source.getNextTarEntry()) != null) {
+        entry.setModTime(fileTime);
+        target.putArchiveEntry(entry);
         IOUtils.copy(source, target);
         target.closeArchiveEntry();
       }
