@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
@@ -60,16 +61,8 @@ public abstract class Web3JClient {
         .handle(
             (response, exception) -> {
               if (exception != null) {
-                final boolean authError =
-                    exception instanceof ClientConnectionException
-                        && exception.getMessage() != null
-                        && (exception.getMessage().contains("received: 401")
-                            || exception.getMessage().contains("received: 403"));
-                handleError(exception, authError);
-                return Response.withErrorMessage(
-                    exception.getMessage() != null
-                        ? exception.getMessage()
-                        : exception.getClass().getSimpleName());
+                handleError(exception, isAuthenticationException(exception));
+                return Response.withErrorMessage(getMessageOrSimpleName(exception));
               } else if (response.hasError()) {
                 final String errorMessage =
                     response.getError().getCode() + ": " + response.getError().getMessage();
@@ -80,6 +73,14 @@ public abstract class Web3JClient {
                 return new Response<>(response.getResult());
               }
             });
+  }
+
+  private boolean isAuthenticationException(final Throwable exception) {
+    if (!(exception instanceof ClientConnectionException)) {
+      return false;
+    }
+    final String message = exception.getMessage();
+    return message.contains("received: 401") || message.contains("received: 403");
   }
 
   protected void handleError(final Throwable error) {

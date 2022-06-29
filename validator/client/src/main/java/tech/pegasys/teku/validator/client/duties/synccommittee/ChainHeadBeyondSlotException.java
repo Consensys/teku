@@ -11,11 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.validator.client.duties.synccommittee;
 
-public interface BeaconRestApi {
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-  public void start();
+public class ChainHeadBeyondSlotException extends RuntimeException {
 
-  public void stop();
+  public ChainHeadBeyondSlotException(final UInt64 slot) {
+    super("Chain head has advanced beyond slot " + slot);
+  }
 }

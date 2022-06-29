@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -125,7 +126,7 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(subcommitteeIndex, 3)
             .build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(message.getSlot(), message.getBeaconBlockRoot(), subcommitteeIndex);
@@ -144,7 +145,7 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(1, 1)
             .addAssignment(subcommitteeIndex, 3)
             .build());
-    addValid(message1);
+    addValidLocal(message1);
     final ValidateableSyncCommitteeMessage message2 =
         ValidateableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(
@@ -154,7 +155,7 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(subcommitteeIndex, 2)
             .addAssignment(5, 1)
             .build());
-    addValid(message2);
+    addValidLocal(message2);
 
     final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(
@@ -165,7 +166,40 @@ class SyncCommitteeMessagePoolTest {
   }
 
   @Test
-  void shouldIncludeMessageInContributionForAllApplicableSubnets() {
+  void shouldCreateCorrespondingContributionsForEqualMessagesFromDifferentSubnets() {
+    final int subcommitteeIndex1 = 1;
+    final int subcommitteeIndex2 = 2;
+    final SyncCommitteeMessage syncCommitteeMessage =
+        dataStructureUtil.randomSyncCommitteeMessage();
+    final ValidateableSyncCommitteeMessage message1 =
+        ValidateableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex1);
+
+    SyncSubcommitteeAssignments assignments =
+        SyncSubcommitteeAssignments.builder()
+            .addAssignment(subcommitteeIndex1, 0)
+            .addAssignment(subcommitteeIndex2, 0)
+            .build();
+    message1.setSubcommitteeAssignments(assignments);
+    addValidRemote(message1);
+
+    final Optional<SyncCommitteeContribution> contribution1 =
+        pool.createContribution(
+            message1.getSlot(), message1.getBeaconBlockRoot(), subcommitteeIndex1);
+    assertThat(contribution1).contains(createContributionFrom(subcommitteeIndex1, message1));
+
+    final ValidateableSyncCommitteeMessage message2 =
+        ValidateableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex2);
+    message2.setSubcommitteeAssignments(assignments);
+    addValidRemote(message2);
+
+    final Optional<SyncCommitteeContribution> contribution2 =
+        pool.createContribution(
+            message2.getSlot(), message2.getBeaconBlockRoot(), subcommitteeIndex2);
+    assertThat(contribution2).contains(createContributionFrom(subcommitteeIndex2, message2));
+  }
+
+  @Test
+  void shouldIncludeLocalMessageInContributionForAllApplicableSubnets() {
     final ValidateableSyncCommitteeMessage message =
         ValidateableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
@@ -176,7 +210,7 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(5, 3)
             .build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final UInt64 slot = message.getSlot();
     final Bytes32 blockRoot = message.getBeaconBlockRoot();
@@ -191,6 +225,29 @@ class SyncCommitteeMessagePoolTest {
   }
 
   @Test
+  void shouldIncludeRemoteMessageInContributionOnlyOnReceivedSubnet() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromNetwork(
+            dataStructureUtil.randomSyncCommitteeMessage(), 1);
+    message.setSubcommitteeAssignments(
+        SyncSubcommitteeAssignments.builder()
+            .addAssignment(1, 1)
+            .addAssignment(3, 3)
+            .addAssignment(5, 3)
+            .build());
+
+    addValidRemote(message);
+
+    final UInt64 slot = message.getSlot();
+    final Bytes32 blockRoot = message.getBeaconBlockRoot();
+
+    assertThat(pool.createContribution(slot, blockRoot, 1))
+        .contains(createContributionFrom(1, message));
+    assertThat(pool.createContribution(slot, blockRoot, 3)).isEmpty();
+    assertThat(pool.createContribution(slot, blockRoot, 5)).isEmpty();
+  }
+
+  @Test
   void shouldAggregateSignatureMultipleTimesWhenValidatorInSameSubcommitteeMultipleTimes() {
     final ValidateableSyncCommitteeMessage message =
         ValidateableSyncCommitteeMessage.fromValidator(
@@ -202,7 +259,7 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(1, 3)
             .build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final BLSSignature signature = message.getMessage().getSignature();
     final BLSSignature expectedAggregate = BLS.aggregate(List.of(signature, signature, signature));
@@ -226,7 +283,7 @@ class SyncCommitteeMessagePoolTest {
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(UInt64.ZERO, message.getBeaconBlockRoot(), subcommitteeIndex);
@@ -242,7 +299,7 @@ class SyncCommitteeMessagePoolTest {
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Optional<SyncCommitteeContribution> contribution =
@@ -259,7 +316,7 @@ class SyncCommitteeMessagePoolTest {
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(message);
+    addValidLocal(message);
 
     final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(message.getSlot(), message.getBeaconBlockRoot(), 1);
@@ -277,9 +334,9 @@ class SyncCommitteeMessagePoolTest {
     final ValidateableSyncCommitteeMessage message2 =
         createMessageInSlot(blockRoot, subcommitteeIndex, 2);
 
-    addValid(message0);
-    addValid(message1);
-    addValid(message2);
+    addValidLocal(message0);
+    addValidLocal(message1);
+    addValidLocal(message2);
 
     pool.onSlot(UInt64.ZERO);
     assertMessagesPresentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
@@ -294,8 +351,12 @@ class SyncCommitteeMessagePoolTest {
     assertMessagesAbsentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
   }
 
-  private void addValid(final ValidateableSyncCommitteeMessage message0) {
+  private void addValidLocal(final ValidateableSyncCommitteeMessage message0) {
     assertThat(pool.addLocal(message0)).isCompletedWithValue(ACCEPT);
+  }
+
+  private void addValidRemote(final ValidateableSyncCommitteeMessage message0) {
+    assertThat(pool.addRemote(message0)).isCompletedWithValue(ACCEPT);
   }
 
   private void assertMessagesPresentForSlots(

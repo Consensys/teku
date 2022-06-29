@@ -27,7 +27,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Objects;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -85,15 +84,14 @@ public class GetDepositContract extends MigratingEndpointAdapter {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     adapt(ctx);
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final int depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
-    DepositContractData data = new DepositContractData(depositChainId, depositContractAddress);
-    request.respondOk(data);
+    request.respondOk(new DepositContractData(depositChainId, depositContractAddress));
   }
 
   static class DepositContractData {

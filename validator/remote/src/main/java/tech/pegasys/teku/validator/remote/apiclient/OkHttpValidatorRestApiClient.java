@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -145,7 +146,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(
         GET_ATTESTATION_DUTIES,
         Map.of("epoch", epoch.toString()),
-        validatorIndices.toArray(),
+        validatorIndices.stream().map(UInt64::valueOf).collect(Collectors.toList()),
         createHandler(PostAttesterDutiesResponse.class));
   }
 
@@ -295,7 +296,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(
         GET_SYNC_COMMITTEE_DUTIES,
         Map.of("epoch", epoch.toString()),
-        validatorIndices.toArray(),
+        validatorIndices.stream().map(UInt64::valueOf).collect(Collectors.toList()),
         createHandler(PostSyncDutiesResponse.class));
   }
 
