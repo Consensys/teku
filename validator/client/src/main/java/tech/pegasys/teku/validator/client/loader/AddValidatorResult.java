@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class AddValidatorResult {

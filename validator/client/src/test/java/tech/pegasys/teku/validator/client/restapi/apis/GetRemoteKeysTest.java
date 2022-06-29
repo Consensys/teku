@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.signatures.NoOpRemoteSigner.NO_OP_REMOTE_SIGNER;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpRemoteSigner.NO_OP_REMOTE_SIGNER;
 
 import java.util.Arrays;
 import java.util.Collections;

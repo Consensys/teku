@@ -7,7 +7,6 @@ idea {
 dependencies {
   api project(':ethereum:events')
 
-  implementation project(':ethereum:core')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:weaksubjectivity')
@@ -28,7 +27,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
-  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
@@ -43,12 +41,11 @@ dependencies {
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation 'org.mockito:mockito-core'
-  testFixturesImplementation project(':ethereum:core')
+  testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation project(':infrastructure:time')
-  testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
