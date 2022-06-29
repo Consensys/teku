@@ -2,7 +2,6 @@ dependencies {
     api project(':ethereum:spec')
 
     implementation project(':data:serializer')
-    implementation project(':ethereum:core')
     implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
@@ -18,7 +17,6 @@ dependencies {
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-units'
 
-    testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))
