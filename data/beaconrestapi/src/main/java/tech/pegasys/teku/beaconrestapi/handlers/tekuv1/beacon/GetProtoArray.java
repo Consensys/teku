@@ -13,16 +13,19 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.mapOfStrings;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -30,21 +33,30 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.teku.GetProtoArrayResponse;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class GetProtoArray implements Handler {
-
+public class GetProtoArray extends MigratingEndpointAdapter {
   public static final String ROUTE = "/teku/v1/debug/beacon/protoarray";
-
   private final ChainDataProvider chainDataProvider;
-  private final JsonProvider jsonProvider;
 
-  public GetProtoArray(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+  public GetProtoArray(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetProtoArray(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  public GetProtoArray(final ChainDataProvider chainDataProvider) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getProtoArray")
+            .summary("Get current fork choice data")
+            .description(
+                "Get the raw data stored in the fork choice protoarray to aid debugging. "
+                    + "This API is considered unstable and the returned data format may change in the future.")
+            .tags(TAG_TEKU)
+            .response(SC_OK, "Request successful", listOf(mapOfStrings()))
+            .withServiceUnavailableResponse()
+            .build());
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -54,7 +66,8 @@ public class GetProtoArray implements Handler {
       summary = "Get current fork choice data",
       tags = {TAG_TEKU},
       description =
-          "Get the raw data stored in the fork choice protoarray to aid debugging. This API is considered unstable and the returned data format may change in the future.",
+          "Get the raw data stored in the fork choice protoarray to aid debugging. "
+              + "This API is considered unstable and the returned data format may change in the future.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -64,10 +77,12 @@ public class GetProtoArray implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    adapt(ctx);
+  }
 
-    final GetProtoArrayResponse response =
-        new GetProtoArrayResponse(chainDataProvider.getProtoArrayData());
-    ctx.result(jsonProvider.objectToJSON(response));
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
+    request.respondOk(chainDataProvider.getProtoArrayData());
   }
 }

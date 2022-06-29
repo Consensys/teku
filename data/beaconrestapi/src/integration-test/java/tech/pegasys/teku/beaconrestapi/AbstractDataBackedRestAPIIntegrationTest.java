@@ -127,7 +127,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected DataProvider dataProvider;
-  protected BeaconRestApi beaconRestApi;
+  protected ReflectionBasedBeaconRestApi beaconRestApi;
 
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
@@ -192,7 +192,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        new BeaconRestApi(
+        new ReflectionBasedBeaconRestApi(
             dataProvider,
             eth1DataProvider,
             config,

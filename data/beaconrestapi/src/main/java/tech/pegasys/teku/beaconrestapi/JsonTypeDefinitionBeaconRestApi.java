@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-public interface BeaconRestApi {
+public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
 
-  public void start();
+  @Override
+  public void start() {
+    throw new UnsupportedOperationException("Unsupported start operation");
+  }
 
-  public void stop();
+  @Override
+  public void stop() {
+    throw new UnsupportedOperationException("Unsupported stop operation");
+  }
 }
