@@ -1,5 +1,4 @@
 dependencies {
-    implementation project(':ethereum:core')
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:logging')

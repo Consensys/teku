@@ -16,9 +16,9 @@ package tech.pegasys.teku.validator.client.restapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;

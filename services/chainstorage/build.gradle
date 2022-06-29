@@ -1,5 +1,4 @@
 dependencies {
-  implementation project(':ethereum:core')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')

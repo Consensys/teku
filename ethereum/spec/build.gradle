@@ -1,72 +1,63 @@
 dependencies {
-    api project(':infrastructure:bytes')
     api 'it.unimi.dsi:fastutil'
     api 'org.apache.tuweni:tuweni-bytes'
-
-    implementation project(':infrastructure:ssz')
-    implementation project(':infrastructure:exceptions')
+    api project(':infrastructure:bls')
+    api project(':infrastructure:bytes')
+    api project(':infrastructure:collections')
+    api project(':infrastructure:ssz')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    implementation 'com.google.code.gson:gson'
+    implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-ssz'
-
-    testFixturesImplementation project(':infrastructure:unsigned')
-    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
-    testFixturesImplementation project(':infrastructure:io')
-    testFixturesImplementation 'org.apache.tuweni:tuweni-units'
-    testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
-
-    testFixturesApi project(':ethereum:pow:api')
-    testFixturesApi 'com.google.guava:guava'
-
-    testImplementation testFixtures(project(':infrastructure:bls'))
-
-    testImplementation 'commons-io:commons-io'
-    testImplementation 'org.assertj:assertj-core'
-    testImplementation 'org.mockito:mockito-core'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params'
-
-    testImplementation testFixtures(project(':infrastructure:collections'))
-
-    // From datastructures - TODO(#3356) clean up these imports
-    api project(':infrastructure:bls')
-    api project(':infrastructure:ssz')
-
+    implementation 'org.apache.tuweni:tuweni-ssz'
+    implementation 'org.apache.tuweni:tuweni-units'
+    implementation project(':ethereum:pow:api')
+    implementation project(':ethereum:signingrecord')
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:bls')
     implementation project(':infrastructure:crypto')
-    api project(':infrastructure:collections')
     implementation project(':infrastructure:events')
+    implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
+    implementation project(':infrastructure:ssz')
     implementation project(':infrastructure:time')
-    implementation project(':ethereum:pow:api')
 
-    implementation 'com.google.code.gson:gson'
-    implementation 'org.apache.tuweni:tuweni-bytes'
-    implementation 'org.apache.tuweni:tuweni-units'
-    implementation 'org.apache.tuweni:tuweni-ssz'
-
-    testImplementation testFixtures(project(':infrastructure:async'))
-    testImplementation testFixtures(project(':infrastructure:bls'))
-    testImplementation testFixtures(project(':infrastructure:ssz'))
-    testImplementation testFixtures(project(':infrastructure:json'))
-
-    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-
+    testFixturesApi 'com.google.guava:guava'
+    testFixturesApi 'com.google.guava:guava'
+    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':infrastructure:ssz')
-
-    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
-    testFixturesApi 'com.google.guava:guava'
     testFixturesApi project(':infrastructure:unsigned')
 
+    testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
+    testFixturesImplementation 'org.apache.tuweni:tuweni-units'
+    testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
+    testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
     testFixturesImplementation project(':infrastructure:bytes')
-    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation project(':infrastructure:crypto')
     testFixturesImplementation project(':infrastructure:events')
+    testFixturesImplementation project(':infrastructure:io')
     testFixturesImplementation project(':infrastructure:time')
+    testFixturesImplementation project(':infrastructure:unsigned')
+    testFixturesImplementation testFixtures(project(':infrastructure:async'))
+    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
+    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
+
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    testImplementation 'commons-io:commons-io'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation testFixtures(project(':infrastructure:async'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
+    testImplementation testFixtures(project(':infrastructure:collections'))
+    testImplementation testFixtures(project(':infrastructure:json'))
+    testImplementation testFixtures(project(':infrastructure:ssz'))
 }

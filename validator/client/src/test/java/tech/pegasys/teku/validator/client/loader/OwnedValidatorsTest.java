@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import java.util.List;
 import java.util.Optional;
