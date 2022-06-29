@@ -91,8 +91,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   @Override
   public void onSlot(UInt64 slot) {
     super.onSlot(slot);
-    pendingBlocksForEPReexecution.removeIf(
-        block -> isReexecutionExpiredForBlock(block, slot));
+    pendingBlocksForEPReexecution.removeIf(block -> isReexecutionExpiredForBlock(block, slot));
   }
 
   @Override
@@ -104,16 +103,17 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
                 return;
               }
               final Optional<UInt64> currentSlot = recentChainData.getCurrentSlot();
-              if(currentSlot.isEmpty()) {
+              if (currentSlot.isEmpty()) {
                 return;
               }
-              if(!isReexecutionExpiredForBlock(block, currentSlot.get())) {
-                  pendingBlocksForEPReexecution.add(block);
+              if (!isReexecutionExpiredForBlock(block, currentSlot.get())) {
+                pendingBlocksForEPReexecution.add(block);
               }
             });
   }
 
-  private boolean isReexecutionExpiredForBlock(final SignedBeaconBlock block, final UInt64 currentSlot) {
+  private boolean isReexecutionExpiredForBlock(
+      final SignedBeaconBlock block, final UInt64 currentSlot) {
     return block.getSlot().plus(EXPIRES_IN_SLOT).isLessThan(currentSlot);
   }
 

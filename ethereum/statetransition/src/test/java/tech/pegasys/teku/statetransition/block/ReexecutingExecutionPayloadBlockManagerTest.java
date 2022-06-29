@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -107,7 +106,8 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   public void setup() {
     forwardBlockImportedNotificationsTo(blockManager);
     remoteStorageSystem.chainUpdater().initializeGenesisWithPayload(false);
-    when(recentChainData.getCurrentSlot()).thenReturn(remoteStorageSystem.recentChainData().getCurrentSlot());
+    when(recentChainData.getCurrentSlot())
+        .thenReturn(remoteStorageSystem.recentChainData().getCurrentSlot());
     assertThat(blockManager.start()).isCompleted();
   }
 
@@ -204,13 +204,13 @@ public class ReexecutingExecutionPayloadBlockManagerTest {
   @Test
   public void onInvalidBlockImport_shouldNotRetryExpiredBlock() {
     final SignedBeaconBlock nextBlock =
-            remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
+        remoteStorageSystem.chainUpdater().chainBuilder.generateNextBlock().getBlock();
 
     // communication error
     when(blockImporter.importBlock(nextBlock, Optional.empty()))
-            .thenReturn(
-                    SafeFuture.completedFuture(
-                            BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.failedExecutionPayloadExecution(new RuntimeException("error"))));
 
     when(recentChainData.getCurrentSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
