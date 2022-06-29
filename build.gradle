@@ -123,6 +123,7 @@ allprojects {
   task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
+    jar.reproducibleFileOrder = true
   }
 
   sourceCompatibility = '11'
@@ -420,6 +421,7 @@ distTar {
   }
   compression = Compression.GZIP
   archiveExtension = 'tar.gz'
+  reproducibleFileOrder = true
   doLast {
     repackage(archiveFile.get().toString(), lastCommitDate())
   }
@@ -430,6 +432,7 @@ distZip {
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
+  reproducibleFileOrder = true
   doLast {
     repackage(archiveFile.get().toString(), lastCommitDate())
   }
