@@ -16,12 +16,8 @@ package tech.pegasys.teku.repackage;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -38,6 +34,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.utils.IOUtils;
 
 public class Repackage {
   /**
@@ -81,120 +78,38 @@ public class Repackage {
 
   private static void repackageZip(Path zipDist, FileTime fileTime, Path tempDir)
       throws IOException {
-    try (ZipFile zf = new ZipFile(zipDist.toString())) {
-      Enumeration<? extends ZipEntry> zipEntries = zf.entries();
-      zipEntries
-          .asIterator()
-          .forEachRemaining(
-              entry -> {
-                try {
-                  Path path = tempDir.resolve(entry.getName());
-                  if (entry.isDirectory()) {
-                    Files.createDirectories(path);
-                  } else {
-                    Files.createDirectories(path.getParent());
-                    Files.copy(zf.getInputStream(entry), path);
-                  }
-                } catch (IOException e) {
-                  e.printStackTrace();
-                }
-              });
-    }
-
     Path newZipDist = tempDir.resolve(zipDist.getFileName());
-    Path zipDistDir = tempDir.resolve(zipDist.getFileName().toString().replace(".zip", ""));
-    try (ZipOutputStream output =
-        new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(newZipDist)))) {
-      // Sorted so that it will be reproducible.
-      try (Stream<Path> walk = Files.walk(zipDistDir)) {
-        walk.sorted()
-            .forEach(
-                path -> {
-                  // Force file separators to be UNIX-style so that it's the same on Windows.
-                  String relativePath = toUnixPath(tempDir.relativize(path));
-                  try {
-                    if (Files.isDirectory(path)) {
-                      ZipEntry entry = new ZipEntry(toDir(relativePath));
-                      entry.setLastModifiedTime(fileTime);
-                      output.putNextEntry(entry);
-                      // Do not write a file. It's a directory.
-                      output.closeEntry();
-                    } else {
-                      ZipEntry entry = new ZipEntry(relativePath);
-                      entry.setLastModifiedTime(fileTime);
-                      output.putNextEntry(entry);
-                      output.write(Files.readAllBytes(path));
-                      output.closeEntry();
-                    }
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                  }
-                });
+    try (final ZipFile source = new ZipFile(zipDist.toFile());
+        final ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(newZipDist))) {
+      final Enumeration<? extends ZipEntry> sourceEntries = source.entries();
+      while (sourceEntries.hasMoreElements()) {
+        final ZipEntry sourceEntry = sourceEntries.nextElement();
+        final ZipEntry outputEntry = new ZipEntry(sourceEntry);
+        outputEntry.setLastModifiedTime(fileTime);
+        outputEntry.setLastAccessTime(fileTime);
+        output.putNextEntry(outputEntry);
+        IOUtils.copy(source.getInputStream(sourceEntry), output);
       }
     }
   }
 
   private static void repackageTarGz(Path tarDist, FileTime fileTime, Path tempDir)
       throws IOException {
-    // Used this website as a resource for doing this:
-    // https://mkyong.com/java/how-to-create-tar-gz-in-java/
-    try (InputStream fi = Files.newInputStream(tarDist);
-        BufferedInputStream bi = new BufferedInputStream(fi);
-        GzipCompressorInputStream gzi = new GzipCompressorInputStream(bi);
-        TarArchiveInputStream ti = new TarArchiveInputStream(gzi)) {
-
-      ArchiveEntry entry;
-      while ((entry = ti.getNextEntry()) != null) {
-        Path path = tempDir.resolve(entry.getName());
-        if (entry.isDirectory()) {
-          Files.createDirectories(path);
-        } else {
-          Files.createDirectories(path.getParent());
-          Files.copy(ti, path);
-        }
-      }
-    }
-
     Path newTarDist = tempDir.resolve(tarDist.getFileName());
-    Path tarDistDir = tempDir.resolve(tarDist.getFileName().toString().replace(".tar.gz", ""));
-    try (OutputStream fOut = Files.newOutputStream(newTarDist);
-        BufferedOutputStream buffOut = new BufferedOutputStream(fOut);
-        GzipCompressorOutputStream gzOut = new GzipCompressorOutputStream(buffOut);
-        TarArchiveOutputStream tOut = new TarArchiveOutputStream(gzOut)) {
-      try (Stream<Path> walk = Files.walk(tarDistDir)) {
-        walk.sorted()
-            .forEach(
-                path -> {
-                  // Force file separators to be UNIX-style so that it's the same on Windows.
-                  String relativePath = toUnixPath(tempDir.relativize(path));
-                  try {
-                    if (Files.isDirectory(path)) {
-                      TarArchiveEntry entry = new TarArchiveEntry(path, toDir(relativePath));
-                      entry.setModTime(fileTime);
-                      tOut.putArchiveEntry(entry);
-                      // Do not write a file. It's a directory.
-                      tOut.closeArchiveEntry();
-                    } else {
-                      TarArchiveEntry entry = new TarArchiveEntry(path, relativePath);
-                      entry.setModTime(fileTime);
-                      tOut.putArchiveEntry(entry);
-                      Files.copy(path, tOut);
-                      tOut.closeArchiveEntry();
-                    }
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                  }
-                });
+    try (final TarArchiveInputStream source =
+            new TarArchiveInputStream(
+                new GzipCompressorInputStream(Files.newInputStream(tarDist)));
+        final TarArchiveOutputStream target =
+            new TarArchiveOutputStream(
+                new GzipCompressorOutputStream(Files.newOutputStream(newTarDist)))) {
+      ArchiveEntry entry;
+      while ((entry = source.getNextEntry()) != null) {
+        final TarArchiveEntry tarEntry = (TarArchiveEntry) entry;
+        tarEntry.setModTime(fileTime);
+        target.putArchiveEntry(tarEntry);
+        IOUtils.copy(source, target);
+        target.closeArchiveEntry();
       }
-      tOut.finish();
     }
-  }
-
-  private static String toUnixPath(Path path) {
-    return path.toString().replace("\\", "/");
-  }
-
-  private static String toDir(String path) {
-    return path + "/";
   }
 }
