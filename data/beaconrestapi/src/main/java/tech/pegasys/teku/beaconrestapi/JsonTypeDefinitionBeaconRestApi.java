@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
@@ -137,23 +134,22 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .exceptionHandler(
             ChainDataUnavailableException.class, (throwable) -> HttpErrorResponse.noContent())
         .exceptionHandler(
-            NodeSyncingException.class,
-            (throwable) -> new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE))
+            NodeSyncingException.class, (throwable) -> HttpErrorResponse.serviceUnavailable())
         .exceptionHandler(
             ServiceUnavailableException.class,
-            (throwable) -> new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE))
+            (throwable) -> HttpErrorResponse.serviceUnavailable())
         .exceptionHandler(
             ContentTypeNotSupportedException.class,
             (throwable) -> new HttpErrorResponse(SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()))
         .exceptionHandler(
             BadRequestException.class,
-            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
         .exceptionHandler(
             JsonProcessingException.class,
-            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
         .exceptionHandler(
             IllegalArgumentException.class,
-            (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
         // Beacon Handlers
         .endpoint(new GetGenesis(dataProvider))
         .endpoint(new GetStateRoot(dataProvider))

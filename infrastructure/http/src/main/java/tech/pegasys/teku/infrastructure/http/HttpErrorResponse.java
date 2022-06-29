@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.http;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 
 import java.util.Objects;
 
@@ -25,6 +27,10 @@ public class HttpErrorResponse {
 
   public static HttpErrorResponse badRequest(String message) {
     return new HttpErrorResponse(SC_BAD_REQUEST, message);
+  }
+
+  public static HttpErrorResponse serviceUnavailable() {
+    return new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
   }
 
   public static HttpErrorResponse noContent() {
