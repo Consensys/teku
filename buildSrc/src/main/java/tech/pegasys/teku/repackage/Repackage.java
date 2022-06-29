@@ -28,9 +28,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import org.apache.commons.compress.archivers.jar.JarArchiveEntry;
-import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
-import org.apache.commons.compress.archivers.jar.JarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -56,7 +53,8 @@ public class Repackage {
       final FileTime fileTime = FileTime.fromMillis(date.getTime());
 
       if (distFile.endsWith(".jar")) {
-        repackageJar(distPath, fileTime, tempDir);
+        // A jar file is essentially a zip file.
+        repackageZip(distPath, fileTime, tempDir);
       } else if (distFile.endsWith(".tar.gz")) {
         repackageTarGz(distPath, fileTime, tempDir);
       } else if (distFile.endsWith(".zip")) {
@@ -70,24 +68,6 @@ public class Repackage {
     } finally {
       try (Stream<Path> walk = Files.walk(tempDir)) {
         walk.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-      }
-    }
-  }
-
-  private static void repackageJar(final Path jarDist, final FileTime fileTime, final Path tempDir)
-      throws IOException {
-    final Path newJarDist = tempDir.resolve(jarDist.getFileName());
-    try (final JarArchiveInputStream source =
-            new JarArchiveInputStream(Files.newInputStream(jarDist));
-        final JarArchiveOutputStream target =
-            new JarArchiveOutputStream(Files.newOutputStream(newJarDist))) {
-      JarArchiveEntry entry;
-      while ((entry = source.getNextJarEntry()) != null) {
-        entry.setLastModifiedTime(fileTime);
-        entry.setLastAccessTime(fileTime);
-        target.putArchiveEntry(entry);
-        IOUtils.copy(source, target);
-        target.closeArchiveEntry();
       }
     }
   }
