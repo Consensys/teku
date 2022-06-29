@@ -14,12 +14,14 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadBeyondSlotException;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 
 class ChainHeadTrackerTest {
@@ -49,11 +51,13 @@ class ChainHeadTrackerTest {
   }
 
   @Test
-  void shouldReturnEmptyWhenHeadIsAfterRequestedSlot() {
+  void shouldThrowCustomExceptionWhenHeadIsAfterRequestedSlot() {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
     updateHead(slot, headBlockRoot);
-    assertThat(tracker.getCurrentChainHead(slot.minus(1))).isEmpty();
+
+    assertThrows(
+        ChainHeadBeyondSlotException.class, () -> tracker.getCurrentChainHead(slot.minus(1)));
   }
 
   private void updateHead(final UInt64 slot, final Bytes32 headBlockRoot) {

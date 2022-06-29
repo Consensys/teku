@@ -40,6 +40,9 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap(), List.of());
+  public static final DutyResult NODE_SYNCING =
+      new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
+
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
@@ -93,7 +96,7 @@ public class DutyResult {
       cause = cause.getCause();
     }
     if (cause instanceof NodeSyncingException) {
-      return new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
+      return NODE_SYNCING;
     } else {
       return new DutyResult(
           0,

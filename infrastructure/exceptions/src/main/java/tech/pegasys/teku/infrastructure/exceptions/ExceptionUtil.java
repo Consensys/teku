@@ -31,4 +31,8 @@ public class ExceptionUtil {
       final Throwable err, Class<? extends T> targetType) {
     return getCause(err, targetType).isPresent();
   }
+
+  public static String getMessageOrSimpleName(final Throwable throwable) {
+    return Optional.ofNullable(throwable.getMessage()).orElse(throwable.getClass().getSimpleName());
+  }
 }

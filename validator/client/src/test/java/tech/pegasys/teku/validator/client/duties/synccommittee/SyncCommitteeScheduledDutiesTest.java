@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -28,6 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -92,10 +95,12 @@ class SyncCommitteeScheduledDutiesTest {
     verifyNoInteractions(validatorApiChannel);
   }
 
-  @Test
-  void shouldNotProduceSignaturesWhenChainHeadIsEmpty() {
+  @ParameterizedTest
+  @EnumSource(HeadNotAvailableReason.class)
+  void shouldNotProduceSignaturesWhenChainHeadIsNotAvailable(
+      final HeadNotAvailableReason headNotAvailableReason) {
     final UInt64 slot = UInt64.valueOf(25);
-    when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
+    setupHeadTrackerResponse(headNotAvailableReason, slot);
 
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -107,21 +112,27 @@ class SyncCommitteeScheduledDutiesTest {
     final SafeFuture<DutyResult> result = duties.performProductionDuty(slot);
     reportDutyResult(slot, result);
 
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(slot),
-            eq(
-                Set.of(
-                    validator1.getPublicKey().toAbbreviatedString(),
-                    validator2.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
+    if (headNotAvailableReason.equals(HeadNotAvailableReason.NODE_SYNCING)) {
+      verify(validatorLogger).dutySkippedWhileSyncing(eq(TYPE), eq(slot), eq(1));
+    } else {
+      verify(validatorLogger)
+          .dutyFailed(
+              eq(TYPE),
+              eq(slot),
+              eq(
+                  Set.of(
+                      validator1.getPublicKey().toAbbreviatedString(),
+                      validator2.getPublicKey().toAbbreviatedString())),
+              any(ChainHeadBeyondSlotException.class));
+    }
   }
 
-  @Test
-  void shouldNotPerformDutyWhenNoActiveValidatorsAndChainHeadEmpty() {
+  @ParameterizedTest
+  @EnumSource(HeadNotAvailableReason.class)
+  void shouldNotPerformDutyWhenNoActiveValidatorsAndChainHeadIsNotAvailable(
+      final HeadNotAvailableReason headNotAvailableReason) {
     final UInt64 slot = UInt64.valueOf(25);
-    when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
+    setupHeadTrackerResponse(headNotAvailableReason, slot);
 
     final SyncCommitteeScheduledDuties duties = validBuilder().build();
     final SafeFuture<DutyResult> result = duties.performProductionDuty(slot);
@@ -238,5 +249,24 @@ class SyncCommitteeScheduledDutiesTest {
 
   private Validator createValidator() {
     return new Validator(dataStructureUtil.randomPublicKey(), mock(Signer.class), Optional::empty);
+  }
+
+  private void setupHeadTrackerResponse(
+      final HeadNotAvailableReason headNotAvailableReason, final UInt64 slot) {
+    doAnswer(
+            __ -> {
+              if (headNotAvailableReason.equals(HeadNotAvailableReason.NODE_SYNCING)) {
+                return Optional.empty();
+              } else {
+                throw new ChainHeadBeyondSlotException(slot);
+              }
+            })
+        .when(chainHeadTracker)
+        .getCurrentChainHead(slot);
+  }
+
+  private enum HeadNotAvailableReason {
+    NODE_SYNCING,
+    HEAD_ADVANCED_BEYOND_SLOT
   }
 }

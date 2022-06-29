@@ -44,6 +44,7 @@ public class PyspecTestFinder implements TestFinder {
     final String testType = testRoot.relativize(testCategoryDir).toString();
     final Path pyspecDir = testCategoryDir.resolve(PYSPEC_TEST_DIRECTORY_NAME);
     return Files.list(pyspecDir)
+        .filter(testDir -> !testDir.getFileName().toString().equals(".DS_Store"))
         .map(
             testDir -> {
               final String testName = pyspecDir.relativize(testDir).toString();
