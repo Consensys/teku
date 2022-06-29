@@ -156,7 +156,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .exceptionHandler(
             IllegalArgumentException.class,
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
-        // FIXME .exceptionHandler(Exception.class, (throwable) -> new DefaultExceptionHandler<>());
         // Beacon Handlers
         .endpoint(new GetGenesis(dataProvider))
         .endpoint(new GetStateRoot(dataProvider))
