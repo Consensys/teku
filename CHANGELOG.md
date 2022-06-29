@@ -17,4 +17,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
 
 ### Bug Fixes
- - Fix rendering emoticons in graffiti when running in a Docker container
+ - Fix not rendering emoticons correctly in graffiti when running in a Docker container
