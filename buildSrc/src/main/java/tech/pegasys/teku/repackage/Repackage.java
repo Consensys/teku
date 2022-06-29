@@ -44,15 +44,13 @@ public class Repackage {
    * @param date The files will have this modification date.
    * @throws IOException
    */
-  public static void repackage(String distFile, Date date) throws IOException {
-    // Create a temporary directory to use as a working directory.
-    // We will delete this when we are finished.
-    Path tempDir = Path.of(Files.createTempDirectory("repackage").toFile().getAbsolutePath());
+  public static void repackage(final String distFile, final Date date) throws IOException {
+    final Path tempDir = Path.of(Files.createTempDirectory("repackage").toFile().getAbsolutePath());
 
     try {
-      Path distPath = Path.of(distFile);
-      Path tempDistPath = tempDir.resolve(distPath.getFileName());
-      FileTime fileTime = FileTime.fromMillis(date.getTime());
+      final Path distPath = Path.of(distFile);
+      final Path tempDistPath = tempDir.resolve(distPath.getFileName());
+      final FileTime fileTime = FileTime.fromMillis(date.getTime());
 
       if (distFile.endsWith(".zip")) {
         repackageZip(distPath, fileTime, tempDir);
@@ -62,39 +60,35 @@ public class Repackage {
         throw new IllegalArgumentException("bad distribution");
       }
 
-      // Set the modification date of the final distribution file.
       Files.setLastModifiedTime(tempDistPath, fileTime);
-      // Replace the original distribution file with the repackaged one.
       Files.copy(tempDistPath, distPath, COPY_ATTRIBUTES, REPLACE_EXISTING);
     } finally {
-      // Delete the temporary directory.
-      // Thank you, SubOptimal: https://stackoverflow.com/a/35989142
       try (Stream<Path> walk = Files.walk(tempDir)) {
         walk.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
       }
     }
   }
 
-  private static void repackageZip(Path zipDist, FileTime fileTime, Path tempDir)
+  private static void repackageZip(final Path zipDist, final FileTime fileTime, final Path tempDir)
       throws IOException {
-    Path newZipDist = tempDir.resolve(zipDist.getFileName());
+    final Path newZipDist = tempDir.resolve(zipDist.getFileName());
     try (final ZipFile source = new ZipFile(zipDist.toFile());
-        final ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(newZipDist))) {
+        final ZipOutputStream target = new ZipOutputStream(Files.newOutputStream(newZipDist))) {
       final Enumeration<? extends ZipEntry> sourceEntries = source.entries();
       while (sourceEntries.hasMoreElements()) {
         final ZipEntry sourceEntry = sourceEntries.nextElement();
         final ZipEntry outputEntry = new ZipEntry(sourceEntry);
         outputEntry.setLastModifiedTime(fileTime);
         outputEntry.setLastAccessTime(fileTime);
-        output.putNextEntry(outputEntry);
-        IOUtils.copy(source.getInputStream(sourceEntry), output);
+        target.putNextEntry(outputEntry);
+        IOUtils.copy(source.getInputStream(sourceEntry), target);
       }
     }
   }
 
-  private static void repackageTarGz(Path tarDist, FileTime fileTime, Path tempDir)
-      throws IOException {
-    Path newTarDist = tempDir.resolve(tarDist.getFileName());
+  private static void repackageTarGz(
+      final Path tarDist, final FileTime fileTime, final Path tempDir) throws IOException {
+    final Path newTarDist = tempDir.resolve(tarDist.getFileName());
     try (final TarArchiveInputStream source =
             new TarArchiveInputStream(
                 new GzipCompressorInputStream(Files.newInputStream(tarDist)));
