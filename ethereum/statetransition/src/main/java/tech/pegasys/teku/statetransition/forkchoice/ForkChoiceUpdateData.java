@@ -40,7 +40,7 @@ public class ForkChoiceUpdateData {
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
       new SafeFuture<>();
-  private UInt64 sentTimestamp = UInt64.ZERO;
+  private UInt64 toBeSentAtTime = UInt64.ZERO;
 
   private long payloadBuildingAttributesSequenceProducer = 0;
   private long payloadBuildingAttributesSequenceConsumer = -1;
@@ -155,10 +155,10 @@ public class ForkChoiceUpdateData {
 
   public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
       final ExecutionLayerChannel executionLayer, final UInt64 currentTimestamp) {
-    if (doesNotRequireSend(currentTimestamp)) {
+    if (!shouldBeSent(currentTimestamp)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    sentTimestamp = currentTimestamp;
+    toBeSentAtTime = currentTimestamp.plus(RESEND_AFTER_MILLIS);
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
@@ -208,16 +208,16 @@ public class ForkChoiceUpdateData {
     return forkChoiceState;
   }
 
-  private boolean doesNotRequireSend(final UInt64 currentTimestamp) {
-    if (sentTimestamp.isZero()) {
-      return false;
+  private boolean shouldBeSent(final UInt64 currentTimestamp) {
+    if (toBeSentAtTime.isZero()) {
+      return true;
     }
-    if (sentTimestamp.plus(RESEND_AFTER_MILLIS).isLessThan(currentTimestamp)) {
+    if (toBeSentAtTime.isLessThanOrEqualTo(currentTimestamp)) {
       LOG.debug("send - already sent but resending");
-      return false;
+      return true;
     }
     LOG.debug("send - already sent");
-    return true;
+    return false;
   }
 
   @Override
