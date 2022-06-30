@@ -164,11 +164,11 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
-  public void beaconNodeFailoverRemoteRequestFailed(
+  public void remoteBeaconNodeFailoverRequestFailed(
       final URI failedEndpoint, final Throwable error, final Optional<URI> failoverEndpoint) {
     final String failoverMessage =
         failoverEndpoint
-            .map(endpoint -> String.format("Will try failover to %s.", endpoint))
+            .map(endpoint -> "Trying failover to " + endpoint)
             .orElse("No more failovers available.");
     final String warningMessage =
         String.format(

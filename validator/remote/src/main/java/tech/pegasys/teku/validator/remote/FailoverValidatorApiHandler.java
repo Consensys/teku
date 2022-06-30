@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
 import java.util.Iterator;
@@ -131,18 +132,18 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
-    throw new UnsupportedOperationException("Not sure yet");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
       Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    throw new UnsupportedOperationException("Not sure yet");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
   public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    throw new UnsupportedOperationException("Not sure yet");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -178,7 +179,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    throw new UnsupportedOperationException("Not sure yet");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -187,7 +188,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return makeFailoverRequest(apiChannel -> apiChannel.registerValidators(validatorRegistrations));
   }
 
-  private <T> SafeFuture<T> makeFailoverRequest(final RemoteValidatorApiChannelRequest<T> request) {
+  private <T> SafeFuture<T> makeFailoverRequest(final ValidatorApiChannelRequest<T> request) {
     final Iterator<RemoteValidatorApiChannel> delegatesIterator = delegates.iterator();
     return makeFailoverRequest(delegatesIterator, delegatesIterator.next(), request);
   }
@@ -195,18 +196,18 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   private <T> SafeFuture<T> makeFailoverRequest(
       final Iterator<RemoteValidatorApiChannel> delegatesIterator,
       final RemoteValidatorApiChannel currentDelegate,
-      final RemoteValidatorApiChannelRequest<T> request) {
+      final ValidatorApiChannelRequest<T> request) {
     return request
         .run(currentDelegate)
         .exceptionallyCompose(
             throwable -> {
               if (!delegatesIterator.hasNext()) {
-                validatorLogger.beaconNodeFailoverRemoteRequestFailed(
+                validatorLogger.remoteBeaconNodeFailoverRequestFailed(
                     currentDelegate.getEndpoint(), throwable, Optional.empty());
                 return SafeFuture.failedFuture(throwable);
               }
               final RemoteValidatorApiChannel nextDelegate = delegatesIterator.next();
-              validatorLogger.beaconNodeFailoverRemoteRequestFailed(
+              validatorLogger.remoteBeaconNodeFailoverRequestFailed(
                   currentDelegate.getEndpoint(),
                   throwable,
                   Optional.of(nextDelegate.getEndpoint()));
@@ -214,8 +215,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
+  @VisibleForTesting
   @FunctionalInterface
-  private interface RemoteValidatorApiChannelRequest<T> {
-    SafeFuture<T> run(final RemoteValidatorApiChannel apiChannel);
+  interface ValidatorApiChannelRequest<T> {
+    SafeFuture<T> run(final ValidatorApiChannel apiChannel);
   }
 }
