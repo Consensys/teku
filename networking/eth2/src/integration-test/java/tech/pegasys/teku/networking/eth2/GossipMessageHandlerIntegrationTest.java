@@ -27,7 +27,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {

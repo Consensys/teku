@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;

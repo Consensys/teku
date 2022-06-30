@@ -38,14 +38,12 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:time'))
 
     testImplementation testFixtures(project(':infrastructure:json'))
-    testImplementation testFixtures(project(':ethereum:core'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
     integrationTestImplementation testFixtures(project(':infrastructure:bls'))
     integrationTestImplementation testFixtures(project(':ethereum:spec'))
     integrationTestImplementation project(':ethereum:weaksubjectivity')
-    integrationTestImplementation testFixtures(project(':ethereum:core'))
 
     integrationTestImplementation project(':networking:p2p')
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'

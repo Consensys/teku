@@ -18,6 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
 public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private DataStructureUtil dataStructureUtil;
@@ -116,6 +118,22 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
     assertThat(response.body().string())
         .isEqualTo(
             "{\"code\":503,\"message\":\"Beacon node is currently syncing and not serving requests\"}");
+  }
+
+  @ParameterizedTest(name = "blinded_{1}")
+  @MethodSource("getNewBlockCases")
+  void shouldNotStackTraceForMissingDeposits(final String route, final boolean isBlindedBlock)
+      throws IOException {
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+        .thenReturn(
+            SafeFuture.failedFuture(
+                MissingDepositsException.missingRange(UInt64.valueOf(1), UInt64.valueOf(10))));
+    Response response = get(route, signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.body().string())
+        .isEqualTo(
+            "{\"code\":500,\"message\":\"Unable to create block because ETH1 deposits are not available. Missing deposits 1 to 10\"}");
   }
 
   public Response get(final String route, final BLSSignature signature, final String contentType)

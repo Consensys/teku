@@ -92,18 +92,21 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
         message.getSubcommitteeAssignments().orElseThrow();
     final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =
         committeeContributionData.computeIfAbsent(message.getSlot(), __ -> new HashMap<>());
-    assignments
-        .getAssignedSubcommittees()
-        .forEach(
-            subcommitteeIndex ->
-                blockRootAndCommitteeIndexToMessages
-                    .computeIfAbsent(
-                        new BlockRootAndCommitteeIndex(
-                            message.getBeaconBlockRoot(), subcommitteeIndex),
-                        __ -> new ContributionData())
-                    .add(
-                        assignments.getParticipationBitIndices(subcommitteeIndex),
-                        message.getMessage().getSignature()));
+    final IntSet applicableSubnets;
+    if (message.getReceivedSubnetId().isEmpty()) {
+      applicableSubnets = assignments.getAssignedSubcommittees();
+    } else {
+      applicableSubnets = IntSet.of(message.getReceivedSubnetId().getAsInt());
+    }
+    applicableSubnets.forEach(
+        subcommitteeIndex ->
+            blockRootAndCommitteeIndexToMessages
+                .computeIfAbsent(
+                    new BlockRootAndCommitteeIndex(message.getBeaconBlockRoot(), subcommitteeIndex),
+                    __ -> new ContributionData())
+                .add(
+                    assignments.getParticipationBitIndices(subcommitteeIndex),
+                    message.getMessage().getSignature()));
   }
 
   public synchronized Optional<SyncCommitteeContribution> createContribution(
