@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.isHostAuthorized;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
@@ -126,6 +127,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
+import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
 public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
 
@@ -234,6 +236,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     app.exception(NodeSyncingException.class, this::serviceUnavailable);
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(ContentTypeNotSupportedException.class, this::unsupportedContentType);
+    app.exception(MissingDepositsException.class, this::missingDeposits);
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
@@ -246,6 +249,13 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
         context,
         () ->
             BadRequest.serialize(jsonProvider, SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()));
+  }
+
+  private void missingDeposits(final Throwable throwable, final Context context) {
+    context.status(SC_INTERNAL_SERVER_ERROR);
+    setErrorBody(
+        context,
+        () -> BadRequest.serialize(jsonProvider, SC_INTERNAL_SERVER_ERROR, throwable.getMessage()));
   }
 
   private void serviceUnavailable(final Throwable throwable, final Context context) {
