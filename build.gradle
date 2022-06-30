@@ -124,6 +124,7 @@ allprojects {
     classifier = 'sources'
     from sourceSets.main.allSource
     jar.reproducibleFileOrder = true
+    jar.preserveFileTimestamps = false
   }
 
   sourceCompatibility = '11'
@@ -780,9 +781,7 @@ subprojects {
       )
     }
     reproducibleFileOrder = true
-    doLast {
-      repackage(archiveFile.get().toString(), lastCommitDate())
-    }
+    preserveFileTimestamps = false
   }
 
   dependencies {

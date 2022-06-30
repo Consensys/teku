@@ -52,10 +52,7 @@ public class Repackage {
       final Path tempDistPath = tempDir.resolve(distPath.getFileName());
       final FileTime fileTime = FileTime.fromMillis(date.getTime());
 
-      if (distFile.endsWith(".jar")) {
-        // A jar file is essentially a zip file.
-        repackageZip(distPath, fileTime, tempDir);
-      } else if (distFile.endsWith(".tar.gz")) {
+      if (distFile.endsWith(".tar.gz")) {
         repackageTarGz(distPath, fileTime, tempDir);
       } else if (distFile.endsWith(".zip")) {
         repackageZip(distPath, fileTime, tempDir);
