@@ -840,7 +840,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final BeaconRestApi api =
         beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
-            ? new JsonTypeDefinitionBeaconRestApi()
+            ? new JsonTypeDefinitionBeaconRestApi(
+                beaconConfig.beaconRestApiConfig(), dataProvider, eth1DataProvider, spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,

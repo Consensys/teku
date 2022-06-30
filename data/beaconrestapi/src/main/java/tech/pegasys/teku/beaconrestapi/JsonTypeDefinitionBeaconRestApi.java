@@ -98,18 +98,27 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
+  private final RestApi restApi;
+
+  public JsonTypeDefinitionBeaconRestApi(
+      final BeaconRestApiConfig config,
+      final DataProvider dataProvider,
+      final Eth1DataProvider eth1DataProvider,
+      final Spec spec) {
+    restApi = create(config, dataProvider, eth1DataProvider, spec);
+  }
 
   @Override
   public void start() {
-    throw new UnsupportedOperationException("Unsupported start operation");
+    restApi.start();
   }
 
   @Override
   public void stop() {
-    throw new UnsupportedOperationException("Unsupported stop operation");
+    restApi.stop();
   }
 
-  public static RestApi create(
+  private static RestApi create(
       final BeaconRestApiConfig config,
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
