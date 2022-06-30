@@ -189,8 +189,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new PostVoluntaryExit(dataProvider))
         .endpoint(new PostSyncCommittees(dataProvider))
         .endpoint(new PostValidatorLiveness(dataProvider))
-        // FIXME Event Handlers (not a MigratingEndpointAdapter)
-        // .endpoint(new GetEvents())
+        // FIXME Add Event Handlers (GetEvents is not a MigratingEndpointAdapter)
         // Node Handlers
         .endpoint(new GetHealth(dataProvider))
         .endpoint(new GetIdentity(dataProvider))
