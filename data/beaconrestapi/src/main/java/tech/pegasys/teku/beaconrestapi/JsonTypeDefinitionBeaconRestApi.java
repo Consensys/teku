@@ -110,12 +110,12 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
 
   @Override
   public void start() {
-    restApi.start();
+    restApi.start().ifExceptionGetsHereRaiseABug();
   }
 
   @Override
   public void stop() {
-    restApi.stop();
+    restApi.stop().ifExceptionGetsHereRaiseABug();
   }
 
   private static RestApi create(
