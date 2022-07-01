@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -368,21 +369,27 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
-            signedBuilderBid -> {
-              LOG.trace(
-                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                  slot,
-                  validatorPublicKey,
-                  executionPayloadContext.getParentHash(),
-                  signedBuilderBid);
-              final BuilderBid builderBid = signedBuilderBid.getMessage();
-              logReceivedBuilderBid(builderBid);
+            signedBuilderBidMaybe ->
+                LOG.trace(
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                    slot,
+                    validatorPublicKey,
+                    executionPayloadContext.getParentHash(),
+                    signedBuilderBidMaybe))
+        .thenComposeChecked(
+            signedBuilderBidMaybe -> {
+              if (signedBuilderBidMaybe.isEmpty()) {
+                return getHeaderFromLocalExecutionPayload(
+                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+              }
+              final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
+              logReceivedBuilderBid(signedBuilderBid.getMessage());
+              final ExecutionPayloadHeader executionPayloadHeader =
+                  builderBidValidator.validateAndGetPayloadHeader(
+                      spec, signedBuilderBid, validatorRegistration.get(), state);
+              slotToLocalElFallbackData.put(slot, Optional.empty());
+              return SafeFuture.completedFuture(executionPayloadHeader);
             })
-        .thenApplyChecked(
-            signedBuilderBid ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    spec, signedBuilderBid, validatorRegistration.get(), state))
-        .thenPeek(__ -> slotToLocalElFallbackData.put(slot, Optional.empty()))
         .exceptionallyCompose(
             error -> {
               LOG.error(
@@ -568,6 +575,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     VALIDATOR_NOT_REGISTERED("validator_not_registered"),
     FORCED("forced"),
     BUILDER_NOT_AVAILABLE("builder_not_available"),
+    BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
     BUILDER_ERROR("builder_error"),
     NONE("");
 
