@@ -477,8 +477,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
-    app.get(
-        GetEvents.ROUTE,
+    addMigratedEndpoint(
         new GetEvents(
             dataProvider,
             eventChannels,
