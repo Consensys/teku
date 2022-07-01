@@ -181,7 +181,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     updateBuilderAvailability();
     slotToLocalElFallbackData
         .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
@@ -290,7 +290,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      TransitionConfiguration transitionConfiguration) {
+      final TransitionConfiguration transitionConfiguration) {
     LOG.trace(
         "calling engineExchangeTransitionConfiguration(transitionConfiguration={})",
         transitionConfiguration);
@@ -481,7 +481,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return latestBuilderAvailability.get();
   }
 
-  private static <K> K unwrapResponseOrThrow(Response<K> response) {
+  private static <K> K unwrapResponseOrThrow(final Response<K> response) {
     checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
     return response.getPayload();
   }
@@ -506,7 +506,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
   }
 
-  private void markBuilderAsNotAvailable(String errorMessage) {
+  private void markBuilderAsNotAvailable(final String errorMessage) {
     latestBuilderAvailability.set(false);
     eventLogger.executionBuilderIsOffline(errorMessage);
   }
@@ -546,7 +546,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final ExecutionPayload executionPayload;
     final FallbackReason reason;
 
-    public FallbackData(ExecutionPayload executionPayload, FallbackReason reason) {
+    public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
       this.executionPayload = executionPayload;
       this.reason = reason;
     }
