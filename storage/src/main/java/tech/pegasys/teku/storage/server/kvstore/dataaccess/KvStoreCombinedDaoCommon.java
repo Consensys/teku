@@ -17,24 +17,22 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-/**
- * Provides an abstract "data access object" interface for working with hot data (non-finalized)
- * data from the underlying database.
- */
-public interface KvStoreHotDao extends AutoCloseable {
+public interface KvStoreCombinedDaoCommon extends AutoCloseable {
+
+  void ingest(KvStoreCombinedDaoCommon dao, int batchSize, Consumer<String> logger);
 
   Optional<UInt64> getGenesisTime();
 
@@ -51,8 +49,6 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   Optional<Checkpoint> getWeakSubjectivityCheckpoint();
 
-  Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
-
   Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
@@ -61,12 +57,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(Bytes32 stateRoot);
 
-  @MustBeClosed
-  Stream<SignedBeaconBlock> streamHotBlocks();
+  Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
 
   Map<UInt64, VoteTracker> getVotes();
-
-  HotUpdater hotUpdater();
 
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
@@ -76,7 +69,18 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
-  interface HotUpdater extends AutoCloseable {
+  Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
+
+  long countNonCanonicalSlots();
+
+  @MustBeClosed
+  Stream<Bytes> streamExecutionPayloads();
+
+  Optional<UInt64> getOptimisticTransitionBlockSlot();
+
+  interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
+
+  interface HotUpdaterCommon extends AutoCloseable {
 
     void setGenesisTime(UInt64 genesisTime);
 
@@ -94,10 +98,6 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     void setLatestFinalizedState(BeaconState state);
 
-    void addHotBlock(BlockAndCheckpointEpochs blockAndCheckpointEpochs);
-
-    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, CheckpointEpochs checkpointEpochs);
-
     void addHotState(Bytes32 blockRoot, BeaconState state);
 
     default void addHotStates(final Map<Bytes32, BeaconState> states) {
@@ -106,21 +106,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     void addVotes(Map<UInt64, VoteTracker> states);
 
-    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
-      blocks.values().forEach(this::addHotBlock);
-    }
-
     void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
-    default void addCheckpointEpochs(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
-      blocks.forEach((k, v) -> addHotBlockCheckpointEpochs(k, v.getCheckpointEpochs()));
-    }
-
-    void pruneHotBlockContext(Bytes32 blockRoot);
-
     void pruneHotStateRoots(List<Bytes32> stateRoots);
-
-    void deleteHotBlock(Bytes32 blockRoot);
 
     void deleteHotState(Bytes32 blockRoot);
 
@@ -134,5 +122,21 @@ public interface KvStoreHotDao extends AutoCloseable {
     void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
     void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+  }
+
+  interface FinalizedUpdaterCommon extends AutoCloseable {
+
+    void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+
+    void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
+
+    void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
+
+    void commit();
+
+    void cancel();
+
+    @Override
+    void close();
   }
 }

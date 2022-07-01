@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,7 +50,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
 public class CombinedKvStoreDao<S extends SchemaCombined>
-    implements KvStoreCombinedDao, V4MigratableSourceDao {
+    implements KvStoreCombinedDaoBlinded, KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
   // Persistent data
   private final KvStoreAccessor db;
   private final S schema;
@@ -160,25 +161,47 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
-  public HotUpdater hotUpdater() {
-    return combinedUpdater();
+  public HotUpdaterBlinded hotUpdaterBlinded() {
+    return combinedUpdaterBlinded();
   }
 
   @Override
   @MustBeClosed
-  public FinalizedUpdater finalizedUpdater() {
-    return combinedUpdater();
+  public FinalizedUpdaterBlinded finalizedUpdaterBlinded() {
+    return combinedUpdaterBlinded();
   }
 
   @Override
   @MustBeClosed
-  public CombinedUpdater combinedUpdater() {
+  public CombinedUpdaterBlinded combinedUpdaterBlinded() {
+    return combinedUpdater();
+  }
+
+  @Override
+  public HotUpdaterUnblinded hotUpdaterUnblinded() {
+    return combinedUpdater();
+  }
+
+  @Override
+  public FinalizedUpdaterUnblinded finalizedUpdaterUnblinded() {
+    return combinedUpdater();
+  }
+
+  @Override
+  public CombinedUpdaterUnblinded combinedUpdaterUnblinded() {
+    return combinedUpdater();
+  }
+
+  @NotNull
+  private V4CombinedUpdater<S> combinedUpdater() {
     return new V4CombinedUpdater<>(db, schema, stateStorageLogic.updater());
   }
 
   @Override
   public void ingest(
-      final KvStoreCombinedDao sourceDao, final int batchSize, final Consumer<String> logger) {
+      final KvStoreCombinedDaoCommon sourceDao,
+      final int batchSize,
+      final Consumer<String> logger) {
     checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
     checkArgument(
         sourceDao instanceof V4MigratableSourceDao, "Expected instance of V4FinalizedKvStoreDao");
@@ -308,6 +331,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getEarliestBlindedBlockSlot() {
+    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getEarliestBlindedBlock() {
     final Optional<Bytes32> maybeRoot =
         db.getFirstEntry(schema.getColumnFinalizedBlockRootBySlot()).map(ColumnEntry::getValue);
@@ -323,6 +351,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<Bytes32> getFinalizedBlockRootAtSlot(final UInt64 slot) {
+    return db.get(schema.getColumnFinalizedBlockRootBySlot(), slot);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<Bytes> streamExecutionPayloads() {
     return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
@@ -331,6 +364,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return db.get(schema.getColumnBlindedBlocksByRoot(), root);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedHotBlocks() {
+    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot())
+        .map(ColumnEntry::getKey)
+        .flatMap(root -> getBlindedBlock(root).stream());
   }
 
   @Override
@@ -411,7 +452,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .flatMap(this::getFinalizedBlockAtSlot);
   }
 
-  static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
+  static class V4CombinedUpdater<S extends SchemaCombined>
+      implements CombinedUpdaterBlinded, CombinedUpdaterUnblinded, CombinedUpdaterCommon {
     private final KvStoreTransaction transaction;
 
     private final KvStoreAccessor db;

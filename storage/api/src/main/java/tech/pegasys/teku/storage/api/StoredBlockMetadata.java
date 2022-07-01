@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -55,8 +55,8 @@ public class StoredBlockMetadata {
         block
             .getMessage()
             .getBody()
-            .getOptionalExecutionPayload()
-            .map(ExecutionPayload::getBlockHash),
+            .getOptionalExecutionPayloadSummary()
+            .map(ExecutionPayloadSummary::getBlockHash),
         Optional.of(checkpointEpochs));
   }
 
