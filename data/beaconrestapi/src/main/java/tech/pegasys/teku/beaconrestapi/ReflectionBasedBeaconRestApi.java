@@ -336,13 +336,15 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   public SafeFuture<?> start() {
     try {
       app.start();
+      return SafeFuture.COMPLETE;
     } catch (RuntimeException ex) {
       if (Throwables.getRootCause(ex) instanceof BindException) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "TCP Port %d is already in use. "
-                    + "You may need to stop another process or change the HTTP port for this process.",
-                getListenPort()));
+        return SafeFuture.failedFuture(
+            new InvalidConfigurationException(
+                String.format(
+                    "TCP Port %d is already in use. "
+                        + "You may need to stop another process or change the HTTP port for this process.",
+                    getListenPort())));
       }
     }
     return SafeFuture.COMPLETE;
@@ -493,6 +495,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       }
     } catch (Exception ex) {
       LOG.error(ex);
+      return SafeFuture.failedFuture(ex);
     }
     app.stop();
     return SafeFuture.COMPLETE;
