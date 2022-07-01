@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.PandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -112,6 +113,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             recentChainData,
             new StubForkChoiceNotifier(),
             transitionBlockValidator,
+            PandaPrinter.NOOP,
             true,
             true);
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);

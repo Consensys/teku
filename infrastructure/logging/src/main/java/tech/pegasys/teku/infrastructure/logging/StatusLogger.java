@@ -374,6 +374,11 @@ public class StatusLogger {
             Color.RED));
   }
 
+  public void posActivated(final String pandas) {
+    log.info(print("Merge Completed", Color.GREEN));
+    log.info(pandas);
+  }
+
   private void logWithColorIfLevelGreaterThanInfo(
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;

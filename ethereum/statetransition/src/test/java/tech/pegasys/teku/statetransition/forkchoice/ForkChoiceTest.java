@@ -116,6 +116,7 @@ class ForkChoiceTest {
           recentChainData,
           forkChoiceNotifier,
           transitionBlockValidator,
+          PandaPrinter.NOOP,
           false,
           true);
 
@@ -204,6 +205,7 @@ class ForkChoiceTest {
             recentChainData,
             forkChoiceNotifier,
             transitionBlockValidator,
+            PandaPrinter.NOOP,
             true,
             false);
 

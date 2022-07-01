@@ -81,6 +81,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean equivocatingIndicesEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
+  private final PandaPrinter pandaPrinter;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -93,6 +94,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
+      final PandaPrinter pandaPrinter,
       final boolean proposerBoostEnabled,
       final boolean equivocatingIndicesEnabled) {
     this.spec = spec;
@@ -100,6 +102,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
+    this.pandaPrinter = pandaPrinter;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
@@ -125,6 +128,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         recentChainData,
         forkChoiceNotifier,
         transitionBlockValidator,
+        PandaPrinter.NOOP,
         false,
         false);
   }
@@ -285,7 +289,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     indexedAttestationCache,
                     postState,
                     payloadResult),
-            forkChoiceExecutor);
+            forkChoiceExecutor)
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful()) {
+                blockSlotState.ifPresent(state -> pandaPrinter.onBlockImported(state, block));
+              }
+            });
   }
 
   private BlockImportResult importBlockAndState(
