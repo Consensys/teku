@@ -261,20 +261,18 @@ public class ExternalSigner implements Signer {
         signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch),
         SignType.VALIDATOR_REGISTRATION,
         Map.of(
-            "validator_registration_request",
+            "validator_registration",
             Map.of(
-                "validator_registration",
-                Map.of(
-                    "fee_recipient",
-                    validatorRegistration.getFeeRecipient().toHexString(),
-                    "gas_limit",
-                    validatorRegistration.getGasLimit(),
-                    "timestamp",
-                    validatorRegistration.getTimestamp(),
-                    "pubkey",
-                    validatorRegistration.getPublicKey().toString()),
-                "epoch",
-                epoch)),
+                "fee_recipient",
+                validatorRegistration.getFeeRecipient().toHexString(),
+                "gas_limit",
+                validatorRegistration.getGasLimit(),
+                "timestamp",
+                validatorRegistration.getTimestamp(),
+                "pubkey",
+                validatorRegistration.getPublicKey().toString()),
+            "epoch",
+            epoch),
         slashableGenericMessage("validator registration"));
   }
 
