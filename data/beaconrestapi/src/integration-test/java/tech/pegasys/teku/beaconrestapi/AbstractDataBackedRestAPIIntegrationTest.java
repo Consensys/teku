@@ -200,7 +200,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             SyncAsyncRunner.SYNC_RUNNER,
             StubTimeProvider.withTimeInMillis(1000),
             spec);
-    beaconRestApi.start();
+    assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }
 
@@ -338,6 +338,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   @AfterEach
   public void tearDown() {
-    beaconRestApi.stop();
+    assertThat(beaconRestApi.stop()).isCompleted();
   }
 }
