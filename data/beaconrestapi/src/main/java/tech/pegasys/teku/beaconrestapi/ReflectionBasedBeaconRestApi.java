@@ -113,6 +113,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
@@ -332,7 +333,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void start() {
+  public SafeFuture<?> start() {
     try {
       app.start();
     } catch (RuntimeException ex) {
@@ -344,6 +345,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
                 getListenPort()));
       }
     }
+    return SafeFuture.COMPLETE;
   }
 
   public int getListenPort() {
@@ -484,7 +486,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     try {
       if (jettyServer != null) {
         jettyServer.stop();
@@ -493,5 +495,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       LOG.error(ex);
     }
     app.stop();
+    return SafeFuture.COMPLETE;
   }
 }

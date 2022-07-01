@@ -87,6 +87,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLivene
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
@@ -111,13 +112,13 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void start() {
-    restApi.start().ifExceptionGetsHereRaiseABug();
+  public SafeFuture<?> start() {
+    return restApi.start();
   }
 
   @Override
-  public void stop() {
-    restApi.stop().ifExceptionGetsHereRaiseABug();
+  public SafeFuture<?> stop() {
+    return restApi.stop();
   }
 
   private static RestApi create(
