@@ -255,7 +255,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("Starting {}", this.getClass().getSimpleName());
     forkChoiceExecutor.start();
     return initialize()
-        .thenCompose((__) -> beaconRestAPI.map(BeaconRestApi::start).orElseGet(SafeFuture::new));
+        .thenCompose(
+            (__) ->
+                beaconRestAPI.map(BeaconRestApi::start).orElse(SafeFuture.completedFuture(null)));
   }
 
   protected void startServices() {
@@ -299,7 +301,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-            beaconRestAPI.map(BeaconRestApi::stop).orElseGet(SafeFuture::new),
+            beaconRestAPI.map(BeaconRestApi::stop).orElse(SafeFuture.completedFuture(null)),
             syncService.stop(),
             blockManager.stop(),
             attestationManager.stop(),
