@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.EventStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class GetEvents extends MigratingEndpointAdapter {
@@ -83,7 +84,7 @@ public class GetEvents extends MigratingEndpointAdapter {
                     + " event stream connection alive in the presence of proxy servers.")
             .tags(TAG_EVENTS, TAG_VALIDATOR_REQUIRED)
             .queryParam(TOPICS_PARAMETER)
-            .response(SC_OK, "Request successful")
+            .response(SC_OK, "Request successful", new EventStreamResponseContentTypeDefinition())
             .build());
     eventSubscriptionManager =
         new EventSubscriptionManager(

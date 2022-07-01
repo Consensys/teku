@@ -237,7 +237,7 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public void startEventStream(Consumer<SseClient> clientConsumer) {
-    // FIXME create this properly
+    throw new UnsupportedOperationException();
   }
 
   public String getHeader(String name) {
