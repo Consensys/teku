@@ -67,8 +67,8 @@ class FailoverValidatorApiHandlerTest {
 
   private static final IllegalStateException EXCEPTION = new IllegalStateException("oopsy");
 
-  private static final Spec spec = TestSpecFactory.createMinimalAltair();
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
 
   private RemoteValidatorApiChannel apiChannel1;
   private RemoteValidatorApiChannel apiChannel2;
@@ -87,7 +87,7 @@ class FailoverValidatorApiHandlerTest {
     validatorLogger = mock(ValidatorLogger.class);
 
     final Supplier<URI> randomUriGenerator =
-        () -> URI.create("http://" + dataStructureUtil.randomBytes4().toHexString() + ".com");
+        () -> URI.create("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
     when(apiChannel1.getEndpoint()).thenReturn(randomUriGenerator.get());
     when(apiChannel2.getEndpoint()).thenReturn(randomUriGenerator.get());
@@ -165,25 +165,26 @@ class FailoverValidatorApiHandlerTest {
 
   private static Stream<Arguments> getFutureRequestsData() {
     final GenesisData genesisData =
-        new GenesisData(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+        new GenesisData(DATA_STRUCTURE_UTIL.randomUInt64(), DATA_STRUCTURE_UTIL.randomBytes32());
+    final BLSPublicKey publicKey = DATA_STRUCTURE_UTIL.randomPublicKey();
     final IntCollection validatorIndices = IntLists.singleton(0);
-    final UInt64 slot = dataStructureUtil.randomUInt64();
-    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final UInt64 epoch = dataStructureUtil.randomUInt64();
-    final Bytes32 randomBytes32 = dataStructureUtil.randomBytes32();
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final UInt64 slot = DATA_STRUCTURE_UTIL.randomUInt64();
+    final BLSSignature randaoReveal = DATA_STRUCTURE_UTIL.randomSignature();
+    final UInt64 epoch = DATA_STRUCTURE_UTIL.randomUInt64();
+    final Bytes32 randomBytes32 = DATA_STRUCTURE_UTIL.randomBytes32();
+    final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final SubmitDataError submitDataError =
-        new SubmitDataError(dataStructureUtil.randomUInt64(), "foo");
+        new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
     final SignedAggregateAndProof signedAggregateAndProof =
-        dataStructureUtil.randomSignedAggregateAndProof();
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+        DATA_STRUCTURE_UTIL.randomSignedAggregateAndProof();
+    final SignedBeaconBlock signedBeaconBlock =
+        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock();
     final SyncCommitteeMessage syncCommitteeMessage =
-        dataStructureUtil.randomSyncCommitteeMessage();
+        DATA_STRUCTURE_UTIL.randomSyncCommitteeMessage();
     final SignedContributionAndProof signedContributionAndProof =
-        dataStructureUtil.randomSignedContributionAndProof(slot.longValue());
+        DATA_STRUCTURE_UTIL.randomSignedContributionAndProof(slot.longValue());
     final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomSignedValidatorRegistrations(3);
+        DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
 
     return Stream.of(
         getArguments(
