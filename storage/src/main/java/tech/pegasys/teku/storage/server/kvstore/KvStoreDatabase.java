@@ -499,7 +499,11 @@ public abstract class KvStoreDatabase<
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
-      updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks());
+      updateHotBlocks(
+          updater,
+          update.getHotBlocks(),
+          update.getDeletedHotBlocks(),
+          update.getFinalizedBlocks().keySet());
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
@@ -518,7 +522,8 @@ public abstract class KvStoreDatabase<
   protected abstract void updateHotBlocks(
       final HotUpdaterT updater,
       final Map<Bytes32, BlockAndCheckpointEpochs> addedBlocks,
-      final Set<Bytes32> deletedHotBlockRoots);
+      final Set<Bytes32> deletedHotBlockRoots,
+      final Set<Bytes32> finalizedBlockRoots);
 
   private Optional<SlotAndExecutionPayload> updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,

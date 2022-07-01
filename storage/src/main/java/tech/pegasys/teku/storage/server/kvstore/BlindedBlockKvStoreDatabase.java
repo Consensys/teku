@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,8 +23,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,7 +47,6 @@ public class BlindedBlockKvStoreDatabase
         CombinedUpdaterBlinded,
         HotUpdaterBlinded,
         FinalizedUpdaterBlinded> {
-  private static final Logger LOG = LogManager.getLogger();
 
   BlindedBlockKvStoreDatabase(
       final KvStoreCombinedDaoBlinded dao,
@@ -131,14 +127,19 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
+  @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return null;
+    return dao.streamFinalizedBlockRoots(startSlot, endSlot)
+        .flatMap(root -> dao.getBlindedBlock(root).stream())
+        .map(this::getUnblindedBlock);
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
+        // FIXME: Having to restrict this to hot block is inefficient
+        .filter(root -> dao.getHotBlockCheckpointEpochs(root).isPresent())
         .flatMap(root -> dao.getBlindedBlock(root).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
@@ -154,6 +155,7 @@ public class BlindedBlockKvStoreDatabase
         new CheckpointEpochs(
             anchorState.getCurrentJustifiedCheckpoint().getEpoch(),
             anchorState.getFinalizedCheckpoint().getEpoch()));
+    updater.addFinalizedBlockRootBySlot(block);
   }
 
   @Override
@@ -244,12 +246,17 @@ public class BlindedBlockKvStoreDatabase
   protected void updateHotBlocks(
       final HotUpdaterBlinded updater,
       final Map<Bytes32, BlockAndCheckpointEpochs> addedBlocks,
-      final Set<Bytes32> deletedHotBlockRoots) {
+      final Set<Bytes32> deletedHotBlockRoots,
+      final Set<Bytes32> finalizedBlockRoots) {
     try (final FinalizedUpdaterBlinded finalizedUpdater = dao.finalizedUpdaterBlinded()) {
       addedBlocks
           .values()
           .forEach(block -> finalizedUpdater.addBlindedBlock(block.getBlock(), spec));
-      deletedHotBlockRoots.forEach(finalizedUpdater::deleteBlindedBlock);
+      if (!storeNonCanonicalBlocks) {
+        deletedHotBlockRoots.stream()
+            .filter(blockRoot -> !finalizedBlockRoots.contains(blockRoot))
+            .forEach(finalizedUpdater::deleteBlindedBlock);
+      }
       finalizedUpdater.commit();
     }
     updater.addCheckpointEpochs(addedBlocks);
@@ -259,39 +266,20 @@ public class BlindedBlockKvStoreDatabase
   @Override
   protected void storeNonCanonicalBlocks(
       final Set<Bytes32> blockRoots, final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
-    if (!storeNonCanonicalBlocks) {
-      final Set<SignedBeaconBlock> nonCanonicalBlocks =
-          blockRoots.stream()
-              .filter(root -> !finalizedChildToParentMap.containsKey(root))
-              .flatMap(root -> getHotBlock(root).stream())
-              .collect(Collectors.toSet());
-      int i = 0;
-      final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
-      while (it.hasNext()) {
-        final int start = i;
-        try (final FinalizedUpdaterBlinded updater = dao.finalizedUpdaterBlinded()) {
-          while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
-            final SignedBeaconBlock block = it.next();
-            LOG.debug(
-                "DELETE non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
-            updater.deleteBlindedBlock(block.getRoot());
-
-            block
-                .getMessage()
-                .getBody()
-                .getOptionalExecutionPayloadSummary()
-                .ifPresent(
-                    payload -> {
-                      LOG.debug(
-                          "DELETE payload({}) from block {}",
-                          payload.getPayloadHash(),
-                          block.getRoot().toHexString());
-                      updater.deleteExecutionPayload(payload.getPayloadHash());
-                    });
-            i++;
-          }
-          updater.commit();
-        }
+    if (storeNonCanonicalBlocks) {
+      final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
+      for (Bytes32 blockRoot : blockRoots) {
+        dao.getBlindedBlock(blockRoot)
+            .map(SignedBeaconBlock::getSlot)
+            .ifPresent(
+                slot ->
+                    nonCanonicalRootsBySlotBuffer
+                        .computeIfAbsent(slot, dao::getNonCanonicalBlockRootsAtSlot)
+                        .add(blockRoot));
+      }
+      try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
+        nonCanonicalRootsBySlotBuffer.forEach(updater::addNonCanonicalRootAtSlot);
+        updater.commit();
       }
     }
   }

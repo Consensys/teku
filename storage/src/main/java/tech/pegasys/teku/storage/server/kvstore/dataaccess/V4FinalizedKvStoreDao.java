@@ -198,6 +198,16 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnFinalizedBlockRootBySlot(), slot);
   }
 
+  @MustBeClosed
+  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
+    return db.stream(schema.getColumnFinalizedBlockRootBySlot(), startSlot, endSlot)
+        .map(ColumnEntry::getValue);
+  }
+
+  public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
+    return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;

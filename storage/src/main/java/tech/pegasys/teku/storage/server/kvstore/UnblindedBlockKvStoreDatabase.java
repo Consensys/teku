@@ -180,7 +180,7 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return dao.getNonCanonicalBlocksAtSlot(slot);
+    return dao.getNonCanonicalUnblindedBlocksAtSlot(slot);
   }
 
   @Override
@@ -205,7 +205,8 @@ public class UnblindedBlockKvStoreDatabase
   protected void updateHotBlocks(
       final HotUpdaterUnblinded updater,
       final Map<Bytes32, BlockAndCheckpointEpochs> addedBlocks,
-      final Set<Bytes32> deletedHotBlockRoots) {
+      final Set<Bytes32> deletedHotBlockRoots,
+      final Set<Bytes32> finalizedBlockRoots) {
     updater.addHotBlocks(addedBlocks);
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
   }
@@ -228,6 +229,9 @@ public class UnblindedBlockKvStoreDatabase
       int i = 0;
       final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
       while (it.hasNext()) {
+        // FIXME: We should be loading any existing non-canonical blocks for the slot and merging
+        // We may have pruned some forks with blocks after the finalized slot because they didn't
+        // descend from teh finalized checkpoint and then later prune more blocks from the same slot
         final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
         final int start = i;
         try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {

@@ -288,13 +288,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(final UInt64 slot) {
     final Optional<Set<Bytes32>> maybeRoots =
         db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
     return maybeRoots.stream()
         .flatMap(Collection::stream)
         .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
+    return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
   }
 
   @Override
@@ -407,6 +412,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
+    return db.stream(schema.getColumnFinalizedBlockRootBySlot(), startSlot, endSlot)
+        .map(ColumnEntry::getValue);
   }
 
   private Optional<UInt64> displayCopyColumnMessage(

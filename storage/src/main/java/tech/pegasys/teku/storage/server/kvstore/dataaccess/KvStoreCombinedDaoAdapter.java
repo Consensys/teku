@@ -173,7 +173,7 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(final UInt64 slot) {
     return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
   }
 
@@ -185,6 +185,11 @@ public class KvStoreCombinedDaoAdapter
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
+  }
+
+  @Override
+  public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
+    return finalizedDao.getNonCanonicalBlockRootsAtSlot(slot);
   }
 
   @Override
@@ -273,6 +278,12 @@ public class KvStoreCombinedDaoAdapter
   @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return finalizedDao.getNonCanonicalBlock(root);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamFinalizedBlockRoots(startSlot, endSlot);
   }
 
   @Override

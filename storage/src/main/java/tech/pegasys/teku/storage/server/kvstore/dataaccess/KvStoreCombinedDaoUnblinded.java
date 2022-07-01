@@ -17,7 +17,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,7 +49,7 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
+  List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(UInt64 slot);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
@@ -79,7 +78,5 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
     void addFinalizedBlock(final SignedBeaconBlock block);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
-
-    void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
   }
 }

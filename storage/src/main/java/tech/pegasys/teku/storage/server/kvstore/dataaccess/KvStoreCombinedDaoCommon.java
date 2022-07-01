@@ -17,6 +17,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -70,6 +71,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
+
+  Set<Bytes32> getNonCanonicalBlockRootsAtSlot(UInt64 slot);
 
   long countNonCanonicalSlots();
 
@@ -131,6 +134,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
 
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
+
+    void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
     void commit();
 

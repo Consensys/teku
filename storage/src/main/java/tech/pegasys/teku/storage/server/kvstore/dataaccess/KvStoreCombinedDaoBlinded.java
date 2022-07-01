@@ -59,6 +59,9 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
+  @MustBeClosed
+  Stream<Bytes32> streamFinalizedBlockRoots(UInt64 startSlot, UInt64 endSlot);
+
   interface CombinedUpdaterBlinded
       extends HotUpdaterBlinded, FinalizedUpdaterBlinded, CombinedUpdaterCommon {}
 

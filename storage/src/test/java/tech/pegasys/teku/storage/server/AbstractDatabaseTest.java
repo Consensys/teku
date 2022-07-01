@@ -921,7 +921,7 @@ public abstract class AbstractDatabaseTest {
     add(allBlocksAndStates);
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
-    assertThat(database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6)).size()).isEqualTo(2);
+    assertThat(database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6))).hasSize(2);
   }
 
   @Test
