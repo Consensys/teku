@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Added a panda banner to celebrate the merge completing
  - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
  - Distributions created from the same git commit and docker image will be identical
 
