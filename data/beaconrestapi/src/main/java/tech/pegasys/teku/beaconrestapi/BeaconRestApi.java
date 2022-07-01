@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface BeaconRestApi {
 
-  public SafeFuture<?> start();
+  SafeFuture<?> start();
 
-  public SafeFuture<?> stop();
+  SafeFuture<?> stop();
 }
