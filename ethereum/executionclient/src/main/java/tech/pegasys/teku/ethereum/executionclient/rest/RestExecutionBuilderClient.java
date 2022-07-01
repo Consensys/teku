@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.HashMap;
@@ -66,7 +66,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   public SafeFuture<Response<Void>> status() {
     return restClient
         .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(EL_BUILDER_STATUS_TIMEOUT);
+        .orTimeout(BUILDER_STATUS_TIMEOUT);
   }
 
   @Override
@@ -84,7 +84,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
             signedValidatorRegistrations,
             requestType)
-        .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+        .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 
   @Override
@@ -117,7 +117,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             responseTypeDefinition)
         .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
         .thenApply(Response::convertToOptional)
-        .orTimeout(EL_BUILDER_GET_HEADER_TIMEOUT);
+        .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
 
   @Override
@@ -151,7 +151,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             requestTypeDefinition,
             responseTypeDefinition)
         .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
-        .orTimeout(EL_BUILDER_GET_PAYLOAD_TIMEOUT);
+        .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 
   private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {

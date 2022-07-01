@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
@@ -154,14 +155,19 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (isFirstCall) {
       return true;
     }
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     final boolean isBeginningOfEpoch = slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
     if (isBeginningOfEpoch && registrationInProgress.get()) {
       LOG.warn(
-          "Validator(s) registration for epoch {} is still in progress. Will skip registration for the current epoch.",
-          lastRunEpoch.get());
+          "Validator(s) registration for epoch {} is still in progress. Will skip registration for the current epoch {}.",
+          lastRunEpoch.get(),
+          currentEpoch);
       return false;
     }
-    return isBeginningOfEpoch;
+    return isBeginningOfEpoch
+        && currentEpoch
+            .minus(lastRunEpoch.get())
+            .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
   }
 
   private SafeFuture<Void> registerValidators(
