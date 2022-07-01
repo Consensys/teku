@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.metrics;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -73,7 +74,7 @@ public class MetricRecordingExecutionBuilderClient extends MetricRecordingAbstra
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBid>> getHeader(
+  public SafeFuture<Response<Optional<SignedBuilderBid>>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
     return countRequest(() -> delegate.getHeader(slot, pubKey, parentHash), GET_HEADER_METHOD);
   }

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTR
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -87,7 +88,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBid>> getHeader(
+  public SafeFuture<Response<Optional<SignedBuilderBid>>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
 
     final Map<String, String> urlParams = new HashMap<>();
@@ -114,7 +115,8 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
             responseTypeDefinition)
-        .thenApply(this::getBuilderApiResponseData)
+        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(Response::convertToOptional)
         .orTimeout(EL_BUILDER_GET_HEADER_TIMEOUT);
   }
 
@@ -148,7 +150,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
-        .thenApply(this::getBuilderApiResponseData)
+        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
         .orTimeout(EL_BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 
@@ -161,12 +163,5 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
                 new IllegalArgumentException(
                     specMilestone
                         + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
-  }
-
-  private <T> Response<T> getBuilderApiResponseData(Response<BuilderApiResponse<T>> response) {
-    if (response.isFailure()) {
-      return Response.withErrorMessage(response.getErrorMessage());
-    }
-    return new Response<>(response.getPayload().getData());
   }
 }
