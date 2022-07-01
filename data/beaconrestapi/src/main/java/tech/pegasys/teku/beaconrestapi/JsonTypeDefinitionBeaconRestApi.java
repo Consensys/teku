@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
+import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
 public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   private final RestApi restApi;
@@ -150,6 +152,9 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .exceptionHandler(
             ContentTypeNotSupportedException.class,
             (throwable) -> new HttpErrorResponse(SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()))
+        .exceptionHandler(
+            MissingDepositsException.class,
+            (throwable) -> new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, throwable.getMessage()))
         .exceptionHandler(
             BadRequestException.class,
             (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
