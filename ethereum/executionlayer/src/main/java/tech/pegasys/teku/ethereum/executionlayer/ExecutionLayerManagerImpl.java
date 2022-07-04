@@ -315,6 +315,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling builderRegisterValidator(slot={},signedValidatorRegistrations={})",
         slot,
         signedValidatorRegistrations);
+
+    if (!isBuilderAvailable()) {
+      return SafeFuture.failedFuture(
+          new RuntimeException("unable to register validators: builder not available"));
+    }
+
     return executionBuilderClient
         .orElseThrow()
         .registerValidators(slot, signedValidatorRegistrations)
@@ -453,7 +459,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return executionBuilderClient
-        .orElseThrow()
+        .orElseThrow(
+            () ->
+                new RuntimeException(
+                    "unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBeaconBlock)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
