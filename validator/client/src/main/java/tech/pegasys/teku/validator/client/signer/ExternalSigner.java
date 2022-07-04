@@ -312,7 +312,6 @@ public class ExternalSigner implements Signer {
                       .header("Content-Type", "application/json")
                       .POST(BodyPublishers.ofString(requestBody))
                       .build();
-              System.out.println(requestBody.toString());
               return httpClient
                   .sendAsync(request, BodyHandlers.ofString())
                   .handleAsync(
