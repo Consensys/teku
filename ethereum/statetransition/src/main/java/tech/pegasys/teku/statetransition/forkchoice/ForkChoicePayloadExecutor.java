@@ -92,6 +92,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                       LOG.error("Error while validating payload", error);
                       return new PayloadValidationResult(PayloadStatus.failedExecution(error));
                     }));
+
     return true;
   }
 }
