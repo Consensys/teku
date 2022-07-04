@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
 public interface BeaconRestApi {
 
-  public void start();
+  SafeFuture<?> start();
 
-  public void stop();
+  SafeFuture<?> stop();
 }

@@ -25,6 +25,7 @@ public class ContentTypes {
 
   public static final String JSON = "application/json";
   public static final String OCTET_STREAM = "application/octet-stream";
+  public static final String EVENT_STREAM = "text/event-stream";
   private static final Logger LOG = LogManager.getLogger();
 
   public static String getRequestContentType(

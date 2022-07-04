@@ -14,20 +14,13 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_LOCAL_EL_FALLBACK_SOURCE;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.BUILDER_SOURCE;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_BUILDER_ERROR;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_BUILDER_NOT_AVAILABLE;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_FORCED;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_NONE;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FALLBACK_REASON_VALIDATOR_NOT_REGISTERED;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.LOCAL_EL_SOURCE;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -37,6 +30,8 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FallbackReason;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -157,7 +152,7 @@ class ExecutionLayerManagerImplTest {
     // we expect no calls to builder
     verifyNoInteractions(executionBuilderClient);
 
-    verifySourceCounter(LOCAL_EL_SOURCE, FALLBACK_REASON_NONE);
+    verifySourceCounter(Source.LOCAL_EL, FallbackReason.NONE);
   }
 
   @Test
@@ -169,7 +164,8 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayloadHeader header = prepareBuilderGetHeaderResponse(executionPayloadContext);
+    final ExecutionPayloadHeader header =
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false);
     prepareEngineGetPayloadResponse(executionPayloadContext);
 
     // we expect result from the builder
@@ -177,15 +173,8 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient)
-        .getHeader(
-            slot,
-            executionPayloadContext
-                .getPayloadBuildingAttributes()
-                .getValidatorRegistrationPublicKey()
-                .orElseThrow(),
-            executionPayloadContext.getParentHash());
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -200,7 +189,7 @@ class ExecutionLayerManagerImplTest {
     verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_SOURCE, FALLBACK_REASON_NONE);
+    verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
   }
 
   @Test
@@ -228,15 +217,8 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient)
-        .getHeader(
-            slot,
-            executionPayloadContext
-                .getPayloadBuildingAttributes()
-                .getValidatorRegistrationPublicKey()
-                .orElseThrow(),
-            executionPayloadContext.getParentHash());
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -249,7 +231,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_ERROR);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
   }
 
   @Test
@@ -263,7 +245,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    prepareBuilderGetHeaderResponse(executionPayloadContext);
+    prepareBuilderGetHeaderResponse(executionPayloadContext, false);
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
 
     final ExecutionPayloadHeader header =
@@ -279,15 +261,8 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient)
-        .getHeader(
-            slot,
-            executionPayloadContext
-                .getPayloadBuildingAttributes()
-                .getValidatorRegistrationPublicKey()
-                .orElseThrow(),
-            executionPayloadContext.getParentHash());
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -300,7 +275,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_ERROR);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
   }
 
   @Test
@@ -328,7 +303,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect only local engine have been called
     verifyNoInteractions(executionBuilderClient);
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -341,7 +316,52 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_BUILDER_NOT_AVAILABLE);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_NOT_AVAILABLE);
+  }
+
+  @Test
+  public void
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfBuilderHeaderNotAvailable() {
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    prepareBuilderGetHeaderResponse(executionPayloadContext, true);
+
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    // we expect local engine header as result
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+        .isCompletedWithValue(header);
+
+    // we expect both builder and local engine have been called
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext);
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(
+        Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
   }
 
   @Test
@@ -370,7 +390,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect only local engine have been called
     verifyNoInteractions(executionBuilderClient);
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -383,7 +403,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_FORCED);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.FORCED);
   }
 
   @Test
@@ -412,7 +432,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect only local engine have been called
     verifyNoInteractions(executionBuilderClient);
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -425,7 +445,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(BUILDER_LOCAL_EL_FALLBACK_SOURCE, FALLBACK_REASON_VALIDATOR_NOT_REGISTERED);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.VALIDATOR_NOT_REGISTERED);
   }
 
   @Test
@@ -469,19 +489,26 @@ class ExecutionLayerManagerImplTest {
   }
 
   private ExecutionPayloadHeader prepareBuilderGetHeaderResponse(
-      final ExecutionPayloadContext executionPayloadContext) {
+      final ExecutionPayloadContext executionPayloadContext, final boolean prepareEmptyResponse) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid();
 
-    when(executionBuilderClient.getHeader(
+    doAnswer(
+            __ -> {
+              if (prepareEmptyResponse) {
+                return SafeFuture.completedFuture(new Response<>(Optional.empty()));
+              }
+              return SafeFuture.completedFuture(new Response<>(Optional.of(signedBuilderBid)));
+            })
+        .when(executionBuilderClient)
+        .getHeader(
             slot,
             executionPayloadContext
                 .getPayloadBuildingAttributes()
                 .getValidatorRegistrationPublicKey()
                 .orElseThrow(),
-            executionPayloadContext.getParentHash()))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(signedBuilderBid)));
+            executionPayloadContext.getParentHash());
 
     return signedBuilderBid.getMessage().getExecutionPayloadHeader();
   }
@@ -526,15 +553,15 @@ class ExecutionLayerManagerImplTest {
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
-    return new ExecutionLayerManagerImpl(
+    return ExecutionLayerManagerImpl.create(
+        eventLogger,
         executionEngineClient,
         builderEnabled ? Optional.of(executionBuilderClient) : Optional.empty(),
         spec,
-        eventLogger,
+        stubMetricsSystem,
         builderValidatorEnabled
             ? new BuilderBidValidatorImpl(eventLogger)
-            : BuilderBidValidator.NOOP,
-        stubMetricsSystem);
+            : BuilderBidValidator.NOOP);
   }
 
   private void updateBuilderStatus(final SafeFuture<Response<Void>> builderClientResponse) {
@@ -563,11 +590,27 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
   }
 
-  private void verifySourceCounter(final String source, final String reason) {
+  private void verifyBuilderCalled(
+      final UInt64 slot, final ExecutionPayloadContext executionPayloadContext) {
+    verify(executionBuilderClient)
+        .getHeader(
+            slot,
+            executionPayloadContext
+                .getPayloadBuildingAttributes()
+                .getValidatorRegistrationPublicKey()
+                .orElseThrow(),
+            executionPayloadContext.getParentHash());
+  }
+
+  private void verifyEngineCalled(final ExecutionPayloadContext executionPayloadContext) {
+    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+  }
+
+  private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
         stubMetricsSystem
             .getCounter(TekuMetricCategory.BEACON, "execution_payload_source")
-            .getValue(source, reason);
+            .getValue(source.toString(), reason.toString());
     assertThat(actualCount).isOne();
   }
 }

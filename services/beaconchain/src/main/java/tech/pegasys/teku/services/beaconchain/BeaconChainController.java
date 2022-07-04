@@ -256,7 +256,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     forkChoiceExecutor.start();
     return initialize()
         .thenCompose(
-            (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
+            (__) ->
+                beaconRestAPI.map(BeaconRestApi::start).orElse(SafeFuture.completedFuture(null)));
   }
 
   protected void startServices() {
@@ -300,7 +301,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+            beaconRestAPI.map(BeaconRestApi::stop).orElse(SafeFuture.completedFuture(null)),
             syncService.stop(),
             blockManager.stop(),
             attestationManager.stop(),
@@ -840,7 +841,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final BeaconRestApi api =
         beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
-            ? new JsonTypeDefinitionBeaconRestApi()
+            ? new JsonTypeDefinitionBeaconRestApi(
+                beaconConfig.beaconRestApiConfig(), dataProvider, eth1DataProvider, spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
@@ -985,7 +987,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            eventThread, spec, executionLayer, recentChainData, proposersDataManager);
+            eventThread, timeProvider, spec, executionLayer, recentChainData, proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {
