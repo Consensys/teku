@@ -19,15 +19,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 public interface OptimisticExecutionPayloadExecutor {
 
   /**
-   * At least begins execution of the specified payload, which may complete asynchronously. Note
-   * that a {@code true} value does NOT indicate the payload is valid only that it is not
-   * immediately found to be invalid and can be optimistically accepted.
+   * Begins execution of the specified payload, which may complete asynchronously.
    *
    * @param latestExecutionPayloadHeader the latest execution payload header from the pre-state
    * @param executionPayload the payload to execute
-   * @return true if the payload should be optimistically accepted or false to * immediately
-   *     invalidate the payload
    */
-  boolean optimisticallyExecute(
+  void optimisticallyExecute(
       ExecutionPayloadHeader latestExecutionPayloadHeader, ExecutionPayload executionPayload);
 }
