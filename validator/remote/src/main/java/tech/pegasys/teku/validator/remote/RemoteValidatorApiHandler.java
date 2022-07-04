@@ -414,18 +414,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void prepareBeaconProposer(
+  public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    sendRequest(
-            () ->
-                apiClient.prepareBeaconProposer(
-                    beaconPreparableProposers.stream()
-                        .map(
-                            pbp ->
-                                new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
-                                    pbp.getValidatorIndex(), pbp.getFeeRecipient()))
-                        .collect(toList())))
-        .finish(error -> LOG.error("Failed to prepare beacon proposers", error));
+    return sendRequest(
+        () ->
+            apiClient.prepareBeaconProposer(
+                beaconPreparableProposers.stream()
+                    .map(
+                        pbp ->
+                            new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
+                                pbp.getValidatorIndex(), pbp.getFeeRecipient()))
+                    .collect(toList())));
   }
 
   @Override
