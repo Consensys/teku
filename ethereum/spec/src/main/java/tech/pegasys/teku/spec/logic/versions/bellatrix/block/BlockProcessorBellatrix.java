@@ -157,9 +157,13 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final ExecutionPayload executionPayload =
           maybeExecutionPayload.orElseThrow(
               () -> new BlockProcessingException("Execution payload expected"));
-      payloadExecutor
-          .get()
-          .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), executionPayload);
+      final boolean optimisticallyAccept =
+          payloadExecutor
+              .get()
+              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), executionPayload);
+      if (!optimisticallyAccept) {
+        throw new BlockProcessingException("Execution payload was not optimistically accepted");
+      }
     }
   }
 
