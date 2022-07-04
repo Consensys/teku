@@ -60,14 +60,14 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   }
 
   @Override
-  public boolean optimisticallyExecute(
+  public void optimisticallyExecute(
       final ExecutionPayloadHeader latestExecutionPayloadHeader,
       final ExecutionPayload executionPayload) {
     if (executionPayload.isDefault()) {
       // We're still pre-merge so no payload to execute
       // Note that the BlockProcessor will have already failed if this is default and shouldn't be
       // because it checks the parentRoot matches
-      return true;
+      return;
     }
 
     result =
@@ -79,6 +79,10 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                       if (result.hasValidStatus()) {
                         return transitionBlockValidator.verifyTransitionBlock(
                             latestExecutionPayloadHeader, block);
+                      } else if (result.hasInvalidStatus()
+                          && result.getLatestValidHash().isPresent()) {
+                        return SafeFuture.completedFuture(
+                            new PayloadValidationResult(block.getParentRoot(), result));
                       } else {
                         return SafeFuture.completedFuture(new PayloadValidationResult(result));
                       }
@@ -88,7 +92,5 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                       LOG.error("Error while validating payload", error);
                       return new PayloadValidationResult(PayloadStatus.failedExecution(error));
                     }));
-
-    return true;
   }
 }
