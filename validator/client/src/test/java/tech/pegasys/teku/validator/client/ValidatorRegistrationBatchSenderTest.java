@@ -49,7 +49,7 @@ class ValidatorRegistrationBatchSenderTest {
     dataStructureUtil = specContext.getDataStructureUtil();
 
     when(validatorApiChannel.registerValidators(any()))
-        .thenReturn(SafeFuture.completedFuture(null));
+        .thenReturn(SafeFuture.COMPLETE);
 
     validatorRegistrationBatchSender =
         new ValidatorRegistrationBatchSender(BATCH_SIZE, validatorApiChannel);

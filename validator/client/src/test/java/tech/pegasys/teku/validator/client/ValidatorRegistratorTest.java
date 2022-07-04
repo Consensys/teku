@@ -94,7 +94,7 @@ class ValidatorRegistratorTest {
             feeRecipientProvider,
             validatorRegistrationBatchSender);
     when(validatorRegistrationBatchSender.sendInBatches(any()))
-        .thenReturn(SafeFuture.completedFuture(null));
+        .thenReturn(SafeFuture.COMPLETE);
 
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
