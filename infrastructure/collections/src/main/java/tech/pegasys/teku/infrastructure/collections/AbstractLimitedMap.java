@@ -27,7 +27,7 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
     return new LinkedHashMap<>(16, 0.75f, true) {
       @Override
       protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return size() > maxSize;
+        return this.size() > maxSize;
       }
     };
   }
