@@ -27,11 +27,11 @@ public class CascadingDefaultProvider implements AdditionalConfigProvider {
   }
 
   @Override
-  public Map<String, String> getAdditionalConfigs(final List<OptionSpec> potentialParams) {
+  public Map<String, String> getAdditionalParams(final List<OptionSpec> potentialParams) {
     return additionalConfigProviders.stream()
         .map(
             additionalConfigProvider ->
-                additionalConfigProvider.getAdditionalConfigs(potentialParams))
+                additionalConfigProvider.getAdditionalParams(potentialParams))
         .reduce(
             (primaryConfig, secondaryConfig) -> {
               final HashMap<String, String> mergedConfig = new HashMap<>(primaryConfig);

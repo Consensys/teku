@@ -30,7 +30,6 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.ArgSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
@@ -65,7 +64,7 @@ import tech.pegasys.teku.cli.subcommand.internal.InternalToolsCommand;
 import tech.pegasys.teku.cli.util.AdditionalConfigProvider;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
-import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.teku.cli.util.YamlConfigFileParamsProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -235,19 +234,22 @@ public class BeaconNodeCommand implements Callable<Integer> {
       return handleParseException(e, args);
     }
 
+    // switch to last subcommand if needed
+    final ParseResult maybeSubCommandParseResult =
+        parseResult.hasSubcommand() ? parseResult.subcommand() : parseResult;
+
     // calculate potential additional params from config provider
     final List<OptionSpec> potentialAdditionalParams =
-        commandLine.getCommandSpec().args().stream()
-            .filter(ArgSpec::isOption)
-            .map(argSpec -> (OptionSpec) argSpec)
-            .filter(optionSpec -> !parseResult.matchedOptionsSet().contains(optionSpec))
+        maybeSubCommandParseResult.commandSpec().options().stream()
+            .filter(
+                optionSpec -> !maybeSubCommandParseResult.matchedOptionsSet().contains(optionSpec))
             .collect(Collectors.toUnmodifiableList());
 
     final AdditionalConfigProvider configurationValueProvider =
         additionalConfigProvider(commandLine, configFile);
 
     final Map<String, String> additionalParams =
-        configurationValueProvider.getAdditionalConfigs(potentialAdditionalParams);
+        configurationValueProvider.getAdditionalParams(potentialAdditionalParams);
 
     // build new argument list by concatenating original args and the additional params
     final String[] enrichedArgs =
@@ -289,7 +291,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
     return new CascadingDefaultProvider(
         new EnvironmentVariableDefaultProvider(environment),
-        new YamlConfigFileDefaultProvider(commandLine, configFile.get()));
+        new YamlConfigFileParamsProvider(commandLine, configFile.get()));
   }
 
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {

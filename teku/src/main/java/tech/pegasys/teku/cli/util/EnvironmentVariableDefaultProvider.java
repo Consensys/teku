@@ -31,7 +31,7 @@ public class EnvironmentVariableDefaultProvider implements AdditionalConfigProvi
   }
 
   @Override
-  public Map<String, String> getAdditionalConfigs(List<OptionSpec> potentialParams) {
+  public Map<String, String> getAdditionalParams(List<OptionSpec> potentialParams) {
     return environment.entrySet().stream()
         .filter(envEntry -> envEntry.getKey().startsWith(ENV_VAR_PREFIX))
         .map(envEntry -> Map.entry(translateKey(envEntry.getKey()), envEntry.getValue()))

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.util;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,49 +29,69 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
-import picocli.CommandLine.ParseResult;
-import tech.pegasys.teku.cli.util.TestCommand.Subcommand;
 
-class YamlConfigFileDefaultProviderTest {
+class YamlConfigFileParamsProviderTest {
 
   private final ObjectMapper objectMapper =
       new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
 
+  final CommandLine commandLine = new CommandLine(TestCommand.class);
+
   @Test
   void parsingValidYamlFilePopulatesCommandObject(@TempDir final Path tempDir) throws IOException {
     final Path configFile = writeToYamlConfigFile(defaultOptions(), tempDir);
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
-    commandLine.parseArgs();
-    final TestCommand testCommand = commandLine.getCommand();
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
+    final Map<String, String> additionalConfigs =
+        yamlConfigFileDefaultProvider.getAdditionalParams(commandLine.getCommandSpec().options());
 
-    Assertions.assertThat(testCommand.getCount()).isEqualTo(10);
-    Assertions.assertThat(testCommand.getNames()).containsExactlyInAnyOrder("a", "b");
-    Assertions.assertThat(testCommand.isTestEnabled()).isTrue();
+    Assertions.assertThat(additionalConfigs.get("--count")).isEqualTo("10");
+    Assertions.assertThat(additionalConfigs.get("--names")).isEqualTo("a,b");
+    Assertions.assertThat(additionalConfigs.get("--test-enabled")).isEqualTo("true");
+  }
+
+  @Test
+  void parsingYamlWithInvalidMultivaluedParamThrows(@TempDir final Path tempDir)
+      throws IOException {
+    final Map<String, Object> options = defaultOptions();
+    options.put("count", List.of(1, 2));
+    final Path configFile = writeToYamlConfigFile(options, tempDir);
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
+        .withMessage(
+            "The option --count is single-valued but matched parameter in config file is multi-valued");
   }
 
   @Test
   void parsingEmptyConfigFileThrowsException(@TempDir final Path tempDir) throws IOException {
     final Path configFile = writeToYamlConfigFile(Collections.emptyMap(), tempDir);
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(commandLine::parseArgs)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
         .withMessage("Empty yaml configuration file: %s", configFile);
   }
 
   @Test
   void parsingNonExistingConfigFileThrowsException(@TempDir final Path tempDir) {
     final Path configFile = tempDir.resolve("config.yaml");
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(commandLine::parseArgs)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
         .withMessage("Unable to read yaml configuration. File not found: %s", configFile);
   }
 
@@ -80,12 +99,14 @@ class YamlConfigFileDefaultProviderTest {
   void parsingInvalidYamlConfigFileThrowsException(@TempDir final Path tempDir) throws IOException {
     final Path configFile =
         Files.writeString(tempDir.resolve("config.yaml"), "test: test\noption= True\n");
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(commandLine::parseArgs)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
         .withMessageStartingWith(
             "Unable to read yaml configuration. Invalid yaml file [%s]:", configFile);
   }
@@ -95,12 +116,14 @@ class YamlConfigFileDefaultProviderTest {
       throws IOException {
     final Path configFile =
         Files.writeString(tempDir.resolve("config.yaml"), "- test\n- test2\n- test3");
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //   new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(commandLine::parseArgs)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
         .withMessage("Unexpected yaml content, expecting block mappings.");
   }
 
@@ -112,32 +135,16 @@ class YamlConfigFileDefaultProviderTest {
     options.put("additional-option-1", "x");
     options.put("additional-option-2", "y");
     final Path configFile = writeToYamlConfigFile(options, tempDir);
-
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(commandLine::parseArgs)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
         .withMessage(
             "Unknown options in yaml configuration file: additional-option-1, additional-option-2, additional-option-3");
-  }
-
-  @Test
-  void subcommandOptionsInYamlConfigFileAreAllowed(@TempDir final Path tempDir) throws IOException {
-    final Map<String, Object> options = defaultOptions();
-    options.put("subcommand-option-1", "x");
-    final Path configFile = writeToYamlConfigFile(options, tempDir);
-
-    final CommandLine commandLine = new CommandLine(TestCommand.class);
-    // commandLine.setDefaultValueProvider(
-    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
-
-    final ParseResult result = commandLine.parseArgs("subcommand");
-    assertThat(result.hasSubcommand()).isTrue();
-
-    final Subcommand subcommand = commandLine.getSubcommands().get("subcommand").getCommand();
-    assertThat(subcommand.getSubcommandOption()).isEqualTo("x");
   }
 
   private Map<String, Object> defaultOptions() {

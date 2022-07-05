@@ -33,25 +33,28 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class YamlConfigFileDefaultProvider implements AdditionalConfigProvider {
+public class YamlConfigFileParamsProvider implements AdditionalConfigProvider {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final CommandLine commandLine;
   private final File configFile;
   // this will be initialized on fist call of defaultValue by PicoCLI parseArgs
   private Map<String, Object> result;
 
-  public YamlConfigFileDefaultProvider(final CommandLine commandLine, final File configFile) {
+  public YamlConfigFileParamsProvider(final CommandLine commandLine, final File configFile) {
     this.commandLine = commandLine;
     this.configFile = configFile;
   }
 
   @Override
-  public Map<String, String> getAdditionalConfigs(final List<OptionSpec> potentialParams) {
+  public Map<String, String> getAdditionalParams(final List<OptionSpec> potentialParams) {
     if (result == null) {
       result = loadConfigurationFromFile();
       checkConfigurationValidity(result == null || result.isEmpty());
@@ -86,16 +89,24 @@ public class YamlConfigFileDefaultProvider implements AdditionalConfigProvider {
   private Map.Entry<String, String> translateToArg(
       OptionSpec matchedOption, Map.Entry<String, Object> yamlEntry) {
     final Object value = yamlEntry.getValue();
-    final String convertedValue;
+
+    final String translatedValue;
 
     if (value instanceof Collection) {
-      convertedValue =
+      if (!matchedOption.isMultiValue()) {
+        throwParameterException(
+            new IllegalArgumentException(),
+            String.format(
+                "The option %s is single-valued but matched parameter in config file is multi-valued",
+                yamlEntry.getKey()));
+      }
+      translatedValue =
           ((Collection<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
     } else {
-      convertedValue = String.valueOf(value);
+      translatedValue = String.valueOf(value);
     }
 
-    return Map.entry(matchedOption.longestName(), convertedValue);
+    return Map.entry(matchedOption.longestName(), translatedValue);
   }
 
   private Map<String, Object> loadConfigurationFromFile() {
