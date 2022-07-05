@@ -48,8 +48,9 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   private final SyncCommitteeProductionDuty productionDuty;
   private final SyncCommitteeAggregationDuty aggregationDuty;
   private final ValidatorLogger validatorLogger;
-  private Optional<Bytes32> lastSignatureBlockRoot = Optional.empty();
-  private Optional<UInt64> lastSignatureSlot = Optional.empty();
+
+  private volatile Optional<Bytes32> lastSignatureBlockRoot = Optional.empty();
+  private volatile Optional<UInt64> lastSignatureSlot = Optional.empty();
 
   @VisibleForTesting
   SyncCommitteeScheduledDuties(
@@ -85,19 +86,19 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (assignments.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
+    try {
+      lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
+    } catch (ChainHeadBeyondSlotException ex) {
+      return chainHeadBeyondSlotFailure(ex);
+    }
     lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
         .map(blockRoot -> productionDuty.produceMessages(slot, blockRoot))
-        .orElseGet(() -> headUnavailableFailure(slot));
+        .orElse(SafeFuture.completedFuture(DutyResult.NODE_SYNCING));
   }
 
-  private SafeFuture<DutyResult> headUnavailableFailure(final UInt64 slot) {
-    return SafeFuture.completedFuture(
-        DutyResult.forError(
-            getAllValidatorKeys(),
-            new IllegalStateException(
-                "Chain head is not available or has advanced beyond slot " + slot)));
+  private SafeFuture<DutyResult> chainHeadBeyondSlotFailure(final ChainHeadBeyondSlotException ex) {
+    return SafeFuture.completedFuture(DutyResult.forError(getAllValidatorKeys(), ex));
   }
 
   private Set<BLSPublicKey> getAllValidatorKeys() {

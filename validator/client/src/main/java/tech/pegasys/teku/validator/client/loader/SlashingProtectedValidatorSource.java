@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
-import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.spec.signatures.Signer;
+import tech.pegasys.teku.spec.signatures.SlashingProtectedSigner;
+import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 
 public class SlashingProtectedValidatorSource implements ValidatorSource {

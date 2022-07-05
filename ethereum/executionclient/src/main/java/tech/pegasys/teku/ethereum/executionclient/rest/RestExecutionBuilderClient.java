@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_HEADER_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_STATUS_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -65,7 +66,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   public SafeFuture<Response<Void>> status() {
     return restClient
         .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(EL_BUILDER_STATUS_TIMEOUT);
+        .orTimeout(BUILDER_STATUS_TIMEOUT);
   }
 
   @Override
@@ -83,11 +84,11 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
             signedValidatorRegistrations,
             requestType)
-        .orTimeout(EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+        .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
   }
 
   @Override
-  public SafeFuture<Response<SignedBuilderBid>> getHeader(
+  public SafeFuture<Response<Optional<SignedBuilderBid>>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
 
     final Map<String, String> urlParams = new HashMap<>();
@@ -114,8 +115,9 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
             responseTypeDefinition)
-        .thenApply(this::getBuilderApiResponseData)
-        .orTimeout(EL_BUILDER_GET_HEADER_TIMEOUT);
+        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(Response::convertToOptional)
+        .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
 
   @Override
@@ -148,8 +150,8 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
-        .thenApply(this::getBuilderApiResponseData)
-        .orTimeout(EL_BUILDER_GET_PAYLOAD_TIMEOUT);
+        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 
   private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {
@@ -161,12 +163,5 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
                 new IllegalArgumentException(
                     specMilestone
                         + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
-  }
-
-  private <T> Response<T> getBuilderApiResponseData(Response<BuilderApiResponse<T>> response) {
-    if (response.isFailure()) {
-      return Response.withErrorMessage(response.getErrorMessage());
-    }
-    return new Response<>(response.getPayload().getData());
   }
 }

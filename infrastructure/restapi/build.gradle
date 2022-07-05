@@ -29,4 +29,5 @@ dependencies {
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
   testFixturesImplementation 'commons-io:commons-io'
   testFixturesImplementation 'com.google.guava:guava'
+  testFixturesImplementation 'io.javalin:javalin'
 }

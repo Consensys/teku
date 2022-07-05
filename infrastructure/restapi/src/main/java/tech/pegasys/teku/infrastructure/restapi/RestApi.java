@@ -77,7 +77,7 @@ public class RestApi extends Service {
         LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
         Files.writeString(path, generated.toUnprefixedHexString(), UTF_8);
       } catch (IOException e) {
-        LOG.error("Failed to write auth file to " + path, e);
+        LOG.error("Failed to write auth file to {}", path, e);
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
