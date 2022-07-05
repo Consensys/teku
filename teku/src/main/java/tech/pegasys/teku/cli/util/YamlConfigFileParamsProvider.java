@@ -33,16 +33,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
 public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final CommandLine commandLine;
   private final File configFile;
   // this will be initialized on fist call of defaultValue by PicoCLI parseArgs
