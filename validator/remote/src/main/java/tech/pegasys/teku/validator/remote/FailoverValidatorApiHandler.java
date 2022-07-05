@@ -205,6 +205,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
    */
   @SuppressWarnings("FutureReturnValueIgnored")
   private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
+    final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
     for (RemoteValidatorApiChannel failover : failoverDelegates) {
       request
           .run(failover)
@@ -213,7 +214,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                   validatorLogger.relayedRequestToFailoverBeaconNodeFailed(
                       failover.getEndpoint(), throwable));
     }
-    return request.run(primaryDelegate);
+    return primaryResponse;
   }
 
   /**
