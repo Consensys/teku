@@ -288,8 +288,9 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
   }
 
-  public void prepareBeaconProposer(List<BeaconPreparableProposer> beaconPreparableProposers) {
-    validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
+  public SafeFuture<Void> prepareBeaconProposer(
+      List<BeaconPreparableProposer> beaconPreparableProposers) {
+    return validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   public SafeFuture<Void> registerValidators(

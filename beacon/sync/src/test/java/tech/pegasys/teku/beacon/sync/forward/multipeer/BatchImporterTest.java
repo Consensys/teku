@@ -126,7 +126,7 @@ class BatchImporterTest {
 
   @Test
   void shouldDisconnectPeersForWeakSubjectivityViolation() {
-    when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
+    when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
@@ -160,7 +160,7 @@ class BatchImporterTest {
 
   @Test
   void shouldNotDisconnectPeersWhenServiceOffline() {
-    when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
+    when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);

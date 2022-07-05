@@ -107,24 +107,13 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
-
-    // Update validators
-    final UInt64 expirySlot =
-        currentSlot.plus(
-            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
-    for (BeaconPreparableProposer proposer : preparedProposers) {
-      preparedProposerInfoByValidatorIndex.put(
-          proposer.getValidatorIndex(),
-          new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
-    }
-
+    updatePreparedProposerCache(preparedProposers, currentSlot);
     subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
       final UInt64 currentSlot) {
-
     return executionLayerChannel
         .builderRegisterValidators(signedValidatorRegistrations, currentSlot)
         .thenCompose(__ -> recentChainData.getBestState().orElseThrow())
@@ -134,12 +123,22 @@ public class ProposersDataManager implements SlotEventsChannel {
                     headState, signedValidatorRegistrations, currentSlot));
   }
 
+  private void updatePreparedProposerCache(
+      final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
+    final UInt64 expirySlot =
+        currentSlot.plus(
+            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
+    preparedProposers.forEach(
+        proposer ->
+            preparedProposerInfoByValidatorIndex.put(
+                proposer.getValidatorIndex(),
+                new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient())));
+  }
+
   private void updateValidatorRegistrationCache(
       final BeaconState headState,
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
       final UInt64 currentSlot) {
-
-    // Update validators
     final UInt64 expirySlot =
         currentSlot.plus(
             spec.getSlotsPerEpoch(currentSlot) * VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS);
