@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -22,10 +23,26 @@ import java.util.function.Function;
 
 abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
 
-  protected final Map<K, V> delegate;
+  protected static <K, V> Map<K, V> createLimitedMap(final int maxSize) {
+    return new LinkedHashMap<>(16, 0.75f, true) {
+      @Override
+      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
+        return size() > maxSize;
+      }
+    };
+  }
 
-  protected AbstractLimitedMap(Map<K, V> delegate) {
+  protected final Map<K, V> delegate;
+  protected final int maxSize;
+
+  protected AbstractLimitedMap(Map<K, V> delegate, int maxSize) {
     this.delegate = delegate;
+    this.maxSize = maxSize;
+  }
+
+  @Override
+  public int getMaxSize() {
+    return maxSize;
   }
 
   @Override
