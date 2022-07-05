@@ -421,9 +421,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
             apiClient.prepareBeaconProposer(
                 beaconPreparableProposers.stream()
                     .map(
-                        bpp ->
+                        proposer ->
                             new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
-                                bpp.getValidatorIndex(), bpp.getFeeRecipient()))
+                                proposer.getValidatorIndex(), proposer.getFeeRecipient()))
                     .collect(toList())));
   }
 
