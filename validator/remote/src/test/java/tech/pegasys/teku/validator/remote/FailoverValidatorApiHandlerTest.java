@@ -26,6 +26,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -70,9 +71,9 @@ class FailoverValidatorApiHandlerTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
   private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
 
-  private RemoteValidatorApiChannel apiChannel1;
-  private RemoteValidatorApiChannel apiChannel2;
-  private RemoteValidatorApiChannel apiChannel3;
+  private RemoteValidatorApiChannel primaryApiChannel;
+  private RemoteValidatorApiChannel failoverApiChannel1;
+  private RemoteValidatorApiChannel failoverApiChannel2;
 
   private ValidatorLogger validatorLogger;
 
@@ -80,46 +81,45 @@ class FailoverValidatorApiHandlerTest {
 
   @BeforeEach
   void setUp() {
-    apiChannel1 = mock(RemoteValidatorApiChannel.class);
-    apiChannel2 = mock(RemoteValidatorApiChannel.class);
-    apiChannel3 = mock(RemoteValidatorApiChannel.class);
+    primaryApiChannel = mock(RemoteValidatorApiChannel.class);
+    failoverApiChannel1 = mock(RemoteValidatorApiChannel.class);
+    failoverApiChannel2 = mock(RemoteValidatorApiChannel.class);
 
     validatorLogger = mock(ValidatorLogger.class);
 
     final Supplier<URI> randomUriGenerator =
         () -> URI.create("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
-    when(apiChannel1.getEndpoint()).thenReturn(randomUriGenerator.get());
-    when(apiChannel2.getEndpoint()).thenReturn(randomUriGenerator.get());
-    when(apiChannel3.getEndpoint()).thenReturn(randomUriGenerator.get());
+    when(primaryApiChannel.getEndpoint()).thenReturn(randomUriGenerator.get());
+    when(failoverApiChannel1.getEndpoint()).thenReturn(randomUriGenerator.get());
+    when(failoverApiChannel2.getEndpoint()).thenReturn(randomUriGenerator.get());
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            List.of(apiChannel1, apiChannel2, apiChannel3), validatorLogger);
+            List.of(primaryApiChannel, failoverApiChannel1, failoverApiChannel2), validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getFutureRequestsData")
+  @MethodSource("getRequestsUsingFailover")
   <T> void requestSucceedsWithoutFailover(
       final ValidatorApiChannelRequest<T> request, final T response) {
 
-    when(request.run(apiChannel1)).thenReturn(SafeFuture.completedFuture(response));
+    setupSuccesses(request, response, primaryApiChannel);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
     assertThat(result).isCompletedWithValue(response);
 
-    verifyNoInteractions(apiChannel2, apiChannel3, validatorLogger);
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getFutureRequestsData")
+  @MethodSource("getRequestsUsingFailover")
   <T> void requestFailoversOnFailure(
       final ValidatorApiChannelRequest<T> request, final T response) {
 
-    setupFailures(request, apiChannel1, apiChannel2);
-
-    when(request.run(apiChannel3)).thenReturn(SafeFuture.completedFuture(response));
+    setupSuccesses(request, response, failoverApiChannel2);
+    setupFailures(request, primaryApiChannel, failoverApiChannel1);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
@@ -127,18 +127,22 @@ class FailoverValidatorApiHandlerTest {
 
     verify(validatorLogger)
         .remoteBeaconNodeFailoverRequestFailed(
-            apiChannel1.getEndpoint(), EXCEPTION, Optional.of(apiChannel2.getEndpoint()));
+            primaryApiChannel.getEndpoint(),
+            EXCEPTION,
+            Optional.of(failoverApiChannel1.getEndpoint()));
     verify(validatorLogger)
         .remoteBeaconNodeFailoverRequestFailed(
-            apiChannel2.getEndpoint(), EXCEPTION, Optional.of(apiChannel3.getEndpoint()));
+            failoverApiChannel1.getEndpoint(),
+            EXCEPTION,
+            Optional.of(failoverApiChannel2.getEndpoint()));
     verifyNoMoreInteractions(validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getFutureRequestsData")
+  @MethodSource("getRequestsUsingFailover")
   <T> void requestFailsOnAllFailovers(final ValidatorApiChannelRequest<T> request) {
 
-    setupFailures(request, apiChannel1, apiChannel2, apiChannel3);
+    setupFailures(request, primaryApiChannel, failoverApiChannel1, failoverApiChannel2);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
@@ -146,13 +150,90 @@ class FailoverValidatorApiHandlerTest {
 
     verify(validatorLogger)
         .remoteBeaconNodeFailoverRequestFailed(
-            apiChannel1.getEndpoint(), EXCEPTION, Optional.of(apiChannel2.getEndpoint()));
+            primaryApiChannel.getEndpoint(),
+            EXCEPTION,
+            Optional.of(failoverApiChannel1.getEndpoint()));
     verify(validatorLogger)
         .remoteBeaconNodeFailoverRequestFailed(
-            apiChannel2.getEndpoint(), EXCEPTION, Optional.of(apiChannel3.getEndpoint()));
+            failoverApiChannel1.getEndpoint(),
+            EXCEPTION,
+            Optional.of(failoverApiChannel2.getEndpoint()));
     verify(validatorLogger)
         .remoteBeaconNodeFailoverRequestFailed(
-            apiChannel3.getEndpoint(), EXCEPTION, Optional.empty());
+            failoverApiChannel2.getEndpoint(), EXCEPTION, Optional.empty());
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void requestIsRelayedToAllNodes(
+      final ValidatorApiChannelRequest<T> request,
+      final T response,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade) {
+
+    setupSuccesses(request, response, primaryApiChannel, failoverApiChannel1, failoverApiChannel2);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verifyCallIsMade.accept(primaryApiChannel);
+    verifyCallIsMade.accept(failoverApiChannel1);
+    verifyCallIsMade.accept(failoverApiChannel2);
+
+    verifyNoInteractions(validatorLogger);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void requestIsRelayedToAllNodesButFailsOnOneFailover(
+      final ValidatorApiChannelRequest<T> request,
+      final T response,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade) {
+
+    setupSuccesses(request, response, primaryApiChannel, failoverApiChannel1);
+    setupFailures(request, failoverApiChannel2);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verifyCallIsMade.accept(primaryApiChannel);
+    verifyCallIsMade.accept(failoverApiChannel1);
+    verifyCallIsMade.accept(failoverApiChannel2);
+
+    verify(validatorLogger)
+        .relayedRequestToFailoverBeaconNodeFailed(failoverApiChannel2.getEndpoint(), EXCEPTION);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void requestFailsOnPrimaryNodeButRelayedToFailoverNodes(
+      final ValidatorApiChannelRequest<T> request,
+      final T response,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade) {
+
+    setupFailures(request, primaryApiChannel);
+    setupSuccesses(request, response, failoverApiChannel1, failoverApiChannel2);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedExceptionally();
+
+    verifyCallIsMade.accept(primaryApiChannel);
+    verifyCallIsMade.accept(failoverApiChannel1);
+    verifyCallIsMade.accept(failoverApiChannel2);
+
+    verifyNoInteractions(validatorLogger);
+  }
+
+  private <T> void setupSuccesses(
+      final ValidatorApiChannelRequest<T> request,
+      final T response,
+      final RemoteValidatorApiChannel... apiChannels) {
+    Stream.of(apiChannels)
+        .forEach(
+            apiChannel ->
+                when(request.run(apiChannel)).thenReturn(SafeFuture.completedFuture(response)));
   }
 
   private <T> void setupFailures(
@@ -163,7 +244,7 @@ class FailoverValidatorApiHandlerTest {
                 when(request.run(apiChannel)).thenReturn(SafeFuture.failedFuture(EXCEPTION)));
   }
 
-  private static Stream<Arguments> getFutureRequestsData() {
+  private static Stream<Arguments> getRequestsUsingFailover() {
     final GenesisData genesisData =
         new GenesisData(DATA_STRUCTURE_UTIL.randomUInt64(), DATA_STRUCTURE_UTIL.randomBytes32());
     final BLSPublicKey publicKey = DATA_STRUCTURE_UTIL.randomPublicKey();
@@ -173,18 +254,6 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 epoch = DATA_STRUCTURE_UTIL.randomUInt64();
     final Bytes32 randomBytes32 = DATA_STRUCTURE_UTIL.randomBytes32();
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
-    final SubmitDataError submitDataError =
-        new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
-    final SignedAggregateAndProof signedAggregateAndProof =
-        DATA_STRUCTURE_UTIL.randomSignedAggregateAndProof();
-    final SignedBeaconBlock signedBeaconBlock =
-        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock();
-    final SyncCommitteeMessage syncCommitteeMessage =
-        DATA_STRUCTURE_UTIL.randomSyncCommitteeMessage();
-    final SignedContributionAndProof signedContributionAndProof =
-        DATA_STRUCTURE_UTIL.randomSignedContributionAndProof(slot.longValue());
-    final SszList<SignedValidatorRegistration> validatorRegistrations =
-        DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
 
     return Stream.of(
         getArguments(
@@ -225,36 +294,72 @@ class FailoverValidatorApiHandlerTest {
         getArguments(
             "createSyncCommitteeContribution",
             apiChannel -> apiChannel.createSyncCommitteeContribution(slot, 0, randomBytes32),
-            Optional.of(mock(SyncCommitteeContribution.class))),
+            Optional.of(mock(SyncCommitteeContribution.class))));
+  }
+
+  private static Stream<Arguments> getRelayRequests() {
+    final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
+    final SubmitDataError submitDataError =
+        new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
+    final SignedAggregateAndProof signedAggregateAndProof =
+        DATA_STRUCTURE_UTIL.randomSignedAggregateAndProof();
+    final SignedBeaconBlock signedBeaconBlock =
+        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock();
+    final SyncCommitteeMessage syncCommitteeMessage =
+        DATA_STRUCTURE_UTIL.randomSyncCommitteeMessage();
+    final SignedContributionAndProof signedContributionAndProof =
+        DATA_STRUCTURE_UTIL.randomSignedContributionAndProof(2);
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
+
+    return Stream.of(
         getArguments(
             "sendSignedAttestations",
             apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
-            List.of(submitDataError)),
+            List.of(submitDataError),
+            apiChannel -> verify(apiChannel).sendSignedAttestations(List.of(attestation))),
         getArguments(
             "sendAggregateAndProofs",
             apiChannel -> apiChannel.sendAggregateAndProofs(List.of(signedAggregateAndProof)),
-            List.of(submitDataError)),
+            List.of(submitDataError),
+            apiChannel ->
+                verify(apiChannel).sendAggregateAndProofs(List.of(signedAggregateAndProof))),
         getArguments(
             "sendSignedBlock",
             apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
-            mock(SendSignedBlockResult.class)),
+            mock(SendSignedBlockResult.class),
+            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock)),
         getArguments(
             "sendSyncCommitteeMessages",
             apiChannel -> apiChannel.sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
-            List.of(submitDataError)),
+            List.of(submitDataError),
+            apiChannel ->
+                verify(apiChannel).sendSyncCommitteeMessages(List.of(syncCommitteeMessage))),
         getArguments(
             "sendSignedContributionAndProofs",
             apiChannel ->
                 apiChannel.sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
-            null),
+            null,
+            apiChannel ->
+                verify(apiChannel)
+                    .sendSignedContributionAndProofs(List.of(signedContributionAndProof))),
         getArguments(
             "registerValidators",
             apiChannel -> apiChannel.registerValidators(validatorRegistrations),
-            null));
+            null,
+            apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations)));
   }
 
   private static <T> Arguments getArguments(
       final String name, final ValidatorApiChannelRequest<T> request, final T response) {
     return Arguments.of(Named.of(name, request), response);
+  }
+
+  private static <T> Arguments getArguments(
+      final String name,
+      final ValidatorApiChannelRequest<T> request,
+      final T response,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade) {
+    return Arguments.of(Named.of(name, request), response, verifyCallIsMade);
   }
 }

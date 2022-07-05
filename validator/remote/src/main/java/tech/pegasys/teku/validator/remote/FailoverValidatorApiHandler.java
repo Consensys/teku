@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
@@ -53,49 +55,55 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
-  private final List<RemoteValidatorApiChannel> delegates;
+  private final RemoteValidatorApiChannel primaryDelegate;
+  private final List<RemoteValidatorApiChannel> failoverDelegates;
   private final ValidatorLogger validatorLogger;
 
   public FailoverValidatorApiHandler(
       final List<RemoteValidatorApiChannel> delegates, final ValidatorLogger validatorLogger) {
-    this.delegates = delegates;
+    checkArgument(
+        delegates.size() > 1,
+        "More than one Beacon Node endpoints should be defined to use the failover feature.");
+    this.primaryDelegate = delegates.get(0);
+    this.failoverDelegates = delegates.subList(1, delegates.size());
     this.validatorLogger = validatorLogger;
   }
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
-    return makeFailoverRequest(ValidatorApiChannel::getGenesisData);
+    return tryRequestUntilSuccess(ValidatorApiChannel::getGenesisData);
   }
 
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final Collection<BLSPublicKey> publicKeys) {
-    return makeFailoverRequest(apiChannel -> apiChannel.getValidatorIndices(publicKeys));
+    return tryRequestUntilSuccess(apiChannel -> apiChannel.getValidatorIndices(publicKeys));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
-    return makeFailoverRequest(apiChannel -> apiChannel.getValidatorStatuses(validatorIdentifiers));
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getValidatorStatuses(validatorIdentifiers));
   }
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getAttestationDuties(epoch, validatorIndices));
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getSyncCommitteeDuties(epoch, validatorIndices));
   }
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return makeFailoverRequest(apiChannel -> apiChannel.getProposerDuties(epoch));
+    return tryRequestUntilSuccess(apiChannel -> apiChannel.getProposerDuties(epoch));
   }
 
   @Override
@@ -104,114 +112,139 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
   }
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createAttestationData(slot, committeeIndex));
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot));
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    return makeFailoverRequest(
+    return tryRequestUntilSuccess(
         apiChannel ->
             apiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot));
   }
 
   @Override
   public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException(
+        "Need to convert to SafeFuture<Void> and will use relayRequest");
   }
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
       Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException(
+        "Need to convert to SafeFuture<Void> and will use relayRequest");
   }
 
   @Override
   public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException(
+        "Need to convert to SafeFuture<Void> and will use relayRequest");
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations) {
-    return makeFailoverRequest(apiChannel -> apiChannel.sendSignedAttestations(attestations));
+    return relayRequest(apiChannel -> apiChannel.sendSignedAttestations(attestations));
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
-    return makeFailoverRequest(apiChannel -> apiChannel.sendAggregateAndProofs(aggregateAndProofs));
+    return relayRequest(apiChannel -> apiChannel.sendAggregateAndProofs(aggregateAndProofs));
   }
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    return makeFailoverRequest(apiChannel -> apiChannel.sendSignedBlock(block));
+    return relayRequest(apiChannel -> apiChannel.sendSignedBlock(block));
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    return makeFailoverRequest(
-        apiChannel -> apiChannel.sendSyncCommitteeMessages(syncCommitteeMessages));
+    return relayRequest(apiChannel -> apiChannel.sendSyncCommitteeMessages(syncCommitteeMessages));
   }
 
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    return makeFailoverRequest(
+    return relayRequest(
         apiChannel -> apiChannel.sendSignedContributionAndProofs(signedContributionAndProofs));
   }
 
   @Override
-  public void prepareBeaconProposer(
+  public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return relayRequest(apiChannel -> apiChannel.prepareBeaconProposer(beaconPreparableProposers));
   }
 
   @Override
   public SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return makeFailoverRequest(apiChannel -> apiChannel.registerValidators(validatorRegistrations));
+    return relayRequest(apiChannel -> apiChannel.registerValidators(validatorRegistrations));
   }
 
-  private <T> SafeFuture<T> makeFailoverRequest(final ValidatorApiChannelRequest<T> request) {
-    final Iterator<RemoteValidatorApiChannel> delegatesIterator = delegates.iterator();
-    return makeFailoverRequest(delegatesIterator, delegatesIterator.next(), request);
+  /**
+   * Relays the given request to the primary Beacon Node along with all failover Beacon Node
+   * endpoints. The returned {@link SafeFuture} will only complete exceptionally in case the request
+   * to the primary Beacon Node fails. All failed failover responses will be logged as warnings.
+   */
+  private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
+    final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
+    failoverDelegates.forEach(
+        failover ->
+            request
+                .run(failover)
+                .handleException(
+                    throwable ->
+                        validatorLogger.relayedRequestToFailoverBeaconNodeFailed(
+                            failover.getEndpoint(), throwable)));
+    return primaryResponse;
+  }
+
+  /**
+   * Tries the given request first with the primary Beacon Node. If it fails, it will log a warning
+   * and retry the request against each failover Beacon Node in order until there is a successful
+   * response. In case all requests fail, the returned {@link SafeFuture} will complete
+   * exceptionally with the last error.
+   */
+  private <T> SafeFuture<T> tryRequestUntilSuccess(final ValidatorApiChannelRequest<T> request) {
+    return makeFailoverRequest(primaryDelegate, failoverDelegates.iterator(), request);
   }
 
   private <T> SafeFuture<T> makeFailoverRequest(
-      final Iterator<RemoteValidatorApiChannel> delegatesIterator,
       final RemoteValidatorApiChannel currentDelegate,
+      final Iterator<RemoteValidatorApiChannel> failoverDelegates,
       final ValidatorApiChannelRequest<T> request) {
     return request
         .run(currentDelegate)
         .exceptionallyCompose(
             throwable -> {
-              if (!delegatesIterator.hasNext()) {
+              if (!failoverDelegates.hasNext()) {
                 validatorLogger.remoteBeaconNodeFailoverRequestFailed(
                     currentDelegate.getEndpoint(), throwable, Optional.empty());
                 return SafeFuture.failedFuture(throwable);
               }
-              final RemoteValidatorApiChannel nextDelegate = delegatesIterator.next();
+              final RemoteValidatorApiChannel nextDelegate = failoverDelegates.next();
               validatorLogger.remoteBeaconNodeFailoverRequestFailed(
                   currentDelegate.getEndpoint(),
                   throwable,
                   Optional.of(nextDelegate.getEndpoint()));
-              return makeFailoverRequest(delegatesIterator, nextDelegate, request);
+              return makeFailoverRequest(nextDelegate, failoverDelegates, request);
             });
   }
 
