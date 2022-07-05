@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,10 +59,15 @@ public class YamlConfigFileDefaultProvider implements AdditionalConfigProvider {
     }
 
     return result.entrySet().stream()
+        .map(yamlEntry -> Map.entry(translateKey(yamlEntry.getKey()), yamlEntry.getValue()))
         .map(yamlEntry -> mapParam(potentialParams, yamlEntry))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  private String translateKey(final String yamlKey) {
+    return "--" + yamlKey;
   }
 
   private Optional<Map.Entry<String, String>> mapParam(
@@ -72,8 +78,9 @@ public class YamlConfigFileDefaultProvider implements AdditionalConfigProvider {
         .map(optionSpec -> translateToArg(optionSpec, yamlEntry));
   }
 
-  private boolean matchKey(final OptionSpec matchedOption, final String yamlKey) {
-    return matchedOption.longestName().equalsIgnoreCase("--" + yamlKey);
+  private boolean matchKey(final OptionSpec matchedOption, final String yamlTranslatedKey) {
+    return Arrays.stream(matchedOption.names())
+        .anyMatch(name -> name.equalsIgnoreCase(yamlTranslatedKey));
   }
 
   private Map.Entry<String, String> translateToArg(

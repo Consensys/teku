@@ -42,8 +42,8 @@ class YamlConfigFileDefaultProviderTest {
   void parsingValidYamlFilePopulatesCommandObject(@TempDir final Path tempDir) throws IOException {
     final Path configFile = writeToYamlConfigFile(defaultOptions(), tempDir);
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
     commandLine.parseArgs();
     final TestCommand testCommand = commandLine.getCommand();
 
@@ -56,8 +56,8 @@ class YamlConfigFileDefaultProviderTest {
   void parsingEmptyConfigFileThrowsException(@TempDir final Path tempDir) throws IOException {
     final Path configFile = writeToYamlConfigFile(Collections.emptyMap(), tempDir);
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
@@ -68,8 +68,8 @@ class YamlConfigFileDefaultProviderTest {
   void parsingNonExistingConfigFileThrowsException(@TempDir final Path tempDir) {
     final Path configFile = tempDir.resolve("config.yaml");
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
@@ -81,8 +81,8 @@ class YamlConfigFileDefaultProviderTest {
     final Path configFile =
         Files.writeString(tempDir.resolve("config.yaml"), "test: test\noption= True\n");
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
@@ -96,8 +96,8 @@ class YamlConfigFileDefaultProviderTest {
     final Path configFile =
         Files.writeString(tempDir.resolve("config.yaml"), "- test\n- test2\n- test3");
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //   new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
@@ -114,8 +114,8 @@ class YamlConfigFileDefaultProviderTest {
     final Path configFile = writeToYamlConfigFile(options, tempDir);
 
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
@@ -130,8 +130,8 @@ class YamlConfigFileDefaultProviderTest {
     final Path configFile = writeToYamlConfigFile(options, tempDir);
 
     final CommandLine commandLine = new CommandLine(TestCommand.class);
-    commandLine.setDefaultValueProvider(
-        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+    // commandLine.setDefaultValueProvider(
+    //    new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     final ParseResult result = commandLine.parseArgs("subcommand");
     assertThat(result.hasSubcommand()).isTrue();

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,10 +34,15 @@ public class EnvironmentVariableDefaultProvider implements AdditionalConfigProvi
   public Map<String, String> getAdditionalConfigs(List<OptionSpec> potentialParams) {
     return environment.entrySet().stream()
         .filter(envEntry -> envEntry.getKey().startsWith(ENV_VAR_PREFIX))
+        .map(envEntry -> Map.entry(translateKey(envEntry.getKey()), envEntry.getValue()))
         .map(yamlEntry -> mapParam(potentialParams, yamlEntry))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  private String translateKey(final String envVarName) {
+    return "--" + envVarName.substring(ENV_VAR_PREFIX.length()).replace('_', '-');
   }
 
   private Optional<Entry<String, String>> mapParam(
@@ -47,10 +53,9 @@ public class EnvironmentVariableDefaultProvider implements AdditionalConfigProvi
         .map(optionSpec -> translateToArg(optionSpec, envEntry));
   }
 
-  private boolean matchKey(final OptionSpec matchedOption, final String envVarName) {
-    return matchedOption
-        .longestName()
-        .equalsIgnoreCase("--" + envVarName.substring(ENV_VAR_PREFIX.length()));
+  private boolean matchKey(final OptionSpec matchedOption, final String envVarTranslatedName) {
+    return Arrays.stream(matchedOption.names())
+        .anyMatch(name -> name.equalsIgnoreCase(envVarTranslatedName));
   }
 
   private Map.Entry<String, String> translateToArg(
