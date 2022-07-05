@@ -42,12 +42,12 @@ class YamlConfigFileParamsProviderTest {
     final Path configFile = writeToYamlConfigFile(defaultOptions(), tempDir);
     final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
         new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
-    final Map<String, String> additionalConfigs =
+    final Map<String, String> additionalParams =
         yamlConfigFileDefaultProvider.getAdditionalParams(commandLine.getCommandSpec().options());
 
-    Assertions.assertThat(additionalConfigs.get("--count")).isEqualTo("10");
-    Assertions.assertThat(additionalConfigs.get("--names")).isEqualTo("a,b");
-    Assertions.assertThat(additionalConfigs.get("--test-enabled")).isEqualTo("true");
+    Assertions.assertThat(additionalParams.get("--count")).isEqualTo("10");
+    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("a,b");
+    Assertions.assertThat(additionalParams.get("--test-enabled")).isEqualTo("true");
   }
 
   @Test

@@ -21,12 +21,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import picocli.CommandLine.Model.OptionSpec;
 
-public class EnvironmentVariableDefaultProvider implements AdditionalConfigProvider {
+public class EnvironmentVariableParamsProvider implements AdditionalParamsProvider {
   private static final String ENV_VAR_PREFIX = "TEKU_";
 
   private final Map<String, String> environment;
 
-  public EnvironmentVariableDefaultProvider(final Map<String, String> environment) {
+  public EnvironmentVariableParamsProvider(final Map<String, String> environment) {
     this.environment = environment;
   }
 

@@ -40,7 +40,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class YamlConfigFileParamsProvider implements AdditionalConfigProvider {
+public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final CommandLine commandLine;

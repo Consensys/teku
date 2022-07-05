@@ -18,11 +18,11 @@ import java.util.List;
 import java.util.Map;
 import picocli.CommandLine.Model.OptionSpec;
 
-public class CascadingDefaultProvider implements AdditionalConfigProvider {
+public class CascadingParamsProvider implements AdditionalParamsProvider {
 
-  private final List<AdditionalConfigProvider> additionalConfigProviders;
+  private final List<AdditionalParamsProvider> additionalConfigProviders;
 
-  public CascadingDefaultProvider(final AdditionalConfigProvider... additionalConfigProviders) {
+  public CascadingParamsProvider(final AdditionalParamsProvider... additionalConfigProviders) {
     this.additionalConfigProviders = List.of(additionalConfigProviders);
   }
 

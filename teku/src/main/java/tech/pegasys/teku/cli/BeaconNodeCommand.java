@@ -61,9 +61,9 @@ import tech.pegasys.teku.cli.subcommand.VoluntaryExitCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.subcommand.internal.InternalToolsCommand;
-import tech.pegasys.teku.cli.util.AdditionalConfigProvider;
-import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
-import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
+import tech.pegasys.teku.cli.util.AdditionalParamsProvider;
+import tech.pegasys.teku.cli.util.CascadingParamsProvider;
+import tech.pegasys.teku.cli.util.EnvironmentVariableParamsProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileParamsProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -245,11 +245,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
                 optionSpec -> !maybeSubCommandParseResult.matchedOptionsSet().contains(optionSpec))
             .collect(Collectors.toUnmodifiableList());
 
-    final AdditionalConfigProvider configurationValueProvider =
-        additionalConfigProvider(commandLine, configFile);
+    final AdditionalParamsProvider additionalParamsProvider =
+        additionalParamsProvider(commandLine, configFile);
 
     final Map<String, String> additionalParams =
-        configurationValueProvider.getAdditionalParams(potentialAdditionalParams);
+        additionalParamsProvider.getAdditionalParams(potentialAdditionalParams);
 
     // build new argument list by concatenating original args and the additional params
     final String[] enrichedArgs =
@@ -283,14 +283,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return baseCommandLine.getCommandSpec().exitCodeOnUsageHelp();
   }
 
-  private AdditionalConfigProvider additionalConfigProvider(
+  private AdditionalParamsProvider additionalParamsProvider(
       final CommandLine commandLine, final Optional<File> configFile) {
     if (configFile.isEmpty()) {
-      return new EnvironmentVariableDefaultProvider(environment);
+      return new EnvironmentVariableParamsProvider(environment);
     }
 
-    return new CascadingDefaultProvider(
-        new EnvironmentVariableDefaultProvider(environment),
+    return new CascadingParamsProvider(
+        new EnvironmentVariableParamsProvider(environment),
         new YamlConfigFileParamsProvider(commandLine, configFile.get()));
   }
 

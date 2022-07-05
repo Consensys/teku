@@ -17,6 +17,6 @@ import java.util.List;
 import java.util.Map;
 import picocli.CommandLine.Model.OptionSpec;
 
-public interface AdditionalConfigProvider {
+public interface AdditionalParamsProvider {
   Map<String, String> getAdditionalParams(List<OptionSpec> potentialParams);
 }
