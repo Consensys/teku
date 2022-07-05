@@ -11,6 +11,7 @@ eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"
 eth1-endpoint: "http://localhost:8545"
 
 # validator
+network: "mainnet"
 validator-keys: "a.key:a.password,b.json:b.txt"
 validators-external-signer-public-keys: ["0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"]
 validators-external-signer-url: "https://signer.url/"
