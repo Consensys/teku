@@ -45,12 +45,4 @@ public class BeaconPreparableProposer {
     this.validator_index = validator_index;
     this.fee_recipient = fee_recipient;
   }
-
-  public static tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix
-          .BeaconPreparableProposer
-      asInternalBeaconPreparableProposer(BeaconPreparableProposer beaconPreparableProposer) {
-    return new tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix
-        .BeaconPreparableProposer(
-        beaconPreparableProposer.validator_index, beaconPreparableProposer.fee_recipient);
-  }
 }
