@@ -619,10 +619,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void prepareBeaconProposer(
+  public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    proposersDataManager.updatePreparedProposers(
-        beaconPreparableProposers, combinedChainDataClient.getCurrentSlot());
+    return SafeFuture.fromRunnable(
+        () ->
+            proposersDataManager.updatePreparedProposers(
+                beaconPreparableProposers, combinedChainDataClient.getCurrentSlot()));
   }
 
   @Override
