@@ -93,7 +93,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               updateValidatorCountMetrics(validatorStatuses);
 
               startupComplete.set(true);
-              return SafeFuture.completedFuture(null);
+              return SafeFuture.COMPLETE;
             })
         .exceptionallyCompose((__) -> retryInitialValidatorStatusCheck());
   }

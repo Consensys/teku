@@ -173,7 +173,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private SafeFuture<Void> registerValidators(
       final List<Validator> validators, final UInt64 epoch) {
     if (validators.isEmpty()) {
-      return SafeFuture.completedFuture(null);
+      return SafeFuture.COMPLETE;
     }
 
     return proposerConfigProvider
