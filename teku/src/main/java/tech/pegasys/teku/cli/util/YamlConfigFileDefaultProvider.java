@@ -22,23 +22,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import picocli.CommandLine;
-import picocli.CommandLine.IDefaultValueProvider;
-import picocli.CommandLine.Model.ArgSpec;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
+public class YamlConfigFileDefaultProvider implements AdditionalConfigProvider {
 
   private final CommandLine commandLine;
   private final File configFile;
@@ -51,16 +50,45 @@ public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
   }
 
   @Override
-  public String defaultValue(final ArgSpec argSpec) {
+  public Map<String, String> getAdditionalConfigs(final List<OptionSpec> potentialParams) {
     if (result == null) {
       result = loadConfigurationFromFile();
       checkConfigurationValidity(result == null || result.isEmpty());
       checkUnknownOptions(result);
     }
 
-    // only options can be used in config because a name is needed for the key
-    // so we skip default for positional params
-    return argSpec.isOption() ? getConfigurationValue(((OptionSpec) argSpec)) : null;
+    return result.entrySet().stream()
+        .map(yamlEntry -> mapParam(potentialParams, yamlEntry))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  private Optional<Map.Entry<String, String>> mapParam(
+      final List<OptionSpec> potentialParams, final Map.Entry<String, Object> yamlEntry) {
+    return potentialParams.stream()
+        .filter(optionSpec -> matchKey(optionSpec, yamlEntry.getKey()))
+        .findFirst()
+        .map(optionSpec -> translateToArg(optionSpec, yamlEntry));
+  }
+
+  private boolean matchKey(final OptionSpec matchedOption, final String yamlKey) {
+    return matchedOption.longestName().equalsIgnoreCase("--" + yamlKey);
+  }
+
+  private Map.Entry<String, String> translateToArg(
+      OptionSpec matchedOption, Map.Entry<String, Object> yamlEntry) {
+    final Object value = yamlEntry.getValue();
+    final String convertedValue;
+
+    if (value instanceof Collection) {
+      convertedValue =
+          ((Collection<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
+    } else {
+      convertedValue = String.valueOf(value);
+    }
+
+    return Map.entry(matchedOption.longestName(), convertedValue);
   }
 
   private Map<String, Object> loadConfigurationFromFile() {
@@ -120,30 +148,5 @@ public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
       throw new ParameterException(
           commandLine, String.format("Empty yaml configuration file: %s", configFile));
     }
-  }
-
-  private String getConfigurationValue(final OptionSpec optionSpec) {
-    final Optional<Object> optionalValue = getKeyName(optionSpec).map(result::get);
-    if (optionalValue.isEmpty()) {
-      return null;
-    }
-
-    final Object value = optionalValue.get();
-
-    if (optionSpec.isMultiValue() && value instanceof Collection) {
-      return ((Collection<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
-    }
-
-    return String.valueOf(value);
-  }
-
-  private Optional<String> getKeyName(final OptionSpec spec) {
-    // If any of the names of the option are used as key in the yaml results
-    // then returns the value of first one.
-    return Arrays.stream(spec.names())
-        // remove leading dashes on option name as we can have "--" or "-" options
-        .map(name -> name.replaceFirst("^-+", ""))
-        .filter(result::containsKey)
-        .findFirst();
   }
 }

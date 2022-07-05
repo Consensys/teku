@@ -13,16 +13,14 @@
 
 package tech.pegasys.teku.cli.util;
 
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
-import picocli.CommandLine.IDefaultValueProvider;
-import picocli.CommandLine.Model.ArgSpec;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Model.OptionSpec;
 
-public class EnvironmentVariableDefaultProvider implements IDefaultValueProvider {
+public class EnvironmentVariableDefaultProvider implements AdditionalConfigProvider {
   private static final String ENV_VAR_PREFIX = "TEKU_";
 
   private final Map<String, String> environment;
@@ -32,27 +30,31 @@ public class EnvironmentVariableDefaultProvider implements IDefaultValueProvider
   }
 
   @Override
-  public String defaultValue(final ArgSpec argSpec) {
-    if (!argSpec.isOption()) {
-      return null;
-    }
-    return envVarNames((OptionSpec) argSpec)
-        .map(environment::get)
-        .filter(Objects::nonNull)
+  public Map<String, String> getAdditionalConfigs(List<OptionSpec> potentialParams) {
+    return environment.entrySet().stream()
+        .filter(envEntry -> envEntry.getKey().startsWith(ENV_VAR_PREFIX))
+        .map(yamlEntry -> mapParam(potentialParams, yamlEntry))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  private Optional<Entry<String, String>> mapParam(
+      final List<OptionSpec> potentialParams, final Map.Entry<String, String> envEntry) {
+    return potentialParams.stream()
+        .filter(optionSpec -> matchKey(optionSpec, envEntry.getKey()))
         .findFirst()
-        .orElse(null);
+        .map(optionSpec -> translateToArg(optionSpec, envEntry));
   }
 
-  private Stream<String> envVarNames(final OptionSpec spec) {
-    return spec.versionHelp() || spec.usageHelp()
-        ? Stream.empty()
-        : Arrays.stream(spec.names())
-            .filter(name -> name.startsWith("--")) // Only long options are allowed
-            .flatMap(
-                name -> Stream.of(ENV_VAR_PREFIX).map(prefix -> prefix + nameToEnvVarSuffix(name)));
+  private boolean matchKey(final OptionSpec matchedOption, final String envVarName) {
+    return matchedOption
+        .longestName()
+        .equalsIgnoreCase("--" + envVarName.substring(ENV_VAR_PREFIX.length()));
   }
 
-  private String nameToEnvVarSuffix(final String name) {
-    return name.substring("--".length()).replace('-', '_').toUpperCase(Locale.US);
+  private Map.Entry<String, String> translateToArg(
+      OptionSpec matchedOption, Map.Entry<String, String> envEntry) {
+    return Map.entry(matchedOption.longestName(), envEntry.getValue());
   }
 }

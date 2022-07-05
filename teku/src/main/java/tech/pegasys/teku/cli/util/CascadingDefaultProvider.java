@@ -13,28 +13,34 @@
 
 package tech.pegasys.teku.cli.util;
 
-import static java.util.Arrays.asList;
-
+import java.util.HashMap;
 import java.util.List;
-import picocli.CommandLine.IDefaultValueProvider;
-import picocli.CommandLine.Model.ArgSpec;
+import java.util.Map;
+import picocli.CommandLine.Model.OptionSpec;
 
-public class CascadingDefaultProvider implements IDefaultValueProvider {
+public class CascadingDefaultProvider implements AdditionalConfigProvider {
 
-  private final List<IDefaultValueProvider> defaultValueProviders;
+  private final List<AdditionalConfigProvider> additionalConfigProviders;
 
-  public CascadingDefaultProvider(final IDefaultValueProvider... defaultValueProviders) {
-    this.defaultValueProviders = asList(defaultValueProviders);
+  public CascadingDefaultProvider(final AdditionalConfigProvider... additionalConfigProviders) {
+    this.additionalConfigProviders = List.of(additionalConfigProviders);
   }
 
   @Override
-  public String defaultValue(final ArgSpec argSpec) throws Exception {
-    for (final IDefaultValueProvider provider : defaultValueProviders) {
-      final String defaultValue = provider.defaultValue(argSpec);
-      if (defaultValue != null) {
-        return defaultValue;
-      }
-    }
-    return null;
+  public Map<String, String> getAdditionalConfigs(final List<OptionSpec> potentialParams) {
+    return additionalConfigProviders.stream()
+        .map(
+            additionalConfigProvider ->
+                additionalConfigProvider.getAdditionalConfigs(potentialParams))
+        .reduce(
+            (primaryConfig, secondaryConfig) -> {
+              final HashMap<String, String> mergedConfig = new HashMap<>(primaryConfig);
+              secondaryConfig.forEach(
+                  (key, value) ->
+                      mergedConfig.merge(
+                          key, value, (primaryValue, secondaryValue) -> primaryValue));
+              return mergedConfig;
+            })
+        .orElse(Map.of());
   }
 }

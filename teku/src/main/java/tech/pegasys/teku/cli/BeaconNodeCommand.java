@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,7 +30,11 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.ArgSpec;
+import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
@@ -56,6 +62,7 @@ import tech.pegasys.teku.cli.subcommand.VoluntaryExitCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.subcommand.internal.InternalToolsCommand;
+import tech.pegasys.teku.cli.util.AdditionalConfigProvider;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
@@ -216,15 +223,45 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
     final Optional<File> configFile = getConfigFileFromCliOrEnv(configFileCommand);
 
-    // final pass
+    // second pass to collect matched params and enrich with additional (environment and\or config
+    // file)
     final CommandLine commandLine = getCommandLine();
     commandLine.setCaseInsensitiveEnumValuesAllowed(true);
+
+    final ParseResult parseResult;
+    try {
+      parseResult = commandLine.parseArgs(args);
+    } catch (ParameterException e) {
+      return handleParseException(e, args);
+    }
+
+    // calculate potential additional params from config provider
+    final List<OptionSpec> potentialAdditionalParams =
+        commandLine.getCommandSpec().args().stream()
+            .filter(ArgSpec::isOption)
+            .map(argSpec -> (OptionSpec) argSpec)
+            .filter(optionSpec -> !parseResult.matchedOptionsSet().contains(optionSpec))
+            .collect(Collectors.toUnmodifiableList());
+
+    final AdditionalConfigProvider configurationValueProvider =
+        additionalConfigProvider(commandLine, configFile);
+
+    final Map<String, String> additionalParams =
+        configurationValueProvider.getAdditionalConfigs(potentialAdditionalParams);
+
+    // build new argument list by concatenating original args and the additional params
+    final String[] enrichedArgs =
+        Stream.concat(
+                Stream.of(args),
+                additionalParams.entrySet().stream()
+                    .flatMap(paramEntry -> Stream.of(paramEntry.getKey(), paramEntry.getValue())))
+            .toArray(String[]::new);
+
+    // last pass - execute command with enriched arguments
     commandLine.setOut(outputWriter);
     commandLine.setErr(errorWriter);
     commandLine.setParameterExceptionHandler(this::handleParseException);
-    commandLine.setDefaultValueProvider(defaultValueProvider(commandLine, configFile));
-
-    return commandLine.execute(args);
+    return commandLine.execute(enrichedArgs);
   }
 
   private Optional<File> getConfigFileFromCliOrEnv(final ConfigFileCommand configFileCommand) {
@@ -244,7 +281,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return baseCommandLine.getCommandSpec().exitCodeOnUsageHelp();
   }
 
-  private CommandLine.IDefaultValueProvider defaultValueProvider(
+  private AdditionalConfigProvider additionalConfigProvider(
       final CommandLine commandLine, final Optional<File> configFile) {
     if (configFile.isEmpty()) {
       return new EnvironmentVariableDefaultProvider(environment);
