@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -58,19 +57,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final RemoteValidatorApiChannel primaryDelegate;
   private final List<RemoteValidatorApiChannel> failoverDelegates;
-  private final AsyncRunner asyncRunner;
   private final ValidatorLogger validatorLogger;
 
   public FailoverValidatorApiHandler(
-      final List<RemoteValidatorApiChannel> delegates,
-      final AsyncRunner asyncRunner,
-      final ValidatorLogger validatorLogger) {
+      final List<RemoteValidatorApiChannel> delegates, final ValidatorLogger validatorLogger) {
     checkArgument(
         delegates.size() > 1,
         "More than one Beacon Node endpoints should be defined to use the failover feature.");
     this.primaryDelegate = delegates.get(0);
     this.failoverDelegates = delegates.subList(1, delegates.size());
-    this.asyncRunner = asyncRunner;
     this.validatorLogger = validatorLogger;
   }
 
@@ -210,16 +205,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
    */
   @SuppressWarnings("FutureReturnValueIgnored")
   private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
-    final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
     for (RemoteValidatorApiChannel failover : failoverDelegates) {
-      asyncRunner
-          .runAsync(() -> request.run(failover))
+      request
+          .run(failover)
           .handleException(
               throwable ->
                   validatorLogger.relayedRequestToFailoverBeaconNodeFailed(
                       failover.getEndpoint(), throwable));
     }
-    return primaryResponse;
+    return request.run(primaryDelegate);
   }
 
   /**
