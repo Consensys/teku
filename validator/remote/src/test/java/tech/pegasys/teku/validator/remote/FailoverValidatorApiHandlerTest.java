@@ -39,6 +39,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -65,6 +66,8 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.ValidatorApiChannelRequest;
 
 class FailoverValidatorApiHandlerTest {
+
+  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   private static final IllegalStateException EXCEPTION = new IllegalStateException("oopsy");
 
@@ -96,7 +99,9 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            List.of(primaryApiChannel, failoverApiChannel1, failoverApiChannel2), validatorLogger);
+            List.of(primaryApiChannel, failoverApiChannel1, failoverApiChannel2),
+            stubAsyncRunner,
+            validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -175,8 +180,10 @@ class FailoverValidatorApiHandlerTest {
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
     assertThat(result).isCompletedWithValue(response);
-
     verifyCallIsMade.accept(primaryApiChannel);
+
+    stubAsyncRunner.executeQueuedActions();
+
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
@@ -196,8 +203,10 @@ class FailoverValidatorApiHandlerTest {
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
     assertThat(result).isCompletedWithValue(response);
-
     verifyCallIsMade.accept(primaryApiChannel);
+
+    stubAsyncRunner.executeQueuedActions();
+
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
@@ -218,8 +227,10 @@ class FailoverValidatorApiHandlerTest {
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
     assertThat(result).isCompletedExceptionally();
-
     verifyCallIsMade.accept(primaryApiChannel);
+
+    stubAsyncRunner.executeQueuedActions();
+
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
