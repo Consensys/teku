@@ -60,36 +60,42 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final boolean blinded);
 
-  SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
+  SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 slot, final int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
+  SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot);
 
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
-      UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot);
 
-  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
+  SafeFuture<Void> subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests);
 
-  void subscribeToSyncCommitteeSubnets(Collection<SyncCommitteeSubnetSubscription> subscriptions);
+  SafeFuture<Void> subscribeToSyncCommitteeSubnets(
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions);
 
-  void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
+  SafeFuture<Void> subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions);
 
-  SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations);
+  SafeFuture<List<SubmitDataError>> sendSignedAttestations(final List<Attestation> attestations);
 
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
-      List<SignedAggregateAndProof> aggregateAndProofs);
+      final List<SignedAggregateAndProof> aggregateAndProofs);
 
-  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
-      List<SyncCommitteeMessage> syncCommitteeMessages);
+      final List<SyncCommitteeMessage> syncCommitteeMessages);
 
   SafeFuture<Void> sendSignedContributionAndProofs(
-      Collection<SignedContributionAndProof> signedContributionAndProofs);
+      final Collection<SignedContributionAndProof> signedContributionAndProofs);
 
   SafeFuture<Void> prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers);
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
   SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations);

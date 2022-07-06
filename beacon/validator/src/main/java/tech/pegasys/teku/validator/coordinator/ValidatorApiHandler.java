@@ -417,11 +417,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
+    return SafeFuture.fromRunnable(() -> processCommitteeSubscriptionRequests(requests));
+  }
+
+  public void processCommitteeSubscriptionRequests(
+      final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
-          // The old subscription API can't provide the validator ID so until it can be removed,
-          // don't track validators from those calls - they should use the old API to subscribe to
+          // The old subscription API can't provide the validator ID so until it can be
+          // removed,
+          // don't track validators from those calls - they should use the old API to
+          // subscribe to
           // persistent subnets.
           if (request.getValidatorIndex() != UNKNOWN_VALIDATOR_ID) {
             activeValidatorTracker.onCommitteeSubscriptionRequest(
@@ -436,7 +444,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+    return SafeFuture.fromRunnable(() -> processSyncCommitteeSubnetSubscriptions(subscriptions));
+  }
+
+  private void processSyncCommitteeSubnetSubscriptions(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
       // untilEpoch is exclusive, so it will unsubscribe at the first slot of the specified index
@@ -454,8 +467,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions);
+  public SafeFuture<Void> subscribeToPersistentSubnets(
+      Set<SubnetSubscription> subnetSubscriptions) {
+    return SafeFuture.fromRunnable(
+        () -> attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
   @Override

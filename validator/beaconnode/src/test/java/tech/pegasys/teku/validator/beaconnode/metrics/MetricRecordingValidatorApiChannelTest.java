@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -147,8 +146,14 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getNoResponseCallArguments")
   public void shouldRecordCallsWithNoResponse(
-      final String name, final Consumer<ValidatorApiChannel> method, final String counterName) {
-    method.accept(apiChannel);
+      final String name,
+      final Function<ValidatorApiChannel, SafeFuture<Void>> method,
+      final String counterName) {
+    when(method.apply(delegate)).thenReturn(SafeFuture.COMPLETE);
+
+    final SafeFuture<Void> result = method.apply(apiChannel);
+
+    assertThat(result).isCompleted();
 
     Assertions.assertThat(
             metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, counterName).getValue())
@@ -168,7 +173,9 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   private static Arguments noResponseTest(
-      final String name, final Consumer<ValidatorApiChannel> method, final String counterName) {
+      final String name,
+      final Function<ValidatorApiChannel, SafeFuture<Void>> method,
+      final String counterName) {
     return Arguments.of(name, method, counterName);
   }
 

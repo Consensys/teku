@@ -17,11 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 /** Batches requests to subscribe to beacon committees. */
 public class BeaconCommitteeSubscriptions {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Queue<CommitteeSubscriptionRequest> pendingRequests = new ConcurrentLinkedQueue<>();
   private final ValidatorApiChannel validatorApiChannel;
 
@@ -43,6 +48,9 @@ public class BeaconCommitteeSubscriptions {
     if (requestsToSend.isEmpty()) {
       return;
     }
-    validatorApiChannel.subscribeToBeaconCommittee(requestsToSend);
+    validatorApiChannel
+        .subscribeToBeaconCommittee(requestsToSend)
+        .finish(
+            error -> LOG.error("Failed to subscribe to beacon committee for aggregation.", error));
   }
 }
