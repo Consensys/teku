@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -323,6 +324,41 @@ public class ExternalSignerIntegrationTest {
                 createForkInfo(fork),
                 "voluntary_exit",
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(metricsSystem, 1, 0, 0);
+  }
+
+  @Test
+  public void shouldSignValidatorRegistration() throws Exception {
+    final ValidatorRegistration validatorRegistration =
+        dataStructureUtil.randomValidatorRegistration();
+    final UInt64 epoch = UInt64.valueOf(7);
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "pTYaqzqFTKb4bOX8kc8vEFj6z/eLbYH9+uGeFFxtklCUlPqugzAQyc7y/8KPcBPJBzRv5Knuph2wnGIyY2c0YbQzblvfXlPGjhBMhL/t8iaS4uF5mYvrZDKefXoNF9TB"));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+    final BLSSignature response =
+        externalSigner.signValidatorRegistration(validatorRegistration, epoch).join();
+    assertThat(response).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(
+            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch),
+            SignType.VALIDATOR_REGISTRATION,
+            Map.of(
+                "validator_registration",
+                Map.of(
+                    "fee_recipient",
+                    validatorRegistration.getFeeRecipient().toHexString(),
+                    "gas_limit",
+                    validatorRegistration.getGasLimit(),
+                    "timestamp",
+                    validatorRegistration.getTimestamp(),
+                    "pubkey",
+                    validatorRegistration.getPublicKey().toString()),
+                "epoch",
+                epoch));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
     validateMetrics(metricsSystem, 1, 0, 0);
   }
