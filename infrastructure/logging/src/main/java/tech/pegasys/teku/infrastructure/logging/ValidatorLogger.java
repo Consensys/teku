@@ -182,7 +182,7 @@ public class ValidatorLogger {
       final URI failoverEndpoint, final Throwable error) {
     final String warningMessage =
         String.format(
-            "%sRemote request to failover Beacon Node %s failed. This means that the node may not be ready to be a failover if required.",
+            "%sRemote request sent to all failover Beacon Nodes failed on %s. This means that the node may not be ready to be a failover if required.",
             PREFIX, failoverEndpoint);
     log.warn(ColorConsolePrinter.print(warningMessage, Color.YELLOW), error);
   }

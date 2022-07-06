@@ -62,19 +62,23 @@ public class ValidatorClientOptions {
   }
 
   public URI parseBeaconNodeApiEndpoint() {
-    return parseApiEndpoint(beaconNodeApiEndpoint);
+    return parseBeaconNodeApiEndpoint(beaconNodeApiEndpoint);
   }
 
   private List<URI> parseBeaconNodeApiEndpoints() {
-    return beaconNodeApiEndpoints.stream().map(this::parseApiEndpoint).collect(Collectors.toList());
+    return beaconNodeApiEndpoints.stream()
+        .map(this::parseBeaconNodeApiEndpoint)
+        .collect(Collectors.toList());
   }
 
-  private URI parseApiEndpoint(String apiEndpoint) {
+  private URI parseBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
     try {
-      return new URI(apiEndpoint);
+      return new URI(beaconNodeApiEndpoint);
     } catch (URISyntaxException e) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. Beacon node API endpoint is not a valid URL: " + apiEndpoint, e);
+          "Invalid configuration. Beacon node API endpoint is not a valid URL: "
+              + beaconNodeApiEndpoint,
+          e);
     }
   }
 }
