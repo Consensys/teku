@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -55,7 +56,6 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
   public void shouldRecordSuccessfulRequestForData(
-      final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
       final String counterName,
       final Object value) {
@@ -74,10 +74,8 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
   public void shouldRecordFailedRequestForData(
-      final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
-      final String counterName,
-      final Object value) {
+      final String counterName) {
     final RuntimeException exception = new RuntimeException("Nope");
     when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(exception));
 
@@ -93,10 +91,8 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
   public void shouldRecordRequestForDataWhenDataUnavailable(
-      final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
-      final String counterName,
-      final Object value) {
+      final String counterName) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<Object>> result = method.apply(apiChannel);
@@ -110,10 +106,8 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getSendDataArguments")
   void shouldRecordSuccessfulSendRequest(
-      final String name,
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
-      final String counterName,
-      final List<Object> failures) {
+      final String counterName) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(emptyList()));
 
     final SafeFuture<List<Object>> result = method.apply(apiChannel);
@@ -128,7 +122,6 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getSendDataArguments")
   void shouldRecordFailingSendRequest(
-      final String name,
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
       final String counterName,
       final List<Object> failures) {
@@ -146,9 +139,7 @@ class MetricRecordingValidatorApiChannelTest {
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getNoResponseCallArguments")
   public void shouldRecordCallsWithNoResponse(
-      final String name,
-      final Function<ValidatorApiChannel, SafeFuture<Void>> method,
-      final String counterName) {
+      final Function<ValidatorApiChannel, SafeFuture<Void>> method, final String counterName) {
     when(method.apply(delegate)).thenReturn(SafeFuture.COMPLETE);
 
     final SafeFuture<Void> result = method.apply(apiChannel);
@@ -176,7 +167,7 @@ class MetricRecordingValidatorApiChannelTest {
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Void>> method,
       final String counterName) {
-    return Arguments.of(name, method, counterName);
+    return Arguments.of(Named.named(name, method), counterName);
   }
 
   public static Stream<Arguments> getDataRequestArguments() {
@@ -251,7 +242,7 @@ class MetricRecordingValidatorApiChannelTest {
       final Function<ValidatorApiChannel, SafeFuture<Optional<T>>> method,
       final String counterName,
       final T presentValue) {
-    return Arguments.of(name, method, counterName, presentValue);
+    return Arguments.of(Named.named(name, method), counterName, presentValue);
   }
 
   private static <T> Arguments sendDataTest(
@@ -259,7 +250,7 @@ class MetricRecordingValidatorApiChannelTest {
       final Function<ValidatorApiChannel, SafeFuture<List<T>>> method,
       final String counterName,
       final List<T> errors) {
-    return Arguments.of(name, method, counterName, errors);
+    return Arguments.of(Named.named(name, method), counterName, errors);
   }
 
   private long getCounterValue(final String counterName, final RequestOutcome outcome) {
