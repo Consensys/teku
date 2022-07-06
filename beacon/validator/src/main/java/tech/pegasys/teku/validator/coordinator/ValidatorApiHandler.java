@@ -426,10 +426,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
-          // The old subscription API can't provide the validator ID so until it can be
-          // removed,
-          // don't track validators from those calls - they should use the old API to
-          // subscribe to
+          // The old subscription API can't provide the validator ID so until it can be removed,
+          // don't track validators from those calls - they should use the old API to subscribe to
           // persistent subnets.
           if (request.getValidatorIndex() != UNKNOWN_VALIDATOR_ID) {
             activeValidatorTracker.onCommitteeSubscriptionRequest(
