@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 public enum ExecutionPayloadStatus {
-  //dummy
   VALID(Validity.VALID),
   INVALID(Validity.INVALID),
   SYNCING(Validity.NOT_VALIDATED),
