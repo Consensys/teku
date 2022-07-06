@@ -224,8 +224,25 @@ class RestExecutionBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              SignedBuilderBid responsePayload = response.getPayload();
-              verifySignedBuilderBidResponse(responsePayload);
+              assertThat(response.getPayload())
+                  .isPresent()
+                  .hasValueSatisfying(this::verifySignedBuilderBidResponse);
+            });
+
+    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+  }
+
+  @TestTemplate
+  void getExecutionPayloadHeader_noHeaderAvailable() {
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+        .satisfies(
+            response -> {
+              assertThat(response.isSuccess()).isTrue();
+              assertThat(response.getPayload()).isEmpty();
             });
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);

@@ -239,7 +239,12 @@ public class TerminalPowBlockMonitor {
               final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
-                checkTtdEta(powBlock);
+                try {
+                  checkTtdEta(powBlock);
+                } catch (Exception ex) {
+                  LOG.debug("TTD ETA calculation exception", ex);
+                }
+
                 return SafeFuture.COMPLETE;
               }
               if (powBlock.getBlockTimestamp().isGreaterThan(timeProvider.getTimeInSeconds())) {

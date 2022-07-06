@@ -40,6 +40,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
@@ -157,4 +158,13 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<Integer> TARGET_PEER_COUNT_PARAMETER =
       new ParameterMetadata<>(
           TARGET_PEER_COUNT, INTEGER_TYPE.withDescription(TARGET_PEER_COUNT_DESCRIPTION));
+
+  public static final ParameterMetadata<String> TOPICS_PARAMETER =
+      new ParameterMetadata<>(
+          TOPICS,
+          CoreTypes.string(
+              "Event types to subscribe to."
+                  + " Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, "
+                  + "`attestation`, `voluntary_exit`, `contribution_and_proof`]\n\n",
+              "head"));
 }

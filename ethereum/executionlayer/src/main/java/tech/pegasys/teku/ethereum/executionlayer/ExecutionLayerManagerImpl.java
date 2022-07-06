@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -180,7 +181,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     updateBuilderAvailability();
     slotToLocalElFallbackData
         .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
@@ -289,7 +290,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      TransitionConfiguration transitionConfiguration) {
+      final TransitionConfiguration transitionConfiguration) {
     LOG.trace(
         "calling engineExchangeTransitionConfiguration(transitionConfiguration={})",
         transitionConfiguration);
@@ -314,6 +315,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling builderRegisterValidator(slot={},signedValidatorRegistrations={})",
         slot,
         signedValidatorRegistrations);
+
+    if (!isBuilderAvailable()) {
+      return SafeFuture.failedFuture(
+          new RuntimeException("unable to register validators: builder not available"));
+    }
+
     return executionBuilderClient
         .orElseThrow()
         .registerValidators(slot, signedValidatorRegistrations)
@@ -368,21 +375,27 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
-            signedBuilderBid -> {
-              LOG.trace(
-                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                  slot,
-                  validatorPublicKey,
-                  executionPayloadContext.getParentHash(),
-                  signedBuilderBid);
-              final BuilderBid builderBid = signedBuilderBid.getMessage();
-              logReceivedBuilderBid(builderBid);
+            signedBuilderBidMaybe ->
+                LOG.trace(
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                    slot,
+                    validatorPublicKey,
+                    executionPayloadContext.getParentHash(),
+                    signedBuilderBidMaybe))
+        .thenComposeChecked(
+            signedBuilderBidMaybe -> {
+              if (signedBuilderBidMaybe.isEmpty()) {
+                return getHeaderFromLocalExecutionPayload(
+                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+              }
+              final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
+              logReceivedBuilderBid(signedBuilderBid.getMessage());
+              final ExecutionPayloadHeader executionPayloadHeader =
+                  builderBidValidator.validateAndGetPayloadHeader(
+                      spec, signedBuilderBid, validatorRegistration.get(), state);
+              slotToLocalElFallbackData.put(slot, Optional.empty());
+              return SafeFuture.completedFuture(executionPayloadHeader);
             })
-        .thenApplyChecked(
-            signedBuilderBid ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    spec, signedBuilderBid, validatorRegistration.get(), state))
-        .thenPeek(__ -> slotToLocalElFallbackData.put(slot, Optional.empty()))
         .exceptionallyCompose(
             error -> {
               LOG.error(
@@ -446,7 +459,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return executionBuilderClient
-        .orElseThrow()
+        .orElseThrow(
+            () ->
+                new RuntimeException(
+                    "unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBeaconBlock)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
@@ -474,7 +490,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return latestBuilderAvailability.get();
   }
 
-  private static <K> K unwrapResponseOrThrow(Response<K> response) {
+  private static <K> K unwrapResponseOrThrow(final Response<K> response) {
     checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
     return response.getPayload();
   }
@@ -499,7 +515,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
   }
 
-  private void markBuilderAsNotAvailable(String errorMessage) {
+  private void markBuilderAsNotAvailable(final String errorMessage) {
     latestBuilderAvailability.set(false);
     eventLogger.executionBuilderIsOffline(errorMessage);
   }
@@ -539,7 +555,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final ExecutionPayload executionPayload;
     final FallbackReason reason;
 
-    public FallbackData(ExecutionPayload executionPayload, FallbackReason reason) {
+    public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
       this.executionPayload = executionPayload;
       this.reason = reason;
     }
@@ -568,6 +584,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     VALIDATOR_NOT_REGISTERED("validator_not_registered"),
     FORCED("forced"),
     BUILDER_NOT_AVAILABLE("builder_not_available"),
+    BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
     BUILDER_ERROR("builder_error"),
     NONE("");
 

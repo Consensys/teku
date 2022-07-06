@@ -113,6 +113,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
@@ -332,18 +333,21 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void start() {
+  public SafeFuture<?> start() {
     try {
       app.start();
+      return SafeFuture.COMPLETE;
     } catch (RuntimeException ex) {
       if (Throwables.getRootCause(ex) instanceof BindException) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "TCP Port %d is already in use. "
-                    + "You may need to stop another process or change the HTTP port for this process.",
-                getListenPort()));
+        return SafeFuture.failedFuture(
+            new InvalidConfigurationException(
+                String.format(
+                    "TCP Port %d is already in use. "
+                        + "You may need to stop another process or change the HTTP port for this process.",
+                    getListenPort())));
       }
     }
+    return SafeFuture.COMPLETE;
   }
 
   public int getListenPort() {
@@ -473,8 +477,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
-    app.get(
-        GetEvents.ROUTE,
+    addMigratedEndpoint(
         new GetEvents(
             dataProvider,
             eventChannels,
@@ -484,14 +487,16 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     try {
       if (jettyServer != null) {
         jettyServer.stop();
       }
     } catch (Exception ex) {
       LOG.error(ex);
+      return SafeFuture.failedFuture(ex);
     }
     app.stop();
+    return SafeFuture.COMPLETE;
   }
 }
