@@ -116,6 +116,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -1213,6 +1214,16 @@ public final class DataStructureUtil {
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty());
+  }
+
+  public BeaconPreparableProposer randomBeaconPreparableProposer() {
+    return new BeaconPreparableProposer(randomUInt64(), randomEth1Address());
+  }
+
+  public List<BeaconPreparableProposer> randomBeaconPreparableProposers(final int size) {
+    return IntStream.range(0, size)
+        .mapToObj(__ -> randomBeaconPreparableProposer())
+        .collect(toList());
   }
 
   public ValidatorRegistration randomValidatorRegistration() {

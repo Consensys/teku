@@ -13,55 +13,48 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
 import java.util.List;
-import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 
-class PostPrepareBeaconProposerTest {
+class PostPrepareBeaconProposerTest extends AbstractMigratedBeaconHandlerTest {
 
-  private final Context context = mock(Context.class);
-  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
-
-  private final PostPrepareBeaconProposer handler = new PostPrepareBeaconProposer(provider, true);
-
-  @Test
-  public void shouldReturnBadRequestWhenRequestBodyIsInvalid() {
-    final String input = "{\"foo\": \"bar\"}";
-    when(context.bodyAsInputStream()).thenReturn(IOUtils.toInputStream(input, UTF_8));
-
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(JsonProcessingException.class);
+  @BeforeEach
+  void setup() {
+    setHandler(new PostPrepareBeaconProposer(validatorDataProvider, true));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
-  public void shouldReturnSuccessWhenPostingValidData() throws Exception {
-    final BeaconPreparableProposer proposer1 =
-        new BeaconPreparableProposer(UInt64.valueOf(1), Eth1Address.ZERO);
-    final BeaconPreparableProposer proposer2 =
-        new BeaconPreparableProposer(
-            UInt64.valueOf(10),
-            Eth1Address.fromHexString("0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836"));
+  public void shouldReturnOK() throws JsonProcessingException {
 
-    final String requestJson = jsonProvider.objectToJSON(List.of(proposer1, proposer2));
-    when(context.bodyAsInputStream()).thenReturn(IOUtils.toInputStream(requestJson, UTF_8));
+    final List<BeaconPreparableProposer> requestBody =
+        dataStructureUtil.randomBeaconPreparableProposers(2);
 
-    handler.handle(context);
+    when(validatorDataProvider.prepareBeaconProposer(requestBody)).thenReturn(SafeFuture.COMPLETE);
 
-    verify(context).status(SC_OK);
+    request.setRequestBody(requestBody);
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 }

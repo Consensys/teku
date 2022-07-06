@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
@@ -43,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
 
-  private static final DeserializableTypeDefinition<BeaconPreparableProposer>
+  public static final DeserializableTypeDefinition<BeaconPreparableProposer>
       BEACON_PREPARABLE_PROPOSER_TYPE =
           DeserializableTypeDefinition.object(
                   BeaconPreparableProposer.class, BeaconPreparableProposer.Builder.class)
@@ -113,8 +114,10 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
     if (!isProposerDefaultFeeRecipientDefined) {
       STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
     }
-    validatorDataProvider.prepareBeaconProposer(request.getRequestBody());
-    request.respondWithCode(SC_OK);
+    request.respondAsync(
+        validatorDataProvider
+            .prepareBeaconProposer(request.getRequestBody())
+            .thenApply(AsyncApiResponse::respondOk));
   }
 
   private static EndpointMetadata createMetadata() {
