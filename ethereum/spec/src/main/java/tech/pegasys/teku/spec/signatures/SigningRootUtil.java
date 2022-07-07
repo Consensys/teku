@@ -118,9 +118,10 @@ public class SigningRootUtil {
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
   }
 
-  // overloaded method that uses the instance Spec instead of epoch to calculate the signing. Used by non-Teku clients
-  // of this library.
-  public Bytes signingRootForValidatorRegistration(final ValidatorRegistration validatorRegistration) {
+  /* overloaded method that uses the instance Spec instead of epoch to calculate the signing. Used
+  by non-Teku clients of this library. */
+  public Bytes signingRootForValidatorRegistration(
+      final ValidatorRegistration validatorRegistration) {
     MiscHelpers miscHelpers = new MiscHelpers(spec.getGenesisSpecConfig());
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
