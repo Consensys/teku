@@ -13,18 +13,15 @@
 
 package tech.pegasys.teku.cli.util;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.stream.Stream;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class EnvironmentVariableParamsProvider implements AdditionalParamsProvider {
+public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<String>
+    implements AdditionalParamsProvider {
   private static final String ENV_VAR_PREFIX = "TEKU_";
 
   private final CommandLine commandLine;
@@ -38,49 +35,26 @@ public class EnvironmentVariableParamsProvider implements AdditionalParamsProvid
 
   @Override
   public Map<String, String> getAdditionalParams(List<OptionSpec> potentialParams) {
-    final Map<String, String> additionalParams = new HashMap<>();
-
-    environment.entrySet().stream()
-        .filter(envEntry -> envEntry.getKey().startsWith(ENV_VAR_PREFIX))
-        .flatMap(this::translateEntry)
-        .flatMap(yamlEntry -> mapParam(potentialParams, yamlEntry).stream())
-        .forEach(
-            mappedParam ->
-                additionalParams.merge(
-                    mappedParam.getKey(),
-                    mappedParam.getValue(),
-                    (conflict1, conflict2) -> {
-                      throw new ParameterException(
-                          commandLine,
-                          String.format(
-                              "Multiple environment options referring to the same configuration '%s'. Conflicting values: %s and %s",
-                              mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
-                    }));
-    return additionalParams;
+    return getAdditionalParam(potentialParams, environment);
   }
 
-  private Stream<Entry<String, String>> translateEntry(final Entry<String, String> envEntry) {
-    final String translatedKey =
-        envEntry.getKey().substring(ENV_VAR_PREFIX.length()).replace('_', '-');
-    return Stream.of(
-        Map.entry("--" + translatedKey, envEntry.getValue()),
-        Map.entry("-" + translatedKey, envEntry.getValue()));
+  @Override
+  protected String onConflict(
+      final Entry<String, String> mappedParam, final String conflict1, final String conflict2) {
+    throw new ParameterException(
+        commandLine,
+        String.format(
+            "Multiple environment options referring to the same configuration '%s'. Conflicting values: %s and %s",
+            mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
   }
 
-  private Optional<Entry<String, String>> mapParam(
-      final List<OptionSpec> potentialParams, final Map.Entry<String, String> envEntry) {
-    return potentialParams.stream()
-        .filter(optionSpec -> matchKey(optionSpec, envEntry.getKey()))
-        .findFirst()
-        .map(optionSpec -> translateToArg(optionSpec, envEntry));
+  @Override
+  protected String translateKey(String key) {
+    return key.substring(ENV_VAR_PREFIX.length()).replace('_', '-');
   }
 
-  private boolean matchKey(final OptionSpec matchedOption, final String envVarTranslatedName) {
-    return Arrays.stream(matchedOption.names())
-        .anyMatch(name -> name.equalsIgnoreCase(envVarTranslatedName));
-  }
-
-  private Map.Entry<String, String> translateToArg(
+  @Override
+  protected Map.Entry<String, String> translateToArg(
       OptionSpec matchedOption, Map.Entry<String, String> envEntry) {
     return Map.entry(matchedOption.longestName(), envEntry.getValue());
   }

@@ -22,25 +22,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
+public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
+    implements AdditionalParamsProvider {
   private final CommandLine commandLine;
   private final File configFile;
   // this will be initialized on fist call of defaultValue by PicoCLI parseArgs
@@ -59,45 +56,26 @@ public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
       checkUnknownOptions(result);
     }
 
-    final Map<String, String> additionalParams = new HashMap<>();
-    result.entrySet().stream()
-        .flatMap(this::translateEntry)
-        .flatMap(yamlEntry -> mapParam(potentialParams, yamlEntry).stream())
-        .forEach(
-            mappedParam ->
-                additionalParams.merge(
-                    mappedParam.getKey(),
-                    mappedParam.getValue(),
-                    (conflict1, conflict2) -> {
-                      throw new ParameterException(
-                          commandLine,
-                          String.format(
-                              "Multiple options referring to the same configuration '%s'. Conflicting values: %s and %s",
-                              mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
-                    }));
-    return additionalParams;
+    return getAdditionalParam(potentialParams, result);
   }
 
-  private Stream<Entry<String, Object>> translateEntry(final Entry<String, Object> yamlEntry) {
-    return Stream.of(
-        Map.entry("--" + yamlEntry.getKey(), yamlEntry.getValue()),
-        Map.entry("-" + yamlEntry.getKey(), yamlEntry.getValue()));
+  @Override
+  protected String onConflict(
+      final Entry<String, String> mappedParam, final String conflict1, final String conflict2) {
+    throw new ParameterException(
+        commandLine,
+        String.format(
+            "Multiple options referring to the same configuration '%s'. Conflicting values: %s and %s",
+            mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
   }
 
-  private Optional<Map.Entry<String, String>> mapParam(
-      final List<OptionSpec> potentialParams, final Map.Entry<String, Object> yamlEntry) {
-    return potentialParams.stream()
-        .filter(optionSpec -> matchKey(optionSpec, yamlEntry.getKey()))
-        .findFirst()
-        .map(optionSpec -> translateToArg(optionSpec, yamlEntry));
+  @Override
+  protected String translateKey(String key) {
+    return key;
   }
 
-  private boolean matchKey(final OptionSpec matchedOption, final String yamlTranslatedKey) {
-    return Arrays.stream(matchedOption.names())
-        .anyMatch(name -> name.equalsIgnoreCase(yamlTranslatedKey));
-  }
-
-  private Map.Entry<String, String> translateToArg(
+  @Override
+  protected Map.Entry<String, String> translateToArg(
       OptionSpec matchedOption, Map.Entry<String, Object> yamlEntry) {
     final Object value = yamlEntry.getValue();
 

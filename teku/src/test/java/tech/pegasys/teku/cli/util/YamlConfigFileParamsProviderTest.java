@@ -69,7 +69,7 @@ class YamlConfigFileParamsProviderTest {
       throws IOException {
     final Map<String, Object> options = new HashMap<>();
     options.put("n", List.of("b", "a"));
-    options.put("names", List.of("b", "a"));
+    options.put("names", List.of("b", "c"));
     final Path configFile = writeToYamlConfigFile(options, tempDir);
     final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
         new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
