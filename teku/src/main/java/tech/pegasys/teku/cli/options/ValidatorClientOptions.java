@@ -37,8 +37,10 @@ public class ValidatorClientOptions {
   @Option(
       names = {"--Xbeacon-node-api-endpoints"},
       paramLabel = "<ENDPOINT>",
-      description = "Endpoint(s) of a Beacon Node REST API",
+      description =
+          "Beacon Node API endpoint(s). If more than one is defined, the first will be used as a primary node and other(s) will be used as failovers.",
       split = ",",
+      hidden = true,
       arity = "1..*")
   private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
 

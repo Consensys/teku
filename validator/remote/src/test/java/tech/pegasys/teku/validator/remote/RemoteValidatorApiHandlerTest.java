@@ -33,13 +33,13 @@ import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_P
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
+import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,7 +85,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 class RemoteValidatorApiHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final URI endpoint = URI.create("localhost:5051");
+  private final HttpUrl endpoint = HttpUrl.get("http://localhost:5051");
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
@@ -104,7 +104,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getsEndpoint() {
-    assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint);
+    assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint.uri());
   }
 
   @Test

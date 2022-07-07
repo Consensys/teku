@@ -63,7 +63,7 @@ class OkHttpValidatorTypeDefClientTest {
     mockWebServer.start();
     okHttpValidatorTypeDefClient =
         new OkHttpValidatorTypeDefClient(
-            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
+            mockWebServer.url("/"), okHttpClient, specContext.getSpec(), false);
     sszRegisterValidatorsRequest =
         new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
     dataStructureUtil = specContext.getDataStructureUtil();

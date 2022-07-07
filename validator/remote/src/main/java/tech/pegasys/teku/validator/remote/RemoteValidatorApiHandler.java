@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import okhttp3.HttpUrl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -83,14 +84,14 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final Spec spec;
-  private final URI endpoint;
+  private final HttpUrl endpoint;
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
 
   public RemoteValidatorApiHandler(
       final Spec spec,
-      final URI endpoint,
+      final HttpUrl endpoint,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner) {
@@ -103,7 +104,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public URI getEndpoint() {
-    return endpoint;
+    return endpoint.uri();
   }
 
   @Override

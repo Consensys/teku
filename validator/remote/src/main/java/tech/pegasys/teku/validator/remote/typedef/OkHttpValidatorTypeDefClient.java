@@ -33,8 +33,8 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockReques
 
 public class OkHttpValidatorTypeDefClient {
 
-  private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
+  private final OkHttpClient okHttpClient;
 
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
@@ -43,12 +43,12 @@ public class OkHttpValidatorTypeDefClient {
   private final RegisterValidatorsRequest registerValidatorsRequest;
 
   public OkHttpValidatorTypeDefClient(
-      final OkHttpClient okHttpClient,
       final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
       final Spec spec,
       final boolean preferSszBlockEncoding) {
-    this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
+    this.okHttpClient = okHttpClient;
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
