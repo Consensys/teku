@@ -16,9 +16,11 @@ package tech.pegasys.teku.validator.client.duties;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -43,6 +45,8 @@ class BeaconCommitteeSubscriptionsTest {
             new CommitteeSubscriptionRequest(1, 2, UInt64.valueOf(3), UInt64.valueOf(5), true),
             new CommitteeSubscriptionRequest(6, 7, UInt64.valueOf(8), UInt64.valueOf(9), false));
     requests.forEach(subscriptions::subscribeToBeaconCommittee);
+    when(validatorApiChannel.subscribeToBeaconCommittee(requests)).thenReturn(SafeFuture.COMPLETE);
+
     subscriptions.sendRequests();
 
     verify(validatorApiChannel).subscribeToBeaconCommittee(requests);

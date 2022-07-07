@@ -15,6 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
@@ -27,12 +29,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
+    when(validatorDataProvider.subscribeToBeaconCommittee(any())).thenReturn(SafeFuture.COMPLETE);
     setHandler(new PostSubscribeToBeaconCommitteeSubnet(validatorDataProvider));
   }
 
