@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.util;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
@@ -49,8 +50,11 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
   }
 
   @Override
-  protected String translateKey(String key) {
-    return key.substring(ENV_VAR_PREFIX.length()).replace('_', '-');
+  protected Optional<String> translateKey(String key) {
+    if (key.length() <= ENV_VAR_PREFIX.length()) {
+      return Optional.empty();
+    }
+    return Optional.of(key.substring(ENV_VAR_PREFIX.length()).replace('_', '-'));
   }
 
   @Override

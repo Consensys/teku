@@ -27,6 +27,7 @@ public abstract class AbstractParamsProvider<V> {
   protected Map<String, String> getAdditionalParam(
       final List<OptionSpec> potentialParams, final Map<String, V> config) {
     final Map<String, String> additionalParams = new HashMap<>();
+
     config.entrySet().stream()
         .flatMap(this::translateEntry)
         .flatMap(translatedEntry -> mapParam(potentialParams, translatedEntry).stream())
@@ -53,16 +54,20 @@ public abstract class AbstractParamsProvider<V> {
   }
 
   private Stream<Entry<String, V>> translateEntry(final Entry<String, V> configEntry) {
-    final String translatedKey = translateKey(configEntry.getKey());
+    final Optional<String> maybeTranslated = translateKey(configEntry.getKey());
+    if (maybeTranslated.isEmpty()) {
+      return Stream.of();
+    }
+
     return Stream.of(
-        Map.entry("--" + translatedKey, configEntry.getValue()),
-        Map.entry("-" + translatedKey, configEntry.getValue()));
+        Map.entry("--" + maybeTranslated.get(), configEntry.getValue()),
+        Map.entry("-" + maybeTranslated.get(), configEntry.getValue()));
   }
 
   protected abstract Entry<String, String> translateToArg(
       OptionSpec matchedOption, Entry<String, V> configEntry);
 
-  protected abstract String translateKey(String key);
+  protected abstract Optional<String> translateKey(String key);
 
   protected abstract String onConflict(
       Entry<String, String> mappedParam, String conflict1, String conflict2);
