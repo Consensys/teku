@@ -102,13 +102,13 @@ public class ProposerConfig {
     @JsonProperty(value = "fee_recipient")
     private Eth1Address feeRecipient;
 
-    @JsonProperty(value = "validator_registration")
+    @JsonProperty(value = "builder_registration")
     private ValidatorRegistration validatorRegistration;
 
     @JsonCreator
     public Config(
         @JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient,
-        @JsonProperty(value = "validator_registration")
+        @JsonProperty(value = "builder_registration")
             final ValidatorRegistration validatorRegistration) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;

@@ -534,7 +534,7 @@ public class ValidatorConfig {
     private void validateValidatorsRegistrationAndBlindedBlocks() {
       if (validatorsRegistrationDefaultEnabled && !blindedBlocksEnabled) {
         LOG.info(
-            "'--validators-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
+            "'--builder-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
         blindedBlocksEnabled = true;
       }
     }
@@ -542,7 +542,7 @@ public class ValidatorConfig {
     private void validatorsRegistrationDefaultEnabledOrProposerConfigSource() {
       if (validatorsRegistrationDefaultEnabled && proposerConfigSource.isPresent()) {
         throw new InvalidConfigurationException(
-            "Invalid configuration. --validators-registration-default-enabled cannot be specified when --validators-proposer-config is used");
+            "Invalid configuration. --builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
       }
     }
 

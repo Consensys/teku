@@ -106,7 +106,7 @@ class ValidatorConfigTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
-            "Invalid configuration. --validators-registration-default-enabled cannot be specified when --validators-proposer-config is used");
+            "Invalid configuration. --builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
   }
 
   @Test

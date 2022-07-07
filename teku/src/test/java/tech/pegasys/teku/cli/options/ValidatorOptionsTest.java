@@ -137,7 +137,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableValidatorRegistrationtWithBlindedBlocks() {
-    final String[] args = {"--validators-registration-default-enabled", "true"};
+    final String[] args = {"--builder-registration-default-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
             config.validatorClient().getValidatorConfig().isValidatorsRegistrationDefaultEnabled())

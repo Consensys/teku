@@ -48,7 +48,7 @@ public class ExecutionLayerOptions {
   private String engineJwtSecretFile = null;
 
   @Option(
-      names = {"--eb-endpoint"},
+      names = {"--builder-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Execution Builder node.",
       arity = "1")
