@@ -371,36 +371,34 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
-    sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests))
-        .finish(
-            error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
+    return sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests));
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    sendRequest(
-            () ->
-                apiClient.subscribeToSyncCommitteeSubnets(
-                    subscriptions.stream()
-                        .map(
-                            subscription ->
-                                new tech.pegasys.teku.api.schema.altair
-                                    .SyncCommitteeSubnetSubscription(
-                                    UInt64.valueOf(subscription.getValidatorIndex()),
-                                    subscription
-                                        .getSyncCommitteeIndices()
-                                        .intStream()
-                                        .mapToObj(UInt64::valueOf)
-                                        .collect(toList()),
-                                    subscription.getUntilEpoch()))
-                        .collect(toList())))
-        .finish(error -> LOG.error("Failed to subscribe to sync committee subnets", error));
+    return sendRequest(
+        () ->
+            apiClient.subscribeToSyncCommitteeSubnets(
+                subscriptions.stream()
+                    .map(
+                        subscription ->
+                            new tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription(
+                                UInt64.valueOf(subscription.getValidatorIndex()),
+                                subscription
+                                    .getSyncCommitteeIndices()
+                                    .intStream()
+                                    .mapToObj(UInt64::valueOf)
+                                    .collect(toList()),
+                                subscription.getUntilEpoch()))
+                    .collect(toList())));
   }
 
   @Override
-  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
+  public SafeFuture<Void> subscribeToPersistentSubnets(
+      final Set<SubnetSubscription> subnetSubscriptions) {
     final Set<tech.pegasys.teku.api.schema.SubnetSubscription> schemaSubscriptions =
         subnetSubscriptions.stream()
             .map(
@@ -409,8 +407,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         s.getSubnetId(), s.getUnsubscriptionSlot()))
             .collect(Collectors.toSet());
 
-    sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
-        .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
+    return sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions));
   }
 
   @Override

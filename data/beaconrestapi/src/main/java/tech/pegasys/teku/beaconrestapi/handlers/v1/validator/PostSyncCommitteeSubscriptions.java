@@ -39,6 +39,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -118,11 +119,14 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<PostSyncCommitteeData> requestData = request.getRequestBody();
-    provider.subscribeToSyncCommitteeSubnets(
+    final List<SyncCommitteeSubnetSubscription> subscriptions =
         requestData.stream()
             .map(PostSyncCommitteeData::toSyncCommitteeSubnetSubscription)
-            .collect(Collectors.toList()));
-    request.respondWithCode(SC_OK);
+            .collect(Collectors.toList());
+    request.respondAsync(
+        provider
+            .subscribeToSyncCommitteeSubnets(subscriptions)
+            .thenApply(AsyncApiResponse::respondOk));
   }
 
   public static class PostSyncCommitteeData {
