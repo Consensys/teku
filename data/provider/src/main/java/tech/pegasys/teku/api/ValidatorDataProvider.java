@@ -247,13 +247,14 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
-    validatorApiChannel.subscribeToBeaconCommittee(requests);
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
+    return validatorApiChannel.subscribeToBeaconCommittee(requests);
   }
 
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    validatorApiChannel.subscribeToSyncCommitteeSubnets(
+    return validatorApiChannel.subscribeToSyncCommitteeSubnets(
         subscriptions.stream()
             .map(
                 subscription ->
@@ -288,8 +289,9 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedContributionAndProofs(contributionAndProofs);
   }
 
-  public void prepareBeaconProposer(List<BeaconPreparableProposer> beaconPreparableProposers) {
-    validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
+  public SafeFuture<Void> prepareBeaconProposer(
+      List<BeaconPreparableProposer> beaconPreparableProposers) {
+    return validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   public SafeFuture<Void> registerValidators(

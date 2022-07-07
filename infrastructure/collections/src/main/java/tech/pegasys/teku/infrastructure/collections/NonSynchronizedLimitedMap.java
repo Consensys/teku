@@ -13,21 +13,17 @@
 
 package tech.pegasys.teku.infrastructure.collections;
 
-import java.util.Collections;
-
 /** Helper that creates a thread-safe map with a maximum capacity. */
-final class SynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
+final class NonSynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
 
-  public SynchronizedLimitedMap(final int maxSize) {
-    super(Collections.synchronizedMap(createLimitedMap(maxSize)), maxSize);
+  public NonSynchronizedLimitedMap(final int maxSize) {
+    super(createLimitedMap(maxSize), maxSize);
   }
 
   @Override
   public LimitedMap<K, V> copy() {
-    SynchronizedLimitedMap<K, V> map = new SynchronizedLimitedMap<>(getMaxSize());
-    synchronized (delegate) {
-      map.putAll(delegate);
-    }
+    NonSynchronizedLimitedMap<K, V> map = new NonSynchronizedLimitedMap<>(getMaxSize());
+    map.putAll(delegate);
     return map;
   }
 }
