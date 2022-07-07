@@ -283,22 +283,24 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
     subscribeAggregationRequestCounter.inc();
-    delegate.subscribeToBeaconCommittee(requests);
+    return delegate.subscribeToBeaconCommittee(requests);
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     subscribeSyncCommitteeRequestCounter.inc();
-    delegate.subscribeToSyncCommitteeSubnets(subscriptions);
+    return delegate.subscribeToSyncCommitteeSubnets(subscriptions);
   }
 
   @Override
-  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
+  public SafeFuture<Void> subscribeToPersistentSubnets(
+      final Set<SubnetSubscription> subnetSubscriptions) {
     subscribePersistentRequestCounter.inc();
-    delegate.subscribeToPersistentSubnets(subnetSubscriptions);
+    return delegate.subscribeToPersistentSubnets(subnetSubscriptions);
   }
 
   @Override
@@ -337,10 +339,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void prepareBeaconProposer(
+  public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     prepareBeaconProposerCounter.inc();
-    delegate.prepareBeaconProposer(beaconPreparableProposers);
+    return delegate.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   @Override

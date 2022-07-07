@@ -66,6 +66,9 @@ class SyncCommitteeScheduledDutiesTest {
 
   @Test
   void shouldSubscribeToSubnets() {
+    when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
+        .thenReturn(SafeFuture.COMPLETE);
+
     final SyncCommitteeScheduledDuties duties =
         validBuilder()
             .committeeAssignment(validator1, 50, 1)

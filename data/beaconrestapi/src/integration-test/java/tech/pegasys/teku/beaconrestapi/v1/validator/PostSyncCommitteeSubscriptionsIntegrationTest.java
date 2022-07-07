@@ -14,6 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class PostSyncCommitteeSubscriptionsIntegrationTest
@@ -40,6 +43,8 @@ public class PostSyncCommitteeSubscriptionsIntegrationTest
 
   @Test
   void shouldPostSubscriptions() throws IOException {
+    when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
+        .thenReturn(SafeFuture.COMPLETE);
     final List<SyncCommitteeSubnetSubscription> validators =
         List.of(new SyncCommitteeSubnetSubscription(ONE, List.of(ONE), ONE));
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);

@@ -417,7 +417,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
+    return SafeFuture.fromRunnable(() -> processCommitteeSubscriptionRequests(requests));
+  }
+
+  private void processCommitteeSubscriptionRequests(
+      final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
           // The old subscription API can't provide the validator ID so until it can be removed,
@@ -436,7 +442,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+    return SafeFuture.fromRunnable(() -> processSyncCommitteeSubnetSubscriptions(subscriptions));
+  }
+
+  private void processSyncCommitteeSubnetSubscriptions(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
       // untilEpoch is exclusive, so it will unsubscribe at the first slot of the specified index
@@ -454,8 +465,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions);
+  public SafeFuture<Void> subscribeToPersistentSubnets(
+      Set<SubnetSubscription> subnetSubscriptions) {
+    return SafeFuture.fromRunnable(
+        () -> attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
   @Override
@@ -619,10 +632,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void prepareBeaconProposer(
+  public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    proposersDataManager.updatePreparedProposers(
-        beaconPreparableProposers, combinedChainDataClient.getCurrentSlot());
+    return SafeFuture.fromRunnable(
+        () ->
+            proposersDataManager.updatePreparedProposers(
+                beaconPreparableProposers, combinedChainDataClient.getCurrentSlot()));
   }
 
   @Override
