@@ -50,11 +50,15 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
   }
 
   @Override
-  protected Optional<String> translateKey(String key) {
-    if (key.length() <= ENV_VAR_PREFIX.length()) {
+  protected Optional<Entry<String, String>> translateEntry(
+      final Entry<String, String> configEntry) {
+    if (configEntry.getKey().length() <= ENV_VAR_PREFIX.length()) {
       return Optional.empty();
     }
-    return Optional.of(key.substring(ENV_VAR_PREFIX.length()).replace('_', '-'));
+    return Optional.of(
+        Map.entry(
+            configEntry.getKey().substring(ENV_VAR_PREFIX.length()).replace('_', '-'),
+            configEntry.getValue()));
   }
 
   @Override

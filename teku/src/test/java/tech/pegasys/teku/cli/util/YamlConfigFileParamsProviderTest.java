@@ -97,7 +97,7 @@ class YamlConfigFileParamsProviderTest {
                 yamlConfigFileDefaultProvider.getAdditionalParams(
                     commandLine.getCommandSpec().options()))
         .withMessage(
-            "The option --count is single-valued but matched parameter in config file is multi-valued");
+            "The 'count' parameter in config file is multi-valued but the corresponding teku option is single-valued");
   }
 
   @Test

@@ -71,8 +71,9 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
   }
 
   @Override
-  protected Optional<String> translateKey(String key) {
-    return Optional.of(key);
+  protected Optional<Entry<String, Object>> translateEntry(
+      final Entry<String, Object> configEntry) {
+    return Optional.of(configEntry);
   }
 
   @Override
@@ -87,7 +88,7 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
         throwParameterException(
             new IllegalArgumentException(),
             String.format(
-                "The option %s is single-valued but matched parameter in config file is multi-valued",
+                "The '%s' parameter in config file is multi-valued but the corresponding teku option is single-valued",
                 yamlEntry.getKey()));
       }
       translatedValue =

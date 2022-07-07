@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Stream;
 import picocli.CommandLine.Model.OptionSpec;
 
 public abstract class AbstractParamsProvider<V> {
@@ -29,7 +28,7 @@ public abstract class AbstractParamsProvider<V> {
     final Map<String, String> additionalParams = new HashMap<>();
 
     config.entrySet().stream()
-        .flatMap(this::translateEntry)
+        .flatMap(configEntry -> translateEntry(configEntry).stream())
         .flatMap(translatedEntry -> mapParam(potentialParams, translatedEntry).stream())
         .forEach(
             mappedParam ->
@@ -48,26 +47,15 @@ public abstract class AbstractParamsProvider<V> {
         .map(optionSpec -> translateToArg(optionSpec, configEntry));
   }
 
-  protected boolean matchKey(final OptionSpec matchedOption, final String envVarTranslatedName) {
+  protected boolean matchKey(final OptionSpec matchedOption, final String configName) {
     return Arrays.stream(matchedOption.names())
-        .anyMatch(name -> name.equalsIgnoreCase(envVarTranslatedName));
+        .anyMatch(name -> name.replaceFirst("^-+", "").equalsIgnoreCase(configName));
   }
 
-  private Stream<Entry<String, V>> translateEntry(final Entry<String, V> configEntry) {
-    final Optional<String> maybeTranslated = translateKey(configEntry.getKey());
-    if (maybeTranslated.isEmpty()) {
-      return Stream.of();
-    }
-
-    return Stream.of(
-        Map.entry("--" + maybeTranslated.get(), configEntry.getValue()),
-        Map.entry("-" + maybeTranslated.get(), configEntry.getValue()));
-  }
+  protected abstract Optional<Entry<String, V>> translateEntry(final Entry<String, V> configEntry);
 
   protected abstract Entry<String, String> translateToArg(
       OptionSpec matchedOption, Entry<String, V> configEntry);
-
-  protected abstract Optional<String> translateKey(String key);
 
   protected abstract String onConflict(
       Entry<String, String> mappedParam, String conflict1, String conflict2);

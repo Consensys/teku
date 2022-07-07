@@ -235,14 +235,15 @@ public class BeaconNodeCommand implements Callable<Integer> {
     }
 
     // switch to last subcommand if needed
-    final ParseResult maybeSubCommandParseResult =
+    final ParseResult commandOrSubCommandParseResult =
         parseResult.hasSubcommand() ? parseResult.subcommand() : parseResult;
 
     // calculate potential additional params from config provider
     final List<OptionSpec> potentialAdditionalParams =
-        maybeSubCommandParseResult.commandSpec().options().stream()
+        commandOrSubCommandParseResult.commandSpec().options().stream()
             .filter(
-                optionSpec -> !maybeSubCommandParseResult.matchedOptionsSet().contains(optionSpec))
+                optionSpec ->
+                    !commandOrSubCommandParseResult.matchedOptionsSet().contains(optionSpec))
             .collect(Collectors.toUnmodifiableList());
 
     final AdditionalParamsProvider additionalParamsProvider =
