@@ -60,12 +60,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   private final ValidatorLogger validatorLogger;
 
   public FailoverValidatorApiHandler(
-      final List<RemoteValidatorApiChannel> delegates, final ValidatorLogger validatorLogger) {
+      final RemoteValidatorApiChannel primaryDelegate,
+      final List<RemoteValidatorApiChannel> failoverDelegates,
+      final ValidatorLogger validatorLogger) {
+    this.primaryDelegate = primaryDelegate;
     checkArgument(
-        delegates.size() > 1,
-        "More than one Beacon Node endpoints should be defined to use the failover feature.");
-    this.primaryDelegate = delegates.get(0);
-    this.failoverDelegates = delegates.subList(1, delegates.size());
+        !failoverDelegates.isEmpty(),
+        "One or more Beacon Nodes should be defined as a failover to use the failover feature.");
+    this.failoverDelegates = failoverDelegates;
     this.validatorLogger = validatorLogger;
   }
 
@@ -139,22 +141,20 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
-    throw new UnsupportedOperationException(
-        "Need to convert to SafeFuture<Void> and will use relayRequest");
+  public SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+    return relayRequest(apiChannel -> apiChannel.subscribeToBeaconCommittee(requests));
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
+  public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    throw new UnsupportedOperationException(
-        "Need to convert to SafeFuture<Void> and will use relayRequest");
+    return relayRequest(apiChannel -> apiChannel.subscribeToSyncCommitteeSubnets(subscriptions));
   }
 
   @Override
-  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    throw new UnsupportedOperationException(
-        "Need to convert to SafeFuture<Void> and will use relayRequest");
+  public SafeFuture<Void> subscribeToPersistentSubnets(
+      Set<SubnetSubscription> subnetSubscriptions) {
+    return relayRequest(apiChannel -> apiChannel.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
   @Override

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,16 +23,19 @@ import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -54,13 +58,16 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.ValidatorApiChannelRequest;
 
@@ -96,7 +103,16 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            List.of(primaryApiChannel, failoverApiChannel1, failoverApiChannel2), validatorLogger);
+            primaryApiChannel, List.of(failoverApiChannel1, failoverApiChannel2), validatorLogger);
+  }
+
+  @Test
+  void initializationFailsWhenNoFailoversAreDefined() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            failoverApiHandler =
+                new FailoverValidatorApiHandler(primaryApiChannel, List.of(), validatorLogger));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -298,6 +314,11 @@ class FailoverValidatorApiHandlerTest {
   }
 
   private static Stream<Arguments> getRelayRequests() {
+    final CommitteeSubscriptionRequest committeeSubscriptionRequest =
+        new CommitteeSubscriptionRequest(0, 0, UInt64.ZERO, UInt64.ONE, true);
+    final SyncCommitteeSubnetSubscription syncCommitteeSubnetSubscription =
+        new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO);
+    final SubnetSubscription subnetSubscription = new SubnetSubscription(0, UInt64.ONE);
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final SubmitDataError submitDataError =
         new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
@@ -313,6 +334,29 @@ class FailoverValidatorApiHandlerTest {
         DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
 
     return Stream.of(
+        getArguments(
+            "subscribeToBeaconCommittee",
+            apiChannel ->
+                apiChannel.subscribeToBeaconCommittee(List.of(committeeSubscriptionRequest)),
+            null,
+            apiChannel ->
+                verify(apiChannel)
+                    .subscribeToBeaconCommittee(List.of(committeeSubscriptionRequest))),
+        getArguments(
+            "subscribeToSyncCommitteeSubnets",
+            apiChannel ->
+                apiChannel.subscribeToSyncCommitteeSubnets(
+                    List.of(syncCommitteeSubnetSubscription)),
+            null,
+            apiChannel ->
+                verify(apiChannel)
+                    .subscribeToSyncCommitteeSubnets(List.of(syncCommitteeSubnetSubscription))),
+        getArguments(
+            "subscribeToPersistentSubnets",
+            apiChannel -> apiChannel.subscribeToPersistentSubnets(Set.of(subnetSubscription)),
+            null,
+            apiChannel ->
+                verify(apiChannel).subscribeToPersistentSubnets(Set.of(subnetSubscription))),
         getArguments(
             "sendSignedAttestations",
             apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
