@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -124,6 +125,11 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+
+  @MustBeClosed
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(UInt64 fromBlockInclusive);
+
+  Optional<Eth1Cache> getEth1Cache();
 
   void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 

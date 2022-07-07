@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -51,6 +52,7 @@ public class StoreBuilder {
   private Checkpoint bestJustifiedCheckpoint;
   private Map<UInt64, VoteTracker> votes;
   private Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload = Optional.empty();
+  private Optional<Eth1Cache> eth1Cache = Optional.empty();
 
   private StoreBuilder() {}
 
@@ -86,7 +88,8 @@ public class StoreBuilder {
         anchor.getCheckpoint(),
         anchor.getCheckpoint(),
         blockInfo,
-        new HashMap<>());
+        new HashMap<>(),
+        Optional.empty());
   }
 
   public StoreBuilder onDiskStoreData(final OnDiskStoreData data) {
@@ -98,7 +101,8 @@ public class StoreBuilder {
         .justifiedCheckpoint(data.getJustifiedCheckpoint())
         .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
         .blockInformation(data.getBlockInformation())
-        .votes(data.getVotes());
+        .votes(data.getVotes())
+        .eth1Cache(data.getEth1Cache());
   }
 
   public UpdatableStore build() {
@@ -119,6 +123,7 @@ public class StoreBuilder {
         bestJustifiedCheckpoint,
         blockInfoByRoot,
         votes,
+        eth1Cache,
         storeConfig);
   }
 
@@ -228,6 +233,12 @@ public class StoreBuilder {
   public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
+    return this;
+  }
+
+  public StoreBuilder eth1Cache(final Optional<Eth1Cache> eth1Cache) {
+    checkNotNull(eth1Cache);
+    this.eth1Cache = eth1Cache;
     return this;
   }
 }

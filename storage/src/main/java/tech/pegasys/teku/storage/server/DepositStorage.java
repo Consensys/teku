@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 
@@ -55,6 +56,12 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   }
 
   private ReplayDepositsResult replayDeposits() {
+    final Optional<Eth1Cache> eth1Cache = database.getEth1Cache();
+    return eth1Cache.map(this::loadFromCache).orElseGet(this::fullReplayDeposits);
+  }
+
+  private ReplayDepositsResult fullReplayDeposits() {
+    // TODO: log
     final DepositSequencer depositSequencer =
         new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
@@ -63,6 +70,19 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     ReplayDepositsResult result = depositSequencer.depositsComplete();
     lastReplayedBlock = Optional.of(result.getLastProcessedBlockNumber());
     return result;
+  }
+
+  // TODO: rename
+  private ReplayDepositsResult loadFromCache(final Eth1Cache eth1Cache) {
+    // TODO: log
+    // FIXME: DepositTree in DepositProvider loaded without sync and it could lead to issues
+    final DepositSequencer depositSequencer =
+        new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
+    try (Stream<DepositsFromBlockEvent> eventStream =
+        database.streamDepositsFromBlocks(eth1Cache.getLatestFinalizedDepositsBlock())) {
+      eventStream.forEach(depositSequencer::depositEvent);
+    }
+    return depositSequencer.depositsComplete();
   }
 
   private boolean shouldProcessEvent(final BigInteger blockNumber) {
@@ -105,6 +125,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
         isGenesisDone = true;
       }
+      // TODO: shouldn't validate deposits up to snapshot if snapshot available
       validateDepositEvent(event);
       eth1EventsChannel.onDepositsFromBlock(event);
       lastDepositIndex = Optional.of(event.getLastDepositIndex());

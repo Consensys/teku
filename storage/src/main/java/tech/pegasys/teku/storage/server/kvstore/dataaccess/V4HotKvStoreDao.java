@@ -133,6 +133,17 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
 
   @Override
   @MustBeClosed
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(final UInt64 blockNumber) {
+    Optional<UInt64> lastKey = db.getLastKey(schema.getColumnDepositsFromBlockEvents());
+    if (lastKey.isEmpty()) {
+      return Stream.empty();
+    }
+    return db.stream(schema.getColumnDepositsFromBlockEvents(), blockNumber, lastKey.get())
+        .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
     return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry -> entry);
   }

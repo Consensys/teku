@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -212,6 +213,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(final UInt64 blockNumber) {
+    return hotDao.streamDepositsFromBlocks(blockNumber);
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
     return hotDao.streamCheckpointEpochs();
   }
@@ -219,6 +226,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return hotDao.getMinGenesisTimeBlock();
+  }
+
+  @Override
+  public Optional<Eth1Cache> getEth1Cache() {
+    return finalizedDao.getEth1Cache();
   }
 
   @Override
@@ -401,6 +413,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       finalizedUpdater.setOptimisticTransitionBlockSlot(transitionBlockSlot);
+    }
+
+    @Override
+    public void setEth1Cache(final Eth1Cache eth1Cache) {
+      finalizedUpdater.setEth1Cache(eth1Cache);
     }
 
     @Override

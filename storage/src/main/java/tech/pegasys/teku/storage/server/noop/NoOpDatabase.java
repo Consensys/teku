@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -170,6 +171,16 @@ public class NoOpDatabase implements Database {
   @Override
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
     return Stream.empty();
+  }
+
+  @Override
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(UInt64 fromBlockInclusive) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Optional<Eth1Cache> getEth1Cache() {
+    return Optional.empty();
   }
 
   @Override

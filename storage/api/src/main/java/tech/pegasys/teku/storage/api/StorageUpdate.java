@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -37,6 +38,7 @@ public class StorageUpdate {
   private final Set<Bytes32> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final Optional<Eth1Cache> eth1Cache;
 
   public StorageUpdate(
       final Optional<UInt64> genesisTime,
@@ -48,7 +50,8 @@ public class StorageUpdate {
       final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Optional<Eth1Cache> eth1Cache) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -59,6 +62,7 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.eth1Cache = eth1Cache;
   }
 
   public boolean isEmpty() {
@@ -123,6 +127,10 @@ public class StorageUpdate {
 
   public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
     return optimisticTransitionBlockRoot;
+  }
+
+  public Optional<Eth1Cache> getEth1Cache() {
+    return eth1Cache;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

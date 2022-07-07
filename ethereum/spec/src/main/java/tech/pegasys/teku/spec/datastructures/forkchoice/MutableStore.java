@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -38,6 +39,8 @@ public interface MutableStore extends ReadOnlyStore {
   void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint);
 
   void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock);
+
+  void setEth1Cache(Eth1Cache eth1Cache, boolean fromOptimisticBlock);
 
   void setBestJustifiedCheckpoint(Checkpoint bestJustifiedCheckpoint);
 

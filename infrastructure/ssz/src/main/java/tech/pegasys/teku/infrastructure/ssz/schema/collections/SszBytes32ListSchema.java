@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.pow.api;
+package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBytes32ListSchemaImpl;
 
-public interface Eth1EventsChannel extends VoidReturningChannelInterface {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
+public interface SszBytes32ListSchema<SszListT extends SszBytes32List>
+    extends SszPrimitiveListSchema<Bytes32, SszBytes32, SszListT> {
 
-  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
-
-  default void onEth1Block(Bytes32 blockHash, UInt64 blockTimestamp, UInt64 blockNumber) {}
+  static SszBytes32ListSchema<SszBytes32List> create(final long maxLength) {
+    return new SszBytes32ListSchemaImpl<>(maxLength);
+  }
 }

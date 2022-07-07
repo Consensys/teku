@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -72,6 +73,8 @@ public interface SchemaCombined extends Schema {
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
 
   KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
+
+  KvStoreVariable<Eth1Cache> getVariableEth1Cache();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 

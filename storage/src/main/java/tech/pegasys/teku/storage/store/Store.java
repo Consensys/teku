@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -91,6 +92,7 @@ class Store implements UpdatableStore {
   Checkpoint bestJustifiedCheckpoint;
   Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  Optional<Eth1Cache> eth1Cache;
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
@@ -103,6 +105,7 @@ class Store implements UpdatableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
+      // TODO: we could add DepositProvider here which will load Eth1Cache too
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -114,7 +117,8 @@ class Store implements UpdatableStore {
       final ForkChoiceStrategy forkChoiceStrategy,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
+      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
+      final Optional<Eth1Cache> eth1Cache) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -149,6 +153,8 @@ class Store implements UpdatableStore {
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
+    this.eth1Cache = eth1Cache;
+
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
         BlockProvider.combined(
@@ -177,6 +183,7 @@ class Store implements UpdatableStore {
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
+      final Optional<Eth1Cache> eth1Cache,
       final StoreConfig config) {
 
     // Create limited collections for non-final data
@@ -215,7 +222,8 @@ class Store implements UpdatableStore {
         forkChoiceStrategy,
         votes,
         blocks,
-        checkpointStateTaskQueue);
+        checkpointStateTaskQueue,
+        eth1Cache);
   }
 
   private static ProtoArray buildProtoArray(
@@ -498,6 +506,16 @@ class Store implements UpdatableStore {
                     finalized.getCheckpoint(),
                     finalized.getBlockSummary(),
                     maybeState.orElseThrow()));
+  }
+
+  @Override
+  public Optional<Eth1Cache> retrieveEth1Cache() {
+    readLock.lock();
+    try {
+      return eth1Cache;
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override

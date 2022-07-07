@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -57,6 +58,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
   boolean finalizedCheckpointOptimistic = false;
+  Optional<Eth1Cache> eth1Cache = Optional.empty();
   Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
@@ -121,6 +123,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock) {
     this.finalizedCheckpoint = Optional.of(finalizedCheckpoint);
     this.finalizedCheckpointOptimistic = fromOptimisticBlock;
+  }
+
+  @Override
+  public void setEth1Cache(final Eth1Cache eth1Cache, final boolean fromOptimisticBlock) {
+    this.eth1Cache = Optional.of(eth1Cache);
   }
 
   @Override
@@ -397,6 +404,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     return store.retrieveCheckpointState(checkpoint, latestStateAtEpoch);
+  }
+
+  @Override
+  public Optional<Eth1Cache> retrieveEth1Cache() {
+    return eth1Cache;
   }
 
   @Override

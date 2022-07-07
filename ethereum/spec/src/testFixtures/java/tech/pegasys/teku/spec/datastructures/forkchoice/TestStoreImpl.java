@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,6 +48,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  protected Optional<Eth1Cache> eth1Cache;
 
   TestStoreImpl(
       final Spec spec,
@@ -56,6 +58,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
+      final Optional<Eth1Cache> eth1Cache,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
       final Map<Checkpoint, BeaconState> checkpointStates,
@@ -67,6 +70,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
+    this.eth1Cache = eth1Cache;
     this.blocks = blocks;
     this.blockStates = blockStates;
     this.checkpointStates = checkpointStates;
@@ -222,6 +226,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<Eth1Cache> retrieveEth1Cache() {
+    return eth1Cache;
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     if (!latestStateAtEpoch.getSlot().equals(checkpoint.getEpochStartSlot(spec))) {
@@ -267,6 +276,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public void setFinalizedCheckpoint(
       final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
     this.finalizedCheckpoint = finalizedCheckpoint;
+  }
+
+  @Override
+  public void setEth1Cache(final Eth1Cache eth1Cache, final boolean fromOptimisticBlock) {
+    this.eth1Cache = Optional.of(eth1Cache);
   }
 
   @Override

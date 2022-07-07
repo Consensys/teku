@@ -72,6 +72,10 @@ public interface KvStoreHotDao extends AutoCloseable {
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
   @MustBeClosed
+  // FIXME: inclusive or not
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(UInt64 blockNumber);
+
+  @MustBeClosed
   Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();

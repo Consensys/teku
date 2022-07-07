@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /**
@@ -59,6 +60,8 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
+  Optional<Eth1Cache> getEth1Cache();
+
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
@@ -72,6 +75,8 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
 
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
+
+    void setEth1Cache(final Eth1Cache eth1Cache);
 
     void commit();
 

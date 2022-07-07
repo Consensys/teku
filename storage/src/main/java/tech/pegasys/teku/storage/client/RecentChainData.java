@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -571,6 +572,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     return store.retrieveCheckpointState(checkpoint);
+  }
+
+  public Optional<Eth1Cache> getEth1Cache() {
+    return store.retrieveEth1Cache();
   }
 
   public List<ProtoNodeData> getChainHeads() {

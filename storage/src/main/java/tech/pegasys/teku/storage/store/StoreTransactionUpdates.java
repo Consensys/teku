@@ -82,7 +82,8 @@ class StoreTransactionUpdates {
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot);
+        optimisticTransitionBlockRoot,
+        tx.eth1Cache);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
@@ -117,6 +118,8 @@ class StoreTransactionUpdates {
     if (tx.proposerBoostRootSet) {
       store.proposerBoostRoot = tx.proposerBoostRoot;
     }
+
+    tx.eth1Cache.ifPresent(eth1Cache -> store.eth1Cache = Optional.of(eth1Cache));
 
     store.forkChoiceStrategy.applyUpdate(
         hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());

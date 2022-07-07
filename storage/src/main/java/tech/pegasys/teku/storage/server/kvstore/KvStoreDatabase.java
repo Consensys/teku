@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -349,6 +350,7 @@ public class KvStoreDatabase implements Database {
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(dao::getFinalizedBlockAtSlot)
             .flatMap(SlotAndExecutionPayload::fromBlock);
+    final Optional<Eth1Cache> eth1Cache = dao.getEth1Cache();
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -366,7 +368,8 @@ public class KvStoreDatabase implements Database {
             justifiedCheckpoint,
             bestJustifiedCheckpoint,
             blockInformation,
-            votes));
+            votes,
+            eth1Cache));
   }
 
   @Override
@@ -506,6 +509,17 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(final UInt64 blockNumber) {
+    return dao.streamDepositsFromBlocks(blockNumber);
+  }
+
+  @Override
+  public Optional<Eth1Cache> getEth1Cache() {
+    return dao.getEth1Cache();
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final HotUpdater updater = dao.hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -544,7 +558,8 @@ public class KvStoreDatabase implements Database {
             update.getFinalizedStates(),
             update.getDeletedHotBlocks(),
             update.isFinalizedOptimisticTransitionBlockRootSet(),
-            update.getOptimisticTransitionBlockRoot());
+            update.getOptimisticTransitionBlockRoot(),
+            update.getEth1Cache());
     LOG.trace("Applying hot updates");
     try (final HotUpdater updater = dao.hotUpdater()) {
       // Store new hot data
@@ -587,7 +602,8 @@ public class KvStoreDatabase implements Database {
       final Map<Bytes32, BeaconState> finalizedStates,
       final Set<Bytes32> deletedHotBlocks,
       final boolean isFinalizedOptimisticBlockRootSet,
-      final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
+      final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot,
+      final Optional<Eth1Cache> eth1Cache) {
     if (finalizedChildToParentMap.isEmpty()) {
       // Nothing to do
       return Optional.empty();
@@ -615,6 +631,8 @@ public class KvStoreDatabase implements Database {
               .flatMap(root -> getHotBlock(root).stream())
               .collect(Collectors.toSet()));
     }
+
+    eth1Cache.ifPresent(this::updateEth1Cache);
 
     return optimisticTransitionPayload;
   }
@@ -654,6 +672,13 @@ public class KvStoreDatabase implements Database {
         nonCanonicalRootsBySlotBuffer.forEach(updater::addNonCanonicalRootAtSlot);
         updater.commit();
       }
+    }
+  }
+
+  private void updateEth1Cache(final Eth1Cache eth1Cache) {
+    try (final FinalizedUpdater updater = dao.finalizedUpdater()) {
+      updater.setEth1Cache(eth1Cache);
+      updater.commit();
     }
   }
 

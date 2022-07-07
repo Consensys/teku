@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -146,6 +147,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks(final UInt64 blockNumber) {
+    Optional<UInt64> lastKey = db.getLastKey(schema.getColumnDepositsFromBlockEvents());
+    if (lastKey.isEmpty()) {
+      return Stream.empty();
+    }
+    return db.stream(schema.getColumnDepositsFromBlockEvents(), blockNumber, lastKey.get())
+        .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
     return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry -> entry);
   }
@@ -153,6 +165,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return db.get(schema.getVariableMinGenesisTimeBlock());
+  }
+
+  @Override
+  public Optional<Eth1Cache> getEth1Cache() {
+    return db.get(schema.getVariableEth1Cache());
   }
 
   @Override
@@ -529,6 +546,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       } else {
         transaction.delete(schema.getOptimisticTransitionBlockSlot());
       }
+    }
+
+    @Override
+    public void setEth1Cache(final Eth1Cache eth1Cache) {
+      transaction.put(schema.getVariableEth1Cache(), eth1Cache);
     }
   }
 }

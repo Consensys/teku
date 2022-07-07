@@ -172,8 +172,8 @@ public class DepositProviderTest {
     setup(16);
     final Bytes32 blockHash = dataStructureUtil.randomBytes32();
     final UInt64 blockTimestamp = dataStructureUtil.randomUInt64();
-    depositProvider.onEth1Block(blockHash, blockTimestamp);
-    verify(eth1DataCache).onEth1Block(blockHash, blockTimestamp);
+    depositProvider.onEth1Block(blockHash, blockTimestamp, UInt64.ZERO);
+    verify(eth1DataCache).onEth1Block(blockHash, blockTimestamp, UInt64.ZERO);
   }
 
   @Test
@@ -181,9 +181,10 @@ public class DepositProviderTest {
     setup(16);
     final tech.pegasys.teku.ethereum.pow.api.Deposit deposit =
         dataStructureUtil.randomDepositEvent(UInt64.ZERO);
+    final UInt64 blockNumber = dataStructureUtil.randomUInt64();
     final DepositsFromBlockEvent event =
         DepositsFromBlockEvent.create(
-            dataStructureUtil.randomUInt64(),
+            blockNumber,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64(),
             Stream.of(deposit));
@@ -194,7 +195,8 @@ public class DepositProviderTest {
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockTimestamp(),
-            new Eth1Data(depositMerkleTree.getRoot(), UInt64.ONE, event.getBlockHash()));
+            new Eth1Data(depositMerkleTree.getRoot(), UInt64.ONE, event.getBlockHash()),
+            blockNumber);
   }
 
   @Test

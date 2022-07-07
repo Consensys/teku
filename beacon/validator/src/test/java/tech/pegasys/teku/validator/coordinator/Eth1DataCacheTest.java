@@ -77,8 +77,8 @@ public class Eth1DataCacheTest {
   void shouldUseDepositDataFromPreviousBlockWhenNoDepositBlockAddedAsLatestBlock() {
     final Eth1Data eth1Data = createEth1Data(STATE_DEPOSIT_COUNT);
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data);
-    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data, ZERO);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2, ZERO);
 
     final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(createBeaconStateWithVotes());
     assertThat(eth1Vote).isEqualTo(eth1Data.withBlockHash(emptyBlockHash));
@@ -90,9 +90,9 @@ public class Eth1DataCacheTest {
     final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT + 1);
     final Eth1Data eth1Data2 = createEth1Data(eth1Data1.getDepositCount());
     final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
-    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2, ZERO);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2, ZERO);
 
     final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(createBeaconStateWithVotes(emptyBlockData));
     assertThat(eth1Vote).isEqualTo(emptyBlockData);
@@ -101,7 +101,7 @@ public class Eth1DataCacheTest {
   @Test
   void shouldUseEmptyMerkleTrieRootForBlocksWithNoEarlierDeposits() {
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
-    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1, ZERO);
 
     final BeaconState beaconState = createBeaconStateWithVotes();
     when(beaconState.getEth1Data()).thenReturn(new Eth1Data(Bytes32.ZERO, ZERO, Bytes32.ZERO));
@@ -115,14 +115,14 @@ public class Eth1DataCacheTest {
     final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     final Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1.minus(CACHE_DURATION), eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1.minus(CACHE_DURATION), eth1Data1, ZERO);
 
     // New block would normally prune the first one, but doesn't because we preserve one item
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2, ZERO);
     assertThat(getCacheSize()).isEqualTo(2);
 
     // Then register an empty block within the voting period but prior to the latest deposit
-    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1, ZERO);
 
     // And it should be recorded
     final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
@@ -136,8 +136,8 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
     // Both Eth1Data timestamp inside the spec range
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data2);
@@ -150,8 +150,8 @@ public class Eth1DataCacheTest {
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2, ZERO);
 
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
   }
@@ -161,8 +161,8 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_START.minus(ONE), eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_START.minus(ONE), eth1Data2, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
@@ -173,8 +173,8 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), eth1Data2, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
@@ -185,8 +185,8 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT - 1);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
@@ -196,8 +196,8 @@ public class Eth1DataCacheTest {
   void noValidVotesInThisPeriod_eth1ChainLive() {
     final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     final Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes();
 
@@ -218,19 +218,21 @@ public class Eth1DataCacheTest {
     final UInt64 newBlockTimestamp = oldBlockTimestamp.plus(CACHE_DURATION).plus(ONE);
     final UInt64 newerBlockTimestamp = newBlockTimestamp.plus(CACHE_DURATION);
 
-    eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
-    eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
+    eth1DataCache.onBlockWithDeposit(
+        olderBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT), ZERO);
+    eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT), ZERO);
     assertThat(getCacheSize()).isEqualTo(2);
 
     // Push both old blocks out of the cache period
-    eth1DataCache.onBlockWithDeposit(newBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
+    eth1DataCache.onBlockWithDeposit(newBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT), ZERO);
     // But only the oldest block gets pruned because we need at least one event prior to the cache
     // period so empty blocks right at the start of the period can lookup the
     assertThat(getCacheSize()).isEqualTo(2);
 
     // Third block is close enough to the second that they are both kept.
     // newBlockTimestamp is now exactly at the start of the cache period so we can remove oldBlock
-    eth1DataCache.onBlockWithDeposit(newerBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
+    eth1DataCache.onBlockWithDeposit(
+        newerBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT), ZERO);
     assertThat(getCacheSize()).isEqualTo(2);
   }
 
@@ -241,11 +243,11 @@ public class Eth1DataCacheTest {
     Eth1Data unknownVote1 = createEth1Data(STATE_DEPOSIT_COUNT);
     Eth1Data unknownVote2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, stateEth1Data);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1);
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, stateEth1Data, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1, ZERO);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2, ZERO);
     // Still unknown because it's out of range
-    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), unknownVote1);
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), unknownVote1, ZERO);
 
     BeaconState beaconState =
         createBeaconStateWithVotes(
@@ -276,7 +278,7 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
     Eth1Data unknownVote = createEth1Data(STATE_DEPOSIT_COUNT);
 
-    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1, ZERO);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, unknownVote, unknownVote);
     when(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot())).thenReturn(50L);

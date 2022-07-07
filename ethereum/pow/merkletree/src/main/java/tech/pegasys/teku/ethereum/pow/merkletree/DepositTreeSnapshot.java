@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DepositTreeSnapshot {
 
@@ -31,6 +32,13 @@ public class DepositTreeSnapshot {
     this.executionBlockHash = executionBlockHash;
   }
 
+  public DepositTreeSnapshot(
+      final tech.pegasys.teku.spec.datastructures.eth1.DepositTreeSnapshot depositTreeSnapshot) {
+    this.finalized = depositTreeSnapshot.getFinalized();
+    this.deposits = depositTreeSnapshot.getDeposits().longValue();
+    this.executionBlockHash = depositTreeSnapshot.getExecutionBlockHash();
+  }
+
   public List<Bytes32> getFinalized() {
     return finalized;
   }
@@ -41,6 +49,11 @@ public class DepositTreeSnapshot {
 
   public Bytes32 getExecutionBlockHash() {
     return executionBlockHash;
+  }
+
+  public tech.pegasys.teku.spec.datastructures.eth1.DepositTreeSnapshot asSerializable() {
+    return tech.pegasys.teku.spec.datastructures.eth1.DepositTreeSnapshot.SSZ_SCHEMA.create(
+        finalized, UInt64.valueOf(deposits), executionBlockHash);
   }
 
   @Override

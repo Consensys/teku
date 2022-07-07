@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -34,6 +35,7 @@ public class OnDiskStoreData {
   private final Map<Bytes32, StoredBlockMetadata> blockInformation;
   private final Map<UInt64, VoteTracker> votes;
   private final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
+  private final Optional<Eth1Cache> eth1Cache;
 
   public OnDiskStoreData(
       final UInt64 time,
@@ -44,7 +46,8 @@ public class OnDiskStoreData {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInformation,
-      final Map<UInt64, VoteTracker> votes) {
+      final Map<UInt64, VoteTracker> votes,
+      final Optional<Eth1Cache> eth1Cache) {
 
     this.time = time;
     this.anchor = anchor;
@@ -55,6 +58,7 @@ public class OnDiskStoreData {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blockInformation = blockInformation;
     this.votes = votes;
+    this.eth1Cache = eth1Cache;
   }
 
   public UInt64 getTime() {
@@ -93,15 +97,19 @@ public class OnDiskStoreData {
     return finalizedOptimisticTransitionPayload;
   }
 
+  public Optional<Eth1Cache> getEth1Cache() {
+    return eth1Cache;
+  }
+
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final OnDiskStoreData that = (OnDiskStoreData) o;
+    OnDiskStoreData that = (OnDiskStoreData) o;
     return Objects.equals(time, that.time)
         && Objects.equals(genesisTime, that.genesisTime)
         && Objects.equals(anchor, that.anchor)
@@ -111,7 +119,8 @@ public class OnDiskStoreData {
         && Objects.equals(blockInformation, that.blockInformation)
         && Objects.equals(votes, that.votes)
         && Objects.equals(
-            finalizedOptimisticTransitionPayload, that.finalizedOptimisticTransitionPayload);
+            finalizedOptimisticTransitionPayload, that.finalizedOptimisticTransitionPayload)
+        && Objects.equals(eth1Cache, that.eth1Cache);
   }
 
   @Override
@@ -125,6 +134,7 @@ public class OnDiskStoreData {
         bestJustifiedCheckpoint,
         blockInformation,
         votes,
-        finalizedOptimisticTransitionPayload);
+        finalizedOptimisticTransitionPayload,
+        eth1Cache);
   }
 }

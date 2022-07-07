@@ -31,6 +31,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
+import tech.pegasys.teku.ethereum.pow.merkletree.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorS
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class DepositProvider
     implements SlotEventsChannel, Eth1EventsChannel, FinalizedCheckpointChannel {
@@ -79,7 +82,11 @@ public class DepositProvider
     this.eth1DataCache = eth1DataCache;
     this.spec = spec;
     depositUtil = new DepositUtil(spec);
-    depositMerkleTree = new DepositTree();
+    depositMerkleTree =
+        recentChainData
+            .getEth1Cache()
+            .map(this::restoreDepositTreeFromCache)
+            .orElseGet(DepositTree::new);
     depositCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -99,7 +106,10 @@ public class DepositProvider
               }
 
               depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.pushLeaf(deposit.getData().hashTreeRoot());
+              // FIXME: not the best place and way
+              if (deposit.getIndex().isGreaterThanOrEqualTo(depositMerkleTree.getDepositCount())) {
+                depositMerkleTree.pushLeaf(deposit.getData().hashTreeRoot());
+              }
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
@@ -107,7 +117,8 @@ public class DepositProvider
         new Eth1Data(
             depositMerkleTree.getRoot(),
             UInt64.valueOf(depositMerkleTree.getDepositCount()),
-            event.getBlockHash()));
+            event.getBlockHash()),
+        event.getBlockNumber());
   }
 
   @Override
@@ -121,6 +132,19 @@ public class DepositProvider
           && depositMerkleTree.getDepositCount()
               >= finalizedState.getEth1Data().getDepositCount().longValue()) {
         depositMerkleTree.finalize(finalizedState.getEth1Data());
+        eth1DataCache
+            .getFirstDataEx()
+            .ifPresent(
+                eth1DataEx -> {
+                  // TODO: log
+                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                  transaction.setEth1Cache(
+                      Eth1Cache.SSZ_SCHEMA.create(
+                          depositMerkleTree.getSnapshot().asSerializable(),
+                          eth1DataEx.getBlockNumber()),
+                      fromOptimisticBlock);
+                  transaction.commit().join();
+                });
       }
     }
   }
@@ -130,8 +154,9 @@ public class DepositProvider
   }
 
   @Override
-  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
-    eth1DataCache.onEth1Block(blockHash, blockTimestamp);
+  public void onEth1Block(
+      final Bytes32 blockHash, final UInt64 blockTimestamp, final UInt64 blockNumber) {
+    eth1DataCache.onEth1Block(blockHash, blockTimestamp, blockNumber);
   }
 
   @Override
@@ -251,6 +276,12 @@ public class DepositProvider
               return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
         .collect(depositsSchema.collector());
+  }
+
+  private DepositTree restoreDepositTreeFromCache(final Eth1Cache eth1Cache) {
+    final tech.pegasys.teku.spec.datastructures.eth1.DepositTreeSnapshot depositTreeSnapshot =
+        eth1Cache.getDepositTreeSnapshot();
+    return DepositTree.fromSnapshot(new DepositTreeSnapshot(depositTreeSnapshot));
   }
 
   private static class DepositsSchemaCache {

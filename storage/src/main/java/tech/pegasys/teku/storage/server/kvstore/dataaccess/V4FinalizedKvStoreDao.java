@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -144,6 +145,11 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   @Override
+  public Optional<Eth1Cache> getEth1Cache() {
+    return db.get(schema.getEth1Cache());
+  }
+
+  @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageLogic.updater());
@@ -214,6 +220,11 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
       } else {
         transaction.delete(schema.getOptimisticTransitionBlockSlot());
       }
+    }
+
+    @Override
+    public void setEth1Cache(Eth1Cache eth1Cache) {
+      transaction.put(schema.getEth1Cache(), eth1Cache);
     }
 
     @Override

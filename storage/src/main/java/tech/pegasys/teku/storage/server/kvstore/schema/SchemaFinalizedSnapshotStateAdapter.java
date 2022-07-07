@@ -19,6 +19,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Cache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnapshotState {
@@ -78,7 +79,15 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getOptimisticTransitionBlockSlot();
   }
 
+  public KvStoreVariable<Eth1Cache> getEth1Cache() {
+    return delegate.getVariableEth1Cache();
+  }
+
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
+    return Map.of(
+        "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
+        getOptimisticTransitionBlockSlot(),
+        "ETH1_CACHE",
+        getEth1Cache());
   }
 }

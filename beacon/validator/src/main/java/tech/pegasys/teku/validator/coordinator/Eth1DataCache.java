@@ -16,12 +16,12 @@ package tech.pegasys.teku.validator.coordinator;
 import com.google.common.collect.Maps;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -41,7 +41,7 @@ public class Eth1DataCache {
   private final UInt64 cacheDuration;
   private final Eth1VotingPeriod eth1VotingPeriod;
 
-  private final NavigableMap<UInt64, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, Eth1DataEx> eth1ChainCache = new ConcurrentSkipListMap<>();
   private final SettableGauge currentPeriodVotesTotal;
   private final SettableGauge currentPeriodVotesUnknown;
   private final SettableGauge currentPeriodVotesCurrent;
@@ -88,32 +88,37 @@ public class Eth1DataCache {
             "Number of votes for the leading block in the current Eth1 voting period");
   }
 
-  public void onBlockWithDeposit(final UInt64 blockTimestamp, final Eth1Data eth1Data) {
-    eth1ChainCache.put(blockTimestamp, eth1Data);
+  public void onBlockWithDeposit(
+      final UInt64 blockTimestamp, final Eth1Data eth1Data, final UInt64 blockNumber) {
+    eth1ChainCache.put(blockTimestamp, new Eth1DataEx(eth1Data, blockNumber));
     prune(blockTimestamp);
   }
 
-  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
-    final Map.Entry<UInt64, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
+  public void onEth1Block(
+      final Bytes32 blockHash, final UInt64 blockTimestamp, final UInt64 blockNumber) {
+    final Map.Entry<UInt64, Eth1DataEx> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
     final Eth1Data data;
     if (previousBlock == null) {
       data = new Eth1Data(Eth1Data.EMPTY_DEPOSIT_ROOT, UInt64.ZERO, blockHash);
     } else {
-      data = previousBlock.getValue().withBlockHash(blockHash);
+      data = previousBlock.getValue().getEth1Data().withBlockHash(blockHash);
     }
-    eth1ChainCache.put(blockTimestamp, data);
+    eth1ChainCache.put(blockTimestamp, new Eth1DataEx(data, blockNumber));
     prune(blockTimestamp);
   }
 
   public Eth1Data getEth1Vote(BeaconState state) {
-    NavigableMap<UInt64, Eth1Data> votesToConsider =
+    NavigableMap<UInt64, Eth1DataEx> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
-    final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
+    final Set<Eth1Data> validBlocks =
+        votesToConsider.values().stream().map(Eth1DataEx::getEth1Data).collect(Collectors.toSet());
     final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     Eth1Data defaultVote =
-        votesToConsider.isEmpty() ? state.getEth1Data() : votesToConsider.lastEntry().getValue();
+        votesToConsider.isEmpty()
+            ? state.getEth1Data()
+            : votesToConsider.lastEntry().getValue().getEth1Data();
 
     Optional<Eth1Data> vote =
         votes.entrySet().stream()
@@ -128,8 +133,11 @@ public class Eth1DataCache {
     final Eth1Data currentEth1Data = state.getEth1Data();
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> knownBlocks =
-        new HashSet<>(
-            getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data).values());
+        getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data)
+            .values()
+            .stream()
+            .map(Eth1DataEx::getEth1Data)
+            .collect(Collectors.toSet());
     Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     currentPeriodVotesMax.set(eth1VotingPeriod.getTotalSlotsInVotingPeriod(state.getSlot()));
@@ -146,6 +154,12 @@ public class Eth1DataCache {
             .orElse(0));
   }
 
+  public Optional<Eth1DataEx> getFirstDataEx() {
+    return eth1ChainCache.isEmpty()
+        ? Optional.empty()
+        : Optional.of(eth1ChainCache.firstEntry().getValue());
+  }
+
   protected Map<Eth1Data, Eth1Vote> countVotes(final BeaconState state) {
     Map<Eth1Data, Eth1Vote> votes = new HashMap<>();
     int i = 0;
@@ -157,16 +171,19 @@ public class Eth1DataCache {
     return votes;
   }
 
-  private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
+  private NavigableMap<UInt64, Eth1DataEx> getVotesToConsider(
       final UInt64 slot, final UInt64 genesisTime, final Eth1Data dataFromState) {
-    return Maps.filterValues(
+    return Maps.filterValues( // FIXME: It looks like a view, should we change interface here?
         eth1ChainCache.subMap(
             eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
             true,
             eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
             true),
-        eth1Data ->
-            eth1Data.getDepositCount().isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
+        eth1DataEx ->
+            eth1DataEx
+                .getEth1Data()
+                .getDepositCount()
+                .isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
   }
 
   protected Eth1VotingPeriod getEth1VotingPeriod() {
