@@ -422,7 +422,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return SafeFuture.fromRunnable(() -> processCommitteeSubscriptionRequests(requests));
   }
 
-  public void processCommitteeSubscriptionRequests(
+  private void processCommitteeSubscriptionRequests(
       final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {

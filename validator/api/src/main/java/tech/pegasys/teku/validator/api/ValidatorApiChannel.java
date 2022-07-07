@@ -45,58 +45,51 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 
-  SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
-      final Collection<BLSPublicKey> publicKeys);
+  SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(Collection<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      final Collection<BLSPublicKey> validatorIdentifiers);
+      Collection<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final IntCollection validatorIndices);
+      UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final IntCollection validatorIndices);
+      UInt64 epoch, IntCollection validatorIndices);
 
-  SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
+  SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final boolean blinded);
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
 
-  SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex);
+  SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot);
+  SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
-      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot);
+      UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
-  SafeFuture<Void> subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests);
+  SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   SafeFuture<Void> subscribeToSyncCommitteeSubnets(
-      final Collection<SyncCommitteeSubnetSubscription> subscriptions);
+      Collection<SyncCommitteeSubnetSubscription> subscriptions);
 
-  SafeFuture<Void> subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions);
+  SafeFuture<Void> subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  SafeFuture<List<SubmitDataError>> sendSignedAttestations(final List<Attestation> attestations);
+  SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations);
 
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
-      final List<SignedAggregateAndProof> aggregateAndProofs);
+      List<SignedAggregateAndProof> aggregateAndProofs);
 
-  SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
-      final List<SyncCommitteeMessage> syncCommitteeMessages);
+      List<SyncCommitteeMessage> syncCommitteeMessages);
 
   SafeFuture<Void> sendSignedContributionAndProofs(
-      final Collection<SignedContributionAndProof> signedContributionAndProofs);
+      Collection<SignedContributionAndProof> signedContributionAndProofs);
 
   SafeFuture<Void> prepareBeaconProposer(
-      final Collection<BeaconPreparableProposer> beaconPreparableProposers);
+      Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
-  SafeFuture<Void> registerValidators(
-      final SszList<SignedValidatorRegistration> validatorRegistrations);
+  SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
 }
