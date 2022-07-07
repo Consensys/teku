@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.spec.util.RandomChainBuilder;
 import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
@@ -242,6 +244,41 @@ class ForkChoiceUtilTest {
     final UInt64 expectedMillis = store.getTimeMillis().plus(123456);
     forkChoiceUtil.onTick(store, expectedMillis);
     assertThat(store.getTimeMillis()).isEqualTo(expectedMillis);
+  }
+
+  @Test
+  void onTick_shouldProcessSkippedEpochTransitions() {
+    final TestStoreImpl store = new TestStoreFactory(spec).createGenesisStore();
+
+    // Setup a block in epoch 1 with checkpoints that should be pulled up when transitioning to
+    // epoch 2.
+    final UInt64 headBlockSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).plus(3);
+    chainBuilder.generateBlocksUpToSlot(headBlockSlot);
+    final SignedBlockAndState headBlockAndState =
+        chainBuilder.getBlockAndState(headBlockSlot).orElseThrow();
+    final Checkpoint justifiedCheckpoint =
+        headBlockAndState.getState().getCurrentJustifiedCheckpoint();
+    final Checkpoint finalizedCheckpoint = headBlockAndState.getState().getFinalizedCheckpoint();
+    final BlockCheckpoints checkpoints =
+        new BlockCheckpoints(
+            justifiedCheckpoint,
+            finalizedCheckpoint,
+            new Checkpoint(justifiedCheckpoint.getEpoch().plus(1), justifiedCheckpoint.getRoot()),
+            new Checkpoint(finalizedCheckpoint.getEpoch().plus(1), finalizedCheckpoint.getRoot()));
+    store.putBlockAndState(headBlockAndState, checkpoints);
+
+    // Transition straight to epoch 3
+    final UInt64 finalMillis =
+        spec.getSlotStartTimeMillis(
+            spec.computeStartSlotAtEpoch(UInt64.valueOf(3)), store.getGenesisTimeMillis());
+    forkChoiceUtil.onTick(store, finalMillis);
+    assertThat(store.getTimeMillis()).isEqualTo(finalMillis);
+
+    // Check the pull-up for epoch 2 was still performed
+    assertThat(store.getJustifiedCheckpoint())
+        .isEqualTo(checkpoints.getUnrealizedJustifiedCheckpoint());
+    assertThat(store.getFinalizedCheckpoint())
+        .isEqualTo(checkpoints.getUnrealizedFinalizedCheckpoint());
   }
 
   @Test

@@ -57,6 +57,14 @@ public class ChainUpdater {
     return recentChainData.getHeadSlot();
   }
 
+  public void advanceCurrentSlotToAtLeast(final UInt64 currentSlot) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
+    final UInt64 slotTime = getSlotTime(currentSlot);
+    if (recentChainData.getStore().getTimeSeconds().isLessThan(slotTime)) {
+      setTime(slotTime);
+    }
+  }
+
   public void setCurrentSlot(final UInt64 currentSlot) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     setTime(getSlotTime(currentSlot));
@@ -237,7 +245,8 @@ public class ChainUpdater {
 
   public void saveBlock(final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(block.getBlock(), block.getState());
+    tx.putBlockAndState(
+        block.getBlock(), block.getState(), spec.calculateBlockCheckpoints(block.getState()));
     assertThat(tx.commit()).isCompleted();
     recentChainData
         .getUpdatableForkChoiceStrategy()
@@ -251,7 +260,8 @@ public class ChainUpdater {
         .withFailMessage("can't save optimistic block if block processor is not optimistic")
         .isTrue();
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(block.getBlock(), block.getState());
+    tx.putBlockAndState(
+        block.getBlock(), block.getState(), spec.calculateBlockCheckpoints(block.getState()));
     assertThat(tx.commit()).isCompleted();
     saveBlockTime(block);
   }

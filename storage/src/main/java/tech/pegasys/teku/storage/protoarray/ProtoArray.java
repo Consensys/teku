@@ -36,14 +36,16 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoArray {
   private static final Logger LOG = LogManager.getLogger();
 
   private int pruneThreshold;
 
-  private UInt64 justifiedEpoch;
-  private UInt64 finalizedEpoch;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint finalizedCheckpoint;
   // The epoch of our initial startup state
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
@@ -67,10 +69,13 @@ public class ProtoArray {
   private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
   ProtoArray(
-      int pruneThreshold, UInt64 justifiedEpoch, UInt64 finalizedEpoch, UInt64 initialEpoch) {
+      final int pruneThreshold,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint,
+      final UInt64 initialEpoch) {
     this.pruneThreshold = pruneThreshold;
-    this.justifiedEpoch = justifiedEpoch;
-    this.finalizedEpoch = finalizedEpoch;
+    this.justifiedCheckpoint = justifiedCheckpoint;
+    this.finalizedCheckpoint = finalizedCheckpoint;
     this.initialEpoch = initialEpoch;
   }
 
@@ -115,8 +120,7 @@ public class ProtoArray {
       Bytes32 blockRoot,
       Bytes32 parentRoot,
       Bytes32 stateRoot,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch,
+      BlockCheckpoints checkpoints,
       Bytes32 executionBlockHash,
       boolean optimisticallyProcessed) {
     if (indices.contains(blockRoot)) {
@@ -132,8 +136,7 @@ public class ProtoArray {
             blockRoot,
             parentRoot,
             indices.get(parentRoot),
-            justifiedEpoch,
-            finalizedEpoch,
+            checkpoints,
             executionBlockHash,
             UInt64.ZERO,
             Optional.empty(),
@@ -150,12 +153,13 @@ public class ProtoArray {
    * Follows the best-descendant links to find the best-block (i.e. head-block), including any
    * optimistic nodes which have not yet been fully validated.
    *
-   * @param justifiedRoot the root of the justified checkpoint
+   * @param justifiedCheckpoint the justified checkpoint
+   * @param finalizedCheckpoint the finalized checkpoint
    * @return the best node according to fork choice
    */
   public ProtoNode findOptimisticHead(
-      Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch)
+      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+    return findHead(justifiedCheckpoint, finalizedCheckpoint)
         .orElseThrow(fatalException("Finalized block was found to be invalid."));
   }
 
@@ -188,18 +192,20 @@ public class ProtoArray {
   }
 
   private Optional<ProtoNode> findHead(
-      final Bytes32 justifiedRoot, final UInt64 justifiedEpoch, final UInt64 finalizedEpoch) {
-    if (!this.justifiedEpoch.equals(justifiedEpoch)
-        || !this.finalizedEpoch.equals(finalizedEpoch)) {
-      this.justifiedEpoch = justifiedEpoch;
-      this.finalizedEpoch = finalizedEpoch;
+      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+    if (!this.justifiedCheckpoint.equals(justifiedCheckpoint)
+        || !this.finalizedCheckpoint.equals(finalizedCheckpoint)) {
+      this.justifiedCheckpoint = justifiedCheckpoint;
+      this.finalizedCheckpoint = finalizedCheckpoint;
       // Justified or finalized epoch changed so we have to re-evaluate all best descendants.
       applyToNodes(this::updateBestDescendantOfParent);
     }
     int justifiedIndex =
         indices
-            .get(justifiedRoot)
-            .orElseThrow(fatalException("Invalid or unknown justified root: " + justifiedRoot));
+            .get(justifiedCheckpoint.getRoot())
+            .orElseThrow(
+                fatalException(
+                    "Invalid or unknown justified root: " + justifiedCheckpoint.getRoot()));
 
     ProtoNode justifiedNode = getNodeByIndex(justifiedIndex);
 
@@ -340,22 +346,21 @@ public class ProtoArray {
    *   <li>If required, update the parents best descendant with the current node or its best
    *       descendant.
    * </ul>
-   *
-   * @param deltas
-   * @param justifiedEpoch
-   * @param finalizedEpoch
    */
-  public void applyScoreChanges(LongList deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+  public void applyScoreChanges(
+      final LongList deltas,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
     checkArgument(
         deltas.size() == getTotalTrackedNodeCount(),
         "ProtoArray: Invalid delta length expected %s but got %s",
         getTotalTrackedNodeCount(),
         deltas.size());
 
-    if (!justifiedEpoch.equals(this.justifiedEpoch)
-        || !finalizedEpoch.equals(this.finalizedEpoch)) {
-      this.justifiedEpoch = justifiedEpoch;
-      this.finalizedEpoch = finalizedEpoch;
+    if (!justifiedCheckpoint.equals(this.justifiedCheckpoint)
+        || !finalizedCheckpoint.equals(this.finalizedCheckpoint)) {
+      this.justifiedCheckpoint = justifiedCheckpoint;
+      this.finalizedCheckpoint = finalizedCheckpoint;
     }
 
     applyDeltas(deltas);
@@ -373,8 +378,6 @@ public class ProtoArray {
    *   <li>The supplied finalized epoch and root are different to the current values.
    *   <li>The number of nodes in `this` is at least `this.pruneThreshold`.
    * </ul>
-   *
-   * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
     int finalizedIndex =
@@ -452,9 +455,6 @@ public class ProtoArray {
    *   <li>The child is not the best child but becomes the best child.
    *   <li>The child is not the best child and does not become the best child.
    * </ul>
-   *
-   * @param parentIndex
-   * @param childIndex
    */
   @SuppressWarnings("StatementWithEmptyBody")
   private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
@@ -518,23 +518,14 @@ public class ProtoArray {
             });
   }
 
-  /**
-   * Helper for maybeUpdateBestChildAndDescendant
-   *
-   * @param parent
-   * @param childIndex
-   */
+  /** Helper for maybeUpdateBestChildAndDescendant */
   private void changeToChild(ProtoNode parent, int childIndex) {
     ProtoNode child = getNodeByIndex(childIndex);
     parent.setBestChildIndex(Optional.of(childIndex));
     parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
   }
 
-  /**
-   * Helper for maybeUpdateBestChildAndDescendant
-   *
-   * @param parent
-   */
+  /** Helper for maybeUpdateBestChildAndDescendant */
   private void changeToNone(ProtoNode parent) {
     parent.setBestChildIndex(Optional.empty());
     parent.setBestDescendantIndex(Optional.empty());
@@ -543,9 +534,6 @@ public class ProtoArray {
   /**
    * Indicates if the node itself is viable for the head, or if it's best descendant is viable for
    * the head.
-   *
-   * @param node
-   * @return
    */
   private boolean nodeLeadsToViableHead(ProtoNode node) {
     boolean bestDescendantIsViableForHead =
@@ -564,26 +552,27 @@ public class ProtoArray {
    *
    * <p>Any node that has a different finalized or justified epoch should not be viable for the
    * head.
-   *
-   * @param node
-   * @return
    */
   public boolean nodeIsViableForHead(ProtoNode node) {
-    return !node.isInvalid()
-        && (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(initialEpoch))
-        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(initialEpoch));
+    if (node.isInvalid()) {
+      return false;
+    }
+    return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
+        && doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
   }
 
-  public UInt64 getJustifiedEpoch() {
-    return justifiedEpoch;
+  private boolean doesCheckpointMatch(final Checkpoint actual, final Checkpoint required) {
+    return required.getEpoch().equals(initialEpoch)
+        || (actual.getEpoch().equals(required.getEpoch())
+            && (actual.getRoot().isZero() || actual.getRoot().equals(required.getRoot())));
   }
 
-  public UInt64 getFinalizedEpoch() {
-    return finalizedEpoch;
+  public Checkpoint getJustifiedCheckpoint() {
+    return justifiedCheckpoint;
   }
 
-  public UInt64 getInitialEpoch() {
-    return initialEpoch;
+  public Checkpoint getFinalizedCheckpoint() {
+    return finalizedCheckpoint;
   }
 
   /**
@@ -596,6 +585,10 @@ public class ProtoArray {
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
     indices.remove(blockRoot);
+  }
+
+  public void pullUpBlockCheckpoints(final Bytes32 blockRoot) {
+    getProtoNode(blockRoot).ifPresent(ProtoNode::pullUpCheckpoints);
   }
 
   private void applyDeltas(final LongList deltas) {

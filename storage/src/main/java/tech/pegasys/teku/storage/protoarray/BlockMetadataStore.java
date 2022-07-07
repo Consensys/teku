@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -39,7 +39,8 @@ public interface BlockMetadataStore {
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 root1, Bytes32 root2);
 
   void applyUpdate(
-      Collection<BlockAndCheckpointEpochs> addedBlocks,
+      Collection<BlockAndCheckpoints> addedBlocks,
+      Collection<Bytes32> pulledUpBlocks,
       Set<Bytes32> removedBlocks,
       Checkpoint finalizedCheckpoint);
 

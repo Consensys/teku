@@ -197,8 +197,8 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
 
-    transaction.putBlockAndState(block1);
-    transaction.putBlockAndState(block2);
+    transaction.putBlockAndState(block1, spec.calculateBlockCheckpoints(block1.getState()));
+    transaction.putBlockAndState(block2, spec.calculateBlockCheckpoints(block2.getState()));
 
     commit(transaction);
 
@@ -302,8 +302,8 @@ public abstract class AbstractDatabaseTest {
 
     // Add blocks while finalizing blockA at the same time
     StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(blockA2);
-    tx.putBlockAndState(blockB2);
+    tx.putBlockAndState(blockA2, spec.calculateBlockCheckpoints(blockA2.getState()));
+    tx.putBlockAndState(blockB2, spec.calculateBlockCheckpoints(blockB2.getState()));
     justifyAndFinalizeEpoch(UInt64.ONE, blockA, tx);
     assertThat(tx.commit()).isCompleted();
 
@@ -439,7 +439,7 @@ public abstract class AbstractDatabaseTest {
     assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newBlock);
+    transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
@@ -457,8 +457,10 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(2);
 
-    transaction.putBlockAndState(blockAndState1);
-    transaction.putBlockAndState(blockAndState2);
+    transaction.putBlockAndState(
+        blockAndState1, spec.calculateBlockCheckpoints(blockAndState1.getState()));
+    transaction.putBlockAndState(
+        blockAndState2, spec.calculateBlockCheckpoints(blockAndState2.getState()));
 
     commit(transaction);
 
@@ -1362,7 +1364,7 @@ public abstract class AbstractDatabaseTest {
   protected void addBlocks(final List<SignedBlockAndState> blocks) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
-      transaction.putBlockAndState(block);
+      transaction.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
     }
     commit(transaction);
   }
@@ -1377,7 +1379,10 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     blocksAndStates.stream()
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
-        .forEach(transaction::putBlockAndState);
+        .forEach(
+            blockAndState ->
+                transaction.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
   }
 
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {

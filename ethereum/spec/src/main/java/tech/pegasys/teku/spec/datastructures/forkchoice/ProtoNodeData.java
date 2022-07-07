@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 
 public class ProtoNodeData implements MinimalBeaconBlockSummary {
@@ -27,6 +28,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
   private final Bytes32 stateRoot;
   private final Bytes32 executionBlockHash;
   private final boolean isOptimistic;
+  private final BlockCheckpoints checkpoints;
 
   public ProtoNodeData(
       final UInt64 slot,
@@ -34,13 +36,15 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
       final Bytes32 executionBlockHash,
-      final boolean isOptimistic) {
+      final boolean isOptimistic,
+      final BlockCheckpoints checkpoints) {
     this.slot = slot;
     this.root = root;
     this.parentRoot = parentRoot;
     this.stateRoot = stateRoot;
     this.executionBlockHash = executionBlockHash;
     this.isOptimistic = isOptimistic;
+    this.checkpoints = checkpoints;
   }
 
   @Override
@@ -71,6 +75,10 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
     return isOptimistic;
   }
 
+  public BlockCheckpoints getCheckpoints() {
+    return checkpoints;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -80,17 +88,25 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       return false;
     }
     final ProtoNodeData that = (ProtoNodeData) o;
-    return isOptimistic == that.isOptimistic
-        && Objects.equals(slot, that.slot)
-        && Objects.equals(root, that.root)
-        && Objects.equals(parentRoot, that.parentRoot)
-        && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(executionBlockHash, that.executionBlockHash);
+    return isOptimistic() == that.isOptimistic()
+        && Objects.equals(getSlot(), that.getSlot())
+        && Objects.equals(getRoot(), that.getRoot())
+        && Objects.equals(getParentRoot(), that.getParentRoot())
+        && Objects.equals(getStateRoot(), that.getStateRoot())
+        && Objects.equals(getExecutionBlockHash(), that.getExecutionBlockHash())
+        && Objects.equals(getCheckpoints(), that.getCheckpoints());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, root, parentRoot, stateRoot, executionBlockHash, isOptimistic);
+    return Objects.hash(
+        getSlot(),
+        getRoot(),
+        getParentRoot(),
+        getStateRoot(),
+        getExecutionBlockHash(),
+        isOptimistic(),
+        getCheckpoints());
   }
 
   @Override
@@ -102,6 +118,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         .add("stateRoot", stateRoot)
         .add("executionBlockHash", executionBlockHash)
         .add("isOptimistic", isOptimistic)
+        .add("checkpoints", checkpoints)
         .toString();
   }
 }

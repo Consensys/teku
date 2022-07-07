@@ -141,6 +141,8 @@ public interface SpecConfig {
 
   Eth1Address getDepositContractAddress();
 
+  ProgressiveBalancesMode getProgressiveBalancesMode();
+
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }

@@ -29,13 +29,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class NoVotesTest {
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final VoteUpdater store = createStoreToManipulateVotes();
+  private final TestStoreImpl store = createStoreToManipulateVotes();
 
   private final ForkChoiceStrategy forkChoice =
       createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
@@ -54,7 +55,7 @@ public class NoVotesTest {
     //         0
     //        /
     //        2
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(2), getHash(0), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is 2
@@ -70,7 +71,7 @@ public class NoVotesTest {
     //         0
     //        / \
     //        2  1
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(0), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is still 2
@@ -88,7 +89,7 @@ public class NoVotesTest {
     //        2  1
     //           |
     //           3
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure 2 is still the head
@@ -108,7 +109,7 @@ public class NoVotesTest {
     //        2  1
     //        |  |
     //        4  3
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(4), getHash(2), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is 4.
@@ -130,7 +131,7 @@ public class NoVotesTest {
     //        4  3
     //        |
     //        5 <- justified epoch = 2
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is still 4 whilst the justified epoch is 0.
@@ -180,7 +181,7 @@ public class NoVotesTest {
     //     5
     //     |
     //     6
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(6), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure 6 is the head
@@ -196,6 +197,27 @@ public class NoVotesTest {
     //     6 <- head
     assertThat(applyPendingVotes(checkpoint(1, 0), checkpoint(2, 5), balances))
         .isEqualTo(getHash(6));
+  }
+
+  private void processBlock(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
+      final Bytes32 executionBlockHash) {
+    forkChoice.processBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        new BlockCheckpoints(
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO),
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
+        executionBlockHash);
   }
 
   private Bytes32 applyPendingVotes(

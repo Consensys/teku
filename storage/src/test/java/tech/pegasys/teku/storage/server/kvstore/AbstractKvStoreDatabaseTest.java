@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -73,7 +73,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     assertThatSafeFuture(store.retrieveBlockState(newValue.getRoot()))
         .isCompletedWithEmptyOptional();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newValue);
+    transaction.putBlockAndState(newValue, spec.calculateBlockCheckpoints(newValue.getState()));
 
     final SafeFuture<Void> result = transaction.commit();
     assertThatThrownBy(result::get).hasCauseInstanceOf(ShuttingDownException.class);
@@ -164,7 +164,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(
-              () -> updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock)))
+              () -> updater.addHotBlock(BlockAndCheckpoints.fromBlockAndState(spec, newBlock)))
           .isInstanceOf(ShuttingDownException.class);
     }
   }
@@ -214,7 +214,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newBlock);
+    transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     transaction.setFinalizedCheckpoint(newCheckpoint, false);
     transaction.commit().ifExceptionGetsHereRaiseABug();
     // Close db
@@ -250,7 +250,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
 
         dbCloserThread.start();
         try {
-          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+          updater.addHotBlock(BlockAndCheckpoints.fromBlockAndState(spec, newBlock));
         } catch (Exception e) {
           assertThat(e).isInstanceOf(ShuttingDownException.class);
         }

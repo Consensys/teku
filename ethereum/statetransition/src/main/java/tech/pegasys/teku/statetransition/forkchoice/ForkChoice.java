@@ -92,6 +92,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean proposerBoostEnabled,
       final boolean equivocatingIndicesEnabled) {
@@ -103,7 +104,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
-    this.tickProcessor = new TickProcessor(spec, recentChainData);
+    this.tickProcessor = tickProcessor;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -124,6 +125,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceExecutor,
         recentChainData,
         forkChoiceNotifier,
+        new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
         false);

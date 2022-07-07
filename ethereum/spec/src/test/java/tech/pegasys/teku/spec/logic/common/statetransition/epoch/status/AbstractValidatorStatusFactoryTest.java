@@ -156,9 +156,9 @@ public abstract class AbstractValidatorStatusFactoryTest {
   void createTotalBalances_shouldAddCurrentEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, true, false),
-            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true),
-            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false));
+            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, true, false, true),
+            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true, false),
+            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false, false));
     // Should include both statuses active in current epoch for a total of 12.
     assertThat(
             validatorStatusFactory.createTotalBalances(statuses).getCurrentEpochActiveValidators())
@@ -169,9 +169,9 @@ public abstract class AbstractValidatorStatusFactoryTest {
   void createTotalBalances_shouldAddPreviousEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, false, true),
-            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true),
-            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false));
+            new ValidatorStatus(false, false, balance(7), withdrawableEpoch, false, true, true),
+            new ValidatorStatus(true, true, balance(5), withdrawableEpoch, true, true, true),
+            new ValidatorStatus(false, false, balance(13), withdrawableEpoch, false, false, false));
     // Should include both statuses active in previous epoch for a total of 12.
     assertThat(
             validatorStatusFactory.createTotalBalances(statuses).getPreviousEpochActiveValidators())
@@ -251,13 +251,13 @@ public abstract class AbstractValidatorStatusFactoryTest {
 
   private ValidatorStatus createValidator(final int effectiveBalance) {
     return new ValidatorStatus(
-        false, false, balance(effectiveBalance), withdrawableEpoch, true, true);
+        false, false, balance(effectiveBalance), withdrawableEpoch, true, true, true);
   }
 
   private ValidatorStatus createWithAllAttesterFlags(
       final boolean slashed, final int effectiveBalance) {
     return new ValidatorStatus(
-            slashed, true, balance(effectiveBalance), withdrawableEpoch, true, true)
+            slashed, true, balance(effectiveBalance), withdrawableEpoch, true, true, true)
         .updateCurrentEpochSourceAttester(true)
         .updatePreviousEpochSourceAttester(true)
         .updateCurrentEpochTargetAttester(true)

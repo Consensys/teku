@@ -18,30 +18,31 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
-public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
+public class BlockAndCheckpoints implements BeaconBlockSummary {
   private final SignedBeaconBlock block;
-  private final CheckpointEpochs checkpointEpochs;
+  private final BlockCheckpoints blockCheckpoints;
 
-  public BlockAndCheckpointEpochs(
-      final SignedBeaconBlock block, final CheckpointEpochs checkpointEpochs) {
+  public BlockAndCheckpoints(
+      final SignedBeaconBlock block, final BlockCheckpoints blockCheckpoints) {
     this.block = block;
-    this.checkpointEpochs = checkpointEpochs;
+    this.blockCheckpoints = blockCheckpoints;
   }
 
-  public static BlockAndCheckpointEpochs fromBlockAndState(
-      final SignedBlockAndState blockAndState) {
-    return new BlockAndCheckpointEpochs(
-        blockAndState.getBlock(), CheckpointEpochs.fromBlockAndState(blockAndState));
+  public static BlockAndCheckpoints fromBlockAndState(
+      final Spec spec, final SignedBlockAndState blockAndState) {
+    return new BlockAndCheckpoints(
+        blockAndState.getBlock(), spec.calculateBlockCheckpoints(blockAndState.getState()));
   }
 
   public SignedBeaconBlock getBlock() {
     return block;
   }
 
-  public CheckpointEpochs getCheckpointEpochs() {
-    return checkpointEpochs;
+  public BlockCheckpoints getBlockCheckpoints() {
+    return blockCheckpoints;
   }
 
   @Override
@@ -100,21 +101,21 @@ public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final BlockAndCheckpointEpochs that = (BlockAndCheckpointEpochs) o;
+    final BlockAndCheckpoints that = (BlockAndCheckpoints) o;
     return Objects.equals(block, that.block)
-        && Objects.equals(checkpointEpochs, that.checkpointEpochs);
+        && Objects.equals(blockCheckpoints, that.blockCheckpoints);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(block, checkpointEpochs);
+    return Objects.hash(block, blockCheckpoints);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("block", block)
-        .add("checkpointEpochs", checkpointEpochs)
+        .add("blockCheckpoints", blockCheckpoints)
         .toString();
   }
 }
