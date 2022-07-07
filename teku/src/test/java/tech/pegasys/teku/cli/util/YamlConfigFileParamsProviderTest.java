@@ -51,6 +51,39 @@ class YamlConfigFileParamsProviderTest {
   }
 
   @Test
+  void parsingValidYamlWithShortParamFilePopulatesCommandObject(@TempDir final Path tempDir)
+      throws IOException {
+    final Map<String, Object> options = new HashMap<>();
+    options.put("n", List.of("b", "a"));
+    final Path configFile = writeToYamlConfigFile(options, tempDir);
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
+    final Map<String, String> additionalParams =
+        yamlConfigFileDefaultProvider.getAdditionalParams(commandLine.getCommandSpec().options());
+
+    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("b,a");
+  }
+
+  @Test
+  void parsingYamlWithDifferentOptionsForSameParamThrows(@TempDir final Path tempDir)
+      throws IOException {
+    final Map<String, Object> options = new HashMap<>();
+    options.put("n", List.of("b", "a"));
+    options.put("names", List.of("b", "a"));
+    final Path configFile = writeToYamlConfigFile(options, tempDir);
+    final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
+        new YamlConfigFileParamsProvider(commandLine, configFile.toFile());
+
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
+        .isThrownBy(
+            () ->
+                yamlConfigFileDefaultProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
+        .withMessageStartingWith(
+            "Multiple options referring to the same configuration 'names'. Conflicting values:");
+  }
+
+  @Test
   void parsingYamlWithInvalidMultivaluedParamThrows(@TempDir final Path tempDir)
       throws IOException {
     final Map<String, Object> options = defaultOptions();

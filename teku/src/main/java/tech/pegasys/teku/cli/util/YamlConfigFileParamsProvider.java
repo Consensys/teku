@@ -25,6 +25,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -57,16 +59,29 @@ public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
       checkUnknownOptions(result);
     }
 
-    return result.entrySet().stream()
-        .map(yamlEntry -> Map.entry(translateKey(yamlEntry.getKey()), yamlEntry.getValue()))
-        .map(yamlEntry -> mapParam(potentialParams, yamlEntry))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+    final Map<String, String> additionalParams = new HashMap<>();
+    result.entrySet().stream()
+        .flatMap(this::translateEntry)
+        .flatMap(yamlEntry -> mapParam(potentialParams, yamlEntry).stream())
+        .forEach(
+            mappedParam ->
+                additionalParams.merge(
+                    mappedParam.getKey(),
+                    mappedParam.getValue(),
+                    (conflict1, conflict2) -> {
+                      throw new ParameterException(
+                          commandLine,
+                          String.format(
+                              "Multiple options referring to the same configuration '%s'. Conflicting values: %s and %s",
+                              mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
+                    }));
+    return additionalParams;
   }
 
-  private String translateKey(final String yamlKey) {
-    return "--" + yamlKey;
+  private Stream<Entry<String, Object>> translateEntry(final Entry<String, Object> yamlEntry) {
+    return Stream.of(
+        Map.entry("--" + yamlEntry.getKey(), yamlEntry.getValue()),
+        Map.entry("-" + yamlEntry.getKey(), yamlEntry.getValue()));
   }
 
   private Optional<Map.Entry<String, String>> mapParam(
@@ -146,6 +161,7 @@ public class YamlConfigFileParamsProvider implements AdditionalParamsProvider {
     final Set<String> unknownOptionsList =
         result.keySet().stream()
             .filter(option -> !validOptions.contains("--" + option))
+            .filter(option -> !validOptions.contains("-" + option))
             .collect(Collectors.toCollection(TreeSet::new));
 
     if (!unknownOptionsList.isEmpty()) {

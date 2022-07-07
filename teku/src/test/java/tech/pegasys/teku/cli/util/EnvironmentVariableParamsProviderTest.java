@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.util;
 
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -21,21 +23,21 @@ import picocli.CommandLine;
 public class EnvironmentVariableParamsProviderTest {
   final CommandLine commandLine = new CommandLine(TestCommand.class);
 
-  final Map<String, String> completeEnvironment =
-      Map.of(
-          "TEKU_unknown",
-          "test",
-          "TEKU_COUNT",
-          "10",
-          "TEKU_NAMES",
-          "a,b",
-          "TEKU_TEST_ENABLED",
-          "true");
-
   @Test
   void shouldReturnAdditionalParams() {
+    final Map<String, String> environment =
+        Map.of(
+            "TEKU_unknown",
+            "test",
+            "TEKU_COUNT",
+            "10",
+            "TEKU_NAMES",
+            "a,b",
+            "TEKU_TEST_ENABLED",
+            "true");
+
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
-        new EnvironmentVariableParamsProvider(completeEnvironment);
+        new EnvironmentVariableParamsProvider(commandLine, environment);
 
     final Map<String, String> additionalParams =
         environmentVariableParamsProvider.getAdditionalParams(
@@ -44,5 +46,36 @@ public class EnvironmentVariableParamsProviderTest {
     Assertions.assertThat(additionalParams.get("--count")).isEqualTo("10");
     Assertions.assertThat(additionalParams.get("--names")).isEqualTo("a,b");
     Assertions.assertThat(additionalParams.get("--test-enabled")).isEqualTo("true");
+  }
+
+  @Test
+  void shouldReturnAdditionalParamsWhenShortNamesAreUsed() {
+    final Map<String, String> environment = Map.of("TEKU_N", "a,b");
+
+    final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
+        new EnvironmentVariableParamsProvider(commandLine, environment);
+
+    final Map<String, String> additionalParams =
+        environmentVariableParamsProvider.getAdditionalParams(
+            commandLine.getCommandSpec().options());
+
+    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("a,b");
+  }
+
+  @Test
+  void shouldThrowWhenDuplicates() {
+    final Map<String, String> environment =
+        Map.of("TEKU_unknown", "test", "TEKU_N", "a,b", "TEKU_NAMES", "c,d");
+
+    final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
+        new EnvironmentVariableParamsProvider(commandLine, environment);
+
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
+        .isThrownBy(
+            () ->
+                environmentVariableParamsProvider.getAdditionalParams(
+                    commandLine.getCommandSpec().options()))
+        .withMessageStartingWith(
+            "Multiple environment options referring to the same configuration 'names'. Conflicting values:");
   }
 }
