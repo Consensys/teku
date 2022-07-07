@@ -57,17 +57,21 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
       checkUnknownOptions(result);
     }
 
-    return getAdditionalParam(potentialParams, result);
+    return getAdditionalParams(potentialParams, result);
   }
 
   @Override
-  protected String onConflict(
-      final Entry<String, String> mappedParam, final String conflict1, final String conflict2) {
+  protected String onConflictingParams(
+      final Entry<String, String> conflictingParam,
+      final String conflictingValue1,
+      final String conflictingValue2) {
     throw new ParameterException(
         commandLine,
         String.format(
             "Multiple options referring to the same configuration '%s'. Conflicting values: %s and %s",
-            mappedParam.getKey().replaceFirst("^-+", ""), conflict1, conflict2));
+            conflictingParam.getKey().replaceFirst("^-+", ""),
+            conflictingValue1,
+            conflictingValue2));
   }
 
   @Override

@@ -23,33 +23,35 @@ import picocli.CommandLine.Model.OptionSpec;
 
 public abstract class AbstractParamsProvider<V> {
 
-  protected Map<String, String> getAdditionalParam(
-      final List<OptionSpec> potentialParams, final Map<String, V> config) {
+  protected Map<String, String> getAdditionalParams(
+      final List<OptionSpec> potentialOptions, final Map<String, V> config) {
     final Map<String, String> additionalParams = new HashMap<>();
 
     config.entrySet().stream()
         .flatMap(configEntry -> translateEntry(configEntry).stream())
-        .flatMap(translatedEntry -> mapParam(potentialParams, translatedEntry).stream())
+        .flatMap(translatedEntry -> getMatchingParam(potentialOptions, translatedEntry).stream())
         .forEach(
-            mappedParam ->
+            matchedParam ->
                 additionalParams.merge(
-                    mappedParam.getKey(),
-                    mappedParam.getValue(),
-                    (conflict1, conflict2) -> onConflict(mappedParam, conflict1, conflict2)));
+                    matchedParam.getKey(),
+                    matchedParam.getValue(),
+                    (conflict1, conflict2) ->
+                        onConflictingParams(matchedParam, conflict1, conflict2)));
     return additionalParams;
   }
 
-  protected Optional<Entry<String, String>> mapParam(
+  protected Optional<Entry<String, String>> getMatchingParam(
       final List<OptionSpec> potentialParams, final Entry<String, V> configEntry) {
     return potentialParams.stream()
-        .filter(optionSpec -> matchKey(optionSpec, configEntry.getKey()))
+        .filter(optionSpec -> isOptionMatchingConfigKey(optionSpec, configEntry.getKey()))
         .findFirst()
         .map(optionSpec -> translateToArg(optionSpec, configEntry));
   }
 
-  protected boolean matchKey(final OptionSpec matchedOption, final String configName) {
-    return Arrays.stream(matchedOption.names())
-        .anyMatch(name -> name.replaceFirst("^-+", "").equalsIgnoreCase(configName));
+  protected boolean isOptionMatchingConfigKey(
+      final OptionSpec potentialOption, final String configKey) {
+    return Arrays.stream(potentialOption.names())
+        .anyMatch(name -> name.replaceFirst("^-+", "").equalsIgnoreCase(configKey));
   }
 
   protected abstract Optional<Entry<String, V>> translateEntry(final Entry<String, V> configEntry);
@@ -57,6 +59,6 @@ public abstract class AbstractParamsProvider<V> {
   protected abstract Entry<String, String> translateToArg(
       OptionSpec matchedOption, Entry<String, V> configEntry);
 
-  protected abstract String onConflict(
-      Entry<String, String> mappedParam, String conflict1, String conflict2);
+  protected abstract String onConflictingParams(
+      Entry<String, String> conflictingParam, String conflictingValue1, String conflictingValue2);
 }
