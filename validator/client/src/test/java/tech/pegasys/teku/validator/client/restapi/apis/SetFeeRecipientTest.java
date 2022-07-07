@@ -27,15 +27,28 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 
 public class SetFeeRecipientTest {
   private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
   private final SetFeeRecipient handler = new SetFeeRecipient(Optional.of(beaconProposerPreparer));
 
-  private final RestApiRequest request = mock(RestApiRequest.class);
+  private final StubRestApiRequest request = new StubRestApiRequest(handler.getMetadata());
+
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  @Test
+  void badPubkey_shouldGiveIllegalArgument() {
+    request.setPathParameter("pubkey", "pubkey");
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
@@ -49,6 +62,9 @@ public class SetFeeRecipientTest {
 
   @Test
   void shouldShareContextIfBellatrixNotEnabled() {
+    request.setPathParameter("pubkey", dataStructureUtil.randomPublicKey().toString());
+    request.setRequestBody(
+        new SetFeeRecipient.SetFeeRecipientBody(dataStructureUtil.randomEth1Address()));
     assertThatThrownBy(
             () -> {
               SetFeeRecipient handler = new SetFeeRecipient(Optional.empty());
@@ -72,5 +88,14 @@ public class SetFeeRecipientTest {
         .isEqualTo(
             new SetFeeRecipient.SetFeeRecipientBody(
                 Eth1Address.fromHexString("0xabcf8e0d4e9587369b2301d0790347320302cc09")));
+  }
+
+  @Test
+  void metadata_shoulThrowInvalidArgument() {
+    assertThatThrownBy(
+            () ->
+                getRequestBodyFromMetadata(
+                    handler, "{\"ethaddress\":\"0xabcF8e0d4E9587369b2301d0790347320302CC09\"}"))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

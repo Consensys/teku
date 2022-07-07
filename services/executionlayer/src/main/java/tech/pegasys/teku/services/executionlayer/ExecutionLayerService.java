@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_CALL_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
 import java.nio.file.Path;
@@ -24,6 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
@@ -67,7 +69,7 @@ public class ExecutionLayerService extends Service {
                 builderEndpoint ->
                     RestClientProvider.create(
                         builderEndpoint,
-                        EL_BUILDER_CALL_TIMEOUT,
+                        BUILDER_CALL_TIMEOUT,
                         false,
                         Optional.empty(),
                         beaconDataDirectory,
@@ -89,11 +91,27 @@ public class ExecutionLayerService extends Service {
       executionLayerManager = new ExecutionLayerManagerStub(config.getSpec(), timeProvider, true);
     } else {
       final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+
+      final ExecutionEngineClient executionEngineClient =
+          ExecutionLayerManagerImpl.createEngineClient(
+              config.getEngineVersion(),
+              engineWeb3jClientProvider.getWeb3JClient(),
+              timeProvider,
+              metricsSystem);
+      final Optional<ExecutionBuilderClient> executionBuilderClient =
+          builderRestClientProvider.map(
+              restClientProvider ->
+                  ExecutionLayerManagerImpl.createBuilderClient(
+                      restClientProvider.getRestClient(),
+                      config.getSpec(),
+                      timeProvider,
+                      metricsSystem));
+
       executionLayerManager =
           ExecutionLayerManagerImpl.create(
-              engineWeb3jClientProvider.getWeb3JClient(),
-              builderRestClientProvider.map(RestClientProvider::getRestClient),
-              config.getEngineVersion(),
+              EVENT_LOG,
+              executionEngineClient,
+              executionBuilderClient,
               config.getSpec(),
               metricsSystem,
               new BuilderBidValidatorImpl(EVENT_LOG));

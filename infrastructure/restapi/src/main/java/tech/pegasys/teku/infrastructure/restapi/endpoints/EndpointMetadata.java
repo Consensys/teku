@@ -125,6 +125,10 @@ public class EndpointMetadata {
     return new EndpointMetaDataBuilder().method(HandlerType.POST).path(path);
   }
 
+  public static EndpointMetaDataBuilder put(final String path) {
+    return new EndpointMetaDataBuilder().method(HandlerType.PUT).path(path);
+  }
+
   public static EndpointMetaDataBuilder delete(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
   }
@@ -546,6 +550,13 @@ public class EndpointMetadata {
           responseCode,
           description,
           List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
+      return response(responseCode, description, List.of(octetStreamTypeDefinition));
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {

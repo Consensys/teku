@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -39,6 +40,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private final RecentChainData recentChainData;
   private final ProposersDataManager proposersDataManager;
   private final Spec spec;
+  private final TimeProvider timeProvider;
 
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
       Subscribers.create(true);
@@ -49,6 +51,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
   public ForkChoiceNotifierImpl(
       final EventThread eventThread,
+      final TimeProvider timeProvider,
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
@@ -58,6 +61,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
+    this.timeProvider = timeProvider;
     proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
@@ -218,8 +222,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
   private void sendForkChoiceUpdated() {
     final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
-        forkChoiceUpdateData.send(executionLayerChannel);
-
+        forkChoiceUpdateData.send(executionLayerChannel, timeProvider.getTimeInMillis());
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(

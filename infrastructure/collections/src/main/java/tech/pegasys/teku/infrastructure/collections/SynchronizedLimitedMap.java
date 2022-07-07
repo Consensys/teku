@@ -14,31 +14,12 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /** Helper that creates a thread-safe map with a maximum capacity. */
 final class SynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
 
-  private static <K, V> Map<K, V> createLimitedMap(final int maxSize) {
-    return new LinkedHashMap<>(16, 0.75f, true) {
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return size() > maxSize;
-      }
-    };
-  }
-
-  private final int maxSize;
-
   public SynchronizedLimitedMap(final int maxSize) {
-    super(Collections.synchronizedMap(createLimitedMap(maxSize)));
-    this.maxSize = maxSize;
-  }
-
-  @Override
-  public int getMaxSize() {
-    return maxSize;
+    super(Collections.synchronizedMap(createLimitedMap(maxSize)), maxSize);
   }
 
   @Override

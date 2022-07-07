@@ -113,7 +113,7 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public List<Map<String, Object>> getNodeData() {
+  public List<Map<String, String>> getNodeData() {
     return Collections.emptyList();
   }
 

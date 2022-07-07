@@ -211,6 +211,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return hotDao.streamCheckpointEpochs();
+  }
+
+  @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return hotDao.getMinGenesisTimeBlock();
   }

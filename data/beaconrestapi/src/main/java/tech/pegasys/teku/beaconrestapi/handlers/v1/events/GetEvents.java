@@ -13,41 +13,36 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.TOPICS_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EVENTS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.http.sse.SseClient;
-import io.javalin.http.sse.SseHandler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.EventStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class GetEvents implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
+public class GetEvents extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/events";
   private final EventSubscriptionManager eventSubscriptionManager;
 
@@ -77,6 +72,20 @@ public class GetEvents implements Handler {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final int maxPendingEvents) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getEvents")
+            .summary("Subscribe to node events")
+            .description(
+                "Provides endpoint to subscribe to beacon node Server-Sent-Events stream. Consumers should use"
+                    + " [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface)"
+                    + " implementation to listen on those events.\n\n"
+                    + "Servers _may_ send SSE comments beginning with `:` for any purpose, including to keep the"
+                    + " event stream connection alive in the presence of proxy servers.")
+            .tags(TAG_EVENTS, TAG_VALIDATOR_REQUIRED)
+            .queryParam(TOPICS_PARAMETER)
+            .response(SC_OK, "Request successful", new EventStreamResponseContentTypeDefinition())
+            .build());
     eventSubscriptionManager =
         new EventSubscriptionManager(
             nodeDataProvider,
@@ -117,28 +126,12 @@ public class GetEvents implements Handler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    SseHandler sseHandler = new SseHandler(this::sseEventHandler);
-    sseHandler.handle(ctx);
+  public void handle(final Context ctx) throws Exception {
+    adapt(ctx);
   }
 
-  public void sseEventHandler(final SseClient sseClient) {
-    try {
-      eventSubscriptionManager.registerClient(sseClient);
-    } catch (IllegalArgumentException ex) {
-      LOG.trace(ex);
-      sseClient.ctx.status(SC_BAD_REQUEST);
-      sseClient.ctx.json(getBadRequestString(ex.getMessage()));
-    }
-  }
-
-  private String getBadRequestString(final String message) {
-    try {
-      return JsonUtil.serialize(HttpErrorResponse.badRequest(message), HTTP_ERROR_RESPONSE_TYPE);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
-    // manually construct a very basic message
-    return "{\"message\": \"" + message + "\"}";
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    request.startEventStream(eventSubscriptionManager::registerClient);
   }
 }

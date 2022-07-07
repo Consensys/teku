@@ -43,7 +43,6 @@ public abstract class GetChainHeads extends MigratingEndpointAdapter {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final List<ProtoNodeData> chainHeads = chainDataProvider.getChainHeads();
-    request.respondOk(chainHeads, CacheLength.NO_CACHE);
+    request.respondOk(chainDataProvider.getChainHeads(), CacheLength.NO_CACHE);
   }
 }

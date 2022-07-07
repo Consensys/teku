@@ -21,8 +21,6 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
-import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -37,7 +35,10 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
+import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
@@ -104,14 +105,15 @@ public class ValidatorClientService extends Service {
   public static ValidatorClientService create(
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
-    final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
-    final boolean generateEarlyAttestations =
-        config.getValidatorConfig().generateEarlyAttestations();
-    final boolean preferSszBlockEncoding =
-        config.getValidatorConfig().isValidatorClientUseSszBlocksEnabled();
+    final ValidatorConfig validatorConfig = config.getValidatorConfig();
+
+    final AsyncRunner asyncRunner =
+        services.createAsyncRunnerWithMaxQueueSize(
+            "validator", validatorConfig.getExecutorMaxQueueSize());
+    final boolean generateEarlyAttestations = validatorConfig.generateEarlyAttestations();
+    final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
     final BeaconNodeApi beaconNodeApi =
-        config
-            .getValidatorConfig()
+        validatorConfig
             .getBeaconNodeApiEndpoint()
             .map(
                 endpoint ->
@@ -133,7 +135,6 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
     final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
-
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
     Optional<ProposerConfigProvider> proposerConfigProvider = Optional.empty();
@@ -144,10 +145,10 @@ public class ValidatorClientService extends Service {
           Optional.of(
               ProposerConfigProvider.create(
                   asyncRunner,
-                  config.getValidatorConfig().getRefreshProposerConfigFromSource(),
+                  validatorConfig.getRefreshProposerConfigFromSource(),
                   new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
                   services.getTimeProvider(),
-                  config.getValidatorConfig().getProposerConfigSource()));
+                  validatorConfig.getProposerConfigSource()));
 
       beaconProposerPreparer =
           Optional.of(
@@ -155,7 +156,7 @@ public class ValidatorClientService extends Service {
                   validatorApiChannel,
                   Optional.empty(),
                   proposerConfigProvider.get(),
-                  config.getValidatorConfig().getProposerDefaultFeeRecipient(),
+                  validatorConfig.getProposerDefaultFeeRecipient(),
                   config.getSpec(),
                   Optional.of(
                       ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
@@ -168,9 +169,11 @@ public class ValidatorClientService extends Service {
                   services.getTimeProvider(),
                   validatorLoader.getOwnedValidators(),
                   proposerConfigProvider.get(),
-                  config.getValidatorConfig(),
+                  validatorConfig,
                   beaconProposerPreparer.get(),
-                  validatorApiChannel));
+                  new ValidatorRegistrationBatchSender(
+                      validatorConfig.getValidatorsRegistrationSendingBatchSize(),
+                      validatorApiChannel)));
     }
     if (validatorApiConfig.isRestApiEnabled()) {
       validatorRestApi =

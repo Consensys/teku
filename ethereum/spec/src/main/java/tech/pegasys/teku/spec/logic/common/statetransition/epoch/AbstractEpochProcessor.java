@@ -98,7 +98,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
-    processEffectiveBalanceUpdates(state);
+    processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
     processRandaoMixesReset(state);
     processHistoricalRootsUpdate(state);
@@ -229,6 +229,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       // Process activation eligibility and ejections
       SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+      final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
@@ -254,7 +255,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
           beaconStateMutators.initiateValidatorExit(state, index);
         }
       }
-
       // Queue validators eligible for activation and not yet dequeued for activation
       List<Integer> activationQueue =
           IntStream.range(0, state.getValidators().size())
@@ -263,7 +263,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
-                    return validatorsUtil.isEligibleForActivation(state, validator);
+                    return validatorsUtil.isEligibleForActivation(finalizedEpoch, validator);
                   })
               .boxed()
               .sorted(
@@ -347,20 +347,22 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   }
 
   @Override
-  public void processEffectiveBalanceUpdates(final MutableBeaconState state) {
+  public void processEffectiveBalanceUpdates(
+      final MutableBeaconState state, final List<ValidatorStatus> statuses) {
     // Update effective balances with hysteresis
     SszMutableList<Validator> validators = state.getValidators();
     SszUInt64List balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
-      Validator validator = validators.get(index);
+      ValidatorStatus status = statuses.get(index);
       UInt64 balance = balances.getElement(index);
 
       final UInt64 hysteresisIncrement =
           specConfig.getEffectiveBalanceIncrement().dividedBy(specConfig.getHysteresisQuotient());
-      final UInt64 currentEffectiveBalance = validator.getEffectiveBalance();
+      final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
       if (shouldDecreaseEffectiveBalance(balance, hysteresisIncrement, currentEffectiveBalance)
           || shouldIncreaseEffectiveBalance(
               balance, hysteresisIncrement, currentEffectiveBalance)) {
+        Validator validator = validators.get(index);
         final UInt64 newEffectiveBalance =
             balance
                 .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))

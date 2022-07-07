@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
+import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -24,7 +25,9 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
+
   private static final String NETWORK_NAME = "less-swift";
+  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode eth1Node;
@@ -35,7 +38,11 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     eth1Node =
         createBesuNode(
-            config -> config.withMergeSupport(true).withGenesisFile("besu/preMergeGenesis.json"));
+            config ->
+                config
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/preMergeGenesis.json")
+                    .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
 
     final int totalValidators = 4;
@@ -51,7 +58,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                     .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
-                    .withJwtSecretFile(Resources.getResource("teku/ee-jwt-secret.hex")));
+                    .withJwtSecretFile(JWT_FILE));
     tekuNode.start();
   }
 

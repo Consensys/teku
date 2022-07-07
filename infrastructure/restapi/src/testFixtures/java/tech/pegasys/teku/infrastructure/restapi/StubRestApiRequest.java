@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.sse.SseClient;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -196,7 +198,7 @@ public class StubRestApiRequest implements RestApiRequest {
     return contentTypeMap.get(statusCode);
   }
 
-  public void setContentType(final int statusCode, final String contentType) {
+  public void setResponseContentType(final int statusCode, final String contentType) {
     contentTypeMap.put(statusCode, contentType);
   }
 
@@ -231,6 +233,11 @@ public class StubRestApiRequest implements RestApiRequest {
   @Override
   public void header(final String name, final String value) {
     headers.put(name, value);
+  }
+
+  @Override
+  public void startEventStream(Consumer<SseClient> clientConsumer) {
+    throw new UnsupportedOperationException();
   }
 
   public String getHeader(String name) {

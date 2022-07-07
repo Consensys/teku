@@ -16,12 +16,19 @@ package tech.pegasys.teku.infrastructure.async;
 import java.util.Collection;
 
 public interface AsyncRunnerFactory {
+
+  int DEFAULT_MAX_QUEUE_SIZE = 5000;
+
+  default AsyncRunner create(String name, int maxThreads) {
+    return create(name, maxThreads, DEFAULT_MAX_QUEUE_SIZE);
+  }
+
+  AsyncRunner create(String name, int maxThreads, int maxQueueSize);
+
+  Collection<AsyncRunner> getAsyncRunners();
+
   static DefaultAsyncRunnerFactory createDefault(
       final MetricTrackingExecutorFactory executorFactory) {
     return new DefaultAsyncRunnerFactory(executorFactory);
   }
-
-  AsyncRunner create(String name, int maxThreads);
-
-  Collection<AsyncRunner> getAsyncRunners();
 }

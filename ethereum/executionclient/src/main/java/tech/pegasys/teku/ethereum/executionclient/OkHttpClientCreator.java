@@ -30,7 +30,8 @@ public class OkHttpClientCreator {
       final Logger logger,
       final Optional<JwtConfig> jwtConfig,
       final TimeProvider timeProvider) {
-    final OkHttpClient.Builder builder = new OkHttpClient.Builder().callTimeout(timeout);
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder().callTimeout(timeout).readTimeout(timeout);
     if (logger.isTraceEnabled()) {
       final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(logger::trace);
       loggingInterceptor.setLevel(Level.BODY);

@@ -28,14 +28,14 @@ public class ValidatorProposerOptions {
       paramLabel = "<ADDRESS>",
       description =
           "Default fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
-      arity = "0..1")
+      arity = "1")
   private String proposerDefaultFeeRecipient = null;
 
   @Option(
       names = {"--validators-proposer-config"},
       paramLabel = "<STRING>",
       description = "remote URL or local file path to load proposer configuration from",
-      arity = "0..1")
+      arity = "1")
   private String proposerConfig = null;
 
   @Option(
@@ -64,12 +64,23 @@ public class ValidatorProposerOptions {
       names = {"--Xvalidators-registration-default-gas-limit"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enable MEV boost when proposing blocks.",
-      arity = "0..1",
+      description = "Change the default gas limit used for the validators registration.",
+      arity = "1",
       hidden = true,
       converter = UInt64Converter.class)
   private UInt64 registrationDefaultGasLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+
+  @Option(
+      names = {"--Xvalidators-registration-sending-batch-size"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Change the default batch size for sending validator registrations to the Beacon Node.",
+      arity = "1",
+      hidden = true)
+  private int registrationSendingBatchSize =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
@@ -90,6 +101,7 @@ public class ValidatorProposerOptions {
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
                 .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
-                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit));
+                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
+                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize));
   }
 }

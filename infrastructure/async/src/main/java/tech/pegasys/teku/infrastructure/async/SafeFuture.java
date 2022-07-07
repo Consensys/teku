@@ -479,6 +479,18 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.thenComposeAsync(fn, executor);
   }
 
+  public <U> SafeFuture<U> thenComposeChecked(
+      final ExceptionThrowingFunction<? super T, ? extends CompletionStage<U>> function) {
+    return thenCompose(
+        value -> {
+          try {
+            return function.apply(value);
+          } catch (final Throwable ex) {
+            return SafeFuture.failedFuture(ex);
+          }
+        });
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <U, V> SafeFuture<V> thenCombineAsync(

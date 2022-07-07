@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -28,8 +29,8 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -142,9 +143,10 @@ public class DebugDbCommand implements Runnable {
               description = "File to write the block matching the latest finalized state to")
           final Path blockOutputFile)
       throws Exception {
-    final AsyncRunner asyncRunner =
-        ScheduledExecutorAsyncRunner.create(
-            "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunner asyncRunner = asyncRunnerFactory.create("async", 1);
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<AnchorPoint> finalizedAnchor =
           database
@@ -172,6 +174,44 @@ public class DebugDbCommand implements Runnable {
     }
   }
 
+  @Command(
+      name = "get-block-counts",
+      description = "Count blocks in block storage tables",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getBlockCounts(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
+        printIfPresent("Hot blocks", stream.count());
+      }
+      try (Stream<SignedBeaconBlock> stream =
+          database.streamFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        printIfPresent("Finalized blocks", stream.count());
+      }
+      try (Stream<?> stream = database.streamCheckpointEpochs()) {
+        printIfPresent("Checkpoint Epochs", stream.count());
+      }
+      return 0;
+    }
+  }
+
+  private void printIfPresent(final String label, final long count) {
+    if (count > 0L) {
+      final String formatString = "%17s: %d%n";
+      System.out.printf(formatString, label, count);
+    }
+  }
+
   private Database createDatabase(
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
@@ -185,6 +225,7 @@ public class DebugDbCommand implements Runnable {
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
             eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
+            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
             spec);
     return databaseFactory.createDatabase();
   }

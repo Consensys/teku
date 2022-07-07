@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 @SuppressWarnings("unchecked")
-abstract class AbstractBeaconStateBuilder<
+public abstract class AbstractBeaconStateBuilder<
     TState extends BeaconState,
     TStateMutable extends MutableBeaconState,
     TBuilder extends AbstractBeaconStateBuilder<TState, TStateMutable, TBuilder>> {

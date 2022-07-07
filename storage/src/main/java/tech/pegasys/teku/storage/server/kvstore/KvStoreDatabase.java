@@ -96,6 +96,9 @@ public class KvStoreDatabase implements Database {
   private final boolean storeNonCanonicalBlocks;
   @VisibleForTesting final KvStoreCombinedDao dao;
 
+  @SuppressWarnings("unused")
+  private boolean storeBlockExecutionPayloadSeparately;
+
   public static Database createV4(
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
@@ -104,6 +107,7 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
@@ -113,7 +117,8 @@ public class KvStoreDatabase implements Database {
         new KvStoreCombinedDaoAdapter(
             hotDao,
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
-    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    return new KvStoreDatabase(
+        dao, stateStorageMode, storeNonCanonicalBlocks, storeBlockExecutionPayloadSeparately, spec);
   }
 
   public static Database createWithStateSnapshots(
@@ -122,12 +127,19 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        spec,
+        finalizedStateStorageLogic);
   }
 
   public static Database createWithStateTree(
@@ -136,12 +148,19 @@ public class KvStoreDatabase implements Database {
       final SchemaCombinedTreeState schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final int maxKnownNodeCacheSize,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        storeBlockExecutionPayloadSeparately,
+        spec,
+        finalizedStateStorageLogic);
   }
 
   private static <S extends SchemaCombined> KvStoreDatabase create(
@@ -149,19 +168,23 @@ public class KvStoreDatabase implements Database {
       final S schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
         new CombinedKvStoreDao<S>(db, schema, finalizedStateStorageLogic);
-    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    return new KvStoreDatabase(
+        dao, stateStorageMode, storeNonCanonicalBlocks, storeBlockExecutionPayloadSeparately, spec);
   }
 
   private KvStoreDatabase(
       final KvStoreCombinedDao dao,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
+      final boolean storeBlockExecutionPayloadSeparately,
       final Spec spec) {
     this.dao = dao;
+    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     checkNotNull(spec);
     this.stateStorageMode = stateStorageMode;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
@@ -420,6 +443,18 @@ public class KvStoreDatabase implements Database {
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamFinalizedBlocks(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamHotBlocks() {
+    return dao.streamHotBlocks();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+    return dao.streamCheckpointEpochs();
   }
 
   @Override

@@ -32,14 +32,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.SignerNotActiveException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.signatures.SignerNotActiveException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap(), List.of());
+  public static final DutyResult NODE_SYNCING =
+      new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
+
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
@@ -93,7 +96,7 @@ public class DutyResult {
       cause = cause.getCause();
     }
     if (cause instanceof NodeSyncingException) {
-      return new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
+      return NODE_SYNCING;
     } else {
       return new DutyResult(
           0,

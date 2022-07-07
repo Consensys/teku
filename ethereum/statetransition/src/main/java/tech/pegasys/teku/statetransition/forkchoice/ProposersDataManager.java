@@ -15,18 +15,19 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -62,9 +62,20 @@ public class ProposersDataManager implements SlotEventsChannel {
   public ProposersDataManager(
       final EventThread eventThread,
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
       final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+    final LabelledGauge labelledGauge =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.BEACON,
+            "proposers_data_total",
+            "Total number proposers/validators under management",
+            "type");
+
+    labelledGauge.labels(preparedProposerInfoByValidatorIndex::size, "prepared_proposers");
+    labelledGauge.labels(validatorRegistrationInfoByValidatorIndex::size, "registered_validators");
+
     this.spec = spec;
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
@@ -96,28 +107,13 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
-
-    // Update validators
-    final UInt64 expirySlot =
-        currentSlot.plus(
-            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
-    for (BeaconPreparableProposer proposer : preparedProposers) {
-      preparedProposerInfoByValidatorIndex.put(
-          proposer.getValidatorIndex(),
-          new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient()));
-    }
-
+    updatePreparedProposerCache(preparedProposers, currentSlot);
     subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
       final UInt64 currentSlot) {
-    // Remove expired validators
-    validatorRegistrationInfoByValidatorIndex
-        .values()
-        .removeIf(info -> info.hasExpired(currentSlot));
-
     return executionLayerChannel
         .builderRegisterValidators(signedValidatorRegistrations, currentSlot)
         .thenCompose(__ -> recentChainData.getBestState().orElseThrow())
@@ -127,12 +123,22 @@ public class ProposersDataManager implements SlotEventsChannel {
                     headState, signedValidatorRegistrations, currentSlot));
   }
 
+  private void updatePreparedProposerCache(
+      final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
+    final UInt64 expirySlot =
+        currentSlot.plus(
+            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
+    preparedProposers.forEach(
+        proposer ->
+            preparedProposerInfoByValidatorIndex.put(
+                proposer.getValidatorIndex(),
+                new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient())));
+  }
+
   private void updateValidatorRegistrationCache(
       final BeaconState headState,
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
       final UInt64 currentSlot) {
-
-    // Update validators
     final UInt64 expirySlot =
         currentSlot.plus(
             spec.getSlotsPerEpoch(currentSlot) * VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS);
@@ -179,14 +185,6 @@ public class ProposersDataManager implements SlotEventsChannel {
             maybeState ->
                 calculatePayloadBuildingAttributes(blockSlot, epoch, maybeState, mandatory),
             eventThread);
-  }
-
-  public int getNumberOfPreparedProposers() {
-    return preparedProposerInfoByValidatorIndex.size();
-  }
-
-  public int getNumberOfRegisteredValidators() {
-    return validatorRegistrationInfoByValidatorIndex.size();
   }
 
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
@@ -244,48 +242,12 @@ public class ProposersDataManager implements SlotEventsChannel {
     }
   }
 
-  public Map<String, Object> getData() {
-    return ImmutableMap.<String, Object>builder()
-        // changing the following attributes require a change to
-        // tech.pegasys.teku.api.response.v1.teku.ProposerDataSchema
-        .put(
-            "prepared_proposers",
-            preparedProposerInfoByValidatorIndex.entrySet().stream()
-                .map(
-                    proposerInfoEntry ->
-                        ImmutableMap.<String, Object>builder()
-                            // changing the following attributes require a change to
-                            // tech.pegasys.teku.api.response.v1.teku.PreparedProposerInfoSchema
-                            .put("proposer_index", proposerInfoEntry.getKey())
-                            .put("fee_recipient", proposerInfoEntry.getValue().getFeeRecipient())
-                            .put("expiry_slot", proposerInfoEntry.getValue().getExpirySlot())
-                            .build())
-                .collect(Collectors.toList()))
-        .put(
-            "registered_validators",
-            validatorRegistrationInfoByValidatorIndex.entrySet().stream()
-                .map(
-                    registeredValidatorInfoEntry -> {
-                      final ValidatorRegistration validatorRegistration =
-                          registeredValidatorInfoEntry
-                              .getValue()
-                              .getSignedValidatorRegistration()
-                              .getMessage();
-                      return ImmutableMap.<String, Object>builder()
-                          // changing the following attributes require a change to
-                          // tech.pegasys.teku.api.response.v1.teku.RegisteredValidatorInfoSchema
-                          .put("proposer_index", registeredValidatorInfoEntry.getKey())
-                          .put("pubkey", validatorRegistration.getPublicKey().toString())
-                          .put("fee_recipient", validatorRegistration.getFeeRecipient())
-                          .put("gas_limit", validatorRegistration.getGasLimit())
-                          .put("timestamp", validatorRegistration.getTimestamp())
-                          .put(
-                              "expiry_slot",
-                              registeredValidatorInfoEntry.getValue().getExpirySlot())
-                          .build();
-                    })
-                .collect(Collectors.toList()))
-        .build();
+  public Map<UInt64, PreparedProposerInfo> getPreparedProposerInfo() {
+    return preparedProposerInfoByValidatorIndex;
+  }
+
+  public Map<UInt64, RegisteredValidatorInfo> getValidatorRegistrationInfo() {
+    return validatorRegistrationInfoByValidatorIndex;
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {

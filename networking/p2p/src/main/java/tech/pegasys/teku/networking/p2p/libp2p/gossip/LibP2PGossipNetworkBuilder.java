@@ -77,12 +77,9 @@ public class LibP2PGossipNetworkBuilder {
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
   }
 
-  protected Gossip createGossip(
-      GossipConfig gossipConfig,
-      boolean gossipLogsEnabled,
-      PreparedGossipMessageFactory defaultMessageFactory,
-      GossipTopicFilter gossipTopicFilter,
-      GossipTopicHandlers topicHandlers) {
+  protected GossipRouter createGossipRouter(
+      GossipConfig gossipConfig, GossipTopicFilter gossipTopicFilter) {
+
     final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
     final GossipScoreParams scoreParams =
         LibP2PParamsFactory.createGossipScoreParams(gossipConfig.getScoringConfig());
@@ -92,22 +89,31 @@ public class LibP2PGossipNetworkBuilder {
             MAX_SUBSCIPTIONS_PER_MESSAGE,
             MAX_SUBSCRIBED_TOPICS,
             gossipTopicFilter::isRelevantTopic);
-    GossipRouter router =
-        new GossipRouter(
-            gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {
+    return new GossipRouter(
+        gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {
 
-          final SeenCache<Optional<ValidationResult>> seenCache =
-              new TTLSeenCache<>(
-                  new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
-                  gossipParams.getSeenTTL(),
-                  getCurTimeMillis());
+      final SeenCache<Optional<ValidationResult>> seenCache =
+          new TTLSeenCache<>(
+              new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
+              gossipParams.getSeenTTL(),
+              getCurTimeMillis());
 
-          @NotNull
-          @Override
-          protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
-            return seenCache;
-          }
-        };
+      @NotNull
+      @Override
+      protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
+        return seenCache;
+      }
+    };
+  }
+
+  protected Gossip createGossip(
+      GossipConfig gossipConfig,
+      boolean gossipLogsEnabled,
+      PreparedGossipMessageFactory defaultMessageFactory,
+      GossipTopicFilter gossipTopicFilter,
+      GossipTopicHandlers topicHandlers) {
+
+    GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter);
 
     router.setMessageFactory(
         msg -> {

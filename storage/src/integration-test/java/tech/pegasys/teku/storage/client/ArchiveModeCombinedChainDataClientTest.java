@@ -20,13 +20,13 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class ArchiveModeCombinedChainDataClientTest extends AbstractCombinedChainDataClientTest {

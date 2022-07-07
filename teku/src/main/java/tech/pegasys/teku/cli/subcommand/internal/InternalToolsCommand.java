@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.subcommand.admin;
+package tech.pegasys.teku.cli.subcommand.internal;
 
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;

@@ -39,7 +39,7 @@ abstract class AbstractValidatorSource implements ValidatorSource {
   void cleanupIncompleteSave(final Path path) {
     LOG.debug("Cleanup " + path.toString());
     if (path.toFile().exists() && path.toFile().isFile() && !path.toFile().delete()) {
-      LOG.warn("Failed to remove " + path);
+      LOG.warn("Failed to remove {}", path);
     }
   }
 

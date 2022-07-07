@@ -44,14 +44,6 @@ public class Constants {
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
   public static final Duration EL_ENGINE_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(8);
   public static final Duration EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(1);
-  // Maximum duration before timeout for each builder call
-  public static final Duration EL_BUILDER_CALL_TIMEOUT = Duration.ofSeconds(8);
-  // Individual durations (per method) before timeout for each builder call. They must be less than
-  // or equal to EL_BUILDER_CALL_TIMEOUT
-  public static final Duration EL_BUILDER_STATUS_TIMEOUT = Duration.ofSeconds(1);
-  public static final Duration EL_BUILDER_REGISTER_VALIDATOR_TIMEOUT = Duration.ofSeconds(8);
-  public static final Duration EL_BUILDER_GET_HEADER_TIMEOUT = Duration.ofSeconds(1);
-  public static final Duration EL_BUILDER_GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(8);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable
@@ -74,4 +66,15 @@ public class Constants {
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
+
+  // Builder Specific
+  // Maximum duration before timeout for each builder call
+  public static final Duration BUILDER_CALL_TIMEOUT = Duration.ofSeconds(8);
+  // Individual durations (per method) before timeout for each builder call. They must be less than
+  // or equal to BUILDER_CALL_TIMEOUT
+  public static final Duration BUILDER_STATUS_TIMEOUT = Duration.ofSeconds(1);
+  public static final Duration BUILDER_REGISTER_VALIDATOR_TIMEOUT = Duration.ofSeconds(8);
+  public static final Duration BUILDER_PROPOSAL_DELAY_TOLERANCE = Duration.ofSeconds(1);
+  public static final Duration BUILDER_GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(8);
+  public static final int EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION = 1;
 }

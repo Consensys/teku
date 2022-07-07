@@ -17,7 +17,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Strings;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -159,14 +158,13 @@ public class OkHttpRestClient implements RestClient {
           @Override
           public void onResponse(
               @NotNull final Call call, @NotNull final okhttp3.Response response) {
-            HttpUrl requestUrl = response.request().url();
-            LOG.trace("{} {} {}", response.request().method(), requestUrl, response.code());
+            LOG.trace("{} {} {}", request.method(), request.url(), response.code());
             if (!response.isSuccessful()) {
               handleFailure(response, futureResponse);
               return;
             }
             try (final ResponseBody responseBody = response.body()) {
-              if (responseBody == null || responseTypeDefinitionMaybe.isEmpty()) {
+              if (bodyIsEmpty(responseBody) || responseTypeDefinitionMaybe.isEmpty()) {
                 futureResponse.complete(Response.withNullPayload());
                 return;
               }
@@ -195,16 +193,14 @@ public class OkHttpRestClient implements RestClient {
   private String getErrorMessageForFailedResponse(final okhttp3.Response response)
       throws IOException {
     try (final ResponseBody responseBody = response.body()) {
-      final String errorCodeAndStatusMessage = response.code() + ": " + response.message();
-      if (responseBody == null) {
-        return errorCodeAndStatusMessage;
+      if (bodyIsEmpty(responseBody)) {
+        return response.code() + ": " + response.message();
       }
-      final String failureBody = responseBody.string();
-      if (Strings.nullToEmpty(failureBody).isBlank()) {
-        return errorCodeAndStatusMessage;
-      } else {
-        return failureBody;
-      }
+      return responseBody.string();
     }
+  }
+
+  private boolean bodyIsEmpty(final ResponseBody responseBody) {
+    return responseBody == null || responseBody.contentLength() == 0;
   }
 }

@@ -116,6 +116,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -127,6 +128,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSc
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -1214,6 +1216,16 @@ public final class DataStructureUtil {
             : Optional.empty());
   }
 
+  public BeaconPreparableProposer randomBeaconPreparableProposer() {
+    return new BeaconPreparableProposer(randomUInt64(), randomEth1Address());
+  }
+
+  public List<BeaconPreparableProposer> randomBeaconPreparableProposers(final int size) {
+    return IntStream.range(0, size)
+        .mapToObj(__ -> randomBeaconPreparableProposer())
+        .collect(toList());
+  }
+
   public ValidatorRegistration randomValidatorRegistration() {
     return VALIDATOR_REGISTRATION_SCHEMA.create(
         randomBytes20(), randomUInt64(), randomUInt64(), randomPublicKey());
@@ -1265,18 +1277,25 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    switch (spec.getGenesisSpec().getMilestone()) {
+    return stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, numItemsInSSZLists)
+        .build();
+  }
+
+  public AbstractBeaconStateBuilder<
+          ? extends BeaconState,
+          ? extends MutableBeaconState,
+          ? extends AbstractBeaconStateBuilder<?, ?, ?>>
+      stateBuilder(
+          final SpecMilestone milestone, final int validatorCount, final int numItemsInSszLists) {
+    switch (milestone) {
       case PHASE0:
-        return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists)
-            .build();
+        return stateBuilderPhase0(validatorCount, numItemsInSszLists);
       case ALTAIR:
-        return BeaconStateBuilderAltair.create(this, spec, validatorCount, numItemsInSSZLists)
-            .build();
+        return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
-        return BeaconStateBuilderBellatrix.create(this, spec, validatorCount, numItemsInSSZLists)
-            .build();
+        return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       default:
-        throw new IllegalStateException("Unsupported milestone");
+        throw new IllegalArgumentException("Unsupported milestone: " + milestone);
     }
   }
 
@@ -1290,11 +1309,23 @@ public final class DataStructureUtil {
   }
 
   public BeaconStateBuilderAltair stateBuilderAltair() {
-    return BeaconStateBuilderAltair.create(this, spec, 10, 10);
+    return stateBuilderAltair(10, 10);
+  }
+
+  public BeaconStateBuilderAltair stateBuilderAltair(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderAltair.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderBellatrix stateBuilderBellatrix() {
-    return BeaconStateBuilderBellatrix.create(this, spec, 10, 10);
+    return stateBuilderBellatrix(10, 10);
+  }
+
+  public BeaconStateBuilderBellatrix stateBuilderBellatrix(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderBellatrix.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {

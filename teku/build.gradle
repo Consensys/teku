@@ -9,7 +9,6 @@ dependencies {
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
   implementation project(':data:dataexchange')
-  implementation project(':ethereum:core')
   implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:executionclient')
   implementation project(':ethereum:networks')

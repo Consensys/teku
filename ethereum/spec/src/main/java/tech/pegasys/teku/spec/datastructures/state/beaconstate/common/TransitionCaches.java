@@ -34,7 +34,7 @@ public class TransitionCaches {
   private static final int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static final int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
   private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
-  private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
+  private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 3;
   private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
   private static final int MAX_SYNC_COMMITTEE_CACHE = 2;
   public static final int MAX_BASE_REWARD_PER_INCREMENT_CACHE = 1;

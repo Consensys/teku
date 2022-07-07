@@ -14,8 +14,10 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.sse.SseClient;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface RestApiRequest {
@@ -51,4 +53,6 @@ public interface RestApiRequest {
   <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata);
 
   void header(final String name, final String value);
+
+  void startEventStream(final Consumer<SseClient> clientConsumer);
 }

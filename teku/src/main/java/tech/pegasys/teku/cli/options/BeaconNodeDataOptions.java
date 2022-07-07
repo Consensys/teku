@@ -41,15 +41,12 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "1")
   private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
 
-  // data-storage-archive-frequency is hidden, because it has been released
-  // and is likely used in nodes  rather than potentially cause issues, hiding the argument
   @CommandLine.Option(
       names = {"--data-storage-archive-frequency"},
       paramLabel = "<FREQUENCY>",
       description =
           "Sets the frequency, in slots, at which to store finalized states to disk. "
               + "This option is ignored if --data-storage-mode is set to PRUNE",
-      hidden = true,
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
@@ -70,6 +67,17 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled =
       StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-store-payload-separately-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Store the execution payload of blocks separate to the rest of the block",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean storeBlockExecutionPayloadSeparately =
+      StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
@@ -103,6 +111,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
+                .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
   }
 
@@ -117,5 +126,9 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   public boolean isStoreNonCanonicalBlocks() {
     return storeNonCanonicalBlocksEnabled;
+  }
+
+  public boolean isStoreBlockExecutionPayloadSeparately() {
+    return storeBlockExecutionPayloadSeparately;
   }
 }

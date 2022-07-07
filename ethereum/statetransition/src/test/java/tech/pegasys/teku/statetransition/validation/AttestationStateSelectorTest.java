@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -118,9 +118,11 @@ class AttestationStateSelectorTest {
   }
 
   @Test
-  void shouldNotUseHeadStateWhenAttestationIsForAncestorFromEarlierEpoch() {
-    // Advance chain so finalized checkpoint isn't suitable
-    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(25));
+  void shouldUseHeadStateWhenAttestationIsForAncestorFromEarlierEpochWithinHistoricVector() {
+    // Finalized is also suitable but we should prefer using the chain head since it will have the
+    // most up to date caches
+    chainUpdater.updateBestBlock(
+        chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(2))));
     final SignedBlockAndState chainHead = chainBuilder.getLatestBlockAndState();
     // Attestation slot is just before the chain head epoch
     final UInt64 attestationSlot =
@@ -130,7 +132,7 @@ class AttestationStateSelectorTest {
     final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
 
     final BeaconState selectedState = safeJoin(result).orElseThrow();
-    assertThat(selectedState).isNotEqualTo(chainHead.getState());
+    assertThat(selectedState).isEqualTo(chainHead.getState());
   }
 
   @Test
@@ -163,8 +165,12 @@ class AttestationStateSelectorTest {
           // Must be at or after the earliest slot
           assertThat(state.getSlot()).isGreaterThanOrEqualTo(earliestSlot);
 
-          // State must not be from a future epoch
-          assertThat(spec.getCurrentEpoch(state)).isLessThanOrEqualTo(attestationEpoch);
+          // State must be from within EPOCHS_PER_HISTORICAL_VECTOR epochs
+          final UInt64 stateEpoch = spec.getCurrentEpoch(state);
+          assertThat(
+                  stateEpoch.minusMinZero(
+                      spec.getSpecConfig(stateEpoch).getEpochsPerHistoricalVector()))
+              .isLessThanOrEqualTo(attestationEpoch);
 
           // If the state isn't the finalized state, it must be a descendant of blockRoot
           // (Finalized state is assumed to always be an ancestor)
