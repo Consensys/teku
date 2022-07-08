@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -120,20 +119,6 @@ class BatchingVoteUpdateChannelTest {
 
     // The vote in votes2 replaces the vote in votes1
     triggerBatchExecution(votes2);
-  }
-
-  @Test
-  void shouldNotCompleteStopUntilLastBatchIsProcessed() {
-    final Map<UInt64, VoteTracker> votes1 = Map.of(UInt64.ONE, VoteTracker.DEFAULT);
-    channel.onVotesUpdated(votes1);
-
-    assertExecutionScheduled();
-
-    final SafeFuture<Void> stopFuture = channel.stop();
-    assertThat(stopFuture).isNotDone();
-
-    triggerBatchExecution(votes1);
-    assertThat(stopFuture).isCompleted();
   }
 
   private void assertExecutionScheduled() {

@@ -85,10 +85,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
   @Override
   protected SafeFuture<?> doStop() {
-    // Ensure the last batch of votes is stored before we close the database.
-    return batchingVoteUpdateChannel
-        .stop()
-        .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
+    return SafeFuture.fromRunnable(database::close);
   }
 
   @Override
