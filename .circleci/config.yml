@@ -156,7 +156,7 @@ commands:
           only_for_branches: 'master'
 jobs:
   assemble:
-    executor: medium_executor
+    executor: large_executor
     steps:
       - prepare
       - run:
