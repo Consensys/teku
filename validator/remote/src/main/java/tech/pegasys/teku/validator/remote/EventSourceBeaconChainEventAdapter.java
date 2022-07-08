@@ -121,7 +121,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   @SuppressWarnings("FutureReturnValueIgnored")
   private void startFailoverEventSource(final HttpUrl failoverApiEndpoint) {
     SafeFuture.asyncDoWhile(
-            // wait until the primary Beacon Node event source is closed
+            // wait until the primary Beacon node event source is closed
             () -> SafeFuture.completedFuture(primaryEventSource.getState() != ReadyState.SHUTDOWN))
         .alwaysRun(
             () -> {
