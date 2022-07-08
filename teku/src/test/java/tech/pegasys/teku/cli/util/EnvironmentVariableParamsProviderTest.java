@@ -61,8 +61,8 @@ public class EnvironmentVariableParamsProviderTest {
   }
 
   @Test
-  void shouldIgnoreEnvWithoutPrefix() {
-    final Map<String, String> environment = Map.of("TEST_ENABLED", "false");
+  void shouldIgnoreEnvWithNonMatchingPrefix() {
+    final Map<String, String> environment = Map.of("TEST_ENABLED", "false", "1234_NAME", "a,b");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
         new EnvironmentVariableParamsProvider(environment);
