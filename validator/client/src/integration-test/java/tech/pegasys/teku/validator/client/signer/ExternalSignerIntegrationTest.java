@@ -358,9 +358,7 @@ public class ExternalSignerIntegrationTest {
                     "timestamp",
                     validatorRegistration.getTimestamp(),
                     "pubkey",
-                    validatorRegistration.getPublicKey().toString()),
-                "epoch",
-                epoch));
+                    validatorRegistration.getPublicKey().toString())));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
     validateMetrics(metricsSystem, 1, 0, 0);
   }
