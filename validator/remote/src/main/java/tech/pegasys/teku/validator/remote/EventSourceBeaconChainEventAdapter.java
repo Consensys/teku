@@ -43,7 +43,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
-  private static final Duration PING_PRIMARY_NODE_AFTER_FAILOVER_PERIOD = Duration.ofMinutes(1);
+  private static final Duration PING_PRIMARY_NODE_DURING_FAILOVER_PERIOD = Duration.ofMinutes(1);
 
   private final AtomicReference<Cancellable> scheduledPingingTask = new AtomicReference<>();
   private final CountDownLatch runningLatch = new CountDownLatch(1);
@@ -158,7 +158,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 primaryEventSource.start();
               }
             },
-            PING_PRIMARY_NODE_AFTER_FAILOVER_PERIOD,
+            PING_PRIMARY_NODE_DURING_FAILOVER_PERIOD,
             throwable ->
                 LOG.error(
                     "Error occurred while pinging the primary Beacon Node during a period of failover.",
