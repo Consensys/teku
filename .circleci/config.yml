@@ -187,7 +187,8 @@ jobs:
 
   windowsBuild:
     executor:
-      name: win/xlarge
+      name: win/default
+      size: xlarge
     steps:
       - checkout
       - restore_cache:
