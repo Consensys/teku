@@ -103,7 +103,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
               }
               if (!PingUtils.hostIsReachable(primaryApiEndpoint)) {
                 final Optional<HttpUrl> maybeFailover = findAvailableFailover();
-                boolean failoverIsAvailable = maybeFailover.isPresent();
+                final boolean failoverIsAvailable = maybeFailover.isPresent();
                 VALIDATOR_LOGGER.beaconNodeIsNotReachableForEventStreaming(
                     primaryApiEndpoint.uri(), failoverIsAvailable);
                 if (failoverIsAvailable) {
@@ -152,9 +152,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                   PingUtils.hostIsReachable(primaryApiEndpoint);
               if (primaryBeaconNodeIsReachable) {
                 cancelScheduledPingingTask();
-                closeFailoverEventSource();
-                primaryEventSource = createPrimaryEventSource();
                 VALIDATOR_LOGGER.beaconNodeIsBackOnlineForEventStreaming(primaryApiEndpoint.uri());
+                primaryEventSource = createPrimaryEventSource();
+                closeFailoverEventSource();
                 primaryEventSource.start();
               }
             },
