@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Stream;
 import picocli.CommandLine.Model.OptionSpec;
 
 public abstract class AbstractParamsProvider<V> {
@@ -27,9 +28,9 @@ public abstract class AbstractParamsProvider<V> {
       final List<OptionSpec> potentialOptions, final Map<String, V> config) {
     final Map<String, String> additionalParams = new HashMap<>();
 
-    config.entrySet().stream()
-        .flatMap(configEntry -> translateEntry(configEntry).stream())
-        .flatMap(translatedEntry -> getMatchingParam(potentialOptions, translatedEntry).stream())
+    potentialOptions.stream()
+        .flatMap(this::getPotentialParamAndOption)
+        .flatMap(potentialParamAndOption -> getMatchingParam(potentialParamAndOption, config))
         .forEach(
             matchedParam ->
                 additionalParams.merge(
@@ -37,21 +38,30 @@ public abstract class AbstractParamsProvider<V> {
                     matchedParam.getValue(),
                     (conflict1, conflict2) ->
                         onConflictingParams(matchedParam, conflict1, conflict2)));
+
     return additionalParams;
   }
 
-  protected Optional<Entry<String, String>> getMatchingParam(
-      final List<OptionSpec> potentialParams, final Entry<String, V> configEntry) {
-    return potentialParams.stream()
-        .filter(optionSpec -> isOptionMatchingConfigKey(optionSpec, configEntry.getKey()))
-        .findFirst()
-        .map(optionSpec -> translateToArg(optionSpec, configEntry));
+  protected Stream<Entry<String, OptionSpec>> getPotentialParamAndOption(
+      final OptionSpec optionSpec) {
+    return Arrays.stream(optionSpec.names())
+        .map(name -> Map.entry(name.replaceFirst("^-+", ""), optionSpec));
   }
 
-  protected boolean isOptionMatchingConfigKey(
-      final OptionSpec potentialOption, final String configKey) {
-    return Arrays.stream(potentialOption.names())
-        .anyMatch(name -> name.replaceFirst("^-+", "").equalsIgnoreCase(configKey));
+  protected Stream<Entry<String, String>> getMatchingParam(
+      final Entry<String, OptionSpec> potentialParamAndOption, final Map<String, V> config) {
+    return config.entrySet().stream()
+        .filter(
+            configEntry ->
+                isOptionMatchingConfigEntry(potentialParamAndOption.getKey(), configEntry))
+        .map(configEntry -> translateToArg(potentialParamAndOption.getValue(), configEntry));
+  }
+
+  protected boolean isOptionMatchingConfigEntry(
+      final String potentialParamName, final Entry<String, V> configEntry) {
+    return translateEntry(configEntry)
+        .map(entry -> entry.getKey().equalsIgnoreCase(potentialParamName))
+        .orElse(false);
   }
 
   protected abstract Optional<Entry<String, V>> translateEntry(final Entry<String, V> configEntry);

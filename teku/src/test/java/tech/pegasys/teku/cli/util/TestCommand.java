@@ -23,7 +23,7 @@ public interface TestCommand {
   int getCount();
 
   @Option(
-      names = {"-n", "--names"},
+      names = {"-n", "--name", "--names"},
       split = ",")
   List<String> getNames();
 

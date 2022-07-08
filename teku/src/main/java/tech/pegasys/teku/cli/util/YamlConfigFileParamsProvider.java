@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -39,6 +41,8 @@ import picocli.CommandLine.ParameterException;
 
 public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
     implements AdditionalParamsProvider {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final CommandLine commandLine;
   private final File configFile;
   // this will be initialized on fist call of defaultValue by PicoCLI parseArgs
@@ -65,13 +69,12 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
       final Entry<String, String> conflictingParam,
       final String conflictingValue1,
       final String conflictingValue2) {
-    throw new ParameterException(
-        commandLine,
-        String.format(
-            "Multiple options referring to the same configuration '%s'. Conflicting values: %s and %s",
-            conflictingParam.getKey().replaceFirst("^-+", ""),
-            conflictingValue1,
-            conflictingValue2));
+    LOG.warn(
+        "Multiple yaml options referring to the same configuration '{}'. Keeping {} and ignoring {}",
+        conflictingParam.getKey().replaceFirst("^-+", ""),
+        conflictingValue1,
+        conflictingValue2);
+    return conflictingValue1;
   }
 
   @Override

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.util;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -63,19 +61,17 @@ public class EnvironmentVariableParamsProviderTest {
   }
 
   @Test
-  void shouldThrowWhenDuplicates() {
+  void shouldGiveCorrectPrecedenceWhenDuplicates() {
     final Map<String, String> environment =
-        Map.of("TEKU_unknown", "test", "TEKU_N", "a,b", "TEKU_NAMES", "c,d");
+        Map.of("TEKU_unknown", "test", "TEKU_NAME", "a,b", "TEKU_N", "c,d", "TEKU_NAMES", "e,f");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
         new EnvironmentVariableParamsProvider(commandLine, environment);
 
-    assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(
-            () ->
-                environmentVariableParamsProvider.getAdditionalParams(
-                    commandLine.getCommandSpec().options()))
-        .withMessageStartingWith(
-            "Multiple environment options referring to the same configuration 'names'. Conflicting values:");
+    final Map<String, String> additionalParams =
+        environmentVariableParamsProvider.getAdditionalParams(
+            commandLine.getCommandSpec().options());
+
+    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("c,d");
   }
 }

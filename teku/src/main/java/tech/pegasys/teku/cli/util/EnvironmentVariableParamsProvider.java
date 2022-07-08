@@ -17,12 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.OptionSpec;
-import picocli.CommandLine.ParameterException;
 
 public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<String>
     implements AdditionalParamsProvider {
+  private static final Logger LOG = LogManager.getLogger();
   private static final String ENV_VAR_PREFIX = "TEKU_";
 
   private final CommandLine commandLine;
@@ -44,13 +46,12 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
       final Entry<String, String> conflictingParam,
       final String conflictingValue1,
       final String conflictingValue2) {
-    throw new ParameterException(
-        commandLine,
-        String.format(
-            "Multiple environment options referring to the same configuration '%s'. Conflicting values: %s and %s",
-            conflictingParam.getKey().replaceFirst("^-+", ""),
-            conflictingValue1,
-            conflictingValue2));
+    LOG.warn(
+        "Multiple environment variables referring to the same configuration '{}'. Keeping {} and ignoring {}",
+        conflictingParam.getKey().replaceFirst("^-+", ""),
+        conflictingValue1,
+        conflictingValue2);
+    return conflictingValue1;
   }
 
   @Override
