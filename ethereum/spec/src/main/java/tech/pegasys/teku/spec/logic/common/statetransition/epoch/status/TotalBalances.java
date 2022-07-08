@@ -51,16 +51,12 @@ public class TotalBalances {
     this.previousEpochHeadAttesters = previousEpochHeadAttesters;
   }
 
-  /**
-   * @return The sum of effective balances of all active validators from the current epoch.
-   */
+  /** @return The sum of effective balances of all active validators from the current epoch. */
   public UInt64 getCurrentEpochActiveValidators() {
     return currentEpochActiveValidators.max(effectiveBalanceIncrement);
   }
 
-  /**
-   * @return The sum of effective balances of all active validators from the previous epoch.
-   */
+  /** @return The sum of effective balances of all active validators from the previous epoch. */
   public UInt64 getPreviousEpochActiveValidators() {
     return previousEpochActiveValidators.max(effectiveBalanceIncrement);
   }
