@@ -306,10 +306,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       reportInvalidBlock(block, result);
       payloadValidationResult
           .getInvalidTransitionBlockRoot()
-          .ifPresent(
+          .ifPresentOrElse(
               invalidTransitionBlockRoot ->
                   getForkChoiceStrategy()
-                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult));
+                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult),
+              () ->
+                  recentChainData
+                      .getChainHead()
+                      .ifPresent(
+                          chainHead ->
+                              getForkChoiceStrategy()
+                                  .onInvalidExecutionResultWithoutTransition(
+                                      chainHead.getRoot(), payloadResult)));
       return result;
     }
 

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -96,6 +97,17 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     forkChoiceStrategy.onExecutionPayloadResult(
         dataStructureUtil.randomBytes32(), PayloadStatus.failedExecution(new Error()));
     verify(protoArray, never()).markNodeInvalid(any(), any());
+    verify(protoArray, never()).markNodeValid(any());
+  }
+
+  @Test
+  void onPayloadExecution_shouldPenalizeNodeOnInvalidExecutionWithoutTransition() {
+    final ProtoArray protoArray = mock(ProtoArray.class);
+    final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
+    forkChoiceStrategy.onInvalidExecutionResultWithoutTransition(
+        dataStructureUtil.randomBytes32(),
+        PayloadStatus.invalid(Optional.of(dataStructureUtil.randomBytes32()), Optional.empty()));
+    verify(protoArray, times(1)).findAndMarkInvalidChain(any(), any());
     verify(protoArray, never()).markNodeValid(any());
   }
 

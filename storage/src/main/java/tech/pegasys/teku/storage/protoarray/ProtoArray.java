@@ -286,6 +286,34 @@ public class ProtoArray {
     applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
+  public void findAndMarkInvalidChain(final Bytes32 headRoot, final Bytes32 latestValidHash) {
+    final Optional<Integer> maybeIndex = indices.get(headRoot);
+    if (maybeIndex.isEmpty()) {
+      LOG.debug("Couldn't find chain head {} because it was unknown", headRoot);
+      return;
+    }
+    final ProtoNode headNode = getNodeByIndex(maybeIndex.get());
+    if (headNode.getExecutionBlockHash().equals(latestValidHash)) {
+      return;
+    }
+
+    final Optional<Integer> maybeFirstInvalidNodeIndex =
+        findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash);
+    // In case we have not found latestValidHash, end this up
+    if (maybeFirstInvalidNodeIndex.isEmpty()) {
+      return;
+    }
+
+    final int index = maybeFirstInvalidNodeIndex.get();
+    final ProtoNode node = getNodeByIndex(index);
+    markNodeValid(node.getParentRoot());
+    node.setValidationStatus(INVALID);
+    removeBlockRoot(node.getBlockRoot());
+    markDescendantsAsInvalid(index);
+    // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
+    applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+  }
+
   private Optional<Integer> findFirstInvalidNodeIndex(
       final int invalidNodeIndex, final Bytes32 latestValidHash) {
     int firstInvalidNodeIndex = invalidNodeIndex;

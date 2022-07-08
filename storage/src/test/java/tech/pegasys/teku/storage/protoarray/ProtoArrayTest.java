@@ -349,6 +349,49 @@ class ProtoArrayTest {
   }
 
   @Test
+  void findAndMarkInvalidChain_shouldNotDoAnythingWhenLatestValidHashFromHead() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertHead(block3a);
+
+    protoArray.findAndMarkInvalidChain(block3a, getExecutionBlockHash(block3a));
+
+    assertHead(block3a);
+    assertThat(protoArray.contains(block3a)).isTrue();
+  }
+
+  @Test
+  void findAndMarkInvalidChain_shouldNotDoAnythingWhenLatestValidHashNodeNotFound() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertHead(block3a);
+
+    protoArray.findAndMarkInvalidChain(block3a, dataStructureUtil.randomBytes32());
+
+    assertHead(block3a);
+    assertThat(protoArray.contains(block3a)).isTrue();
+  }
+
+  @Test
+  void findAndMarkInvalidChain_shouldMarkAllNodesAfterLatestValidHashAsInvalid() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertHead(block3a);
+
+    protoArray.findAndMarkInvalidChain(block3a, getExecutionBlockHash(block1a));
+
+    assertHead(block1a);
+    assertThat(protoArray.contains(block3a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isFalse();
+  }
+
+  @Test
   void contains_shouldContainValidBlock() {
     addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     assertThat(protoArray.contains(block1a)).isTrue();

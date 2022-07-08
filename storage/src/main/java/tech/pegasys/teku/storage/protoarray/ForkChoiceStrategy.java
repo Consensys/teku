@@ -556,4 +556,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArrayLock.writeLock().unlock();
     }
   }
+
+  public void onInvalidExecutionResultWithoutTransition(
+      final Bytes32 headRoot, final PayloadStatus result) {
+    if (!result.hasInvalidStatus() || result.getLatestValidHash().isEmpty()) {
+      return;
+    }
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.findAndMarkInvalidChain(headRoot, result.getLatestValidHash().get());
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
+  }
 }
