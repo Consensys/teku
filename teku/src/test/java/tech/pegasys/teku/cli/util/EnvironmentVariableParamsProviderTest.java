@@ -47,7 +47,7 @@ public class EnvironmentVariableParamsProviderTest {
   }
 
   @Test
-  void shouldReturnAdditionalParamsWhenShortNamesAreUsed() {
+  void shouldIgnoreShortNames() {
     final Map<String, String> environment = Map.of("TEKU_N", "a,b");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
@@ -57,7 +57,7 @@ public class EnvironmentVariableParamsProviderTest {
         environmentVariableParamsProvider.getAdditionalParams(
             commandLine.getCommandSpec().options());
 
-    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("a,b");
+    Assertions.assertThat(additionalParams).isEmpty();
   }
 
   @Test
@@ -77,7 +77,7 @@ public class EnvironmentVariableParamsProviderTest {
   @Test
   void shouldGiveCorrectPrecedenceWhenDuplicates() {
     final Map<String, String> environment =
-        Map.of("TEKU_unknown", "test", "TEKU_NAME", "a,b", "TEKU_N", "c,d", "TEKU_NAMES", "e,f");
+        Map.of("TEKU_unknown", "test", "TEKU_NAME", "a,b", "TEKU_NAMES", "c,d");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
         new EnvironmentVariableParamsProvider(environment);
@@ -86,6 +86,6 @@ public class EnvironmentVariableParamsProviderTest {
         environmentVariableParamsProvider.getAdditionalParams(
             commandLine.getCommandSpec().options());
 
-    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("c,d");
+    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("a,b");
   }
 }

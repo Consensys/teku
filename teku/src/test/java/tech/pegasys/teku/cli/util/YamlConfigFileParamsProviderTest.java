@@ -51,8 +51,7 @@ class YamlConfigFileParamsProviderTest {
   }
 
   @Test
-  void parsingValidYamlWithShortParamFilePopulatesCommandObject(@TempDir final Path tempDir)
-      throws IOException {
+  void parsingValidYamlShouldIgnoreShortParam(@TempDir final Path tempDir) throws IOException {
     final Map<String, Object> options = new HashMap<>();
     options.put("n", List.of("b", "a"));
     final Path configFile = writeToYamlConfigFile(options, tempDir);
@@ -61,7 +60,7 @@ class YamlConfigFileParamsProviderTest {
     final Map<String, String> additionalParams =
         yamlConfigFileDefaultProvider.getAdditionalParams(commandLine.getCommandSpec().options());
 
-    Assertions.assertThat(additionalParams.get("--names")).isEqualTo("b,a");
+    Assertions.assertThat(additionalParams).isEmpty();
   }
 
   @Test
@@ -69,7 +68,7 @@ class YamlConfigFileParamsProviderTest {
       @TempDir final Path tempDir) throws IOException {
     final Map<String, Object> options = new HashMap<>();
     options.put("names", List.of("b", "c"));
-    options.put("n", List.of("b", "a"));
+    options.put("name", List.of("b", "a"));
     final Path configFile = writeToYamlConfigFile(options, tempDir);
     final YamlConfigFileParamsProvider yamlConfigFileDefaultProvider =
         new YamlConfigFileParamsProvider(commandLine, configFile.toFile());

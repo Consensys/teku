@@ -45,6 +45,7 @@ public abstract class AbstractParamsProvider<V> {
   protected Stream<Entry<String, OptionSpec>> getPotentialParamAndOption(
       final OptionSpec optionSpec) {
     return Arrays.stream(optionSpec.names())
+        .filter(name -> name.startsWith("--"))
         .map(name -> Map.entry(name.replaceFirst("^-+", ""), optionSpec));
   }
 
