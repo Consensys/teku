@@ -27,10 +27,10 @@ dependencyManagement {
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.1'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:2.5.0'
+    dependency 'com.launchdarkly:okhttp-eventsource:2.6.1'
 
-    dependency 'com.squareup.okhttp3:okhttp:4.9.2'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
+    dependency 'com.squareup.okhttp3:okhttp:4.10.0'
+    dependency 'com.squareup.okhttp3:mockwebserver:4.10.0'
 
     dependency 'commons-cli:commons-cli:1.4'
 

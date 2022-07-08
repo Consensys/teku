@@ -68,10 +68,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
         "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
-    final List<HttpUrl> apiEndpoints = convertToOkHttpUrls(beaconNodeApiEndpoints);
+    List<HttpUrl> apiEndpoints = convertToOkHttpUrls(beaconNodeApiEndpoints);
     final OkHttpClient okHttpClient = createOkHttpClient(apiEndpoints);
     // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
-    stripAuthentication(apiEndpoints);
+    apiEndpoints = stripAuthentication(apiEndpoints);
 
     final HttpUrl primaryApiEndpoint = apiEndpoints.get(0);
     final List<HttpUrl> failoverApiEndpoints = apiEndpoints.subList(1, apiEndpoints.size());
@@ -105,9 +105,11 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
+
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
             primaryApiEndpoint,
+            failoverApiEndpoints,
             okHttpClient,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApiWithMetrics),
@@ -116,6 +118,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 validatorTimingChannel,
                 spec),
             validatorTimingChannel,
+            asyncRunner,
             serviceConfig.getMetricsSystem(),
             generateEarlyAttestations);
 

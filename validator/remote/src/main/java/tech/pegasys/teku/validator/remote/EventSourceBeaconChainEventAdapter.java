@@ -14,62 +14,67 @@
 package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import com.google.common.base.Preconditions;
+import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.ReadyState;
 import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import okhttp3.Credentials;
+import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
+
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
+  private static final Duration PING_PRIMARY_NODE_AFTER_FAILOVER_PERIOD = Duration.ofMinutes(1);
+
+  private final AtomicReference<Cancellable> scheduledPingingTask = new AtomicReference<>();
   private final CountDownLatch runningLatch = new CountDownLatch(1);
+
   private final BeaconChainEventAdapter timeBasedEventAdapter;
-  private final EventSource eventSource;
+  private final HttpUrl primaryApiEndpoint;
+  private final List<HttpUrl> failoverApiEndpoints;
+  private final OkHttpClient okHttpClient;
+  private final EventSourceHandler eventSourceHandler;
+  private final AsyncRunner asyncRunner;
+
+  private volatile EventSource primaryEventSource;
+  private volatile Optional<EventSource> maybeFailoverEventSource = Optional.empty();
 
   public EventSourceBeaconChainEventAdapter(
-      final HttpUrl baseEndpoint,
+      final HttpUrl primaryApiEndpoint,
+      final List<HttpUrl> failoverApiEndpoints,
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
-    final HttpUrl eventSourceUrl =
-        baseEndpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
-    this.eventSource =
-        new EventSource.Builder(
-                new EventSourceHandler(
-                    validatorTimingChannel, metricsSystem, generateEarlyAttestations),
-                eventSourceUrl)
-            .maxReconnectTime(Duration.ofSeconds(12))
-            .client(okHttpClient)
-            .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
-            .build();
-  }
-
-  private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {
-    if (!eventSourceUrl.username().isEmpty()) {
-      return request
-          .newBuilder()
-          .header(
-              "Authorization",
-              Credentials.basic(eventSourceUrl.encodedUsername(), eventSourceUrl.encodedPassword()))
-          .build();
-    } else {
-      return request;
-    }
+    this.primaryApiEndpoint = primaryApiEndpoint;
+    this.failoverApiEndpoints = failoverApiEndpoints;
+    this.okHttpClient = okHttpClient;
+    this.eventSourceHandler =
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
+    this.asyncRunner = asyncRunner;
+    primaryEventSource = createPrimaryEventSource();
   }
 
   @Override
@@ -77,15 +82,108 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     // EventSource uses a daemon thread which allows the process to exit because all threads are
     // daemons, but while we're subscribed to events we should just wait for the next event, not
     // exit.  So create a non-daemon thread that lives until the adapter is stopped.
-    eventSource.start();
+    primaryEventSource.start();
     new Thread(this::waitForExit).start();
     return timeBasedEventAdapter.start();
   }
 
   @Override
   public SafeFuture<Void> stop() {
-    eventSource.close();
+    primaryEventSource.close();
+    maybeFailoverEventSource.ifPresent(EventSource::close);
     return timeBasedEventAdapter.stop().thenRun(runningLatch::countDown);
+  }
+
+  private EventSource createPrimaryEventSource() {
+    return new EventSource.Builder(eventSourceHandler, createHeadEventSourceUrl(primaryApiEndpoint))
+        .connectionErrorHandler(
+            throwable -> {
+              if (failoverApiEndpoints.isEmpty()) {
+                return Action.PROCEED;
+              }
+              if (!PingUtils.hostIsReachable(primaryApiEndpoint)) {
+                final Optional<HttpUrl> maybeFailover = findAvailableFailover();
+                boolean failoverIsAvailable = maybeFailover.isPresent();
+                VALIDATOR_LOGGER.beaconNodeIsNotReachableForEventStreaming(
+                    primaryApiEndpoint.uri(), failoverIsAvailable);
+                if (failoverIsAvailable) {
+                  startFailoverEventSource(maybeFailover.get());
+                  return Action.SHUTDOWN;
+                }
+              }
+              return Action.PROCEED;
+            })
+        .maxReconnectTime(MAX_RECONNECT_TIME)
+        .client(okHttpClient)
+        .build();
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void startFailoverEventSource(final HttpUrl failoverApiEndpoint) {
+    SafeFuture.asyncDoWhile(
+            // wait until the primary Beacon Node event source is closed
+            () -> SafeFuture.completedFuture(primaryEventSource.getState() != ReadyState.SHUTDOWN))
+        .alwaysRun(
+            () -> {
+              final EventSource failoverEventSource =
+                  createFailoverEventSource(failoverApiEndpoint);
+              LOG.info(
+                  "Connecting to a failover Beacon Node {} for event streaming.",
+                  failoverApiEndpoint);
+              failoverEventSource.start();
+              maybeFailoverEventSource = Optional.of(failoverEventSource);
+              schedulePingingOfPrimaryBeaconNode();
+            });
+  }
+
+  private EventSource createFailoverEventSource(final HttpUrl failoverApiEndpoint) {
+    return new EventSource.Builder(
+            eventSourceHandler, createHeadEventSourceUrl(failoverApiEndpoint))
+        .maxReconnectTime(MAX_RECONNECT_TIME)
+        .client(okHttpClient)
+        .build();
+  }
+
+  private void schedulePingingOfPrimaryBeaconNode() {
+    final Cancellable cancellable =
+        asyncRunner.runWithFixedDelay(
+            () -> {
+              final boolean primaryBeaconNodeIsReachable =
+                  PingUtils.hostIsReachable(primaryApiEndpoint);
+              if (primaryBeaconNodeIsReachable) {
+                cancelScheduledPingingTask();
+                closeFailoverEventSource();
+                primaryEventSource = createPrimaryEventSource();
+                VALIDATOR_LOGGER.beaconNodeIsBackOnlineForEventStreaming(primaryApiEndpoint.uri());
+                primaryEventSource.start();
+              }
+            },
+            PING_PRIMARY_NODE_AFTER_FAILOVER_PERIOD,
+            throwable ->
+                LOG.error(
+                    "Error occurred while pinging the primary Beacon Node during a period of failover.",
+                    throwable));
+    scheduledPingingTask.set(cancellable);
+  }
+
+  private HttpUrl createHeadEventSourceUrl(final HttpUrl apiEndpoint) {
+    final HttpUrl eventSourceUrl =
+        apiEndpoint.resolve(
+            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
+    return Preconditions.checkNotNull(eventSourceUrl);
+  }
+
+  private Optional<HttpUrl> findAvailableFailover() {
+    return failoverApiEndpoints.stream().filter(PingUtils::hostIsReachable).findFirst();
+  }
+
+  private void cancelScheduledPingingTask() {
+    Optional.ofNullable(scheduledPingingTask.getAndSet(null)).ifPresent(Cancellable::cancel);
+  }
+
+  private void closeFailoverEventSource() {
+    maybeFailoverEventSource.ifPresent(EventSource::close);
+    maybeFailoverEventSource = Optional.empty();
   }
 
   private void waitForExit() {

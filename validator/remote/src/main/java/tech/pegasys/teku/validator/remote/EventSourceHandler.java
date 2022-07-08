@@ -67,7 +67,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onOpen() {
-    VALIDATOR_LOGGER.connectedToBeaconNode();
+    VALIDATOR_LOGGER.connectedToBeaconNodeEventStream();
     // We might have missed some events while connecting or reconnected so ensure the duties are
     // recalculated
     validatorTimingChannel.onPossibleMissedEvents();
@@ -121,7 +121,7 @@ class EventSourceHandler implements EventHandler {
               + "Reconnecting. This is normal if the beacon node is still syncing.");
     } else {
       errorCounter.inc();
-      VALIDATOR_LOGGER.beaconNodeConnectionError(t);
+      VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError(t);
     }
   }
 }
