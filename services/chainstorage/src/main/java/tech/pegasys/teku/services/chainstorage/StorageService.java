@@ -29,6 +29,8 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service implements StorageServiceFacade {
+
+  public static final int VOTE_UPDATE_QUEUE_CAPACITY = 5000;
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
@@ -69,7 +71,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
               .subscribe(StorageUpdateChannel.class, chainStorage)
-              .subscribe(VoteUpdateChannel.class, chainStorage)
+              .subscribe(VoteUpdateChannel.class, chainStorage, VOTE_UPDATE_QUEUE_CAPACITY)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
         });

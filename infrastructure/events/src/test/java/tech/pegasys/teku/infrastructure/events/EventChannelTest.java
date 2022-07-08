@@ -40,6 +40,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.AsyncEventDeliverer.QueueReader;
 
 class EventChannelTest {
+
+  private static final int QUEUE_CAPACITY = 100;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -74,7 +76,7 @@ class EventChannelTest {
   public void shouldDeliverCallsToSubscribers() {
     final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable subscriber = mock(Runnable.class);
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
 
     channel.getPublisher(Optional.empty()).run();
 
@@ -86,8 +88,8 @@ class EventChannelTest {
     final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable subscriber1 = mock(Runnable.class);
     final Runnable subscriber2 = mock(Runnable.class);
-    channel.subscribe(subscriber1);
-    channel.subscribe(subscriber2);
+    channel.subscribe(subscriber1, QUEUE_CAPACITY);
+    channel.subscribe(subscriber2, QUEUE_CAPACITY);
 
     channel.getPublisher(Optional.empty()).run();
 
@@ -100,7 +102,7 @@ class EventChannelTest {
     final EventChannel<MultipleMethods> channel =
         EventChannel.create(MultipleMethods.class, metricsSystem);
     final MultipleMethods subscriber = mock(MultipleMethods.class);
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
 
     channel.getPublisher(Optional.empty()).method2();
     verify(subscriber).method2();
@@ -116,7 +118,7 @@ class EventChannelTest {
     final EventChannel<WithFuture> channel = EventChannel.create(WithFuture.class, metricsSystem);
     final SafeFuture<String> expected = new SafeFuture<>();
     final WithFuture subscriber = () -> expected;
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
 
     final SafeFuture<String> result =
         channel.getPublisher(Optional.of(asyncRunner)).getFutureString();
@@ -129,8 +131,8 @@ class EventChannelTest {
   @Test
   public void shouldDisallowMultipleSubscribersWhenMethodsHaveReturnValues() {
     final EventChannel<WithFuture> channel = EventChannel.create(WithFuture.class, metricsSystem);
-    channel.subscribe(SafeFuture::new);
-    assertThatThrownBy(() -> channel.subscribe(SafeFuture::new))
+    channel.subscribe(SafeFuture::new, QUEUE_CAPACITY);
+    assertThatThrownBy(() -> channel.subscribe(SafeFuture::new, QUEUE_CAPACITY))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -142,7 +144,7 @@ class EventChannelTest {
     final RuntimeException exception = new RuntimeException("Nope");
     doThrow(exception).when(subscriber).run();
 
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
     channel.getPublisher(Optional.empty()).run();
 
     verify(exceptionHandler)
@@ -179,7 +181,7 @@ class EventChannelTest {
     final EventChannel<EventWithArgument> channel =
         EventChannel.createAsync(EventWithArgument.class, executor, metricsSystem);
     final EventWithArgument subscriber = mock(EventWithArgument.class);
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
 
     // Publish a sequence of events
     channel.getPublisher(Optional.empty()).method1("Event1");
@@ -223,7 +225,7 @@ class EventChannelTest {
             throw new RuntimeException(e);
           }
         };
-    channel.subscribeMultithreaded(subscriber, 2); // Two subscribing threads
+    channel.subscribeMultithreaded(subscriber, 2, QUEUE_CAPACITY); // Two subscribing threads
 
     final CountDownLatch started1 = new CountDownLatch(1);
     final CountDownLatch await1 = new CountDownLatch(1);
@@ -259,7 +261,7 @@ class EventChannelTest {
         EventChannel.createAsync(WithFuture.class, executor, metricsSystem);
     final SafeFuture<String> expected = SafeFuture.completedFuture("Yay");
     final WithFuture subscriber = () -> expected;
-    channel.subscribe(subscriber);
+    channel.subscribe(subscriber, QUEUE_CAPACITY);
 
     final SafeFuture<String> result =
         channel.getPublisher(Optional.of(asyncRunner)).getFutureString();

@@ -37,7 +37,7 @@ abstract class EventDeliverer<T> {
             "channel");
   }
 
-  void subscribe(final T subscriber, final int numberOfThreads) {
+  void subscribe(final T subscriber, final int numberOfThreads, final int queueCapacity) {
     subscribers.subscribe(subscriber);
   }
 

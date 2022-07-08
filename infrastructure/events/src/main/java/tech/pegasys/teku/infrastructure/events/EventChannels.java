@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class EventChannels {
 
+  private static final int QUEUE_CAPACITY = 500;
+
   private final ConcurrentMap<Class<?>, EventChannel<?>> channels = new ConcurrentHashMap<>();
   private final Function<Class<?>, EventChannel<?>> eventChannelFactory;
 
@@ -80,7 +82,12 @@ public class EventChannels {
 
   public <T extends ChannelInterface> EventChannels subscribe(
       final Class<T> channelInterface, final T subscriber) {
-    return subscribeMultithreaded(channelInterface, subscriber, 1);
+    return subscribe(channelInterface, subscriber, QUEUE_CAPACITY);
+  }
+
+  public <T extends ChannelInterface> EventChannels subscribe(
+      final Class<T> channelInterface, final T subscriber, final int queueCapacity) {
+    return subscribeMultithreaded(channelInterface, subscriber, 1, queueCapacity);
   }
 
   /**
@@ -98,7 +105,31 @@ public class EventChannels {
    */
   public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
       final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
-    getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
+    return subscribeMultithreaded(
+        channelInterface, subscriber, requestedParallelism, QUEUE_CAPACITY);
+  }
+
+  /**
+   * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
+   *
+   * <p>Note that only async event channels can use multiple threads. Synchronous channels will
+   * always use the publisher thread to process events.
+   *
+   * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
+   * pull from the queue, the execution order can no longer be guaranteed.
+   *
+   * @param channelInterface the channel to subscribe to
+   * @param subscriber the subscriber to notify of events
+   * @param requestedParallelism the number of threads to use to process events
+   * @param queueCapacity the maximum capacity for queued events before publishers begin blocking
+   */
+  public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
+      final Class<T> channelInterface,
+      final T subscriber,
+      final int requestedParallelism,
+      final int queueCapacity) {
+    getChannel(channelInterface)
+        .subscribeMultithreaded(subscriber, requestedParallelism, queueCapacity);
     return this;
   }
 

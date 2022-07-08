@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int QUEUE_CAPACITY = 500;
 
   private final Map<T, BlockingQueue<Runnable>> eventQueuesBySubscriber =
       synchronizedMap(new IdentityHashMap<>());
@@ -47,10 +46,10 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   }
 
   @Override
-  void subscribe(final T subscriber, final int numberOfThreads) {
-    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+  void subscribe(final T subscriber, final int numberOfThreads, final int queueCapacity) {
+    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueCapacity);
     eventQueuesBySubscriber.put(subscriber, queue);
-    super.subscribe(subscriber, numberOfThreads);
+    super.subscribe(subscriber, numberOfThreads, queueCapacity);
     for (int i = 0; i < numberOfThreads; i++) {
       executor.execute(new QueueReader(queue));
     }
