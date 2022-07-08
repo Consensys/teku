@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.signatures;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -112,17 +113,14 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
-    final MiscHelpers miscHelpers = spec.atEpoch(epoch).miscHelpers();
-    final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
-    return miscHelpers.computeSigningRoot(validatorRegistration, domain);
-  }
+      final ValidatorRegistration validatorRegistration, final Optional<UInt64> epoch) {
+    final MiscHelpers miscHelpers;
+    if (epoch.isPresent()) {
+      miscHelpers = spec.atEpoch(epoch.get()).miscHelpers();
+    } else {
+      miscHelpers = spec.getGenesisSpec().miscHelpers();
+    }
 
-  /* overloaded method that uses the instance Spec instead of epoch to calculate the signing. Used
-  by non-Teku clients of this library. */
-  public Bytes signingRootForValidatorRegistration(
-      final ValidatorRegistration validatorRegistration) {
-    MiscHelpers miscHelpers = new MiscHelpers(spec.getGenesisSpecConfig());
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
   }

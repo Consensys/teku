@@ -31,6 +31,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -344,7 +345,8 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch),
+            signingRootUtil.signingRootForValidatorRegistration(
+                validatorRegistration, Optional.of(epoch)),
             SignType.VALIDATOR_REGISTRATION,
             Map.of(
                 "validator_registration",
