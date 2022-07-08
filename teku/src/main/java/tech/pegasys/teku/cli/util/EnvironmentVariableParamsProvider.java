@@ -53,7 +53,7 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
   @Override
   protected Optional<Entry<String, String>> translateEntry(
       final Entry<String, String> configEntry) {
-    if (configEntry.getKey().length() <= ENV_VAR_PREFIX.length()) {
+    if (!configEntry.getKey().startsWith(ENV_VAR_PREFIX)) {
       return Optional.empty();
     }
     return Optional.of(

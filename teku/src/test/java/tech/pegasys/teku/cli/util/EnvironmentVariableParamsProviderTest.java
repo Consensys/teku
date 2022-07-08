@@ -61,6 +61,20 @@ public class EnvironmentVariableParamsProviderTest {
   }
 
   @Test
+  void shouldIgnoreEnvWithoutPrefix() {
+    final Map<String, String> environment = Map.of("TEST_ENABLED", "false");
+
+    final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
+        new EnvironmentVariableParamsProvider(environment);
+
+    final Map<String, String> additionalParams =
+        environmentVariableParamsProvider.getAdditionalParams(
+            commandLine.getCommandSpec().options());
+
+    Assertions.assertThat(additionalParams).isEmpty();
+  }
+
+  @Test
   void shouldGiveCorrectPrecedenceWhenDuplicates() {
     final Map<String, String> environment =
         Map.of("TEKU_unknown", "test", "TEKU_NAME", "a,b", "TEKU_N", "c,d", "TEKU_NAMES", "e,f");
