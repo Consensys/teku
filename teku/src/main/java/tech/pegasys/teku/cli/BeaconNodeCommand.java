@@ -287,11 +287,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private AdditionalParamsProvider additionalParamsProvider(
       final CommandLine commandLine, final Optional<File> configFile) {
     if (configFile.isEmpty()) {
-      return new EnvironmentVariableParamsProvider(commandLine, environment);
+      return new EnvironmentVariableParamsProvider(environment);
     }
 
     return new CascadingParamsProvider(
-        new EnvironmentVariableParamsProvider(commandLine, environment),
+        new EnvironmentVariableParamsProvider(environment),
         new YamlConfigFileParamsProvider(commandLine, configFile.get()));
   }
 

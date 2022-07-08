@@ -19,7 +19,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import picocli.CommandLine;
 import picocli.CommandLine.Model.OptionSpec;
 
 public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<String>
@@ -27,12 +26,9 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
   private static final Logger LOG = LogManager.getLogger();
   private static final String ENV_VAR_PREFIX = "TEKU_";
 
-  private final CommandLine commandLine;
   private final Map<String, String> environment;
 
-  public EnvironmentVariableParamsProvider(
-      final CommandLine commandLine, final Map<String, String> environment) {
-    this.commandLine = commandLine;
+  public EnvironmentVariableParamsProvider(final Map<String, String> environment) {
     this.environment = environment;
   }
 

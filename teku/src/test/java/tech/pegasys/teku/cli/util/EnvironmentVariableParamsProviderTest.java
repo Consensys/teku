@@ -35,7 +35,7 @@ public class EnvironmentVariableParamsProviderTest {
             "true");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
-        new EnvironmentVariableParamsProvider(commandLine, environment);
+        new EnvironmentVariableParamsProvider(environment);
 
     final Map<String, String> additionalParams =
         environmentVariableParamsProvider.getAdditionalParams(
@@ -51,7 +51,7 @@ public class EnvironmentVariableParamsProviderTest {
     final Map<String, String> environment = Map.of("TEKU_N", "a,b");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
-        new EnvironmentVariableParamsProvider(commandLine, environment);
+        new EnvironmentVariableParamsProvider(environment);
 
     final Map<String, String> additionalParams =
         environmentVariableParamsProvider.getAdditionalParams(
@@ -66,7 +66,7 @@ public class EnvironmentVariableParamsProviderTest {
         Map.of("TEKU_unknown", "test", "TEKU_NAME", "a,b", "TEKU_N", "c,d", "TEKU_NAMES", "e,f");
 
     final EnvironmentVariableParamsProvider environmentVariableParamsProvider =
-        new EnvironmentVariableParamsProvider(commandLine, environment);
+        new EnvironmentVariableParamsProvider(environment);
 
     final Map<String, String> additionalParams =
         environmentVariableParamsProvider.getAdditionalParams(
