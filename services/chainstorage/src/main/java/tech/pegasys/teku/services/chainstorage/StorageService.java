@@ -35,6 +35,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
   private volatile Database database;
+  private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
 
   public StorageService(
       final ServiceConfig serviceConfig, final StorageConfiguration storageConfiguration) {
@@ -66,17 +67,17 @@ public class StorageService extends Service implements StorageServiceFacade {
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
 
+          batchingVoteUpdateChannel =
+              new BatchingVoteUpdateChannel(
+                  chainStorage,
+                  new AsyncRunnerEventThread(
+                      "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
           serviceConfig
               .getEventChannels()
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
               .subscribe(StorageUpdateChannel.class, chainStorage)
-              .subscribe(
-                  VoteUpdateChannel.class,
-                  new BatchingVoteUpdateChannel(
-                      chainStorage,
-                      new AsyncRunnerEventThread(
-                          "batch-vote-updater", serviceConfig.getAsyncRunnerFactory())))
+              .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
         });
@@ -84,10 +85,10 @@ public class StorageService extends Service implements StorageServiceFacade {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.fromRunnable(
-        () -> {
-          database.close();
-        });
+    // Ensure the last batch of votes is stored before we close the database.
+    return batchingVoteUpdateChannel
+        .stop()
+        .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
   @Override

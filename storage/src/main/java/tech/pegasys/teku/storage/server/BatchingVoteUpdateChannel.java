@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -57,8 +56,13 @@ public class BatchingVoteUpdateChannel implements VoteUpdateChannel {
     delegate.onVotesUpdated(batch);
   }
 
-  @VisibleForTesting
-  public void waitForCompletion() {
-    eventThread.executeFuture(() -> SafeFuture.COMPLETE).join();
+  public SafeFuture<Void> stop() {
+    synchronized (this) {
+      if (nextExecutionScheduled) {
+        return eventThread.executeFuture(() -> SafeFuture.COMPLETE);
+      } else {
+        return SafeFuture.COMPLETE;
+      }
+    }
   }
 }

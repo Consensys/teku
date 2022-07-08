@@ -110,6 +110,6 @@ public class VoteUpdateChannelBenchmark {
     for (Map<UInt64, VoteTracker> update : UPDATES) {
       batchingChannel.onVotesUpdated(update);
     }
-    batchingChannel.waitForCompletion();
+    batchingChannel.stop().join();
   }
 }
