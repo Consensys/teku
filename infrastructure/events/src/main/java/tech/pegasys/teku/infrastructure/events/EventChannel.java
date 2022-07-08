@@ -143,8 +143,8 @@ class EventChannel<T> {
     return publisher;
   }
 
-  void subscribe(final T listener, final int queueCapacity) {
-    subscribeMultithreaded(listener, 1, queueCapacity);
+  void subscribe(final T listener) {
+    subscribeMultithreaded(listener, 1);
   }
 
   /**
@@ -158,15 +158,13 @@ class EventChannel<T> {
    *
    * @param listener the listener to notify of events
    * @param requestedParallelism the number of threads to use to process events
-   * @param queueCapacity the maximum capacity for queued events before publishers begin blocking
    */
-  void subscribeMultithreaded(
-      final T listener, final int requestedParallelism, final int queueCapacity) {
+  void subscribeMultithreaded(final T listener, final int requestedParallelism) {
     checkArgument(requestedParallelism > 0, "Number of threads must be at least 1");
     if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");
     }
-    invoker.subscribe(listener, requestedParallelism, queueCapacity);
+    invoker.subscribe(listener, requestedParallelism);
   }
 
   public void stop() {

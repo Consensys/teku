@@ -31,8 +31,6 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service implements StorageServiceFacade {
-
-  public static final int VOTE_UPDATE_QUEUE_CAPACITY = 5000;
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
