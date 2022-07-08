@@ -45,19 +45,18 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 
-  SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
-      final Collection<BLSPublicKey> publicKeys);
+  SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(Collection<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      final Collection<BLSPublicKey> validatorIdentifiers);
+      Collection<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final IntCollection validatorIndices);
+      UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final IntCollection validatorIndices);
+      UInt64 epoch, IntCollection validatorIndices);
 
-  SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
+  SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
@@ -69,11 +68,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
-  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
+  SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
-  void subscribeToSyncCommitteeSubnets(Collection<SyncCommitteeSubnetSubscription> subscriptions);
+  SafeFuture<Void> subscribeToSyncCommitteeSubnets(
+      Collection<SyncCommitteeSubnetSubscription> subscriptions);
 
-  void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
+  SafeFuture<Void> subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations);
 
@@ -91,6 +91,5 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
-  SafeFuture<Void> registerValidators(
-      final SszList<SignedValidatorRegistration> validatorRegistrations);
+  SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
 }

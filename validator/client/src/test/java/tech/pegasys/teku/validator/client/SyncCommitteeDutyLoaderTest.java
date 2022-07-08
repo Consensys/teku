@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,6 +71,8 @@ class SyncCommitteeDutyLoaderTest {
 
   @BeforeEach
   void setUp() {
+    when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
+        .thenReturn(SafeFuture.COMPLETE);
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
   }

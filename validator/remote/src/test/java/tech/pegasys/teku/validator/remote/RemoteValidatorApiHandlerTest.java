@@ -471,9 +471,11 @@ class RemoteValidatorApiHandlerTest {
         List.of(
             new CommitteeSubscriptionRequest(
                 validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator));
-    apiHandler.subscribeToBeaconCommittee(requests);
+
+    final SafeFuture<Void> result = apiHandler.subscribeToBeaconCommittee(requests);
     asyncRunner.executeQueuedActions();
 
+    assertThat(result).isCompleted();
     verify(apiClient).subscribeToBeaconCommittee(requests);
   }
 
@@ -487,12 +489,14 @@ class RemoteValidatorApiHandlerTest {
     final tech.pegasys.teku.api.schema.SubnetSubscription schemaSubnetSubscription =
         new tech.pegasys.teku.api.schema.SubnetSubscription(subnetId, slot);
 
-    ArgumentCaptor<Set<tech.pegasys.teku.api.schema.SubnetSubscription>> argumentCaptor =
+    final ArgumentCaptor<Set<tech.pegasys.teku.api.schema.SubnetSubscription>> argumentCaptor =
         ArgumentCaptor.forClass(Set.class);
 
-    apiHandler.subscribeToPersistentSubnets(Set.of(subnetSubscription));
+    final SafeFuture<Void> result =
+        apiHandler.subscribeToPersistentSubnets(Set.of(subnetSubscription));
     asyncRunner.executeQueuedActions();
 
+    assertThat(result).isCompleted();
     verify(apiClient).subscribeToPersistentSubnets(argumentCaptor.capture());
 
     final Set<tech.pegasys.teku.api.schema.SubnetSubscription> request = argumentCaptor.getValue();
