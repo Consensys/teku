@@ -24,12 +24,14 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.annotations.VisibleForTesting;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
 
+  @VisibleForTesting
   public static final DeserializableTypeDefinition<BeaconPreparableProposer>
       BEACON_PREPARABLE_PROPOSER_TYPE =
           DeserializableTypeDefinition.object(
@@ -114,9 +117,10 @@ public class PostPrepareBeaconProposer extends MigratingEndpointAdapter {
     if (!isProposerDefaultFeeRecipientDefined) {
       STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
     }
+    final List<BeaconPreparableProposer> proposers = request.getRequestBody();
     request.respondAsync(
         validatorDataProvider
-            .prepareBeaconProposer(request.getRequestBody())
+            .prepareBeaconProposer(proposers)
             .thenApply(AsyncApiResponse::respondOk));
   }
 

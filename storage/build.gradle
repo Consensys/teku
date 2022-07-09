@@ -62,4 +62,7 @@ dependencies {
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+
+  jmhImplementation testFixtures(project(':storage'))
+  jmhImplementation testFixtures(project(':ethereum:spec'))
 }

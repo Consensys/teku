@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionReq
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -135,12 +135,14 @@ public class PostSubscribeToBeaconCommitteeSubnet extends MigratingEndpointAdapt
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<CommitteeSubscriptionData> requestBody = request.getRequestBody();
-
-    provider.subscribeToBeaconCommittee(
+    final List<CommitteeSubscriptionRequest> subscriptionRequests =
         requestBody.stream()
             .map(CommitteeSubscriptionData::toCommitteeSubscriptionRequest)
-            .collect(Collectors.toList()));
-    request.respondWithCode(SC_OK);
+            .collect(Collectors.toList());
+    request.respondAsync(
+        provider
+            .subscribeToBeaconCommittee(subscriptionRequests)
+            .thenApply(AsyncApiResponse::respondOk));
   }
 
   static class CommitteeSubscriptionData {
