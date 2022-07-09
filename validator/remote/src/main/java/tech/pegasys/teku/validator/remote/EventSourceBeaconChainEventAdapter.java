@@ -71,9 +71,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.primaryApiEndpoint = primaryApiEndpoint;
     this.failoverApiEndpoints = failoverApiEndpoints;
     this.okHttpClient = okHttpClient;
-    this.eventSourceHandler =
-        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
     this.asyncRunner = asyncRunner;
+    eventSourceHandler =
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
     primaryEventSource = createPrimaryEventSource();
   }
 
@@ -157,12 +157,12 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                   PingUtils.hostIsReachable(primaryApiEndpoint);
               if (primaryBeaconNodeIsReachable) {
                 // reconnect again to the primary Beacon node event stream
-                cancelScheduledPingingTask();
                 VALIDATOR_LOGGER.primaryBeaconNodeIsBackOnlineForEventStreaming(
                     primaryApiEndpoint.uri());
                 primaryEventSource = createPrimaryEventSource();
                 closeFailoverEventSource();
                 primaryEventSource.start();
+                cancelScheduledPingingTask();
               }
             },
             PING_PRIMARY_NODE_DURING_FAILOVER_PERIOD,

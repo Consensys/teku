@@ -21,7 +21,7 @@ import okhttp3.HttpUrl;
 
 public class PingUtils {
 
-  private static final int PING_TIMEOUT_MILLIS = 1000;
+  private static final int PING_TIMEOUT_MILLIS = 2500;
 
   public static boolean hostIsReachable(final HttpUrl hostUrl) {
     try (final Socket socket = new Socket()) {
