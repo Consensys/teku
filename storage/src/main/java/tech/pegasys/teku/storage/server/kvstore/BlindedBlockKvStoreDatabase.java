@@ -239,6 +239,10 @@ public class BlindedBlockKvStoreDatabase
   @Override
   protected void addFinalizedBlock(
       final SignedBeaconBlock block, final FinalizedUpdaterBlinded updater) {
+    // FIXME why calling add finalized when not calling addBlindedBlock?
+    if (getHotBlock(block.getRoot()).isEmpty()) {
+      updater.addBlindedBlock(block, spec);
+    }
     updater.addFinalizedBlockRootBySlot(block);
   }
 
