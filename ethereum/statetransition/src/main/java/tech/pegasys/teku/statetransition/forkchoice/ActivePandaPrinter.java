@@ -31,13 +31,16 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 public class ActivePandaPrinter implements PandaPrinter {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String PANDA_KEY = "pandas-printed";
+  static final String PANDA_KEY = "pandas-printed";
 
   private final KeyValueStore<String, Bytes> keyValueStore;
+  private final StatusLogger logger;
   private final AtomicBoolean pandasPrinted;
 
-  public ActivePandaPrinter(final KeyValueStore<String, Bytes> keyValueStore) {
+  public ActivePandaPrinter(
+      final KeyValueStore<String, Bytes> keyValueStore, final StatusLogger logger) {
     this.keyValueStore = keyValueStore;
+    this.logger = logger;
     final boolean pandasPrinted = !keyValueStore.get(PANDA_KEY).orElse(Bytes.EMPTY).isEmpty();
     this.pandasPrinted = new AtomicBoolean(pandasPrinted);
   }
@@ -57,7 +60,7 @@ public class ActivePandaPrinter implements PandaPrinter {
     try {
       final String pandas =
           Resources.toString(Resources.getResource(ActivePandaPrinter.class, "panda.txt"), UTF_8);
-      StatusLogger.STATUS_LOG.posActivated(pandas);
+      logger.posActivated(pandas);
     } catch (final Throwable t) {
       LOG.info("POS activated, but the pandas failed to unleash.", t);
     }
