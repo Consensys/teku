@@ -14,19 +14,9 @@
 package tech.pegasys.teku.cli.util;
 
 import java.util.List;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import java.util.Map;
+import picocli.CommandLine.Model.OptionSpec;
 
-@Command()
-public interface TestCommand {
-  @Option(names = "--count")
-  int getCount();
-
-  @Option(
-      names = {"-n", "--name", "--names"},
-      split = ",")
-  List<String> getNames();
-
-  @Option(names = "--test-enabled", arity = "1")
-  boolean isTestEnabled();
+public interface AdditionalParamsProvider {
+  Map<String, String> getAdditionalParams(List<OptionSpec> potentialParams);
 }
