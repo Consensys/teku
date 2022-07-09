@@ -520,7 +520,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             forkChoiceNotifier,
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
-            new ActivePandaPrinter(keyValueStore),
+            new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             proposerBoostEnabled,
             equivocatingIndicesEnabled);
     forkChoiceTrigger =
