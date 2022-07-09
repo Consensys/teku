@@ -89,19 +89,26 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   @Override
   public SafeFuture<Void> stop() {
-    primaryEventSource.close();
-    maybeFailoverEventSource.ifPresent(EventSource::close);
-    return timeBasedEventAdapter.stop().thenRun(runningLatch::countDown);
+    return SafeFuture.fromRunnable(
+            () -> {
+              primaryEventSource.close();
+              closeFailoverEventSource();
+              cancelScheduledPingingTask();
+            })
+        .thenCompose(__ -> timeBasedEventAdapter.stop())
+        .thenRun(runningLatch::countDown);
   }
 
   private EventSource createPrimaryEventSource() {
-    return new EventSource.Builder(eventSourceHandler, createHeadEventSourceUrl(primaryApiEndpoint))
+    return defaultEventSourceBuilder(primaryApiEndpoint)
         .connectionErrorHandler(
             throwable -> {
               if (failoverApiEndpoints.isEmpty()) {
                 return Action.PROCEED;
               }
               if (!PingUtils.hostIsReachable(primaryApiEndpoint)) {
+                // connect to a failover Beacon node in case the primary Beacon node is not
+                // reachable (offline)
                 final Optional<HttpUrl> maybeFailover = findAvailableFailover();
                 final boolean failoverIsAvailable = maybeFailover.isPresent();
                 VALIDATOR_LOGGER.beaconNodeIsNotReachableForEventStreaming(
@@ -126,7 +133,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
         .alwaysRun(
             () -> {
               final EventSource failoverEventSource =
-                  createFailoverEventSource(failoverApiEndpoint);
+                  defaultEventSourceBuilder(failoverApiEndpoint).build();
               LOG.info(
                   "Connecting to a failover Beacon Node {} for event streaming.",
                   failoverApiEndpoint);
@@ -136,12 +143,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             });
   }
 
-  private EventSource createFailoverEventSource(final HttpUrl failoverApiEndpoint) {
-    return new EventSource.Builder(
-            eventSourceHandler, createHeadEventSourceUrl(failoverApiEndpoint))
+  private EventSource.Builder defaultEventSourceBuilder(final HttpUrl apiEndpoint) {
+    return new EventSource.Builder(eventSourceHandler, createHeadEventSourceUrl(apiEndpoint))
         .maxReconnectTime(MAX_RECONNECT_TIME)
-        .client(okHttpClient)
-        .build();
+        .client(okHttpClient);
   }
 
   private void schedulePingingOfPrimaryBeaconNode() {
@@ -151,8 +156,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
               final boolean primaryBeaconNodeIsReachable =
                   PingUtils.hostIsReachable(primaryApiEndpoint);
               if (primaryBeaconNodeIsReachable) {
+                // reconnect again to the primary Beacon node event stream
                 cancelScheduledPingingTask();
-                VALIDATOR_LOGGER.beaconNodeIsBackOnlineForEventStreaming(primaryApiEndpoint.uri());
+                VALIDATOR_LOGGER.primaryBeaconNodeIsBackOnlineForEventStreaming(
+                    primaryApiEndpoint.uri());
                 primaryEventSource = createPrimaryEventSource();
                 closeFailoverEventSource();
                 primaryEventSource.start();

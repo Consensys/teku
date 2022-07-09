@@ -69,11 +69,11 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void beaconNodeIsBackOnlineForEventStreaming(final URI endpoint) {
+  public void primaryBeaconNodeIsBackOnlineForEventStreaming(final URI endpoint) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sBeacon node %s is back online and available for event streaming. Will attempt connecting.",
+                "%sPrimary Beacon node %s is back online and available for event streaming. Will attempt connecting.",
                 PREFIX, endpoint),
             Color.GREEN));
   }
