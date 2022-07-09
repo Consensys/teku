@@ -42,7 +42,7 @@ public class ValidatorRegistrationBatchSender {
       final List<SignedValidatorRegistration> validatorRegistrations) {
     if (validatorRegistrations.isEmpty()) {
       LOG.debug("No validator(s) registrations required to be sent to the Beacon Node.");
-      return SafeFuture.completedFuture(null);
+      return SafeFuture.COMPLETE;
     }
 
     final List<List<SignedValidatorRegistration>> batchedRegistrations =

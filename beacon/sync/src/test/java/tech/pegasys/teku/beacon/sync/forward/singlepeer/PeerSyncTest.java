@@ -72,7 +72,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     super.setup();
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
+    when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
     // By default set up block import to succeed
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
     final SafeFuture<BlockImportResult> result =
