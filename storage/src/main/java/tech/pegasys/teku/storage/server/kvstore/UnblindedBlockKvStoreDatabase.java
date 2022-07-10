@@ -212,7 +212,9 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   protected void addFinalizedBlock(
-      final SignedBeaconBlock block, final FinalizedUpdaterUnblinded updater) {
+      final SignedBeaconBlock block,
+      final boolean isRemovedFromHotBlocks,
+      final FinalizedUpdaterUnblinded updater) {
     updater.addFinalizedBlock(block);
   }
 

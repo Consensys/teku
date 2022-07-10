@@ -14,8 +14,6 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import java.io.File;
-import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -39,14 +37,5 @@ public class InMemoryV4KvStoreBlindedBlocksDatabaseTest
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .storeBlockExecutionPayloadSeparately(true)
         .build();
-  }
-
-  @Test
-  @Override
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() {
-    // FIXME: It's currently assumed that we'll commit the block as hot first before finalizing
-    // In real usage that always happens but previously we've designed the transaction system
-    // to handle batch commits. It's probably worth keeping this ability but we haven't yet
-    throw new TestAbortedException("Batch updates not supported");
   }
 }

@@ -542,11 +542,12 @@ public abstract class KvStoreDatabase<
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     switch (stateStorageMode) {
       case ARCHIVE:
-        updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+        updateFinalizedDataArchiveMode(
+            finalizedChildToParentMap, finalizedBlocks, deletedHotBlocks, finalizedStates);
         break;
 
       case PRUNE:
-        updateFinalizedDataPruneMode(finalizedChildToParentMap, finalizedBlocks);
+        updateFinalizedDataPruneMode(finalizedChildToParentMap, deletedHotBlocks, finalizedBlocks);
         break;
       default:
         throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
@@ -579,6 +580,7 @@ public abstract class KvStoreDatabase<
   private void updateFinalizedDataArchiveMode(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
     final BlockProvider blockProvider =
         BlockProvider.withKnownBlocks(
@@ -609,7 +611,9 @@ public abstract class KvStoreDatabase<
           final Bytes32 blockRoot = finalizedRoots.get(i);
 
           final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(blockRoot).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
+          maybeBlock.ifPresent(
+              block ->
+                  addFinalizedBlock(block, deletedHotBlocks.contains(block.getRoot()), updater));
           // If block is missing and doesn't match the initial anchor, throw
           if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
             throw new IllegalStateException("Missing finalized block");
@@ -638,10 +642,13 @@ public abstract class KvStoreDatabase<
   }
 
   protected abstract void addFinalizedBlock(
-      final SignedBeaconBlock block, final FinalizedUpdaterT updater);
+      final SignedBeaconBlock block,
+      final boolean isRemovedFromHotBlocks,
+      final FinalizedUpdaterT updater);
 
   private void updateFinalizedDataPruneMode(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
     final BlockProvider blockProvider =
@@ -656,7 +663,9 @@ public abstract class KvStoreDatabase<
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
           final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(root).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
+          maybeBlock.ifPresent(
+              block ->
+                  addFinalizedBlock(block, deletedHotBlocks.contains(block.getRoot()), updater));
 
           // If block is missing and doesn't match the initial anchor, throw
           if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(root)).isEmpty()) {

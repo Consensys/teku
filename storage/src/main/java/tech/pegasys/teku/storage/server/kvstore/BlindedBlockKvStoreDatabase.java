@@ -138,7 +138,6 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
-        // FIXME: Having to restrict this to hot block is inefficient
         .filter(root -> dao.getHotBlockCheckpointEpochs(root).isPresent())
         .flatMap(root -> dao.getBlindedBlock(root).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
@@ -238,9 +237,10 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   protected void addFinalizedBlock(
-      final SignedBeaconBlock block, final FinalizedUpdaterBlinded updater) {
-    // FIXME why calling add finalized when not calling addBlindedBlock?
-    if (getHotBlock(block.getRoot()).isEmpty()) {
+      final SignedBeaconBlock block,
+      final boolean isRemovedFromHotBlocks,
+      final FinalizedUpdaterBlinded updater) {
+    if (isRemovedFromHotBlocks) {
       updater.addBlindedBlock(block, spec);
     }
     updater.addFinalizedBlockRootBySlot(block);
