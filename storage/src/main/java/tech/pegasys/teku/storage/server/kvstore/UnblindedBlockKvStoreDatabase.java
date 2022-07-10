@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -229,9 +228,6 @@ public class UnblindedBlockKvStoreDatabase
       int i = 0;
       final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
       while (it.hasNext()) {
-        // FIXME: We should be loading any existing non-canonical blocks for the slot and merging
-        // We may have pruned some forks with blocks after the finalized slot because they didn't
-        // descend from teh finalized checkpoint and then later prune more blocks from the same slot
         final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
         final int start = i;
         try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
@@ -240,7 +236,7 @@ public class UnblindedBlockKvStoreDatabase
             LOG.debug("Non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
             updater.addNonCanonicalBlock(block);
             nonCanonicalRootsBySlotBuffer
-                .computeIfAbsent(block.getSlot(), __ -> new HashSet<>())
+                .computeIfAbsent(block.getSlot(), dao::getNonCanonicalBlockRootsAtSlot)
                 .add(block.getRoot());
             i++;
           }
