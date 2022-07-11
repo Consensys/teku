@@ -78,7 +78,11 @@ public class DebugDbCommand implements Runnable {
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
-        final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+        final Database database =
+            createDatabase(
+                beaconNodeDataOptions,
+                beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+                eth2NetworkOptions)) {
       final DepositStorage depositStorage = DepositStorage.create(eth1EventsChannel, database);
       depositStorage.replayDepositEvents().join();
     }
@@ -112,7 +116,11 @@ public class DebugDbCommand implements Runnable {
                   "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
-    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+    try (final Database database =
+        createDatabase(
+            beaconNodeDataOptions,
+            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            eth2NetworkOptions)) {
       return writeState(
           outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
@@ -147,7 +155,11 @@ public class DebugDbCommand implements Runnable {
         AsyncRunnerFactory.createDefault(
             new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("async", 1);
-    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+    try (final Database database =
+        createDatabase(
+            beaconNodeDataOptions,
+            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            eth2NetworkOptions)) {
       final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
@@ -190,7 +202,8 @@ public class DebugDbCommand implements Runnable {
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
-    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+    try (final Database database =
+        createDatabase(beaconNodeDataOptions, false, eth2NetworkOptions)) {
       try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
         printIfPresent("Hot blocks", stream.count());
       }
@@ -201,6 +214,9 @@ public class DebugDbCommand implements Runnable {
       try (Stream<?> stream = database.streamCheckpointEpochs()) {
         printIfPresent("Checkpoint Epochs", stream.count());
       }
+    }
+    try (final Database database =
+        createDatabase(beaconNodeDataOptions, true, eth2NetworkOptions)) {
 
       printIfPresent("Blinded blocks", database.countBlindedBlocks());
       printIfPresent("Execution Payloads", database.countExecutionPayloads());
@@ -219,6 +235,7 @@ public class DebugDbCommand implements Runnable {
 
   private Database createDatabase(
       final BeaconNodeDataOptions beaconNodeDataOptions,
+      final boolean isStoreBlockExecutionPayloadSeparately,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
     final VersionedDatabaseFactory databaseFactory =
@@ -230,7 +247,7 @@ public class DebugDbCommand implements Runnable {
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
             eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
-            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            isStoreBlockExecutionPayloadSeparately,
             spec);
     return databaseFactory.createDatabase();
   }
