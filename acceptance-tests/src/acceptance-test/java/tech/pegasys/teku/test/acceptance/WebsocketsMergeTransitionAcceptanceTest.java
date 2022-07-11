@@ -25,7 +25,6 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-@Disabled("Blocked by Besu#3990")
 public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
 
