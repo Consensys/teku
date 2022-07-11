@@ -22,89 +22,45 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
+import picocli.CommandLine.IDefaultValueProvider;
+import picocli.CommandLine.Model.ArgSpec;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 
-public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
-    implements AdditionalParamsProvider {
-  private static final Logger LOG = LogManager.getLogger();
+public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
 
   private final CommandLine commandLine;
   private final File configFile;
   // this will be initialized on fist call of defaultValue by PicoCLI parseArgs
   private Map<String, Object> result;
 
-  public YamlConfigFileParamsProvider(final CommandLine commandLine, final File configFile) {
+  public YamlConfigFileDefaultProvider(final CommandLine commandLine, final File configFile) {
     this.commandLine = commandLine;
     this.configFile = configFile;
   }
 
   @Override
-  public Map<String, String> getAdditionalParams(final List<OptionSpec> potentialParams) {
+  public String defaultValue(final ArgSpec argSpec) {
     if (result == null) {
       result = loadConfigurationFromFile();
       checkConfigurationValidity(result == null || result.isEmpty());
       checkUnknownOptions(result);
     }
 
-    return getAdditionalParams(potentialParams, result);
-  }
-
-  @Override
-  protected String onConflictingParams(
-      final Entry<String, String> conflictingParam,
-      final String conflictingValue1,
-      final String conflictingValue2) {
-    LOG.warn(
-        "Multiple yaml options referring to the same configuration '{}'. Keeping {} and ignoring {}",
-        conflictingParam.getKey().replaceFirst("^-+", ""),
-        conflictingValue1,
-        conflictingValue2);
-    return conflictingValue1;
-  }
-
-  @Override
-  protected Optional<Entry<String, Object>> translateEntry(
-      final Entry<String, Object> configEntry) {
-    return Optional.of(configEntry);
-  }
-
-  @Override
-  protected Map.Entry<String, String> translateToArg(
-      OptionSpec matchedOption, Map.Entry<String, Object> yamlEntry) {
-    final Object value = yamlEntry.getValue();
-
-    final String translatedValue;
-
-    if (value instanceof Collection) {
-      if (!matchedOption.isMultiValue()) {
-        throwParameterException(
-            new IllegalArgumentException(),
-            String.format(
-                "The '%s' parameter in config file is multi-valued but the corresponding teku option is single-valued",
-                yamlEntry.getKey()));
-      }
-      translatedValue =
-          ((Collection<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
-    } else {
-      translatedValue = String.valueOf(value);
-    }
-
-    return Map.entry(matchedOption.longestName(), translatedValue);
+    // only options can be used in config because a name is needed for the key
+    // so we skip default for positional params
+    return argSpec.isOption() ? getConfigurationValue(((OptionSpec) argSpec)) : null;
   }
 
   private Map<String, Object> loadConfigurationFromFile() {
@@ -148,7 +104,6 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
     final Set<String> unknownOptionsList =
         result.keySet().stream()
             .filter(option -> !validOptions.contains("--" + option))
-            .filter(option -> !validOptions.contains("-" + option))
             .collect(Collectors.toCollection(TreeSet::new));
 
     if (!unknownOptionsList.isEmpty()) {
@@ -165,5 +120,30 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
       throw new ParameterException(
           commandLine, String.format("Empty yaml configuration file: %s", configFile));
     }
+  }
+
+  private String getConfigurationValue(final OptionSpec optionSpec) {
+    final Optional<Object> optionalValue = getKeyName(optionSpec).map(result::get);
+    if (optionalValue.isEmpty()) {
+      return null;
+    }
+
+    final Object value = optionalValue.get();
+
+    if (optionSpec.isMultiValue() && value instanceof Collection) {
+      return ((Collection<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
+    }
+
+    return String.valueOf(value);
+  }
+
+  private Optional<String> getKeyName(final OptionSpec spec) {
+    // If any of the names of the option are used as key in the yaml results
+    // then returns the value of first one.
+    return Arrays.stream(spec.names())
+        // remove leading dashes on option name as we can have "--" or "-" options
+        .map(name -> name.replaceFirst("^-+", ""))
+        .filter(result::containsKey)
+        .findFirst();
   }
 }

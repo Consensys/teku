@@ -16,17 +16,22 @@ package tech.pegasys.teku.cli.util;
 import java.util.List;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.util.TestCommand.Subcommand;
 
-@Command()
+@Command(subcommands = Subcommand.class)
 public interface TestCommand {
   @Option(names = "--count")
   int getCount();
 
-  @Option(
-      names = {"-n", "--name", "--names"},
-      split = ",")
+  @Option(names = "--names", split = ",")
   List<String> getNames();
 
   @Option(names = "--test-enabled", arity = "1")
   boolean isTestEnabled();
+
+  @Command(name = "subcommand")
+  interface Subcommand {
+    @Option(names = "--subcommand-option-1")
+    String getSubcommandOption();
+  }
 }

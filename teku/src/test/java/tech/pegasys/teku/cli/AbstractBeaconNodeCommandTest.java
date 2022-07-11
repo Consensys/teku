@@ -24,8 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -96,19 +94,11 @@ public abstract class AbstractBeaconNodeCommandTest {
     return getResultingLoggingConfiguration();
   }
 
-  public TekuConfiguration getTekuConfigurationFromFile(
-      String resourceFilename, Optional<String> subcommand) {
+  public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
-    final String[] args =
-        Stream.concat(subcommand.stream(), Stream.of(CONFIG_FILE_OPTION_NAME, configFile))
-            .toArray(String[]::new);
-
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);
     return getResultingTekuConfiguration();
-  }
-
-  public TekuConfiguration getTekuConfigurationFromFile(final String resourceFilename) {
-    return getTekuConfigurationFromFile(resourceFilename, Optional.empty());
   }
 
   public LoggingConfig getLoggingConfigFromFile(String resourceFilename) {
