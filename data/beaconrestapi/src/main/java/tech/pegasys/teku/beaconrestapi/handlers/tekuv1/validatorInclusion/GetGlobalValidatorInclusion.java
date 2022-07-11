@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -49,8 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/teku/v1/validator_inclusion/:epoch/global";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/teku/v1/validator_inclusion/{epoch}/global";
 
   private final ChainDataProvider chainDataProvider;
 
@@ -81,7 +79,7 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get Global Validator Inclusion",
       tags = {TAG_TEKU, TAG_EXPERIMENTAL},
