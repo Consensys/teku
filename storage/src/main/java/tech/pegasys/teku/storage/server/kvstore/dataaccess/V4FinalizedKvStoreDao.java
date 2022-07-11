@@ -101,7 +101,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public long countBlindedBlocks() {
-    return db.size(schema.getColumnNonCanonicalBlocksByRoot());
+    return db.size(schema.getColumnBlindedBlocksByRoot());
   }
 
   @MustBeClosed
