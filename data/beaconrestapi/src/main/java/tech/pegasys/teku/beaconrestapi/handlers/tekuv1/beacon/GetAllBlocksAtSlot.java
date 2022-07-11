@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -60,8 +59,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetAllBlocksAtSlot extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:slot";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/teku/v1/beacon/blocks/{slot}";
   private final ChainDataProvider chainDataProvider;
 
   public GetAllBlocksAtSlot(
@@ -87,7 +85,7 @@ public class GetAllBlocksAtSlot extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get blocks at slot",
       tags = {TAG_TEKU},

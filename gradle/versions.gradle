@@ -36,7 +36,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.6.3'
 
-    dependencySet(group: 'io.javalin', version: '4.4.0') {
+    dependencySet(group: 'io.javalin', version: '4.6.4') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -64,7 +64,7 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-    dependency 'org.webjars:swagger-ui:3.43.0'
+    dependency 'org.webjars:swagger-ui:4.10.3'
     dependency 'io.github.classgraph:classgraph:4.8.147'
     dependency 'com.github.oshi:oshi-core-java11:6.1.6'
 
