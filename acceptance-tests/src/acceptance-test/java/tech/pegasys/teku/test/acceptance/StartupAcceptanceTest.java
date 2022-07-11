@@ -68,7 +68,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldStartChainFromDepositContract() throws Exception {
-    final BesuNode eth1Node = createBesuNode();
+    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
     final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
