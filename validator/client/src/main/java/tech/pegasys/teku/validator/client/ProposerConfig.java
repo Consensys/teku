@@ -59,16 +59,12 @@ public class ProposerConfig {
     return getConfigForPubKey(pubKey).orElse(defaultConfig);
   }
 
-  public Optional<Boolean> isValidatorRegistrationEnabledForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey)
-        .getValidatorRegistration()
-        .map(ValidatorRegistration::isEnabled);
+  public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey pubKey) {
+    return getConfigForPubKeyOrDefault(pubKey).getBuilder().map(Builder::isEnabled);
   }
 
-  public Optional<UInt64> getValidatorRegistrationGasLimitForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey)
-        .getValidatorRegistration()
-        .flatMap(ValidatorRegistration::getGasLimit);
+  public Optional<UInt64> getBuilderGasLimitForPubKey(final BLSPublicKey pubKey) {
+    return getConfigForPubKeyOrDefault(pubKey).getBuilder().flatMap(Builder::getGasLimit);
   }
 
   public Config getDefaultConfig() {
@@ -102,25 +98,24 @@ public class ProposerConfig {
     @JsonProperty(value = "fee_recipient")
     private Eth1Address feeRecipient;
 
-    @JsonProperty(value = "builder_registration")
-    private ValidatorRegistration validatorRegistration;
+    @JsonProperty(value = "builder")
+    private Builder builder;
 
     @JsonCreator
     public Config(
         @JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient,
-        @JsonProperty(value = "builder_registration")
-            final ValidatorRegistration validatorRegistration) {
+        @JsonProperty(value = "builder") final Builder builder) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
-      this.validatorRegistration = validatorRegistration;
+      this.builder = builder;
     }
 
     public Eth1Address getFeeRecipient() {
       return feeRecipient;
     }
 
-    public Optional<ValidatorRegistration> getValidatorRegistration() {
-      return Optional.ofNullable(validatorRegistration);
+    public Optional<Builder> getBuilder() {
+      return Optional.ofNullable(builder);
     }
 
     @Override
@@ -133,17 +128,17 @@ public class ProposerConfig {
       }
       final Config that = (Config) o;
       return Objects.equals(feeRecipient, that.feeRecipient)
-          && Objects.equals(validatorRegistration, that.validatorRegistration);
+          && Objects.equals(builder, that.builder);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(feeRecipient, validatorRegistration);
+      return Objects.hash(feeRecipient, builder);
     }
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class ValidatorRegistration {
+  public static class Builder {
     @JsonProperty(value = "enabled")
     private Boolean enabled;
 
@@ -151,7 +146,7 @@ public class ProposerConfig {
     private UInt64 gasLimit;
 
     @JsonCreator
-    public ValidatorRegistration(
+    public Builder(
         @JsonProperty(value = "enabled") final Boolean enabled,
         @JsonProperty(value = "gas_limit") final UInt64 gasLimit) {
       checkNotNull(enabled, "enabled is required");
@@ -175,7 +170,7 @@ public class ProposerConfig {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final ValidatorRegistration that = (ValidatorRegistration) o;
+      final Builder that = (Builder) o;
       return Objects.equals(enabled, that.enabled) && Objects.equals(gasLimit, that.gasLimit);
     }
 

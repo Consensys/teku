@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.validator.client.ProposerConfig.Builder;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
-import tech.pegasys.teku.validator.client.ProposerConfig.ValidatorRegistration;
 
 class ProposerConfigTest {
 
@@ -36,83 +36,72 @@ class ProposerConfigTest {
       Bytes48.fromHexString(
           "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224");
 
-  private static final Config NO_VALIDATOR_REGISTRATION_CONFIG = new Config(ETH1_ADDRESS, null);
+  private static final Config NO_BUILDER_CONFIG = new Config(ETH1_ADDRESS, null);
 
   private static final UInt64 DEFAULT_GAS_LIMIT = UInt64.valueOf(30_000_000);
   private static final UInt64 CUSTOM_GAS_LIMIT = UInt64.valueOf(28_000_000);
 
   private static final Config DEFAULT_CONFIG =
-      new Config(ETH1_ADDRESS, new ValidatorRegistration(false, DEFAULT_GAS_LIMIT));
+      new Config(ETH1_ADDRESS, new Builder(false, DEFAULT_GAS_LIMIT));
 
   @Test
   void gets_isValidatorRegistrationEnabled_forPubKey() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(
-        PUB_KEY, new Config(ETH1_ADDRESS, new ValidatorRegistration(true, CUSTOM_GAS_LIMIT)));
+    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, CUSTOM_GAS_LIMIT)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
-    assertThat(
-            proposerConfig.isValidatorRegistrationEnabledForPubKey(
-                BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+    assertThat(proposerConfig.isBuilderEnabledForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .hasValue(true);
 
     // defaults to default config
     assertThat(
-            proposerConfig.isValidatorRegistrationEnabledForPubKey(
+            proposerConfig.isBuilderEnabledForPubKey(
                 BLSPublicKey.fromBytesCompressed(ANOTHER_PUB_KEY)))
         .hasValue(false);
   }
 
   @Test
   void registrationIsNotEnabledDoesNotExist_whenRegistrationIsNull() {
-    ProposerConfig proposerConfig =
-        new ProposerConfig(new HashMap<>(), NO_VALIDATOR_REGISTRATION_CONFIG);
+    ProposerConfig proposerConfig = new ProposerConfig(new HashMap<>(), NO_BUILDER_CONFIG);
 
-    assertThat(
-            proposerConfig.isValidatorRegistrationEnabledForPubKey(
-                BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+    assertThat(proposerConfig.isBuilderEnabledForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .isEmpty();
   }
 
   @Test
   void gets_validatorRegistrationGasLimit_forPubKey() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(
-        PUB_KEY, new Config(ETH1_ADDRESS, new ValidatorRegistration(true, CUSTOM_GAS_LIMIT)));
+    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, CUSTOM_GAS_LIMIT)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
     assertThat(
-            proposerConfig.getValidatorRegistrationGasLimitForPubKey(
-                BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+            proposerConfig.getBuilderGasLimitForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .hasValue(CUSTOM_GAS_LIMIT);
 
     // defaults to default config
     assertThat(
-            proposerConfig.getValidatorRegistrationGasLimitForPubKey(
+            proposerConfig.getBuilderGasLimitForPubKey(
                 BLSPublicKey.fromBytesCompressed(ANOTHER_PUB_KEY)))
         .hasValue(DEFAULT_GAS_LIMIT);
   }
 
   @Test
   void registrationGasLimitDoesNotExist_whenRegistrationIsNull() {
-    ProposerConfig proposerConfig =
-        new ProposerConfig(new HashMap<>(), NO_VALIDATOR_REGISTRATION_CONFIG);
+    ProposerConfig proposerConfig = new ProposerConfig(new HashMap<>(), NO_BUILDER_CONFIG);
 
     assertThat(
-            proposerConfig.getValidatorRegistrationGasLimitForPubKey(
-                BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+            proposerConfig.getBuilderGasLimitForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .isEmpty();
   }
 
   @Test
   void registrationGasLimitDoesNotExist_whenGasLimitIsNull() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new ValidatorRegistration(true, null)));
+    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, null)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
     assertThat(
-            proposerConfig.getValidatorRegistrationGasLimitForPubKey(
-                BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+            proposerConfig.getBuilderGasLimitForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .isEmpty();
   }
 }

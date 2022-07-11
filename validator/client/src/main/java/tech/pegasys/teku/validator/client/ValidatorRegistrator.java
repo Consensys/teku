@@ -236,16 +236,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private boolean registrationIsEnabled(
       final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
     return maybeProposerConfig
-        .flatMap(
-            proposerConfig -> proposerConfig.isValidatorRegistrationEnabledForPubKey(publicKey))
+        .flatMap(proposerConfig -> proposerConfig.isBuilderEnabledForPubKey(publicKey))
         .orElse(validatorConfig.isValidatorsRegistrationDefaultEnabled());
   }
 
   private UInt64 getGasLimit(
       final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
     return maybeProposerConfig
-        .flatMap(
-            proposerConfig -> proposerConfig.getValidatorRegistrationGasLimitForPubKey(publicKey))
+        .flatMap(proposerConfig -> proposerConfig.getBuilderGasLimitForPubKey(publicKey))
         .orElse(validatorConfig.getValidatorsRegistrationDefaultGasLimit());
   }
 
