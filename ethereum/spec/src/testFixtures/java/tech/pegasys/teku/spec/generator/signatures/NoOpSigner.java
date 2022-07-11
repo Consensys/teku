@@ -89,7 +89,7 @@ public abstract class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
+      final ValidatorRegistration validatorRegistration) {
     return new SafeFuture<>();
   }
 

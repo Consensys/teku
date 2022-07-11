@@ -256,10 +256,9 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
+      final ValidatorRegistration validatorRegistration) {
     return sign(
-        signingRootUtil.signingRootForValidatorRegistration(
-            validatorRegistration, Optional.of(epoch)),
+        signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
         SignType.VALIDATOR_REGISTRATION,
         Map.of(
             "validator_registration",

@@ -264,7 +264,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
       final ValidatorRegistration validatorRegistration, final Signer signer, final UInt64 epoch) {
     return signer
-        .signValidatorRegistration(validatorRegistration, epoch)
+        .signValidatorRegistration(validatorRegistration)
         .thenApply(
             signature -> {
               final SignedValidatorRegistration signedValidatorRegistration =

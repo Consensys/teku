@@ -31,7 +31,6 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -333,20 +332,18 @@ public class ExternalSignerIntegrationTest {
   public void shouldSignValidatorRegistration() throws Exception {
     final ValidatorRegistration validatorRegistration =
         dataStructureUtil.randomValidatorRegistration();
-    final UInt64 epoch = UInt64.valueOf(7);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "pTYaqzqFTKb4bOX8kc8vEFj6z/eLbYH9+uGeFFxtklCUlPqugzAQyc7y/8KPcBPJBzRv5Knuph2wnGIyY2c0YbQzblvfXlPGjhBMhL/t8iaS4uF5mYvrZDKefXoNF9TB"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
     final BLSSignature response =
-        externalSigner.signValidatorRegistration(validatorRegistration, epoch).join();
+        externalSigner.signValidatorRegistration(validatorRegistration).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForValidatorRegistration(
-                validatorRegistration, Optional.of(epoch)),
+            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
             SignType.VALIDATOR_REGISTRATION,
             Map.of(
                 "validator_registration",
