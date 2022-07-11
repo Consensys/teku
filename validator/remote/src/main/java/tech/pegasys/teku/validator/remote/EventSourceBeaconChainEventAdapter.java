@@ -20,6 +20,7 @@ import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -110,10 +111,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 // connect to a failover Beacon node in case the primary Beacon node is not
                 // reachable (offline)
                 final Optional<HttpUrl> maybeFailover = findAvailableFailover();
-                final boolean failoverIsAvailable = maybeFailover.isPresent();
+                final Optional<URI> maybeFailoverUri = maybeFailover.map(HttpUrl::uri);
                 VALIDATOR_LOGGER.beaconNodeIsNotReachableForEventStreaming(
-                    primaryApiEndpoint.uri(), failoverIsAvailable);
-                if (failoverIsAvailable) {
+                    primaryApiEndpoint.uri(), maybeFailoverUri);
+                if (maybeFailover.isPresent()) {
                   startFailoverEventSource(maybeFailover.get());
                   return Action.SHUTDOWN;
                 }

@@ -56,16 +56,18 @@ public class ValidatorLogger {
   }
 
   public void beaconNodeIsNotReachableForEventStreaming(
-      final URI endpoint, final boolean failoverAvailable) {
+      final URI endpoint, final Optional<URI> failoverEndpoint) {
+    final String failoverMessage =
+        failoverEndpoint
+            .map(
+                failoverUri ->
+                    String.format("Will try connecting to %s as a failover.", failoverUri))
+            .orElse("No failovers available.");
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%sBeacon Node %s is not reachable for event streaming."
-                    + (failoverAvailable
-                        ? " Will try connecting to a failover Beacon Node event stream."
-                        : ""),
-                PREFIX,
-                endpoint),
+                "%sBeacon Node %s is not reachable for event streaming. %s",
+                PREFIX, endpoint, failoverMessage),
             Color.YELLOW));
   }
 
