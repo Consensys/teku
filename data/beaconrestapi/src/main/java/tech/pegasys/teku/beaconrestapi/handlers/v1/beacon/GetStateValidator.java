@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_VALIDATOR_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
@@ -58,9 +57,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 public class GetStateValidator extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE =
-      "/eth/v1/beacon/states/:state_id/validators/:validator_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators/{validator_id}";
 
   private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
       DeserializableTypeDefinition.enumOf(ValidatorStatus.class);
@@ -107,7 +104,7 @@ public class GetStateValidator extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get validator from state",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},

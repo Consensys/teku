@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -58,8 +57,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetState extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v2/debug/beacon/states/:state_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v2/debug/beacon/states/{state_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetState(
@@ -90,7 +88,7 @@ public class GetState extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state",
       tags = {TAG_DEBUG},

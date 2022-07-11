@@ -93,7 +93,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
           activeValidators.size(),
           epoch);
       registrationInProgress.set(true);
-      registerValidators(activeValidators, epoch)
+      registerValidators(activeValidators)
           .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
           .always(
               () -> {
@@ -125,8 +125,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
             .collect(Collectors.toList());
 
-    registerValidators(newlyAddedValidators, lastRunEpoch.get())
-        .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+    registerValidators(newlyAddedValidators).finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
   }
 
   @Override
@@ -170,8 +169,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
   }
 
-  private SafeFuture<Void> registerValidators(
-      final List<Validator> validators, final UInt64 epoch) {
+  private SafeFuture<Void> registerValidators(final List<Validator> validators) {
     if (validators.isEmpty()) {
       return SafeFuture.COMPLETE;
     }
@@ -184,8 +182,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                   validators.stream()
                       .map(
                           validator ->
-                              createSignedValidatorRegistration(
-                                  maybeProposerConfig, validator, epoch))
+                              createSignedValidatorRegistration(maybeProposerConfig, validator))
                       .flatMap(Optional::stream);
 
               return SafeFuture.collectAll(validatorRegistrationsFutures)
@@ -194,9 +191,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
-      final Optional<ProposerConfig> maybeProposerConfig,
-      final Validator validator,
-      final UInt64 epoch) {
+      final Optional<ProposerConfig> maybeProposerConfig, final Validator validator) {
     final BLSPublicKey publicKey = validator.getPublicKey();
 
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
@@ -234,8 +229,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
               final ValidatorRegistration validatorRegistration =
                   createValidatorRegistration(publicKey, feeRecipient, gasLimit);
               final Signer signer = validator.getSigner();
-              return Optional.of(
-                  signAndCacheValidatorRegistration(validatorRegistration, signer, epoch));
+              return Optional.of(signAndCacheValidatorRegistration(validatorRegistration, signer));
             });
   }
 
@@ -262,9 +256,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final Signer signer, final UInt64 epoch) {
+      final ValidatorRegistration validatorRegistration, final Signer signer) {
     return signer
-        .signValidatorRegistration(validatorRegistration, epoch)
+        .signValidatorRegistration(validatorRegistration)
         .thenApply(
             signature -> {
               final SignedValidatorRegistration signedValidatorRegistration =

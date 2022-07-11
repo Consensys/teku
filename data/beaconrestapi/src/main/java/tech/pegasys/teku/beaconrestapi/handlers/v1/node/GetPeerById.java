@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PEER_ID_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -46,8 +45,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeerById extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v1/node/peers/:peer_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
 
   private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
@@ -76,7 +74,7 @@ public class GetPeerById extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get node peer",
       tags = {TAG_NODE},
