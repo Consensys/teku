@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,7 +24,6 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-@Disabled("Blocked by Besu#3990")
 public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "less-swift";
 

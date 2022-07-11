@@ -42,7 +42,6 @@ import org.mockserver.model.Delay;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.core.signatures.SigningRootUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -51,10 +50,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
@@ -323,6 +324,38 @@ public class ExternalSignerIntegrationTest {
                 createForkInfo(fork),
                 "voluntary_exit",
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(metricsSystem, 1, 0, 0);
+  }
+
+  @Test
+  public void shouldSignValidatorRegistration() throws Exception {
+    final ValidatorRegistration validatorRegistration =
+        dataStructureUtil.randomValidatorRegistration();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "pTYaqzqFTKb4bOX8kc8vEFj6z/eLbYH9+uGeFFxtklCUlPqugzAQyc7y/8KPcBPJBzRv5Knuph2wnGIyY2c0YbQzblvfXlPGjhBMhL/t8iaS4uF5mYvrZDKefXoNF9TB"));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+    final BLSSignature response =
+        externalSigner.signValidatorRegistration(validatorRegistration).join();
+    assertThat(response).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(
+            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
+            SignType.VALIDATOR_REGISTRATION,
+            Map.of(
+                "validator_registration",
+                Map.of(
+                    "fee_recipient",
+                    validatorRegistration.getFeeRecipient().toHexString(),
+                    "gas_limit",
+                    validatorRegistration.getGasLimit(),
+                    "timestamp",
+                    validatorRegistration.getTimestamp(),
+                    "pubkey",
+                    validatorRegistration.getPublicKey().toString())));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
     validateMetrics(metricsSystem, 1, 0, 0);
   }

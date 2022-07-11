@@ -31,12 +31,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -66,6 +66,9 @@ class SyncCommitteeScheduledDutiesTest {
 
   @Test
   void shouldSubscribeToSubnets() {
+    when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
+        .thenReturn(SafeFuture.COMPLETE);
+
     final SyncCommitteeScheduledDuties duties =
         validBuilder()
             .committeeAssignment(validator1, 50, 1)

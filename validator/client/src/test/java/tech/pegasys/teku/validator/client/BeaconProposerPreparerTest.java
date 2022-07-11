@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -45,6 +44,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
@@ -124,6 +124,7 @@ public class BeaconProposerPreparerTest {
     when(validatorIndexProvider.containsPublicKey(eq(validator2.getPublicKey()))).thenReturn(true);
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
+    when(validatorApiChannel.prepareBeaconProposer(anyList())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @TestTemplate
@@ -321,7 +322,8 @@ public class BeaconProposerPreparerTest {
 
   @TestTemplate
   void should_catchApiExceptions() {
-    doThrow(new RuntimeException("error")).when(validatorApiChannel).prepareBeaconProposer(any());
+    when(validatorApiChannel.prepareBeaconProposer(anyList()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
     beaconProposerPreparer.onSlot(UInt64.ZERO);
     verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());

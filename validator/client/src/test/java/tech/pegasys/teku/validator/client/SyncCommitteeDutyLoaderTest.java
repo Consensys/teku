@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,11 +27,11 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
@@ -70,6 +71,8 @@ class SyncCommitteeDutyLoaderTest {
 
   @BeforeEach
   void setUp() {
+    when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
+        .thenReturn(SafeFuture.COMPLETE);
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
   }

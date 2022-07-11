@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.isHostAuthorized;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
@@ -112,6 +113,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
@@ -126,6 +128,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
+import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
 public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
 
@@ -234,6 +237,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     app.exception(NodeSyncingException.class, this::serviceUnavailable);
     app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
     app.exception(ContentTypeNotSupportedException.class, this::unsupportedContentType);
+    app.exception(MissingDepositsException.class, this::missingDeposits);
     app.exception(BadRequestException.class, this::badRequest);
     app.exception(JsonProcessingException.class, this::badRequest);
     app.exception(IllegalArgumentException.class, this::badRequest);
@@ -246,6 +250,13 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
         context,
         () ->
             BadRequest.serialize(jsonProvider, SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()));
+  }
+
+  private void missingDeposits(final Throwable throwable, final Context context) {
+    context.status(SC_INTERNAL_SERVER_ERROR);
+    setErrorBody(
+        context,
+        () -> BadRequest.serialize(jsonProvider, SC_INTERNAL_SERVER_ERROR, throwable.getMessage()));
   }
 
   private void serviceUnavailable(final Throwable throwable, final Context context) {
@@ -322,18 +333,21 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void start() {
+  public SafeFuture<?> start() {
     try {
       app.start();
+      return SafeFuture.COMPLETE;
     } catch (RuntimeException ex) {
       if (Throwables.getRootCause(ex) instanceof BindException) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "TCP Port %d is already in use. "
-                    + "You may need to stop another process or change the HTTP port for this process.",
-                getListenPort()));
+        return SafeFuture.failedFuture(
+            new InvalidConfigurationException(
+                String.format(
+                    "TCP Port %d is already in use. "
+                        + "You may need to stop another process or change the HTTP port for this process.",
+                    getListenPort())));
       }
     }
+    return SafeFuture.COMPLETE;
   }
 
   public int getListenPort() {
@@ -463,8 +477,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
-    app.get(
-        GetEvents.ROUTE,
+    addMigratedEndpoint(
         new GetEvents(
             dataProvider,
             eventChannels,
@@ -474,14 +487,16 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     try {
       if (jettyServer != null) {
         jettyServer.stop();
       }
     } catch (Exception ex) {
       LOG.error(ex);
+      return SafeFuture.failedFuture(ex);
     }
     app.stop();
+    return SafeFuture.COMPLETE;
   }
 }

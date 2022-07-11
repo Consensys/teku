@@ -1,6 +1,5 @@
 dependencies {
   implementation project(':beacon:pow')
-  implementation project(':ethereum:core')
   implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
@@ -35,7 +34,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation project(':infrastructure:crypto')
   testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation project(':ethereum:networks')
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
@@ -52,7 +50,6 @@ dependencies {
   testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':infrastructure:bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
-  testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
@@ -65,4 +62,7 @@ dependencies {
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+
+  jmhImplementation testFixtures(project(':storage'))
+  jmhImplementation testFixtures(project(':ethereum:spec'))
 }

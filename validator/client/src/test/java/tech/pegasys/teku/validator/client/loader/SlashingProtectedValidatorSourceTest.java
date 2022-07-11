@@ -25,15 +25,15 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
-import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
+import tech.pegasys.teku.spec.signatures.Signer;
+import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 

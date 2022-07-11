@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class ForkChoiceUpdateData {
+  static final UInt64 RESEND_AFTER_MILLIS = UInt64.valueOf(30_000);
   private static final Logger LOG = LogManager.getLogger();
   private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
       new ForkChoiceState(
@@ -39,7 +40,7 @@ public class ForkChoiceUpdateData {
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
       new SafeFuture<>();
-  private boolean sent = false;
+  private UInt64 toBeSentAtTime = UInt64.ZERO;
 
   private long payloadBuildingAttributesSequenceProducer = 0;
   private long payloadBuildingAttributesSequenceConsumer = -1;
@@ -153,12 +154,11 @@ public class ForkChoiceUpdateData {
   }
 
   public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
-      final ExecutionLayerChannel executionLayer) {
-    if (sent) {
-      LOG.debug("send - already sent");
+      final ExecutionLayerChannel executionLayer, final UInt64 currentTimestamp) {
+    if (!shouldBeSent(currentTimestamp)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    sent = true;
+    toBeSentAtTime = currentTimestamp.plus(RESEND_AFTER_MILLIS);
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
@@ -206,6 +206,18 @@ public class ForkChoiceUpdateData {
 
   public ForkChoiceState getForkChoiceState() {
     return forkChoiceState;
+  }
+
+  private boolean shouldBeSent(final UInt64 currentTimestamp) {
+    if (toBeSentAtTime.isZero()) {
+      return true;
+    }
+    if (toBeSentAtTime.isLessThanOrEqualTo(currentTimestamp)) {
+      LOG.debug("send - already sent but resending");
+      return true;
+    }
+    LOG.debug("send - already sent");
+    return false;
   }
 
   @Override

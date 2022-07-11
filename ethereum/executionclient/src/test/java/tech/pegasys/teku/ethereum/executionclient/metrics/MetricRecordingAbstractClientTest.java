@@ -42,7 +42,7 @@ public class MetricRecordingAbstractClientTest {
 
   @Test
   public void shouldCountSuccessfulRequest() {
-    final Response<String> response = new Response<>("value", null);
+    final Response<String> response = new Response<>("value");
     setupResponse(SafeFuture.completedFuture(response));
     final SafeFuture<Response<String>> result = clientTest.testMethod("test");
 

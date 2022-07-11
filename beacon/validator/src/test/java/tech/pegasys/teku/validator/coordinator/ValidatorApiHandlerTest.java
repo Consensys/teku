@@ -620,11 +620,14 @@ class ValidatorApiHandlerTest {
     final UInt64 aggregationSlot = UInt64.valueOf(13);
     final UInt64 committeesAtSlot = UInt64.valueOf(10);
     final int validatorIndex = 1;
-    validatorApiHandler.subscribeToBeaconCommittee(
-        List.of(
-            new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, true)));
 
+    final SafeFuture<Void> result =
+        validatorApiHandler.subscribeToBeaconCommittee(
+            List.of(
+                new CommitteeSubscriptionRequest(
+                    validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, true)));
+
+    assertThat(result).isCompleted();
     verify(attestationTopicSubscriptions)
         .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
@@ -636,11 +639,14 @@ class ValidatorApiHandlerTest {
     final UInt64 aggregationSlot = UInt64.valueOf(13);
     final UInt64 committeesAtSlot = UInt64.valueOf(10);
     final int validatorIndex = 1;
-    validatorApiHandler.subscribeToBeaconCommittee(
-        List.of(
-            new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, false)));
 
+    final SafeFuture<Void> result =
+        validatorApiHandler.subscribeToBeaconCommittee(
+            List.of(
+                new CommitteeSubscriptionRequest(
+                    validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, false)));
+
+    assertThat(result).isCompleted();
     verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
   }
@@ -651,9 +657,15 @@ class ValidatorApiHandlerTest {
         new SyncCommitteeSubnetSubscription(1, IntSet.of(1, 2, 15, 30), UInt64.valueOf(44));
     final SyncCommitteeSubnetSubscription subscription2 =
         new SyncCommitteeSubnetSubscription(1, IntSet.of(5, 10), UInt64.valueOf(35));
-    validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
+
+    assertThat(result).isCompleted();
+
     final UInt64 unsubscribeSlotSubscription1 = spec.computeStartSlotAtEpoch(UInt64.valueOf(44));
     final UInt64 unsubscribeSlotSubscription2 = spec.computeStartSlotAtEpoch(UInt64.valueOf(35));
+
     verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(3, unsubscribeSlotSubscription1);

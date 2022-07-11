@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.spec.config.Constants.EL_BUILDER_CALL_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
 import java.nio.file.Path;
@@ -69,7 +69,7 @@ public class ExecutionLayerService extends Service {
                 builderEndpoint ->
                     RestClientProvider.create(
                         builderEndpoint,
-                        EL_BUILDER_CALL_TIMEOUT,
+                        BUILDER_CALL_TIMEOUT,
                         false,
                         Optional.empty(),
                         beaconDataDirectory,

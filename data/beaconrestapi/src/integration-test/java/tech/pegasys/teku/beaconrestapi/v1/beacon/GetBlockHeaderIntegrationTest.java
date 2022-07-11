@@ -24,8 +24,8 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 public class GetBlockHeaderIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach

@@ -15,6 +15,8 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class Response<T> {
 
@@ -37,6 +39,27 @@ public class Response<T> {
 
   public static <T> Response<T> withErrorMessage(final String errorMessage) {
     return new Response<>(null, errorMessage);
+  }
+
+  public static <T, R> Response<R> unwrap(
+      final Response<T> response, final Function<T, R> unwrapFunction) {
+    if (response.isFailure()) {
+      return Response.withErrorMessage(response.getErrorMessage());
+    }
+    final T payload = response.getPayload();
+    return payload == null
+        ? Response.withNullPayload()
+        : new Response<>(unwrapFunction.apply(payload));
+  }
+
+  public static <T> Response<Optional<T>> convertToOptional(final Response<T> response) {
+    if (response.isFailure()) {
+      return Response.withErrorMessage(response.getErrorMessage());
+    }
+    final T payload = response.getPayload();
+    return payload == null
+        ? new Response<>(Optional.empty())
+        : new Response<>(Optional.of(payload));
   }
 
   public T getPayload() {

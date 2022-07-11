@@ -32,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
+import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -93,8 +93,7 @@ class ValidatorRegistratorTest {
             validatorConfig,
             feeRecipientProvider,
             validatorRegistrationBatchSender);
-    when(validatorRegistrationBatchSender.sendInBatches(any()))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(validatorRegistrationBatchSender.sendInBatches(any())).thenReturn(SafeFuture.COMPLETE);
 
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
@@ -110,7 +109,7 @@ class ValidatorRegistratorTest {
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
-        .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
+        .signValidatorRegistration(any(ValidatorRegistration.class));
   }
 
   @TestTemplate
@@ -152,7 +151,7 @@ class ValidatorRegistratorTest {
 
     // signer will be called in total 3 times, since from the 2nd run the registrations will
     // be cached
-    verify(signer, times(3)).signValidatorRegistration(any(), any());
+    verify(signer, times(3)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -221,7 +220,7 @@ class ValidatorRegistratorTest {
         Optional.of(updatedRegistrationsRequirements));
 
     // signer will be called in total 5 times
-    verify(signer, times(5)).signValidatorRegistration(any(), any());
+    verify(signer, times(5)).signValidatorRegistration(any());
   }
 
   @TestTemplate

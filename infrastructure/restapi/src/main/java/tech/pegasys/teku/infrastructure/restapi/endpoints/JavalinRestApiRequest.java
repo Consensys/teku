@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.sse.SseClient;
+import io.javalin.http.sse.SseHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,6 +30,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -199,5 +202,11 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @Override
   public void header(String name, String value) {
     context.header(name, value);
+  }
+
+  @Override
+  public void startEventStream(Consumer<SseClient> clientConsumer) {
+    SseHandler sseHandler = new SseHandler(clientConsumer);
+    sseHandler.handle(context);
   }
 }

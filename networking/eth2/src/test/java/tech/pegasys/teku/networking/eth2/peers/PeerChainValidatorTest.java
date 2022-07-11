@@ -108,7 +108,7 @@ public class PeerChainValidatorTest {
     setupRemoteStatusAndValidator(remoteFinalizedCheckpoint);
     when(peer.getId()).thenReturn(new MockNodeId());
     when(peer.hasStatus()).thenReturn(true);
-    when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
+    when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
 
     when(combinedChainData.getCurrentEpoch()).thenReturn(spec.computeEpochAtSlot(laterBlockSlot));
     when(combinedChainData.getStore()).thenReturn(store);
