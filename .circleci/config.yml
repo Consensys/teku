@@ -14,11 +14,13 @@ executors:
     working_directory: ~/project
     environment:
       JAVA_TOOL_OPTIONS: -Xmx2g
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   trivy_executor:
     docker:
       - image: docker:stable-git
+        auth:
+          <<: *docker-auth
     resource_class: small
     working_directory: ~/project
 
@@ -32,7 +34,7 @@ executors:
     environment:
       DOCKER_CLI_EXPERIMENTAL: enabled
       JAVA_TOOL_OPTIONS: -Xmx2g
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   medium_plus_executor:
     docker:
@@ -43,7 +45,7 @@ executors:
     working_directory: ~/project
     environment:
       JAVA_TOOL_OPTIONS: -Xmx2g
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   large_executor:
     docker:
@@ -54,7 +56,7 @@ executors:
     working_directory: ~/project
     environment:
       JAVA_TOOL_OPTIONS: -Xmx3g
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   machine_executor_amd64:
     machine:
@@ -156,7 +158,7 @@ commands:
           only_for_branches: 'master'
 jobs:
   assemble:
-    executor: medium_executor
+    executor: large_executor
     steps:
       - prepare
       - run:
@@ -188,6 +190,7 @@ jobs:
   windowsBuild:
     executor:
       name: win/default
+      size: xlarge
     steps:
       - checkout
       - restore_cache:
@@ -199,7 +202,7 @@ jobs:
           name: Build
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2"
+            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
             cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       - run:
           name: "Gather test artifacts"

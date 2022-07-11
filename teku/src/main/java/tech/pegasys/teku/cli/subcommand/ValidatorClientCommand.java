@@ -164,7 +164,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
   }
 
-  private TekuConfiguration tekuConfiguration() {
+  public TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
     configureEth2Network(builder);
     validatorOptions.configure(builder);

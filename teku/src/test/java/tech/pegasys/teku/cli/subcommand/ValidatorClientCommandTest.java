@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
@@ -55,5 +57,14 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
         getLoggingConfigurationFromArguments(
             "vc", "--network=mainnet", "--log-destination=console");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
+  }
+
+  @Test
+  public void shouldIgnoreNonMatchingSubcommandParams() {
+    final TekuConfiguration configuration =
+        getTekuConfigurationFromFile(
+            "beaconAndValidatorOptions_config.yaml", Optional.of("validator-client"));
+    assertThat(configuration.validatorClient().getValidatorConfig().getValidatorKeys())
+        .containsExactly("a.key:a.password", "b.json:b.txt");
   }
 }
