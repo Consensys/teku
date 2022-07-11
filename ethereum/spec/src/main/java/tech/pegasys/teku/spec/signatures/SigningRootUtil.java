@@ -112,8 +112,8 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
-    final MiscHelpers miscHelpers = spec.atEpoch(epoch).miscHelpers();
+      final ValidatorRegistration validatorRegistration) {
+    final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
   }
