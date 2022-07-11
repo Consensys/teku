@@ -309,15 +309,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           .ifPresentOrElse(
               invalidTransitionBlockRoot ->
                   getForkChoiceStrategy()
-                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult),
+                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult, true),
               () ->
-                  recentChainData
-                      .getChainHead()
-                      .ifPresent(
-                          chainHead ->
-                              getForkChoiceStrategy()
-                                  .onInvalidExecutionResultWithoutTransition(
-                                      chainHead.getRoot(), payloadResult)));
+                  getForkChoiceStrategy()
+                      .onExecutionPayloadResult(block.getParentRoot(), payloadResult, false));
       return result;
     }
 
@@ -360,7 +355,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult);
+    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -415,7 +410,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           final Bytes32 validatedBlockRoot =
               result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
-          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
+          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
 
           if (resultStatus.hasInvalidStatus()) {
             LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);

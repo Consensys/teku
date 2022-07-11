@@ -530,7 +530,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return protoArray.getProtoNode(blockRoot);
   }
 
-  public void onExecutionPayloadResult(final Bytes32 blockRoot, final PayloadStatus result) {
+  public void onExecutionPayloadResult(
+      final Bytes32 blockRoot,
+      final PayloadStatus result,
+      final boolean verifiedInvalidTransition) {
     if (result.hasFailedExecution()) {
       LOG.warn(
           "Unable to execute Payload for block root {}, Execution Engine is offline",
@@ -548,23 +551,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         protoArray.markNodeValid(blockRoot);
       } else if (status.isInvalid()) {
         LOG.warn("Payload for block root {} was invalid", blockRoot);
-        protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
+        protoArray.markNodeInvalid(
+            blockRoot, result.getLatestValidHash(), verifiedInvalidTransition);
       } else {
         throw new IllegalArgumentException("Unknown payload validity status: " + status);
       }
-    } finally {
-      protoArrayLock.writeLock().unlock();
-    }
-  }
-
-  public void onInvalidExecutionResultWithoutTransition(
-      final Bytes32 headRoot, final PayloadStatus result) {
-    if (!result.hasInvalidStatus() || result.getLatestValidHash().isEmpty()) {
-      return;
-    }
-    protoArrayLock.writeLock().lock();
-    try {
-      protoArray.findAndMarkInvalidChain(headRoot, result.getLatestValidHash().get());
     } finally {
       protoArrayLock.writeLock().unlock();
     }

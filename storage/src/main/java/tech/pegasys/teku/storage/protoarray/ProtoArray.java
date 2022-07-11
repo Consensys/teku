@@ -257,7 +257,14 @@ public class ProtoArray {
     }
   }
 
-  public void markNodeInvalid(final Bytes32 blockRoot, final Optional<Bytes32> latestValidHash) {
+  public void markNodeInvalid(
+      final Bytes32 blockRoot,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition) {
+    if (!verifiedInvalidTransition && latestValidHash.isEmpty()) {
+      // Couldn't find invalid chain segment with lack of data
+      return;
+    }
     final Optional<Integer> maybeIndex = indices.get(blockRoot);
     if (maybeIndex.isEmpty()) {
       LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
@@ -266,8 +273,21 @@ public class ProtoArray {
     final int index;
     final ProtoNode node;
     if (latestValidHash.isPresent()) {
-      final Optional<Integer> maybeFirstInvalidNodeIndex =
-          findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash.get());
+      final Optional<Integer> maybeFirstInvalidNodeIndex;
+      if (verifiedInvalidTransition) {
+        maybeFirstInvalidNodeIndex =
+            findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash.get());
+      } else {
+        maybeFirstInvalidNodeIndex =
+            verifyInvalidIndex(maybeIndex.get(), latestValidHash.get())
+                .flatMap(
+                    invalidIndex -> findFirstInvalidNodeIndex(invalidIndex, latestValidHash.get()));
+        if (maybeFirstInvalidNodeIndex.isEmpty()) {
+          // Nothing to do: latestValidHash was not found, no proof of invalid transition
+          return;
+        }
+      }
+
       index = maybeFirstInvalidNodeIndex.orElse(maybeIndex.get());
       node = getNodeByIndex(index);
       // We found the latestValidHash so mark it as valid
@@ -286,32 +306,14 @@ public class ProtoArray {
     applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
-  public void findAndMarkInvalidChain(final Bytes32 headRoot, final Bytes32 latestValidHash) {
-    final Optional<Integer> maybeIndex = indices.get(headRoot);
-    if (maybeIndex.isEmpty()) {
-      LOG.debug("Couldn't find chain head {} because it was unknown", headRoot);
-      return;
+  private Optional<Integer> verifyInvalidIndex(
+      final int maybeInvalidIndex, final Bytes32 latestValidHash) {
+    if (getNodeByIndex(maybeInvalidIndex).getExecutionBlockHash().equals(latestValidHash)) {
+      // latestValidHash points to the index, so index cannot be invalid
+      return Optional.empty();
+    } else {
+      return Optional.of(maybeInvalidIndex);
     }
-    final ProtoNode headNode = getNodeByIndex(maybeIndex.get());
-    if (headNode.getExecutionBlockHash().equals(latestValidHash)) {
-      return;
-    }
-
-    final Optional<Integer> maybeFirstInvalidNodeIndex =
-        findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash);
-    // In case we have not found latestValidHash, end this up
-    if (maybeFirstInvalidNodeIndex.isEmpty()) {
-      return;
-    }
-
-    final int index = maybeFirstInvalidNodeIndex.get();
-    final ProtoNode node = getNodeByIndex(index);
-    markNodeValid(node.getParentRoot());
-    node.setValidationStatus(INVALID);
-    removeBlockRoot(node.getBlockRoot());
-    markDescendantsAsInvalid(index);
-    // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
-    applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   private Optional<Integer> findFirstInvalidNodeIndex(

@@ -242,7 +242,7 @@ public class ChainUpdater {
     recentChainData
         .getUpdatableForkChoiceStrategy()
         .orElseThrow()
-        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID);
+        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
     saveBlockTime(block);
   }
 
