@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Distributions created from the same git commit and docker image will be identical
  - Optimised storage of latest vote information by batching updates
  - Ensured dependencies are up to date
+ - Validator Registration signature integration with external signer
 
 ### Bug Fixes
  - Fix not rendering emoticons correctly in graffiti when running in a Docker container

@@ -332,19 +332,18 @@ public class ExternalSignerIntegrationTest {
   public void shouldSignValidatorRegistration() throws Exception {
     final ValidatorRegistration validatorRegistration =
         dataStructureUtil.randomValidatorRegistration();
-    final UInt64 epoch = UInt64.valueOf(7);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "pTYaqzqFTKb4bOX8kc8vEFj6z/eLbYH9+uGeFFxtklCUlPqugzAQyc7y/8KPcBPJBzRv5Knuph2wnGIyY2c0YbQzblvfXlPGjhBMhL/t8iaS4uF5mYvrZDKefXoNF9TB"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
     final BLSSignature response =
-        externalSigner.signValidatorRegistration(validatorRegistration, epoch).join();
+        externalSigner.signValidatorRegistration(validatorRegistration).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration, epoch),
+            signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
             SignType.VALIDATOR_REGISTRATION,
             Map.of(
                 "validator_registration",
@@ -356,9 +355,7 @@ public class ExternalSignerIntegrationTest {
                     "timestamp",
                     validatorRegistration.getTimestamp(),
                     "pubkey",
-                    validatorRegistration.getPublicKey().toString()),
-                "epoch",
-                epoch));
+                    validatorRegistration.getPublicKey().toString())));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
     validateMetrics(metricsSystem, 1, 0, 0);
   }
