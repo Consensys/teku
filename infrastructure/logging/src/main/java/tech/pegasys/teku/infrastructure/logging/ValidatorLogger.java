@@ -43,14 +43,14 @@ public class ValidatorLogger {
   public void connectedToBeaconNodeEventStream() {
     log.info(
         ColorConsolePrinter.print(
-            String.format("%sSuccessfully connected to Beacon node event stream", PREFIX),
+            String.format("%sSuccessfully connected to Beacon Node event stream", PREFIX),
             Color.GREEN));
   }
 
   public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
-            String.format("%sError while connecting to Beacon node event stream", PREFIX),
+            String.format("%sError while connecting to Beacon Node event stream", PREFIX),
             Color.RED),
         t);
   }
@@ -60,9 +60,9 @@ public class ValidatorLogger {
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%sBeacon node %s is not reachable for event streaming."
+                "%sBeacon Node %s is not reachable for event streaming."
                     + (failoverAvailable
-                        ? " Will try connecting to a failover beacon node event stream."
+                        ? " Will try connecting to a failover Beacon Node event stream."
                         : ""),
                 PREFIX,
                 endpoint),
@@ -73,7 +73,7 @@ public class ValidatorLogger {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPrimary Beacon node %s is back online and available for event streaming. Will attempt connecting.",
+                "%sPrimary Beacon node %s is back online. Will attempt connecting to event stream.",
                 PREFIX, endpoint),
             Color.GREEN));
   }
@@ -189,27 +189,11 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
-  public void remoteBeaconNodeFailoverRequestFailed(
-      final URI failedEndpoint, final Throwable error, final Optional<URI> failoverEndpoint) {
-    final String failoverMessage =
-        failoverEndpoint
-            .map(endpoint -> "Trying failover to " + endpoint)
-            .orElse("No more failovers available.");
+  public void remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints() {
     final String warningMessage =
         String.format(
-            "%sRemote request to Beacon Node %s failed. " + failoverMessage,
-            PREFIX,
-            failedEndpoint);
-    log.warn(ColorConsolePrinter.print(warningMessage, Color.YELLOW), error);
-  }
-
-  public void relayedRequestToFailoverBeaconNodeFailed(
-      final URI failoverEndpoint, final Throwable error) {
-    final String warningMessage =
-        String.format(
-            "%sRemote request sent to all failover Beacon Nodes failed for %s. The node may not be fully ready to be a failover if required.",
-            PREFIX, failoverEndpoint);
-    log.warn(ColorConsolePrinter.print(warningMessage, Color.YELLOW), error);
+            "%sRemote request to the Beacon Node failed on all configured endpoints.", PREFIX);
+    log.error(ColorConsolePrinter.print(warningMessage, Color.RED));
   }
 
   public void beaconProposerPreparationFailed(final Throwable error) {

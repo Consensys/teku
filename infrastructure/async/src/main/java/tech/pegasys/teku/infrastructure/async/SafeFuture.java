@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -215,17 +216,17 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Returns a new SafeFuture that is completed when all of the given SafeFutures complete
-   * successfully or completes exceptionally immediately when any of the SafeFutures complete
-   * exceptionally. The results, if any, of the given SafeFutures are not reflected in the returned
-   * SafeFuture, but may be obtained by inspecting them individually. If no SafeFutures are
-   * provided, returns a SafeFuture completed with the value {@code null}.
+   * Returns a new SafeFuture that is completed when all the given SafeFutures complete successfully
+   * or completes exceptionally immediately when any of the SafeFutures complete exceptionally. The
+   * results, if any, of the given SafeFutures are not reflected in the returned SafeFuture, but may
+   * be obtained by inspecting them individually. If no SafeFutures are provided, returns a
+   * SafeFuture completed with the value {@code null}.
    *
    * <p>Among the applications of this method is to await completion of a set of independent
    * SafeFutures before continuing a program, as in: {@code SafeFuture.allOf(c1, c2, c3).join();}.
    *
    * @param futures the SafeFutures
-   * @return a new SafeFuture that is completed when all of the given SafeFutures complete
+   * @return a new SafeFuture that is completed when all the given SafeFutures complete
    * @throws NullPointerException if the array or any of its elements are {@code null}
    */
   public static <U> SafeFuture<Void> allOfFailFast(final SafeFuture<?>... futures) {
@@ -233,6 +234,32 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     Stream.of(futures).forEach(future -> future.finish(() -> {}, complete::completeExceptionally));
     allOf(futures).propagateTo(complete);
     return complete;
+  }
+
+  /**
+   * Returns a new {@link SafeFuture} with the result of the first successful future from the given
+   * futures. If all futures complete exceptionally, the returned {@link SafeFuture} will complete
+   * exceptionally with the error captured from {@link #allOf(SafeFuture[])} ()}.
+   *
+   * @param futures the futures which will need to be completed
+   * @return a new {@link SafeFuture} that is completed with the first successful result from the
+   *     given futures or completed exceptionally if all futures complete exceptionally
+   */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public static <T> SafeFuture<T> firstSuccess(final List<SafeFuture<T>> futures) {
+    SafeFuture<T> result = new SafeFuture<>();
+    allOf(futures.toArray(SafeFuture[]::new))
+        .whenComplete(
+            (___, throwable) -> {
+              final Optional<SafeFuture<T>> completeFutureMaybe =
+                  futures.stream().filter(SafeFuture::isCompletedNormally).findFirst();
+              if (completeFutureMaybe.isPresent()) {
+                result.complete(completeFutureMaybe.get().join());
+              } else {
+                result.completeExceptionally(throwable);
+              }
+            });
+    return result;
   }
 
   public static SafeFuture<Object> anyOf(final SafeFuture<?>... futures) {
@@ -298,6 +325,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               return failedFuture(error);
             })
         .thenPeek(value -> action.run());
+  }
+
+  public void finish(final BiConsumer<T, Throwable> action) {
+    handle(
+            (result, error) -> {
+              action.accept(result, error);
+              return null;
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {

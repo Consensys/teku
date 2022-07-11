@@ -32,6 +32,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandler implements EventHandler {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -76,7 +77,7 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onClosed() {
     disconnectCounter.inc();
-    LOG.info("Beacon chain event stream closed");
+    LOG.info("Beacon Node event stream closed");
   }
 
   @Override
@@ -90,7 +91,7 @@ class EventSourceHandler implements EventHandler {
     } catch (final IllegalArgumentException | JsonProcessingException e) {
       invalidEventCounter.inc();
       LOG.warn(
-          "Received invalid event from beacon node. Event type: {} Event data: {}",
+          "Received invalid event from Beacon Node. Event type: {} Event data: {}",
           event,
           messageEvent.getData(),
           e);
@@ -117,8 +118,8 @@ class EventSourceHandler implements EventHandler {
     if (Throwables.getRootCause(t) instanceof SocketTimeoutException) {
       timeoutCounter.inc();
       LOG.info(
-          "Timed out waiting for events from beacon node event stream. "
-              + "Reconnecting. This is normal if the beacon node is still syncing.");
+          "Timed out waiting for events from Beacon Node event stream. "
+              + "Reconnecting. This is normal if the Beacon Node is still syncing.");
     } else {
       errorCounter.inc();
       VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError(t);
