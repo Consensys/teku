@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.ReadyState;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -125,20 +124,18 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void startFailoverEventSource(final HttpUrl failoverApiEndpoint) {
-    SafeFuture.asyncDoWhile(
-            // wait until the primary Beacon node event source is closed
-            () -> SafeFuture.completedFuture(primaryEventSource.getState() != ReadyState.SHUTDOWN))
-        .alwaysRun(
-            () -> {
-              final EventSource failoverEventSource =
-                  defaultEventSourceBuilder(failoverApiEndpoint).build();
-              LOG.info(
-                  "Connecting to a failover Beacon Node {} for event streaming.",
-                  failoverApiEndpoint);
-              failoverEventSource.start();
-              maybeFailoverEventSource = Optional.of(failoverEventSource);
-              schedulePingingOfPrimaryBeaconNode();
-            });
+    asyncRunner.runAfterDelay(
+        () -> {
+          final EventSource failoverEventSource =
+              defaultEventSourceBuilder(failoverApiEndpoint).build();
+          LOG.info(
+              "Connecting to a failover Beacon Node {} for event streaming.", failoverApiEndpoint);
+          failoverEventSource.start();
+          maybeFailoverEventSource = Optional.of(failoverEventSource);
+          schedulePingingOfPrimaryBeaconNode();
+        },
+        // Give some time for the primary Beacon node event stream to shut down
+        Duration.ofSeconds(1));
   }
 
   private EventSource.Builder defaultEventSourceBuilder(final HttpUrl apiEndpoint) {
