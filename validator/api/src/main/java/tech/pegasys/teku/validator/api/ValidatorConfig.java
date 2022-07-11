@@ -46,10 +46,10 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
-  public static final boolean DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED = false;
+  public static final boolean DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
-  public static final UInt64 DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
+  public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -275,10 +275,10 @@ public class ValidatorConfig {
     private boolean refreshProposerConfigFromSource =
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
     private boolean validatorsRegistrationDefaultEnabled =
-        DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
+        DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
-    private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+    private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int validatorsRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> validatorsRegistrationTimestampOverride = Optional.empty();

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.validator.client.ProposerConfig.Builder;
+import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 
 class ProposerConfigTest {
@@ -42,12 +42,13 @@ class ProposerConfigTest {
   private static final UInt64 CUSTOM_GAS_LIMIT = UInt64.valueOf(28_000_000);
 
   private static final Config DEFAULT_CONFIG =
-      new Config(ETH1_ADDRESS, new Builder(false, DEFAULT_GAS_LIMIT));
+      new Config(ETH1_ADDRESS, new BuilderConfig(false, DEFAULT_GAS_LIMIT));
 
   @Test
   void gets_isValidatorRegistrationEnabled_forPubKey() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, CUSTOM_GAS_LIMIT)));
+    configByPubKey.put(
+        PUB_KEY, new Config(ETH1_ADDRESS, new BuilderConfig(true, CUSTOM_GAS_LIMIT)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
     assertThat(proposerConfig.isBuilderEnabledForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
@@ -71,7 +72,8 @@ class ProposerConfigTest {
   @Test
   void gets_validatorRegistrationGasLimit_forPubKey() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, CUSTOM_GAS_LIMIT)));
+    configByPubKey.put(
+        PUB_KEY, new Config(ETH1_ADDRESS, new BuilderConfig(true, CUSTOM_GAS_LIMIT)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
     assertThat(
@@ -97,7 +99,7 @@ class ProposerConfigTest {
   @Test
   void registrationGasLimitDoesNotExist_whenGasLimitIsNull() {
     Map<Bytes48, Config> configByPubKey = new HashMap<>();
-    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new Builder(true, null)));
+    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new BuilderConfig(true, null)));
     ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
 
     assertThat(

@@ -60,11 +60,11 @@ public class ProposerConfig {
   }
 
   public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilder().map(Builder::isEnabled);
+    return getConfigForPubKeyOrDefault(pubKey).getBuilder().map(BuilderConfig::isEnabled);
   }
 
   public Optional<UInt64> getBuilderGasLimitForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilder().flatMap(Builder::getGasLimit);
+    return getConfigForPubKeyOrDefault(pubKey).getBuilder().flatMap(BuilderConfig::getGasLimit);
   }
 
   public Config getDefaultConfig() {
@@ -99,12 +99,12 @@ public class ProposerConfig {
     private Eth1Address feeRecipient;
 
     @JsonProperty(value = "builder")
-    private Builder builder;
+    private BuilderConfig builder;
 
     @JsonCreator
     public Config(
         @JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient,
-        @JsonProperty(value = "builder") final Builder builder) {
+        @JsonProperty(value = "builder") final BuilderConfig builder) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
       this.builder = builder;
@@ -114,7 +114,7 @@ public class ProposerConfig {
       return feeRecipient;
     }
 
-    public Optional<Builder> getBuilder() {
+    public Optional<BuilderConfig> getBuilder() {
       return Optional.ofNullable(builder);
     }
 
@@ -138,7 +138,7 @@ public class ProposerConfig {
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class Builder {
+  public static class BuilderConfig {
     @JsonProperty(value = "enabled")
     private Boolean enabled;
 
@@ -146,7 +146,7 @@ public class ProposerConfig {
     private UInt64 gasLimit;
 
     @JsonCreator
-    public Builder(
+    public BuilderConfig(
         @JsonProperty(value = "enabled") final Boolean enabled,
         @JsonProperty(value = "gas_limit") final UInt64 gasLimit) {
       checkNotNull(enabled, "enabled is required");
@@ -170,7 +170,7 @@ public class ProposerConfig {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final Builder that = (Builder) o;
+      final BuilderConfig that = (BuilderConfig) o;
       return Objects.equals(enabled, that.enabled) && Objects.equals(gasLimit, that.gasLimit);
     }
 
