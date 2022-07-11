@@ -227,23 +227,17 @@ public class BeaconNodeCommand implements Callable<Integer> {
     final CommandLine commandLine = getCommandLine();
     commandLine.setCaseInsensitiveEnumValuesAllowed(true);
 
-    final ParseResult parseResult;
+    ParseResult parseResult;
     try {
-      parseResult = commandLine.parseArgs(args);
+      parseResult = getMostNestedParseResult(commandLine, args);
     } catch (ParameterException e) {
       return handleParseException(e, args);
     }
 
-    // switch to last subcommand if needed
-    final ParseResult commandOrSubCommandParseResult =
-        parseResult.hasSubcommand() ? parseResult.subcommand() : parseResult;
-
     // calculate potential additional params from config provider
     final List<OptionSpec> potentialAdditionalParams =
-        commandOrSubCommandParseResult.commandSpec().options().stream()
-            .filter(
-                optionSpec ->
-                    !commandOrSubCommandParseResult.matchedOptionsSet().contains(optionSpec))
+        parseResult.commandSpec().options().stream()
+            .filter(optionSpec -> !parseResult.matchedOptionsSet().contains(optionSpec))
             .collect(Collectors.toUnmodifiableList());
 
     final AdditionalParamsProvider additionalParamsProvider =
@@ -265,6 +259,17 @@ public class BeaconNodeCommand implements Callable<Integer> {
     commandLine.setErr(errorWriter);
     commandLine.setParameterExceptionHandler(this::handleParseException);
     return commandLine.execute(enrichedArgs);
+  }
+
+  private ParseResult getMostNestedParseResult(final CommandLine commandLine, final String[] args) {
+    ParseResult parseResult;
+    parseResult = commandLine.parseArgs(args);
+
+    // switch to last subcommand if needed
+    while (parseResult.hasSubcommand()) {
+      parseResult = parseResult.subcommand();
+    }
+    return parseResult;
   }
 
   private Optional<File> getConfigFileFromCliOrEnv(final ConfigFileCommand configFileCommand) {
