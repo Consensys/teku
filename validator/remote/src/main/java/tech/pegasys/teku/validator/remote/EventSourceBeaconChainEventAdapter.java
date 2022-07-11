@@ -120,8 +120,6 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
               }
               return Action.PROCEED;
             })
-        .maxReconnectTime(MAX_RECONNECT_TIME)
-        .client(okHttpClient)
         .build();
   }
 
