@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.PUBLIC_KEY_TYPE;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
@@ -55,8 +54,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 
 public class GetProposerDuties extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v1/validator/duties/proposer/:epoch";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/validator/duties/proposer/{epoch}";
 
   private static final SerializableTypeDefinition<ProposerDuty> PROPOSER_DUTY_TYPE =
       SerializableTypeDefinition.object(ProposerDuty.class)
@@ -110,7 +108,7 @@ public class GetProposerDuties extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get proposer duties",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},

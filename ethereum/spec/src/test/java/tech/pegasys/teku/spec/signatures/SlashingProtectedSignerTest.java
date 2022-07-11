@@ -137,10 +137,9 @@ class SlashingProtectedSignerTest {
   void signValidatorRegistration_shouldAlwaysSign() {
     final ValidatorRegistration validatorRegistration =
         dataStructureUtil.randomValidatorRegistration();
-    when(delegate.signValidatorRegistration(validatorRegistration, UInt64.ONE))
-        .thenReturn(signatureFuture);
+    when(delegate.signValidatorRegistration(validatorRegistration)).thenReturn(signatureFuture);
 
-    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration, UInt64.ONE))
+    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration))
         .isCompletedWithValue(signature);
   }
 
