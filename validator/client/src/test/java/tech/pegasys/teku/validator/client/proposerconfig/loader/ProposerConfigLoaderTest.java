@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
-import tech.pegasys.teku.validator.client.ProposerConfig.Builder;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 
 public class ProposerConfigLoaderTest {
@@ -146,10 +145,9 @@ public class ProposerConfigLoaderTest {
         .isEqualTo(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3"));
 
     assertThat(theConfig.get().getBuilder()).isPresent();
-    Builder validatorRegistration = theConfig.get().getBuilder().get();
-    assertThat(validatorRegistration.isEnabled()).isTrue();
-    assertThat(validatorRegistration.getGasLimit().orElseThrow())
-        .isEqualTo(UInt64.valueOf(12345654321L));
+    ProposerConfig.Builder builder = theConfig.get().getBuilder().get();
+    assertThat(builder.isEnabled()).isTrue();
+    assertThat(builder.getGasLimit().orElseThrow()).isEqualTo(UInt64.valueOf(12345654321L));
 
     Config defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig.getFeeRecipient())
