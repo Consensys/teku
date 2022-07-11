@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
@@ -59,8 +58,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateSyncCommittees extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/sync_committees";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/sync_committees";
   private final ChainDataProvider chainDataProvider;
 
   private static final ObjectAndMetaData<StateSyncCommitteesData> EMPTY_RESPONSE =
@@ -105,7 +103,7 @@ public class GetStateSyncCommittees extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get sync committees",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
