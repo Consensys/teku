@@ -43,6 +43,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> blindedBlocksByRoot;
 
+  private final KvStoreColumn<UInt64, Bytes32> finalizedBlockRootBySlot;
+
   private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
 
   public V6SchemaCombinedTreeState(final Spec spec, final boolean storeVotesEquivocation) {
@@ -79,6 +81,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             KvStoreSerializer.createSignedBlindedBlockSerializer(spec));
     executionPayloadByBlockRoot =
         KvStoreColumn.create(finalizedOffset + 10, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+    finalizedBlockRootBySlot =
+        KvStoreColumn.create(finalizedOffset + 11, UINT64_SERIALIZER, BYTES32_SERIALIZER);
   }
 
   @Override
@@ -133,7 +137,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
 
   @Override
   public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot() {
-    return null;
+    return finalizedBlockRootBySlot;
   }
 
   @Override
@@ -170,6 +174,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
         .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
         .put("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash())
+        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .build();
   }
 

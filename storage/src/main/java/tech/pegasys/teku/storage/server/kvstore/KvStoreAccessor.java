@@ -29,7 +29,7 @@ public interface KvStoreAccessor extends AutoCloseable {
 
   <K, V> Optional<V> get(KvStoreColumn<K, V> column, K key);
 
-  long size(final KvStoreColumn<?, ?> column);
+  long size(KvStoreColumn<?, ?> column);
 
   <K, V> Map<K, V> getAll(KvStoreColumn<K, V> column);
 
