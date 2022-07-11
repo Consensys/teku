@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -56,8 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetState extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v1/debug/beacon/states/:state_id";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v1/debug/beacon/states/{state_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetState(
@@ -103,7 +101,7 @@ public class GetState extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       deprecated = true,
       method = HttpMethod.GET,
       summary = "Get state",
