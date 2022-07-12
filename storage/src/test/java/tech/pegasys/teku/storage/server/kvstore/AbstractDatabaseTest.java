@@ -968,7 +968,7 @@ public abstract class AbstractDatabaseTest {
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks);
 
-  protected StorageSystem createStorageSystemInternal(
+  private StorageSystem createStorageSystemInternal(
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks)
@@ -978,11 +978,7 @@ public abstract class AbstractDatabaseTest {
     return createStorageSystem(tmpDir.toFile(), storageMode, storeConfig, storeNonCanonicalBlocks);
   }
 
-  protected StorageSystem createStorage(final File tempDir, final StateStorageMode storageMode) {
-    return createStorage(tempDir, storageMode, false);
-  }
-
-  protected StorageSystem createStorage(
+  private StorageSystem createStorageSystemInternal(
       final File tempDir,
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks) {
@@ -1009,7 +1005,7 @@ public abstract class AbstractDatabaseTest {
   public void testShouldRecreateGenesisStateOnRestart(
       final Path tempDir, final StateStorageMode storageMode) {
     // Set up database with genesis state
-    createStorage(tempDir.toFile(), storageMode);
+    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
     initGenesis();
 
     // Shutdown and restart
@@ -1037,7 +1033,7 @@ public abstract class AbstractDatabaseTest {
   public void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
-    createStorage(tempDir.toFile(), storageMode);
+    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
     initGenesis();
 
     // Create finalized block at slot prior to epoch boundary
@@ -1085,7 +1081,7 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorage(tempDir.toFile(), StateStorageMode.PRUNE);
+    createStorageSystemInternal(tempDir.toFile(), StateStorageMode.PRUNE, false);
     initFromAnchor(anchor);
 
     // Shutdown and restart
@@ -1446,7 +1442,7 @@ public abstract class AbstractDatabaseTest {
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
     // Setup database
-    createStorage(tempDir.toFile(), storageMode);
+    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
     initGenesis();
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
@@ -1485,7 +1481,7 @@ public abstract class AbstractDatabaseTest {
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
       @TempDir final Path tempDir, final StateStorageMode storageMode) {
-    createStorage(tempDir.toFile(), storageMode);
+    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
     final CreateForkChainResult forkChainResult = createForkChain(true);
 
     // Fork states should be unavailable
