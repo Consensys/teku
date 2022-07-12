@@ -119,7 +119,7 @@ public abstract class AbstractDatabaseTest {
 
   @BeforeEach
   public void setup() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE);
+    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
 
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
@@ -145,12 +145,8 @@ public abstract class AbstractDatabaseTest {
     setDefaultStorage(storage);
   }
 
-  protected StorageSystem createStorage(final StateStorageMode storageMode) throws IOException {
-    return createStorage(storageMode, StoreConfig.createDefault(), false);
-  }
-
   // This method shouldn't be called outside of createStorage
-  protected StorageSystem createStorage(
+  private StorageSystem createStorage(
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks)
@@ -171,7 +167,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void createMemoryStoreFromEmptyDatabase() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE);
+    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
@@ -556,7 +552,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void handleFinalizationWhenCacheLimitsExceeded() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE);
+    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
@@ -782,7 +778,7 @@ public abstract class AbstractDatabaseTest {
    * @return the merge transition block
    */
   private SignedBlockAndState generateChainWithFinalizableTransitionBlock() throws IOException {
-    createStorage(StateStorageMode.PRUNE);
+    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
@@ -841,7 +837,7 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorage(StateStorageMode.PRUNE);
+    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1269,7 +1265,7 @@ public abstract class AbstractDatabaseTest {
       throws Exception {
 
     for (int i = 0; i < 20; i++) {
-      createStorage(StateStorageMode.PRUNE);
+      createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
       try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
@@ -1570,7 +1566,7 @@ public abstract class AbstractDatabaseTest {
 
   public void testStartupFromNonGenesisState(final StateStorageMode storageMode)
       throws IOException {
-    createStorage(storageMode);
+    createStorage(storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1582,7 +1578,7 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorage(storageMode);
+    createStorage(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1609,7 +1605,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   void shouldStoreAndRetrieveVotes() throws IOException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    createStorage(StateStorageMode.PRUNE);
+    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
 
     final Map<UInt64, VoteTracker> voteBatch1 =
@@ -1634,7 +1630,7 @@ public abstract class AbstractDatabaseTest {
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final StateStorageMode storageMode) throws IOException {
-    createStorage(storageMode);
+    createStorage(storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1646,7 +1642,7 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorage(storageMode);
+    createStorage(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1695,7 +1691,7 @@ public abstract class AbstractDatabaseTest {
     forkChain.generateBlockAtSlot(hotSlot);
 
     // Setup database
-    createStorage(storageMode);
+    createStorage(storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     final Set<SignedBlockAndState> allBlocksAndStates =
