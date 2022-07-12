@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -41,8 +42,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -93,6 +101,8 @@ public abstract class AbstractDatabaseTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private static final Logger LOG = LogManager.getLogger();
+  final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainProperties chainProperties = new ChainProperties(spec);
   private final List<File> tmpDirectories = new ArrayList<>();
@@ -161,7 +171,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void updateWeakSubjectivityState_setValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
 
@@ -174,7 +183,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void updateWeakSubjectivityState_clearValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
     // Set an initial value
@@ -210,7 +218,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldPruneHotBlocksAddedOverMultipleSessions() throws Exception {
+  public void shouldPruneHotBlocksAddedOverMultipleSessions() {
     final UInt64 targetSlot = UInt64.valueOf(10);
 
     chainBuilder.generateBlocksUpToSlot(targetSlot.minus(UInt64.ONE));
@@ -296,8 +304,8 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockB));
 
     // Then build on both chains, into the next epoch
-    final SignedBlockAndState blockA2 = forkA.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2 + 2);
-    final SignedBlockAndState blockB2 = forkB.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2 + 2);
+    final SignedBlockAndState blockA2 = forkA.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
+    final SignedBlockAndState blockB2 = forkB.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
 
     // Add blocks while finalizing blockA at the same time
     StoreTransaction tx = recentChainData.startStoreTransaction();
@@ -521,15 +529,15 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldRecordAndRetrieveGenesisInformation() {
-    final DataStructureUtil util = new DataStructureUtil(spec);
     final MinGenesisTimeBlockEvent event =
         new MinGenesisTimeBlockEvent(
-            util.randomUInt64(), util.randomUInt64(), util.randomBytes32());
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32());
     database.addMinGenesisTimeBlock(event);
 
     final Optional<MinGenesisTimeBlockEvent> fetch = database.getMinGenesisTimeBlock();
-    assertThat(fetch.isPresent()).isTrue();
-    assertThat(fetch.get()).isEqualToComparingFieldByField(event);
+    assertThat(fetch).contains(event);
   }
 
   @Test
@@ -796,7 +804,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldStoreAndRetrieve() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
@@ -842,7 +849,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
     final Bytes32 oneStateRoot = insertRandomSlotAndBlock(1L, dataStructureUtil);
     insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -854,7 +860,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldPurgeToSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     insertRandomSlotAndBlock(0L, dataStructureUtil);
     insertRandomSlotAndBlock(1L, dataStructureUtil);
     final Bytes32 twoStateRoot = insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -1176,8 +1181,6 @@ public abstract class AbstractDatabaseTest {
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    final DataStructureUtil dataStructureUtil =
-        new DataStructureUtil(TestSpecFactory.createDefault());
     try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
@@ -1211,34 +1214,35 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
       throws Exception {
-
-    for (int i = 0; i < 20; i++) {
-      createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
-      database.storeInitialAnchor(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
+    final StampedLock lock = new StampedLock();
+    final long stamp = lock.writeLock();
+    final Thread dbCloserThread =
+        new Thread(
+            () -> {
+              try {
+                database.close();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              } finally {
+                lock.unlock(stamp);
+              }
+            });
 
       try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-        SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
-
-        final Thread dbCloserThread =
-            new Thread(
-                () -> {
-                  try {
-                    database.close();
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  }
-                });
+        final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
 
         dbCloserThread.start();
-        try {
-          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
-        } catch (Exception e) {
-          assertThat(e).isInstanceOf(ShuttingDownException.class);
-        }
-
+        assertThatThrownBy(() -> {
+          final long stamp2 = lock.writeLock();
+          try {
+            updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+          } finally {
+            lock.unlock(stamp2);
+          }
+        }).isInstanceOf(ShuttingDownException.class);
         dbCloserThread.join(500);
       }
-    }
   }
 
   @Test
@@ -1532,7 +1536,6 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   void shouldStoreAndRetrieveVotes() throws IOException {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
 
@@ -1926,7 +1929,7 @@ public abstract class AbstractDatabaseTest {
     return storageSystem.recentChainData().getStore();
   }
 
-  private StorageSystem createStorageSystemInternal(
+  private void createStorageSystemInternal(
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks)
@@ -1937,7 +1940,6 @@ public abstract class AbstractDatabaseTest {
     final StorageSystem storage =
         createStorageSystem(tmpDir.toFile(), storageMode, storeConfig, storeNonCanonicalBlocks);
     setDefaultStorage(storage);
-    return storage;
   }
 
   private void setDefaultStorage(final StorageSystem storageSystem) {
@@ -1948,8 +1950,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   public static class CreateForkChainResult {
-    private ChainBuilder forkChain;
-    private UInt64 firstHotBlockSlot;
+    private final ChainBuilder forkChain;
+    private final UInt64 firstHotBlockSlot;
 
     public CreateForkChainResult(final ChainBuilder forkChain, final UInt64 firstHotBlockSlot) {
       this.forkChain = forkChain;
