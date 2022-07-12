@@ -59,7 +59,11 @@ public class EventSubscriber {
     this.queuedEvents = new ConcurrentLinkedQueue<>();
     this.processingQueue = new AtomicBoolean(false);
     this.asyncRunner = asyncRunner;
-    this.sseClient.onClose(closeCallback);
+    this.sseClient.onClose(
+        () -> {
+          stopped.set(true);
+          closeCallback.run();
+        });
 
     keepAlive();
   }
