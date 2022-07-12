@@ -41,11 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -1210,35 +1207,31 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
       throws Exception {
+    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     database.storeInitialAnchor(genesisAnchor);
-    final StampedLock lock = new StampedLock();
-    final long stamp = lock.writeLock();
-    final Thread dbCloserThread =
-        new Thread(
-            () -> {
-              try {
-                database.close();
-              } catch (Exception e) {
-                throw new RuntimeException(e);
-              } finally {
-                lock.unlock(stamp);
-              }
-            });
 
     try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-      final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+      SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+
+      final Thread dbCloserThread =
+          new Thread(
+              () -> {
+                try {
+                  database.close();
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              });
 
       dbCloserThread.start();
-      assertThatThrownBy(
-              () -> {
-                final long stamp2 = lock.writeLock();
-                try {
-                  updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
-                } finally {
-                  lock.unlock(stamp2);
-                }
-              })
-          .isInstanceOf(ShuttingDownException.class);
+      try {
+        updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+      } catch (ShuttingDownException ignored) {
+        // For this test to fail, we'd see exceptions other than ShuttingDownException at this point
+        // Because it's a probabilistic test, it's possible that either no exception occurs, or
+        // a ShuttingDownException, and both these outcomes are ok, but other exceptions are not.
+      }
+
       dbCloserThread.join(500);
     }
   }
@@ -1269,7 +1262,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
     // We should only be able to pull states at epoch boundaries
-    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(1, latestEpoch.intValue());
+    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(latestEpoch.intValue());
     for (int i = 0; i <= targetSlot.intValue(); i++) {
       final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
       final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
@@ -1320,7 +1313,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
     // We should only be able to pull states at epoch boundaries
-    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(1, latestEpoch.intValue());
+    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(latestEpoch.intValue());
     for (int i = 0; i <= targetSlot.intValue(); i++) {
       final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
       final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
@@ -1446,9 +1439,9 @@ public abstract class AbstractDatabaseTest {
     assertBlocksUnavailable(unavailableBlockRoots);
   }
 
-  private Set<UInt64> getEpochBoundarySlots(final int fromEpoch, final int toEpoch) {
+  private Set<UInt64> getEpochBoundarySlots(final int toEpoch) {
     final Set<UInt64> epochBoundarySlots = new HashSet<>();
-    for (int i = fromEpoch; i <= toEpoch; i++) {
+    for (int i = 1; i <= toEpoch; i++) {
       final UInt64 epochSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(i));
       epochBoundarySlots.add(epochSlot);
     }
