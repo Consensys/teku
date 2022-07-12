@@ -550,9 +550,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       if (status.isValid()) {
         protoArray.markNodeValid(blockRoot);
       } else if (status.isInvalid()) {
-        LOG.warn("Payload for block root {} was invalid", blockRoot);
-        protoArray.markNodeInvalid(
-            blockRoot, result.getLatestValidHash(), verifiedInvalidTransition);
+        if (verifiedInvalidTransition) {
+          LOG.warn("Payload for block root {} was invalid", blockRoot);
+          protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
+        } else {
+          LOG.warn("Payload for child of block root {} was invalid", blockRoot);
+          protoArray.markParentChainInvalid(blockRoot, result.getLatestValidHash());
+        }
       } else {
         throw new IllegalArgumentException("Unknown payload validity status: " + status);
       }

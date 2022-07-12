@@ -17,7 +17,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -97,7 +96,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
     forkChoiceStrategy.onExecutionPayloadResult(
         dataStructureUtil.randomBytes32(), PayloadStatus.failedExecution(new Error()), true);
-    verify(protoArray, never()).markNodeInvalid(any(), any(), eq(true));
+    verify(protoArray, never()).markNodeInvalid(any(), any());
     verify(protoArray, never()).markNodeValid(any());
   }
 
@@ -109,7 +108,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         dataStructureUtil.randomBytes32(),
         PayloadStatus.invalid(Optional.of(dataStructureUtil.randomBytes32()), Optional.empty()),
         false);
-    verify(protoArray, times(1)).markNodeInvalid(any(), any(), eq(false));
+    verify(protoArray, times(1)).markParentChainInvalid(any(), any());
     verify(protoArray, never()).markNodeValid(any());
   }
 

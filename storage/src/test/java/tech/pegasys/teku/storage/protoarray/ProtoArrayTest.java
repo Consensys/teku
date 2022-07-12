@@ -99,7 +99,7 @@ class ProtoArrayTest {
 
     assertHead(block2a);
 
-    protoArray.markNodeInvalid(block2a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertHead(block1a);
   }
@@ -118,7 +118,7 @@ class ProtoArrayTest {
         .isEqualTo(protoArray.getIndexByRoot(block3a));
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block2a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertHead(block1a);
   }
@@ -137,7 +137,7 @@ class ProtoArrayTest {
         .isEqualTo(protoArray.getIndexByRoot(block3a));
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block3a, Optional.empty());
 
     assertHead(block2a);
   }
@@ -151,7 +151,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot(), Optional.empty(), true);
+    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot(), Optional.empty());
 
     assertThatThrownBy(
             () ->
@@ -220,7 +220,7 @@ class ProtoArrayTest {
 
     assertHead(block2b);
 
-    protoArray.markNodeInvalid(block2a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
@@ -254,7 +254,7 @@ class ProtoArrayTest {
     assertHead(block2a);
 
     // But oh no! It turns out to be invalid.
-    protoArray.markNodeInvalid(block2a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     // So we switch back to chain b (notably without having to applyScoreChanges)
     assertHead(block2b);
@@ -268,7 +268,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.of(getExecutionBlockHash(block1a)), true);
+    protoArray.markNodeInvalid(block3a, Optional.of(getExecutionBlockHash(block1a)));
 
     assertHead(block1a);
     assertThat(protoArray.contains(block3a)).isFalse();
@@ -284,7 +284,7 @@ class ProtoArrayTest {
 
     assertHead(block4a);
 
-    protoArray.markNodeInvalid(block4a, Optional.of(getExecutionBlockHash(block2a)), true);
+    protoArray.markNodeInvalid(block4a, Optional.of(getExecutionBlockHash(block2a)));
 
     assertHead(block2a);
     assertThat(protoArray.contains(block4a)).isFalse();
@@ -303,7 +303,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block3a, Optional.empty());
 
     assertHead(block2a);
     assertThat(protoArray.contains(block3a)).isFalse();
@@ -321,7 +321,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.of(dataStructureUtil.randomBytes32()), true);
+    protoArray.markNodeInvalid(block3a, Optional.of(dataStructureUtil.randomBytes32()));
 
     assertHead(block2a);
     assertThat(protoArray.contains(block3a)).isFalse();
@@ -356,7 +356,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.of(getExecutionBlockHash(block3a)), false);
+    protoArray.markParentChainInvalid(block3a, Optional.of(getExecutionBlockHash(block3a)));
 
     assertHead(block3a);
     assertThat(protoArray.contains(block3a)).isTrue();
@@ -370,7 +370,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.of(dataStructureUtil.randomBytes32()), false);
+    protoArray.markParentChainInvalid(block3a, Optional.of(dataStructureUtil.randomBytes32()));
 
     assertHead(block3a);
     assertThat(protoArray.contains(block3a)).isTrue();
@@ -384,7 +384,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
 
-    protoArray.markNodeInvalid(block3a, Optional.of(getExecutionBlockHash(block1a)), false);
+    protoArray.markParentChainInvalid(block3a, Optional.of(getExecutionBlockHash(block1a)));
 
     assertHead(block1a);
     assertThat(protoArray.contains(block3a)).isFalse();
@@ -406,7 +406,7 @@ class ProtoArrayTest {
   @Test
   void contains_shouldNotContainInvalidBlock() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
-    protoArray.markNodeInvalid(block1a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block1a, Optional.empty());
     assertThat(protoArray.contains(block1a)).isFalse();
   }
 
@@ -414,7 +414,7 @@ class ProtoArrayTest {
   void contains_shouldNotContainDescendantsOfInvalidBlock() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(1, block2a, block1a);
-    protoArray.markNodeInvalid(block1a, Optional.empty(), true);
+    protoArray.markNodeInvalid(block1a, Optional.empty());
     assertThat(protoArray.contains(block1a)).isFalse();
     assertThat(protoArray.contains(block2a)).isFalse();
   }
