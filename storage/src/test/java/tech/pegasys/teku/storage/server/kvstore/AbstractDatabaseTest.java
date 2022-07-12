@@ -1207,32 +1207,32 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
       throws Exception {
-    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
-    database.storeInitialAnchor(genesisAnchor);
+    for (int i = 0; i < 20; i++) {
+      createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+      database.storeInitialAnchor(genesisAnchor);
+      try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
+        final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+        final Thread dbCloserThread =
+            new Thread(
+                () -> {
+                  try {
+                    database.close();
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                });
 
-    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-      SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+        dbCloserThread.start();
+        try {
+          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+        } catch (ShuttingDownException ignored) {
+          // For this test to fail, we'd see exceptions other than ShuttingDownException.
+          // Because it's a probabilistic test, it's possible that either no exception occurs, or
+          // a ShuttingDownException, and both these outcomes are ok, but other exceptions are not.
+        }
 
-      final Thread dbCloserThread =
-          new Thread(
-              () -> {
-                try {
-                  database.close();
-                } catch (Exception e) {
-                  throw new RuntimeException(e);
-                }
-              });
-
-      dbCloserThread.start();
-      try {
-        updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
-      } catch (ShuttingDownException ignored) {
-        // For this test to fail, we'd see exceptions other than ShuttingDownException at this point
-        // Because it's a probabilistic test, it's possible that either no exception occurs, or
-        // a ShuttingDownException, and both these outcomes are ok, but other exceptions are not.
+        dbCloserThread.join(500);
       }
-
-      dbCloserThread.join(500);
     }
   }
 
