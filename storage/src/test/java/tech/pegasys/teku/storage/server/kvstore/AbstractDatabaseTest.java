@@ -613,7 +613,7 @@ public abstract class AbstractDatabaseTest {
     recentChainData
         .getUpdatableForkChoiceStrategy()
         .orElseThrow()
-        .onExecutionPayloadResult(transitionBlock.getRoot(), PayloadStatus.VALID);
+        .onExecutionPayloadResult(transitionBlock.getRoot(), PayloadStatus.VALID, true);
 
     // Then finalize
     final Checkpoint finalizedCheckpoint =
