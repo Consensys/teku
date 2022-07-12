@@ -529,6 +529,46 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_shouldChangeForkChoiceForLatestValidHashOnInvalidExecutionPayload() {
+    doMerge();
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.ACCEPTED);
+    final UInt64 slotToImport = prepFinalizeEpoch(2);
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch4Block);
+
+    // Make an optimistic chain
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
+    final SignedBlockAndState maybeValidBlock = chainBuilder.generateNextBlock();
+    storageSystem.chainUpdater().setCurrentSlot(maybeValidBlock.getSlot());
+    importBlockOptimistically(maybeValidBlock);
+
+    storageSystem.chainUpdater().setCurrentSlot(maybeValidBlock.getSlot().increment());
+    importBlockOptimistically(chainBuilder.generateNextBlock());
+
+    final SignedBlockAndState latestOptimisticBlock = chainBuilder.generateNextBlock();
+    storageSystem.chainUpdater().setCurrentSlot(latestOptimisticBlock.getSlot());
+    importBlockOptimistically(latestOptimisticBlock);
+    assertHeadIsOptimistic(latestOptimisticBlock);
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
+        .isEqualTo(latestOptimisticBlock.getRoot());
+
+    // make EL returning INVALID with latestValidHash in the past (maybeValidBlock)
+    executionLayer.setPayloadStatus(
+        PayloadStatus.invalid(
+            Optional.of(maybeValidBlock.getExecutionBlockHash().get()), Optional.empty()));
+    storageSystem.chainUpdater().setCurrentSlot(latestOptimisticBlock.getSlot().increment());
+    SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
+    importBlockWithError(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
+
+    assertHeadIsFullyValidated(maybeValidBlock);
+    assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
+        .isEqualTo(maybeValidBlock.getRoot());
+  }
+
+  @Test
   void onBlock_shouldNotifyOptimisticSyncChangeOnlyWhenImportingOnCanonicalHead() {
     doMerge();
     UInt64 slotToImport = prepFinalizeEpoch(2);
