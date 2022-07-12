@@ -45,6 +45,10 @@
       "moduleName": ".*"
     },
     {
+      "moduleLicense": "MIT-0",
+      "moduleName": ".*"
+    },
+    {
       "moduleLicense": "Mozilla Public License, Version 2.0",
       "moduleName": ".*"
     },

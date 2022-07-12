@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -51,8 +50,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider.VotingPeriodInfo
 
 public class GetEth1VotingSummary extends MigratingEndpointAdapter {
 
-  public static final String OAPI_ROUTE = "/teku/v1/beacon/state/:state_id/eth1voting";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/teku/v1/beacon/state/{state_id}/eth1voting";
 
   private static final SerializableTypeDefinition<Pair<Eth1Data, UInt64>> ETH1DATA_WITH_VOTES_TYPE =
       SerializableTypeDefinition.<Pair<Eth1Data, UInt64>>object()
@@ -109,7 +107,7 @@ public class GetEth1VotingSummary extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get Eth1 voting summary",
       description =

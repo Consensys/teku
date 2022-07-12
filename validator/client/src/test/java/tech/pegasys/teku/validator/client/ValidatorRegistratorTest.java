@@ -109,7 +109,7 @@ class ValidatorRegistratorTest {
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
-        .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
+        .signValidatorRegistration(any(ValidatorRegistration.class));
   }
 
   @TestTemplate
@@ -151,7 +151,7 @@ class ValidatorRegistratorTest {
 
     // signer will be called in total 3 times, since from the 2nd run the registrations will
     // be cached
-    verify(signer, times(3)).signValidatorRegistration(any(), any());
+    verify(signer, times(3)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -220,7 +220,7 @@ class ValidatorRegistratorTest {
         Optional.of(updatedRegistrationsRequirements));
 
     // signer will be called in total 5 times
-    verify(signer, times(5)).signValidatorRegistration(any(), any());
+    verify(signer, times(5)).signValidatorRegistration(any());
   }
 
   @TestTemplate

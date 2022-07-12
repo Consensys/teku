@@ -18,7 +18,6 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETE
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
@@ -63,8 +62,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends MigratingEndpointAdapter {
-  private static final String OAPI_ROUTE = "/eth/v2/validator/blocks/:slot";
-  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
+  public static final String ROUTE = "/eth/v2/validator/blocks/{slot}";
 
   protected final ValidatorDataProvider provider;
 
@@ -84,7 +82,7 @@ public class GetNewBlock extends MigratingEndpointAdapter {
   }
 
   @OpenApi(
-      path = OAPI_ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},

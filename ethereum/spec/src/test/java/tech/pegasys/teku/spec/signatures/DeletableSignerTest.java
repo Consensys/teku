@@ -240,10 +240,9 @@ public class DeletableSignerTest {
 
     final ValidatorRegistration validatorRegistration =
         dataStructureUtil.randomValidatorRegistration();
-    when(delegate.signValidatorRegistration(validatorRegistration, UInt64.ONE))
-        .thenReturn(signatureFuture);
+    when(delegate.signValidatorRegistration(validatorRegistration)).thenReturn(signatureFuture);
 
-    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration, UInt64.ONE))
+    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration))
         .isCompletedWithValue(signature);
   }
 
@@ -253,10 +252,10 @@ public class DeletableSignerTest {
         dataStructureUtil.randomValidatorRegistration();
     signer.delete();
 
-    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration, UInt64.ONE))
+    assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
 
-    verify(delegate, never()).signValidatorRegistration(validatorRegistration, UInt64.ONE);
+    verify(delegate, never()).signValidatorRegistration(validatorRegistration);
   }
 
   @Test
