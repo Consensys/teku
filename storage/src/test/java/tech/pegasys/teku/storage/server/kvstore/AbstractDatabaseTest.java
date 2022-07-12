@@ -48,7 +48,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
@@ -96,30 +95,27 @@ public abstract class AbstractDatabaseTest {
   protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected final ChainProperties chainProperties = new ChainProperties(spec);
-
+  private final List<File> tmpDirectories = new ArrayList<>();
   protected UInt64 genesisTime = UInt64.valueOf(100);
   protected AnchorPoint genesisAnchor;
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
   protected SignedBlockAndState checkpoint2BlockAndState;
   protected SignedBlockAndState checkpoint3BlockAndState;
-
   protected Checkpoint genesisCheckpoint;
   protected Checkpoint checkpoint1;
   protected Checkpoint checkpoint2;
   protected Checkpoint checkpoint3;
-
   protected StateStorageMode storageMode;
   protected StorageSystem storageSystem;
   protected Database database;
   protected RecentChainData recentChainData;
   protected UpdatableStore store;
-
   protected List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
   public void setup() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
 
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
@@ -140,34 +136,20 @@ public abstract class AbstractDatabaseTest {
     tmpDirectories.clear();
   }
 
+  protected abstract StorageSystem createStorageSystem(
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks);
+
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
     setDefaultStorage(storage);
   }
 
-  // This method shouldn't be called outside of createStorage
-  private StorageSystem createStorage(
-      final StateStorageMode storageMode,
-      final StoreConfig storeConfig,
-      final boolean storeNonCanonicalBlocks)
-      throws IOException {
-    this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode, storeConfig, storeNonCanonicalBlocks);
-    setDefaultStorage(storageSystem);
-
-    return storageSystem;
-  }
-
-  protected void setDefaultStorage(final StorageSystem storageSystem) {
-    this.storageSystem = storageSystem;
-    database = storageSystem.database();
-    recentChainData = storageSystem.recentChainData();
-    storageSystems.add(storageSystem);
-  }
-
   @Test
   public void createMemoryStoreFromEmptyDatabase() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
@@ -552,7 +534,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void handleFinalizationWhenCacheLimitsExceeded() throws IOException {
-    createStorage(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
@@ -778,7 +760,7 @@ public abstract class AbstractDatabaseTest {
    * @return the merge transition block
    */
   private SignedBlockAndState generateChainWithFinalizableTransitionBlock() throws IOException {
-    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
@@ -837,7 +819,7 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -895,7 +877,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void orphanedBlockStorageTest_withCanonicalBlocks() throws IOException {
-    createStorage(storageMode, StoreConfig.createDefault(), true);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksAvailable(
         forkChainResult
@@ -907,7 +889,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void orphanedBlockStorageTest_multiple() throws IOException {
-    createStorage(storageMode, StoreConfig.createDefault(), true);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
     final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
@@ -946,7 +928,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void orphanedBlockStorageTest_noCanonicalBlocks() throws IOException {
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksUnavailable(
         forkChainResult
@@ -956,52 +938,20 @@ public abstract class AbstractDatabaseTest {
             .collect(Collectors.toList()));
   }
 
-  private final List<File> tmpDirectories = new ArrayList<>();
+  @Test
+  public void shouldRecreateGenesisStateOnRestart_archiveMode() throws Exception {
+    testShouldRecreateGenesisStateOnRestart(StateStorageMode.ARCHIVE);
+  }
 
-  protected abstract StorageSystem createStorageSystem(
-      final File tempDir,
-      final StateStorageMode storageMode,
-      final StoreConfig storeConfig,
-      final boolean storeNonCanonicalBlocks);
+  @Test
+  public void shouldRecreateGenesisStateOnRestart_pruneMode() throws Exception {
+    testShouldRecreateGenesisStateOnRestart(StateStorageMode.PRUNE);
+  }
 
-  private StorageSystem createStorageSystemInternal(
-      final StateStorageMode storageMode,
-      final StoreConfig storeConfig,
-      final boolean storeNonCanonicalBlocks)
+  public void testShouldRecreateGenesisStateOnRestart(final StateStorageMode storageMode)
       throws IOException {
-    final Path tmpDir = Files.createTempDirectory("storageTest");
-    tmpDirectories.add(tmpDir.toFile());
-    return createStorageSystem(tmpDir.toFile(), storageMode, storeConfig, storeNonCanonicalBlocks);
-  }
-
-  private StorageSystem createStorageSystemInternal(
-      final File tempDir,
-      final StateStorageMode storageMode,
-      final boolean storeNonCanonicalBlocks) {
-    this.storageMode = storageMode;
-    final StorageSystem storage =
-        createStorageSystem(
-            tempDir, storageMode, StoreConfig.createDefault(), storeNonCanonicalBlocks);
-    setDefaultStorage(storage);
-    return storage;
-  }
-
-  @Test
-  public void shouldRecreateGenesisStateOnRestart_archiveMode(@TempDir final Path tempDir)
-      throws Exception {
-    testShouldRecreateGenesisStateOnRestart(tempDir, StateStorageMode.ARCHIVE);
-  }
-
-  @Test
-  public void shouldRecreateGenesisStateOnRestart_pruneMode(@TempDir final Path tempDir)
-      throws Exception {
-    testShouldRecreateGenesisStateOnRestart(tempDir, StateStorageMode.PRUNE);
-  }
-
-  public void testShouldRecreateGenesisStateOnRestart(
-      final Path tempDir, final StateStorageMode storageMode) {
     // Set up database with genesis state
-    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     // Shutdown and restart
@@ -1013,23 +963,21 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_archiveMode(
-      @TempDir final Path tempDir) throws Exception {
-    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
-        tempDir, StateStorageMode.ARCHIVE);
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_archiveMode()
+      throws Exception {
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_pruneMode(
-      @TempDir final Path tempDir) throws Exception {
-    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
-        tempDir, StateStorageMode.PRUNE);
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_pruneMode()
+      throws Exception {
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(StateStorageMode.PRUNE);
   }
 
   public void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
-      final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
-    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     // Create finalized block at slot prior to epoch boundary
@@ -1069,7 +1017,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldRecreateAnchorStoreOnRestart(@TempDir final Path tempDir) {
+  public void shouldRecreateAnchorStoreOnRestart() throws IOException {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -1077,7 +1025,7 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorageSystemInternal(tempDir.toFile(), StateStorageMode.PRUNE, false);
+    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Shutdown and restart
@@ -1265,7 +1213,7 @@ public abstract class AbstractDatabaseTest {
       throws Exception {
 
     for (int i = 0; i < 20; i++) {
-      createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+      createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
       try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
@@ -1294,15 +1242,13 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
-      @TempDir final Path tempDir) {
-    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive() throws IOException {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
-      @TempDir final Path tempDir) {
-    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune() throws IOException {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(StateStorageMode.PRUNE);
   }
 
   @Test
@@ -1310,7 +1256,7 @@ public abstract class AbstractDatabaseTest {
     final int storageFrequency = 1;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -1339,7 +1285,7 @@ public abstract class AbstractDatabaseTest {
     final int storageFrequency = 0;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -1361,7 +1307,7 @@ public abstract class AbstractDatabaseTest {
     final int storageFrequency = 3;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
@@ -1393,7 +1339,7 @@ public abstract class AbstractDatabaseTest {
     final int storageFrequency = 1;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
+    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -1413,17 +1359,17 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir) {
-    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.ARCHIVE);
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive() throws IOException {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir) {
-    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.PRUNE);
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune() throws IOException {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(StateStorageMode.PRUNE);
   }
 
   private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) {
+      final StateStorageMode storageMode) throws IOException {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
@@ -1438,7 +1384,7 @@ public abstract class AbstractDatabaseTest {
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
     // Setup database
-    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
@@ -1476,8 +1422,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) {
-    createStorageSystemInternal(tempDir.toFile(), storageMode, false);
+      final StateStorageMode storageMode) throws IOException {
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(true);
 
     // Fork states should be unavailable
@@ -1509,24 +1455,6 @@ public abstract class AbstractDatabaseTest {
 
   private void testShouldPersistOnDisk(final StateStorageMode storageMode) throws Exception {
     testShouldRecordFinalizedBlocksAndStates(storageMode, false);
-  }
-
-  public static class CreateForkChainResult {
-    private ChainBuilder forkChain;
-    private UInt64 firstHotBlockSlot;
-
-    public CreateForkChainResult(final ChainBuilder forkChain, final UInt64 firstHotBlockSlot) {
-      this.forkChain = forkChain;
-      this.firstHotBlockSlot = firstHotBlockSlot;
-    }
-
-    public ChainBuilder getForkChain() {
-      return forkChain;
-    }
-
-    public UInt64 getFirstHotBlockSlot() {
-      return firstHotBlockSlot;
-    }
   }
 
   protected CreateForkChainResult createForkChain(final boolean restartStorage) {
@@ -1566,7 +1494,7 @@ public abstract class AbstractDatabaseTest {
 
   public void testStartupFromNonGenesisState(final StateStorageMode storageMode)
       throws IOException {
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1578,7 +1506,7 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1605,7 +1533,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   void shouldStoreAndRetrieveVotes() throws IOException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    createStorage(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
 
     final Map<UInt64, VoteTracker> voteBatch1 =
@@ -1630,7 +1558,7 @@ public abstract class AbstractDatabaseTest {
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final StateStorageMode storageMode) throws IOException {
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1642,7 +1570,7 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1691,7 +1619,7 @@ public abstract class AbstractDatabaseTest {
     forkChain.generateBlockAtSlot(hotSlot);
 
     // Setup database
-    createStorage(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     final Set<SignedBlockAndState> allBlocksAndStates =
@@ -2011,5 +1939,44 @@ public abstract class AbstractDatabaseTest {
   protected UpdatableStore recreateStore() {
     restartStorage();
     return storageSystem.recentChainData().getStore();
+  }
+
+  private StorageSystem createStorageSystemInternal(
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks)
+      throws IOException {
+    final Path tmpDir = Files.createTempDirectory("storageTest");
+    tmpDirectories.add(tmpDir.toFile());
+    this.storageMode = storageMode;
+    final StorageSystem storage =
+        createStorageSystem(tmpDir.toFile(), storageMode, storeConfig, storeNonCanonicalBlocks);
+    setDefaultStorage(storage);
+    return storage;
+  }
+
+  private void setDefaultStorage(final StorageSystem storageSystem) {
+    this.storageSystem = storageSystem;
+    database = storageSystem.database();
+    recentChainData = storageSystem.recentChainData();
+    storageSystems.add(storageSystem);
+  }
+
+  public static class CreateForkChainResult {
+    private ChainBuilder forkChain;
+    private UInt64 firstHotBlockSlot;
+
+    public CreateForkChainResult(final ChainBuilder forkChain, final UInt64 firstHotBlockSlot) {
+      this.forkChain = forkChain;
+      this.firstHotBlockSlot = firstHotBlockSlot;
+    }
+
+    public ChainBuilder getForkChain() {
+      return forkChain;
+    }
+
+    public UInt64 getFirstHotBlockSlot() {
+      return firstHotBlockSlot;
+    }
   }
 }
