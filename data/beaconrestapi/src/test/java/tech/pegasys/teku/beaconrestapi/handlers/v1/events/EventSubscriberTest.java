@@ -205,7 +205,6 @@ public class EventSubscriberTest {
   }
 
   @Test
-  @SuppressWarnings("unused")
   void shouldSendKeepAlive() {
     createSubscriber(EventType.voluntary_exit.name());
 
