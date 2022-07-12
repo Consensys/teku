@@ -70,10 +70,10 @@ class GetGlobalValidatorInclusionTest
             spec.getGenesisSpecConfig(),
             UInt64.valueOf(4666673844721362956L),
             UInt64.valueOf(4665021361504678828L),
-            dataStructureUtil.randomUInt64(),
+            UInt64.valueOf(738321361504678828L),
             UInt64.valueOf(4668326327938047084L),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
+            UInt64.valueOf(24987249274924L),
+            UInt64.valueOf(948294294242342329L),
             UInt64.valueOf(4658411424342975020L),
             UInt64.valueOf(4663368873993027404L));
     GetGlobalValidatorInclusion.GetGlobalValidatorResponseData responseData =

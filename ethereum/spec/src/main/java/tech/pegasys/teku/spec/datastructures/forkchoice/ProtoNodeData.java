@@ -88,25 +88,19 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       return false;
     }
     final ProtoNodeData that = (ProtoNodeData) o;
-    return isOptimistic() == that.isOptimistic()
-        && Objects.equals(getSlot(), that.getSlot())
-        && Objects.equals(getRoot(), that.getRoot())
-        && Objects.equals(getParentRoot(), that.getParentRoot())
-        && Objects.equals(getStateRoot(), that.getStateRoot())
-        && Objects.equals(getExecutionBlockHash(), that.getExecutionBlockHash())
-        && Objects.equals(getCheckpoints(), that.getCheckpoints());
+    return isOptimistic == that.isOptimistic
+        && Objects.equals(slot, that.slot)
+        && Objects.equals(root, that.root)
+        && Objects.equals(parentRoot, that.parentRoot)
+        && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(executionBlockHash, that.executionBlockHash)
+        && Objects.equals(checkpoints, that.checkpoints);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        getSlot(),
-        getRoot(),
-        getParentRoot(),
-        getStateRoot(),
-        getExecutionBlockHash(),
-        isOptimistic(),
-        getCheckpoints());
+        slot, root, parentRoot, stateRoot, executionBlockHash, isOptimistic, checkpoints);
   }
 
   @Override
