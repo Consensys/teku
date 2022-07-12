@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -42,13 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -304,8 +299,10 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockB));
 
     // Then build on both chains, into the next epoch
-    final SignedBlockAndState blockA2 = forkA.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
-    final SignedBlockAndState blockB2 = forkB.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
+    final SignedBlockAndState blockA2 =
+        forkA.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
+    final SignedBlockAndState blockB2 =
+        forkB.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2L + 2);
 
     // Add blocks while finalizing blockA at the same time
     StoreTransaction tx = recentChainData.startStoreTransaction();
@@ -1229,20 +1226,22 @@ public abstract class AbstractDatabaseTest {
               }
             });
 
-      try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-        final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
+      final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
 
-        dbCloserThread.start();
-        assertThatThrownBy(() -> {
-          final long stamp2 = lock.writeLock();
-          try {
-            updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
-          } finally {
-            lock.unlock(stamp2);
-          }
-        }).isInstanceOf(ShuttingDownException.class);
-        dbCloserThread.join(500);
-      }
+      dbCloserThread.start();
+      assertThatThrownBy(
+              () -> {
+                final long stamp2 = lock.writeLock();
+                try {
+                  updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+                } finally {
+                  lock.unlock(stamp2);
+                }
+              })
+          .isInstanceOf(ShuttingDownException.class);
+      dbCloserThread.join(500);
+    }
   }
 
   @Test
