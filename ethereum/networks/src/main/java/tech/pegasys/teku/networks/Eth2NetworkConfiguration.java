@@ -511,7 +511,6 @@ public class Eth2NetworkConfiguration {
           .constants(ROPSTEN.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(12269949)
-          .progressiveBalancesEnabled(ProgressiveBalancesMode.USED)
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
           .discoveryBootnodes(
