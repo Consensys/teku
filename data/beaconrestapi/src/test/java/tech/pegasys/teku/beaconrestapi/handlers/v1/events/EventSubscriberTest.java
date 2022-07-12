@@ -207,7 +207,7 @@ public class EventSubscriberTest {
   @Test
   @SuppressWarnings("unused")
   void shouldSendKeepAlive() {
-    final EventSubscriber subscriber = createSubscriber(EventType.voluntary_exit.name());
+    createSubscriber(EventType.voluntary_exit.name());
 
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
@@ -216,6 +216,18 @@ public class EventSubscriberTest {
 
     // Keep alive schedules another to be run
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldStopSendingKeepAliveWhenSseClientCloses() {
+    createSubscriber(EventType.voluntary_exit.name());
+
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    sseClient.close();
+    asyncRunner.executeQueuedActions();
+
+    // Keep alive should not schedule another to be run
+    assertThat(asyncRunner.countDelayedActions()).isZero();
   }
 
   private EventSource<String> event(final String message) {
