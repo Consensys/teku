@@ -20,7 +20,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class InMemoryV5KvStoreDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+public class InMemoryV5KvStoreDatabaseTest extends AbstractDatabaseTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir,

@@ -19,12 +19,12 @@ import java.io.File;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
+import tech.pegasys.teku.storage.server.kvstore.AbstractDatabaseTest;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class V2LevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+public class V2LevelDbDatabaseTest extends AbstractDatabaseTest {
 
   @BeforeAll
   static void setUp() {
