@@ -147,7 +147,7 @@ public class EventSubscriber {
                   sseClient.sendComment("");
                 }
               },
-              Duration.ofSeconds(5))
+              Duration.ofSeconds(30))
           .alwaysRun(this::keepAlive)
           .ifExceptionGetsHereRaiseABug();
     }
