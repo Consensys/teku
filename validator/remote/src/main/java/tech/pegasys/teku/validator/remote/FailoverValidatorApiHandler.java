@@ -219,15 +219,19 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     final List<SafeFuture<T>> failoversResponses =
         failoverDelegates.stream().map(request::run).collect(Collectors.toList());
     return primaryResponse.exceptionallyCompose(
-        primaryThrowable ->
-            SafeFuture.firstSuccess(failoversResponses)
-                .exceptionallyCompose(
-                    __ -> {
-                      validatorLogger.remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
-                      SafeFuture.addSuppressedErrors(
-                          primaryThrowable, failoversResponses.toArray(new SafeFuture<?>[0]));
-                      return SafeFuture.failedFuture(primaryThrowable);
-                    }));
+        primaryThrowable -> {
+          LOG.debug(
+              "Request which is sent to all configured Beacon Node endpoints failed on the primary Beacon Node {} . Will try to use a response from a failover.",
+              primaryDelegate.getEndpoint());
+          return SafeFuture.firstSuccess(failoversResponses)
+              .exceptionallyCompose(
+                  __ -> {
+                    validatorLogger.remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+                    SafeFuture.addSuppressedErrors(
+                        primaryThrowable, failoversResponses.toArray(new SafeFuture<?>[0]));
+                    return SafeFuture.failedFuture(primaryThrowable);
+                  });
+        });
   }
 
   /**
@@ -259,9 +263,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
               capturedExceptions.add(throwable);
               final RemoteValidatorApiChannel nextDelegate = failoverDelegates.next();
               LOG.debug(
-                  String.format(
-                      "Request to Beacon Node %s failed. Will try sending request to failover %s",
-                      failedEndpoint, nextDelegate.getEndpoint()));
+                  "Request to Beacon Node {} failed. Will try sending request to failover {}",
+                  failedEndpoint,
+                  nextDelegate.getEndpoint());
               return makeFailoverRequest(
                   nextDelegate, failoverDelegates, request, capturedExceptions);
             });
