@@ -78,7 +78,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             serviceConfig.getMetricsSystem(),
-            new RemoteValidatorApiHandler(spec, apiClient, typeDefClient, asyncRunner));
+            new RemoteValidatorApiHandler(
+                spec, apiEndpoint, apiClient, typeDefClient, asyncRunner));
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);

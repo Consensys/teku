@@ -235,6 +235,41 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return complete;
   }
 
+  /**
+   * Returns a new {@link SafeFuture} with the result of the first successful future from the given
+   * futures. If all futures complete exceptionally, the returned {@link SafeFuture} will complete
+   * exceptionally with the exception from the first future. If the provided {@link List} of futures
+   * is an empty collection, the returned {@link SafeFuture} will complete exceptionally with an
+   * {@link IllegalArgumentException} exception.
+   *
+   * @param futures the futures which will need to be completed
+   * @return a new {@link SafeFuture} that is completed with the first successful result from the
+   *     given futures or completed exceptionally if all futures complete exceptionally
+   */
+  public static <T> SafeFuture<T> firstSuccess(final List<SafeFuture<T>> futures) {
+    if (futures.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException("The provided list of SafeFuture<T> should not be empty"));
+    }
+    return asyncDoWhile(
+            () ->
+                SafeFuture.of(
+                    () -> {
+                      final boolean canProceed =
+                          futures.stream().anyMatch(SafeFuture::isCompletedNormally)
+                              || futures.stream().allMatch(SafeFuture::isCompletedExceptionally);
+                      return !canProceed;
+                    }))
+        .thenCompose(
+            __ ->
+                futures.stream()
+                    .filter(SafeFuture::isCompletedNormally)
+                    .findFirst()
+                    // at this point, all futures have completed exceptionally, so just
+                    // return the first error future
+                    .orElse(futures.get(0)));
+  }
+
   public static SafeFuture<Object> anyOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.anyOf(futures));
   }
