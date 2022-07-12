@@ -96,7 +96,6 @@ public abstract class AbstractDatabaseTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
-  private static final Logger LOG = LogManager.getLogger();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainProperties chainProperties = new ChainProperties(spec);
