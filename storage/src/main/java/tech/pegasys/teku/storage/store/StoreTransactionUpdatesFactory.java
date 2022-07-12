@@ -27,8 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -44,7 +43,7 @@ class StoreTransactionUpdatesFactory {
   private final Store baseStore;
   private final StoreTransaction tx;
 
-  private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
+  private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
@@ -62,15 +61,11 @@ class StoreTransactionUpdatesFactory {
     this.latestFinalized = latestFinalized;
     // Save copy of tx data that may be pruned
     hotBlocks =
-        tx.blockAndStates.entrySet().stream()
+        tx.blockData.entrySet().stream()
             .collect(
                 Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry ->
-                        new BlockAndCheckpointEpochs(
-                            entry.getValue().getBlock(),
-                            CheckpointEpochs.fromBlockAndState(entry.getValue()))));
-    hotBlockAndStates = new ConcurrentHashMap<>(tx.blockAndStates);
+                    Map.Entry::getKey, entry -> entry.getValue().toBlockAndCheckpoints()));
+    hotBlockAndStates = new ConcurrentHashMap<>(tx.blockData);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
   }
 
@@ -219,7 +214,7 @@ class StoreTransactionUpdatesFactory {
           }
         });
 
-    tx.blockAndStates.values().stream()
+    tx.blockData.values().stream()
         // Iterate new blocks in slot order to guarantee we see parents first
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
         .filter(

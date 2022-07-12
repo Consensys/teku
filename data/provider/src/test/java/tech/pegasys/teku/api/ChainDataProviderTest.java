@@ -118,7 +118,8 @@ public class ChainDataProviderTest {
                 bestBlock.getParentRoot(),
                 bestBlock.getStateRoot(),
                 bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                false));
+                false,
+                spec.calculateBlockCheckpoints(bestBlock.getState())));
   }
 
   @Test

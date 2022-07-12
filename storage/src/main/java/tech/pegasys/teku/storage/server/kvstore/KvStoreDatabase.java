@@ -46,8 +46,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -213,11 +213,7 @@ public class KvStoreDatabase implements Database {
           block -> {
             // Save to hot storage
             updater.addHotBlock(
-                new BlockAndCheckpointEpochs(
-                    block,
-                    new CheckpointEpochs(
-                        anchorState.getCurrentJustifiedCheckpoint().getEpoch(),
-                        anchorState.getFinalizedCheckpoint().getEpoch())));
+                new BlockAndCheckpoints(block, spec.calculateBlockCheckpoints(anchorState)));
             // Save to cold storage
             updater.addFinalizedBlock(block);
           });
@@ -309,7 +305,7 @@ public class KvStoreDatabase implements Database {
     try (final Stream<SignedBeaconBlock> hotBlocks = dao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
-            final Optional<CheckpointEpochs> checkpointEpochs =
+            final Optional<BlockCheckpoints> checkpointEpochs =
                 dao.getHotBlockCheckpointEpochs(b.getRoot());
             blockInformation.put(
                 b.getRoot(),
@@ -338,7 +334,7 @@ public class KvStoreDatabase implements Database {
         throw new IllegalStateException("Anchor state (" + anchor + ") is unavailable");
       }
       blockInformation.put(
-          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(latestFinalized));
+          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(spec, latestFinalized));
     }
 
     final Optional<SignedBeaconBlock> finalizedBlock =
@@ -453,8 +449,8 @@ public class KvStoreDatabase implements Database {
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return dao.streamCheckpointEpochs();
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
+    return dao.streamBlockCheckpoints();
   }
 
   @Override

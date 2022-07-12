@@ -58,7 +58,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -195,8 +195,8 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
 
-    transaction.putBlockAndState(block1);
-    transaction.putBlockAndState(block2);
+    transaction.putBlockAndState(block1, spec.calculateBlockCheckpoints(block1.getState()));
+    transaction.putBlockAndState(block2, spec.calculateBlockCheckpoints(block2.getState()));
 
     commit(transaction);
 
@@ -302,8 +302,8 @@ public abstract class AbstractDatabaseTest {
 
     // Add blocks while finalizing blockA at the same time
     StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(blockA2);
-    tx.putBlockAndState(blockB2);
+    tx.putBlockAndState(blockA2, spec.calculateBlockCheckpoints(blockA2.getState()));
+    tx.putBlockAndState(blockB2, spec.calculateBlockCheckpoints(blockB2.getState()));
     justifyAndFinalizeEpoch(UInt64.ONE, blockA, tx);
     assertThat(tx.commit()).isCompleted();
 
@@ -439,7 +439,7 @@ public abstract class AbstractDatabaseTest {
     assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newBlock);
+    transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
@@ -457,8 +457,10 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(2);
 
-    transaction.putBlockAndState(blockAndState1);
-    transaction.putBlockAndState(blockAndState2);
+    transaction.putBlockAndState(
+        blockAndState1, spec.calculateBlockCheckpoints(blockAndState1.getState()));
+    transaction.putBlockAndState(
+        blockAndState2, spec.calculateBlockCheckpoints(blockAndState2.getState()));
 
     commit(transaction);
 
@@ -1052,7 +1054,7 @@ public abstract class AbstractDatabaseTest {
     assertThatSafeFuture(store.retrieveBlockState(newValue.getRoot()))
         .isCompletedWithEmptyOptional();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newValue);
+    transaction.putBlockAndState(newValue, spec.calculateBlockCheckpoints(newValue.getState()));
 
     final SafeFuture<Void> result = transaction.commit();
     assertThatThrownBy(result::get).hasCauseInstanceOf(ShuttingDownException.class);
@@ -1143,7 +1145,7 @@ public abstract class AbstractDatabaseTest {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(
-              () -> updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock)))
+              () -> updater.addHotBlock(BlockAndCheckpoints.fromBlockAndState(spec, newBlock)))
           .isInstanceOf(ShuttingDownException.class);
     }
   }
@@ -1191,7 +1193,7 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newBlock);
+    transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     transaction.setFinalizedCheckpoint(newCheckpoint, false);
     transaction.commit().ifExceptionGetsHereRaiseABug();
     // Close db
@@ -1224,7 +1226,7 @@ public abstract class AbstractDatabaseTest {
 
         dbCloserThread.start();
         try {
-          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+          updater.addHotBlock(BlockAndCheckpoints.fromBlockAndState(spec, newBlock));
         } catch (ShuttingDownException ignored) {
           // For this test to fail, we'd see exceptions other than ShuttingDownException.
           // Because it's a probabilistic test, it's possible that either no exception occurs, or
@@ -1838,7 +1840,7 @@ public abstract class AbstractDatabaseTest {
   private void addBlocks(final List<SignedBlockAndState> blocks) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
-      transaction.putBlockAndState(block);
+      transaction.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
     }
     commit(transaction);
   }
@@ -1853,7 +1855,10 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     blocksAndStates.stream()
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
-        .forEach(transaction::putBlockAndState);
+        .forEach(
+            blockAndState ->
+                transaction.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
   }
 
   private void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {

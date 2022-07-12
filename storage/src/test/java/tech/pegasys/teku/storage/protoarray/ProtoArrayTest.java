@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.StubVoteUpdater;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -63,16 +64,18 @@ class ProtoArrayTest {
     // The justified checkpoint is the default chain head to use when there are no other blocks
     // considered viable, so ensure we always accept it as head
     final Bytes32 justifiedRoot = dataStructureUtil.randomBytes32();
+    final Checkpoint justifiedCheckpoint = new Checkpoint(UInt64.ONE, justifiedRoot);
+    final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, justifiedRoot);
     protoArray =
         new ProtoArrayBuilder()
-            .justifiedCheckpoint(new Checkpoint(UInt64.ONE, justifiedRoot))
-            .finalizedCheckpoint(new Checkpoint(UInt64.ONE, justifiedRoot))
+            .justifiedCheckpoint(justifiedCheckpoint)
+            .finalizedCheckpoint(finalizedCheckpoint)
             .initialEpoch(UInt64.ZERO)
             .build();
     // Justified block will have justified and finalized epoch of 0 which doesn't match the current
     // so would normally be not viable, but we should allow it anyway.
     addValidBlock(12, justifiedRoot, dataStructureUtil.randomBytes32());
-    final ProtoNode head = protoArray.findOptimisticHead(justifiedRoot, UInt64.ONE, UInt64.ONE);
+    final ProtoNode head = protoArray.findOptimisticHead(justifiedCheckpoint, finalizedCheckpoint);
     assertThat(head).isEqualTo(protoArray.getProtoNode(justifiedRoot).orElseThrow());
   }
 
@@ -111,7 +114,7 @@ class ProtoArrayTest {
     addOptimisticBlock(3, block3a, block2a);
 
     // Apply score changes to ensure that the best descendant index is updated
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // Check the best descendant has been updated
     assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
@@ -130,7 +133,7 @@ class ProtoArrayTest {
     addOptimisticBlock(3, block3a, block2a);
 
     // Apply score changes to ensure that the best descendant index is updated
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // Check the best descendant has been updated
     assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
@@ -153,10 +156,7 @@ class ProtoArrayTest {
 
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot(), Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                protoArray.findOptimisticHead(
-                    GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
+    assertThatThrownBy(() -> protoArray.findOptimisticHead(GENESIS_CHECKPOINT, GENESIS_CHECKPOINT))
         .isInstanceOf(FatalServiceFailureException.class);
   }
 
@@ -170,14 +170,14 @@ class ProtoArrayTest {
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // And our head should switch
     assertHead(block2a);
@@ -193,14 +193,14 @@ class ProtoArrayTest {
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // And our head should switch
     assertHead(block2a);
@@ -216,7 +216,7 @@ class ProtoArrayTest {
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     assertHead(block2b);
 
@@ -225,7 +225,7 @@ class ProtoArrayTest {
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // Votes for 2a don't count because it's invalid so we stick with chain b.
     assertHead(block2b);
@@ -241,14 +241,14 @@ class ProtoArrayTest {
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     assertHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // We switch to chain a because it has the greater weight now
     assertHead(block2a);
@@ -336,7 +336,7 @@ class ProtoArrayTest {
     addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
-    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+    protoArray.applyScoreChanges(computeDeltas(), GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
 
     // Check the best descendant has been updated
     assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
@@ -495,8 +495,7 @@ class ProtoArrayTest {
 
   private void assertHead(final Bytes32 expectedBlockHash) {
     final ProtoNode node = protoArray.getProtoNode(expectedBlockHash).orElseThrow();
-    assertThat(
-            protoArray.findOptimisticHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
+    assertThat(protoArray.findOptimisticHead(GENESIS_CHECKPOINT, GENESIS_CHECKPOINT))
         .isEqualTo(node);
 
     assertThat(node.getBestDescendantIndex()).isEmpty();
@@ -532,8 +531,8 @@ class ProtoArrayTest {
         blockRoot,
         parentRoot,
         dataStructureUtil.randomBytes32(),
-        GENESIS_CHECKPOINT.getEpoch(),
-        GENESIS_CHECKPOINT.getEpoch(),
+        new BlockCheckpoints(
+            GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT),
         executionBlockHash,
         true);
   }

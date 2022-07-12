@@ -16,6 +16,9 @@ package tech.pegasys.teku.spec.logic.versions.altair.block;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.SYNC_REWARD_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_TARGET_FLAG_INDEX;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.ArrayList;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -123,7 +127,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
     // Update epoch participation flags
     final SszMutableList<SszByte> epochParticipation;
-    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
+    final boolean forCurrentEpoch =
+        data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state));
+    if (forCurrentEpoch) {
       epochParticipation = state.getCurrentEpochParticipation();
     } else {
       epochParticipation = state.getPreviousEpochParticipation();
@@ -134,22 +140,33 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         indexedAttestationProvider.getIndexedAttestation(attestation).getAttestingIndices();
     for (SszUInt64 attestingIndex : attestingIndices) {
       final int index = attestingIndex.get().intValue();
-      byte participationFlags = epochParticipation.get(index).get();
+      final byte previousParticipationFlags = epochParticipation.get(index).get();
+      byte newParticipationFlags = 0;
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
-      boolean shouldUpdate = false;
       for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
         final UInt64 weight = PARTICIPATION_FLAG_WEIGHTS.get(flagIndex);
 
         if (participationFlagIndices.contains(flagIndex)
-            && !miscHelpersAltair.hasFlag(participationFlags, flagIndex)) {
-          shouldUpdate = true;
-          participationFlags = miscHelpersAltair.addFlag(participationFlags, flagIndex);
+            && !miscHelpersAltair.hasFlag(previousParticipationFlags, flagIndex)) {
+          newParticipationFlags = miscHelpersAltair.addFlag(newParticipationFlags, flagIndex);
           proposerRewardNumerator = proposerRewardNumerator.plus(baseReward.times(weight));
         }
       }
 
-      if (shouldUpdate) {
-        epochParticipation.set(index, SszByte.of(participationFlags));
+      if (newParticipationFlags != 0) {
+        epochParticipation.set(
+            index,
+            SszByte.of(
+                miscHelpersAltair.addFlags(previousParticipationFlags, newParticipationFlags)));
+
+        BeaconStateCache.getTransitionCaches(state)
+            .getProgressiveTotalBalances()
+            .onAttestation(
+                state.getValidators().get(index),
+                forCurrentEpoch,
+                miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_SOURCE_FLAG_INDEX),
+                miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_TARGET_FLAG_INDEX),
+                miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX));
       }
     }
 

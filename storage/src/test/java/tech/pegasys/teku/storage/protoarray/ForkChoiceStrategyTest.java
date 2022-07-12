@@ -33,7 +33,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -84,8 +85,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getRoot(),
                     blockAndState.getParentRoot(),
                     blockAndState.getStateRoot(),
-                    blockAndState.getState().getCurrentJustifiedCheckpoint().getEpoch(),
-                    blockAndState.getState().getFinalizedCheckpoint().getEpoch(),
+                    spec.calculateBlockCheckpoints(blockAndState.getState()),
                     blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
   }
@@ -136,8 +136,11 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         anchor.getRoot(),
         anchor.getParentRoot(),
         anchor.getStateRoot(),
-        anchor.getEpoch(),
-        anchor.getEpoch(),
+        new BlockCheckpoints(
+            anchor.getCheckpoint(),
+            anchor.getCheckpoint(),
+            anchor.getCheckpoint(),
+            anchor.getCheckpoint()),
         Bytes32.ZERO,
         false);
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
@@ -184,8 +187,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     strategy.applyUpdate(
         List.of(
-            BlockAndCheckpointEpochs.fromBlockAndState(bestBlock),
-            BlockAndCheckpointEpochs.fromBlockAndState(forkBlock)),
+            BlockAndCheckpoints.fromBlockAndState(spec, bestBlock),
+            BlockAndCheckpoints.fromBlockAndState(spec, forkBlock)),
+        emptySet(),
         emptySet(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
     assertThat(strategy.getBlockRootsAtSlot(bestBlock.getSlot()))
@@ -218,7 +222,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getParentRoot(),
                     head.getStateRoot(),
                     head.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                    false)));
+                    false,
+                    spec.calculateBlockCheckpoints(head.getState()))));
   }
 
   @Test
@@ -245,6 +250,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
     strategy.applyUpdate(
         emptyList(),
+        emptySet(),
         Set.of(block2.getRoot()),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
 
@@ -262,8 +268,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     strategy.applyUpdate(
         List.of(
-            BlockAndCheckpointEpochs.fromBlockAndState(block1),
-            BlockAndCheckpointEpochs.fromBlockAndState(block2)),
+            BlockAndCheckpoints.fromBlockAndState(spec, block1),
+            BlockAndCheckpoints.fromBlockAndState(spec, block2)),
+        emptySet(),
         emptySet(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
 
@@ -284,14 +291,16 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     strategy.setPruneThreshold(3);
 
     // Not pruned because threshold isn't reached.
-    strategy.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, block2.getRoot()));
+    strategy.applyUpdate(
+        emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, block2.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isTrue();
     assertThat(strategy.contains(block2.getRoot())).isTrue();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
     assertThat(strategy.contains(block4.getRoot())).isTrue();
 
     // Prune when threshold is exceeded
-    strategy.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, block3.getRoot()));
+    strategy.applyUpdate(
+        emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, block3.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isFalse();
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -307,7 +316,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBeaconBlock finalizedBlock = storageSystem.chainBuilder().getBlockAtSlot(4);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.applyUpdate(emptyList(), emptySet(), finalizedCheckpoint);
+    forkChoiceStrategy.applyUpdate(emptyList(), emptySet(), emptySet(), finalizedCheckpoint);
 
     // Check that all blocks prior to latest finalized have been pruned
     final List<SignedBlockAndState> allBlocks =
@@ -338,6 +347,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     strategy.applyUpdate(
         emptyList(),
+        emptySet(),
         Set.of(block1.getRoot(), block2.getRoot()),
         new Checkpoint(ONE, block3.getRoot()));
 

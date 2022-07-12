@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -46,6 +47,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = false;
+  public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
+      ProgressiveBalancesMode.DISABLED;
 
   private final Spec spec;
   private final String constants;
@@ -207,6 +210,7 @@ public class Eth2NetworkConfiguration {
     private boolean proposerBoostEnabled = DEFAULT_PROPOSER_BOOST_ENABLED;
     private boolean equivocatingIndicesEnabled = DEFAULT_EQUIVOCATING_INDICES_ENABLED;
     private boolean forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
+    private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
@@ -228,6 +232,7 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
+                  builder.progressiveBalancesMode(progressiveBalancesMode);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -334,6 +339,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder proposerBoostEnabled(final boolean proposerBoostEnabled) {
       this.proposerBoostEnabled = proposerBoostEnabled;
+      return this;
+    }
+
+    public Builder progressiveBalancesEnabled(
+        final ProgressiveBalancesMode progressiveBalancesMode) {
+      this.progressiveBalancesMode = progressiveBalancesMode;
       return this;
     }
 
