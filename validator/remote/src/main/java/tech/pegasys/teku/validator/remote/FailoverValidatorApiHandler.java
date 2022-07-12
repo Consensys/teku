@@ -210,9 +210,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
    * endpoints. The returned {@link SafeFuture} will complete with the response from the primary
    * Beacon Node or in case in failure, it will complete with the first successful response from a
    * failover node. The returned {@link SafeFuture} will only complete exceptionally when the
-   * request to the primary Beacon Node and all requests to the failover nodes fail. In this case,
-   * the returned error will be the primary Beacon node error and all other failover errors will be
-   * part of it as suppressed.
+   * request to the primary Beacon Node and all the requests to the failover nodes fail. In this
+   * case, the returned error will be the primary Beacon Node error and all the failovers errors
+   * will be part of it as suppressed.
    */
   private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
     final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
@@ -233,8 +233,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   /**
    * Tries the given request first with the primary Beacon Node. If it fails, it will retry the
    * request against each failover Beacon Node in order until there is a successful response. In
-   * case all requests fail, the returned {@link SafeFuture} will complete exceptionally with the
-   * last error and all previous errors will be part of it as suppressed.
+   * case all the requests fail, the returned {@link SafeFuture} will complete exceptionally with
+   * the last error and all previous errors will be part of it as suppressed.
    */
   private <T> SafeFuture<T> tryRequestUntilSuccess(final ValidatorApiChannelRequest<T> request) {
     return makeFailoverRequest(
