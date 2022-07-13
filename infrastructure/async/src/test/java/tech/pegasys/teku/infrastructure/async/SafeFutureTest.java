@@ -1082,7 +1082,7 @@ public class SafeFutureTest {
     final SafeFuture<String> result = SafeFuture.firstSuccess(List.of());
     SafeFutureAssert.assertThatSafeFuture(result)
         .isCompletedExceptionallyWith(IllegalArgumentException.class)
-        .hasMessage("The provided list of futures should not be empty");
+        .hasMessage("The provided List of futures should not be empty");
   }
 
   @Test

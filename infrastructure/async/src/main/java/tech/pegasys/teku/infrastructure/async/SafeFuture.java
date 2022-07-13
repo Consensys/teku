@@ -249,7 +249,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   public static <T> SafeFuture<T> firstSuccess(final List<SafeFuture<T>> futures) {
     if (futures.isEmpty()) {
       return SafeFuture.failedFuture(
-          new IllegalArgumentException("The provided list of futures should not be empty"));
+          new IllegalArgumentException("The provided List of futures should not be empty"));
     }
     final SafeFuture<T> result = new SafeFuture<>();
     allOf(
