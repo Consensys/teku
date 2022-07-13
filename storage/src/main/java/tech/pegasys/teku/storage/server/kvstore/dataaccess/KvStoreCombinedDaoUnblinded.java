@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
@@ -64,9 +64,9 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
       extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded, CombinedUpdaterCommon {}
 
   interface HotUpdaterUnblinded extends HotUpdaterCommon {
-    void addHotBlock(BlockAndCheckpointEpochs blockAndCheckpointEpochs);
+    void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
 
-    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
       blocks.values().forEach(this::addHotBlock);
     }
 

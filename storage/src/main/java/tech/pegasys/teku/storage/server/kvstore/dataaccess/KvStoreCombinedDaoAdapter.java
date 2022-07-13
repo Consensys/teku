@@ -26,9 +26,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -224,7 +224,7 @@ public class KvStoreCombinedDaoAdapter
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamBlindedHotBlocks() {
     return hotDao
-        .streamCheckpointEpochs()
+        .streamBlockCheckpoints()
         .map(Map.Entry::getKey)
         .flatMap(blockRoot -> getBlindedBlock(blockRoot).stream());
   }

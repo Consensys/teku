@@ -29,8 +29,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -143,7 +143,7 @@ public class UnblindedBlockKvStoreDatabase
     try (final Stream<SignedBeaconBlock> hotBlocks = dao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
-            final Optional<CheckpointEpochs> checkpointEpochs =
+            final Optional<BlockCheckpoints> checkpointEpochs =
                 dao.getHotBlockCheckpointEpochs(b.getRoot());
             blockInformation.put(
                 b.getRoot(),
@@ -168,11 +168,13 @@ public class UnblindedBlockKvStoreDatabase
       final BeaconState anchorState,
       final SignedBeaconBlock block) {
     updater.addHotBlock(
-        new BlockAndCheckpointEpochs(
+        new BlockAndCheckpoints(
             block,
-            new CheckpointEpochs(
-                anchorState.getCurrentJustifiedCheckpoint().getEpoch(),
-                anchorState.getFinalizedCheckpoint().getEpoch())));
+            new BlockCheckpoints(
+                anchorState.getCurrentJustifiedCheckpoint(),
+                anchorState.getFinalizedCheckpoint(),
+                anchorState.getCurrentJustifiedCheckpoint(),
+                anchorState.getFinalizedCheckpoint())));
     // Save to cold storage
     updater.addFinalizedBlock(block);
   }
@@ -203,7 +205,7 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   protected void updateHotBlocks(
       final HotUpdaterUnblinded updater,
-      final Map<Bytes32, BlockAndCheckpointEpochs> addedBlocks,
+      final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
       final Set<Bytes32> deletedHotBlockRoots,
       final Set<Bytes32> finalizedBlockRoots) {
     updater.addHotBlocks(addedBlocks);

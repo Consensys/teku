@@ -334,7 +334,7 @@ public abstract class KvStoreDatabase<
         throw new IllegalStateException("Anchor state (" + anchor + ") is unavailable");
       }
       blockInformation.put(
-          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(latestFinalized));
+          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(spec, latestFinalized));
     }
 
     final Optional<SignedBeaconBlock> finalizedBlock =

@@ -22,8 +22,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
@@ -66,10 +66,10 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
       extends HotUpdaterBlinded, FinalizedUpdaterBlinded, CombinedUpdaterCommon {}
 
   interface HotUpdaterBlinded extends HotUpdaterCommon {
-    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, CheckpointEpochs checkpointEpochs);
+    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, BlockCheckpoints blockCheckpoints);
 
-    default void addCheckpointEpochs(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
-      blocks.forEach((k, v) -> addHotBlockCheckpointEpochs(k, v.getCheckpointEpochs()));
+    default void addCheckpointEpochs(final Map<Bytes32, BlockAndCheckpoints> blocks) {
+      blocks.forEach((k, v) -> addHotBlockCheckpointEpochs(k, v.getBlockCheckpoints()));
     }
 
     void pruneHotBlockContext(Bytes32 blockRoot);
