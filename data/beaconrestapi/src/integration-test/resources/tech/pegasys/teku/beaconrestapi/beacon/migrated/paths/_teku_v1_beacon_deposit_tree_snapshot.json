@@ -1,7 +1,7 @@
 {
   "get" : {
-    "tags" : [ "Teku" ],
-    "operationId" : "getDepositSnapshot",
+    "tags" : [ "Teku", "Experimental" ],
+    "operationId" : "getDepositTreeSnapshot",
     "summary" : "Get finalized DepositTreeSnapshot",
     "description" : "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See EIP-4881 for details.",
     "responses" : {
@@ -10,7 +10,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetDepositSnapshotResponse"
+              "$ref" : "#/components/schemas/GetDepositTreeSnapshotResponse"
             }
           },
           "application/octet-stream" : {

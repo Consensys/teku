@@ -40,50 +40,52 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
-public class GetDepositSnapshot extends MigratingEndpointAdapter {
+public class GetDepositTreeSnapshot extends MigratingEndpointAdapter {
 
-  public static final String ROUTE = "/teku/v1/beacon/deposit_snapshot";
+  public static final String ROUTE = "/teku/v1/beacon/deposit_tree_snapshot";
 
-  private static final SerializableTypeDefinition<DepositTreeSnapshotData> DEPOSIT_SNAPSHOT_TYPE =
-      SerializableTypeDefinition.object(DepositTreeSnapshotData.class)
-          .withField(
-              "finalized",
-              SerializableTypeDefinition.listOf(CoreTypes.BYTES32_TYPE)
-                  .withDescription("List of finalized nodes in deposit tree"),
-              DepositTreeSnapshotData::getFinalized)
-          .withField(
-              "deposits",
-              CoreTypes.UINT64_TYPE.withDescription("Number of deposits stored in the snapshot"),
-              DepositTreeSnapshotData::getDeposits)
-          .withField(
-              "execution_block_hash",
-              CoreTypes.BYTES32_TYPE.withDescription(
-                  "Hash of the execution block containing the highest index deposit stored in the snapshot"),
-              DepositTreeSnapshotData::getExecutionBlockHash)
-          .build();
+  private static final SerializableTypeDefinition<DepositTreeSnapshotData>
+      DEPOSIT_TREE_SNAPSHOT_TYPE =
+          SerializableTypeDefinition.object(DepositTreeSnapshotData.class)
+              .withField(
+                  "finalized",
+                  SerializableTypeDefinition.listOf(CoreTypes.BYTES32_TYPE)
+                      .withDescription("List of finalized nodes in deposit tree"),
+                  DepositTreeSnapshotData::getFinalized)
+              .withField(
+                  "deposits",
+                  CoreTypes.UINT64_TYPE.withDescription(
+                      "Number of deposits stored in the snapshot"),
+                  DepositTreeSnapshotData::getDeposits)
+              .withField(
+                  "execution_block_hash",
+                  CoreTypes.BYTES32_TYPE.withDescription(
+                      "Hash of the execution block containing the highest index deposit stored in the snapshot"),
+                  DepositTreeSnapshotData::getExecutionBlockHash)
+              .build();
 
   public static final SerializableTypeDefinition<DepositTreeSnapshotData>
-      DEPOSIT_SNAPSHOT_RESPONSE_TYPE =
+      DEPOSIT_TREE_SNAPSHOT_RESPONSE_TYPE =
           SerializableTypeDefinition.<DepositTreeSnapshotData>object()
-              .name("GetDepositSnapshotResponse")
-              .withField("data", DEPOSIT_SNAPSHOT_TYPE, Function.identity())
+              .name("GetDepositTreeSnapshotResponse")
+              .withField("data", DEPOSIT_TREE_SNAPSHOT_TYPE, Function.identity())
               .build();
 
   private final Eth1DataProvider eth1DataProvider;
 
-  public GetDepositSnapshot(final Eth1DataProvider eth1DataProvider) {
+  public GetDepositTreeSnapshot(final Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getDepositSnapshot")
+            .operationId("getDepositTreeSnapshot")
             .summary("Get finalized DepositTreeSnapshot")
             .description(
                 "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. "
                     + "See EIP-4881 for details.")
-            .tags(TAG_TEKU)
+            .tags(TAG_TEKU, TAG_EXPERIMENTAL)
             .response(
                 SC_OK,
                 "Request successful",
-                DEPOSIT_SNAPSHOT_RESPONSE_TYPE,
+                DEPOSIT_TREE_SNAPSHOT_RESPONSE_TYPE,
                 DepositTreeSnapshotSerializer.OCTET_TYPE_DEFINITION)
             .withNotFoundResponse()
             .build());

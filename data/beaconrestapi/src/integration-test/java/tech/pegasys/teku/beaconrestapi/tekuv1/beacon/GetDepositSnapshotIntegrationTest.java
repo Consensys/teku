@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.data.DepositTreeSnapshotData;
 import tech.pegasys.teku.api.ssz.DepositTreeSnapshotSerializer;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -70,7 +70,8 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
     assertThat(actualResponse)
         .isEqualTo(
             JsonUtil.serialize(
-                depositTreeSnapshotData, GetDepositSnapshot.DEPOSIT_SNAPSHOT_RESPONSE_TYPE));
+                depositTreeSnapshotData,
+                GetDepositTreeSnapshot.DEPOSIT_TREE_SNAPSHOT_RESPONSE_TYPE));
   }
 
   @Test
@@ -98,10 +99,10 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
   }
 
   private Response get() throws IOException {
-    return getResponse(GetDepositSnapshot.ROUTE);
+    return getResponse(GetDepositTreeSnapshot.ROUTE);
   }
 
   private Response getSsz() throws IOException {
-    return getResponse(GetDepositSnapshot.ROUTE, ContentTypes.OCTET_STREAM);
+    return getResponse(GetDepositTreeSnapshot.ROUTE, ContentTypes.OCTET_STREAM);
   }
 }
