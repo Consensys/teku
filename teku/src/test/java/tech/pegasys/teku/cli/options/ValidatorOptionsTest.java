@@ -147,6 +147,18 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldEnableValidatorRegistrationDistributedValidatorTimestamp() {
+    final String[] args = {"--Xvalidators-registration-distributed-validator-timestamp", "120000"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(
+            config
+                .validatorClient()
+                .getValidatorConfig()
+                .getValidatorsRegistrationDistributedValidatorTimestamp())
+        .isEqualTo(Optional.of(120000));
+  }
+
+  @Test
   public void shouldNotUseValidatorsRegistrationByDefault() {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
