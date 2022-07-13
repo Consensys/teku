@@ -39,10 +39,6 @@ public class DatabaseContext {
     return databaseVersion;
   }
 
-  public BlockStorage getBlockStorage() {
-    return blockStorage;
-  }
-
   public boolean isInMemoryStorage() {
     return inMemoryStorage;
   }
@@ -59,6 +55,7 @@ public class DatabaseContext {
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .build();
   }
 
@@ -77,6 +74,11 @@ public class DatabaseContext {
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .build();
+  }
+
+  private boolean isStoreExecutionPayloadSeparately() {
+    return blockStorage.equals(BlockStorage.BLINDED_BLOCK);
   }
 }
