@@ -64,6 +64,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -88,11 +89,14 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLivene
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -105,11 +109,16 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   private final RestApi restApi;
 
   public JsonTypeDefinitionBeaconRestApi(
-      final BeaconRestApiConfig config,
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
+      final BeaconRestApiConfig config,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
-    restApi = create(config, dataProvider, eth1DataProvider, spec);
+    restApi =
+        create(
+            config, dataProvider, eth1DataProvider, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   @Override
@@ -126,6 +135,9 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final BeaconRestApiConfig config,
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
     return new RestApiBuilder()
@@ -196,7 +208,14 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new PostVoluntaryExit(dataProvider))
         .endpoint(new PostSyncCommittees(dataProvider))
         .endpoint(new PostValidatorLiveness(dataProvider))
-        // FIXME Add Event Handlers (GetEvents is not a MigratingEndpointAdapter)
+        // Event Handler
+        .endpoint(
+            new GetEvents(
+                dataProvider,
+                eventChannels,
+                asyncRunner,
+                timeProvider,
+                config.getMaxPendingEvents()))
         // Node Handlers
         .endpoint(new GetHealth(dataProvider))
         .endpoint(new GetIdentity(dataProvider))

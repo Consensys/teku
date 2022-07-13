@@ -41,6 +41,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<UInt64, Bytes32> finalizedStateRootsBySlot;
   private final KvStoreColumn<Bytes32, Bytes> finalizedStateTreeLeavesByRoot;
   private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
+  private final KvStoreColumn<Bytes32, SignedBeaconBlock> blindedBlocksByRoot;
+
+  private final KvStoreColumn<UInt64, Bytes32> finalizedBlockRootBySlot;
+
+  private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
 
   public V6SchemaCombinedTreeState(final Spec spec, final boolean storeVotesEquivocation) {
     super(spec, storeVotesEquivocation, V6_FINALIZED_OFFSET);
@@ -69,6 +74,15 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             V6_FINALIZED_OFFSET + 8,
             BYTES32_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
+    blindedBlocksByRoot =
+        KvStoreColumn.create(
+            V6_FINALIZED_OFFSET + 9,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedBlockSerializer(spec));
+    executionPayloadByBlockRoot =
+        KvStoreColumn.create(finalizedOffset + 10, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+    finalizedBlockRootBySlot =
+        KvStoreColumn.create(finalizedOffset + 11, UINT64_SERIALIZER, BYTES32_SERIALIZER);
   }
 
   @Override
@@ -112,6 +126,21 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot() {
+    return blindedBlocksByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash() {
+    return executionPayloadByBlockRoot;
+  }
+
+  @Override
+  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot() {
+    return finalizedBlockRootBySlot;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "GENESIS_TIME", getVariableGenesisTime(),
@@ -143,6 +172,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
+        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
+        .put("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash())
+        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .build();
   }
 

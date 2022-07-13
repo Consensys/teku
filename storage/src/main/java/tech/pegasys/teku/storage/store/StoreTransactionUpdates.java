@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -33,7 +33,7 @@ class StoreTransactionUpdates {
   private final StoreTransaction tx;
 
   private final Optional<FinalizedChainData> finalizedChainData;
-  private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
+  private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
@@ -45,7 +45,7 @@ class StoreTransactionUpdates {
   StoreTransactionUpdates(
       final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
-      final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
+      final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
@@ -119,7 +119,10 @@ class StoreTransactionUpdates {
     }
 
     store.forkChoiceStrategy.applyUpdate(
-        hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
+        hotBlocks.values(),
+        tx.pulledUpBlockCheckpoints,
+        prunedHotBlockRoots,
+        store.getFinalizedCheckpoint());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

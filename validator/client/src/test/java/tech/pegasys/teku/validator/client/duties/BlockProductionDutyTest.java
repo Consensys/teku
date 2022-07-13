@@ -276,5 +276,10 @@ class BlockProductionDutyTest {
     public Bytes getExtraData() {
       return null;
     }
+
+    @Override
+    public Bytes32 getPayloadHash() {
+      return null;
+    }
   }
 }

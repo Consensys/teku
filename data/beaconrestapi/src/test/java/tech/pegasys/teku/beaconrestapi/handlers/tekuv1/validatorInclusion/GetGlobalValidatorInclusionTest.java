@@ -29,6 +29,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
@@ -67,13 +68,14 @@ class GetGlobalValidatorInclusionTest
     final TotalBalances totalBalances =
         new TotalBalances(
             spec.getGenesisSpecConfig(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomUInt64());
+            UInt64.valueOf(4666673844721362956L),
+            UInt64.valueOf(4665021361504678828L),
+            UInt64.valueOf(738321361504678828L),
+            UInt64.valueOf(4668326327938047084L),
+            UInt64.valueOf(24987249274924L),
+            UInt64.valueOf(948294294242342329L),
+            UInt64.valueOf(4658411424342975020L),
+            UInt64.valueOf(4663368873993027404L));
     GetGlobalValidatorInclusion.GetGlobalValidatorResponseData responseData =
         new GetGlobalValidatorInclusion.GetGlobalValidatorResponseData(totalBalances);
 

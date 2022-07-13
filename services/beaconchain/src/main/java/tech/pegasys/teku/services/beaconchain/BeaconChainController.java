@@ -107,6 +107,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -511,6 +512,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceExecutor,
             recentChainData,
             forkChoiceNotifier,
+            new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             proposerBoostEnabled,
             equivocatingIndicesEnabled);
@@ -842,7 +844,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BeaconRestApi api =
         beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
             ? new JsonTypeDefinitionBeaconRestApi(
-                beaconConfig.beaconRestApiConfig(), dataProvider, eth1DataProvider, spec)
+                dataProvider,
+                eth1DataProvider,
+                beaconConfig.beaconRestApiConfig(),
+                eventChannels,
+                eventAsyncRunner,
+                timeProvider,
+                spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,

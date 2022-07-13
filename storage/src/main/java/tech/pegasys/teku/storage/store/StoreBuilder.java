@@ -26,7 +26,6 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -73,9 +72,7 @@ public class StoreBuilder {
             anchor.getParentRoot(),
             anchor.getState().hashTreeRoot(),
             anchor.getExecutionBlockHash(),
-            Optional.of(
-                new CheckpointEpochs(
-                    anchor.getCheckpoint().getEpoch(), anchor.getCheckpoint().getEpoch()))));
+            Optional.of(spec.calculateBlockCheckpoints(anchor.getState()))));
 
     return new OnDiskStoreData(
         time,

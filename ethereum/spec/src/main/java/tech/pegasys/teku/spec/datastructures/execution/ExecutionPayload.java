@@ -173,6 +173,11 @@ public class ExecutionPayload
     return getField12().get();
   }
 
+  @Override
+  public Bytes32 getPayloadHash() {
+    return hashTreeRoot();
+  }
+
   public SszList<Transaction> getTransactions() {
     return getField13();
   }

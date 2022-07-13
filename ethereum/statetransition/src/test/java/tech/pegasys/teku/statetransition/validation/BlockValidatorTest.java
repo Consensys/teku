@@ -217,9 +217,10 @@ public class BlockValidatorTest {
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
     List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
 
-    StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
-    ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+    ChainUpdater chainUpdater =
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilder, spec);
 
     BlockValidator blockValidator = new BlockValidator(spec, storageSystem.recentChainData());
     chainUpdater.initializeGenesis();
@@ -228,7 +229,7 @@ public class BlockValidatorTest {
 
     ChainBuilder chainBuilderFork = chainBuilder.fork();
     ChainUpdater chainUpdaterFork =
-        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork, spec);
 
     UInt64 startSlotOfFinalizedEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
 

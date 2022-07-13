@@ -16,11 +16,12 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -31,7 +32,7 @@ public interface SchemaCombined extends Schema {
   // Columns
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
 
-  KvStoreColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot();
+  KvStoreColumn<Bytes32, BlockCheckpoints> getColumnHotBlockCheckpointEpochsByRoot();
 
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   KvStoreColumn<Checkpoint, BeaconState> getColumnCheckpointStates();
@@ -54,6 +55,11 @@ public interface SchemaCombined extends Schema {
 
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
 
+  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash();
+
+  KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot();
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 

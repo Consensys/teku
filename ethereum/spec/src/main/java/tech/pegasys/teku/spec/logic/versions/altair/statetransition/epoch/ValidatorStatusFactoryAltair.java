@@ -82,6 +82,10 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
             currentParticipationFlags, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
           status.updateCurrentEpochTargetAttester(true);
         }
+        if (miscHelpersAltair.hasFlag(
+            currentParticipationFlags, ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
+          status.updateCurrentEpochHeadAttester(true);
+        }
       }
     }
   }

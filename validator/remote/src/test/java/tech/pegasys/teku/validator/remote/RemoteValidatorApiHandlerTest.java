@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
+import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 class RemoteValidatorApiHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final HttpUrl endpoint = HttpUrl.get("http://localhost:5051");
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
@@ -96,7 +98,13 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, typeDefClient, asyncRunner);
+    apiHandler =
+        new RemoteValidatorApiHandler(spec, endpoint, apiClient, typeDefClient, asyncRunner);
+  }
+
+  @Test
+  public void getsEndpoint() {
+    assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint.uri());
   }
 
   @Test

@@ -831,7 +831,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void orInterrupt_complexInterruptImmediately() throws Exception {
+  public void orInterrupt_complexInterruptImmediately() {
     InterruptTest test = new InterruptTest();
 
     test.interruptorFut2.complete(0);
@@ -1075,6 +1075,56 @@ public class SafeFutureTest {
     assertThatThrownBy(future::getImmediately)
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Expected result to be available immediately, but was not");
+  }
+
+  @Test
+  public void firstSuccess_completesExceptionallyIfPassedListIsEmpty() {
+    final SafeFuture<String> result = SafeFuture.firstSuccess(List.of());
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessage("The provided List of futures should not be empty");
+  }
+
+  @Test
+  public void firstSuccess_completesWithFirstSuccessfulResponse() {
+    final IllegalStateException exception = new IllegalStateException("oopsy");
+
+    final SafeFuture<String> result =
+        SafeFuture.firstSuccess(
+            List.of(
+                SafeFuture.completedFuture("foo"),
+                SafeFuture.completedFuture("bar"),
+                SafeFuture.failedFuture(exception)));
+
+    assertThat(result).isCompletedWithValue("foo");
+  }
+
+  @Test
+  public void firstSuccess_completesEvenWhenOneOfTheFuturesNeverCompletes() {
+    final SafeFuture<String> result =
+        SafeFuture.firstSuccess(
+            List.of(
+                new SafeFuture<>(),
+                SafeFuture.completedFuture("foo"),
+                SafeFuture.completedFuture("bar")));
+
+    assertThat(result).isCompletedWithValue("foo");
+  }
+
+  @Test
+  public void firstSuccess_completesExceptionallyWhenAllFuturesFail() {
+    final IllegalStateException exception = new IllegalStateException("oopsy");
+
+    final SafeFuture<String> result =
+        SafeFuture.firstSuccess(
+            List.of(
+                SafeFuture.failedFuture(exception),
+                SafeFuture.failedFuture(exception),
+                SafeFuture.failedFuture(exception)));
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(IllegalStateException.class)
+        .hasMessage("oopsy");
   }
 
   private List<Throwable> collectUncaughtExceptions() {

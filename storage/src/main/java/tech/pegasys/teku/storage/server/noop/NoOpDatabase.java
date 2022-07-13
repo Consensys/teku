@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -131,7 +131,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return Stream.empty();
   }
 
@@ -180,6 +180,21 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
+
+  @Override
+  public long countBlindedBlocks() {
+    return 0;
+  }
+
+  @Override
+  public long countExecutionPayloads() {
+    return 0;
+  }
+
+  @Override
+  public long countNonCanonicalSlots() {
+    return 0;
+  }
 
   @Override
   public void close() {}
