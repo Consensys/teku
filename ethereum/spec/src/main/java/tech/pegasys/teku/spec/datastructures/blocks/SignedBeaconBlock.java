@@ -72,6 +72,10 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return backingNode.updated(nodeIndexToBlind, blindedNode);
   }
 
+  public boolean isBlinded() {
+    return getMessage().getBody().isBlinded();
+  }
+
   public SignedBeaconBlock unblind(
       final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
     if (!getMessage().getBody().isBlinded()) {

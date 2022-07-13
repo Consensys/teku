@@ -14,5 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 public enum BlockStorage {
-  FULL_BLOCK
+  FULL_BLOCK,
+  BLINDED_BLOCK
 }

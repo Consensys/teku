@@ -15,24 +15,31 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-/**
- * Provides an abstract "data access object" interface for working with finalized data from the
- * underlying database.
- */
-public interface KvStoreFinalizedDao extends AutoCloseable {
+public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
+
+  @MustBeClosed
+  HotUpdaterUnblinded hotUpdaterUnblinded();
+
+  @MustBeClosed
+  FinalizedUpdaterUnblinded finalizedUpdaterUnblinded();
+
+  @MustBeClosed
+  CombinedUpdaterUnblinded combinedUpdaterUnblinded();
+
+  Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamHotBlocks();
 
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
-
-  FinalizedUpdater finalizedUpdater();
 
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
@@ -42,9 +49,7 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
-
-  Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
+  List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(UInt64 slot);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
@@ -53,31 +58,25 @@ public interface KvStoreFinalizedDao extends AutoCloseable {
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
-  Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
-
-  Optional<UInt64> getOptimisticTransitionBlockSlot();
-
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
-  interface FinalizedUpdater extends AutoCloseable {
+  interface CombinedUpdaterUnblinded
+      extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded, CombinedUpdaterCommon {}
+
+  interface HotUpdaterUnblinded extends HotUpdaterCommon {
+    void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
+
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
+      blocks.values().forEach(this::addHotBlock);
+    }
+
+    void deleteHotBlock(Bytes32 blockRoot);
+  }
+
+  interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
-
-    void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
-
-    void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
-
-    void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
-
-    void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
-
-    void commit();
-
-    void cancel();
-
-    @Override
-    void close();
   }
 }

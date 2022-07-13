@@ -88,6 +88,14 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public long size(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    try (final Stream<?> rawStream = streamRaw(column)) {
+      return rawStream.count();
+    }
+  }
+
+  @Override
   public <K, V> Map<K, V> getAll(KvStoreColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream = stream(column)) {

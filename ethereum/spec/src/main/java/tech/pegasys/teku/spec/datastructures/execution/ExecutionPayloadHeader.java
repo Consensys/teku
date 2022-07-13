@@ -179,4 +179,9 @@ public class ExecutionPayloadHeader
   public Bytes32 getTransactionsRoot() {
     return getField13().get();
   }
+
+  @Override
+  public Bytes32 getPayloadHash() {
+    return hashTreeRoot();
+  }
 }
