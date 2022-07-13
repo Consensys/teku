@@ -47,7 +47,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
@@ -77,10 +77,14 @@ import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.TestDatabaseContext;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -88,7 +92,8 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public abstract class AbstractDatabaseTest {
+@TestDatabaseContext
+public class DatabaseTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
@@ -116,14 +121,21 @@ public abstract class AbstractDatabaseTest {
 
   @BeforeEach
   public void setup() throws IOException {
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
-
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
+  }
+
+  private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
+      throws IOException {
+    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
 
     // Initialize genesis store
     initGenesis();
+  }
+
+  private void initialize(final DatabaseContext context) throws IOException {
+    initialize(context, StateStorageMode.ARCHIVE);
   }
 
   @AfterEach
@@ -137,31 +149,29 @@ public abstract class AbstractDatabaseTest {
     tmpDirectories.clear();
   }
 
-  protected abstract StorageSystem createStorageSystem(
-      final File tempDir,
-      final StateStorageMode storageMode,
-      final StoreConfig storeConfig,
-      final boolean storeNonCanonicalBlocks);
-
   private void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
     setDefaultStorage(storage);
   }
 
-  @Test
-  public void createMemoryStoreFromEmptyDatabase() throws IOException {
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+  @TestTemplate
+  public void createMemoryStoreFromEmptyDatabase(final DatabaseContext context) throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
-  @Test
-  public void shouldRecreateOriginalGenesisStore() {
+  @TestTemplate
+  public void shouldRecreateOriginalGenesisStore(final DatabaseContext context) throws IOException {
+    initialize(context);
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
   }
 
-  @Test
-  public void updateWeakSubjectivityState_setValue() {
+  @TestTemplate
+  public void updateWeakSubjectivityState_setValue(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
 
@@ -172,8 +182,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
   }
 
-  @Test
-  public void updateWeakSubjectivityState_clearValue() {
+  @TestTemplate
+  public void updateWeakSubjectivityState_clearValue(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
     // Set an initial value
@@ -189,8 +201,9 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
   }
 
-  @Test
-  public void shouldGetHotBlockByRoot() {
+  @TestTemplate
+  public void shouldGetHotBlockByRoot(final DatabaseContext context) throws IOException {
+    initialize(context);
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
@@ -208,8 +221,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(transaction.commit()).isCompleted();
   }
 
-  @Test
-  public void shouldPruneHotBlocksAddedOverMultipleSessions() {
+  @TestTemplate
+  public void shouldPruneHotBlocksAddedOverMultipleSessions(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final UInt64 targetSlot = UInt64.valueOf(10);
 
     chainBuilder.generateBlocksUpToSlot(targetSlot.minus(UInt64.ONE));
@@ -264,8 +279,10 @@ public abstract class AbstractDatabaseTest {
     assertRecentDataWasPruned(store, rootsToPrune);
   }
 
-  @Test
-  public void shouldPruneHotBlocksInCurrentTransactionFromChainThatIsInvalided() {
+  @TestTemplate
+  public void shouldPruneHotBlocksInCurrentTransactionFromChainThatIsInvalided(
+      final DatabaseContext context) throws IOException {
+    initialize(context);
     final UInt64 commonAncestorSlot = UInt64.valueOf(5);
 
     chainBuilder.generateBlocksUpToSlot(commonAncestorSlot);
@@ -318,8 +335,9 @@ public abstract class AbstractDatabaseTest {
         .isCompletedWithValue(Optional.of(blockA2.getBlock()));
   }
 
-  @Test
-  public void getFinalizedState() {
+  @TestTemplate
+  public void getFinalizedState(final DatabaseContext context) throws IOException {
+    initialize(context);
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(UInt64.ONE);
     final SignedBlockAndState block2 =
@@ -342,8 +360,9 @@ public abstract class AbstractDatabaseTest {
         .contains(block1.getState());
   }
 
-  @Test
-  public void shouldStoreSingleValueFields() {
+  @TestTemplate
+  public void shouldStoreSingleValueFields(final DatabaseContext context) throws IOException {
+    initialize(context);
     generateCheckpoints();
 
     final List<SignedBlockAndState> allBlocks =
@@ -369,8 +388,9 @@ public abstract class AbstractDatabaseTest {
         .isEqualTo(transaction.getBestJustifiedCheckpoint());
   }
 
-  @Test
-  public void shouldStoreSingleValue_genesisTime() {
+  @TestTemplate
+  public void shouldStoreSingleValue_genesisTime(final DatabaseContext context) throws IOException {
+    initialize(context);
     final UInt64 newGenesisTime = UInt64.valueOf(3);
     // Sanity check
     assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
@@ -383,8 +403,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
-  @Test
-  public void shouldStoreSingleValue_justifiedCheckpoint() {
+  @TestTemplate
+  public void shouldStoreSingleValue_justifiedCheckpoint(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -398,8 +420,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
-  @Test
-  public void shouldStoreSingleValue_finalizedCheckpoint() {
+  @TestTemplate
+  public void shouldStoreSingleValue_finalizedCheckpoint(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -417,8 +441,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
   }
 
-  @Test
-  public void shouldStoreSingleValue_bestJustifiedCheckpoint() {
+  @TestTemplate
+  public void shouldStoreSingleValue_bestJustifiedCheckpoint(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -432,8 +458,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
-  @Test
-  public void shouldStoreSingleValue_singleBlockAndState() {
+  @TestTemplate
+  public void shouldStoreSingleValue_singleBlockAndState(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
     assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
@@ -449,8 +477,10 @@ public abstract class AbstractDatabaseTest {
         .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
 
-  @Test
-  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
+  @TestTemplate
+  public void shouldLoadHotBlocksAndStatesIntoMemoryStore(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
@@ -475,8 +505,10 @@ public abstract class AbstractDatabaseTest {
         .isCompletedWithValue(Optional.of(blockAndState2.getState()));
   }
 
-  @Test
-  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
+  @TestTemplate
+  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -520,8 +552,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(result.getOrderedBlockRoots()).containsExactlyInAnyOrderElementsOf(hotBlockRoots);
   }
 
-  @Test
-  public void shouldRecordAndRetrieveGenesisInformation() {
+  @TestTemplate
+  public void shouldRecordAndRetrieveGenesisInformation(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final MinGenesisTimeBlockEvent event =
         new MinGenesisTimeBlockEvent(
             dataStructureUtil.randomUInt64(),
@@ -533,10 +567,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(fetch).contains(event);
   }
 
-  @Test
-  public void handleFinalizationWhenCacheLimitsExceeded() throws IOException {
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
-    initGenesis();
+  @TestTemplate
+  public void handleFinalizationWhenCacheLimitsExceeded(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
     final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
@@ -575,10 +609,11 @@ public abstract class AbstractDatabaseTest {
     assertFinalizedStatesAvailable(expectedFinalizedStates);
   }
 
-  @Test
-  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_singleTransaction()
-      throws IOException {
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+  @TestTemplate
+  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_singleTransaction(
+      final DatabaseContext context) throws IOException {
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -601,9 +636,11 @@ public abstract class AbstractDatabaseTest {
         .isEqualTo(transitionPayload);
   }
 
-  @Test
-  public void shouldNotRecordTransitionExecutionPayloadWhenNotOptimistic() throws IOException {
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+  @TestTemplate
+  public void shouldNotRecordTransitionExecutionPayloadWhenNotOptimistic(
+      final DatabaseContext context) throws IOException {
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -630,10 +667,11 @@ public abstract class AbstractDatabaseTest {
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload()).isEmpty();
   }
 
-  @Test
-  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_multiTransaction()
-      throws IOException {
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+  @TestTemplate
+  public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_multiTransaction(
+      final DatabaseContext context) throws IOException {
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -659,9 +697,11 @@ public abstract class AbstractDatabaseTest {
         .isEqualTo(transitionPayload);
   }
 
-  @Test
-  public void shouldPersistOptimisticTransitionExecutionPayload() throws IOException {
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+  @TestTemplate
+  public void shouldPersistOptimisticTransitionExecutionPayload(final DatabaseContext context)
+      throws IOException {
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -686,10 +726,12 @@ public abstract class AbstractDatabaseTest {
         .isEqualTo(transitionPayload);
   }
 
-  @Test
-  public void shouldClearOptimisticTransitionExecutionPayload() throws IOException {
+  @TestTemplate
+  public void shouldClearOptimisticTransitionExecutionPayload(final DatabaseContext context)
+      throws IOException {
     // Record optimistic transition execution payload.
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -717,10 +759,11 @@ public abstract class AbstractDatabaseTest {
     assertThat(store.getFinalizedOptimisticTransitionPayload()).isEmpty();
   }
 
-  @Test
-  public void shouldNotRemoveOptimisticFinalizedExceptionPayloadWhenFinalizedNextUpdated()
-      throws IOException {
-    final SignedBlockAndState transitionBlock = generateChainWithFinalizableTransitionBlock();
+  @TestTemplate
+  public void shouldNotRemoveOptimisticFinalizedExceptionPayloadWhenFinalizedNextUpdated(
+      final DatabaseContext context) throws IOException {
+    final SignedBlockAndState transitionBlock =
+        generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
         chainBuilder
             .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
@@ -760,9 +803,9 @@ public abstract class AbstractDatabaseTest {
    *
    * @return the merge transition block
    */
-  private SignedBlockAndState generateChainWithFinalizableTransitionBlock() throws IOException {
-    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
-    initGenesis();
+  private SignedBlockAndState generateChainWithFinalizableTransitionBlock(
+      final DatabaseContext context) throws IOException {
+    initialize(context, StateStorageMode.PRUNE);
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
     final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
@@ -780,23 +823,28 @@ public abstract class AbstractDatabaseTest {
     return transitionBlock;
   }
 
-  @Test
-  public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws IOException {
-    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
+  @TestTemplate
+  public void shouldRecordFinalizedBlocksAndStates_pruneMode(final DatabaseContext context)
+      throws IOException {
+    testShouldRecordFinalizedBlocksAndStates(context, StateStorageMode.PRUNE, false);
   }
 
-  @Test
-  public void shouldRecordFinalizedBlocksAndStates_archiveMode() throws IOException {
-    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, false);
+  @TestTemplate
+  public void shouldRecordFinalizedBlocksAndStates_archiveMode(final DatabaseContext context)
+      throws IOException {
+    testShouldRecordFinalizedBlocksAndStates(context, StateStorageMode.ARCHIVE, false);
   }
 
-  @Test
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() throws IOException {
-    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
+  @TestTemplate
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate(final DatabaseContext context)
+      throws IOException {
+    testShouldRecordFinalizedBlocksAndStates(context, StateStorageMode.ARCHIVE, true);
   }
 
-  @Test
-  public void slotAndBlock_shouldStoreAndRetrieve() {
+  @TestTemplate
+  public void slotAndBlock_shouldStoreAndRetrieve(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
@@ -810,8 +858,11 @@ public abstract class AbstractDatabaseTest {
     assertThat(fromStorage.get()).isEqualTo(slotAndBlockRoot);
   }
 
-  @Test
-  public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks() throws IOException {
+  @TestTemplate
+  public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks(
+      final DatabaseContext context) throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -819,7 +870,6 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -830,8 +880,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 
-  @Test
-  public void getEarliestAvailableBlockSlot_noBlocksMissing() {
+  @TestTemplate
+  public void getEarliestAvailableBlockSlot_noBlocksMissing(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     // Add some blocks
     addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
     // And finalize them
@@ -840,8 +892,10 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
-  @Test
-  public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
+  @TestTemplate
+  public void slotAndBlock_shouldGetStateRootsBeforeSlot(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
     final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
     final Bytes32 oneStateRoot = insertRandomSlotAndBlock(1L, dataStructureUtil);
     insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -851,8 +905,9 @@ public abstract class AbstractDatabaseTest {
         .containsExactlyInAnyOrder(zeroStateRoot, oneStateRoot);
   }
 
-  @Test
-  public void slotAndBlock_shouldPurgeToSlot() {
+  @TestTemplate
+  public void slotAndBlock_shouldPurgeToSlot(final DatabaseContext context) throws IOException {
+    initialize(context);
     insertRandomSlotAndBlock(0L, dataStructureUtil);
     insertRandomSlotAndBlock(1L, dataStructureUtil);
     final Bytes32 twoStateRoot = insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -863,19 +918,21 @@ public abstract class AbstractDatabaseTest {
         .containsExactlyInAnyOrder(twoStateRoot, threeStateRoot);
   }
 
-  @Test
-  public void startupFromNonGenesisState_prune() throws IOException {
-    testStartupFromNonGenesisState(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void startupFromNonGenesisState_prune(final DatabaseContext context) throws IOException {
+    testStartupFromNonGenesisState(context, StateStorageMode.PRUNE);
   }
 
-  @Test
-  public void startupFromNonGenesisState_archive() throws IOException {
-    testStartupFromNonGenesisState(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void startupFromNonGenesisState_archive(final DatabaseContext context) throws IOException {
+    testStartupFromNonGenesisState(context, StateStorageMode.ARCHIVE);
   }
 
-  @Test
-  public void orphanedBlockStorageTest_withCanonicalBlocks() throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
+  @TestTemplate
+  public void orphanedBlockStorageTest_withCanonicalBlocks(final DatabaseContext context)
+      throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksAvailable(
         forkChainResult
@@ -885,9 +942,10 @@ public abstract class AbstractDatabaseTest {
             .collect(Collectors.toList()));
   }
 
-  @Test
-  public void orphanedBlockStorageTest_multiple() throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), true);
+  @TestTemplate
+  public void orphanedBlockStorageTest_multiple(final DatabaseContext context) throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
     final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
@@ -906,7 +964,6 @@ public abstract class AbstractDatabaseTest {
     forkChain.generateBlockAtSlot(firstHotBlockSlot);
     secondFork.generateBlockAtSlot(6);
     secondFork.generateBlockAtSlot(firstHotBlockSlot);
-    // Setup database
 
     initGenesis();
 
@@ -924,9 +981,11 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6)).size()).isEqualTo(2);
   }
 
-  @Test
-  public void orphanedBlockStorageTest_noCanonicalBlocks() throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
+  @TestTemplate
+  public void orphanedBlockStorageTest_noCanonicalBlocks(final DatabaseContext context)
+      throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksUnavailable(
         forkChainResult
@@ -936,22 +995,21 @@ public abstract class AbstractDatabaseTest {
             .collect(Collectors.toList()));
   }
 
-  @Test
-  public void shouldRecreateGenesisStateOnRestart_archiveMode() throws Exception {
-    testShouldRecreateGenesisStateOnRestart(StateStorageMode.ARCHIVE);
-  }
-
-  @Test
-  public void shouldRecreateGenesisStateOnRestart_pruneMode() throws Exception {
-    testShouldRecreateGenesisStateOnRestart(StateStorageMode.PRUNE);
-  }
-
-  public void testShouldRecreateGenesisStateOnRestart(final StateStorageMode storageMode)
+  @TestTemplate
+  public void shouldRecreateGenesisStateOnRestart_archiveMode(final DatabaseContext context)
       throws IOException {
-    // Set up database with genesis state
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
-    initGenesis();
+    initialize(context, StateStorageMode.ARCHIVE);
+    testShouldRecreateGenesisStateOnRestart();
+  }
 
+  @TestTemplate
+  public void shouldRecreateGenesisStateOnRestart_pruneMode(final DatabaseContext context)
+      throws IOException {
+    initialize(context, StateStorageMode.PRUNE);
+    testShouldRecreateGenesisStateOnRestart();
+  }
+
+  public void testShouldRecreateGenesisStateOnRestart() {
     // Shutdown and restart
     restartStorage();
 
@@ -960,23 +1018,21 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
-  @Test
-  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_archiveMode()
-      throws Exception {
-    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_archiveMode(
+      final DatabaseContext context) throws IOException {
+    initialize(context, StateStorageMode.ARCHIVE);
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock();
   }
 
-  @Test
-  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_pruneMode()
-      throws Exception {
-    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_pruneMode(
+      final DatabaseContext context) throws IOException {
+    initialize(context, StateStorageMode.PRUNE);
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock();
   }
 
-  public void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
-      final StateStorageMode storageMode) throws Exception {
-    // Set up database with genesis state
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
-    initGenesis();
+  private void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock() {
 
     // Create finalized block at slot prior to epoch boundary
     final UInt64 finalizedEpoch = UInt64.valueOf(2);
@@ -1004,18 +1060,20 @@ public abstract class AbstractDatabaseTest {
     assertStoresMatch(memoryStore, store);
   }
 
-  @Test
-  public void shouldPersistOnDisk_pruneMode() throws Exception {
-    testShouldPersistOnDisk(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void shouldPersistOnDisk_pruneMode(final DatabaseContext context) throws Exception {
+    testShouldPersistOnDisk(context, StateStorageMode.PRUNE);
   }
 
-  @Test
-  public void shouldPersistOnDisk_archiveMode() throws Exception {
-    testShouldPersistOnDisk(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void shouldPersistOnDisk_archiveMode(final DatabaseContext context) throws Exception {
+    testShouldPersistOnDisk(context, StateStorageMode.ARCHIVE);
   }
 
-  @Test
-  public void shouldRecreateAnchorStoreOnRestart() throws IOException {
+  @TestTemplate
+  public void shouldRecreateAnchorStoreOnRestart(final DatabaseContext context) throws Exception {
+    createStorageSystemInternal(
+        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -1023,7 +1081,6 @@ public abstract class AbstractDatabaseTest {
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
-    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Shutdown and restart
@@ -1035,15 +1092,19 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsModified_setGenesis(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     database.close();
     assertThatThrownBy(() -> database.storeInitialAnchor(genesisAnchor))
         .isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsModified_update() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsModified_update(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     database.close();
 
@@ -1058,8 +1119,9 @@ public abstract class AbstractDatabaseTest {
     assertThatThrownBy(result::get).hasCauseInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void createMemoryStore_priorToGenesisTime() {
+  @TestTemplate
+  public void createMemoryStore_priorToGenesisTime(final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<OnDiskStoreData> maybeData =
@@ -1088,16 +1150,20 @@ public abstract class AbstractDatabaseTest {
     assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     assertThatThrownBy(database::createMemoryStore).isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot(
+      final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     database.close();
 
@@ -1105,8 +1171,10 @@ public abstract class AbstractDatabaseTest {
         .isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     database.close();
 
@@ -1114,8 +1182,10 @@ public abstract class AbstractDatabaseTest {
         .isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     database.close();
 
@@ -1123,9 +1193,10 @@ public abstract class AbstractDatabaseTest {
         .isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown()
-      throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown(
+      final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
     try (final Stream<SignedBeaconBlock> stream =
         database.streamFinalizedBlocks(UInt64.ZERO, UInt64.valueOf(1000L))) {
@@ -1134,9 +1205,10 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
-      throws Exception {
+  @TestTemplate
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao(
+      final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
     try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
@@ -1152,9 +1224,10 @@ public abstract class AbstractDatabaseTest {
     return ((KvStoreDatabase) database).dao.hotUpdater();
   }
 
-  @Test
-  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
-      throws Exception {
+  @TestTemplate
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao(
+      final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
     try (final KvStoreFinalizedDao.FinalizedUpdater updater = finalizedUpdater()) {
@@ -1169,9 +1242,10 @@ public abstract class AbstractDatabaseTest {
     return ((KvStoreDatabase) database).dao.finalizedUpdater();
   }
 
-  @Test
-  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
-      throws Exception {
+  @TestTemplate
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao(
+      final DatabaseContext context) throws Exception {
+    initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
     try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
@@ -1183,8 +1257,10 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
+  @TestTemplate
+  public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
     // Store genesis
     database.storeInitialAnchor(genesisAnchor);
     // Add a new finalized block to supersede genesis
@@ -1204,11 +1280,13 @@ public abstract class AbstractDatabaseTest {
         .isInstanceOf(ShuttingDownException.class);
   }
 
-  @Test
-  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
-      throws Exception {
+  @TestTemplate
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread(
+      final DatabaseContext context) throws Exception {
+
     for (int i = 0; i < 20; i++) {
-      createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+      createStorageSystemInternal(
+          context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
       try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
         final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
@@ -1236,33 +1314,27 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive() throws IOException {
-    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
+      final DatabaseContext context) throws Exception {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(context, StateStorageMode.ARCHIVE);
   }
 
-  @Test
-  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune() throws IOException {
-    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
+      final DatabaseContext context) throws Exception {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(context, StateStorageMode.PRUNE);
   }
 
-  @Test
-  public void shouldPersistHotStates_everyEpoch() throws IOException {
+  @TestTemplate
+  public void shouldPersistHotStates_everyEpoch(final DatabaseContext context) throws Exception {
     final int storageFrequency = 1;
-    StoreConfig storeConfig =
-        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
-    initGenesis();
-
     final UInt64 latestEpoch = UInt64.valueOf(3);
     final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
-    chainBuilder.generateBlocksUpToSlot(targetSlot);
-
-    // Add blocks
-    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+    addBlocksWithHotStatePersistence(context, storageFrequency, targetSlot.intValue());
 
     // We should only be able to pull states at epoch boundaries
-    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(latestEpoch.intValue());
+    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(3);
     for (int i = 0; i <= targetSlot.intValue(); i++) {
       final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
       final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
@@ -1275,20 +1347,12 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldPersistHotStates_never() throws IOException {
+  @TestTemplate
+  public void shouldPersistHotStates_never(final DatabaseContext context) throws Exception {
     final int storageFrequency = 0;
-    StoreConfig storeConfig =
-        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
-    initGenesis();
-
     final UInt64 latestEpoch = UInt64.valueOf(3);
     final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
-    chainBuilder.generateBlocksUpToSlot(targetSlot);
-
-    // Add blocks
-    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+    addBlocksWithHotStatePersistence(context, storageFrequency, targetSlot.intValue());
 
     for (int i = 0; i <= targetSlot.intValue(); i++) {
       final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
@@ -1297,20 +1361,28 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldPersistHotStates_everyThirdEpoch() throws IOException {
-    final int storageFrequency = 3;
-    StoreConfig storeConfig =
-        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
+  private void addBlocksWithHotStatePersistence(
+      final DatabaseContext context, final int statePersistenceInEpochs, final int targetSlot)
+      throws IOException {
+    final StoreConfig storeConfig =
+        StoreConfig.builder()
+            .hotStatePersistenceFrequencyInEpochs(statePersistenceInEpochs)
+            .build();
+    createStorageSystemInternal(context, StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
-
-    final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
-    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
     // Add blocks
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+  }
+
+  @TestTemplate
+  public void shouldPersistHotStates_everyThirdEpoch(final DatabaseContext context)
+      throws IOException {
+    final int storageFrequency = 3;
+    final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
+    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
+    addBlocksWithHotStatePersistence(context, storageFrequency, targetSlot.intValue());
 
     // We should only be able to pull states at epoch boundaries
     final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(latestEpoch.intValue());
@@ -1329,20 +1401,12 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldClearStaleHotStates() throws IOException {
+  @TestTemplate
+  public void shouldClearStaleHotStates(final DatabaseContext context) throws IOException {
     final int storageFrequency = 1;
-    StoreConfig storeConfig =
-        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorageSystemInternal(StateStorageMode.ARCHIVE, storeConfig, false);
-    initGenesis();
-
     final UInt64 latestEpoch = UInt64.valueOf(3);
     final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
-    chainBuilder.generateBlocksUpToSlot(targetSlot);
-
-    // Add blocks
-    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+    addBlocksWithHotStatePersistence(context, storageFrequency, targetSlot.intValue());
     justifyAndFinalizeEpoch(latestEpoch, chainBuilder.getLatestBlockAndState());
 
     // Hot states should be cleared out
@@ -1353,18 +1417,20 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive() throws IOException {
-    testShouldHandleRestartWithUnrecoverableForkBlocks(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(final DatabaseContext context)
+      throws IOException {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(context, StateStorageMode.ARCHIVE);
   }
 
-  @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune() throws IOException {
-    testShouldHandleRestartWithUnrecoverableForkBlocks(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(final DatabaseContext context)
+      throws IOException {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(context, StateStorageMode.PRUNE);
   }
 
   private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
-      final StateStorageMode storageMode) throws IOException {
+      final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
@@ -1379,7 +1445,7 @@ public abstract class AbstractDatabaseTest {
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
     // Setup database
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
+    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
@@ -1417,8 +1483,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
-      final StateStorageMode storageMode) throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
+      final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
+    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(true);
 
     // Fork states should be unavailable
@@ -1448,8 +1514,9 @@ public abstract class AbstractDatabaseTest {
     return epochBoundarySlots;
   }
 
-  private void testShouldPersistOnDisk(final StateStorageMode storageMode) throws Exception {
-    testShouldRecordFinalizedBlocksAndStates(storageMode, false);
+  private void testShouldPersistOnDisk(
+      final DatabaseContext context, final StateStorageMode storageMode) throws Exception {
+    testShouldRecordFinalizedBlocksAndStates(context, storageMode, false);
   }
 
   private CreateForkChainResult createForkChain(final boolean restartStorage) {
@@ -1487,9 +1554,9 @@ public abstract class AbstractDatabaseTest {
     return new CreateForkChainResult(forkChain, firstHotBlockSlot);
   }
 
-  public void testStartupFromNonGenesisState(final StateStorageMode storageMode)
-      throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
+  public void testStartupFromNonGenesisState(
+      final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
+    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1501,7 +1568,6 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1515,19 +1581,22 @@ public abstract class AbstractDatabaseTest {
     assertThat(recentChainData.getFinalizedCheckpoint()).contains(anchor.getCheckpoint());
   }
 
-  @Test
-  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_prune() throws IOException {
-    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(StateStorageMode.PRUNE);
+  @TestTemplate
+  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_prune(
+      final DatabaseContext context) throws IOException {
+    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(context, StateStorageMode.PRUNE);
   }
 
-  @Test
-  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_archive() throws IOException {
-    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(StateStorageMode.ARCHIVE);
+  @TestTemplate
+  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_archive(
+      final DatabaseContext context) throws IOException {
+    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(context, StateStorageMode.ARCHIVE);
   }
 
-  @Test
-  void shouldStoreAndRetrieveVotes() throws IOException {
-    createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+  @TestTemplate
+  void shouldStoreAndRetrieveVotes(final DatabaseContext context) throws IOException {
+    createStorageSystemInternal(
+        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
 
     final Map<UInt64, VoteTracker> voteBatch1 =
@@ -1551,8 +1620,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
-      final StateStorageMode storageMode) throws IOException {
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
+      final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
+    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1564,7 +1633,6 @@ public abstract class AbstractDatabaseTest {
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
     initFromAnchor(anchor);
 
     // Add some blocks
@@ -1593,7 +1661,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   private void testShouldRecordFinalizedBlocksAndStates(
-      final StateStorageMode storageMode, final boolean batchUpdate) throws IOException {
+      final DatabaseContext context, final StateStorageMode storageMode, final boolean batchUpdate)
+      throws IOException {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
@@ -1613,8 +1682,7 @@ public abstract class AbstractDatabaseTest {
     forkChain.generateBlockAtSlot(hotSlot);
 
     // Setup database
-    createStorageSystemInternal(storageMode, StoreConfig.createDefault(), false);
-    initGenesis();
+    initialize(context, storageMode);
 
     final Set<SignedBlockAndState> allBlocksAndStates =
         Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
@@ -1921,16 +1989,36 @@ public abstract class AbstractDatabaseTest {
   }
 
   private void createStorageSystemInternal(
+      final DatabaseContext context,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks)
       throws IOException {
-    final Path tmpDir = Files.createTempDirectory("storageTest");
-    tmpDirectories.add(tmpDir.toFile());
     this.storageMode = storageMode;
-    final StorageSystem storage =
-        createStorageSystem(tmpDir.toFile(), storageMode, storeConfig, storeNonCanonicalBlocks);
-    setDefaultStorage(storage);
+    if (context.isInMemoryStorage()) {
+      setDefaultStorage(
+          InMemoryStorageSystemBuilder.create()
+              .specProvider(spec)
+              .version(context.getDatabaseVersion())
+              .storageMode(storageMode)
+              .stateStorageFrequency(1L)
+              .storeConfig(storeConfig)
+              .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+              .build());
+    } else {
+      final Path tmpDir = Files.createTempDirectory("storageTest");
+      tmpDirectories.add(tmpDir.toFile());
+      setDefaultStorage(
+          FileBackedStorageSystemBuilder.create()
+              .specProvider(spec)
+              .dataDir(tmpDir)
+              .version(context.getDatabaseVersion())
+              .storageMode(storageMode)
+              .stateStorageFrequency(1L)
+              .storeConfig(storeConfig)
+              .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+              .build());
+    }
   }
 
   private void setDefaultStorage(final StorageSystem storageSystem) {
