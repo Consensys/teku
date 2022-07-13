@@ -18,7 +18,6 @@ import static java.util.Collections.emptyMap;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.EventSource;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
@@ -42,15 +41,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSource eventSource;
 
-  @SuppressWarnings("unused")
-  private final HttpUrl primaryEndpoint;
-
-  @SuppressWarnings("unused")
-  private final List<HttpUrl> failoverEndpoints;
-
   public EventSourceBeaconChainEventAdapter(
       final HttpUrl primaryEndpoint,
-      final List<HttpUrl> failoverEndpoints,
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
@@ -66,8 +58,6 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
             .build();
-    this.primaryEndpoint = primaryEndpoint;
-    this.failoverEndpoints = failoverEndpoints;
   }
 
   private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {

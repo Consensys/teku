@@ -109,7 +109,6 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
             primaryEndpoint,
-            failoverEndpoints,
             okHttpClient,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApiWithMetrics),
