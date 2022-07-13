@@ -15,8 +15,10 @@ package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyMap;
 
+import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.EventSource;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
@@ -32,31 +34,40 @@ import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final CountDownLatch runningLatch = new CountDownLatch(1);
+
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSource eventSource;
 
+  @SuppressWarnings("unused")
+  private final HttpUrl primaryEndpoint;
+
+  @SuppressWarnings("unused")
+  private final List<HttpUrl> failoverEndpoints;
+
   public EventSourceBeaconChainEventAdapter(
-      final HttpUrl baseEndpoint,
+      final HttpUrl primaryEndpoint,
+      final List<HttpUrl> failoverEndpoints,
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
-    final HttpUrl eventSourceUrl =
-        baseEndpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
+    final HttpUrl eventSourceUrl = createHeadEventSourceUrl(primaryEndpoint);
+    final EventSourceHandler eventSourceHandler =
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
     this.eventSource =
-        new EventSource.Builder(
-                new EventSourceHandler(
-                    validatorTimingChannel, metricsSystem, generateEarlyAttestations),
-                eventSourceUrl)
+        new EventSource.Builder(eventSourceHandler, eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(12))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
             .build();
+    this.primaryEndpoint = primaryEndpoint;
+    this.failoverEndpoints = failoverEndpoints;
   }
 
   private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {
@@ -86,6 +97,13 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   public SafeFuture<Void> stop() {
     eventSource.close();
     return timeBasedEventAdapter.stop().thenRun(runningLatch::countDown);
+  }
+
+  private HttpUrl createHeadEventSourceUrl(final HttpUrl endpoint) {
+    final HttpUrl eventSourceUrl =
+        endpoint.resolve(
+            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
+    return Preconditions.checkNotNull(eventSourceUrl);
   }
 
   private void waitForExit() {
