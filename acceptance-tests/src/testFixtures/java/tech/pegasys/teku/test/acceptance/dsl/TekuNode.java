@@ -18,6 +18,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
@@ -47,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -283,8 +285,16 @@ public class TekuNode extends Node {
   }
 
   public void waitForNewBlock() {
-    final Bytes32 startingBlockRoot = waitForBeaconHead();
-    waitFor(() -> assertThat(fetchBeaconHead().get()).isNotEqualTo(startingBlockRoot));
+    final Bytes32 startingBlockRoot = waitForBeaconHead(null);
+    waitFor(() -> assertThat(fetchBeaconHeadRoot().get()).isNotEqualTo(startingBlockRoot));
+  }
+
+  public void waitForOptimisticBlock() {
+    waitForBeaconHead(true);
+  }
+
+  public void waitForNonOptimisticBlock() {
+    waitForBeaconHead(false);
   }
 
   public void waitForNewFinalization() {
@@ -360,9 +370,9 @@ public class TekuNode extends Node {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
         () -> {
-          final Optional<Bytes32> beaconHead = fetchBeaconHead();
+          final Optional<Bytes32> beaconHead = fetchBeaconHeadRoot();
           assertThat(beaconHead).isPresent();
-          final Optional<Bytes32> targetBeaconHead = targetNode.fetchBeaconHead();
+          final Optional<Bytes32> targetBeaconHead = targetNode.fetchBeaconHeadRoot();
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
@@ -370,20 +380,23 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  private Bytes32 waitForBeaconHead() {
+  private Bytes32 waitForBeaconHead(final Boolean optimistic) {
     LOG.debug("Waiting for beacon head");
     final AtomicReference<Bytes32> beaconHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<Bytes32> fetchedHead = fetchBeaconHead();
-          assertThat(fetchedHead).isPresent();
-          beaconHead.set(fetchedHead.get());
+          final Optional<Pair<Bytes32, Boolean>> beaconHeadRootData = fetchBeaconHeadRootData();
+          assertThat(beaconHeadRootData).isPresent();
+          if (optimistic != null) {
+            assertEquals(optimistic, beaconHeadRootData.get().getRight());
+          }
+          beaconHead.set(beaconHeadRootData.get().getLeft());
         });
     LOG.debug("Retrieved beacon head: {}", beaconHead.get());
     return beaconHead.get();
   }
 
-  private Optional<Bytes32> fetchBeaconHead() throws IOException {
+  private Optional<Pair<Bytes32, Boolean>> fetchBeaconHeadRootData() throws IOException {
     final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head/root");
     if (result.isEmpty()) {
       return Optional.empty();
@@ -392,7 +405,11 @@ public class TekuNode extends Node {
     final GetBlockRootResponse response =
         jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
 
-    return Optional.of(response.data.root);
+    return Optional.of(Pair.of(response.data.root, response.execution_optimistic));
+  }
+
+  private Optional<Bytes32> fetchBeaconHeadRoot() throws IOException {
+    return fetchBeaconHeadRootData().map(Pair::getLeft);
   }
 
   private FinalityCheckpointsResponse waitForChainHead() {
