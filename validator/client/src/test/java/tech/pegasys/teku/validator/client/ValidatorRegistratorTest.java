@@ -157,8 +157,8 @@ class ValidatorRegistratorTest {
   @TestTemplate
   void registersValidators_shouldRegisterWithDistributedValidatorTimestamp() {
     when(validatorConfig.getValidatorsRegistrationDistributedValidatorTimestamp())
-        .thenReturn(Optional.of(120));
-    setActiveValidators(validator1, validator2, validator3);
+        .thenReturn(Optional.of(140));
+    setActiveValidators(validator1);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
@@ -166,12 +166,9 @@ class ValidatorRegistratorTest {
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     registrationCalls.forEach(
-        registrationCall ->
-            verifyRegistrations(registrationCall, List.of(validator1, validator2, validator3)));
+        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
 
-    // signer will be called in total 3 times, since from the 2nd run the registrations will
-    // be cached
-    verify(signer, times(3)).signValidatorRegistration(any());
+    verify(signer, times(1)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -385,7 +382,7 @@ class ValidatorRegistratorTest {
         validatorConfig
             .getValidatorsRegistrationDistributedValidatorTimestamp()
             .map(UInt64::valueOf)
-            .orElse(UInt64.valueOf(12));
+            .orElse(stubTimeProvider.getTimeInSeconds());
 
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())
