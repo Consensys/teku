@@ -23,3 +23,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Fix not rendering emoticons correctly in graffiti when running in a Docker container
  - Fix resource leak from closed SSE connections
+ - Fix `latestValidHash`with invalid Execution Payload in response from execution engine didn't trigger appropriate ForkChoice changes 

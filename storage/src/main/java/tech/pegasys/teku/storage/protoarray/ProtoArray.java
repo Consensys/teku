@@ -257,7 +257,40 @@ public class ProtoArray {
     }
   }
 
+  /**
+   * Marks blockRoot node and all found ancestors up to a node containing block with
+   * `latestValidHash` (exclusive) execution block as INVALID. If node with `latestValidHash` is
+   * found it's marked as VALID along with its ancestors
+   *
+   * @param blockRoot Transition block root
+   * @param latestValidHash Latest valid hash of execution block
+   */
   public void markNodeInvalid(final Bytes32 blockRoot, final Optional<Bytes32> latestValidHash) {
+    markNodeInvalid(blockRoot, latestValidHash, true);
+  }
+
+  /**
+   * Tries to find an INVALID chain starting from `blockRoot` up to a node containing block with
+   * `latestValidHash` (exclusive), if such chain segment is found it's marked as INVALID, while
+   * node containing `latestValidHash` and its ancestors are marked as VALID. If such chain segment
+   * is not found, no changes are applied.
+   *
+   * @param blockRoot Parent of the node with INVALID execution block
+   * @param latestValidHash Latest valid hash of execution block
+   */
+  public void markParentChainInvalid(
+      final Bytes32 blockRoot, final Optional<Bytes32> latestValidHash) {
+    markNodeInvalid(blockRoot, latestValidHash, false);
+  }
+
+  private void markNodeInvalid(
+      final Bytes32 blockRoot,
+      final Optional<Bytes32> latestValidHash,
+      final boolean verifiedInvalidTransition) {
+    if (!verifiedInvalidTransition && latestValidHash.isEmpty()) {
+      // Couldn't find invalid chain segment with lack of data
+      return;
+    }
     final Optional<Integer> maybeIndex = indices.get(blockRoot);
     if (maybeIndex.isEmpty()) {
       LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
@@ -268,6 +301,17 @@ public class ProtoArray {
     if (latestValidHash.isPresent()) {
       final Optional<Integer> maybeFirstInvalidNodeIndex =
           findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash.get());
+      if (!verifiedInvalidTransition) {
+        if (nodeHasExecutionHash(maybeIndex.get(), latestValidHash.get())) {
+          // Nothing to do: head blockRoot contains payload with latestValidHash
+          return;
+        }
+        if (maybeFirstInvalidNodeIndex.isEmpty()) {
+          // Nothing to do: latestValidHash was not found, no proof of invalid transition
+          return;
+        }
+      }
+
       index = maybeFirstInvalidNodeIndex.orElse(maybeIndex.get());
       node = getNodeByIndex(index);
       // We found the latestValidHash so mark it as valid
@@ -284,6 +328,10 @@ public class ProtoArray {
     markDescendantsAsInvalid(index);
     // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
     applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+  }
+
+  private boolean nodeHasExecutionHash(final int nodeIndex, final Bytes32 executionHash) {
+    return getNodeByIndex(nodeIndex).getExecutionBlockHash().equals(executionHash);
   }
 
   private Optional<Integer> findFirstInvalidNodeIndex(
