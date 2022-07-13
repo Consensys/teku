@@ -1100,6 +1100,18 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void firstSuccess_completesEvenWhenOneOfTheFuturesNeverCompletes() {
+    final SafeFuture<String> result =
+        SafeFuture.firstSuccess(
+            List.of(
+                new SafeFuture<>(),
+                SafeFuture.completedFuture("foo"),
+                SafeFuture.completedFuture("bar")));
+
+    assertThat(result).isCompletedWithValue("foo");
+  }
+
+  @Test
   public void firstSuccess_completesExceptionallyWhenAllFuturesFail() {
     final IllegalStateException exception = new IllegalStateException("oopsy");
 

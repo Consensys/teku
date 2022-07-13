@@ -28,13 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
@@ -229,24 +227,14 @@ class FailoverValidatorApiHandlerTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRelayRequests")
-  <T> void requestFailsOnPrimaryNodeAndOneFailoverIsVerySlow(
+  <T> void requestFailsOnPrimaryNodeAndOneFailoverDoesNotResponse(
       final ValidatorApiChannelRequest<T> request,
       final Consumer<ValidatorApiChannel> verifyCallIsMade,
       final T response) {
 
     setupFailures(request, primaryApiChannel);
-    // one failover is very slow
-    SafeFuture<T> longRunningFuture =
-        SafeFuture.supplyAsync(
-            () -> {
-              try {
-                TimeUnit.MINUTES.sleep(1);
-              } catch (InterruptedException ex) {
-                Assertions.fail(ex);
-              }
-              return response;
-            });
-    when(request.run(failoverApiChannel1)).thenReturn(longRunningFuture);
+    SafeFuture<T> neverCompletedFuture = new SafeFuture<>();
+    when(request.run(failoverApiChannel1)).thenReturn(neverCompletedFuture);
     setupSuccesses(request, response, failoverApiChannel2);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
@@ -258,9 +246,6 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel2);
 
     verifyNoInteractions(validatorLogger);
-
-    // cleanup
-    longRunningFuture.cancel(true);
   }
 
   @ParameterizedTest(name = "{0}")
