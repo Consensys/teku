@@ -73,6 +73,8 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
   private final int validatorsRegistrationSendingBatchSize;
+  private final int validatorsRegistrationDistributedValidatorTimestamp;
+
   private final int executorMaxQueueSize;
 
   private ValidatorConfig(
@@ -99,6 +101,7 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final UInt64 validatorsRegistrationDefaultGasLimit,
       final int validatorsRegistrationSendingBatchSize,
+      final int validatorsRegistrationDistributedValidatorTimestamp,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -126,6 +129,7 @@ public class ValidatorConfig {
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
     this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
+    this.validatorsRegistrationDistributedValidatorTimestamp = validatorsRegistrationDistributedValidatorTimestamp;
     this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
@@ -204,6 +208,10 @@ public class ValidatorConfig {
     return validatorsRegistrationSendingBatchSize;
   }
 
+  public int getValidatorsRegistrationDistributedValidatorTimestamp() {
+    return validatorsRegistrationDistributedValidatorTimestamp;
+  }
+
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
   }
@@ -264,6 +272,7 @@ public class ValidatorConfig {
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
     private int validatorsRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
+    private int validatorsRegistrationDistributedValidatorTimestamp = DEFAULT_VALIDATOR_REGISTRATION_DISTRIBUTED_VALIDATOR_TIMESTAMP;
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -414,6 +423,12 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorsRegistrationDistributedValidatorTimestamp(
+        final int validatorsRegistrationDistributedValidatorTimestamp) {
+      this.validatorsRegistrationDistributedValidatorTimestamp = validatorsRegistrationDistributedValidatorTimestamp;
+      return this;
+    }
+
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
       return this;
@@ -450,6 +465,7 @@ public class ValidatorConfig {
           validatorClientSszBlocksEnabled,
           validatorsRegistrationDefaultGasLimit,
           validatorsRegistrationSendingBatchSize,
+          validatorsRegistrationDistributedValidatorTimestamp,
           executorMaxQueueSize);
     }
 

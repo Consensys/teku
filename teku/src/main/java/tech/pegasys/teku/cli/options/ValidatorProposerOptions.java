@@ -83,6 +83,16 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
+      names = {"--Xvalidators-registration-distributed-validator-timestamp"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Hardcoded timestamp to enable distributed validators to come to consensus to register to builder infrastructure.",
+      arity = "1",
+      hidden = true)
+  private int validatorsRegistrationDistributedValidatorTimestamp =
+      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DISTRIBUTED_VALIDATOR_TIMESTAMP; 
+
+  @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -102,6 +112,7 @@ public class ValidatorProposerOptions {
                 .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
-                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize));
+                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize))
+                .validatorsRegistrationDistributedValidatorTimestamp(validatorsRegistrationDistributedValidatorTimestamp);
   }
 }
