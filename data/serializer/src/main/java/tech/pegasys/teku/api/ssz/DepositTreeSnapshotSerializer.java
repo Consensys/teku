@@ -57,7 +57,8 @@ public class DepositTreeSnapshotSerializer implements SszSerializer<DepositTreeS
         Bytes.of(data),
         reader -> {
           final List<Bytes32> finalized =
-              reader.readFixedBytesList(Bytes32.SIZE).stream()
+              // Tuweni's `reader.readFixedBytesList` is buggy, using this instead
+              reader.readHashList(Bytes32.SIZE).stream()
                   .map(Bytes32::wrap)
                   .collect(Collectors.toList());
           final UInt64 deposits = UInt64.fromLongBits(reader.readUInt64());
