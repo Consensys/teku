@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -41,5 +43,13 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   @Override
   protected int getMinSlashingPenaltyQuotient() {
     return specConfigAltair.getMinSlashingPenaltyQuotientAltair();
+  }
+
+  @Override
+  public void slashValidator(final MutableBeaconState state, final int slashedIndex) {
+    super.slashValidator(state, slashedIndex);
+    BeaconStateCache.getTransitionCaches(state)
+        .getProgressiveTotalBalances()
+        .onSlashing(state, slashedIndex);
   }
 }

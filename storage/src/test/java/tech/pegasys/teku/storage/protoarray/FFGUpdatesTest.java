@@ -28,13 +28,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class FFGUpdatesTest {
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final VoteUpdater store = createStoreToManipulateVotes();
+  private final TestStoreImpl store = createStoreToManipulateVotes();
   private final ForkChoiceStrategy forkChoice =
       createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
   private final List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
@@ -55,11 +56,10 @@ public class FFGUpdatesTest {
     //            2 <- just: 1, fin: 0
     //            |
     //            3 <- just: 2, fin: 1
-    forkChoice.processBlock(
-        ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
+    processBlock(
         unsigned(2), getHash(2), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(3), getHash(3), getHash(2), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure that with justified epoch 0 we find 3
@@ -121,27 +121,27 @@ public class FFGUpdatesTest {
     //  just: 2, fin: 0 -> 9  10 <- just: 2, fin: 0
 
     //  Left branch
-    forkChoice.processBlock(
+    processBlock(
         unsigned(1), getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(2), getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(3), getHash(5), getHash(3), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(4), getHash(7), getHash(5), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(4), getHash(9), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
 
     //  Right branch
-    forkChoice.processBlock(
+    processBlock(
         unsigned(1), getHash(2), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(2), getHash(4), getHash(2), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(3), getHash(6), getHash(4), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(4), getHash(8), getHash(6), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         unsigned(4), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
 
     // Ensure that if we start at 0 we find 10 (just: 0, fin: 0).
@@ -293,6 +293,27 @@ public class FFGUpdatesTest {
     // Same as above but justified epoch 3 (should invalidate all so return justified).
     assertThat(applyPendingVotes(checkpoint(0, 0), checkpoint(3, 2), balances))
         .isEqualTo(getHash(2));
+  }
+
+  private void processBlock(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
+      final Bytes32 executionBlockHash) {
+    forkChoice.processBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        new BlockCheckpoints(
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO),
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
+        executionBlockHash);
   }
 
   private UInt64 unsigned(final int i) {

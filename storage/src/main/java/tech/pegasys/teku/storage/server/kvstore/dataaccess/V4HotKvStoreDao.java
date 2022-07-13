@@ -24,8 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -74,7 +74,7 @@ public class V4HotKvStoreDao {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
   }
 
-  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+  public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
   }
 
@@ -119,7 +119,7 @@ public class V4HotKvStoreDao {
   }
 
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry -> entry);
   }
 
@@ -215,17 +215,17 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void addHotBlock(final BlockAndCheckpointEpochs block) {
+    public void addHotBlock(final BlockAndCheckpoints block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
-      addHotBlockCheckpointEpochs(blockRoot, block.getCheckpointEpochs());
+      addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
     }
 
     @Override
     public void addHotBlockCheckpointEpochs(
-        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
+        final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
       transaction.put(
-          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, checkpointEpochs);
+          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, blockCheckpoints);
     }
 
     @Override

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
@@ -26,6 +27,11 @@ public interface EpochProcessor {
       BeaconState state, ValidatorStatuses validatorStatuses);
 
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
+
+  default void initProgressiveTotalBalancesIfRequired(
+      BeaconState state, TotalBalances totalBalances) {}
+
+  BlockCheckpoints calculateBlockCheckpoints(BeaconState state);
 
   void processJustificationAndFinalization(MutableBeaconState state, TotalBalances totalBalances)
       throws EpochProcessingException;

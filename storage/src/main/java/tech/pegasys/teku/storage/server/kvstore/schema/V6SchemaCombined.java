@@ -28,7 +28,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -54,7 +54,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private static final KvStoreColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       KvStoreColumn.create(5, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
   private final KvStoreColumn<Bytes32, BeaconState> hotStatesByRoot;
-  private static final KvStoreColumn<Bytes32, CheckpointEpochs>
+  private static final KvStoreColumn<Bytes32, BlockCheckpoints>
       HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT =
           KvStoreColumn.create(7, BYTES32_SERIALIZER, CHECKPOINT_EPOCHS_SERIALIZER);
 
@@ -103,7 +103,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
-  public KvStoreColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot() {
+  public KvStoreColumn<Bytes32, BlockCheckpoints> getColumnHotBlockCheckpointEpochsByRoot() {
     return HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT;
   }
 
@@ -200,15 +200,16 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
   @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "GENESIS_TIME", getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint(),
-        "OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
+    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+        .put("GENESIS_TIME", getVariableGenesisTime())
+        .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
+        .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())
+        .put("FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint())
+        .put("LATEST_FINALIZED_STATE", getVariableLatestFinalizedState())
+        .put("MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock())
+        .put("WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint())
+        .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
+        .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
+        .build();
   }
 }

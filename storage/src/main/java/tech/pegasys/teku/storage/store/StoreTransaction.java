@@ -18,9 +18,11 @@ import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncSt
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -62,7 +65,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   boolean proposerBoostRootSet = false;
   boolean clearFinalizedOptimisticTransitionPayload = false;
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
-  Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
+  Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
+  Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -79,21 +83,22 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
-    putBlockAndState(new SignedBlockAndState(block, state));
-  }
-
-  @Override
-  public void putBlockAndState(final SignedBlockAndState blockAndState) {
-    blockAndStates.put(blockAndState.getRoot(), blockAndState);
-    putStateRoot(
-        blockAndState.getState().hashTreeRoot(),
-        new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot()));
+  public void putBlockAndState(
+      final SignedBeaconBlock block,
+      final BeaconState state,
+      final BlockCheckpoints blockCheckpoints) {
+    blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
+    putStateRoot(state.hashTreeRoot(), new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
 
   @Override
   public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
     stateRoots.put(stateRoot, slotAndBlockRoot);
+  }
+
+  @Override
+  public void pullUpBlockCheckpoints(final Bytes32 blockRoot) {
+    pulledUpBlockCheckpoints.add(blockRoot);
   }
 
   @Override
@@ -269,12 +274,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
-    return blockAndStates.containsKey(blockRoot) || store.containsBlock(blockRoot);
+    return blockData.containsKey(blockRoot) || store.containsBlock(blockRoot);
   }
 
   @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
-    if (this.blockAndStates.isEmpty()) {
+    if (this.blockData.isEmpty()) {
       return store.getOrderedBlockRoots();
     }
 
@@ -283,7 +288,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
       store.forkChoiceStrategy.processAllInOrder(
           (root, slot, parent) -> blockRootsBySlot.put(slot, root));
-      this.blockAndStates
+      this.blockData
           .values()
           .forEach(
               blockAndState ->
@@ -296,25 +301,25 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blockAndStates.get(blockRoot))
+    return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getState)
         .or(() -> store.getBlockStateIfAvailable(blockRoot));
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
-    if (blockAndStates.containsKey(blockRoot)) {
+    if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
-          Optional.of(blockAndStates.get(blockRoot)).map(SignedBlockAndState::getBlock));
+          Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getBlock));
     }
     return store.retrieveSignedBlock(blockRoot);
   }
 
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
-    if (blockAndStates.containsKey(blockRoot)) {
-      final SignedBlockAndState result = blockAndStates.get(blockRoot);
-      return SafeFuture.completedFuture(Optional.of(result));
+    if (blockData.containsKey(blockRoot)) {
+      final TransactionBlockData result = blockData.get(blockRoot);
+      return SafeFuture.completedFuture(Optional.of(result.toSignedBlockAndState()));
     }
     return store.retrieveBlockAndState(blockRoot);
   }
@@ -322,25 +327,25 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
       final Bytes32 blockRoot) {
-    if (blockAndStates.containsKey(blockRoot)) {
-      final StateAndBlockSummary result = blockAndStates.get(blockRoot);
-      return SafeFuture.completedFuture(Optional.of(result));
+    if (blockData.containsKey(blockRoot)) {
+      final TransactionBlockData result = blockData.get(blockRoot);
+      return SafeFuture.completedFuture(Optional.of(result.toSignedBlockAndState()));
     }
     return store.retrieveStateAndBlockSummary(blockRoot);
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
-    if (blockAndStates.containsKey(blockRoot)) {
+    if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
-          Optional.of(blockAndStates.get(blockRoot)).map(SignedBlockAndState::getState));
+          Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getState));
     }
     return store.retrieveBlockState(blockRoot);
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
-    SignedBlockAndState inMemoryCheckpointBlockState = blockAndStates.get(checkpoint.getRoot());
+    SignedBlockAndState inMemoryCheckpointBlockState = blockData.get(checkpoint.getRoot());
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
@@ -356,7 +361,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
     SignedBlockAndState inMemoryCheckpointBlockState =
-        blockAndStates.get(slotAndBlockRoot.getBlockRoot());
+        blockData.get(slotAndBlockRoot.getBlockRoot());
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
@@ -401,7 +406,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blockAndStates.get(blockRoot))
+    return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
         .or(() -> store.getBlockIfAvailable(blockRoot));
   }

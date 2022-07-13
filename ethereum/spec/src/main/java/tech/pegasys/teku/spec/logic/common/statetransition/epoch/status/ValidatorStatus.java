@@ -23,9 +23,11 @@ public class ValidatorStatus {
   private final boolean withdrawableInCurrentEpoch;
   private final boolean activeInCurrentEpoch;
   private final boolean activeInPreviousEpoch;
+  private final boolean activeInNextEpoch;
 
   private boolean currentEpochSourceAttester = false;
   private boolean currentEpochTargetAttester = false;
+  private boolean currentEpochHeadAttester = false;
   private boolean previousEpochSourceAttester = false;
   private boolean previousEpochTargetAttester = false;
   private boolean previousEpochHeadAttester = false;
@@ -38,13 +40,15 @@ public class ValidatorStatus {
       final UInt64 currentEpochEffectiveBalance,
       final UInt64 withdrawableEpoch,
       final boolean activeInCurrentEpoch,
-      final boolean activeInPreviousEpoch) {
+      final boolean activeInPreviousEpoch,
+      final boolean activeInNextEpoch) {
     this.slashed = slashed;
     this.withdrawableInCurrentEpoch = withdrawableInCurrentEpoch;
     this.currentEpochEffectiveBalance = currentEpochEffectiveBalance;
     this.withdrawableEpoch = withdrawableEpoch;
     this.activeInCurrentEpoch = activeInCurrentEpoch;
     this.activeInPreviousEpoch = activeInPreviousEpoch;
+    this.activeInNextEpoch = activeInNextEpoch;
   }
 
   public boolean isEligibleValidator() {
@@ -83,6 +87,15 @@ public class ValidatorStatus {
     return activeInPreviousEpoch;
   }
 
+  /**
+   * @return True if the validator is "active" in the next epoch. In other words the next epoch is
+   *     in the range between the validator's activation epoch (inclusive) and exit epoch
+   *     (exclusive).
+   */
+  public boolean isActiveInNextEpoch() {
+    return activeInNextEpoch;
+  }
+
   public UInt64 getCurrentEpochEffectiveBalance() {
     return currentEpochEffectiveBalance;
   }
@@ -101,6 +114,11 @@ public class ValidatorStatus {
    */
   public boolean isCurrentEpochTargetAttester() {
     return currentEpochTargetAttester;
+  }
+
+  /** @return True if the validator correctly attested to the correct head in the current epoch. */
+  public boolean isCurrentEpochHeadAttester() {
+    return currentEpochHeadAttester;
   }
 
   /**
@@ -143,6 +161,11 @@ public class ValidatorStatus {
   public ValidatorStatus updateCurrentEpochTargetAttester(
       final boolean currentEpochTargetAttester) {
     this.currentEpochTargetAttester |= currentEpochTargetAttester;
+    return this;
+  }
+
+  public ValidatorStatus updateCurrentEpochHeadAttester(final boolean currentEpochHeadAttester) {
+    this.currentEpochHeadAttester |= currentEpochHeadAttester;
     return this;
   }
 

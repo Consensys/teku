@@ -17,8 +17,9 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 
@@ -28,7 +29,7 @@ public class StoredBlockMetadata {
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
   private final Optional<Bytes32> executionBlockHash;
-  private final Optional<CheckpointEpochs> checkpointEpochs;
+  private final Optional<BlockCheckpoints> checkpointEpochs;
 
   public StoredBlockMetadata(
       final UInt64 blockSlot,
@@ -36,7 +37,7 @@ public class StoredBlockMetadata {
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
       final Optional<Bytes32> executionBlockHash,
-      final Optional<CheckpointEpochs> checkpointEpochs) {
+      final Optional<BlockCheckpoints> checkpointEpochs) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
@@ -46,7 +47,7 @@ public class StoredBlockMetadata {
   }
 
   public static StoredBlockMetadata fromBlockAndCheckpointEpochs(
-      final SignedBeaconBlock block, final CheckpointEpochs checkpointEpochs) {
+      final SignedBeaconBlock block, final BlockCheckpoints checkpointEpochs) {
     return new StoredBlockMetadata(
         block.getSlot(),
         block.getRoot(),
@@ -60,8 +61,9 @@ public class StoredBlockMetadata {
         Optional.of(checkpointEpochs));
   }
 
-  public static StoredBlockMetadata fromBlockAndState(final StateAndBlockSummary blockAndState) {
-    final CheckpointEpochs epochs = CheckpointEpochs.fromBlockAndState(blockAndState);
+  public static StoredBlockMetadata fromBlockAndState(
+      final Spec spec, final StateAndBlockSummary blockAndState) {
+    final BlockCheckpoints epochs = spec.calculateBlockCheckpoints(blockAndState.getState());
     return new StoredBlockMetadata(
         blockAndState.getSlot(),
         blockAndState.getRoot(),
@@ -91,7 +93,7 @@ public class StoredBlockMetadata {
     return executionBlockHash;
   }
 
-  public Optional<CheckpointEpochs> getCheckpointEpochs() {
+  public Optional<BlockCheckpoints> getCheckpointEpochs() {
     return checkpointEpochs;
   }
 

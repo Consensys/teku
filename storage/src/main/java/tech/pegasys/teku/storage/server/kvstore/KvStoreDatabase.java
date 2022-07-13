@@ -42,8 +42,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -391,8 +391,8 @@ public abstract class KvStoreDatabase<
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return dao.streamCheckpointEpochs();
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
+    return dao.streamBlockCheckpoints();
   }
 
   @Override
@@ -521,7 +521,7 @@ public abstract class KvStoreDatabase<
 
   protected abstract void updateHotBlocks(
       final HotUpdaterT updater,
-      final Map<Bytes32, BlockAndCheckpointEpochs> addedBlocks,
+      final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
       final Set<Bytes32> deletedHotBlockRoots,
       final Set<Bytes32> finalizedBlockRoots);
 

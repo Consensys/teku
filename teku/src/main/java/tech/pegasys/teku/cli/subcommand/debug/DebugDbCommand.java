@@ -211,7 +211,7 @@ public class DebugDbCommand implements Runnable {
           database.streamFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
         printIfPresent("Finalized blocks", stream.count());
       }
-      try (Stream<?> stream = database.streamCheckpointEpochs()) {
+      try (Stream<?> stream = database.streamBlockCheckpoints()) {
         printIfPresent("Checkpoint Epochs", stream.count());
       }
     }

@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesUpdates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 /** The container class for all transition caches. */
@@ -51,7 +52,8 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
-          NoOpCache.getNoOpCache()) {
+          NoOpCache.getNoOpCache(),
+          ProgressiveTotalBalancesUpdates.NOOP) {
 
         @Override
         public TransitionCaches copy() {
@@ -83,6 +85,7 @@ public class TransitionCaches {
   private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
 
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
+  private volatile ProgressiveTotalBalancesUpdates progressiveTotalBalances;
 
   private TransitionCaches() {
     activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
@@ -96,6 +99,7 @@ public class TransitionCaches {
     effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
+    progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
   }
 
   private TransitionCaches(
@@ -109,7 +113,8 @@ public class TransitionCaches {
       Cache<Bytes32, IntList> committeeShuffle,
       Cache<UInt64, List<UInt64>> effectiveBalances,
       Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
-      Cache<UInt64, UInt64> baseRewardPerIncrement) {
+      Cache<UInt64, UInt64> baseRewardPerIncrement,
+      ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -121,6 +126,7 @@ public class TransitionCaches {
     this.effectiveBalances = effectiveBalances;
     this.syncCommitteeCache = syncCommitteeCache;
     this.baseRewardPerIncrement = baseRewardPerIncrement;
+    this.progressiveTotalBalances = progressiveTotalBalances;
   }
 
   public void setLatestTotalBalances(TotalBalances totalBalances) {
@@ -129,6 +135,15 @@ public class TransitionCaches {
 
   public Optional<TotalBalances> getLatestTotalBalances() {
     return latestTotalBalances;
+  }
+
+  public ProgressiveTotalBalancesUpdates getProgressiveTotalBalances() {
+    return progressiveTotalBalances;
+  }
+
+  public void setProgressiveTotalBalances(
+      final ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
+    this.progressiveTotalBalances = progressiveTotalBalances;
   }
 
   /** (epoch) -> (active validators) cache */
@@ -212,6 +227,7 @@ public class TransitionCaches {
         committeeShuffle.copy(),
         effectiveBalances.copy(),
         syncCommitteeCache.copy(),
-        baseRewardPerIncrement.copy());
+        baseRewardPerIncrement.copy(),
+        progressiveTotalBalances.copy());
   }
 }

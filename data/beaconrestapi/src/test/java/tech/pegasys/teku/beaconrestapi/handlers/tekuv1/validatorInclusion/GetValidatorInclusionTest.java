@@ -71,6 +71,7 @@ class GetValidatorInclusionTest extends AbstractMigratedBeaconHandlerWithChainDa
             UInt64.valueOf(32000000000L),
             dataStructureUtil.randomEpoch(),
             true,
+            true,
             true);
     GetValidatorInclusion.GetValidatorInclusionResponseData responseData =
         new GetValidatorInclusion.GetValidatorInclusionResponseData(status);

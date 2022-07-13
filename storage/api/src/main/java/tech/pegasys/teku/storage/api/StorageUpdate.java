@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -32,7 +32,7 @@ public class StorageUpdate {
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
-  private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
+  private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Set<Bytes32> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
@@ -43,7 +43,7 @@ public class StorageUpdate {
       final Optional<FinalizedChainData> finalizedChainData,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
-      final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
+      final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
@@ -87,7 +87,7 @@ public class StorageUpdate {
     return bestJustifiedCheckpoint;
   }
 
-  public Map<Bytes32, BlockAndCheckpointEpochs> getHotBlocks() {
+  public Map<Bytes32, BlockAndCheckpoints> getHotBlocks() {
     return hotBlocks;
   }
 

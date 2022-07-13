@@ -25,7 +25,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -50,7 +52,7 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Optional<Checkpoint> getWeakSubjectivityCheckpoint();
 
-  Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(Bytes32 root);
+  Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
 
@@ -66,7 +68,7 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
   @MustBeClosed
-  Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
+  Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints();
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 

@@ -152,7 +152,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
             operationValidator,
             schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateAccessors, attestationUtil, miscHelpers);
+        new ForkChoiceUtil(
+            config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 

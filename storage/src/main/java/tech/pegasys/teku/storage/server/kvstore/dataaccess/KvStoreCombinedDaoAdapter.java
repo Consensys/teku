@@ -26,9 +26,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -93,7 +93,7 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+  public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return hotDao.getHotBlockCheckpointEpochs(root);
   }
 
@@ -300,8 +300,8 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return hotDao.streamCheckpointEpochs();
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
+    return hotDao.streamBlockCheckpoints();
   }
 
   @Override
@@ -424,14 +424,14 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addHotBlock(final BlockAndCheckpointEpochs blockAndCheckpointEpochs) {
-      hotUpdater.addHotBlock(blockAndCheckpointEpochs);
+    public void addHotBlock(final BlockAndCheckpoints blockAndCheckpoints) {
+      hotUpdater.addHotBlock(blockAndCheckpoints);
     }
 
     @Override
     public void addHotBlockCheckpointEpochs(
-        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
-      hotUpdater.addHotBlockCheckpointEpochs(blockRoot, checkpointEpochs);
+        final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
+      hotUpdater.addHotBlockCheckpointEpochs(blockRoot, blockCheckpoints);
     }
 
     @Override
@@ -450,7 +450,7 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+    public void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
       hotUpdater.addHotBlocks(blocks);
     }
 

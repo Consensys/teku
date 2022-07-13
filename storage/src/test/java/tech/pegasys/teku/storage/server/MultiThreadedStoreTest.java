@@ -102,7 +102,7 @@ public class MultiThreadedStoreTest {
     return () -> {
       final StoreTransaction transaction = recentChainData.startStoreTransaction();
       final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slotNumber);
-      transaction.putBlockAndState(block);
+      transaction.putBlockAndState(block, SPEC.calculateBlockCheckpoints(block.getState()));
       transaction.commit().finish(ex -> {});
     };
   }
