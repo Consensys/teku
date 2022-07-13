@@ -17,6 +17,8 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.stream.Collectors;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -33,6 +35,16 @@ public class ValidatorClientOptions {
   private String beaconNodeApiEndpoint = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINT;
 
   @Option(
+      names = {"--Xbeacon-node-api-endpoints"},
+      paramLabel = "<ENDPOINT>",
+      description =
+          "Beacon Node API endpoint(s). If more than one is defined, the first node will be used as a primary and others as failovers.",
+      split = ",",
+      hidden = true,
+      arity = "1..*")
+  private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
+
+  @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use SSZ encoding for API block requests",
@@ -46,18 +58,27 @@ public class ValidatorClientOptions {
     builder.validator(
         config ->
             config
-                .beaconNodeApiEndpoint(parseApiEndpoint())
+                .beaconNodeApiEndpoint(getBeaconNodeApiEndpoint())
+                .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled));
   }
 
-  public URI parseApiEndpoint() {
+  public URI getBeaconNodeApiEndpoint() {
+    return parseBeaconNodeApiEndpoint(beaconNodeApiEndpoint);
+  }
+
+  private List<URI> getBeaconNodeApiEndpoints() {
+    return beaconNodeApiEndpoints.stream()
+        .map(this::parseBeaconNodeApiEndpoint)
+        .collect(Collectors.toList());
+  }
+
+  private URI parseBeaconNodeApiEndpoint(final String apiEndpoint) {
     try {
-      return new URI(beaconNodeApiEndpoint);
+      return new URI(apiEndpoint);
     } catch (URISyntaxException e) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. Beacon node API endpoint is not a valid URL: "
-              + beaconNodeApiEndpoint,
-          e);
+          "Invalid configuration. Beacon node API endpoint is not a valid URL: " + apiEndpoint, e);
     }
   }
 }

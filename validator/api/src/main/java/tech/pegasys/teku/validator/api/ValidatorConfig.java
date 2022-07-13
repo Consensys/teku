@@ -36,6 +36,7 @@ public class ValidatorConfig {
   private static final int DEFAULT_REST_API_PORT = 5051;
   public static final String DEFAULT_BEACON_NODE_API_ENDPOINT =
       "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
+  public static final List<String> DEFAULT_BEACON_NODE_API_ENDPOINTS = List.of();
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
@@ -63,6 +64,7 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
+  private final List<URI> beaconNodeApiEndpoints;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
@@ -85,6 +87,7 @@ public class ValidatorConfig {
       final Path validatorExternalSignerTruststore,
       final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<URI> beaconNodeApiEndpoint,
+      final List<URI> beaconNodeApiEndpoints,
       final GraffitiProvider graffitiProvider,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
@@ -112,6 +115,7 @@ public class ValidatorConfig {
     this.graffitiProvider = graffitiProvider;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    this.beaconNodeApiEndpoints = beaconNodeApiEndpoints;
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
     this.validatorExternalSignerSlashingProtectionEnabled =
         validatorExternalSignerSlashingProtectionEnabled;
@@ -172,6 +176,10 @@ public class ValidatorConfig {
 
   public Optional<URI> getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
+  }
+
+  public List<URI> getBeaconNodeApiEndpoints() {
+    return beaconNodeApiEndpoints;
   }
 
   public GraffitiProvider getGraffitiProvider() {
@@ -250,6 +258,7 @@ public class ValidatorConfig {
         ValidatorPerformanceTrackingMode.DEFAULT_MODE;
     private boolean validatorKeystoreLockingEnabled = DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
+    private List<URI> beaconNodeApiEndpoints = List.of();
     private boolean validatorExternalSignerSlashingProtectionEnabled =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
@@ -341,6 +350,11 @@ public class ValidatorConfig {
 
     public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
       this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
+      return this;
+    }
+
+    public Builder beaconNodeApiEndpoints(final List<URI> beaconNodeApiEndpoints) {
+      this.beaconNodeApiEndpoints = beaconNodeApiEndpoints;
       return this;
     }
 
@@ -436,6 +450,7 @@ public class ValidatorConfig {
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoint,
+          beaconNodeApiEndpoints,
           graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
