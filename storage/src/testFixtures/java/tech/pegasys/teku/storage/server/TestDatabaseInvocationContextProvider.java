@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -39,25 +38,23 @@ class TestDatabaseInvocationContextProvider implements TestTemplateInvocationCon
     final Set<BlockStorage> blockStorageSet = Set.of(BlockStorage.values());
     final List<TestTemplateInvocationContext> configurations = new ArrayList<>();
 
-    configurations.addAll(
-        databaseVersions.stream()
-            .flatMap(
-                databaseVersion ->
-                    blockStorageSet.stream()
-                        .map(
-                            blockStorageMode ->
-                                generateContext(databaseVersion, blockStorageMode, true)))
-            .collect(Collectors.toList()));
+    databaseVersions.stream()
+        .flatMap(
+            databaseVersion ->
+                blockStorageSet.stream()
+                    .map(
+                        blockStorageMode ->
+                            generateContext(databaseVersion, blockStorageMode, true)))
+        .forEach(configurations::add);
 
-    configurations.addAll(
-        databaseVersions.stream()
-            .flatMap(
-                databaseVersion ->
-                    blockStorageSet.stream()
-                        .map(
-                            blockStorageMode ->
-                                generateContext(databaseVersion, blockStorageMode, false)))
-            .collect(Collectors.toList()));
+    databaseVersions.stream()
+        .flatMap(
+            databaseVersion ->
+                blockStorageSet.stream()
+                    .map(
+                        blockStorageMode ->
+                            generateContext(databaseVersion, blockStorageMode, false)))
+        .forEach(configurations::add);
 
     return configurations.stream();
   }

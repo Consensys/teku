@@ -83,8 +83,6 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
-import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -128,7 +126,7 @@ public class DatabaseTest {
 
   private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
       throws IOException {
-    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
 
     // Initialize genesis store
     initGenesis();
@@ -156,8 +154,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void createMemoryStoreFromEmptyDatabase(final DatabaseContext context) throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
@@ -863,8 +860,7 @@ public class DatabaseTest {
   @TestTemplate
   public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks(
       final DatabaseContext context) throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -933,8 +929,7 @@ public class DatabaseTest {
   @TestTemplate
   public void orphanedBlockStorageTest_withCanonicalBlocks(final DatabaseContext context)
       throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksAvailable(
         forkChainResult
@@ -946,8 +941,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void orphanedBlockStorageTest_multiple(final DatabaseContext context) throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
     final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
@@ -986,8 +980,7 @@ public class DatabaseTest {
   @TestTemplate
   public void orphanedBlockStorageTest_noCanonicalBlocks(final DatabaseContext context)
       throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(false);
     assertBlocksUnavailable(
         forkChainResult
@@ -1074,8 +1067,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldRecreateAnchorStoreOnRestart(final DatabaseContext context) throws Exception {
-    createStorageSystemInternal(
-        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -1287,8 +1279,7 @@ public class DatabaseTest {
       final DatabaseContext context) throws Exception {
 
     for (int i = 0; i < 20; i++) {
-      createStorageSystemInternal(
-          context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+      createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
       try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
         final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
@@ -1370,7 +1361,7 @@ public class DatabaseTest {
         StoreConfig.builder()
             .hotStatePersistenceFrequencyInEpochs(statePersistenceInEpochs)
             .build();
-    createStorageSystemInternal(context, StateStorageMode.ARCHIVE, storeConfig, false);
+    createStorageSystem(context, StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
@@ -1447,7 +1438,7 @@ public class DatabaseTest {
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
     // Setup database
-    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
     initGenesis();
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
@@ -1486,7 +1477,7 @@ public class DatabaseTest {
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
-    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
     final CreateForkChainResult forkChainResult = createForkChain(true);
 
     // Fork states should be unavailable
@@ -1558,7 +1549,7 @@ public class DatabaseTest {
 
   public void testStartupFromNonGenesisState(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
-    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1597,8 +1588,7 @@ public class DatabaseTest {
 
   @TestTemplate
   void shouldStoreAndRetrieveVotes(final DatabaseContext context) throws IOException {
-    createStorageSystemInternal(
-        context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
+    createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
 
     final Map<UInt64, VoteTracker> voteBatch1 =
@@ -1623,7 +1613,7 @@ public class DatabaseTest {
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
-    createStorageSystemInternal(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
 
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
@@ -1993,7 +1983,7 @@ public class DatabaseTest {
     return storageSystem.recentChainData().getStore();
   }
 
-  private void createStorageSystemInternal(
+  private void createStorageSystem(
       final DatabaseContext context,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
@@ -2002,27 +1992,13 @@ public class DatabaseTest {
     this.storageMode = storageMode;
     if (context.isInMemoryStorage()) {
       setDefaultStorage(
-          InMemoryStorageSystemBuilder.create()
-              .specProvider(spec)
-              .version(context.getDatabaseVersion())
-              .storageMode(storageMode)
-              .stateStorageFrequency(1L)
-              .storeConfig(storeConfig)
-              .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-              .build());
+          context.createInMemoryStorage(spec, storageMode, storeConfig, storeNonCanonicalBlocks));
     } else {
       final Path tmpDir = Files.createTempDirectory("storageTest");
       tmpDirectories.add(tmpDir.toFile());
       setDefaultStorage(
-          FileBackedStorageSystemBuilder.create()
-              .specProvider(spec)
-              .dataDir(tmpDir)
-              .version(context.getDatabaseVersion())
-              .storageMode(storageMode)
-              .stateStorageFrequency(1L)
-              .storeConfig(storeConfig)
-              .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-              .build());
+          context.createFileBasedStorage(
+              spec, tmpDir, storageMode, storeConfig, storeNonCanonicalBlocks));
     }
   }
 

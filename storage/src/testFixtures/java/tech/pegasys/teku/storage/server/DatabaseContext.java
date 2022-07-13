@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.storage.server;
 
+import java.nio.file.Path;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
+
 public class DatabaseContext {
   private final DatabaseVersion databaseVersion;
 
@@ -38,5 +45,38 @@ public class DatabaseContext {
 
   public boolean isInMemoryStorage() {
     return inMemoryStorage;
+  }
+
+  public StorageSystem createInMemoryStorage(
+      final Spec spec,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
+    return InMemoryStorageSystemBuilder.create()
+        .specProvider(spec)
+        .version(getDatabaseVersion())
+        .storageMode(storageMode)
+        .stateStorageFrequency(1L)
+        .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+        .build();
+  }
+
+  public StorageSystem createFileBasedStorage(
+      final Spec spec,
+      final Path tmpDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
+
+    return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
+        .dataDir(tmpDir)
+        .version(getDatabaseVersion())
+        .storageMode(storageMode)
+        .stateStorageFrequency(1L)
+        .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+        .build();
   }
 }
