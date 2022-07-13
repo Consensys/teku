@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.merkletree.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -329,6 +330,44 @@ public class DepositProviderTest {
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
     List<DepositWithIndex> availableDeposits = depositProvider.getAvailableDeposits();
     assertThat(availableDeposits.size()).isEqualTo(10);
+  }
+
+  @Test
+  void whenCallingForFinalizedSnapshotAndNoFinalizedSnapshotAvailable_EmptyOptionalReturned() {
+    setup(16);
+    assertThat(depositProvider.getFinalizedDepositTreeSnapshot()).isEmpty();
+  }
+
+  @Test
+  void whenCallingForFinalizedSnapshotAndSnapshotAvailable_SnapshotReturned() {
+    setup(16);
+    Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
+    mockStateEth1DepositIndex(10);
+    mockEth1DataDepositCount(10);
+    mockDepositsFromEth1Block(0, 20);
+    final AnchorPoint anchorPoint = mock(AnchorPoint.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getLatestFinalized()).thenReturn(anchorPoint);
+    when(anchorPoint.getState()).thenReturn(state);
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
+
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
+    Optional<DepositTreeSnapshot> finalizedDepositTreeSnapshot =
+        depositProvider.getFinalizedDepositTreeSnapshot();
+    assertThat(finalizedDepositTreeSnapshot).isNotEmpty();
+    assertThat(finalizedDepositTreeSnapshot.get().getDeposits()).isEqualTo(10);
+    assertThat(finalizedDepositTreeSnapshot.get().getExecutionBlockHash())
+        .isEqualTo(
+            recentChainData
+                .getStore()
+                .getLatestFinalized()
+                .getState()
+                .getEth1Data()
+                .getBlockHash());
   }
 
   private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.api.data;
 
 import com.google.common.base.Preconditions;
 import java.util.List;

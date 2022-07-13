@@ -30,8 +30,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
+import tech.pegasys.teku.api.data.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.data.ValidatorLivenessRequest;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
