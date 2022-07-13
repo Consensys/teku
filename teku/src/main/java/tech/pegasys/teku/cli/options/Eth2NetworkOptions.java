@@ -26,6 +26,7 @@ import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 
 public class Eth2NetworkOptions {
 
@@ -131,6 +132,15 @@ public class Eth2NetworkOptions {
   private Boolean proposerBoostEnabled = Eth2NetworkConfiguration.DEFAULT_PROPOSER_BOOST_ENABLED;
 
   @Option(
+      names = {"--Xprogressive-balances-mode"},
+      paramLabel = "<MODE>",
+      description = "Progressive balance optimization mode to use.",
+      arity = "1",
+      hidden = true)
+  private ProgressiveBalancesMode progressiveBalancesMode =
+      Eth2NetworkConfiguration.DEFAULT_PROGRESSIVE_BALANCES_MODE;
+
+  @Option(
       names = {"--Xfork-choice-equivocating-indices-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Whether to enable the fork choice equivocating indices feature.",
@@ -200,7 +210,8 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .proposerBoostEnabled(proposerBoostEnabled);
+        .proposerBoostEnabled(proposerBoostEnabled)
+        .progressiveBalancesEnabled(progressiveBalancesMode);
   }
 
   public String getNetwork() {

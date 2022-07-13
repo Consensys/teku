@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 
@@ -22,38 +24,41 @@ public class TotalBalances {
   private final UInt64 previousEpochActiveValidators;
   private final UInt64 currentEpochSourceAttesters;
   private final UInt64 currentEpochTargetAttesters;
+  private final UInt64 currentEpochHeadAttesters;
   private final UInt64 previousEpochSourceAttesters;
   private final UInt64 previousEpochTargetAttesters;
   private final UInt64 previousEpochHeadAttesters;
+  private final UInt64 effectiveBalanceIncrement;
 
   public TotalBalances(
       final SpecConfig specConfig,
-      UInt64 currentEpochActiveValidators,
-      UInt64 previousEpochActiveValidators,
-      UInt64 currentEpochSourceAttesters,
-      UInt64 currentEpochTargetAttesters,
-      UInt64 previousEpochSourceAttesters,
-      UInt64 previousEpochTargetAttesters,
-      UInt64 previousEpochHeadAttesters) {
-    UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    this.currentEpochActiveValidators = currentEpochActiveValidators.max(effectiveBalanceIncrement);
-    this.previousEpochActiveValidators =
-        previousEpochActiveValidators.max(effectiveBalanceIncrement);
-    this.currentEpochSourceAttesters = currentEpochSourceAttesters.max(effectiveBalanceIncrement);
-    this.currentEpochTargetAttesters = currentEpochTargetAttesters.max(effectiveBalanceIncrement);
-    this.previousEpochSourceAttesters = previousEpochSourceAttesters.max(effectiveBalanceIncrement);
-    this.previousEpochTargetAttesters = previousEpochTargetAttesters.max(effectiveBalanceIncrement);
-    this.previousEpochHeadAttesters = previousEpochHeadAttesters.max(effectiveBalanceIncrement);
+      final UInt64 currentEpochActiveValidators,
+      final UInt64 previousEpochActiveValidators,
+      final UInt64 currentEpochSourceAttesters,
+      final UInt64 currentEpochTargetAttesters,
+      final UInt64 currentEpochHeadAttesters,
+      final UInt64 previousEpochSourceAttesters,
+      final UInt64 previousEpochTargetAttesters,
+      final UInt64 previousEpochHeadAttesters) {
+    this.effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
+    this.currentEpochActiveValidators = currentEpochActiveValidators;
+    this.previousEpochActiveValidators = previousEpochActiveValidators;
+    this.currentEpochSourceAttesters = currentEpochSourceAttesters;
+    this.currentEpochTargetAttesters = currentEpochTargetAttesters;
+    this.currentEpochHeadAttesters = currentEpochHeadAttesters;
+    this.previousEpochSourceAttesters = previousEpochSourceAttesters;
+    this.previousEpochTargetAttesters = previousEpochTargetAttesters;
+    this.previousEpochHeadAttesters = previousEpochHeadAttesters;
   }
 
   /** @return The sum of effective balances of all active validators from the current epoch. */
   public UInt64 getCurrentEpochActiveValidators() {
-    return currentEpochActiveValidators;
+    return currentEpochActiveValidators.max(effectiveBalanceIncrement);
   }
 
   /** @return The sum of effective balances of all active validators from the previous epoch. */
   public UInt64 getPreviousEpochActiveValidators() {
-    return previousEpochActiveValidators;
+    return previousEpochActiveValidators.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -61,7 +66,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getCurrentEpochSourceAttesters() {
-    return currentEpochSourceAttesters;
+    return currentEpochSourceAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -69,7 +74,15 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getCurrentEpochTargetAttesters() {
-    return currentEpochTargetAttesters;
+    return currentEpochTargetAttesters.max(effectiveBalanceIncrement);
+  }
+
+  /**
+   * @return The sum of effective balances of all attesters from the current epoch that attested to
+   *     the correct head.
+   */
+  public UInt64 getCurrentEpochHeadAttesters() {
+    return currentEpochHeadAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -77,7 +90,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getPreviousEpochSourceAttesters() {
-    return previousEpochSourceAttesters;
+    return previousEpochSourceAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -85,7 +98,7 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getPreviousEpochTargetAttesters() {
-    return previousEpochTargetAttesters;
+    return previousEpochTargetAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -93,6 +106,87 @@ public class TotalBalances {
    *     the correct head block at their assigned slot.
    */
   public UInt64 getPreviousEpochHeadAttesters() {
+    return previousEpochHeadAttesters.max(effectiveBalanceIncrement);
+  }
+
+  UInt64 getRawCurrentEpochActiveValidators() {
+    return currentEpochActiveValidators;
+  }
+
+  UInt64 getRawPreviousEpochActiveValidators() {
+    return previousEpochActiveValidators;
+  }
+
+  UInt64 getRawCurrentEpochSourceAttesters() {
+    return currentEpochSourceAttesters;
+  }
+
+  UInt64 getRawCurrentEpochTargetAttesters() {
+    return currentEpochTargetAttesters;
+  }
+
+  UInt64 getRawCurrentEpochHeadAttesters() {
+    return currentEpochHeadAttesters;
+  }
+
+  UInt64 getRawPreviousEpochSourceAttesters() {
+    return previousEpochSourceAttesters;
+  }
+
+  UInt64 getRawPreviousEpochTargetAttesters() {
+    return previousEpochTargetAttesters;
+  }
+
+  UInt64 getRawPreviousEpochHeadAttesters() {
     return previousEpochHeadAttesters;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final TotalBalances that = (TotalBalances) o;
+    return Objects.equals(currentEpochActiveValidators, that.currentEpochActiveValidators)
+        && Objects.equals(previousEpochActiveValidators, that.previousEpochActiveValidators)
+        && Objects.equals(currentEpochSourceAttesters, that.currentEpochSourceAttesters)
+        && Objects.equals(currentEpochTargetAttesters, that.currentEpochTargetAttesters)
+        && Objects.equals(currentEpochHeadAttesters, that.currentEpochHeadAttesters)
+        && Objects.equals(previousEpochSourceAttesters, that.previousEpochSourceAttesters)
+        && Objects.equals(previousEpochTargetAttesters, that.previousEpochTargetAttesters)
+        && Objects.equals(previousEpochHeadAttesters, that.previousEpochHeadAttesters)
+        && Objects.equals(effectiveBalanceIncrement, that.effectiveBalanceIncrement);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        currentEpochActiveValidators,
+        previousEpochActiveValidators,
+        currentEpochSourceAttesters,
+        currentEpochTargetAttesters,
+        currentEpochHeadAttesters,
+        previousEpochSourceAttesters,
+        previousEpochTargetAttesters,
+        previousEpochHeadAttesters,
+        effectiveBalanceIncrement);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("currentEpochActiveValidators", currentEpochActiveValidators)
+        .add("previousEpochActiveValidators", previousEpochActiveValidators)
+        .add("currentEpochSourceAttesters", currentEpochSourceAttesters)
+        .add("currentEpochTargetAttesters", currentEpochTargetAttesters)
+        .add("currentEpochHeadAttesters", currentEpochHeadAttesters)
+        .add("previousEpochSourceAttesters", previousEpochSourceAttesters)
+        .add("previousEpochTargetAttesters", previousEpochTargetAttesters)
+        .add("previousEpochHeadAttesters", previousEpochHeadAttesters)
+        .add("effectiveBalanceIncrement", effectiveBalanceIncrement)
+        .toString();
   }
 }

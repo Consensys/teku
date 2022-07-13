@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -68,6 +69,7 @@ public class TestStoreFactory {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
+        new HashMap<>(),
         new HashMap<>());
   }
 
@@ -85,12 +87,17 @@ public class TestStoreFactory {
     final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
 
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BlockCheckpoints> blockCheckpoints = new HashMap<>();
     Map<Bytes32, BeaconState> blockStates = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     blockStates.put(anchorRoot, anchorState);
+    blockCheckpoints.put(
+        anchorRoot,
+        new BlockCheckpoints(
+            anchorCheckpoint, anchorCheckpoint, anchorCheckpoint, anchorCheckpoint));
     checkpointStates.put(anchorCheckpoint, anchorState);
 
     return new TestStoreImpl(
@@ -103,6 +110,7 @@ public class TestStoreFactory {
         anchorCheckpoint,
         blocks,
         blockStates,
+        blockCheckpoints,
         checkpointStates,
         votes);
   }

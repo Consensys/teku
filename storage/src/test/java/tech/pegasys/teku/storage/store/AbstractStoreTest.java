@@ -29,10 +29,8 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -122,7 +120,10 @@ public abstract class AbstractStoreTest {
 
   protected void addBlocks(final UpdatableStore store, final List<SignedBlockAndState> blocks) {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    blocks.forEach(tx::putBlockAndState);
+    blocks.forEach(
+        blockAndState ->
+            tx.putBlockAndState(
+                blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
     assertThat(tx.commit()).isCompletedWithValue(null);
   }
 
@@ -154,7 +155,7 @@ public abstract class AbstractStoreTest {
                     genesis.getParentRoot(),
                     genesis.getStateRoot(),
                     genesis.getExecutionBlockHash(),
-                    Optional.of(new CheckpointEpochs(UInt64.ZERO, UInt64.ZERO)))))
+                    Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
         .votes(emptyMap())
         .build();

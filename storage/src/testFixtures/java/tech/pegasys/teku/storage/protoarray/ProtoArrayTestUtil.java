@@ -18,8 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
@@ -50,14 +51,17 @@ public class ProtoArrayTestUtil {
         finalizedBlockRoot,
         Bytes32.ZERO,
         Bytes32.ZERO,
-        justifiedCheckpointEpoch,
-        finalizedCheckpointEpoch,
+        new BlockCheckpoints(
+            new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO),
+            new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO)),
         Bytes32.ZERO);
 
     return forkChoice;
   }
 
-  public static VoteUpdater createStoreToManipulateVotes() {
+  public static TestStoreImpl createStoreToManipulateVotes() {
     return new TestStoreFactory().createGenesisStore();
   }
 
@@ -66,14 +70,14 @@ public class ProtoArrayTestUtil {
     assertThat(node1.getStateRoot()).isEqualTo(node2.getStateRoot());
     assertThat(node1.getBlockRoot()).isEqualTo(node2.getBlockRoot());
     assertThat(node1.getParentRoot()).isEqualTo(node2.getParentRoot());
-    assertThat(node1.getJustifiedEpoch()).isEqualTo(node2.getJustifiedEpoch());
-    assertThat(node1.getFinalizedEpoch()).isEqualTo(node2.getFinalizedEpoch());
+    assertThat(node1.getJustifiedCheckpoint()).isEqualTo(node2.getJustifiedCheckpoint());
+    assertThat(node1.getFinalizedCheckpoint()).isEqualTo(node2.getFinalizedCheckpoint());
   }
 
   public static void assertThatProtoArrayMatches(ProtoArray array1, ProtoArray array2) {
     assertThat(array1.getNodes().size()).isEqualTo(array2.getNodes().size());
-    assertThat(array1.getJustifiedEpoch()).isEqualTo(array2.getJustifiedEpoch());
-    assertThat(array1.getFinalizedEpoch()).isEqualTo(array2.getFinalizedEpoch());
+    assertThat(array1.getJustifiedCheckpoint()).isEqualTo(array2.getJustifiedCheckpoint());
+    assertThat(array1.getFinalizedCheckpoint()).isEqualTo(array2.getFinalizedCheckpoint());
     for (int i = 0; i < array1.getNodes().size(); i++) {
       assertThatBlockInformationMatches(array1.getNodes().get(i), array2.getNodes().get(i));
     }

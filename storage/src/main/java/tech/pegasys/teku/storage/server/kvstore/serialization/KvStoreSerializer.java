@@ -21,7 +21,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -39,8 +39,8 @@ public interface KvStoreSerializer<T> {
       new MinGenesisTimeBlockEventSerializer();
   KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_SERIALIZER =
       new SlotAndBlockRootSerializer();
-  KvStoreSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
-      new CheckpointEpochsSerializer();
+  KvStoreSerializer<BlockCheckpoints> CHECKPOINT_EPOCHS_SERIALIZER =
+      new BlockCheckpointsSerializer();
   KvStoreSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();

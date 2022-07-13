@@ -20,15 +20,20 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesAltair;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -114,6 +119,25 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
       final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
       state.setNextSyncCommittee(beaconStateAccessorsAltair.getNextSyncCommittee(state));
+    }
+  }
+
+  /**
+   * Replaces the progressive total balances in the state transition caches with an altair one if
+   * not already in use. This handles both upgrading on milestone transition and switching from the
+   * default no-op instance once initial data is available.
+   */
+  @Override
+  public void initProgressiveTotalBalancesIfRequired(
+      final BeaconState state, final TotalBalances totalBalances) {
+    if (specConfigAltair.getProgressiveBalancesMode() == ProgressiveBalancesMode.DISABLED) {
+      return;
+    }
+    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    if (!(transitionCaches.getProgressiveTotalBalances()
+        instanceof ProgressiveTotalBalancesAltair)) {
+      transitionCaches.setProgressiveTotalBalances(
+          new ProgressiveTotalBalancesAltair(miscHelpersAltair, totalBalances));
     }
   }
 

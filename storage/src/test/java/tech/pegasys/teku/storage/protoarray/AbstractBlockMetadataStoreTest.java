@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -57,14 +57,14 @@ abstract class AbstractBlockMetadataStoreTest {
   @Test
   void contains_shouldContainAddedBlocks() {
     final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
-    final BlockAndCheckpointEpochs block1 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(1));
-    final BlockAndCheckpointEpochs block2 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(2));
-    final BlockAndCheckpointEpochs block3 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(3));
+    final BlockAndCheckpoints block1 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(1));
+    final BlockAndCheckpoints block2 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(2));
+    final BlockAndCheckpoints block3 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(3));
 
-    store.applyUpdate(List.of(block1, block2, block3), Collections.emptySet(), genesisCheckpoint);
+    store.applyUpdate(List.of(block1, block2, block3), emptySet(), emptySet(), genesisCheckpoint);
 
     chainBuilder
         .streamBlocksAndStates()
@@ -74,15 +74,16 @@ abstract class AbstractBlockMetadataStoreTest {
   @Test
   void contains_shouldNotContainRemovedBlocks() {
     final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
-    final BlockAndCheckpointEpochs block1 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(1));
-    final BlockAndCheckpointEpochs block2 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(2));
-    final BlockAndCheckpointEpochs block3 =
-        BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(3));
+    final BlockAndCheckpoints block1 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(1));
+    final BlockAndCheckpoints block2 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(2));
+    final BlockAndCheckpoints block3 =
+        BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(3));
 
     store.applyUpdate(
         List.of(block1, block2, block3),
+        emptySet(),
         Set.of(genesis.getRoot(), block1.getRoot()),
         new Checkpoint(UInt64.ONE, block2.getRoot()));
 
@@ -123,9 +124,10 @@ abstract class AbstractBlockMetadataStoreTest {
     store.applyUpdate(
         forkBuilder
             .streamBlocksAndStates()
-            .map(BlockAndCheckpointEpochs::fromBlockAndState)
+            .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
-        Collections.emptySet(),
+        emptySet(),
+        emptySet(),
         genesisCheckpoint);
 
     final Set<Bytes32> seenBlocks = new HashSet<>();
@@ -171,9 +173,10 @@ abstract class AbstractBlockMetadataStoreTest {
     store.applyUpdate(
         forkBuilder
             .streamBlocksAndStates()
-            .map(BlockAndCheckpointEpochs::fromBlockAndState)
+            .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
-        Collections.emptySet(),
+        emptySet(),
+        emptySet(),
         genesisCheckpoint);
 
     verifyHashesInChain(

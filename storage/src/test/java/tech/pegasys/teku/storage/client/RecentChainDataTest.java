@@ -593,7 +593,7 @@ class RecentChainDataTest {
     final SignedBlockAndState block = chainBuilder.generateNextBlock();
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(block);
+    tx.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
 
     assertThat(tx.retrieveBlockAndState(block.getRoot())).isCompletedWithValue(Optional.of(block));
   }
@@ -898,7 +898,10 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
-    newBlocks.forEach(tx::putBlockAndState);
+    newBlocks.forEach(
+        blockAndState ->
+            tx.putBlockAndState(
+                blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
     tx.commit().ifExceptionGetsHereRaiseABug();
 
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
@@ -938,7 +941,10 @@ class RecentChainDataTest {
     final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(transaction::putBlockAndState);
+        .forEach(
+            blockAndState ->
+                transaction.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
     transaction.commit().join();
   }
 
@@ -980,7 +986,7 @@ class RecentChainDataTest {
 
   private void saveBlock(final RecentChainData recentChainData, final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putBlockAndState(block);
+    tx.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
     tx.commit().ifExceptionGetsHereRaiseABug();
   }
 

@@ -17,7 +17,10 @@ import java.nio.file.Path;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
   private final String fork;
@@ -50,25 +53,43 @@ public class TestDefinition {
 
   public Spec getSpec() {
     if (spec == null) {
-      if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.PHASE0)) {
-        spec = TestSpecFactory.createMainnetPhase0();
-      } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.ALTAIR)) {
-        spec = TestSpecFactory.createMainnetAltair();
-      } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.BELLATRIX)) {
-        spec = TestSpecFactory.createMainnetBellatrix();
-      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.PHASE0)) {
-        spec = TestSpecFactory.createMinimalPhase0();
-      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.ALTAIR)) {
-        spec = TestSpecFactory.createMinimalAltair();
-      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.BELLATRIX)) {
-        spec = TestSpecFactory.createMinimalBellatrix();
-      } else {
-        // Set generic value
-        spec = TestSpecFactory.createMinimalPhase0();
-      }
+      createSpec();
     }
 
     return spec;
+  }
+
+  private void createSpec() {
+    final Eth2Network network;
+    final SpecMilestone highestSupportedMilestone;
+    switch (configName) {
+      case TestSpecConfig.MAINNET:
+        network = Eth2Network.MAINNET;
+        break;
+      case TestSpecConfig.MINIMAL:
+        network = Eth2Network.MINIMAL;
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown configName: " + configName);
+    }
+    switch (fork) {
+      case TestFork.PHASE0:
+        highestSupportedMilestone = SpecMilestone.PHASE0;
+        break;
+      case TestFork.ALTAIR:
+        highestSupportedMilestone = SpecMilestone.ALTAIR;
+        break;
+      case TestFork.BELLATRIX:
+        highestSupportedMilestone = SpecMilestone.BELLATRIX;
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown fork: " + fork);
+    }
+    spec =
+        TestSpecFactory.create(
+            highestSupportedMilestone,
+            network,
+            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.CHECKED));
   }
 
   public String getTestType() {

@@ -137,19 +137,37 @@ public class TestSpecFactory {
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
+    return create(specMilestone, network, builder -> {});
+  }
+
+  public static Spec create(
+      final SpecMilestone specMilestone,
+      final Eth2Network network,
+      final Consumer<SpecConfigBuilder> configModifier) {
+    final Consumer<SpecConfigBuilder> actualModifier;
     switch (specMilestone) {
       case PHASE0:
-        return create(SpecConfigLoader.loadConfig(network.configName()), specMilestone);
+        actualModifier = configModifier;
+        break;
       case ALTAIR:
-        return create(getAltairSpecConfig(network), specMilestone);
+        actualModifier =
+            configModifier.andThen(
+                builder -> builder.altairBuilder(altair -> altair.altairForkEpoch(UInt64.ZERO)));
+        break;
       case BELLATRIX:
-        return create(getBellatrixSpecConfig(network), specMilestone);
+        actualModifier =
+            configModifier.andThen(
+                c ->
+                    c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(m -> m.bellatrixForkEpoch(UInt64.ZERO)));
+        break;
       default:
         throw new IllegalStateException("unsupported milestone");
     }
+    return create(SpecConfigLoader.loadConfig(network.configName(), actualModifier), specMilestone);
   }
 
-  private static Spec create(
+  public static Spec create(
       final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
     return Spec.create(config, highestSupportedMilestone);
   }

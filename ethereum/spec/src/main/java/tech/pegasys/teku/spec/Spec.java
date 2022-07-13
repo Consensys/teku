@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -485,7 +486,7 @@ public class Spec {
     return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
-  public void onTick(MutableStore store, UInt64 timeMillis) {
+  public void onTick(final MutableStore store, final UInt64 timeMillis) {
     atTimeMillis(store.getGenesisTimeMillis(), timeMillis)
         .getForkChoiceUtil()
         .onTick(store, timeMillis);
@@ -634,6 +635,10 @@ public class Spec {
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {
+    return atState(state).getEpochProcessor().calculateBlockCheckpoints(state);
   }
 
   @CheckReturnValue

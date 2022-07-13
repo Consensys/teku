@@ -24,7 +24,10 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -36,8 +39,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
@@ -123,9 +130,59 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition,
       final BeaconState preState)
       throws Exception {
+    initProgressiveBalances(testDefinition, preState);
+
     final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILE);
     final BeaconState result = applyOperation(testDefinition, processor, preState);
     assertThat(result).isEqualTo(expectedState);
+
+    verifyProgressiveBalances(testDefinition, result);
+  }
+
+  private void initProgressiveBalances(
+      final TestDefinition testDefinition, final BeaconState state) {
+    final Spec spec = testDefinition.getSpec();
+    spec.atSlot(state.getSlot())
+        .getEpochProcessor()
+        .initProgressiveTotalBalancesIfRequired(state, calculateTotalBalances(spec, state));
+  }
+
+  /**
+   * Checks the progressive balances match the non-progressive results both for the immediate state,
+   * and after it goes through another epoch transition.
+   */
+  private void verifyProgressiveBalances(
+      final TestDefinition testDefinition, final BeaconState result)
+      throws SlotProcessingException, EpochProcessingException {
+    if (testDefinition.getSpec().atSlot(result.getSlot()).getMilestone() == SpecMilestone.PHASE0) {
+      // Progressive balances not used in Phase0
+      return;
+    }
+    final Spec spec = testDefinition.getSpec();
+    assertTotalBalances(spec, result);
+    final UInt64 firstSlotOfNextEpoch =
+        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(result.getSlot()).plus(1));
+    final BeaconState nextEpochState = spec.processSlots(result, firstSlotOfNextEpoch);
+    assertTotalBalances(spec, nextEpochState);
+  }
+
+  private void assertTotalBalances(final Spec spec, final BeaconState state) {
+    final Optional<TotalBalances> maybeProgressiveBalances =
+        BeaconStateCache.getTransitionCaches(state)
+            .getProgressiveTotalBalances()
+            .getTotalBalances(spec.getSpecConfig(state.getSlot()));
+    assertThat(maybeProgressiveBalances).isPresent();
+    final TotalBalances progressiveBalances = maybeProgressiveBalances.get();
+
+    final TotalBalances totalBalances = calculateTotalBalances(spec, state);
+    assertThat(progressiveBalances).isEqualTo(totalBalances);
+  }
+
+  private TotalBalances calculateTotalBalances(final Spec spec, final BeaconState nextEpochState) {
+    return spec.atSlot(nextEpochState.getSlot())
+        .getValidatorStatusFactory()
+        .createValidatorStatuses(nextEpochState)
+        .getTotalBalances();
   }
 
   private void assertOperationInvalid(
