@@ -38,7 +38,7 @@ public class ValidatorClientOptions {
       names = {"--Xbeacon-node-api-endpoints"},
       paramLabel = "<ENDPOINT>",
       description =
-          "Beacon Node API endpoint(s). If more than one is defined, the first node will be used as a primary and others as failovers.",
+          "Experimental support for multiple Beacon Node API endpoints. If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
       split = ",",
       hidden = true,
       arity = "1..*")
