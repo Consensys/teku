@@ -155,7 +155,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
                 .validatorClient()
                 .getValidatorConfig()
                 .getValidatorsRegistrationDistributedValidatorTimestamp())
-        .isEqualTo(Optional.of(120000));
+        .isEqualTo(Optional.of(UInt64.valueOf(120000)));
   }
 
   @Test

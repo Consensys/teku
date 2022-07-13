@@ -84,13 +84,13 @@ public class ValidatorProposerOptions {
 
   @Option(
       names = {"--Xvalidators-registration-distributed-validator-timestamp"},
-      paramLabel = "<INTEGER>",
+      paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Hardcoded timestamp to enable distributed validators to come to consensus to register to builder infrastructure.",
       arity = "1",
       hidden = true)
-  private Integer validatorsRegistrationDistributedValidatorTimestamp = null;
+  private UInt64 validatorsRegistrationDistributedValidatorTimestamp = null;
 
   @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},

@@ -254,7 +254,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final UInt64 timestamp =
         validatorConfig
             .getValidatorsRegistrationDistributedValidatorTimestamp()
-            .map(UInt64::valueOf)
             .orElse(timeProvider.getTimeInSeconds());
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);

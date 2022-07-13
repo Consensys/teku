@@ -73,7 +73,7 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
   private final int validatorsRegistrationSendingBatchSize;
-  private final Optional<Integer> validatorsRegistrationDistributedValidatorTimestamp;
+  private final Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp;
 
   private final int executorMaxQueueSize;
 
@@ -101,7 +101,7 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final UInt64 validatorsRegistrationDefaultGasLimit,
       final int validatorsRegistrationSendingBatchSize,
-      final Optional<Integer> validatorsRegistrationDistributedValidatorTimestamp,
+      final Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -209,7 +209,7 @@ public class ValidatorConfig {
     return validatorsRegistrationSendingBatchSize;
   }
 
-  public Optional<Integer> getValidatorsRegistrationDistributedValidatorTimestamp() {
+  public Optional<UInt64> getValidatorsRegistrationDistributedValidatorTimestamp() {
     return validatorsRegistrationDistributedValidatorTimestamp;
   }
 
@@ -273,8 +273,7 @@ public class ValidatorConfig {
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
     private int validatorsRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
-    private Optional<Integer> validatorsRegistrationDistributedValidatorTimestamp =
-        Optional.empty();
+    private Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -426,7 +425,7 @@ public class ValidatorConfig {
     }
 
     public Builder validatorsRegistrationDistributedValidatorTimestamp(
-        final Integer validatorsRegistrationDistributedValidatorTimestamp) {
+        final UInt64 validatorsRegistrationDistributedValidatorTimestamp) {
       this.validatorsRegistrationDistributedValidatorTimestamp =
           Optional.ofNullable(validatorsRegistrationDistributedValidatorTimestamp);
       return this;

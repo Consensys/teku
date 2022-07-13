@@ -157,7 +157,7 @@ class ValidatorRegistratorTest {
   @TestTemplate
   void registersValidators_shouldRegisterWithDistributedValidatorTimestamp() {
     when(validatorConfig.getValidatorsRegistrationDistributedValidatorTimestamp())
-        .thenReturn(Optional.of(140));
+        .thenReturn(Optional.of(UInt64.valueOf(140)));
     setActiveValidators(validator1);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
@@ -381,7 +381,6 @@ class ValidatorRegistratorTest {
     final UInt64 expectedTimestamp =
         validatorConfig
             .getValidatorsRegistrationDistributedValidatorTimestamp()
-            .map(UInt64::valueOf)
             .orElse(stubTimeProvider.getTimeInSeconds());
 
     assertThat(validatorRegistrations)
