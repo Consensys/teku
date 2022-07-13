@@ -75,9 +75,10 @@ public class GetDepositSnapshot extends MigratingEndpointAdapter {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getDepositSnapshot")
-            .summary("Get new Eth1Data")
+            .summary("Get finalized DepositTreeSnapshot")
             .description(
-                "Eth1Data that would be used in a new block created based on the current head.")
+                "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. "
+                    + "See EIP-4881 for details.")
             .tags(TAG_TEKU)
             .response(
                 SC_OK,

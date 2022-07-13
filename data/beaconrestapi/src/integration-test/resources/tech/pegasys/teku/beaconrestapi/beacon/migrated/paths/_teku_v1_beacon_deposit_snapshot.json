@@ -2,8 +2,8 @@
   "get" : {
     "tags" : [ "Teku" ],
     "operationId" : "getDepositSnapshot",
-    "summary" : "Get new Eth1Data",
-    "description" : "Eth1Data that would be used in a new block created based on the current head.",
+    "summary" : "Get finalized DepositTreeSnapshot",
+    "description" : "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See EIP-4881 for details.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
