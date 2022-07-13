@@ -91,7 +91,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
         validator.getEffectiveBalance(),
         withdrawableEpoch,
         predicates.isActiveValidator(activationEpoch, exitEpoch, currentEpoch),
-        predicates.isActiveValidator(activationEpoch, exitEpoch, previousEpoch));
+        predicates.isActiveValidator(activationEpoch, exitEpoch, previousEpoch),
+        predicates.isActiveValidator(activationEpoch, exitEpoch, currentEpoch.plus(1)));
   }
 
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
@@ -99,6 +100,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     UInt64 previousEpochActiveValidators = UInt64.ZERO;
     UInt64 currentEpochSourceAttesters = UInt64.ZERO;
     UInt64 currentEpochTargetAttesters = UInt64.ZERO;
+    UInt64 currentEpochHeadAttesters = UInt64.ZERO;
     UInt64 previousEpochSourceAttesters = UInt64.ZERO;
     UInt64 previousEpochTargetAttesters = UInt64.ZERO;
     UInt64 previousEpochHeadAttesters = UInt64.ZERO;
@@ -121,6 +123,9 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
       if (status.isCurrentEpochTargetAttester()) {
         currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
       }
+      if (status.isCurrentEpochHeadAttester()) {
+        currentEpochHeadAttesters = currentEpochHeadAttesters.plus(balance);
+      }
 
       if (status.isPreviousEpochSourceAttester()) {
         previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
@@ -138,6 +143,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
         previousEpochActiveValidators,
         currentEpochSourceAttesters,
         currentEpochTargetAttesters,
+        currentEpochHeadAttesters,
         previousEpochSourceAttesters,
         previousEpochTargetAttesters,
         previousEpochHeadAttesters);

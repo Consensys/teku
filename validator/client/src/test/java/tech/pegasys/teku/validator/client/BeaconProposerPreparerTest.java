@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -124,6 +124,7 @@ public class BeaconProposerPreparerTest {
     when(validatorIndexProvider.containsPublicKey(eq(validator2.getPublicKey()))).thenReturn(true);
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
+    when(validatorApiChannel.prepareBeaconProposer(anyList())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @TestTemplate
@@ -321,7 +322,8 @@ public class BeaconProposerPreparerTest {
 
   @TestTemplate
   void should_catchApiExceptions() {
-    doThrow(new RuntimeException("error")).when(validatorApiChannel).prepareBeaconProposer(any());
+    when(validatorApiChannel.prepareBeaconProposer(anyList()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
     beaconProposerPreparer.onSlot(UInt64.ZERO);
     verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());

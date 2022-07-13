@@ -212,7 +212,8 @@ class StoreTest extends AbstractStoreTest {
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    tx.putBlockAndState(finalizedBlockAndState);
+    tx.putBlockAndState(
+        finalizedBlockAndState, spec.calculateBlockCheckpoints(finalizedBlockAndState.getState()));
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.commit()).isCompleted();
 
@@ -235,7 +236,12 @@ class StoreTest extends AbstractStoreTest {
 
     // Add blocks
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                tx.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
     tx.commit().join();
 
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureRoot);
@@ -263,7 +269,12 @@ class StoreTest extends AbstractStoreTest {
         new StubStorageUpdateChannelWithDelays();
     final StoreTransaction tx = store.startTransaction(updateChannel);
     // Add blocks
-    chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                tx.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
     // Update checkpoints
     tx.setFinalizedCheckpoint(checkpoint1, false);
     tx.setJustifiedCheckpoint(checkpoint2);

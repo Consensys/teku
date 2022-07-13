@@ -22,8 +22,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -53,7 +53,7 @@ public interface KvStoreHotDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
 
-  Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(Bytes32 root);
+  Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
 
@@ -72,7 +72,7 @@ public interface KvStoreHotDao extends AutoCloseable {
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
   @MustBeClosed
-  Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs();
+  Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints();
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
@@ -94,9 +94,9 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     void setLatestFinalizedState(BeaconState state);
 
-    void addHotBlock(BlockAndCheckpointEpochs blockAndCheckpointEpochs);
+    void addHotBlock(BlockAndCheckpoints blockAndCheckpoints);
 
-    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, CheckpointEpochs checkpointEpochs);
+    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, BlockCheckpoints blockCheckpoints);
 
     void addHotState(Bytes32 blockRoot, BeaconState state);
 
@@ -106,7 +106,7 @@ public interface KvStoreHotDao extends AutoCloseable {
 
     void addVotes(Map<UInt64, VoteTracker> states);
 
-    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
       blocks.values().forEach(this::addHotBlock);
     }
 

@@ -202,7 +202,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
                           return buildBeaconPreparableProposerList(
                               Optional.empty(), publicKeyToIndex);
                         }))
-        .thenAccept(validatorApiChannel::prepareBeaconProposer)
+        .thenCompose(validatorApiChannel::prepareBeaconProposer)
         .finish(
             () -> sentProposersAtLeastOnce.compareAndSet(false, true),
             VALIDATOR_LOGGER::beaconProposerPreparationFailed);

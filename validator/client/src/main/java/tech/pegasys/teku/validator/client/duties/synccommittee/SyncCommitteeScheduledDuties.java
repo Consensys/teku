@@ -140,7 +140,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (assignments.isEmpty()) {
       return;
     }
-    validatorApiChannel.subscribeToSyncCommitteeSubnets(
+    final Set<SyncCommitteeSubnetSubscription> subscriptions =
         assignments.stream()
             .map(
                 assignment ->
@@ -148,7 +148,10 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
                         assignment.getValidatorIndex(),
                         assignment.getCommitteeIndices(),
                         lastEpochInCommitteePeriod.increment()))
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toSet());
+    validatorApiChannel
+        .subscribeToSyncCommitteeSubnets(subscriptions)
+        .finish(error -> LOG.error("Failed to subscribe to sync committee subnets.", error));
   }
 
   public static class Builder {

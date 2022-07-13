@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -69,9 +70,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
           .put("fork_choice/ex_ante", new ForkChoiceTestExecutor())
-          .put(
-              "fork_choice/on_block",
-              new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
+          .put("fork_choice/reorg", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_block", new ForkChoiceTestExecutor())
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .build();
 
@@ -111,6 +111,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new InlineEventThread(),
             recentChainData,
             new StubForkChoiceNotifier(),
+            new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             true,
             true);

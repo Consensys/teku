@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 public class LRUCache<K, V> implements Cache<K, V> {
 
   public static <K, V> LRUCache<K, V> create(int capacity) {
-    return new LRUCache<>(LimitedMap.createSynchronized(capacity));
+    return new LRUCache<>(LimitedMap.createNonSynchronized(capacity));
   }
 
   private final LimitedMap<K, V> cacheData;
@@ -37,7 +37,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public Cache<K, V> copy() {
+  public synchronized Cache<K, V> copy() {
     return new LRUCache<>(cacheData.copy());
   }
 
@@ -50,7 +50,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
    * @return expected value result for provided key
    */
   @Override
-  public V get(K key, Function<K, V> fallback) {
+  public synchronized V get(K key, Function<K, V> fallback) {
     V result = cacheData.get(key);
 
     if (result == null) {
@@ -64,22 +64,22 @@ public class LRUCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public Optional<V> getCached(K key) {
+  public synchronized Optional<V> getCached(K key) {
     return Optional.ofNullable(cacheData.get(key));
   }
 
   @Override
-  public void invalidate(K key) {
+  public synchronized void invalidate(K key) {
     cacheData.remove(key);
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
     cacheData.clear();
   }
 
   @Override
-  public int size() {
+  public synchronized int size() {
     return cacheData.size();
   }
 }

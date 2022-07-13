@@ -23,14 +23,14 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoArrayBuilder {
   private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
-  private UInt64 justifiedEpoch;
-  private UInt64 finalizedEpoch;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint finalizedCheckpoint;
   private UInt64 initialEpoch = SpecConfig.GENESIS_EPOCH;
 
   public ProtoArray build() {
-    checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
-    checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
-    return new ProtoArray(pruneThreshold, justifiedEpoch, finalizedEpoch, initialEpoch);
+    checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
+    checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
+    return new ProtoArray(pruneThreshold, justifiedCheckpoint, finalizedCheckpoint, initialEpoch);
   }
 
   public ProtoArrayBuilder pruneThreshold(final int pruneThreshold) {
@@ -45,23 +45,13 @@ public class ProtoArrayBuilder {
 
   public ProtoArrayBuilder justifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
     checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
-    this.justifiedEpoch(justifiedCheckpoint.getEpoch());
+    this.justifiedCheckpoint = justifiedCheckpoint;
     return this;
   }
 
   public ProtoArrayBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
     checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
-    this.finalizedEpoch(finalizedCheckpoint.getEpoch());
-    return this;
-  }
-
-  public ProtoArrayBuilder justifiedEpoch(final UInt64 justifiedEpoch) {
-    this.justifiedEpoch = justifiedEpoch;
-    return this;
-  }
-
-  public ProtoArrayBuilder finalizedEpoch(final UInt64 finalizedEpoch) {
-    this.finalizedEpoch = finalizedEpoch;
+    this.finalizedCheckpoint = finalizedCheckpoint;
     return this;
   }
 

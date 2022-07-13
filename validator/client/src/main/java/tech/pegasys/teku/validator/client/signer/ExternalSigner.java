@@ -256,8 +256,22 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final UInt64 epoch) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
+      final ValidatorRegistration validatorRegistration) {
+    return sign(
+        signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
+        SignType.VALIDATOR_REGISTRATION,
+        Map.of(
+            "validator_registration",
+            Map.of(
+                "fee_recipient",
+                validatorRegistration.getFeeRecipient().toHexString(),
+                "gas_limit",
+                validatorRegistration.getGasLimit(),
+                "timestamp",
+                validatorRegistration.getTimestamp(),
+                "pubkey",
+                validatorRegistration.getPublicKey().toString())),
+        slashableGenericMessage("validator registration"));
   }
 
   @Override

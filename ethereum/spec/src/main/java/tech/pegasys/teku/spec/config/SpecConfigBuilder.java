@@ -102,6 +102,8 @@ public class SpecConfigBuilder {
   private Integer depositNetworkId;
   private Eth1Address depositContractAddress;
 
+  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.DISABLED;
+
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
@@ -161,7 +163,8 @@ public class SpecConfigBuilder {
             proposerScoreBoost,
             depositChainId,
             depositNetworkId,
-            depositContractAddress);
+            depositContractAddress,
+            progressiveBalancesMode);
 
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
@@ -549,6 +552,12 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder depositContractAddress(final Eth1Address depositContractAddress) {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
+    return this;
+  }
+
+  public SpecConfigBuilder progressiveBalancesMode(
+      final ProgressiveBalancesMode progressiveBalancesMode) {
+    this.progressiveBalancesMode = progressiveBalancesMode;
     return this;
   }
 

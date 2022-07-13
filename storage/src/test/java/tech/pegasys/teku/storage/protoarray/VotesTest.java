@@ -30,15 +30,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class VotesTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final VoteUpdater store = createStoreToManipulateVotes();
+  private final TestStoreImpl store = createStoreToManipulateVotes();
   private final ForkChoiceStrategy forkChoice =
       createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
   private List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
@@ -57,7 +58,7 @@ public class VotesTest {
     //          0
     //         /
     //        2
-    forkChoice.processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is 2
     //
@@ -75,7 +76,7 @@ public class VotesTest {
     //          0
     //         / \
     //        2   1
-    forkChoice.processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -128,7 +129,7 @@ public class VotesTest {
     //        2   1
     //            |
     //            3
-    forkChoice.processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -194,7 +195,7 @@ public class VotesTest {
     //            3
     //            |
     //            4
-    forkChoice.processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is now 4
     //
@@ -221,7 +222,7 @@ public class VotesTest {
     //            4
     //           /
     //          5 <- justified epoch = 2
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure that 5 is filtered out and the head stays at 4.
@@ -251,7 +252,7 @@ public class VotesTest {
     //            4
     //           / \
     //          5   6 <- justified epoch = 0
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Move both votes to 5.
@@ -286,11 +287,11 @@ public class VotesTest {
     //          8
     //         /
     //         9
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
@@ -375,7 +376,7 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Double-check the head is still 9
@@ -507,7 +508,7 @@ public class VotesTest {
 
     // Ensure that pruning below the prune threshold does not prune.
     forkChoice.setPruneThreshold(Integer.MAX_VALUE);
-    forkChoice.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, getHash(5)));
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
@@ -533,7 +534,7 @@ public class VotesTest {
     //         / \
     //        9  10
     forkChoice.setPruneThreshold(1);
-    forkChoice.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, getHash(5)));
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(6);
 
     // Run find-head, ensure the prune didn't change the head.
@@ -551,7 +552,7 @@ public class VotesTest {
     //        9  10
     //        |
     //        11
-    forkChoice.processBlock(
+    processBlock(
         ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure the head is now 11
@@ -567,6 +568,27 @@ public class VotesTest {
     // head-> 11
     assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
         .isEqualTo(getHash(11));
+  }
+
+  private void processBlock(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
+      final Bytes32 executionBlockHash) {
+    forkChoice.processBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        new BlockCheckpoints(
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO),
+            new Checkpoint(justifiedEpoch, Bytes32.ZERO),
+            new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
+        executionBlockHash);
   }
 
   private UInt64 unsigned(final int i) {

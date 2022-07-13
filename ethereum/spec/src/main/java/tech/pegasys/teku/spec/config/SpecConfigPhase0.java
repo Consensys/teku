@@ -100,6 +100,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int depositNetworkId;
   private final Eth1Address depositContractAddress;
 
+  private final ProgressiveBalancesMode progressiveBalancesMode;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -150,7 +152,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int proposerScoreBoost,
       final int depositChainId,
       final int depositNetworkId,
-      final Eth1Address depositContractAddress) {
+      final Eth1Address depositContractAddress,
+      final ProgressiveBalancesMode progressiveBalancesMode) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -202,6 +205,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
+    this.progressiveBalancesMode = progressiveBalancesMode;
   }
 
   @Override
@@ -480,6 +484,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public ProgressiveBalancesMode getProgressiveBalancesMode() {
+    return progressiveBalancesMode;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -537,7 +546,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(depositContractAddress, that.depositContractAddress);
+        && Objects.equals(depositContractAddress, that.depositContractAddress)
+        && progressiveBalancesMode == that.progressiveBalancesMode;
   }
 
   @Override
@@ -592,6 +602,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         proposerScoreBoost,
         depositChainId,
         depositNetworkId,
-        depositContractAddress);
+        depositContractAddress,
+        progressiveBalancesMode);
   }
 }

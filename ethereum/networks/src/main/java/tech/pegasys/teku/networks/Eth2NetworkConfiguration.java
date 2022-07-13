@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -46,6 +47,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = false;
+  public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
+      ProgressiveBalancesMode.DISABLED;
 
   private final Spec spec;
   private final String constants;
@@ -207,6 +210,7 @@ public class Eth2NetworkConfiguration {
     private boolean proposerBoostEnabled = DEFAULT_PROPOSER_BOOST_ENABLED;
     private boolean equivocatingIndicesEnabled = DEFAULT_EQUIVOCATING_INDICES_ENABLED;
     private boolean forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
+    private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
@@ -228,6 +232,7 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
+                  builder.progressiveBalancesMode(progressiveBalancesMode);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -334,6 +339,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder proposerBoostEnabled(final boolean proposerBoostEnabled) {
       this.proposerBoostEnabled = proposerBoostEnabled;
+      return this;
+    }
+
+    public Builder progressiveBalancesEnabled(
+        final ProgressiveBalancesMode progressiveBalancesMode) {
+      this.progressiveBalancesMode = progressiveBalancesMode;
       return this;
     }
 
@@ -505,8 +516,16 @@ public class Eth2NetworkConfiguration {
           .discoveryBootnodes(
               // Teku bootnode
               "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
-              // EF bootnode
-              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk");
+              // EF bootnodes
+              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
+              "enr:-L64QLKGahA2AQwFUrX1rpad2zfSgtSwdFUSAH2vLwYkFaGIFtaCKwllLVeRyaxm_EiJA_AnIut11VBWssanktwEzmOCAQyHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEojetBIlzZWNwMjU2azGhAmIKKR-unrW_VMUSW9ctYQVt4rYRD7HmQ48xkM-yNyxKiHN5bmNuZXRzBoN0Y3CCIyiDdWRwgiMo",
+              "enr:-Ly4QBKxH0EE-Z1VHY7GbxgV6axbnD0jJoeHsj0tOY7DeOyqW1GhIrgEyxb6Rl_rS10qrgrBtJOI8Yt3bd7rXHk3GBlsh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhKfr5v6Jc2VjcDI1NmsxoQPmax4TV2mAzlHJV1J0l-6tQkHui-iIJ7mcCiyE9YREMohzeW5jbmV0cwyDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QKEbHPy_jbA3xy_ZR04LVyJ8x2vGoVSUZ2QvoLHTHiCoeWraxyWwl3MhRupM0aXbr8U_OBJ2GkqZAxbY1I5boJtRh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhAWhjUqJc2VjcDI1NmsxoQLTpctSHKHGN7nGTQmCP4-PSTtSYcppPqGTkvCbR-iUAIhzeW5jbmV0cw-DdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QBPqYWxS4x6UuU2IbDFGRYpMj-z1-rtoRFXGw6uJ0fQ0Rix0Vtak2dSl0SO0w50WKTSmFubSpHkxLmeHJ7kZ-S1Rh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhAWhhAmJc2VjcDI1NmsxoQPpPhUwcdObdY1ERHpiR2X7vaAZ05xwHs1uLEIUjea044hzeW5jbmV0cwmDdGNwgiMog3VkcIIjKA",
+              "enr:-L64QOfVzGCvyI73fW6IFzugYZr0QfYItn0j19P8zgbmgFdJKIdFLUp7lynEwy0U9YgFhKF4NF4PumailtLAmUv4bM2CApmHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEh7WWsIlzZWNwMjU2azGhAsMdsKC6SYYlIN7huLAhhxxRzOJOka7gpfnFZ2Auq0kiiHN5bmNuZXRzBoN0Y3CCIyiDdWRwgiMo",
+              "enr:-L64QNCPH53Je5MJ_TbKHnPSqKO1XZtywJK4gF4UA3UcQyHZEJKpcPHbXYnibrDUB7XEbZ1NW2INUK9uSD2ecOVVXfmCARCHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEQWz6UYlzZWNwMjU2azGhAovELkeemN_zzm-wEyQJo8p0DgiM4o32zSDQkiR1LOIIiHN5bmNuZXRzA4N0Y3CCIyiDdWRwgiMo",
+              "enr:-L64QESLzEbBz8I38oLg1PX1ATTGZUQ5KUadgy4UAZqSsutLdW4rSASTCFKL0ssqmq0lUXEF7aP-4gvuDB9IvVb42syCAx6HYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEw8ndRIlzZWNwMjU2azGhAirZcWMVxDPb5T4exQOfGRxIHICCcAxSpi1_mCaehUgyiHN5bmNuZXRzDIN0Y3CCIyiDdWRwgiMo",
+              "enr:-L24QN8Y-8WTMuwF8ePM2wOjzlMdLOYwl3QJmXs1KILv6ZZwVovYC822cb-nh1R2U3Hi6AiHS5SsINNrHzLQVzFrsduBg4dhdHRuZXRziP__________hGV0aDKQPPo7rIAAAHH__________4JpZIJ2NIJpcITDyd1CiXNlY3AyNTZrMaECroNSTYv0Gy272DBfn-in38LLREpMwzOP18LoLrYJ4jeIc3luY25ldHMJg3RjcIIjKIN1ZHCCIyg");
     }
 
     private Builder applySepoliaNetworkDefaults() {
@@ -517,10 +536,11 @@ public class Eth2NetworkConfiguration {
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .discoveryBootnodes(
-              // EF bootnode
+              // EF bootnodes
               "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
+              "enr:-KG4QE5OIg5ThTjkzrlVF32WT_-XT14WeJtIz2zoTqLLjQhYAmJlnk4ItSoH41_2x0RX0wTFIe5GgjRzU2u7Q1fN4vADhGV0aDKQqP7o7pAAAHAyAAAAAAAAAIJpZIJ2NIJpcISlFsStiXNlY3AyNTZrMaEC-Rrd_bBZwhKpXzFCrStKp1q_HmGOewxY3KwM8ofAj_ODdGNwgiMog3VkcIIjKA",
               // Teku bootnode
-              "enr:-KG4QKB1sosCWgLCHw08KFtyNyOG-zjlXvYxSO0xUaM7vVuwCjGk9RPZSBdbzSoUWvHkK93oI3uCOIga5-SGaywFQOgGhGV0aDKQqP7o7pAAAHAyAAAAAAAAAIJpZIJ2NIJpcIQS2CYxiXNlY3AyNTZrMaECNILo12nPazAG-PDbTKrUk8hyHjWJaY5G2KVicOOj5mGDdGNwgiMog3VkcIIjKA");
+              "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA");
     }
 
     public Builder applyKilnNetworkDefaults() {

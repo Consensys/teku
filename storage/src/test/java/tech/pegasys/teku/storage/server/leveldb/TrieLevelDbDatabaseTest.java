@@ -17,16 +17,14 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.io.File;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
+import tech.pegasys.teku.storage.server.kvstore.AbstractDatabaseTest;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-@Disabled("https://github.com/ConsenSys/teku/issues/4173 still in progress")
-public class TrieLevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+public class TrieLevelDbDatabaseTest extends AbstractDatabaseTest {
 
   @BeforeAll
   static void setUp() {
@@ -42,6 +40,7 @@ public class TrieLevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotState
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.LEVELDB_TREE)
         .storageMode(storageMode)
