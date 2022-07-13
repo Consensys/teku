@@ -27,6 +27,7 @@ import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 import com.google.common.collect.Streams;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,7 +59,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -79,8 +79,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -1065,7 +1064,7 @@ public abstract class AbstractDatabaseTest {
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<OnDiskStoreData> maybeData =
-        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
+        ((KvStoreDatabase<?, ?, ?, ?>) database).createMemoryStore(() -> 0L);
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -1141,17 +1140,16 @@ public abstract class AbstractDatabaseTest {
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-      SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
       database.close();
-      assertThatThrownBy(
-              () -> updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock)))
+      assertThatThrownBy(() -> updater.setGenesisTime(UInt64.ONE))
           .isInstanceOf(ShuttingDownException.class);
     }
   }
 
-  private KvStoreHotDao.HotUpdater hotUpdater() {
-    return ((KvStoreDatabase) database).dao.hotUpdater();
+  @MustBeClosed
+  private KvStoreCombinedDaoCommon.HotUpdaterCommon hotUpdater() {
+    return ((KvStoreDatabase<?, ?, ?, ?>) database).hotUpdater();
   }
 
   @Test
@@ -1159,16 +1157,17 @@ public abstract class AbstractDatabaseTest {
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreFinalizedDao.FinalizedUpdater updater = finalizedUpdater()) {
+    try (final KvStoreCombinedDaoCommon.FinalizedUpdaterCommon updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
-      assertThatThrownBy(() -> updater.addFinalizedBlock(newBlock.getBlock()))
+      assertThatThrownBy(() -> updater.addFinalizedState(newBlock.getRoot(), newBlock.getState()))
           .isInstanceOf(ShuttingDownException.class);
     }
   }
 
-  private KvStoreFinalizedDao.FinalizedUpdater finalizedUpdater() {
-    return ((KvStoreDatabase) database).dao.finalizedUpdater();
+  @MustBeClosed
+  private KvStoreCombinedDaoCommon.FinalizedUpdaterCommon finalizedUpdater() {
+    return ((KvStoreDatabase<?, ?, ?, ?>) database).finalizedUpdater();
   }
 
   @Test
@@ -1178,7 +1177,7 @@ public abstract class AbstractDatabaseTest {
 
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createDefault());
-    try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
+    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
@@ -1216,9 +1215,7 @@ public abstract class AbstractDatabaseTest {
       createStorageSystemInternal(StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreHotDao.HotUpdater updater = hotUpdater()) {
-        SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
-
+      try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
         final Thread dbCloserThread =
             new Thread(
                 () -> {
@@ -1231,7 +1228,7 @@ public abstract class AbstractDatabaseTest {
 
         dbCloserThread.start();
         try {
-          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+          updater.setGenesisTime(UInt64.ONE);
         } catch (Exception e) {
           assertThat(e).isInstanceOf(ShuttingDownException.class);
         }
