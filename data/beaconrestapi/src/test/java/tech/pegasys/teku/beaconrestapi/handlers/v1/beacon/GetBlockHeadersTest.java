@@ -29,8 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.data.BlockHeaderData;
-import tech.pegasys.teku.api.data.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.BlockHeaderData;
+import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
 

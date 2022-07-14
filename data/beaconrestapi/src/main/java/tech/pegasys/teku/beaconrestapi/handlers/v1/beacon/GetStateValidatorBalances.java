@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.data.StateValidatorBalanceData;
+import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;

@@ -35,7 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.data.BlockHeaderData;
+import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
