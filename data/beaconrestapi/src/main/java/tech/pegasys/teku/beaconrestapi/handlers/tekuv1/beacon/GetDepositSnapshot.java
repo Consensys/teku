@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,7 +31,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.api.response.v1.teku.GetDepositTreeSnapshotResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetDepositSnapshotResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -85,12 +84,12 @@ public class GetDepositSnapshot extends MigratingEndpointAdapter {
       description =
           "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. "
               + "See EIP-4881 for details.",
-      tags = {TAG_TEKU, TAG_EXPERIMENTAL},
+      tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(type = JSON, from = GetDepositTreeSnapshotResponse.class),
+              @OpenApiContent(type = JSON, from = GetDepositSnapshotResponse.class),
               @OpenApiContent(type = OCTET_STREAM)
             }),
         @OpenApiResponse(status = RES_NOT_FOUND),

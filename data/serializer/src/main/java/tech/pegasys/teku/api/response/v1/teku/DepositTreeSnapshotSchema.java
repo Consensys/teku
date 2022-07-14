@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetDepositTreeSnapshotResponse {
+public class DepositTreeSnapshotSchema {
   @JsonProperty("finalized")
   @ArraySchema(
       schema = @Schema(type = "string", example = EXAMPLE_BYTES32, pattern = PATTERN_BYTES32),
@@ -49,7 +49,7 @@ public class GetDepositTreeSnapshotResponse {
   public Bytes32 executionBlockHash;
 
   @JsonCreator
-  public GetDepositTreeSnapshotResponse(
+  public DepositTreeSnapshotSchema(
       @JsonProperty("finalized") final List<Bytes32> finalized,
       @JsonProperty("deposits") final UInt64 deposits,
       @JsonProperty("execution_block_hash") final Bytes32 executionBlockHash) {

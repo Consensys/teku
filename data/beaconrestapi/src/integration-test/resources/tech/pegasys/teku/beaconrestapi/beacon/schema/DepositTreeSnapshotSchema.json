@@ -13,8 +13,8 @@
     "deposits" : {
       "type" : "string",
       "description" : "Number of deposits stored in the snapshot",
-      "example" : "1",
-      "format" : "uint64"
+      "format" : "uint64",
+      "example" : "1"
     },
     "execution_block_hash" : {
       "pattern" : "^0x[a-fA-F0-9]{64}$",
