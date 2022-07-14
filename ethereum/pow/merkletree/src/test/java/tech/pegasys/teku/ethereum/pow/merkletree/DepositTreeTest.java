@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -126,26 +127,7 @@ class DepositTreeTest {
   }
 
   private static final DeserializableTypeDefinition<DepositTreeSnapshot>
-      DEPOSIT_TREE_SNAPSHOT_TYPE =
-          DeserializableTypeDefinition.object(DepositTreeSnapshot.class, SnapshotBuilder.class)
-              .initializer(SnapshotBuilder::new)
-              .finisher(SnapshotBuilder::build)
-              .withField(
-                  "finalized",
-                  DeserializableTypeDefinition.listOf(CoreTypes.BYTES32_TYPE),
-                  DepositTreeSnapshot::getFinalized,
-                  SnapshotBuilder::finalized)
-              .withField(
-                  "deposits",
-                  CoreTypes.UINT64_TYPE,
-                  snapshot -> UInt64.valueOf(snapshot.getDeposits()),
-                  SnapshotBuilder::deposits)
-              .withField(
-                  "execution_block_hash",
-                  CoreTypes.BYTES32_TYPE,
-                  DepositTreeSnapshot::getExecutionBlockHash,
-                  SnapshotBuilder::executionBlockHash)
-              .build();
+      DEPOSIT_TREE_SNAPSHOT_TYPE = DepositTreeSnapshot.getJsonTypeDefinition();
 
   private static final DeserializableTypeDefinition<DepositTestCase> TEST_CASE_TYPE =
       DeserializableTypeDefinition.object(DepositTestCase.class)
@@ -171,28 +153,6 @@ class DepositTreeTest {
               DepositTestCase::getSnapshot,
               DepositTestCase::setSnapshot)
           .build();
-
-  private static class SnapshotBuilder {
-    private List<Bytes32> finalized;
-    private long deposits;
-    private Bytes32 executionBlockHash;
-
-    public void finalized(final List<Bytes32> finalized) {
-      this.finalized = finalized;
-    }
-
-    public void deposits(final UInt64 deposits) {
-      this.deposits = deposits.longValue();
-    }
-
-    public void executionBlockHash(final Bytes32 executionBlockHash) {
-      this.executionBlockHash = executionBlockHash;
-    }
-
-    public DepositTreeSnapshot build() {
-      return new DepositTreeSnapshot(finalized, deposits, executionBlockHash);
-    }
-  }
 
   private static class DepositTestCase {
     private DepositData depositData;

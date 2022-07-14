@@ -21,8 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.teku.api.data.DepositTreeSnapshotData;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
@@ -67,9 +66,8 @@ public class Eth1DataProvider {
     return new VotingPeriodInfo(votesRequired, votingSlots, slotsLeft);
   }
 
-  public SafeFuture<Optional<DepositTreeSnapshotData>> getFinalizedDepositTreeSnapshot() {
-    return SafeFuture.supplyAsync(
-        () -> depositProvider.getFinalizedDepositTreeSnapshot().map(DepositTreeSnapshotData::new));
+  public Optional<DepositTreeSnapshot> getFinalizedDepositTreeSnapshot() {
+    return depositProvider.getFinalizedDepositTreeSnapshot();
   }
 
   public static class VotingPeriodInfo {

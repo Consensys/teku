@@ -47,7 +47,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositTreeSnapshot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
@@ -395,7 +395,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetDepositTreeSnapshot(eth1DataProvider));
+    addMigratedEndpoint(new GetDepositSnapshot(eth1DataProvider));
     addMigratedEndpoint(new GetGlobalValidatorInclusion(provider));
     addMigratedEndpoint(new GetValidatorInclusion(provider));
   }

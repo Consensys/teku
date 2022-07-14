@@ -24,14 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.data.DepositTreeSnapshotData;
-import tech.pegasys.teku.api.ssz.DepositTreeSnapshotSerializer;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositTreeSnapshot;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -48,8 +47,7 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
 
   @Test
   public void shouldReturnNotFoundWhenNoFinalizedTree() throws IOException {
-    when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(eth1DataProvider.getFinalizedDepositTreeSnapshot()).thenReturn(Optional.empty());
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
   }
@@ -59,19 +57,18 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
     final List<Bytes32> finalized = new ArrayList<>();
     finalized.add(dataStructureUtil.randomBytes32());
     finalized.add(dataStructureUtil.randomBytes32());
-    final DepositTreeSnapshotData depositTreeSnapshotData =
-        new DepositTreeSnapshotData(
-            finalized, dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
+    final DepositTreeSnapshot depositTreeSnapshotData =
+        new DepositTreeSnapshot(
+            finalized, dataStructureUtil.randomLong(), dataStructureUtil.randomBytes32());
     when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(depositTreeSnapshotData)));
+        .thenReturn(Optional.of(depositTreeSnapshotData));
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     final String actualResponse = response.body().string();
     assertThat(actualResponse)
         .isEqualTo(
             JsonUtil.serialize(
-                depositTreeSnapshotData,
-                GetDepositTreeSnapshot.DEPOSIT_TREE_SNAPSHOT_RESPONSE_TYPE));
+                depositTreeSnapshotData, GetDepositSnapshot.DEPOSIT_SNAPSHOT_RESPONSE_TYPE));
   }
 
   @Test
@@ -79,16 +76,15 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
     final List<Bytes32> finalized = new ArrayList<>();
     finalized.add(dataStructureUtil.randomBytes32());
     finalized.add(dataStructureUtil.randomBytes32());
-    final DepositTreeSnapshotData depositTreeSnapshotData =
-        new DepositTreeSnapshotData(
-            finalized, dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
+    final DepositTreeSnapshot depositTreeSnapshot =
+        new DepositTreeSnapshot(
+            finalized, dataStructureUtil.randomLong(), dataStructureUtil.randomBytes32());
     when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(depositTreeSnapshotData)));
+        .thenReturn(Optional.of(depositTreeSnapshot));
     final Response response = getSsz();
     assertThat(response.code()).isEqualTo(SC_OK);
-    final byte[] actualResponse = response.body().bytes();
-    assertThat(actualResponse)
-        .isEqualTo(DepositTreeSnapshotSerializer.INSTANCE.serialize(depositTreeSnapshotData));
+    final Bytes actualResponse = Bytes.wrap(response.body().bytes());
+    assertThat(actualResponse).isEqualTo(depositTreeSnapshot.sszSerialize());
   }
 
   @Test
@@ -99,10 +95,10 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
   }
 
   private Response get() throws IOException {
-    return getResponse(GetDepositTreeSnapshot.ROUTE);
+    return getResponse(GetDepositSnapshot.ROUTE);
   }
 
   private Response getSsz() throws IOException {
-    return getResponse(GetDepositTreeSnapshot.ROUTE, ContentTypes.OCTET_STREAM);
+    return getResponse(GetDepositSnapshot.ROUTE, ContentTypes.OCTET_STREAM);
   }
 }

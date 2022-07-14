@@ -25,7 +25,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositTreeSnapshot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
@@ -267,7 +267,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new GetDeposits(eth1DataProvider))
         .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
         .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
-        .endpoint(new GetDepositTreeSnapshot(eth1DataProvider))
+        .endpoint(new GetDepositSnapshot(eth1DataProvider))
         .endpoint(new GetGlobalValidatorInclusion(dataProvider))
         .endpoint(new GetValidatorInclusion(dataProvider))
         .build();
