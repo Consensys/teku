@@ -19,46 +19,34 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.MoreObjects;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SyncingStatus;
 
 public class GetSyncing extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/node/syncing";
 
-  private static final SerializableTypeDefinition<SyncStatusData> SYNC_RESPONSE_DATA_TYPE =
-      SerializableTypeDefinition.object(SyncStatusData.class)
-          .withField("head_slot", UINT64_TYPE, SyncStatusData::getCurrentSlot)
-          .withField("sync_distance", UINT64_TYPE, SyncStatusData::getSlotsBehind)
-          .withField("is_syncing", BOOLEAN_TYPE, SyncStatusData::isSyncing)
-          .withOptionalField("is_optimistic", BOOLEAN_TYPE, SyncStatusData::isOptimistic)
-          .build();
-
-  private static final SerializableTypeDefinition<SyncStatusData> SYNCING_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(SyncStatusData.class)
+  private static final SerializableTypeDefinition<SyncingStatus> GET_SYNCING_STATUS_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(SyncingStatus.class)
           .name("GetSyncingStatusResponse")
-          .withField("data", SYNC_RESPONSE_DATA_TYPE, Function.identity())
+          .withField("data", SyncingStatus.TYPE_DEFINITION, Function.identity())
           .build();
 
   private final SyncDataProvider syncProvider;
@@ -76,7 +64,7 @@ public class GetSyncing extends MigratingEndpointAdapter {
                 "Requests the beacon node to describe if it's currently syncing or not, "
                     + "and if it is, what block it is up to.")
             .tags(TAG_NODE, TAG_VALIDATOR_REQUIRED)
-            .response(SC_OK, "Request successful", SYNCING_RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", GET_SYNCING_STATUS_RESPONSE_TYPE)
             .build());
     this.syncProvider = syncProvider;
   }
@@ -101,88 +89,29 @@ public class GetSyncing extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(new SyncStatusData(syncProvider));
+    request.respondOk(getValidatorApiSyncingStatus());
   }
 
-  static class SyncStatusData {
-    private final boolean isSyncing;
-    private final Optional<Boolean> isOptimistic;
-    private final UInt64 currentSlot;
-    private final UInt64 slotsBehind;
+  private tech.pegasys.teku.validator.api.SyncingStatus getValidatorApiSyncingStatus() {
+    final tech.pegasys.teku.beacon.sync.events.SyncingStatus syncingStatus =
+        syncProvider.getSyncingStatus();
+    final SyncState syncState = syncProvider.getCurrentSyncState();
+    final boolean isSyncing = !syncState.isInSync();
+    final UInt64 syncDistance = calculateSyncDistance(syncingStatus, isSyncing);
+    return new tech.pegasys.teku.validator.api.SyncingStatus(
+        syncingStatus.getCurrentSlot(),
+        syncDistance,
+        isSyncing,
+        Optional.of(syncState.isOptimistic()));
+  }
 
-    public SyncStatusData(final SyncDataProvider syncProvider) {
-      final SyncingStatus status = syncProvider.getSyncingStatus();
-      final SyncState syncState = syncProvider.getCurrentSyncState();
-      this.isSyncing = !syncState.isInSync();
-      this.isOptimistic = Optional.of(syncState.isOptimistic());
-      this.currentSlot = status.getCurrentSlot();
-      // do this last, after isSyncing is calculated
-      this.slotsBehind = calculateSlotsBehind(status);
+  private UInt64 calculateSyncDistance(
+      final tech.pegasys.teku.beacon.sync.events.SyncingStatus syncingStatus,
+      final boolean isSyncing) {
+    if (isSyncing && syncingStatus.getHighestSlot().isPresent()) {
+      final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
+      return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
     }
-
-    SyncStatusData(
-        final boolean isSyncing,
-        final Boolean isOptimistic,
-        final int currentSlot,
-        final int slotsBehind) {
-      this.isSyncing = isSyncing;
-      this.isOptimistic = Optional.ofNullable(isOptimistic);
-      this.currentSlot = UInt64.valueOf(currentSlot);
-      this.slotsBehind = UInt64.valueOf(slotsBehind);
-    }
-
-    public boolean isSyncing() {
-      return isSyncing;
-    }
-
-    public Optional<Boolean> isOptimistic() {
-      return isOptimistic;
-    }
-
-    public UInt64 getCurrentSlot() {
-      return currentSlot;
-    }
-
-    public UInt64 getSlotsBehind() {
-      return slotsBehind;
-    }
-
-    private UInt64 calculateSlotsBehind(final SyncingStatus syncingStatus) {
-      if (isSyncing && syncingStatus.getHighestSlot().isPresent()) {
-        final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
-        return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
-      }
-      return UInt64.ZERO;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final SyncStatusData that = (SyncStatusData) o;
-      return isSyncing == that.isSyncing
-          && Objects.equals(isOptimistic, that.isOptimistic)
-          && Objects.equals(currentSlot, that.currentSlot)
-          && Objects.equals(slotsBehind, that.slotsBehind);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(isSyncing, isOptimistic, currentSlot, slotsBehind);
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("isSyncing", isSyncing)
-          .add("isOptimistic", isOptimistic)
-          .add("currentSlot", currentSlot)
-          .add("slotsBehind", slotsBehind)
-          .toString();
-    }
+    return UInt64.ZERO;
   }
 }

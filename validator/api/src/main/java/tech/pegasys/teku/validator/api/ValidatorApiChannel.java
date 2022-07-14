@@ -43,6 +43,8 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 public interface ValidatorApiChannel extends ChannelInterface {
   int UNKNOWN_VALIDATOR_ID = -1;
 
+  SafeFuture<Optional<SyncingStatus>> getSyncingStatus();
+
   SafeFuture<Optional<GenesisData>> getGenesisData();
 
   SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(Collection<BLSPublicKey> publicKeys);

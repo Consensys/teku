@@ -48,10 +48,13 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.validator.api.SyncingStatus;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
+  public static final String SYNCING_STATUS_REQUESTS_COUNTER_NAME =
+      "beacon_node_syncing_status_requests_total";
   public static final String GENESIS_TIME_REQUESTS_COUNTER_NAME =
       "beacon_node_genesis_time_requests_total";
   public static final String GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME =
@@ -90,6 +93,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String REGISTER_VALIDATOR_NAME =
       "beacon_node_register_validator_requests_total";
   private final ValidatorApiChannel delegate;
+  private final BeaconChainRequestCounter syncingStatusRequestCounter;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
   private final BeaconChainRequestCounter syncCommitteeDutiesRequestCounter;
@@ -114,6 +118,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
     this.delegate = delegate;
 
+    syncingStatusRequestCounter =
+        BeaconChainRequestCounter.create(
+            metricsSystem,
+            SYNCING_STATUS_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests for syncing status");
     genesisTimeRequestCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
@@ -209,6 +218,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             REGISTER_VALIDATOR_NAME,
             "Counter recording the number of validator registration requests sent to the beacon node");
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncingStatus>> getSyncingStatus() {
+    return countDataRequest(delegate.getSyncingStatus(), syncingStatusRequestCounter);
   }
 
   @Override
