@@ -147,6 +147,18 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldEnableValidatorRegistrationTimestampOverride() {
+    final String[] args = {"--Xvalidators-registration-timestamp-override", "120000"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(
+            config
+                .validatorClient()
+                .getValidatorConfig()
+                .getValidatorsRegistrationTimestampOverride())
+        .isEqualTo(Optional.of(UInt64.valueOf(120000)));
+  }
+
+  @Test
   public void shouldNotUseValidatorsRegistrationByDefault() {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);

@@ -155,6 +155,23 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registersValidators_shouldRegisterWithTimestampOverride() {
+    when(validatorConfig.getValidatorsRegistrationTimestampOverride())
+        .thenReturn(Optional.of(UInt64.valueOf(140)));
+    setActiveValidators(validator1);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    registrationCalls.forEach(
+        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
   void cleanupsCache_ifValidatorIsNoLongerActive() {
     setActiveValidators(validator1, validator2, validator3);
 
@@ -361,6 +378,11 @@ class ValidatorRegistratorTest {
       final List<Validator> expectedRegisteredValidators,
       final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
 
+    final UInt64 expectedTimestamp =
+        validatorConfig
+            .getValidatorsRegistrationTimestampOverride()
+            .orElse(stubTimeProvider.getTimeInSeconds());
+
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())
         .allSatisfy(registration -> assertThat(registration.getSignature().isValid()).isTrue())
@@ -371,7 +393,7 @@ class ValidatorRegistratorTest {
                 alternativeRegistrationRequirements.get().accept(registration);
               } else {
                 assertThat(registration.getFeeRecipient()).isEqualTo(eth1Address);
-                assertThat(registration.getTimestamp()).isEqualTo(UInt64.valueOf(12));
+                assertThat(registration.getTimestamp()).isEqualTo(expectedTimestamp);
                 assertThat(registration.getGasLimit()).isEqualTo(gasLimit);
               }
             })
