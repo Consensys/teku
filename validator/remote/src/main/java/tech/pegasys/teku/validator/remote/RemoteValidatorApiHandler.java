@@ -83,20 +83,20 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
-  private final Spec spec;
   private final HttpUrl endpoint;
+  private final Spec spec;
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
 
   public RemoteValidatorApiHandler(
-      final Spec spec,
       final HttpUrl endpoint,
+      final Spec spec,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner) {
-    this.spec = spec;
     this.endpoint = endpoint;
+    this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
