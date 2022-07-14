@@ -200,6 +200,7 @@ jobs:
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
+          no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
             $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"

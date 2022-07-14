@@ -192,6 +192,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
+        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
+        .put("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash())
+        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .build();
   }
 

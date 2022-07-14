@@ -13,16 +13,23 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
+import com.google.errorprone.annotations.MustBeClosed;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.HotUpdaterCommon;
 
 public class TestKvStoreDatabase {
-  private final KvStoreDatabase db;
+  private final KvStoreDatabase<?, ?, ?, ?> db;
 
-  public TestKvStoreDatabase(final KvStoreDatabase db) {
+  public TestKvStoreDatabase(final KvStoreDatabase<?, ?, ?, ?> db) {
     this.db = db;
   }
 
-  public KvStoreHotDao getHotDao() {
+  public KvStoreCombinedDaoCommon getHotDao() {
     return db.dao;
+  }
+
+  @MustBeClosed
+  public HotUpdaterCommon hotUpdater() {
+    return db.hotUpdater();
   }
 }

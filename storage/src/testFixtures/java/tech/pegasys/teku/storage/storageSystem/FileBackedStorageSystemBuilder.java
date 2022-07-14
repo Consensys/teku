@@ -93,6 +93,7 @@ public class FileBackedStorageSystemBuilder {
         .dataDir(dataDir)
         .storageMode(storageMode)
         .stateStorageFrequency(stateStorageFrequency)
+        .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
         .storeConfig(storeConfig);
   }
 

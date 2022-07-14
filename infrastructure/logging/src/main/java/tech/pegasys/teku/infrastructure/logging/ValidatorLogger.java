@@ -163,6 +163,13 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
+  public void remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints() {
+    final String warningMessage =
+        String.format(
+            "%sRemote request to the Beacon Node failed on all configured endpoints.", PREFIX);
+    log.error(ColorConsolePrinter.print(warningMessage, Color.RED));
+  }
+
   public void beaconProposerPreparationFailed(final Throwable error) {
     final String errorString = String.format("%sFailed to send proposers to Beacon Node", PREFIX);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);

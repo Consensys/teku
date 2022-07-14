@@ -94,6 +94,13 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public long size(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    assertValidColumn(column);
+    return columnData.get(column).size();
+  }
+
+  @Override
   public <K, V> Map<K, V> getAll(final KvStoreColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);
