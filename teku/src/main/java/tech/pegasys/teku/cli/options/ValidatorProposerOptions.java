@@ -82,12 +82,13 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
-      names = {"--validators-registration-timestamp-override"},
+      names = {"--Xvalidators-registration-timestamp-override"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Set a constant timestamp in Unix format to be used in validator registrations against builder infrastructure.",
-      arity = "1")
+      arity = "1",
+      hidden = true)
   private UInt64 validatorsRegistrationTimestampOverride = null;
 
   @Option(
