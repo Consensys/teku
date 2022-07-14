@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,8 +53,8 @@ class DepositTreeTest {
       if (i >= nonFinalizedDepositCount) {
         final DepositTestCase finalisingTestCase = testCases.get(i - nonFinalizedDepositCount);
         depositTree.finalize(finalisingTestCase.getEth1Data());
-        final DepositTreeSnapshot snapshot = depositTree.getSnapshot();
-        assertThat(snapshot).isEqualTo(finalisingTestCase.getSnapshot());
+        final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
+        assertThat(snapshotOptional.get()).isEqualTo(finalisingTestCase.getSnapshot());
       }
     }
   }

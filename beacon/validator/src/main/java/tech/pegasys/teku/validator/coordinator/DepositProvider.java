@@ -201,11 +201,7 @@ public class DepositProvider
   }
 
   protected synchronized Optional<DepositTreeSnapshot> getFinalizedDepositTreeSnapshot() {
-    try {
-      return Optional.of(depositMerkleTree.getSnapshot());
-    } catch (IllegalStateException ex) {
-      return Optional.empty();
-    }
+    return depositMerkleTree.getSnapshot();
   }
 
   private void checkRequiredDepositsAvailable(

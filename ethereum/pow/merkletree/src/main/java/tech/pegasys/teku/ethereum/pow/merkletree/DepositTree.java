@@ -49,13 +49,13 @@ public class DepositTree {
     this.finalizedExecutionBlock = Optional.of(snapshot.getExecutionBlockHash());
   }
 
-  public DepositTreeSnapshot getSnapshot() {
-    checkState(
-        finalizedExecutionBlock.isPresent(),
-        "Cannot create snapshot before DepositTree has been finalized");
+  public Optional<DepositTreeSnapshot> getSnapshot() {
+    if (finalizedExecutionBlock.isEmpty()) {
+      return Optional.empty();
+    }
     final List<Bytes32> finalized = new ArrayList<>();
     final long deposits = tree.getFinalized(finalized);
-    return new DepositTreeSnapshot(finalized, deposits, finalizedExecutionBlock.get());
+    return Optional.of(new DepositTreeSnapshot(finalized, deposits, finalizedExecutionBlock.get()));
   }
 
   public static DepositTree fromSnapshot(final DepositTreeSnapshot snapshot) {
@@ -95,12 +95,8 @@ public class DepositTree {
     checkArgument(
         lastDepositIndex >= finalizedDepositCount,
         "Cannot recreate tree before finalized deposit count");
-    final DepositTree treeForProof;
-    if (finalizedExecutionBlock.isPresent()) {
-      treeForProof = fromSnapshot(getSnapshot());
-    } else {
-      treeForProof = new DepositTree();
-    }
+    final DepositTree treeForProof =
+        getSnapshot().map(DepositTree::fromSnapshot).orElse(new DepositTree());
     if (lastDepositIndex > 0) {
       tree.forEachLeafInclusive(
           treeForProof.getDepositCount(),
