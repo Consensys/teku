@@ -54,6 +54,7 @@ public class Eth2NetworkConfiguration {
   private final String constants;
   private final Optional<String> initialState;
   private final boolean usingCustomInitialState;
+  private final Optional<String> genesisState;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -73,6 +74,7 @@ public class Eth2NetworkConfiguration {
       final String constants,
       final Optional<String> initialState,
       final boolean usingCustomInitialState,
+      final Optional<String> genesisState,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
@@ -90,6 +92,7 @@ public class Eth2NetworkConfiguration {
     this.constants = constants;
     this.initialState = initialState;
     this.usingCustomInitialState = usingCustomInitialState;
+    this.genesisState = genesisState;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -139,6 +142,10 @@ public class Eth2NetworkConfiguration {
 
   public boolean isUsingCustomInitialState() {
     return usingCustomInitialState;
+  }
+
+  public Optional<String> getGenesisState() {
+    return genesisState;
   }
 
   public Integer getStartupTargetPeerCount() {
@@ -202,6 +209,7 @@ public class Eth2NetworkConfiguration {
     private String constants;
     private Optional<String> initialState = Optional.empty();
     private boolean usingCustomInitialState = false;
+    private Optional<String> genesisState = Optional.empty();
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
@@ -259,6 +267,7 @@ public class Eth2NetworkConfiguration {
           constants,
           initialState,
           usingCustomInitialState,
+          genesisState,
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
@@ -294,6 +303,11 @@ public class Eth2NetworkConfiguration {
     public Builder initialStateFromClasspath(final String filename) {
       this.initialState =
           Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+      return this;
+    }
+
+    public Builder customGenesisState(final String genesisState) {
+      this.genesisState = Optional.of(genesisState);
       return this;
     }
 
@@ -428,6 +442,7 @@ public class Eth2NetworkConfiguration {
     private Builder reset() {
       constants = null;
       initialState = Optional.empty();
+      genesisState = Optional.empty();
       startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
       startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
       discoveryBootnodes = new ArrayList<>();

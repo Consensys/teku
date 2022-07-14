@@ -93,6 +93,17 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       hidden = true)
   private int maxKnownNodeCacheSize = StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
+  @CommandLine.Option(
+      names = {"--Xreconstruct-historic-states"},
+      paramLabel = "<BOOLEAN>",
+      description = "",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private Boolean reconstructHistoricStates =
+      StorageConfiguration.DEFAULT_RECONSTRUCT_HISTORIC_STATES;
+
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
@@ -112,7 +123,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
-                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
+                .reconstructHistoricStates(reconstructHistoricStates));
   }
 
   private DatabaseVersion parseDatabaseVersion() {
