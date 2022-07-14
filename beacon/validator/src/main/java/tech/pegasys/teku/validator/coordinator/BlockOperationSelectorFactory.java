@@ -153,18 +153,14 @@ public class BlockOperationSelectorFactory {
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
                 (executionPayloadContext) -> {
-                  final boolean forceLocalFallback =
+                  final boolean transitionNotFinalized =
                       executionPayloadContext
                           .getForkChoiceState()
                           .getFinalizedExecutionBlockHash()
                           .isZero();
 
-                  if (forceLocalFallback) {
-                    LOG.info(
-                        "Merge transition not finalized: forcing block production using local execution engine");
-                  }
                   return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState, forceLocalFallback);
+                      executionPayloadContext, blockSlotState, transitionNotFinalized);
                 }));
         return;
       }
