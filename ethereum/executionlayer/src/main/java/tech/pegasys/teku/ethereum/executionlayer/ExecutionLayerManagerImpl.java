@@ -491,11 +491,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private static <K> K unwrapResponseOrThrow(final Response<K> response) {
-    if (response.isSuccess()) {
-      return response.getPayload();
-    }
-    throw new RuntimeException(
-        String.format("Invalid remote response: %s", response.getErrorMessage()));
+    checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
+    return response.getPayload();
   }
 
   private void updateBuilderAvailability() {

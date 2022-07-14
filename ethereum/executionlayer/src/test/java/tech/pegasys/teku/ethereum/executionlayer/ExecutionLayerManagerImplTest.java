@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -488,20 +486,6 @@ class ExecutionLayerManagerImplTest {
     // we expect both builder and local engine have been called
     verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
-  }
-
-  @Test
-  void builderApiShouldCompleteExceptionallyWithRuntimeExceptionOnMessageUnwrappingException() {
-    setBuilderOnline();
-
-    when(executionBuilderClient.registerValidators(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Response.withErrorMessage("Error")));
-
-    final SafeFuture<Void> registrationResult =
-        executionLayerManager.builderRegisterValidators(
-            dataStructureUtil.randomSignedValidatorRegistrations(1), UInt64.ONE);
-
-    assertThatSafeFuture(registrationResult).isCompletedExceptionallyWith(RuntimeException.class);
   }
 
   private ExecutionPayloadHeader prepareBuilderGetHeaderResponse(
