@@ -83,14 +83,14 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
-      names = {"--Xvalidators-registration-distributed-validator-timestamp"},
+      names = {"--Xvalidators-registration-timestamp-override"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Hardcoded timestamp to enable distributed validators to come to consensus to register to builder infrastructure.",
+          "Set a constant timestamp in Unix format to be used in validator registrations against builder infrastructure.",
       arity = "1",
       hidden = true)
-  private UInt64 validatorsRegistrationDistributedValidatorTimestamp = null;
+  private UInt64 validatorsRegistrationTimestampOverride = null;
 
   @Option(
       names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
@@ -113,7 +113,6 @@ public class ValidatorProposerOptions {
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
                 .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize)
-                .validatorsRegistrationDistributedValidatorTimestamp(
-                    validatorsRegistrationDistributedValidatorTimestamp));
+                .validatorsRegistrationTimestampOverride(validatorsRegistrationTimestampOverride));
   }
 }

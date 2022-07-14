@@ -253,7 +253,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit) {
     final UInt64 timestamp =
         validatorConfig
-            .getValidatorsRegistrationDistributedValidatorTimestamp()
+            .getValidatorsRegistrationTimestampOverride()
             .orElse(timeProvider.getTimeInSeconds());
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);

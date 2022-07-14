@@ -73,7 +73,7 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
   private final int validatorsRegistrationSendingBatchSize;
-  private final Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp;
+  private final Optional<UInt64> validatorsRegistrationTimestampOverride;
 
   private final int executorMaxQueueSize;
 
@@ -101,7 +101,7 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final UInt64 validatorsRegistrationDefaultGasLimit,
       final int validatorsRegistrationSendingBatchSize,
-      final Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp,
+      final Optional<UInt64> validatorsRegistrationTimestampOverride,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -129,8 +129,7 @@ public class ValidatorConfig {
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
     this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
-    this.validatorsRegistrationDistributedValidatorTimestamp =
-        validatorsRegistrationDistributedValidatorTimestamp;
+    this.validatorsRegistrationTimestampOverride = validatorsRegistrationTimestampOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
@@ -209,8 +208,8 @@ public class ValidatorConfig {
     return validatorsRegistrationSendingBatchSize;
   }
 
-  public Optional<UInt64> getValidatorsRegistrationDistributedValidatorTimestamp() {
-    return validatorsRegistrationDistributedValidatorTimestamp;
+  public Optional<UInt64> getValidatorsRegistrationTimestampOverride() {
+    return validatorsRegistrationTimestampOverride;
   }
 
   public boolean getRefreshProposerConfigFromSource() {
@@ -273,7 +272,7 @@ public class ValidatorConfig {
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
     private int validatorsRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
-    private Optional<UInt64> validatorsRegistrationDistributedValidatorTimestamp = Optional.empty();
+    private Optional<UInt64> validatorsRegistrationTimestampOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -424,10 +423,10 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorsRegistrationDistributedValidatorTimestamp(
-        final UInt64 validatorsRegistrationDistributedValidatorTimestamp) {
-      this.validatorsRegistrationDistributedValidatorTimestamp =
-          Optional.ofNullable(validatorsRegistrationDistributedValidatorTimestamp);
+    public Builder validatorsRegistrationTimestampOverride(
+        final UInt64 validatorsRegistrationTimestampOverride) {
+      this.validatorsRegistrationTimestampOverride =
+          Optional.ofNullable(validatorsRegistrationTimestampOverride);
       return this;
     }
 
@@ -467,7 +466,7 @@ public class ValidatorConfig {
           validatorClientSszBlocksEnabled,
           validatorsRegistrationDefaultGasLimit,
           validatorsRegistrationSendingBatchSize,
-          validatorsRegistrationDistributedValidatorTimestamp,
+          validatorsRegistrationTimestampOverride,
           executorMaxQueueSize);
     }
 
