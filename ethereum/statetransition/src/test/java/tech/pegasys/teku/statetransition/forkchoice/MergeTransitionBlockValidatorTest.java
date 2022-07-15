@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -46,7 +47,7 @@ class MergeTransitionBlockValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false);
+      new ExecutionLayerChannelStub(spec, false, Optional.empty());
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   @BeforeAll

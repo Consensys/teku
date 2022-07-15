@@ -106,7 +106,7 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false);
+      new ExecutionLayerChannelStub(spec, false, Optional.empty());
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private ForkChoice forkChoice =

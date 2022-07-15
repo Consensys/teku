@@ -115,7 +115,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             transitionBlockValidator,
             true,
             true);
-    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
+    final ExecutionLayerChannelStub executionLayer =
+        new ExecutionLayerChannelStub(spec, false, Optional.empty());
 
     try {
       runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
