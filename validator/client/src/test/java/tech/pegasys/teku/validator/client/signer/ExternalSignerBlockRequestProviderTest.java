@@ -81,4 +81,25 @@ class ExternalSignerBlockRequestProviderTest {
     assertThat(blockRequestBody.getBeaconBlock()).isNull();
     assertThat(blockRequestBody.getBeaconBlockHeader()).isNotNull();
   }
+
+  @Test
+  void bellatrixBlindedBlockGeneratesCorrectSignTypeAndMetadata() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final BeaconBlock block = new DataStructureUtil(spec).randomBlindedBeaconBlock(10);
+
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+    final SignType signType = externalSignerBlockRequestProvider.getSignType();
+    final Map<String, Object> blockMetadata =
+        externalSignerBlockRequestProvider.getBlockMetadata(Map.of());
+
+    assertThat(signType).isEqualTo(SignType.BLOCK_V2);
+    assertThat(blockMetadata).containsKey("beacon_block");
+    assertThat(blockMetadata.get("beacon_block")).isExactlyInstanceOf(BlockRequestBody.class);
+
+    final BlockRequestBody blockRequestBody = (BlockRequestBody) blockMetadata.get("beacon_block");
+    assertThat(blockRequestBody.getVersion()).isEqualTo(SpecMilestone.BELLATRIX);
+    assertThat(blockRequestBody.getBeaconBlock()).isNull();
+    assertThat(blockRequestBody.getBeaconBlockHeader()).isNotNull();
+  }
 }
