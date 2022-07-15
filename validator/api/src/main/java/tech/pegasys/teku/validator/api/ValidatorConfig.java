@@ -71,11 +71,11 @@ public class ValidatorConfig {
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
   private final boolean blindedBeaconBlocksEnabled;
-  private final boolean validatorsRegistrationDefaultEnabled;
+  private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
-  private final UInt64 validatorsRegistrationDefaultGasLimit;
-  private final int validatorsRegistrationSendingBatchSize;
-  private final Optional<UInt64> validatorsRegistrationTimestampOverride;
+  private final UInt64 builderRegistrationDefaultGasLimit;
+  private final int builderRegistrationSendingBatchSize;
+  private final Optional<UInt64> builderRegistrationTimestampOverride;
 
   private final int executorMaxQueueSize;
 
@@ -99,12 +99,12 @@ public class ValidatorConfig {
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
-      final boolean validatorsRegistrationDefaultEnabled,
+      final boolean builderRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
-      final UInt64 validatorsRegistrationDefaultGasLimit,
-      final int validatorsRegistrationSendingBatchSize,
-      final Optional<UInt64> validatorsRegistrationTimestampOverride,
+      final UInt64 builderRegistrationDefaultGasLimit,
+      final int builderRegistrationSendingBatchSize,
+      final Optional<UInt64> builderRegistrationTimestampOverride,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -129,11 +129,11 @@ public class ValidatorConfig {
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
-    this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
+    this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
-    this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
-    this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
-    this.validatorsRegistrationTimestampOverride = validatorsRegistrationTimestampOverride;
+    this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
+    this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
+    this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
@@ -208,16 +208,16 @@ public class ValidatorConfig {
     return proposerConfigSource;
   }
 
-  public UInt64 getValidatorsRegistrationDefaultGasLimit() {
-    return validatorsRegistrationDefaultGasLimit;
+  public UInt64 getBuilderRegistrationDefaultGasLimit() {
+    return builderRegistrationDefaultGasLimit;
   }
 
-  public int getValidatorsRegistrationSendingBatchSize() {
-    return validatorsRegistrationSendingBatchSize;
+  public int getBuilderRegistrationSendingBatchSize() {
+    return builderRegistrationSendingBatchSize;
   }
 
-  public Optional<UInt64> getValidatorsRegistrationTimestampOverride() {
-    return validatorsRegistrationTimestampOverride;
+  public Optional<UInt64> getBuilderRegistrationTimestampOverride() {
+    return builderRegistrationTimestampOverride;
   }
 
   public boolean getRefreshProposerConfigFromSource() {
@@ -232,8 +232,8 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
-  public boolean isValidatorsRegistrationDefaultEnabled() {
-    return validatorsRegistrationDefaultEnabled;
+  public boolean isBuilderRegistrationDefaultEnabled() {
+    return builderRegistrationDefaultEnabled;
   }
 
   public int getExecutorMaxQueueSize() {
@@ -278,10 +278,10 @@ public class ValidatorConfig {
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
-    private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
-    private int validatorsRegistrationSendingBatchSize =
+    private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
+    private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
-    private Optional<UInt64> validatorsRegistrationTimestampOverride = Optional.empty();
+    private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -408,7 +408,7 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorsRegistrationDefaultEnabled(
+    public Builder builderRegistrationDefaultEnabled(
         final boolean validatorsRegistrationDefaultEnabled) {
       this.validatorsRegistrationDefaultEnabled = validatorsRegistrationDefaultEnabled;
       return this;
@@ -425,22 +425,22 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorsRegistrationDefaultGasLimit(
-        final UInt64 validatorsRegistrationDefaultGasLimit) {
-      this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
+    public Builder builderRegistrationDefaultGasLimit(
+        final UInt64 builderRegistrationDefaultGasLimit) {
+      this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
       return this;
     }
 
-    public Builder validatorsRegistrationSendingBatchSize(
-        final int validatorsRegistrationSendingBatchSize) {
-      this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
+    public Builder builderRegistrationSendingBatchSize(
+        final int builderRegistrationSendingBatchSize) {
+      this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
       return this;
     }
 
-    public Builder validatorsRegistrationTimestampOverride(
-        final UInt64 validatorsRegistrationTimestampOverride) {
-      this.validatorsRegistrationTimestampOverride =
-          Optional.ofNullable(validatorsRegistrationTimestampOverride);
+    public Builder builderRegistrationTimestampOverride(
+        final UInt64 builderRegistrationTimestampOverride) {
+      this.builderRegistrationTimestampOverride =
+          Optional.ofNullable(builderRegistrationTimestampOverride);
       return this;
     }
 
@@ -479,9 +479,9 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
-          validatorsRegistrationDefaultGasLimit,
-          validatorsRegistrationSendingBatchSize,
-          validatorsRegistrationTimestampOverride,
+          builderRegistrationDefaultGasLimit,
+          builderRegistrationSendingBatchSize,
+          builderRegistrationTimestampOverride,
           executorMaxQueueSize);
     }
 
@@ -534,7 +534,7 @@ public class ValidatorConfig {
     private void validateValidatorsRegistrationAndBlindedBlocks() {
       if (validatorsRegistrationDefaultEnabled && !blindedBlocksEnabled) {
         LOG.info(
-            "'--builder-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
+            "'--validators-builder-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
         blindedBlocksEnabled = true;
       }
     }
@@ -542,7 +542,7 @@ public class ValidatorConfig {
     private void validatorsRegistrationDefaultEnabledOrProposerConfigSource() {
       if (validatorsRegistrationDefaultEnabled && proposerConfigSource.isPresent()) {
         throw new InvalidConfigurationException(
-            "Invalid configuration. --builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
+            "Invalid configuration. --validators-builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
       }
     }
 

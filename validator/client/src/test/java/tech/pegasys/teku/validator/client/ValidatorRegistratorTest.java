@@ -154,7 +154,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersValidators_shouldRegisterWithTimestampOverride() {
-    when(validatorConfig.getValidatorsRegistrationTimestampOverride())
+    when(validatorConfig.getBuilderRegistrationTimestampOverride())
         .thenReturn(Optional.of(UInt64.valueOf(140)));
     setActiveValidators(validator1);
 
@@ -280,7 +280,7 @@ class ValidatorRegistratorTest {
     // false
     when(proposerConfig.isBuilderEnabledForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
-    when(validatorConfig.isValidatorsRegistrationDefaultEnabled()).thenReturn(false);
+    when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(false);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
@@ -301,7 +301,7 @@ class ValidatorRegistratorTest {
     // validator3 gas limit will fall back to a default
     when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
-    when(validatorConfig.getValidatorsRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
+    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
@@ -378,7 +378,7 @@ class ValidatorRegistratorTest {
 
     final UInt64 expectedTimestamp =
         validatorConfig
-            .getValidatorsRegistrationTimestampOverride()
+            .getBuilderRegistrationTimestampOverride()
             .orElse(stubTimeProvider.getTimeInSeconds());
 
     assertThat(validatorRegistrations)

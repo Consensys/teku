@@ -237,21 +237,21 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
     return maybeProposerConfig
         .flatMap(proposerConfig -> proposerConfig.isBuilderEnabledForPubKey(publicKey))
-        .orElse(validatorConfig.isValidatorsRegistrationDefaultEnabled());
+        .orElse(validatorConfig.isBuilderRegistrationDefaultEnabled());
   }
 
   private UInt64 getGasLimit(
       final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
     return maybeProposerConfig
         .flatMap(proposerConfig -> proposerConfig.getBuilderGasLimitForPubKey(publicKey))
-        .orElse(validatorConfig.getValidatorsRegistrationDefaultGasLimit());
+        .orElse(validatorConfig.getBuilderRegistrationDefaultGasLimit());
   }
 
   private ValidatorRegistration createValidatorRegistration(
       final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit) {
     final UInt64 timestamp =
         validatorConfig
-            .getValidatorsRegistrationTimestampOverride()
+            .getBuilderRegistrationTimestampOverride()
             .orElse(timeProvider.getTimeInSeconds());
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
