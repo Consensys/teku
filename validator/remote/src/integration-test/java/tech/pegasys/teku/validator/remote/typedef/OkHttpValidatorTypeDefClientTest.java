@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
 @TestSpecContext(
@@ -92,10 +91,10 @@ class OkHttpValidatorTypeDefClientTest {
                     + "  }\n"
                     + "}"));
 
-    Optional<SyncingStatus> result = okHttpValidatorTypeDefClient.getSyncingStatus();
+    SyncingStatus result = okHttpValidatorTypeDefClient.getSyncingStatus();
 
     assertThat(result)
-        .hasValueSatisfying(
+        .satisfies(
             syncingStatus -> {
               assertThat(syncingStatus.getHeadSlot()).isEqualTo(UInt64.ONE);
               assertThat(syncingStatus.getSyncDistance()).isEqualTo(UInt64.ONE);

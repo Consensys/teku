@@ -73,7 +73,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.validator.api.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -109,7 +109,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SyncingStatus>> getSyncingStatus() {
+  public SafeFuture<SyncingStatus> getSyncingStatus() {
     return sendRequest(typeDefClient::getSyncingStatus);
   }
 

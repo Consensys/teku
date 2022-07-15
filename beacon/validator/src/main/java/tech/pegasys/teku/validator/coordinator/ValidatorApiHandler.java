@@ -88,7 +88,6 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.validator.api.SyncingStatus;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
@@ -158,11 +157,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
-  }
-
-  @Override
-  public SafeFuture<Optional<SyncingStatus>> getSyncingStatus() {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override

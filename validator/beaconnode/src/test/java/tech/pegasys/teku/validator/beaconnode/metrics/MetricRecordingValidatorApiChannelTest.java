@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncingStatus;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconChainRequestCounter.RequestOutcome;
 
@@ -180,15 +179,6 @@ class MetricRecordingValidatorApiChannelTest {
     final int subcommitteeIndex = dataStructureUtil.randomPositiveInt();
     final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
     return Stream.of(
-        requestDataTest(
-            "getSyncingStatus",
-            ValidatorApiChannel::getSyncingStatus,
-            MetricRecordingValidatorApiChannel.SYNCING_STATUS_REQUESTS_COUNTER_NAME,
-            new SyncingStatus(
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomUInt64(),
-                true,
-                Optional.of(true))),
         requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,

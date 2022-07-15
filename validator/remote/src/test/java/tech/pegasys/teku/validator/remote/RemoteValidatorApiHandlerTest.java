@@ -78,7 +78,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -109,23 +109,16 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void getSyncingStatus_WhenPresent_ReturnsValue() {
+  public void getSyncingStatus_ReturnsSyncingStatus() {
     final SyncingStatus syncingStatus =
         new SyncingStatus(UInt64.ONE, UInt64.ONE, true, Optional.of(true));
-    when(typeDefClient.getSyncingStatus()).thenReturn(Optional.of(syncingStatus));
+    when(typeDefClient.getSyncingStatus()).thenReturn(syncingStatus);
 
-    final SafeFuture<Optional<SyncingStatus>> future = apiHandler.getSyncingStatus();
+    final SafeFuture<SyncingStatus> future = apiHandler.getSyncingStatus();
 
-    assertThat(unwrapToValue(future)).isEqualTo(syncingStatus);
-  }
+    asyncRunner.executeQueuedActions();
 
-  @Test
-  public void getSyncingStatus_WhenNotPresent_ReturnsEmpty() {
-    when(typeDefClient.getSyncingStatus()).thenReturn(Optional.empty());
-
-    SafeFuture<Optional<SyncingStatus>> future = apiHandler.getSyncingStatus();
-
-    assertThat(unwrapToOptional(future)).isNotPresent();
+    assertThat(future).isCompletedWithValue(syncingStatus);
   }
 
   @Test

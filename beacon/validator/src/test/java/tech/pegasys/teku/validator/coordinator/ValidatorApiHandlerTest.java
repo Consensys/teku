@@ -50,7 +50,6 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -219,12 +218,6 @@ class ValidatorApiHandlerTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(syncState);
     when(chainDataClient.getCurrentEpoch()).thenReturn(currentEpoch);
     when(chainDataClient.getHeadEpoch()).thenReturn(headEpoch);
-  }
-
-  @Test
-  public void getSyncingStatus_shouldReturnSyncingStatus() {
-    SafeFutureAssert.assertThatSafeFuture(validatorApiHandler.getSyncingStatus())
-        .isCompletedExceptionally();
   }
 
   @Test

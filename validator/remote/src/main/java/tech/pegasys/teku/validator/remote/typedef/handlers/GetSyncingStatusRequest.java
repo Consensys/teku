@@ -15,39 +15,25 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNCING_STATUS;
 
-import java.util.Optional;
-import java.util.function.Function;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.validator.api.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.ValidatorRequiredApiTypes;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetSyncingStatusRequest extends AbstractTypeDefRequest {
-
-  private static final DeserializableTypeDefinition<SyncingStatus>
-      SYNCING_STATUS_RESPONSE_TYPE_DEFINITION =
-          DeserializableTypeDefinition.object(SyncingStatus.class, SyncingStatus.Builder.class)
-              .name("SyncingStatusResponse")
-              .initializer(SyncingStatus.Builder::builder)
-              .finisher(SyncingStatus.Builder::build)
-              .withField(
-                  "data",
-                  SyncingStatus.TYPE_DEFINITION,
-                  Function.identity(),
-                  ((builder, syncingStatus) ->
-                      builder
-                          .headSlot(syncingStatus.getHeadSlot())
-                          .syncDistance(syncingStatus.getSyncDistance())
-                          .isSyncing(syncingStatus.isSyncing())
-                          .isOptimistic(syncingStatus.getIsOptimistic())))
-              .build();
 
   public GetSyncingStatusRequest(final OkHttpClient okHttpClient, final HttpUrl baseEndpoint) {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<SyncingStatus> getSyncingStatus() {
-    return get(GET_SYNCING_STATUS, new ResponseHandler<>(SYNCING_STATUS_RESPONSE_TYPE_DEFINITION));
+  public SyncingStatus getSyncingStatus() {
+    return get(
+            GET_SYNCING_STATUS,
+            new ResponseHandler<>(ValidatorRequiredApiTypes.SYNCING_STATUS_RESPONSE))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Empty response when querying the Beacon Node syncing status"));
   }
 }

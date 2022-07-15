@@ -11,36 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.validator.api.required;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncingStatus {
-
-  public static final DeserializableTypeDefinition<SyncingStatus> TYPE_DEFINITION =
-      DeserializableTypeDefinition.object(SyncingStatus.class, SyncingStatus.Builder.class)
-          .name("SyncingStatus")
-          .initializer(SyncingStatus.Builder::builder)
-          .finisher(SyncingStatus.Builder::build)
-          .withField(
-              "head_slot", CoreTypes.UINT64_TYPE, SyncingStatus::getHeadSlot, Builder::headSlot)
-          .withField(
-              "sync_distance",
-              CoreTypes.UINT64_TYPE,
-              SyncingStatus::getSyncDistance,
-              Builder::syncDistance)
-          .withField(
-              "is_syncing", CoreTypes.BOOLEAN_TYPE, SyncingStatus::isSyncing, Builder::isSyncing)
-          .withOptionalField(
-              "is_optimistic",
-              CoreTypes.BOOLEAN_TYPE,
-              SyncingStatus::getIsOptimistic,
-              Builder::isOptimistic)
-          .build();
 
   private final UInt64 headSlot;
   private final UInt64 syncDistance;

@@ -22,13 +22,10 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.SyncingStatus;
 
 public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -45,8 +42,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(
-            new SyncingStatus(UInt64.valueOf(7), UInt64.valueOf(3), true, Optional.of(false)));
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, 7, 3));
   }
 
   @Test
@@ -57,7 +53,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(new SyncingStatus(UInt64.valueOf(10), UInt64.ZERO, false, Optional.of(false)));
+        .isEqualTo(new GetSyncing.SyncStatusData(false, false, 10, 0));
   }
 
   @Test
@@ -74,9 +70,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   void metadata_shouldHandle200() throws JsonProcessingException {
     final String data =
         getResponseStringFromMetadata(
-            handler,
-            SC_OK,
-            new SyncingStatus(UInt64.valueOf(10), UInt64.ZERO, false, Optional.of(false)));
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, 10, 0));
     assertThat(data)
         .isEqualTo(
             "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false}}");

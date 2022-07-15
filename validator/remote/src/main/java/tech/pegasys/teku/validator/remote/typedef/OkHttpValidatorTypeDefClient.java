@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SyncingStatus;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
@@ -62,7 +62,7 @@ public class OkHttpValidatorTypeDefClient {
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
   }
 
-  public Optional<SyncingStatus> getSyncingStatus() {
+  public SyncingStatus getSyncingStatus() {
     return getSyncingStatusRequest.getSyncingStatus();
   }
 

@@ -56,7 +56,6 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.validator.api.SyncingStatus;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class FailoverValidatorApiHandler implements ValidatorApiChannel {
@@ -77,11 +76,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         "One or more Beacon Nodes should be defined as a failover to use the failover feature.");
     this.failoverDelegates = failoverDelegates;
     this.validatorLogger = validatorLogger;
-  }
-
-  @Override
-  public SafeFuture<Optional<SyncingStatus>> getSyncingStatus() {
-    return tryRequestUntilSuccess(ValidatorApiChannel::getSyncingStatus);
   }
 
   @Override
