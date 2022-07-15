@@ -403,7 +403,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionBuilderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.FORCED);
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.TRANSITION_NOT_FINALIZED);
   }
 
   @Test

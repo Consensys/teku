@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -196,6 +198,10 @@ public class DepositProvider
 
   protected synchronized List<DepositWithIndex> getAvailableDeposits() {
     return new ArrayList<>(depositNavigableMap.values());
+  }
+
+  protected synchronized Optional<DepositTreeSnapshot> getFinalizedDepositTreeSnapshot() {
+    return depositMerkleTree.getSnapshot();
   }
 
   private void checkRequiredDepositsAvailable(

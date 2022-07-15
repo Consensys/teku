@@ -14,11 +14,13 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Support `--network=goerli` as an alias for `--network=prater`
  - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
  - Distributions created from the same git commit and docker image will be identical
  - Optimised storage of latest vote information by batching updates
  - Ensured dependencies are up to date
  - Validator Registration signature integration with external signer
+ - Teku-specific Beacon Node API on `/teku/v1/beacon/deposit_snapshot` providing finalized Deposit Tree Snapshot according to the draft EIP-4881
 
 ### Bug Fixes
  - Fix not rendering emoticons correctly in graffiti when running in a Docker container
