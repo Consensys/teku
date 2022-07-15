@@ -96,7 +96,7 @@ public class DepositTree {
         lastDepositIndex >= finalizedDepositCount,
         "Cannot recreate tree before finalized deposit count");
     final DepositTree treeForProof =
-        getSnapshot().map(DepositTree::fromSnapshot).orElseGet(DepositTree::get);
+        getSnapshot().map(DepositTree::fromSnapshot).orElseGet(DepositTree::new);
     if (lastDepositIndex > 0) {
       tree.forEachLeafInclusive(
           treeForProof.getDepositCount(),
