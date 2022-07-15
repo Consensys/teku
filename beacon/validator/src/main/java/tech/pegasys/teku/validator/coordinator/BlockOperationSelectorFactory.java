@@ -19,8 +19,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,8 +45,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -153,18 +149,14 @@ public class BlockOperationSelectorFactory {
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
                 (executionPayloadContext) -> {
-                  final boolean forceLocalFallback =
+                  final boolean transitionNotFinalized =
                       executionPayloadContext
                           .getForkChoiceState()
                           .getFinalizedExecutionBlockHash()
                           .isZero();
 
-                  if (forceLocalFallback) {
-                    LOG.info(
-                        "Merge transition not finalized: forcing block production using local execution engine");
-                  }
                   return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState, forceLocalFallback);
+                      executionPayloadContext, blockSlotState, transitionNotFinalized);
                 }));
         return;
       }
