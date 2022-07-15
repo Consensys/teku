@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -22,8 +24,11 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
     implements ExecutionLayerManager {
 
   public ExecutionLayerManagerStub(
-      Spec spec, TimeProvider timeProvider, boolean enableTransitionEmulation) {
-    super(spec, timeProvider, enableTransitionEmulation);
+      Spec spec,
+      TimeProvider timeProvider,
+      boolean enableTransitionEmulation,
+      final Optional<Bytes32> terminalBlockHashInTTDMode) {
+    super(spec, timeProvider, enableTransitionEmulation, terminalBlockHashInTTDMode);
   }
 
   @Override

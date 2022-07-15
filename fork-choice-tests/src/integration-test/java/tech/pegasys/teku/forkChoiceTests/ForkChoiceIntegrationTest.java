@@ -280,7 +280,11 @@ public class ForkChoiceIntegrationTest {
 
   private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
-        fc.onBlock(block, Optional.empty(), new ExecutionLayerChannelStub(SPEC, false)).join();
+        fc.onBlock(
+                block,
+                Optional.empty(),
+                new ExecutionLayerChannelStub(SPEC, false, Optional.empty()))
+            .join();
     return blockImportResult.isSuccessful();
   }
 
