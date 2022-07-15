@@ -108,7 +108,7 @@ public class BlockManagerTest {
           transitionBlockValidator);
 
   private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false);
+      new ExecutionLayerChannelStub(spec, false, Optional.empty());
   private final BlockValidator blockValidator = mock(BlockValidator.class);
 
   private final BlockImporter blockImporter =
