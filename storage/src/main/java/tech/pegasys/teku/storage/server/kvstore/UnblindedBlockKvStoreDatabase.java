@@ -131,6 +131,11 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public long countFinalizedBlocks() {
+    return dao.countFinalizedUnblindedBlocks();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {

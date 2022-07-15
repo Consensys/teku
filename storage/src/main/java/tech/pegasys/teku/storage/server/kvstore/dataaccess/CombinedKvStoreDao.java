@@ -112,6 +112,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long countHotBlocks() {
+    try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
+        db.streamRaw(schema.getColumnHotBlocksByRoot())) {
+      return rawEntries.count();
+    }
+  }
+
+  @Override
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(schema.getVariableLatestFinalizedState());
   }
@@ -333,6 +341,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public long countFinalizedUnblindedBlocks() {
+    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
+        db.streamRaw(schema.getColumnSlotsByFinalizedRoot())) {
+      return entries.count();
+    }
   }
 
   @Override
@@ -574,6 +590,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
+    }
+
+    @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
     }
@@ -620,9 +641,21 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      addBlindedBlock(block, block.getRoot(), spec);
+    }
+
+    @Override
+    public void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      addBlindedBlock(block, block.getRoot(), spec);
+      addFinalizedBlockRootBySlot(block);
+    }
+
+    @Override
+    public void addBlindedBlock(
+        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       transaction.put(
           schema.getColumnBlindedBlocksByRoot(),
-          block.getRoot(),
+          blockRoot,
           block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
       final Optional<ExecutionPayload> maybePayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
@@ -658,6 +691,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
+    }
+
+    @Override
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
+      transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override

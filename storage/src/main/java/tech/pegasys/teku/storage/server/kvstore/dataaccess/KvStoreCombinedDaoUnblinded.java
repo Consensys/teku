@@ -39,6 +39,8 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
+  long countHotBlocks();
+
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
 
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
@@ -53,6 +55,8 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+
+  long countFinalizedUnblindedBlocks();
 
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
@@ -71,6 +75,8 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
     }
 
     void deleteHotBlock(Bytes32 blockRoot);
+
+    void deleteHotBlockOnly(Bytes32 blockRoot);
   }
 
   interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
@@ -78,5 +84,7 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
     void addFinalizedBlock(final SignedBeaconBlock block);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
+
+    void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
   }
 }

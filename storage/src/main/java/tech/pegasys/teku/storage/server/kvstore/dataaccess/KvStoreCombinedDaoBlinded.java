@@ -81,6 +81,10 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
     void addBlindedBlock(final SignedBeaconBlock block, final Spec spec);
 
+    void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec);
+
+    void addBlindedBlock(final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec);
+
     void addExecutionPayload(final ExecutionPayload payload);
 
     void deleteBlindedBlock(final Bytes32 root);

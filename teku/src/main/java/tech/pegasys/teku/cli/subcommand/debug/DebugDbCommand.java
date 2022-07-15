@@ -207,10 +207,7 @@ public class DebugDbCommand implements Runnable {
       try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
         printIfPresent("Hot blocks", stream.count());
       }
-      try (Stream<SignedBeaconBlock> stream =
-          database.streamFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
-        printIfPresent("Finalized blocks", stream.count());
-      }
+      printIfPresent("Finalized blocks", database.countFinalizedBlocks());
       try (Stream<?> stream = database.streamBlockCheckpoints()) {
         printIfPresent("Checkpoint Epochs", stream.count());
       }

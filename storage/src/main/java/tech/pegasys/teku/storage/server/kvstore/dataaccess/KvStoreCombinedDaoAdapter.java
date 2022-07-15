@@ -119,6 +119,11 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  public long countHotBlocks() {
+    return hotDao.countHotBlocks();
+  }
+
+  @Override
   public Map<UInt64, VoteTracker> getVotes() {
     return hotDao.getVotes();
   }
@@ -207,6 +212,11 @@ public class KvStoreCombinedDaoAdapter
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
+  }
+
+  @Override
+  public long countFinalizedUnblindedBlocks() {
+    return finalizedDao.countFinalizedBlocks();
   }
 
   @Override
@@ -476,6 +486,11 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+      hotUpdater.deleteHotBlockOnly(blockRoot);
+    }
+
+    @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       hotUpdater.deleteHotState(blockRoot);
     }
@@ -496,6 +511,17 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      finalizedUpdater.addFinalizedBlindedBlock(block, spec);
+    }
+
+    @Override
+    public void addBlindedBlock(
+        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
+      finalizedUpdater.addBlindedBlock(block, blockRoot, spec);
+    }
+
+    @Override
     public void addExecutionPayload(final ExecutionPayload payload) {
       finalizedUpdater.addExecutionPayload(payload);
     }
@@ -513,6 +539,11 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addNonCanonicalBlock(block);
+    }
+
+    @Override
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+      finalizedUpdater.deleteFinalizedBlock(slot, blockRoot);
     }
 
     @Override

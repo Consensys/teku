@@ -87,6 +87,13 @@ public class V4HotKvStoreDao {
     return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
+  public long countHotBlocks() {
+    try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
+        db.streamRaw(schema.getColumnHotBlocksByRoot())) {
+      return rawEntries.count();
+    }
+  }
+
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(schema.getVariableLatestFinalizedState());
   }
@@ -265,6 +272,11 @@ public class V4HotKvStoreDao {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
+    }
+
+    @Override
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
     }
 
     @Override

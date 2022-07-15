@@ -111,6 +111,13 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getValue);
   }
 
+  public long countFinalizedBlocks() {
+    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
+        db.streamRaw(schema.getColumnFinalizedBlocksBySlot())) {
+      return entries.count();
+    }
+  }
+
   @MustBeClosed
   public Stream<Bytes> streamExecutionPayloads() {
     return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
@@ -241,9 +248,21 @@ public class V4FinalizedKvStoreDao {
 
     @Override
     public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      addBlindedBlock(block, block.getRoot(), spec);
+    }
+
+    @Override
+    public void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      addBlindedBlock(block, spec);
+      addFinalizedBlockRootBySlot(block);
+    }
+
+    @Override
+    public void addBlindedBlock(
+        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       transaction.put(
           schema.getColumnBlindedBlocksByRoot(),
-          block.getRoot(),
+          blockRoot,
           block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
       final Optional<ExecutionPayload> maybePayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
@@ -279,6 +298,12 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
+    }
+
+    @Override
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
+      transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override
