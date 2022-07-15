@@ -54,7 +54,7 @@ class DepositTreeTest {
         final DepositTestCase finalisingTestCase = testCases.get(i - nonFinalizedDepositCount);
         depositTree.finalize(finalisingTestCase.getEth1Data());
         final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
-        assertThat(snapshotOptional.get()).isEqualTo(finalisingTestCase.getSnapshot());
+        assertThat(snapshotOptional).contains(finalisingTestCase.getSnapshot());
       }
     }
   }
