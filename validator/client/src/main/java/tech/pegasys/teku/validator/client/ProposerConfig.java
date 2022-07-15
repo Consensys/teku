@@ -39,6 +39,7 @@ public class ProposerConfig {
       @JsonProperty(value = "proposer_config") final Map<Bytes48, Config> proposerConfig,
       @JsonProperty(value = "default_config") final Config defaultConfig) {
     checkNotNull(defaultConfig, "default_config is required");
+    checkNotNull(defaultConfig.feeRecipient, "fee_recipient is required in default_config");
     this.proposerConfig = proposerConfig == null ? ImmutableMap.of() : proposerConfig;
     this.defaultConfig = defaultConfig;
   }
@@ -105,13 +106,12 @@ public class ProposerConfig {
     public Config(
         @JsonProperty(value = "fee_recipient") final Eth1Address feeRecipient,
         @JsonProperty(value = "builder") final BuilderConfig builder) {
-      checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
       this.builder = builder;
     }
 
-    public Eth1Address getFeeRecipient() {
-      return feeRecipient;
+    public Optional<Eth1Address> getFeeRecipient() {
+      return Optional.ofNullable(feeRecipient);
     }
 
     public Optional<BuilderConfig> getBuilder() {
