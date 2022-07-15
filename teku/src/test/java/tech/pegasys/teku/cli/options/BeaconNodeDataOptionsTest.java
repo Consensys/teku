@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
@@ -21,11 +22,14 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final Path TEST_PATH = Path.of("/tmp/teku");
+  private static final String GENESIS_STATE =
+      "https://221EMZ2YSdriVVdXx:5058f100c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized";
 
   @Test
   public void dataPath_shouldReadFromConfigurationFile() {
@@ -120,5 +124,51 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void shouldAcceptReconstructHistoricStatesValue() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--data-storage-mode",
+            "ARCHIVE",
+            "--Xgenesis-state",
+            GENESIS_STATE,
+            "--Xreconstruct-historic-states",
+            "true");
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
+    assertThat(config.isReconstructHistoricStates()).isEqualTo(true);
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
+                .storageConfiguration(
+                    b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void missingGenesisState_expectInvalidReconstructHistoricStatesValue() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .storageConfiguration(b -> b.reconstructHistoricStates(true))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Genesis state required when reconstructing historic states");
+  }
+
+  @Test
+  public void pruneDataStorageMode_expectInvalidReconstructHistoricStatesValue() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
+                    .storageConfiguration(
+                        b -> b.dataStorageMode(PRUNE).reconstructHistoricStates(true))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Cannot reconstruct historic states when prune mode on");
   }
 }
