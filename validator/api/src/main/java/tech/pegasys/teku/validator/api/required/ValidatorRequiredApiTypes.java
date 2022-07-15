@@ -55,11 +55,11 @@ public class ValidatorRequiredApiTypes {
               "data",
               SYNCING_STATUS,
               Function.identity(),
-              ((builder, syncingStatus) ->
+              (builder, syncingStatus) ->
                   builder
                       .headSlot(syncingStatus.getHeadSlot())
                       .syncDistance(syncingStatus.getSyncDistance())
                       .isSyncing(syncingStatus.isSyncing())
-                      .isOptimistic(syncingStatus.getIsOptimistic())))
+                      .isOptimistic(syncingStatus.getIsOptimistic()))
           .build();
 }
