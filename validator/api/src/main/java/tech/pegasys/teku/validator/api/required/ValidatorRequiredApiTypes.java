@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.api.required;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.validator.api.required.SyncingStatus.Builder;
 
 public class ValidatorRequiredApiTypes {
 
@@ -26,19 +25,25 @@ public class ValidatorRequiredApiTypes {
           .initializer(SyncingStatus.Builder::builder)
           .finisher(SyncingStatus.Builder::build)
           .withField(
-              "head_slot", CoreTypes.UINT64_TYPE, SyncingStatus::getHeadSlot, Builder::headSlot)
+              "head_slot",
+              CoreTypes.UINT64_TYPE,
+              SyncingStatus::getHeadSlot,
+              SyncingStatus.Builder::headSlot)
           .withField(
               "sync_distance",
               CoreTypes.UINT64_TYPE,
               SyncingStatus::getSyncDistance,
-              Builder::syncDistance)
+              SyncingStatus.Builder::syncDistance)
           .withField(
-              "is_syncing", CoreTypes.BOOLEAN_TYPE, SyncingStatus::isSyncing, Builder::isSyncing)
+              "is_syncing",
+              CoreTypes.BOOLEAN_TYPE,
+              SyncingStatus::isSyncing,
+              SyncingStatus.Builder::isSyncing)
           .withOptionalField(
               "is_optimistic",
               CoreTypes.BOOLEAN_TYPE,
               SyncingStatus::getIsOptimistic,
-              Builder::isOptimistic)
+              SyncingStatus.Builder::isOptimistic)
           .build();
 
   public static final DeserializableTypeDefinition<SyncingStatus> SYNCING_STATUS_RESPONSE =
