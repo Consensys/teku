@@ -3,16 +3,12 @@ dependencies {
   api 'io.swagger.core.v3:swagger-annotations'
 
   implementation project(':ethereum:spec')
-  implementation project(':ethereum:pow:merkletree')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:jackson')
   implementation project(':infrastructure:async')
-  implementation project(':infrastructure:restapi')
-  implementation project(':infrastructure:http')
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
-  implementation 'org.apache.tuweni:tuweni-ssz'
 
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))
