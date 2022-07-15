@@ -52,6 +52,9 @@ public enum Eth2Network {
         return Optional.of(value);
       }
     }
+    if (normalizedNetworkName.equals("GOERLI")) {
+      return Optional.of(PRATER);
+    }
     return Optional.empty();
   }
 }
