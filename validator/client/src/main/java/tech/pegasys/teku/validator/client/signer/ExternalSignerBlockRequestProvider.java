@@ -46,7 +46,9 @@ public class ExternalSignerBlockRequestProvider {
     final Map<String, Object> metadata = new HashMap<>(additionalEntries);
 
     final tech.pegasys.teku.api.schema.BeaconBlock beaconBlock =
-        schemaObjectProvider.getBeaconBlock(block);
+        block.getBody().isBlinded()
+            ? schemaObjectProvider.getBlindedBlock(block)
+            : schemaObjectProvider.getBeaconBlock(block);
     final tech.pegasys.teku.api.schema.BeaconBlockHeader beaconBlockHeader =
         new tech.pegasys.teku.api.schema.BeaconBlockHeader(blockHeader);
 
