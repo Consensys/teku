@@ -52,14 +52,14 @@ public class SyncingStatus {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SyncingStatus that = (SyncingStatus) o;
+    final SyncingStatus that = (SyncingStatus) o;
     return isSyncing == that.isSyncing
         && Objects.equals(headSlot, that.headSlot)
         && Objects.equals(syncDistance, that.syncDistance)
@@ -98,22 +98,22 @@ public class SyncingStatus {
       return new Builder();
     }
 
-    public Builder headSlot(UInt64 headSlot) {
+    public Builder headSlot(final UInt64 headSlot) {
       this.headSlot = headSlot;
       return this;
     }
 
-    public Builder syncDistance(UInt64 syncDistance) {
+    public Builder syncDistance(final UInt64 syncDistance) {
       this.syncDistance = syncDistance;
       return this;
     }
 
-    public Builder isSyncing(boolean isSyncing) {
+    public Builder isSyncing(final boolean isSyncing) {
       this.isSyncing = isSyncing;
       return this;
     }
 
-    public Builder isOptimistic(Optional<Boolean> isOptimistic) {
+    public Builder isOptimistic(final Optional<Boolean> isOptimistic) {
       this.isOptimistic = isOptimistic;
       return this;
     }

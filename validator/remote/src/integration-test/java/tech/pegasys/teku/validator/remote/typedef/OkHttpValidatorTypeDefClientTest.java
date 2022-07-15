@@ -91,7 +91,7 @@ class OkHttpValidatorTypeDefClientTest {
                     + "  }\n"
                     + "}"));
 
-    SyncingStatus result = okHttpValidatorTypeDefClient.getSyncingStatus();
+    final SyncingStatus result = okHttpValidatorTypeDefClient.getSyncingStatus();
 
     assertThat(result)
         .satisfies(
