@@ -24,6 +24,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -153,10 +154,35 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(
             () ->
                 createConfigBuilder()
-                    .storageConfiguration(b -> b.reconstructHistoricStates(true))
+                    .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MINIMAL))
+                    .storageConfiguration(
+                        b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Genesis state required when reconstructing historic states");
+  }
+
+  @Test
+  public void usingDefaultGenesisState_expectValidReconstructHistoricStatesValue() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--data-storage-mode",
+            "ARCHIVE",
+            "--network",
+            "mainnet",
+            "--Xreconstruct-historic-states",
+            "true");
+
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
+    assertThat(config.isReconstructHistoricStates()).isEqualTo(true);
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
+                .storageConfiguration(
+                    b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test

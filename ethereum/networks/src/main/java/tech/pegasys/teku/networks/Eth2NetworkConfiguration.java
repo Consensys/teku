@@ -311,6 +311,12 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder genesisStateFromClasspath(final String filename) {
+      this.genesisState =
+          Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+      return this;
+    }
+
     public Builder startupTargetPeerCount(final int startupTargetPeerCount) {
       if (startupTargetPeerCount < 0) {
         throw new InvalidConfigurationException(
@@ -473,6 +479,7 @@ public class Eth2NetworkConfiguration {
       return reset()
           .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
+          .genesisStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
@@ -505,6 +512,8 @@ public class Eth2NetworkConfiguration {
           .eth1DepositContractDeployBlock(4367322)
           .defaultInitialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
           .discoveryBootnodes(
               // Teku bootnode
               "enr:-KK4QH0RsNJmIG0EX9LSnVxMvg-CAOr3ZFF92hunU63uE7wcYBjG1cFbUTvEa5G_4nDJkRhUq9q2ck9xY-VX1RtBsruBtIRldGgykIL0pysBABAg__________-CaWSCdjSCaXCEEnXQ0YlzZWNwMjU2azGhA1grTzOdMgBvjNrk-vqWtTZsYQIi0QawrhoZrsn5Hd56g3RjcIIjKIN1ZHCCIyg",
@@ -528,6 +537,8 @@ public class Eth2NetworkConfiguration {
           .eth1DepositContractDeployBlock(12269949)
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
           .discoveryBootnodes(
               // Teku bootnode
               "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
@@ -550,6 +561,8 @@ public class Eth2NetworkConfiguration {
           .eth1DepositContractDeployBlock(1273020)
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .discoveryBootnodes(
               // EF bootnodes
               "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
@@ -566,6 +579,8 @@ public class Eth2NetworkConfiguration {
           .eth1DepositContractDeployBlock(0)
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/a44b13a8d495984f4bc9770348a1c451f615be76/kiln/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth-clients/merge-testnets/raw/a44b13a8d495984f4bc9770348a1c451f615be76/kiln/genesis.ssz")
           .discoveryBootnodes(
               "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
               "enr:-KG4QFkPJUFWuONp5grM94OJvNht9wX6N36sA4wqucm6Z02ECWBQRmh6AzndaLVGYBHWre67mjK-E0uKt2CIbWrsZ_8DhGV0aDKQc6pfXHAAAHAyAAAAAAAAAIJpZIJ2NIJpcISl6LTmiXNlY3AyNTZrMaEDHlSNOgYrNWP8_l_WXqDMRvjv6gUAvHKizfqDDVc8feaDdGNwgiMog3VkcIIjKA",
@@ -576,6 +591,7 @@ public class Eth2NetworkConfiguration {
       return reset()
           .constants(GNOSIS.configName())
           .initialStateFromClasspath("gnosis-genesis.ssz")
+          .genesisStateFromClasspath("gnosis-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(19469077)
           .discoveryBootnodes(

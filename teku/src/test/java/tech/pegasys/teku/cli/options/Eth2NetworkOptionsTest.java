@@ -113,6 +113,11 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(Optional.empty());
     assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.empty());
+  }
+
+  @Test
+  void minimalNetwork_shouldMergeTransitionsOverrideBeEmptyByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "minimal");
     assertThat(config.eth2NetworkConfiguration().getGenesisState()).isEqualTo(Optional.empty());
   }
 
