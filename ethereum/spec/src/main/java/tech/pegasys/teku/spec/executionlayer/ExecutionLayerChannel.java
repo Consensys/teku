@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
-  String STUB_ENDPOINT_IDENTIFIER = "stub";
+  String STUB_ENDPOINT_PREFIX = "stub";
   ExecutionLayerChannel NOOP =
       new ExecutionLayerChannel() {
         @Override
@@ -77,7 +77,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
-            final boolean forceLocalFallback) {
+            final boolean transitionNotFinalized) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -113,7 +113,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
-      boolean forceLocalFallback);
+      boolean transitionNotFinalized);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 

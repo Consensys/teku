@@ -99,7 +99,7 @@ class RemoteValidatorApiHandlerTest {
   @BeforeEach
   public void beforeEach() {
     apiHandler =
-        new RemoteValidatorApiHandler(spec, endpoint, apiClient, typeDefClient, asyncRunner);
+        new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
   }
 
   @Test

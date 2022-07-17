@@ -24,6 +24,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -337,7 +338,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final boolean forceLocalFallback) {
+      final boolean transitionNotFinalized) {
     final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
@@ -348,8 +349,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     // fallback conditions
     final FallbackReason fallbackReason;
-    if (forceLocalFallback) {
-      fallbackReason = FallbackReason.FORCED;
+    if (executionBuilderClient.isEmpty() && validatorRegistration.isEmpty()) {
+      fallbackReason = FallbackReason.NOT_NEEDED;
+    } else if (transitionNotFinalized) {
+      fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
+    } else if (executionBuilderClient.isEmpty()) {
+      fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
     } else if (!isBuilderAvailable()) {
       fallbackReason = FallbackReason.BUILDER_NOT_AVAILABLE;
     } else if (validatorRegistration.isEmpty()) {
@@ -521,7 +526,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
-    LOG.info(
+    LOG.log(
+        fallbackData.reason == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO,
         "Falling back to locally produced execution payload (Block Number {}, Block Hash = {}, Fallback Reason = {})",
         fallbackData.executionPayload.getBlockNumber(),
         fallbackData.executionPayload.getBlockHash(),
@@ -581,9 +587,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   // Metric - fallback "reason" label values
   protected enum FallbackReason {
+    NOT_NEEDED("not_needed"),
     VALIDATOR_NOT_REGISTERED("validator_not_registered"),
-    FORCED("forced"),
+    TRANSITION_NOT_FINALIZED("transition_not_finalized"),
     BUILDER_NOT_AVAILABLE("builder_not_available"),
+    BUILDER_NOT_CONFIGURED("builder_not_configured"),
     BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
     BUILDER_ERROR("builder_error"),
     NONE("");

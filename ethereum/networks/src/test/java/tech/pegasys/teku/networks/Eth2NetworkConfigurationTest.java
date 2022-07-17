@@ -44,6 +44,15 @@ public class Eth2NetworkConfigurationTest {
   }
 
   @Test
+  void shouldAliasGoerliToPrater() {
+    final Eth2NetworkConfiguration goerliConfig =
+        Eth2NetworkConfiguration.builder("goerli").build();
+    final Eth2NetworkConfiguration praterConfig =
+        Eth2NetworkConfiguration.builder("prater").build();
+    assertThat(goerliConfig).usingRecursiveComparison().isEqualTo(praterConfig);
+  }
+
+  @Test
   public void builder_usingConstantsUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
