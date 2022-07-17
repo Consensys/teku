@@ -252,7 +252,10 @@ public class BeaconChainUtil {
     setSlot(slot);
     final BlockImportResult importResult =
         forkChoice
-            .onBlock(block, Optional.empty(), new ExecutionLayerChannelStub(spec, false))
+            .onBlock(
+                block,
+                Optional.empty(),
+                new ExecutionLayerChannelStub(spec, false, Optional.empty()))
             .join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

@@ -35,7 +35,7 @@ class RestClientProviderTest {
   void createsStubProvider(@TempDir Path tempDir) {
     RestClientProvider restClientProvider =
         RestClientProvider.create(
-            ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER,
+            ExecutionLayerChannel.STUB_ENDPOINT_PREFIX,
             TIMEOUT,
             false,
             Optional.empty(),

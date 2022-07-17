@@ -98,6 +98,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -216,6 +217,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
+  private volatile KeyValueStore<String, Bytes> keyValueStore;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -364,6 +366,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initAll() {
+    initKeyValueStore();
     initExecutionLayer();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -392,6 +395,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initKeyValueStore() {
+    keyValueStore =
+        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
   }
 
   protected void initExecutionLayer() {
@@ -514,6 +522,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceNotifier,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
+            new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             proposerBoostEnabled,
             equivocatingIndicesEnabled);
     forkChoiceTrigger =
@@ -743,9 +752,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
-
-    final KeyValueStore<String, Bytes> keyValueStore =
-        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()

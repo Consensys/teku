@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
  - Support `--network=goerli` as an alias for `--network=prater`
+ - Added a panda banner to celebrate the merge completing
  - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
  - Distributions created from the same git commit and docker image will be identical
  - Optimised storage of latest vote information by batching updates
