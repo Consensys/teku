@@ -27,7 +27,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnb
 public class BlindedHotBlockMigration<
     T extends KvStoreCombinedDaoBlinded & KvStoreCombinedDaoUnblinded> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int BATCH_SIZE = 10_000;
+  private static final int BATCH_SIZE = 1_000;
   private final Spec spec;
 
   private final T dao;
@@ -46,7 +46,6 @@ public class BlindedHotBlockMigration<
 
   private void performBatchMigration() {
     moveHotBlocksToBlindedStorage();
-    moveFirstFinalizedBlockToBlindedStorage();
   }
 
   private void moveFirstFinalizedBlockToBlindedStorage() {
@@ -60,8 +59,8 @@ public class BlindedHotBlockMigration<
               KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded unblindedUpdater =
                   dao.finalizedUpdaterUnblinded()) {
 
-            blindedUpdater.addFinalizedBlindedBlock(block, spec);
-            unblindedUpdater.deleteFinalizedBlock(block.getSlot(), root);
+            blindedUpdater.addBlindedFinalizedBlock(block, spec);
+            unblindedUpdater.deleteUnblindedFinalizedBlock(block.getSlot(), root);
             blindedUpdater.commit();
             unblindedUpdater.commit();
           }
@@ -69,7 +68,7 @@ public class BlindedHotBlockMigration<
   }
 
   private void moveHotBlocksToBlindedStorage() {
-    final long countBlocks = dao.countHotBlocks();
+    final long countBlocks = dao.countUnblindedHotBlocks();
     if (countBlocks == 0) {
       return;
     }
@@ -85,7 +84,7 @@ public class BlindedHotBlockMigration<
           for (int i = 0; i < BATCH_SIZE && it.hasNext(); i++) {
             final SignedBeaconBlock block = it.next();
             blindedUpdater.addBlindedBlock(block, spec);
-            unblindedUpdater.deleteHotBlockOnly(block.getRoot());
+            unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
           }
           blindedUpdater.commit();
@@ -94,5 +93,6 @@ public class BlindedHotBlockMigration<
       }
     }
     LOG.info("Hot blocks all moved ({} blocks)", counter);
+    moveFirstFinalizedBlockToBlindedStorage();
   }
 }

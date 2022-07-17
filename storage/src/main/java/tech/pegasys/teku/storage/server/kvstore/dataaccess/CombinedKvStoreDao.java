@@ -112,7 +112,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public long countHotBlocks() {
+  public long countUnblindedHotBlocks() {
     try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
         db.streamRaw(schema.getColumnHotBlocksByRoot())) {
       return rawEntries.count();
@@ -344,7 +344,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public long countFinalizedUnblindedBlocks() {
+  public long countUnblindedFinalizedBlocks() {
     try (Stream<ColumnEntry<Bytes, Bytes>> entries =
         db.streamRaw(schema.getColumnSlotsByFinalizedRoot())) {
       return entries.count();
@@ -590,7 +590,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+    public void deleteUnblindedHotBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
     }
 
@@ -645,7 +645,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+    public void addBlindedFinalizedBlock(final SignedBeaconBlock block, final Spec spec) {
       addBlindedBlock(block, block.getRoot(), spec);
       addFinalizedBlockRootBySlot(block);
     }
@@ -694,7 +694,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }

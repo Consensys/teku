@@ -111,7 +111,7 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getValue);
   }
 
-  public long countFinalizedBlocks() {
+  public long countUnblindedFinalizedBlocks() {
     try (Stream<ColumnEntry<Bytes, Bytes>> entries =
         db.streamRaw(schema.getColumnFinalizedBlocksBySlot())) {
       return entries.count();
@@ -252,7 +252,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addFinalizedBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+    public void addBlindedFinalizedBlock(final SignedBeaconBlock block, final Spec spec) {
       addBlindedBlock(block, spec);
       addFinalizedBlockRootBySlot(block);
     }
@@ -301,7 +301,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }

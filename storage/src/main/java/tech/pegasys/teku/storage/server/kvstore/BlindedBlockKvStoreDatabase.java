@@ -127,7 +127,7 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
-  public long countFinalizedBlocks() {
+  public long countUnblindedFinalizedBlocks() {
     return 0;
   }
 

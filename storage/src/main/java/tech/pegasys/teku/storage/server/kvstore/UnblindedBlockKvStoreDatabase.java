@@ -131,8 +131,8 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
-  public long countFinalizedBlocks() {
-    return dao.countFinalizedUnblindedBlocks();
+  public long countUnblindedFinalizedBlocks() {
+    return dao.countUnblindedFinalizedBlocks();
   }
 
   @Override

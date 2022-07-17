@@ -87,7 +87,7 @@ public class V4HotKvStoreDao {
     return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
-  public long countHotBlocks() {
+  public long countUnblindedHotBlocks() {
     try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
         db.streamRaw(schema.getColumnHotBlocksByRoot())) {
       return rawEntries.count();
@@ -275,7 +275,7 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+    public void deleteUnblindedHotBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
     }
 

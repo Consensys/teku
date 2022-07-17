@@ -131,7 +131,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public long countFinalizedBlocks() {
+  public long countUnblindedFinalizedBlocks() {
     return 0;
   }
 
