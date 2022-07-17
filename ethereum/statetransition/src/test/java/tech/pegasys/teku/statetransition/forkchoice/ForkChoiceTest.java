@@ -117,6 +117,7 @@ class ForkChoiceTest {
           forkChoiceNotifier,
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
+          PandaPrinter.NOOP,
           false,
           true);
 
@@ -206,6 +207,7 @@ class ForkChoiceTest {
             forkChoiceNotifier,
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            PandaPrinter.NOOP,
             true,
             false);
 
