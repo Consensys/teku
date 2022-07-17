@@ -125,7 +125,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(finalizedBlock);
+    tx.putBlockAndState(finalizedBlock, spec.calculateBlockCheckpoints(finalizedBlock.getState()));
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     assertThat(tx.getLatestFinalized().getRoot()).isEqualTo(finalizedBlock.getRoot());
   }
@@ -150,7 +150,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
     SafeFuture<Optional<SignedBeaconBlock>> result =
         tx.retrieveSignedBlock(blockAndState.getRoot());
@@ -177,7 +177,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
     SafeFuture<Optional<BeaconBlock>> result = tx.retrieveBlock(blockAndState.getRoot());
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getBlock().getMessage()));
@@ -203,7 +203,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
     SafeFuture<Optional<SignedBlockAndState>> result =
         tx.retrieveBlockAndState(blockAndState.getRoot());
@@ -229,7 +229,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
     SafeFuture<Optional<BeaconState>> result = tx.retrieveBlockState(blockAndState.getRoot());
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
@@ -258,7 +258,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState);
+    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
     SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
@@ -273,7 +273,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    tx.putBlockAndState(finalizedBlockAndState);
+    tx.putBlockAndState(
+        finalizedBlockAndState, spec.calculateBlockCheckpoints(finalizedBlockAndState.getState()));
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
 
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
@@ -294,7 +295,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
     final StoreTransaction blockTx = store.startTransaction(new StubStorageUpdateChannel());
-    blockTx.putBlockAndState(finalizedBlockAndState);
+    blockTx.putBlockAndState(
+        finalizedBlockAndState, spec.calculateBlockCheckpoints(finalizedBlockAndState.getState()));
     assertThat(blockTx.commit()).isCompleted();
 
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
@@ -319,7 +321,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final StoreTransaction finalizingTx = store.startTransaction(new StubStorageUpdateChannel());
     finalizingTx.setFinalizedCheckpoint(finalizedCheckpoint, false);
-    finalizingTx.putBlockAndState(finalizedBlockAndState);
+    finalizingTx.putBlockAndState(
+        finalizedBlockAndState, spec.calculateBlockCheckpoints(finalizedBlockAndState.getState()));
     assertThat(finalizingTx.commit()).isCompleted();
 
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
@@ -348,8 +351,11 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     // Save blocks
     final StoreTransaction blockTx = store.startTransaction(new StubStorageUpdateChannel());
-    blockTx.putBlockAndState(finalizedBlockAndState);
-    blockTx.putBlockAndState(newerFinalizedBlockAndState);
+    blockTx.putBlockAndState(
+        finalizedBlockAndState, spec.calculateBlockCheckpoints(finalizedBlockAndState.getState()));
+    blockTx.putBlockAndState(
+        newerFinalizedBlockAndState,
+        spec.calculateBlockCheckpoints(newerFinalizedBlockAndState.getState()));
     assertThat(blockTx.commit()).isCompleted();
 
     // Start tx finalizing epoch 1
@@ -358,7 +364,9 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     // Finalize epoch 2
     final StoreTransaction otherTx = store.startTransaction(new StubStorageUpdateChannel());
-    otherTx.putBlockAndState(newerFinalizedBlockAndState);
+    otherTx.putBlockAndState(
+        newerFinalizedBlockAndState,
+        spec.calculateBlockCheckpoints(newerFinalizedBlockAndState.getState()));
     otherTx.setFinalizedCheckpoint(newerFinalizedCheckpoint, false);
     assertThat(otherTx.commit()).isCompleted();
 
@@ -394,7 +402,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
             mainChainBlock4.getRoot());
 
     // Added block should be included
-    tx.putBlockAndState(forkBlock2);
+    tx.putBlockAndState(forkBlock2, spec.calculateBlockCheckpoints(forkBlock2.getState()));
 
     // Children are ordered based on hash - so check ordering depending on specific hashes
     if (mainChainBlock1.getRoot().compareTo(forkBlock2.getRoot()) < 0) {

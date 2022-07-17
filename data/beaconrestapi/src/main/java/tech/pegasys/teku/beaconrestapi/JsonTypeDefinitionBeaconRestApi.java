@@ -25,6 +25,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -87,11 +89,14 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLivene
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -104,11 +109,16 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   private final RestApi restApi;
 
   public JsonTypeDefinitionBeaconRestApi(
-      final BeaconRestApiConfig config,
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
+      final BeaconRestApiConfig config,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
-    restApi = create(config, dataProvider, eth1DataProvider, spec);
+    restApi =
+        create(
+            config, dataProvider, eth1DataProvider, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   @Override
@@ -125,6 +135,9 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final BeaconRestApiConfig config,
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
     return new RestApiBuilder()
@@ -195,7 +208,14 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new PostVoluntaryExit(dataProvider))
         .endpoint(new PostSyncCommittees(dataProvider))
         .endpoint(new PostValidatorLiveness(dataProvider))
-        // FIXME Add Event Handlers (GetEvents is not a MigratingEndpointAdapter)
+        // Event Handler
+        .endpoint(
+            new GetEvents(
+                dataProvider,
+                eventChannels,
+                asyncRunner,
+                timeProvider,
+                config.getMaxPendingEvents()))
         // Node Handlers
         .endpoint(new GetHealth(dataProvider))
         .endpoint(new GetIdentity(dataProvider))
@@ -247,6 +267,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new GetDeposits(eth1DataProvider))
         .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
         .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
+        .endpoint(new GetDepositSnapshot(eth1DataProvider))
         .endpoint(new GetGlobalValidatorInclusion(dataProvider))
         .endpoint(new GetValidatorInclusion(dataProvider))
         .build();

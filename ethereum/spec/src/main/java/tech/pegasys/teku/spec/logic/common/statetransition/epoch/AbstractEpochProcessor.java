@@ -14,24 +14,31 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesUpdates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -88,10 +95,14 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
-    BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
-    BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(currentEpoch, __ -> totalBalances.getCurrentEpochActiveValidators());
+
+    updateTransitionCaches(state, currentEpoch, totalBalances);
+
+    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    final ProgressiveTotalBalancesUpdates progressiveTotalBalances =
+        transitionCaches.getProgressiveTotalBalances();
+    progressiveTotalBalances.checkResult(specConfig, state.getSlot(), totalBalances);
+    progressiveTotalBalances.onEpochTransition(validatorStatuses.getStatuses());
     processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
     processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);
@@ -104,6 +115,53 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processHistoricalRootsUpdate(state);
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
+
+    if (specConfig.getProgressiveBalancesMode() == ProgressiveBalancesMode.USED) {
+      progressiveTotalBalances
+          .getTotalBalances(specConfig)
+          .ifPresent(
+              newTotalBalances ->
+                  BeaconStateCache.getTransitionCaches(state)
+                      .getTotalActiveBalance()
+                      .get(
+                          currentEpoch.plus(1),
+                          __ -> newTotalBalances.getCurrentEpochActiveValidators()));
+    }
+  }
+
+  private void updateTransitionCaches(
+      final MutableBeaconState state,
+      final UInt64 currentEpoch,
+      final TotalBalances totalBalances) {
+    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    transitionCaches.setLatestTotalBalances(totalBalances);
+    transitionCaches
+        .getTotalActiveBalance()
+        .get(currentEpoch, __ -> totalBalances.getCurrentEpochActiveValidators());
+    initProgressiveTotalBalancesIfRequired(state, totalBalances);
+  }
+
+  @Override
+  public BlockCheckpoints calculateBlockCheckpoints(final BeaconState preState) {
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(preState);
+    final Checkpoint currentJustifiedCheckpoint = preState.getCurrentJustifiedCheckpoint();
+    final Checkpoint currentFinalizedCheckpoint = preState.getFinalizedCheckpoint();
+    if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))
+        || specConfig.getProgressiveBalancesMode() != ProgressiveBalancesMode.USED) {
+      return new BlockCheckpoints(
+          currentJustifiedCheckpoint,
+          currentFinalizedCheckpoint,
+          currentJustifiedCheckpoint,
+          currentFinalizedCheckpoint);
+    }
+
+    final TotalBalances totalBalances =
+        BeaconStateCache.getTransitionCaches(preState)
+            .getProgressiveTotalBalances()
+            .getTotalBalances(specConfig)
+            .orElseGet(
+                () -> validatorStatusFactory.createValidatorStatuses(preState).getTotalBalances());
+    return calculateBlockCheckpoints(preState, currentEpoch, totalBalances, __ -> {});
   }
 
   /** Processes justification and finalization */
@@ -115,73 +173,91 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))) {
         return;
       }
-      final UInt64 totalActiveBalance = totalBalances.getCurrentEpochActiveValidators();
-      final UInt64 previousEpochTargetBalance = totalBalances.getPreviousEpochTargetAttesters();
-      final UInt64 currentEpochTargetBalance = totalBalances.getCurrentEpochTargetAttesters();
-      weighJustificationAndFinalization(
-          state,
-          currentEpoch,
-          totalActiveBalance,
-          previousEpochTargetBalance,
-          currentEpochTargetBalance);
+      weighJustificationAndFinalization(state, currentEpoch, totalBalances);
 
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
   }
 
-  private void weighJustificationAndFinalization(
-      final MutableBeaconState state,
+  private BlockCheckpoints calculateBlockCheckpoints(
+      final BeaconState state,
       final UInt64 currentEpoch,
-      final UInt64 totalActiveBalance,
-      final UInt64 previousEpochTargetBalance,
-      final UInt64 currentEpochTargetBalance) {
-    Checkpoint oldPreviousJustifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
-    Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
+      final TotalBalances totalBalances,
+      final Consumer<SszBitvector> modifiedJustificationBitsHandler) {
+    final UInt64 totalActiveBalance = totalBalances.getCurrentEpochActiveValidators();
+    final UInt64 previousEpochTargetBalance = totalBalances.getPreviousEpochTargetAttesters();
+    final UInt64 currentEpochTargetBalance = totalBalances.getCurrentEpochTargetAttesters();
 
-    // Process justifications
-    state.setPreviousJustifiedCheckpoint(state.getCurrentJustifiedCheckpoint());
+    final Checkpoint oldPreviousJustifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
+    final Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
+    final Checkpoint oldFinalizedCheckpoint = state.getFinalizedCheckpoint();
+    Checkpoint unrealizedJustifiedCheckpoint = oldCurrentJustifiedCheckpoint;
+    Checkpoint unrealizedFinalizedCheckpoint = oldFinalizedCheckpoint;
+
     SszBitvector justificationBits = state.getJustificationBits().rightShift(1);
 
+    // Process justifications
     if (previousEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
       UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
-      Checkpoint newCheckpoint =
-          new Checkpoint(previousEpoch, beaconStateAccessors.getBlockRoot(state, previousEpoch));
-      state.setCurrentJustifiedCheckpoint(newCheckpoint);
+      unrealizedJustifiedCheckpoint =
+          new Checkpoint(previousEpoch, getBlockRootInEffect(state, previousEpoch));
       justificationBits = justificationBits.withBit(1);
     }
 
     if (currentEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
-      Checkpoint newCheckpoint =
-          new Checkpoint(currentEpoch, beaconStateAccessors.getBlockRoot(state, currentEpoch));
-      state.setCurrentJustifiedCheckpoint(newCheckpoint);
+      unrealizedJustifiedCheckpoint =
+          new Checkpoint(currentEpoch, getBlockRootInEffect(state, currentEpoch));
       justificationBits = justificationBits.withBit(0);
     }
 
-    state.setJustificationBits(justificationBits);
-
-    // Process finalizations
+    modifiedJustificationBitsHandler.accept(justificationBits);
 
     // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
     if (beaconStateUtil.all(justificationBits, 1, 4)
         && oldPreviousJustifiedCheckpoint.getEpoch().plus(3).equals(currentEpoch)) {
-      state.setFinalizedCheckpoint(oldPreviousJustifiedCheckpoint);
+      unrealizedFinalizedCheckpoint = oldPreviousJustifiedCheckpoint;
     }
     // The 2nd/3rd most recent epochs are justified, the 2nd using the 3rd as source
     if (beaconStateUtil.all(justificationBits, 1, 3)
         && oldPreviousJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-      state.setFinalizedCheckpoint(oldPreviousJustifiedCheckpoint);
+      unrealizedFinalizedCheckpoint = oldPreviousJustifiedCheckpoint;
     }
     // The 1st/2nd/3rd most recent epochs are justified, the 1st using the 3rd as source
     if (beaconStateUtil.all(justificationBits, 0, 3)
         && oldCurrentJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-      state.setFinalizedCheckpoint(oldCurrentJustifiedCheckpoint);
+      unrealizedFinalizedCheckpoint = oldCurrentJustifiedCheckpoint;
     }
     // The 1st/2nd most recent epochs are justified, the 1st using the 2nd as source
     if (beaconStateUtil.all(justificationBits, 0, 2)
         && oldCurrentJustifiedCheckpoint.getEpoch().plus(1).equals(currentEpoch)) {
-      state.setFinalizedCheckpoint(oldCurrentJustifiedCheckpoint);
+      unrealizedFinalizedCheckpoint = oldCurrentJustifiedCheckpoint;
     }
+    return new BlockCheckpoints(
+        oldCurrentJustifiedCheckpoint,
+        oldFinalizedCheckpoint,
+        unrealizedJustifiedCheckpoint,
+        unrealizedFinalizedCheckpoint);
+  }
+
+  private Bytes32 getBlockRootInEffect(final BeaconState state, final UInt64 epoch) {
+    final UInt64 slot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    if (state.getSlot().isGreaterThan(slot)) {
+      return beaconStateAccessors.getBlockRootAtSlot(state, slot);
+    } else {
+      return BeaconBlockHeader.fromState(state).hashTreeRoot();
+    }
+  }
+
+  private void weighJustificationAndFinalization(
+      final MutableBeaconState state,
+      final UInt64 currentEpoch,
+      final TotalBalances totalBalances) {
+    final BlockCheckpoints unrealisedCheckpoints =
+        calculateBlockCheckpoints(state, currentEpoch, totalBalances, state::setJustificationBits);
+    state.setPreviousJustifiedCheckpoint(state.getCurrentJustifiedCheckpoint());
+    state.setCurrentJustifiedCheckpoint(unrealisedCheckpoints.getUnrealizedJustifiedCheckpoint());
+    state.setFinalizedCheckpoint(unrealisedCheckpoints.getUnrealizedFinalizedCheckpoint());
   }
 
   @Override
@@ -367,6 +443,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             balance
                 .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
                 .min(specConfig.getMaxEffectiveBalance());
+        BeaconStateCache.getTransitionCaches(state)
+            .getProgressiveTotalBalances()
+            .onEffectiveBalanceChange(status, newEffectiveBalance);
         validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
       }
     }

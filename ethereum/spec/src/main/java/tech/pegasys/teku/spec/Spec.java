@@ -49,10 +49,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -270,12 +272,31 @@ public class Spec {
         .sszDeserialize(serializedSignedBlock);
   }
 
+  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getSignedBlindedBeaconBlockSchema()
+        .sszDeserialize(serializedState);
+  }
+
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {
     final UInt64 slot = BeaconBlockInvariants.extractBeaconBlockSlot(serializedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconBlockSchema()
         .sszDeserialize(serializedBlock);
+  }
+
+  public ExecutionPayload deserializeExecutionPayload(
+      final Bytes serializedPayload, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionBellatrix()
+        .orElseThrow(
+            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
+        .getExecutionPayloadSchema()
+        .sszDeserialize(serializedPayload);
   }
 
   public ExecutionPayloadHeader deserializeJsonExecutionPayloadHeader(
@@ -485,7 +506,7 @@ public class Spec {
     return atSlot(forkChoiceStrategy.blockSlot(root).orElse(startSlot));
   }
 
-  public void onTick(MutableStore store, UInt64 timeMillis) {
+  public void onTick(final MutableStore store, final UInt64 timeMillis) {
     atTimeMillis(store.getGenesisTimeMillis(), timeMillis)
         .getForkChoiceUtil()
         .onTick(store, timeMillis);
@@ -634,6 +655,10 @@ public class Spec {
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {
+    return atState(state).getEpochProcessor().calculateBlockCheckpoints(state);
   }
 
   @CheckReturnValue

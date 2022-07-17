@@ -111,6 +111,7 @@ public class InMemoryStorageSystemBuilder {
             .version(version)
             .storageMode(storageMode)
             .stateStorageFrequency(stateStorageFrequency)
+            .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
             .storeConfig(storeConfig);
 
     copy.unifiedDb = unifiedDb;

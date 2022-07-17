@@ -106,7 +106,7 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false);
+      new ExecutionLayerChannelStub(spec, false, Optional.empty());
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
   private ForkChoice forkChoice =
@@ -115,6 +115,7 @@ class ForkChoiceTest {
           new InlineEventThread(),
           recentChainData,
           forkChoiceNotifier,
+          new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
           PandaPrinter.NOOP,
           false,
@@ -134,10 +135,6 @@ class ForkChoiceTest {
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
-
-    storageSystem
-        .chainUpdater()
-        .setTime(genesis.getState().getGenesisTime().plus(10L * spec.getSecondsPerSlot(ZERO)));
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
   }
@@ -160,6 +157,7 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
         forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
@@ -173,6 +171,7 @@ class ForkChoiceTest {
   void onBlock_shouldNotTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(UInt64.valueOf(5));
     processHead(nodeSlot);
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
@@ -198,12 +197,15 @@ class ForkChoiceTest {
   @MethodSource("provideArgumentsForShouldReorg")
   void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain(
       long advanceTimeSlotMillis, boolean shouldReorg) {
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(2));
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
     forkChoice =
         new ForkChoice(
-            TestSpecFactory.createMinimalBellatrix(),
+            spec,
             new InlineEventThread(),
             recentChainData,
             forkChoiceNotifier,
+            new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,
             true,
@@ -456,10 +458,6 @@ class ForkChoiceTest {
     final ChainUpdater chainUpdater = storageSystem.chainUpdater();
     final UInt64 epoch4StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
 
-    // Set the time to be the start of epoch 3 so all the blocks we need are valid
-    chainUpdater.setTime(
-        spec.getSlotStartTime(epoch4StartSlot, genesis.getState().getGenesisTime()));
-
     justifyEpoch(chainUpdater, 2);
 
     // Update ProtoArray to avoid the special case of considering the anchor
@@ -486,6 +484,7 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldSendForkChoiceUpdatedNotification() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
         forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
@@ -529,6 +528,46 @@ class ForkChoiceTest {
 
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
+  }
+
+  @Test
+  void onBlock_shouldChangeForkChoiceForLatestValidHashOnInvalidExecutionPayload() {
+    doMerge();
+    setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.ACCEPTED);
+    final UInt64 slotToImport = prepFinalizeEpoch(2);
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch4Block);
+
+    // Make an optimistic chain
+    executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
+    final SignedBlockAndState maybeValidBlock = chainBuilder.generateNextBlock();
+    storageSystem.chainUpdater().setCurrentSlot(maybeValidBlock.getSlot());
+    importBlockOptimistically(maybeValidBlock);
+
+    storageSystem.chainUpdater().setCurrentSlot(maybeValidBlock.getSlot().increment());
+    importBlockOptimistically(chainBuilder.generateNextBlock());
+
+    final SignedBlockAndState latestOptimisticBlock = chainBuilder.generateNextBlock();
+    storageSystem.chainUpdater().setCurrentSlot(latestOptimisticBlock.getSlot());
+    importBlockOptimistically(latestOptimisticBlock);
+    assertHeadIsOptimistic(latestOptimisticBlock);
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
+        .isEqualTo(latestOptimisticBlock.getRoot());
+
+    // make EL returning INVALID with latestValidHash in the past (maybeValidBlock)
+    executionLayer.setPayloadStatus(
+        PayloadStatus.invalid(
+            Optional.of(maybeValidBlock.getExecutionBlockHash().get()), Optional.empty()));
+    storageSystem.chainUpdater().setCurrentSlot(latestOptimisticBlock.getSlot().increment());
+    SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
+    importBlockWithError(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
+
+    assertHeadIsFullyValidated(maybeValidBlock);
+    assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
+        .isEqualTo(maybeValidBlock.getRoot());
   }
 
   @Test
@@ -840,9 +879,6 @@ class ForkChoiceTest {
     final ChainUpdater chainUpdater = storageSystem.chainUpdater();
     final UInt64 epochPlus2StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch).plus(2));
 
-    chainUpdater.setTime(
-        spec.getSlotStartTime(epochPlus2StartSlot, genesis.getState().getGenesisTime()));
-
     justifyEpoch(chainUpdater, epoch);
 
     prepEpochForJustification(chainUpdater, epochPlus2StartSlot);
@@ -920,6 +956,7 @@ class ForkChoiceTest {
 
   @Test
   void onAttestation_shouldDeferAttestationsFromCurrentSlot() {
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(UInt64.valueOf(10));
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(currentSlot);
     importBlock(targetBlock);
@@ -984,12 +1021,14 @@ class ForkChoiceTest {
   }
 
   private void importBlock(final SignedBlockAndState block) {
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
@@ -1003,6 +1042,7 @@ class ForkChoiceTest {
   }
 
   private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportFailure(result, failureReason);

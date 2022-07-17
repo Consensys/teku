@@ -93,6 +93,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final PandaPrinter pandaPrinter,
       final boolean proposerBoostEnabled,
@@ -106,7 +107,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
-    this.tickProcessor = new TickProcessor(spec, recentChainData);
+    this.tickProcessor = tickProcessor;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -127,6 +128,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceExecutor,
         recentChainData,
         forkChoiceNotifier,
+        new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         PandaPrinter.NOOP,
         false,
@@ -316,10 +318,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       reportInvalidBlock(block, result);
       payloadValidationResult
           .getInvalidTransitionBlockRoot()
-          .ifPresent(
+          .ifPresentOrElse(
               invalidTransitionBlockRoot ->
                   getForkChoiceStrategy()
-                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult));
+                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult, true),
+              () ->
+                  getForkChoiceStrategy()
+                      .onExecutionPayloadResult(block.getParentRoot(), payloadResult, false));
       return result;
     }
 
@@ -362,7 +367,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult);
+    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -417,7 +422,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           final Bytes32 validatedBlockRoot =
               result.getInvalidTransitionBlockRoot().orElse(blockRoot);
 
-          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus);
+          getForkChoiceStrategy().onExecutionPayloadResult(validatedBlockRoot, resultStatus, true);
 
           if (resultStatus.hasInvalidStatus()) {
             LOG.warn("Will run fork choice because head block {} was invalid", validatedBlockRoot);

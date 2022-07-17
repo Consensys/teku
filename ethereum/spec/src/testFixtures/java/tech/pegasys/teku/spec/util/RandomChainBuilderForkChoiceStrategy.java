@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -103,7 +104,12 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
                         h.getParentRoot(),
                         h.getStateRoot(),
                         h.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                        false)))
+                        false,
+                        new BlockCheckpoints(
+                            h.getState().getCurrentJustifiedCheckpoint(),
+                            h.getState().getFinalizedCheckpoint(),
+                            h.getState().getCurrentJustifiedCheckpoint(),
+                            h.getState().getFinalizedCheckpoint()))))
         .orElse(Collections.emptyList());
   }
 
@@ -134,21 +140,28 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
 
   @Override
   public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
-    return getBlock(blockRoot)
+    return chainBuilder
+        .getBlockAndState(blockRoot)
         .map(
-            block ->
+            blockAndState ->
                 new ProtoNodeData(
-                    block.getSlot(),
-                    block.getRoot(),
-                    block.getParentRoot(),
-                    block.getStateRoot(),
-                    block
+                    blockAndState.getSlot(),
+                    blockAndState.getRoot(),
+                    blockAndState.getParentRoot(),
+                    blockAndState.getStateRoot(),
+                    blockAndState
+                        .getBlock()
                         .getMessage()
                         .getBody()
                         .getOptionalExecutionPayload()
                         .map(ExecutionPayload::getBlockHash)
                         .orElse(Bytes32.ZERO),
-                    false));
+                    false,
+                    new BlockCheckpoints(
+                        blockAndState.getState().getCurrentJustifiedCheckpoint(),
+                        blockAndState.getState().getFinalizedCheckpoint(),
+                        blockAndState.getState().getCurrentJustifiedCheckpoint(),
+                        blockAndState.getState().getFinalizedCheckpoint())));
   }
 
   @Override

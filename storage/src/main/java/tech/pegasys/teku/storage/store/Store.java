@@ -242,8 +242,7 @@ class Store implements UpdatableStore {
           block.getBlockRoot(),
           block.getParentRoot(),
           block.getStateRoot(),
-          block.getCheckpointEpochs().get().getJustifiedEpoch(),
-          block.getCheckpointEpochs().get().getFinalizedEpoch(),
+          block.getCheckpointEpochs().get(),
           block.getExecutionBlockHash().orElse(Bytes32.ZERO),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }

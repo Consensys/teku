@@ -31,7 +31,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -78,10 +79,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private SlotAndBlockRoot findHeadImpl(
       final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
     final ProtoNode bestNode =
-        protoArray.findOptimisticHead(
-            justifiedCheckpoint.getRoot(),
-            justifiedCheckpoint.getEpoch(),
-            finalizedCheckpoint.getEpoch());
+        protoArray.findOptimisticHead(justifiedCheckpoint, finalizedCheckpoint);
     return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
   }
 
@@ -120,8 +118,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               this.proposerBoostAmount,
               proposerBoostAmount);
 
-      protoArray.applyScoreChanges(
-          deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
+      protoArray.applyScoreChanges(deltas, justifiedCheckpoint, finalizedCheckpoint);
       balances = justifiedStateEffectiveBalances;
       this.proposerBoostRoot = proposerBoostRoot;
       this.proposerBoostAmount = proposerBoostAmount;
@@ -185,10 +182,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
-          protoArray.findOptimisticHead(
-              justifiedCheckpoint.getRoot(),
-              justifiedCheckpoint.getEpoch(),
-              finalizedCheckpoint.getEpoch());
+          protoArray.findOptimisticHead(justifiedCheckpoint, finalizedCheckpoint);
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
       final Bytes32 justifiedExecutionHash =
           protoArray
@@ -450,13 +444,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @Override
   public void applyUpdate(
-      final Collection<BlockAndCheckpointEpochs> newBlocks,
+      final Collection<BlockAndCheckpoints> newBlocks,
+      final Collection<Bytes32> pulledUpBlocks,
       final Set<Bytes32> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
     protoArrayLock.writeLock().lock();
     try {
       newBlocks.stream()
-          .sorted(Comparator.comparing(BlockAndCheckpointEpochs::getSlot))
+          .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
           .forEach(
               block ->
                   processBlock(
@@ -464,10 +459,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlock().getRoot(),
                       block.getBlock().getParentRoot(),
                       block.getBlock().getStateRoot(),
-                      block.getCheckpointEpochs().getJustifiedEpoch(),
-                      block.getCheckpointEpochs().getFinalizedEpoch(),
+                      block.getBlockCheckpoints(),
                       block.getExecutionBlockHash().orElse(Bytes32.ZERO)));
       removedBlockRoots.forEach(protoArray::removeBlockRoot);
+      pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
       protoArray.maybePrune(finalizedCheckpoint.getRoot());
     } finally {
       protoArrayLock.writeLock().unlock();
@@ -512,16 +507,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       Bytes32 blockRoot,
       Bytes32 parentRoot,
       Bytes32 stateRoot,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch,
+      BlockCheckpoints checkpoints,
       Bytes32 executionBlockHash) {
     protoArray.onBlock(
         blockSlot,
         blockRoot,
         parentRoot,
         stateRoot,
-        justifiedEpoch,
-        finalizedEpoch,
+        checkpoints,
         executionBlockHash,
         spec.isBlockProcessorOptimistic(blockSlot));
   }
@@ -530,7 +523,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return protoArray.getProtoNode(blockRoot);
   }
 
-  public void onExecutionPayloadResult(final Bytes32 blockRoot, final PayloadStatus result) {
+  public void onExecutionPayloadResult(
+      final Bytes32 blockRoot,
+      final PayloadStatus result,
+      final boolean verifiedInvalidTransition) {
     if (result.hasFailedExecution()) {
       LOG.warn(
           "Unable to execute Payload for block root {}, Execution Engine is offline",
@@ -547,8 +543,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       if (status.isValid()) {
         protoArray.markNodeValid(blockRoot);
       } else if (status.isInvalid()) {
-        LOG.warn("Payload for block root {} was invalid", blockRoot);
-        protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
+        if (verifiedInvalidTransition) {
+          LOG.warn("Payload for block root {} was invalid", blockRoot);
+          protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
+        } else {
+          LOG.warn("Payload for child of block root {} was invalid", blockRoot);
+          protoArray.markParentChainInvalid(blockRoot, result.getLatestValidHash());
+        }
       } else {
         throw new IllegalArgumentException("Unknown payload validity status: " + status);
       }

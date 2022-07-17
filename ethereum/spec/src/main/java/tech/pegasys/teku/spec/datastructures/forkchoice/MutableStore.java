@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -23,13 +24,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface MutableStore extends ReadOnlyStore {
 
-  void putBlockAndState(SignedBeaconBlock block, BeaconState state);
+  void putBlockAndState(SignedBeaconBlock block, BeaconState state, BlockCheckpoints checkpoints);
 
-  default void putBlockAndState(SignedBlockAndState blockAndState) {
-    putBlockAndState(blockAndState.getBlock(), blockAndState.getState());
+  default void putBlockAndState(SignedBlockAndState blockAndState, BlockCheckpoints checkpoints) {
+    putBlockAndState(blockAndState.getBlock(), blockAndState.getState(), checkpoints);
   }
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
+
+  void pullUpBlockCheckpoints(Bytes32 blockRoot);
 
   void setTimeMillis(UInt64 timeMillis);
 

@@ -26,8 +26,10 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -38,22 +40,26 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class ForkChoiceUtil {
 
   private final SpecConfig specConfig;
   private final BeaconStateAccessors beaconStateAccessors;
+  private final EpochProcessor epochProcessor;
   private final AttestationUtil attestationUtil;
   private final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
       final BeaconStateAccessors beaconStateAccessors,
+      final EpochProcessor epochProcessor,
       final AttestationUtil attestationUtil,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.epochProcessor = epochProcessor;
     this.attestationUtil = attestationUtil;
     this.miscHelpers = miscHelpers;
   }
@@ -182,19 +188,36 @@ public class ForkChoiceUtil {
    * of seconds. This allows the time to be stored in milliseconds which allows for more
    * fine-grained time calculations if required.
    *
-   * @param store
+   * @param store the store to update
    * @param timeMillis onTick time in milliseconds
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
-  public void onTick(MutableStore store, UInt64 timeMillis) {
+  public void onTick(final MutableStore store, final UInt64 timeMillis) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
     if (store.getTimeMillis().isGreaterThan(timeMillis)
         || store.getGenesisTimeMillis().isGreaterThan(timeMillis)) {
       return;
     }
-    UInt64 previousSlot = getCurrentSlot(store);
+    final UInt64 previousSlot = getCurrentSlot(store);
+    final UInt64 newSlot = getCurrentSlotForMillis(timeMillis, store.getGenesisTimeMillis());
+    final UInt64 previousEpoch = miscHelpers.computeEpochAtSlot(previousSlot);
+    final UInt64 newEpoch = miscHelpers.computeEpochAtSlot(newSlot);
+
+    // Catch up on any missed epoch transitions
+    for (UInt64 currentEpoch = previousEpoch.plus(1);
+        currentEpoch.isLessThanOrEqualTo(newEpoch);
+        currentEpoch = currentEpoch.plus(1)) {
+      final UInt64 firstSlotOfEpoch = miscHelpers.computeStartSlotAtEpoch(currentEpoch);
+      final UInt64 slotStartTime =
+          getSlotStartTimeMillis(firstSlotOfEpoch, store.getGenesisTimeMillis());
+      processOnTick(store, slotStartTime);
+    }
+    // Catch up final part
+    processOnTick(store, timeMillis);
+  }
+
+  private void processOnTick(final MutableStore store, final UInt64 timeMillis) {
+    final UInt64 previousSlot = getCurrentSlot(store);
 
     // Update store time
     store.setTimeMillis(timeMillis);
@@ -206,10 +229,8 @@ public class ForkChoiceUtil {
     }
 
     // Not a new epoch, return
-    // Note this allows for potentially entirely skipping the first slot of the epoch
-    if (!miscHelpers
-        .computeEpochAtSlot(previousSlot)
-        .isLessThan(miscHelpers.computeEpochAtSlot(currentSlot))) {
+    if (!(currentSlot.isGreaterThan(previousSlot)
+        && computeSlotsSinceEpochStart(currentSlot).isZero())) {
       return;
     }
 
@@ -219,6 +240,41 @@ public class ForkChoiceUtil {
         .getEpoch()
         .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
+    }
+
+    final UInt64 previousEpoch = miscHelpers.computeEpochAtSlot(previousSlot);
+    for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads()) {
+      if (miscHelpers.computeEpochAtSlot(nodeData.getSlot()).equals(previousEpoch)) {
+        store.pullUpBlockCheckpoints(nodeData.getRoot());
+        updateCheckpoints(
+            store,
+            nodeData.getCheckpoints().getUnrealizedJustifiedCheckpoint(),
+            nodeData.getCheckpoints().getUnrealizedFinalizedCheckpoint(),
+            nodeData.isOptimistic());
+      }
+    }
+  }
+
+  private void updateCheckpoints(
+      final MutableStore store,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint,
+      final boolean isBlockOptimistic) {
+    if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+      if (justifiedCheckpoint
+          .getEpoch()
+          .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
+        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+      }
+      if (shouldUpdateJustifiedCheckpoint(
+          store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
+      }
+    }
+
+    if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
+      store.setJustifiedCheckpoint(justifiedCheckpoint);
     }
   }
 
@@ -331,49 +387,25 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic) {
+
+    BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
+
+    // If block is from a prior epoch, pull up the post-state to next epoch to realize new finality
+    // info
+    if (miscHelpers
+        .computeEpochAtSlot(signedBlock.getSlot())
+        .isLessThan(miscHelpers.computeEpochAtSlot(getCurrentSlot(store)))) {
+      blockCheckpoints = blockCheckpoints.realizeNextEpoch();
+    }
+
     // Add new block to store
-    store.putBlockAndState(signedBlock, postState);
+    store.putBlockAndState(signedBlock, postState, blockCheckpoints);
 
-    // Update justified checkpoint
-    final Checkpoint justifiedCheckpoint = postState.getCurrentJustifiedCheckpoint();
-    if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
-      if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
-          > 0) {
-        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-      }
-      if (shouldUpdateJustifiedCheckpoint(
-          store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
-        store.setJustifiedCheckpoint(justifiedCheckpoint);
-      }
-    }
-
-    // Update finalized checkpoint
-    final Checkpoint finalizedCheckpoint = postState.getFinalizedCheckpoint();
-    if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
-
-      // Potentially update justified if different from store
-      if (!store.getJustifiedCheckpoint().equals(postState.getCurrentJustifiedCheckpoint())) {
-        // Update justified if new justified is later than store justified
-        // or if store justified is not in chain with finalized checkpoint
-        if (postState
-                    .getCurrentJustifiedCheckpoint()
-                    .getEpoch()
-                    .compareTo(store.getJustifiedCheckpoint().getEpoch())
-                > 0
-            || !isFinalizedAncestorOfJustified(store)) {
-          store.setJustifiedCheckpoint(postState.getCurrentJustifiedCheckpoint());
-        }
-      }
-    }
-  }
-
-  private boolean isFinalizedAncestorOfJustified(ReadOnlyStore store) {
-    return hasAncestorAtSlot(
-        store.getForkChoiceStrategy(),
-        store.getJustifiedCheckpoint().getRoot(),
-        getFinalizedCheckpointStartSlot(store),
-        store.getFinalizedCheckpoint().getRoot());
+    updateCheckpoints(
+        store,
+        blockCheckpoints.getJustifiedCheckpoint(),
+        blockCheckpoints.getFinalizedCheckpoint(),
+        isBlockOptimistic);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

@@ -45,6 +45,10 @@ public class MiscHelpersAltair extends MiscHelpers {
     return (byte) (participationFlags | flag);
   }
 
+  public byte addFlags(final byte participationFlags, final byte newFlags) {
+    return (byte) (participationFlags | newFlags);
+  }
+
   /**
    * Return whether participationFlags has flagIndex set.
    *

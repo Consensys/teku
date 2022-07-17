@@ -22,20 +22,19 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoNode {
 
-  // The `slot` and `stateRoot` is not necessary for `ProtoArray`, it just exists so external
-  // components can
-  // easily query the block slot. This is useful for upstream fork choice logic.
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
 
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
-  private final UInt64 justifiedEpoch;
-  private final UInt64 finalizedEpoch;
+
+  private BlockCheckpoints checkpoints;
 
   /**
    * The block hash from the execution payload.
@@ -58,8 +57,7 @@ public class ProtoNode {
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Optional<Integer> parentIndex,
-      final UInt64 justifiedEpoch,
-      final UInt64 finalizedEpoch,
+      final BlockCheckpoints checkpoints,
       final Bytes32 executionBlockHash,
       final UInt64 weight,
       final Optional<Integer> bestChildIndex,
@@ -70,8 +68,7 @@ public class ProtoNode {
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
     this.parentIndex = parentIndex;
-    this.justifiedEpoch = justifiedEpoch;
-    this.finalizedEpoch = finalizedEpoch;
+    this.checkpoints = checkpoints;
     this.executionBlockHash = executionBlockHash;
     this.weight = weight;
     this.bestChildIndex = bestChildIndex;
@@ -123,16 +120,28 @@ public class ProtoNode {
     return parentIndex;
   }
 
-  public UInt64 getJustifiedEpoch() {
-    return justifiedEpoch;
+  public Checkpoint getJustifiedCheckpoint() {
+    return checkpoints.getJustifiedCheckpoint();
   }
 
-  public UInt64 getFinalizedEpoch() {
-    return finalizedEpoch;
+  public Checkpoint getFinalizedCheckpoint() {
+    return checkpoints.getFinalizedCheckpoint();
+  }
+
+  public Checkpoint getUnrealizedJustifiedCheckpoint() {
+    return checkpoints.getUnrealizedJustifiedCheckpoint();
+  }
+
+  public Checkpoint getUnrealizedFinalizedCheckpoint() {
+    return checkpoints.getUnrealizedFinalizedCheckpoint();
   }
 
   public Bytes32 getExecutionBlockHash() {
     return executionBlockHash;
+  }
+
+  public void pullUpCheckpoints() {
+    checkpoints = checkpoints.realizeNextEpoch();
   }
 
   public void setParentIndex(Optional<Integer> parentIndex) {
@@ -184,18 +193,21 @@ public class ProtoNode {
         parentRoot,
         stateRoot,
         executionBlockHash,
-        validationStatus == ProtoNodeValidationStatus.OPTIMISTIC);
+        validationStatus == ProtoNodeValidationStatus.OPTIMISTIC,
+        checkpoints);
   }
 
   public Map<String, String> getData() {
     return ImmutableMap.<String, String>builder()
         .put("slot", blockSlot.toString())
-        .put("blockRoot", blockRoot.toHexString())
-        .put("parentRoot", parentRoot.toHexString())
-        .put("stateRoot", stateRoot.toHexString())
-        .put("justifiedEpoch", justifiedEpoch.toString())
-        .put("finalizedEpoch", finalizedEpoch.toString())
-        .put("executionBlockHash", executionBlockHash.toHexString())
+        .put("blockRoot", blockRoot.toString())
+        .put("parentRoot", parentRoot.toString())
+        .put("stateRoot", stateRoot.toString())
+        .put("justifiedEpoch", getJustifiedCheckpoint().toString())
+        .put("finalizedEpoch", getFinalizedCheckpoint().toString())
+        .put("unrealizedJustifiedCheckpoint", getUnrealizedJustifiedCheckpoint().toString())
+        .put("unrealizedFinalizedCheckpoint", getUnrealizedFinalizedCheckpoint().toString())
+        .put("executionBlockHash", executionBlockHash.toString())
         .put("validationStatus", validationStatus.name())
         .put("weight", weight.toString())
         .build();
@@ -214,8 +226,7 @@ public class ProtoNode {
         && Objects.equals(stateRoot, protoNode.stateRoot)
         && Objects.equals(blockRoot, protoNode.blockRoot)
         && Objects.equals(parentRoot, protoNode.parentRoot)
-        && Objects.equals(justifiedEpoch, protoNode.justifiedEpoch)
-        && Objects.equals(finalizedEpoch, protoNode.finalizedEpoch)
+        && Objects.equals(checkpoints, protoNode.checkpoints)
         && Objects.equals(executionBlockHash, protoNode.executionBlockHash)
         && Objects.equals(weight, protoNode.weight)
         && Objects.equals(parentIndex, protoNode.parentIndex)
@@ -231,8 +242,7 @@ public class ProtoNode {
         stateRoot,
         blockRoot,
         parentRoot,
-        justifiedEpoch,
-        finalizedEpoch,
+        checkpoints,
         executionBlockHash,
         weight,
         parentIndex,
@@ -248,8 +258,10 @@ public class ProtoNode {
         .add("stateRoot", stateRoot)
         .add("blockRoot", blockRoot)
         .add("parentRoot", parentRoot)
-        .add("justifiedEpoch", justifiedEpoch)
-        .add("finalizedEpoch", finalizedEpoch)
+        .add("justifiedCheckpoint", getJustifiedCheckpoint())
+        .add("finalizedCheckpoint", getFinalizedCheckpoint())
+        .add("unrealizedJustifiedCheckpoint", getUnrealizedJustifiedCheckpoint())
+        .add("unrealizedFinalizedCheckpoint", getUnrealizedFinalizedCheckpoint())
         .add("executionBlockHash", executionBlockHash)
         .add("weight", weight)
         .add("parentIndex", parentIndex)

@@ -13,21 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -44,9 +48,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Checkpoint bestJustifiedCheckpoint;
   protected Map<Bytes32, SignedBeaconBlock> blocks;
   protected Map<Bytes32, BeaconState> blockStates;
+  protected Map<Bytes32, BlockCheckpoints> blockCheckpoints;
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
+      new TestReadOnlyForkChoiceStrategy();
 
   TestStoreImpl(
       final Spec spec,
@@ -58,6 +65,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
+      final Map<Bytes32, BlockCheckpoints> blockCheckpoints,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes) {
     this.spec = spec;
@@ -69,6 +77,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blockStates = blockStates;
+    this.blockCheckpoints = blockCheckpoints;
     this.checkpointStates = checkpointStates;
     this.votes = votes;
   }
@@ -128,7 +137,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
-    throw new UnsupportedOperationException("Not implemented");
+    return forkChoiceStrategy;
   }
 
   private SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
@@ -154,7 +163,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return blocks.values().stream()
         .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
         .map(SignedBeaconBlock::getRoot)
-        .collect(Collectors.toList());
+        .collect(toList());
   }
 
   private BeaconState getBlockState(final Bytes32 blockRoot) {
@@ -232,9 +241,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   // Mutable methods
   @Override
-  public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
+  public void putBlockAndState(
+      final SignedBeaconBlock block, final BeaconState state, final BlockCheckpoints checkpoints) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
+    blockCheckpoints.put(block.getRoot(), checkpoints);
   }
 
   @Override
@@ -243,9 +254,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void putBlockAndState(final SignedBlockAndState blockAndState) {
-    blocks.put(blockAndState.getRoot(), blockAndState.getBlock());
-    blockStates.put(blockAndState.getRoot(), blockAndState.getState());
+  public void pullUpBlockCheckpoints(final Bytes32 blockRoot) {
+    final BlockCheckpoints blockCheckpoints = this.blockCheckpoints.get(blockRoot);
+    if (blockCheckpoints == null) {
+      return;
+    }
+    this.blockCheckpoints.put(blockRoot, blockCheckpoints.realizeNextEpoch());
   }
 
   @Override
@@ -309,5 +323,104 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Optional<Bytes32> proposerBoostRoot,
       final UInt64 proposerScoreBoostAmount) {
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  private class TestReadOnlyForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
+
+    @Override
+    public Optional<UInt64> blockSlot(final Bytes32 blockRoot) {
+      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot);
+    }
+
+    @Override
+    public Optional<Bytes32> blockParentRoot(final Bytes32 blockRoot) {
+      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getParentRoot);
+    }
+
+    @Override
+    public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+      return Optional.empty();
+    }
+
+    @Override
+    public Optional<SlotAndBlockRoot> findCommonAncestor(
+        final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public List<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
+      return blocks.values().stream()
+          .filter(block -> block.getSlot().equals(slot))
+          .map(SignedBeaconBlock::getRoot)
+          .collect(toList());
+    }
+
+    @Override
+    public List<ProtoNodeData> getChainHeads() {
+      final Map<Bytes32, ProtoNodeData> headsByRoot = new HashMap<>();
+      getOrderedBlockRoots()
+          .forEach(
+              root -> {
+                final SignedBeaconBlock block = blocks.get(root);
+                headsByRoot.put(
+                    root,
+                    new ProtoNodeData(
+                        block.getSlot(),
+                        root,
+                        block.getParentRoot(),
+                        block.getStateRoot(),
+                        block
+                            .getMessage()
+                            .getBody()
+                            .getOptionalExecutionPayload()
+                            .map(ExecutionPayload::getBlockHash)
+                            .orElse(Bytes32.ZERO),
+                        false,
+                        blockCheckpoints.get(root)));
+                headsByRoot.remove(block.getParentRoot());
+              });
+      return new ArrayList<>(headsByRoot.values());
+    }
+
+    @Override
+    public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
+      return Optional.empty();
+    }
+
+    @Override
+    public List<Map<String, String>> getNodeData() {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public boolean contains(final Bytes32 blockRoot) {
+      return blocks.containsKey(blockRoot);
+    }
+
+    @Override
+    public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public boolean isFullyValidated(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
   }
 }

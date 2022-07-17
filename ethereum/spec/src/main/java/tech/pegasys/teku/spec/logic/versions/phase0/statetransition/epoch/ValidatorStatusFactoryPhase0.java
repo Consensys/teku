@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -61,8 +62,20 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
               final Checkpoint target = data.getTarget();
               if (target.getEpoch().equals(currentEpoch)) {
                 updates.currentEpochSourceAttester = true;
-                updates.currentEpochTargetAttester =
-                    matchesEpochStartBlock(state, currentEpoch, target.getRoot());
+                if (matchesEpochStartBlock(state, currentEpoch, target.getRoot())) {
+                  updates.currentEpochTargetAttester = true;
+                  if (data.getSlot().isGreaterThanOrEqualTo(state.getSlot())) {
+                    updates.currentEpochHeadAttester =
+                        BeaconBlockHeader.fromState(state)
+                            .getRoot()
+                            .equals(data.getBeaconBlockRoot());
+                  } else {
+                    updates.currentEpochHeadAttester =
+                        beaconStateAccessors
+                            .getBlockRootAtSlot(state, data.getSlot())
+                            .equals(data.getBeaconBlockRoot());
+                  }
+                }
               } else if (target.getEpoch().equals(previousEpoch)) {
                 updates.previousEpochSourceAttester = true;
 
@@ -92,6 +105,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
   private static class AttestationUpdates {
     private boolean currentEpochSourceAttester = false;
     private boolean currentEpochTargetAttester = false;
+    private boolean currentEpochHeadAttester = false;
     private boolean previousEpochSourceAttester = false;
     private boolean previousEpochTargetAttester = false;
     private boolean previousEpochHeadAttester = false;
@@ -100,6 +114,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
     public void apply(final ValidatorStatus status) {
       status.updateCurrentEpochSourceAttester(currentEpochSourceAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
+      status.updateCurrentEpochHeadAttester(currentEpochHeadAttester);
       status.updatePreviousEpochSourceAttester(previousEpochSourceAttester);
       status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);

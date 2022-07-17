@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
-import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_IDENTIFIER;
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -38,7 +38,7 @@ public interface ExecutionWeb3jClientProvider {
 
         @Override
         public String getEndpoint() {
-          return STUB_ENDPOINT_IDENTIFIER;
+          return STUB_ENDPOINT_PREFIX;
         }
 
         @Override
@@ -54,7 +54,7 @@ public interface ExecutionWeb3jClientProvider {
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory,
       final TimeProvider timeProvider) {
-    if (endpoint.equals(STUB_ENDPOINT_IDENTIFIER)) {
+    if (endpoint.startsWith(STUB_ENDPOINT_PREFIX)) {
       return STUB;
     } else {
       final Optional<JwtConfig> jwtConfig =

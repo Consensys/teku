@@ -26,18 +26,23 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao.V4HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4MigratableSourceDao {
+public class KvStoreCombinedDaoAdapter
+    implements KvStoreCombinedDaoBlinded, KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
   private final V4HotKvStoreDao hotDao;
   private final V4FinalizedKvStoreDao finalizedDao;
 
@@ -88,7 +93,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+  public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return hotDao.getHotBlockCheckpointEpochs(root);
   }
 
@@ -120,7 +125,13 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public HotUpdater hotUpdater() {
+  public HotUpdaterBlinded hotUpdaterBlinded() {
+    return hotDao.hotUpdater();
+  }
+
+  @Override
+  @MustBeClosed
+  public HotUpdaterUnblinded hotUpdaterUnblinded() {
     return hotDao.hotUpdater();
   }
 
@@ -131,7 +142,13 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public FinalizedUpdater finalizedUpdater() {
+  public FinalizedUpdaterBlinded finalizedUpdaterBlinded() {
+    return finalizedDao.finalizedUpdater();
+  }
+
+  @Override
+  @MustBeClosed
+  public FinalizedUpdaterUnblinded finalizedUpdaterUnblinded() {
     return finalizedDao.finalizedUpdater();
   }
 
@@ -156,8 +173,13 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(final UInt64 slot) {
     return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
+  }
+
+  @Override
+  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return finalizedDao.getBlindedNonCanonicalBlocksAtSlot(slot);
   }
 
   @Override
@@ -166,10 +188,70 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
+    return finalizedDao.getNonCanonicalBlockRootsAtSlot(slot);
+  }
+
+  @Override
+  public long countNonCanonicalSlots() {
+    return finalizedDao.countNonCanonicalSlots();
+  }
+
+  @Override
+  public long countBlindedBlocks() {
+    return finalizedDao.countBlindedBlocks();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes> streamExecutionPayloads() {
+    return finalizedDao.streamExecutionPayloads();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
+    return finalizedDao.getBlindedBlock(root);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedHotBlocks() {
+    return hotDao
+        .streamBlockCheckpoints()
+        .map(Map.Entry::getKey)
+        .flatMap(blockRoot -> getBlindedBlock(blockRoot).stream());
+  }
+
+  @Override
+  public Optional<Bytes> getExecutionPayload(final Bytes32 root) {
+    return finalizedDao.getExecutionPayload(root);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlindedBlockSlot() {
+    return finalizedDao.getEarliestBlindedBlockSlot();
+  }
+
+  @Override
+  public Optional<Bytes32> getFinalizedBlockRootAtSlot(final UInt64 slot) {
+    return finalizedDao.getFinalizedBlockRootAtSlot(slot);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getEarliestBlindedBlock() {
+    return finalizedDao.getEarliestBlindedBlock();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getLatestBlindedBlockAtSlot(final UInt64 slot) {
+    return finalizedDao.getLatestBlindedBlockAtSlot(slot);
   }
 
   @Override
@@ -199,8 +281,14 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamFinalizedBlockRoots(startSlot, endSlot);
+  }
+
+  @Override
   public void ingest(
-      final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
+      final KvStoreCombinedDaoCommon dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
   }
 
@@ -212,8 +300,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
-    return hotDao.streamCheckpointEpochs();
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
+    return hotDao.streamBlockCheckpoints();
   }
 
   @Override
@@ -231,8 +319,21 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public CombinedUpdater combinedUpdater() {
-    return new CombinedUpdaterAdapter(hotUpdater(), finalizedUpdater());
+  public CombinedUpdaterBlinded combinedUpdaterBlinded() {
+    return combinedUpdater();
+  }
+
+  @Override
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public CombinedUpdaterUnblinded combinedUpdaterUnblinded() {
+    return combinedUpdater();
+  }
+
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  private CombinedUpdaterAdapter combinedUpdater() {
+    return new CombinedUpdaterAdapter(hotDao.hotUpdater(), finalizedDao.finalizedUpdater());
   }
 
   @Override
@@ -271,12 +372,13 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
   }
 
-  private static class CombinedUpdaterAdapter implements CombinedUpdater {
-    private final HotUpdater hotUpdater;
-    private final FinalizedUpdater finalizedUpdater;
+  private static class CombinedUpdaterAdapter
+      implements CombinedUpdaterUnblinded, CombinedUpdaterBlinded {
+    private final V4HotUpdater hotUpdater;
+    private final V4FinalizedUpdater finalizedUpdater;
 
     private CombinedUpdaterAdapter(
-        final HotUpdater hotUpdater, final FinalizedUpdater finalizedUpdater) {
+        final V4HotUpdater hotUpdater, final V4FinalizedUpdater finalizedUpdater) {
       this.hotUpdater = hotUpdater;
       this.finalizedUpdater = finalizedUpdater;
     }
@@ -322,14 +424,14 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addHotBlock(final BlockAndCheckpointEpochs blockAndCheckpointEpochs) {
-      hotUpdater.addHotBlock(blockAndCheckpointEpochs);
+    public void addHotBlock(final BlockAndCheckpoints blockAndCheckpoints) {
+      hotUpdater.addHotBlock(blockAndCheckpoints);
     }
 
     @Override
     public void addHotBlockCheckpointEpochs(
-        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
-      hotUpdater.addHotBlockCheckpointEpochs(blockRoot, checkpointEpochs);
+        final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
+      hotUpdater.addHotBlockCheckpointEpochs(blockRoot, blockCheckpoints);
     }
 
     @Override
@@ -348,7 +450,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
+    public void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
       hotUpdater.addHotBlocks(blocks);
     }
 
@@ -356,6 +458,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     public void addHotStateRoots(
         final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
       hotUpdater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
+    }
+
+    @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
+      hotUpdater.pruneHotBlockContext(blockRoot);
     }
 
     @Override
@@ -376,6 +483,31 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addFinalizedBlock(block);
+    }
+
+    @Override
+    public void addFinalizedBlockRootBySlot(final SignedBeaconBlock block) {
+      finalizedUpdater.addFinalizedBlockRootBySlot(block);
+    }
+
+    @Override
+    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+      finalizedUpdater.addBlindedBlock(block, spec);
+    }
+
+    @Override
+    public void addExecutionPayload(final ExecutionPayload payload) {
+      finalizedUpdater.addExecutionPayload(payload);
+    }
+
+    @Override
+    public void deleteBlindedBlock(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteBlindedBlock(blockRoot);
+    }
+
+    @Override
+    public void deleteExecutionPayload(final Bytes32 payloadHash) {
+      finalizedUpdater.deleteExecutionPayload(payloadHash);
     }
 
     @Override

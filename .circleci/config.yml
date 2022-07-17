@@ -200,6 +200,7 @@ jobs:
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
+          no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
             $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
@@ -241,7 +242,7 @@ jobs:
             for FILE in $(ls docker)
             do
               docker pull -q "consensys/teku:develop-$FILE"
-              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL --ignorefile "gradle/trivyignore.txt" "consensys/teku:develop-$FILE" 
             done
       - notify
 

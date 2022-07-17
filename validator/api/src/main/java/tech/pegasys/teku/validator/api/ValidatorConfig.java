@@ -36,6 +36,7 @@ public class ValidatorConfig {
   private static final int DEFAULT_REST_API_PORT = 5051;
   public static final String DEFAULT_BEACON_NODE_API_ENDPOINT =
       "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
+  public static final List<String> DEFAULT_BEACON_NODE_API_ENDPOINTS = List.of();
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
@@ -63,6 +64,7 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
+  private final List<URI> beaconNodeApiEndpoints;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
@@ -73,6 +75,8 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final UInt64 validatorsRegistrationDefaultGasLimit;
   private final int validatorsRegistrationSendingBatchSize;
+  private final Optional<UInt64> validatorsRegistrationTimestampOverride;
+
   private final int executorMaxQueueSize;
 
   private ValidatorConfig(
@@ -85,6 +89,7 @@ public class ValidatorConfig {
       final Path validatorExternalSignerTruststore,
       final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<URI> beaconNodeApiEndpoint,
+      final List<URI> beaconNodeApiEndpoints,
       final GraffitiProvider graffitiProvider,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
@@ -99,6 +104,7 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final UInt64 validatorsRegistrationDefaultGasLimit,
       final int validatorsRegistrationSendingBatchSize,
+      final Optional<UInt64> validatorsRegistrationTimestampOverride,
       final int executorMaxQueueSize) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -112,6 +118,7 @@ public class ValidatorConfig {
     this.graffitiProvider = graffitiProvider;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    this.beaconNodeApiEndpoints = beaconNodeApiEndpoints;
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
     this.validatorExternalSignerSlashingProtectionEnabled =
         validatorExternalSignerSlashingProtectionEnabled;
@@ -126,6 +133,7 @@ public class ValidatorConfig {
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorsRegistrationDefaultGasLimit = validatorsRegistrationDefaultGasLimit;
     this.validatorsRegistrationSendingBatchSize = validatorsRegistrationSendingBatchSize;
+    this.validatorsRegistrationTimestampOverride = validatorsRegistrationTimestampOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
   }
 
@@ -174,6 +182,10 @@ public class ValidatorConfig {
     return beaconNodeApiEndpoint;
   }
 
+  public List<URI> getBeaconNodeApiEndpoints() {
+    return beaconNodeApiEndpoints;
+  }
+
   public GraffitiProvider getGraffitiProvider() {
     return graffitiProvider;
   }
@@ -202,6 +214,10 @@ public class ValidatorConfig {
 
   public int getValidatorsRegistrationSendingBatchSize() {
     return validatorsRegistrationSendingBatchSize;
+  }
+
+  public Optional<UInt64> getValidatorsRegistrationTimestampOverride() {
+    return validatorsRegistrationTimestampOverride;
   }
 
   public boolean getRefreshProposerConfigFromSource() {
@@ -250,6 +266,7 @@ public class ValidatorConfig {
         ValidatorPerformanceTrackingMode.DEFAULT_MODE;
     private boolean validatorKeystoreLockingEnabled = DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
+    private List<URI> beaconNodeApiEndpoints = List.of();
     private boolean validatorExternalSignerSlashingProtectionEnabled =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
@@ -264,6 +281,7 @@ public class ValidatorConfig {
     private UInt64 validatorsRegistrationDefaultGasLimit = DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
     private int validatorsRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
+    private Optional<UInt64> validatorsRegistrationTimestampOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
     private Builder() {}
@@ -344,6 +362,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder beaconNodeApiEndpoints(final List<URI> beaconNodeApiEndpoints) {
+      this.beaconNodeApiEndpoints = beaconNodeApiEndpoints;
+      return this;
+    }
+
     public Builder graffitiProvider(GraffitiProvider graffitiProvider) {
       this.graffitiProvider = graffitiProvider;
       return this;
@@ -414,6 +437,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorsRegistrationTimestampOverride(
+        final UInt64 validatorsRegistrationTimestampOverride) {
+      this.validatorsRegistrationTimestampOverride =
+          Optional.ofNullable(validatorsRegistrationTimestampOverride);
+      return this;
+    }
+
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
       return this;
@@ -436,6 +466,7 @@ public class ValidatorConfig {
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoint,
+          beaconNodeApiEndpoints,
           graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
@@ -450,6 +481,7 @@ public class ValidatorConfig {
           validatorClientSszBlocksEnabled,
           validatorsRegistrationDefaultGasLimit,
           validatorsRegistrationSendingBatchSize,
+          validatorsRegistrationTimestampOverride,
           executorMaxQueueSize);
     }
 

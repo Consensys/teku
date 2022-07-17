@@ -59,9 +59,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
 
   // transition emulation
-  private final boolean transitionEmulationEnabled;
   private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
+  private final boolean transitionEmulationEnabled;
+  private final Bytes32 terminalBlockHashInTTDMode;
   private boolean bellatrixActivationDetected = false;
   private Bytes32 terminalBlockHash;
   private PowBlock terminalBlockParent;
@@ -75,15 +76,23 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
   public ExecutionLayerChannelStub(
-      final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean enableTransitionEmulation,
+      final Optional<Bytes32> terminalBlockHashInTTDMode) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;
+    this.terminalBlockHashInTTDMode =
+        terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
   }
 
-  public ExecutionLayerChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
-    this(spec, new SystemTimeProvider(), enableTransitionEmulation);
+  public ExecutionLayerChannelStub(
+      final Spec spec,
+      final boolean enableTransitionEmulation,
+      final Optional<Bytes32> terminalBlockHashInTTDMode) {
+    this(spec, new SystemTimeProvider(), enableTransitionEmulation, terminalBlockHashInTTDMode);
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -272,7 +281,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final boolean forceLocalFallback) {
+      final boolean transitionNotFinalized) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -396,7 +405,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
       transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
 
-      terminalBlockHash = Bytes32.fromHexStringLenient("0x01");
+      terminalBlockHash = terminalBlockHashInTTDMode;
 
     } else {
       // TBH emulation

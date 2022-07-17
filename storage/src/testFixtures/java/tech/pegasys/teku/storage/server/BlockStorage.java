@@ -11,17 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.kvstore.dataaccess;
+package tech.pegasys.teku.storage.server;
 
-import com.google.errorprone.annotations.MustBeClosed;
-import java.util.function.Consumer;
-
-public interface KvStoreCombinedDao extends KvStoreHotDao, KvStoreFinalizedDao {
-
-  void ingest(KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger);
-
-  @MustBeClosed
-  CombinedUpdater combinedUpdater();
-
-  interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
+public enum BlockStorage {
+  FULL_BLOCK,
+  BLINDED_BLOCK
 }

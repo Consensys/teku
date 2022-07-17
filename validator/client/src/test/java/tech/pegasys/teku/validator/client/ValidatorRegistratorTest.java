@@ -109,7 +109,7 @@ class ValidatorRegistratorTest {
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
-        .signValidatorRegistration(any(ValidatorRegistration.class), any(UInt64.class));
+        .signValidatorRegistration(any(ValidatorRegistration.class));
   }
 
   @TestTemplate
@@ -151,7 +151,24 @@ class ValidatorRegistratorTest {
 
     // signer will be called in total 3 times, since from the 2nd run the registrations will
     // be cached
-    verify(signer, times(3)).signValidatorRegistration(any(), any());
+    verify(signer, times(3)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
+  void registersValidators_shouldRegisterWithTimestampOverride() {
+    when(validatorConfig.getValidatorsRegistrationTimestampOverride())
+        .thenReturn(Optional.of(UInt64.valueOf(140)));
+    setActiveValidators(validator1);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    registrationCalls.forEach(
+        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -220,7 +237,7 @@ class ValidatorRegistratorTest {
         Optional.of(updatedRegistrationsRequirements));
 
     // signer will be called in total 5 times
-    verify(signer, times(5)).signValidatorRegistration(any(), any());
+    verify(signer, times(5)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -361,6 +378,11 @@ class ValidatorRegistratorTest {
       final List<Validator> expectedRegisteredValidators,
       final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
 
+    final UInt64 expectedTimestamp =
+        validatorConfig
+            .getValidatorsRegistrationTimestampOverride()
+            .orElse(stubTimeProvider.getTimeInSeconds());
+
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())
         .allSatisfy(registration -> assertThat(registration.getSignature().isValid()).isTrue())
@@ -371,7 +393,7 @@ class ValidatorRegistratorTest {
                 alternativeRegistrationRequirements.get().accept(registration);
               } else {
                 assertThat(registration.getFeeRecipient()).isEqualTo(eth1Address);
-                assertThat(registration.getTimestamp()).isEqualTo(UInt64.valueOf(12));
+                assertThat(registration.getTimestamp()).isEqualTo(expectedTimestamp);
                 assertThat(registration.getGasLimit()).isEqualTo(gasLimit);
               }
             })

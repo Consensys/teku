@@ -24,8 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -34,11 +34,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.HotUpdaterBlinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.HotUpdaterUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 
-public class V4HotKvStoreDao implements KvStoreHotDao {
+public class V4HotKvStoreDao {
   // Persistent data
   private final KvStoreAccessor db;
   private final SchemaHotAdapter schema;
@@ -48,63 +50,51 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     this.schema = schema;
   }
 
-  @Override
   public Optional<UInt64> getGenesisTime() {
     return db.get(schema.getVariableGenesisTime());
   }
 
-  @Override
   public Optional<Checkpoint> getAnchor() {
     return db.get(schema.getVariableAnchorCheckpoint());
   }
 
-  @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return db.get(schema.getVariableJustifiedCheckpoint());
   }
 
-  @Override
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
     return db.get(schema.getVariableBestJustifiedCheckpoint());
   }
 
-  @Override
   public Optional<Checkpoint> getFinalizedCheckpoint() {
     return db.get(schema.getVariableFinalizedCheckpoint());
   }
 
-  @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
   }
 
-  @Override
-  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+  public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
   }
 
-  @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
   }
 
-  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
     return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
-  @Override
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(schema.getVariableLatestFinalizedState());
   }
 
-  @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
     return db.get(schema.getVariableWeakSubjectivityCheckpoint());
   }
 
-  @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     try (Stream<ColumnEntry<Bytes32, SlotAndBlockRoot>> stream =
         db.stream(schema.getColumnStateRootToSlotAndBlockRoot())) {
@@ -115,36 +105,40 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     }
   }
 
-  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     return db.get(schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot);
   }
 
-  @Override
   public Map<UInt64, VoteTracker> getVotes() {
     return db.getAll(schema.getColumnVotes());
   }
 
-  @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
     return db.stream(schema.getColumnDepositsFromBlockEvents()).map(ColumnEntry::getValue);
   }
 
-  @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, CheckpointEpochs>> streamCheckpointEpochs() {
+  public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot()).map(entry -> entry);
   }
 
-  @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return db.get(schema.getVariableMinGenesisTimeBlock());
   }
 
-  @Override
   @MustBeClosed
-  public HotUpdater hotUpdater() {
+  public HotUpdaterBlinded hotUpdaterBlinded() {
+    return hotUpdater();
+  }
+
+  @MustBeClosed
+  public HotUpdaterUnblinded hotUpdaterUnblinded() {
+    return hotUpdater();
+  }
+
+  @MustBeClosed
+  public V4HotUpdater hotUpdater() {
     return new V4HotUpdater(db, schema);
   }
 
@@ -158,7 +152,6 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     return db.streamRaw(kvStoreColumn);
   }
 
-  @Override
   public void close() throws Exception {
     db.close();
   }
@@ -171,7 +164,7 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     return schema.getVariableMap();
   }
 
-  static class V4HotUpdater implements HotUpdater {
+  static class V4HotUpdater implements HotUpdaterBlinded, HotUpdaterUnblinded {
 
     private final KvStoreTransaction transaction;
     private final SchemaHotAdapter schema;
@@ -222,17 +215,17 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
     }
 
     @Override
-    public void addHotBlock(final BlockAndCheckpointEpochs block) {
+    public void addHotBlock(final BlockAndCheckpoints block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
-      addHotBlockCheckpointEpochs(blockRoot, block.getCheckpointEpochs());
+      addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
     }
 
     @Override
     public void addHotBlockCheckpointEpochs(
-        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
+        final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
       transaction.put(
-          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, checkpointEpochs);
+          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, blockCheckpoints);
     }
 
     @Override
@@ -247,6 +240,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao {
           (stateRoot, slotAndBlockRoot) ->
               transaction.put(
                   schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot, slotAndBlockRoot));
+    }
+
+    @Override
+    public void pruneHotBlockContext(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
+      deleteHotState(blockRoot);
     }
 
     @Override
