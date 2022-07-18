@@ -45,8 +45,7 @@ public class FailedExecutionPool {
     this.asyncRunner = asyncRunner;
   }
 
-  public synchronized void addFailedBlock(
-      final SignedBeaconBlock block, final BlockImportResult importResult) {
+  public synchronized void addFailedBlock(final SignedBeaconBlock block) {
     if (retryingBlock.isEmpty()) {
       retryingBlock = Optional.of(block);
       scheduleNextRetry(block);

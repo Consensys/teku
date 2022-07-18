@@ -55,7 +55,7 @@ class FailedExecutionPoolTest {
   @Test
   void shouldRetryExecutionAfterShortDelay() {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
@@ -69,7 +69,7 @@ class FailedExecutionPoolTest {
   void shouldContinueRetryingWhenExecutionFailsAgain() {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -84,7 +84,7 @@ class FailedExecutionPoolTest {
   void shouldStopRetryingWhenBlockImports() {
     withImportResult(BlockImportResult.successful(block));
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -98,7 +98,7 @@ class FailedExecutionPoolTest {
     withImportResult(
         BlockImportResult.failedStateTransition(new IllegalStateException("Invalid payload")));
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -111,7 +111,7 @@ class FailedExecutionPoolTest {
   void shouldStopRetryingWhenBlockCanBeOptimisticallyImported() {
     withImportResult(BlockImportResult.optimisticallySuccessful(block));
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -124,7 +124,7 @@ class FailedExecutionPoolTest {
   void shouldWaitLongerBetweenEachRetry() {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
@@ -146,7 +146,7 @@ class FailedExecutionPoolTest {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
@@ -159,7 +159,7 @@ class FailedExecutionPoolTest {
     verify(blockManager, times(2)).importBlock(block);
 
     // New block fails and should be retried with a short timeout again
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block2);
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
     verify(blockManager).importBlock(block2);
@@ -170,8 +170,8 @@ class FailedExecutionPoolTest {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager, times(1)).importBlock(any());
@@ -182,8 +182,8 @@ class FailedExecutionPoolTest {
     withImportResult(BlockImportResult.optimisticallySuccessful(block));
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager).importBlock(block);
@@ -194,7 +194,7 @@ class FailedExecutionPoolTest {
   @Test
   void shouldLimitMaximumRetryDelayForSyncingResponses() {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
 
     Duration expectedDelay = FailedExecutionPool.SHORT_DELAY;
     for (int i = 0; i < 5; i++) {
@@ -213,7 +213,7 @@ class FailedExecutionPoolTest {
   @Test
   void shouldLimitMaximumRetryDelayForTimeoutResponses() {
     withImportResult(FAILED_EXECUTION_TIMEOUT);
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_TIMEOUT);
+    failurePool.addFailedBlock(block);
 
     Duration expectedDelay = FailedExecutionPool.SHORT_DELAY;
     for (int i = 0; i < 5; i++) {
@@ -232,7 +232,7 @@ class FailedExecutionPoolTest {
   @Test
   void shouldLimitMaximumRetryDelayForFailureResponses() {
     withImportResult(FAILED_EXECUTION_ERROR);
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_ERROR);
+    failurePool.addFailedBlock(block);
 
     Duration expectedDelay = FailedExecutionPool.SHORT_DELAY;
     for (int i = 0; i < 5; i++) {
@@ -253,8 +253,8 @@ class FailedExecutionPoolTest {
     withImportResult(FAILED_EXECUTION_TIMEOUT);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_TIMEOUT);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_TIMEOUT);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager).importBlock(block);
@@ -268,8 +268,8 @@ class FailedExecutionPoolTest {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager).importBlock(block);
@@ -283,8 +283,8 @@ class FailedExecutionPoolTest {
     withImportResult(FAILED_EXECUTION_ERROR);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_ERROR);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_ERROR);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager).importBlock(block);
@@ -300,8 +300,8 @@ class FailedExecutionPoolTest {
     when(blockManager.importBlock(block2))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block2)));
 
-    failurePool.addFailedBlock(block, FAILED_EXECUTION_TIMEOUT);
-    failurePool.addFailedBlock(block2, FAILED_EXECUTION_TIMEOUT);
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
     verify(blockManager).importBlock(block);

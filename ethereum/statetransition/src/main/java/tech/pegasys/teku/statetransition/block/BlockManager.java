@@ -59,6 +59,8 @@ public class BlockManager extends Service
       LimitedMap.createSynchronized(500);
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
+  private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
+      Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
 
@@ -144,6 +146,10 @@ public class BlockManager extends Service
       final SignedBeaconBlock signedBeaconBlock, final boolean executionOptimistic) {
     receivedBlockSubscribers.forEach(
         s -> s.onBlockImported(signedBeaconBlock, executionOptimistic));
+  }
+
+  public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
+    failedPayloadExecutionSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -240,11 +246,15 @@ public class BlockManager extends Service
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
                     LOG.warn("Unable to import block: Execution Client is still syncing");
+                    failedPayloadExecutionSubscribers.deliver(
+                        FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION:
                     LOG.error(
                         "Unable to import block: Execution Client communication error.",
                         result.getFailureCause().orElse(null));
+                    failedPayloadExecutionSubscribers.deliver(
+                        FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
                   default:
                     LOG.trace(
@@ -282,5 +292,9 @@ public class BlockManager extends Service
     maybeBlockImportPerformance.ifPresent(
         blockImportPerformance ->
             blockImportPerformance.processingComplete(eventLogger, block, blockImportResult));
+  }
+
+  public interface FailedPayloadExecutionSubscriber {
+    void onPayloadExecutionFailed(SignedBeaconBlock block);
   }
 }
