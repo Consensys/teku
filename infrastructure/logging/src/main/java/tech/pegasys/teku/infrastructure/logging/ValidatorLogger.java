@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.logging;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.base.Strings;
+import java.net.URI;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,17 +40,43 @@ public class ValidatorLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void connectedToBeaconNode() {
+  public void connectedToBeaconNodeEventStream() {
     log.info(
         ColorConsolePrinter.print(
-            "Validator   *** Successfully connected to beacon chain event stream", Color.GREEN));
+            String.format("%sSuccessfully connected to Beacon Node event stream", PREFIX),
+            Color.GREEN));
   }
 
-  public void beaconNodeConnectionError(final Throwable t) {
+  public void beaconNodeEventStreamClosed() {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format("%sBeacon Node event stream closed", PREFIX), Color.GREEN));
+  }
+
+  public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
-            "Validator   *** Error while connecting to beacon node event stream", Color.RED),
+            String.format("%sError while connecting to Beacon Node event stream", PREFIX),
+            Color.RED),
         t);
+  }
+
+  public void switchingToFailoverBeaconNodeForEventStreaming(final URI failoverEndpoint) {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sSwitching to failover Beacon Node %s for event streaming",
+                PREFIX, failoverEndpoint),
+            Color.GREEN));
+  }
+
+  public void primaryBeaconNodeIsBackOnlineForEventStreaming(final URI primaryEndpoint) {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPrimary Beacon Node %s is back and ready for event streaming. Will attempt connecting.",
+                PREFIX, primaryEndpoint),
+            Color.GREEN));
   }
 
   public void dutyCompleted(

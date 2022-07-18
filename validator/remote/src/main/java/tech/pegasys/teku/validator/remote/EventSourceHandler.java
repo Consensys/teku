@@ -32,9 +32,11 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandler implements EventHandler {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final JsonProvider jsonProvider = new JsonProvider();
+
   private final ValidatorTimingChannel validatorTimingChannel;
   private final Counter disconnectCounter;
   private final Counter invalidEventCounter;
@@ -67,7 +69,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onOpen() {
-    VALIDATOR_LOGGER.connectedToBeaconNode();
+    VALIDATOR_LOGGER.connectedToBeaconNodeEventStream();
     // We might have missed some events while connecting or reconnected so ensure the duties are
     // recalculated
     validatorTimingChannel.onPossibleMissedEvents();
@@ -76,7 +78,7 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onClosed() {
     disconnectCounter.inc();
-    LOG.info("Beacon chain event stream closed");
+    VALIDATOR_LOGGER.beaconNodeEventStreamClosed();
   }
 
   @Override
@@ -121,7 +123,7 @@ class EventSourceHandler implements EventHandler {
               + "Reconnecting. This is normal if the beacon node is still syncing.");
     } else {
       errorCounter.inc();
-      VALIDATOR_LOGGER.beaconNodeConnectionError(t);
+      VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError(t);
     }
   }
 }

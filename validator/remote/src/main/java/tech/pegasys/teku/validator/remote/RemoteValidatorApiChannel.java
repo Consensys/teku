@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.validator.remote;
 
-import java.net.URI;
+import okhttp3.HttpUrl;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
 public interface RemoteValidatorApiChannel extends ValidatorApiChannel {
 
-  URI getEndpoint();
+  HttpUrl getEndpoint();
 
   SafeFuture<SyncingStatus> getSyncingStatus();
 }
