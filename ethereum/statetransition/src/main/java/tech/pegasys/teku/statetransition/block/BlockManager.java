@@ -251,8 +251,8 @@ public class BlockManager extends Service
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION:
                     LOG.error(
-                        "Unable to import block: Execution Client communication error.",
-                        result.getFailureCause().orElse(null));
+                        "Unable to import block: Execution Client returned an error: {}",
+                        result.getFailureCause().map(Throwable::getMessage).orElse(""));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;

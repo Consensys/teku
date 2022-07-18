@@ -50,6 +50,10 @@ public class FailedExecutionPool {
       retryingBlock = Optional.of(block);
       scheduleNextRetry(block);
     } else {
+      if (retryingBlock.get().equals(block) || awaitingExecution.contains(block)) {
+        // Already retrying this block.
+        return;
+      }
       if (!awaitingExecution.offer(block)) {
         LOG.info(
             "Discarding block {} as execution retry pool capacity exceeded",
@@ -69,19 +73,15 @@ public class FailedExecutionPool {
         scheduleNextRetry(block);
       } else {
         // Try a different block
-        final SignedBeaconBlock nextBlock = awaitingExecution.poll();
-        awaitingExecution.remove(nextBlock);
+        final SignedBeaconBlock nextBlock = awaitingExecution.remove();
         awaitingExecution.add(block);
+        retryingBlock = Optional.of(nextBlock);
         scheduleNextRetry(nextBlock);
       }
     } else {
       currentDelay = SHORT_DELAY;
       retryingBlock = Optional.ofNullable(awaitingExecution.poll());
-      retryingBlock.ifPresent(
-          nextBlock -> {
-            awaitingExecution.remove(nextBlock);
-            retryExecution(nextBlock);
-          });
+      retryingBlock.ifPresent(this::retryExecution);
     }
   }
 
@@ -99,6 +99,9 @@ public class FailedExecutionPool {
   }
 
   private synchronized void retryExecution(final SignedBeaconBlock block) {
+    LOG.info(
+        "Retrying execution of block {}",
+        LogFormatter.formatBlock(block.getSlot(), block.getRoot()));
     SafeFuture.of(() -> blockManager.importBlock(block))
         .exceptionally(BlockImportResult::internalError)
         .thenAccept(result -> handleExecutionResult(block, result))

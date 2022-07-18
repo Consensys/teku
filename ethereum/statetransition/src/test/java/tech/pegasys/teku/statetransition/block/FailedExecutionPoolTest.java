@@ -121,6 +121,20 @@ class FailedExecutionPoolTest {
   }
 
   @Test
+  void shouldNotRetrySameBlockTwice() {
+    withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+
+    failurePool.addFailedBlock(block);
+    failurePool.addFailedBlock(block);
+
+    withImportResult(BlockImportResult.optimisticallySuccessful(block));
+    asyncRunner.executeQueuedActions();
+    verify(blockManager).importBlock(block);
+
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+  }
+
+  @Test
   void shouldWaitLongerBetweenEachRetry() {
     withImportResult(FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
 
