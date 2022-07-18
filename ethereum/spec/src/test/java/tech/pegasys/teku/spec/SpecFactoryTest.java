@@ -35,7 +35,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> BELLATRIX_NETWORKS = Set.of("ropsten", "kiln", "sepolia");
+  private static final Set<String> BELLATRIX_NETWORKS =
+      Set.of("ropsten", "kiln", "sepolia", "prater");
 
   @Test
   public void defaultFactoryShouldScheduleAltairForMainNet() {
