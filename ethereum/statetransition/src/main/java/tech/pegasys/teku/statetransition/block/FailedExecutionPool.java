@@ -37,7 +37,7 @@ public class FailedExecutionPool {
   static final Duration SHORT_DELAY = Duration.ofSeconds(2);
   private static final List<Class<? extends Throwable>> TIMEOUT_EXCEPTIONS =
       List.of(InterruptedException.class, SocketTimeoutException.class, TimeoutException.class);
-  private final Queue<SignedBeaconBlock> awaitingExecution = new ArrayBlockingQueue<>(10);
+  private final Queue<SignedBeaconBlock> awaitingExecutionQueue = new ArrayBlockingQueue<>(10);
   private final BlockManager blockManager;
   private final AsyncRunner asyncRunner;
 
@@ -53,13 +53,13 @@ public class FailedExecutionPool {
   public synchronized void addFailedBlock(final SignedBeaconBlock block) {
     if (retryingBlock.isEmpty()) {
       retryingBlock = Optional.of(block);
-      scheduleNextRetry(block);
+      scheduleNextRetry();
     } else {
-      if (retryingBlock.get().equals(block) || awaitingExecution.contains(block)) {
+      if (retryingBlock.get().equals(block) || awaitingExecutionQueue.contains(block)) {
         // Already retrying this block.
         return;
       }
-      if (!awaitingExecution.offer(block)) {
+      if (!awaitingExecutionQueue.offer(block)) {
         LOG.info(
             "Discarding block {} as execution retry pool capacity exceeded",
             LogFormatter.formatBlock(block.getSlot(), block.getRoot()));
@@ -74,18 +74,18 @@ public class FailedExecutionPool {
       if (currentDelay.compareTo(MAX_RETRY_DELAY) > 0) {
         currentDelay = MAX_RETRY_DELAY;
       }
-      if (awaitingExecution.isEmpty() || isTimeout(importResult)) {
-        scheduleNextRetry(block);
+      if (awaitingExecutionQueue.isEmpty() || isTimeout(importResult)) {
+        scheduleNextRetry();
       } else {
         // Try a different block
-        final SignedBeaconBlock nextBlock = awaitingExecution.remove();
-        awaitingExecution.add(block);
+        final SignedBeaconBlock nextBlock = awaitingExecutionQueue.remove();
+        awaitingExecutionQueue.add(block);
         retryingBlock = Optional.of(nextBlock);
-        scheduleNextRetry(nextBlock);
+        scheduleNextRetry();
       }
     } else {
       currentDelay = SHORT_DELAY;
-      retryingBlock = Optional.ofNullable(awaitingExecution.poll());
+      retryingBlock = Optional.ofNullable(awaitingExecutionQueue.poll());
       retryingBlock.ifPresent(this::retryExecution);
     }
   }
@@ -99,10 +99,12 @@ public class FailedExecutionPool {
         .orElse(false);
   }
 
-  private synchronized void scheduleNextRetry(final SignedBeaconBlock block) {
-    asyncRunner
-        .runAfterDelay(() -> retryExecution(block), currentDelay)
-        .ifExceptionGetsHereRaiseABug();
+  private synchronized void scheduleNextRetry() {
+    retryingBlock.ifPresent(
+        block ->
+            asyncRunner
+                .runAfterDelay(() -> retryExecution(block), currentDelay)
+                .ifExceptionGetsHereRaiseABug());
   }
 
   private synchronized void retryExecution(final SignedBeaconBlock block) {
@@ -117,7 +119,7 @@ public class FailedExecutionPool {
               if (!(Throwables.getRootCause(error) instanceof ShuttingDownException)) {
                 LOG.error("Failed to schedule payload re-execution", error);
               }
-              retryingBlock.ifPresent(this::scheduleNextRetry);
+              scheduleNextRetry();
             });
   }
 }
