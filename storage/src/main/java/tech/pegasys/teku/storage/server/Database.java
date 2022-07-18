@@ -105,6 +105,8 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
+  long countUnblindedFinalizedBlocks();
+
   @MustBeClosed
   Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints();
 
