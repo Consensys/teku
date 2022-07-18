@@ -116,6 +116,12 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void minimalNetwork_shouldMergeTransitionsOverrideBeEmptyByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "minimal");
+    assertThat(config.eth2NetworkConfiguration().getGenesisState()).isEqualTo(Optional.empty());
+  }
+
+  @Test
   void shouldLoadMergeTerminalTotalDifficultyOverride() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
@@ -236,5 +242,21 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xfork-choice-before-proposing-enabled=false")
             .eth2NetworkConfiguration();
     assertThat(networkConfig.isForkChoiceBeforeProposingEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldLoadGenesisState() {
+    final String genesisState =
+        "https://221EMZ2YSdriVVdXx:5058f100c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized";
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xgenesis-state", genesisState);
+    assertThat(config.eth2NetworkConfiguration().getGenesisState())
+        .isEqualTo(Optional.of(genesisState));
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.customGenesisState(genesisState))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 }
