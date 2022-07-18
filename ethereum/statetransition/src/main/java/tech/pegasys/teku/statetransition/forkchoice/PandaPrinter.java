@@ -11,21 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.statetransition.forkchoice;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class BeaconChainReorgEvent extends BeaconChainEvent {
+public interface PandaPrinter {
+  PandaPrinter NOOP = (preState, block) -> {};
 
-  private final UInt64 commonAncestorSlot;
-
-  public BeaconChainReorgEvent(
-      final String name, final UInt64 data, final UInt64 commonAncestorSlot) {
-    super(name, data);
-    this.commonAncestorSlot = commonAncestorSlot;
-  }
-
-  public UInt64 getCommonAncestorSlot() {
-    return commonAncestorSlot;
-  }
+  void onBlockImported(BeaconState preState, SignedBeaconBlock block);
 }

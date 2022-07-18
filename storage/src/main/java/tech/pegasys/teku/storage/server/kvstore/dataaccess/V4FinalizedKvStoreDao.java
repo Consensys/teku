@@ -111,6 +111,13 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getValue);
   }
 
+  public long countUnblindedFinalizedBlocks() {
+    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
+        db.streamRaw(schema.getColumnFinalizedBlocksBySlot())) {
+      return entries.count();
+    }
+  }
+
   @MustBeClosed
   public Stream<Bytes> streamExecutionPayloads() {
     return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
@@ -235,15 +242,23 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addFinalizedBlockRootBySlot(final SignedBeaconBlock block) {
-      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), block.getSlot(), block.getRoot());
+    public void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root) {
+      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), slot, root);
     }
 
     @Override
-    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
+    public void addBlindedFinalizedBlock(
+        final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
+      addBlindedBlock(block, root, spec);
+      addFinalizedBlockRootBySlot(block.getSlot(), root);
+    }
+
+    @Override
+    public void addBlindedBlock(
+        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       transaction.put(
           schema.getColumnBlindedBlocksByRoot(),
-          block.getRoot(),
+          blockRoot,
           block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
       final Optional<ExecutionPayload> maybePayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
@@ -279,6 +294,12 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
+    }
+
+    @Override
+    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
+      transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override

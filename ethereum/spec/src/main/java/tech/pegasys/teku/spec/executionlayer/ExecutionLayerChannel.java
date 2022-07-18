@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
-  String STUB_ENDPOINT_IDENTIFIER = "stub";
+  String STUB_ENDPOINT_PREFIX = "stub";
   ExecutionLayerChannel NOOP =
       new ExecutionLayerChannel() {
         @Override

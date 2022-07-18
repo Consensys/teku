@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrati
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
 @TestSpecContext(
@@ -72,6 +74,42 @@ class OkHttpValidatorTypeDefClientTest {
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
+  }
+
+  @TestTemplate
+  void getsSyncingStatus() {
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(
+                "{\n"
+                    + "  \"data\": {\n"
+                    + "    \"head_slot\": \"1\",\n"
+                    + "    \"sync_distance\": \"1\",\n"
+                    + "    \"is_syncing\": true,\n"
+                    + "    \"is_optimistic\": true\n"
+                    + "  }\n"
+                    + "}"));
+
+    final SyncingStatus result = okHttpValidatorTypeDefClient.getSyncingStatus();
+
+    assertThat(result)
+        .satisfies(
+            syncingStatus -> {
+              assertThat(syncingStatus.getHeadSlot()).isEqualTo(UInt64.ONE);
+              assertThat(syncingStatus.getSyncDistance()).isEqualTo(UInt64.ONE);
+              assertThat(syncingStatus.isSyncing()).isTrue();
+              assertThat(syncingStatus.getIsOptimistic()).hasValue(true);
+            });
+  }
+
+  @TestTemplate
+  void getsSyncingStatus_handlesFailure() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+
+    Assertions.assertThrows(
+        RemoteServiceNotAvailableException.class,
+        () -> okHttpValidatorTypeDefClient.getSyncingStatus());
   }
 
   @TestTemplate

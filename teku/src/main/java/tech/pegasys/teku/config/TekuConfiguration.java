@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.config;
 
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -226,10 +229,25 @@ public class TekuConfiguration {
       P2PConfig p2PConfig = p2pConfigBuilder.build();
       syncConfig.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
+      StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
+
+      // Check for invalid config settings
+      if (storageConfiguration.isReconstructHistoricStates()
+          && eth2NetworkConfiguration.getGenesisState().isEmpty()) {
+        throw new InvalidConfigurationException(
+            "Genesis state required when reconstructing historic states");
+      }
+
+      if (storageConfiguration.isReconstructHistoricStates()
+          && PRUNE.equals(storageConfiguration.getDataStorageMode())) {
+        throw new InvalidConfigurationException(
+            "Cannot reconstruct historic states when using prune data storage mode");
+      }
+
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           spec,
-          storageConfigurationBuilder.build(),
+          storageConfiguration,
           weakSubjectivityBuilder.build(),
           validatorConfig,
           powchainConfigBuilder.build(),
