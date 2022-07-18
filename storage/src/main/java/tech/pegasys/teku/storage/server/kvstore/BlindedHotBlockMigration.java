@@ -53,7 +53,7 @@ public class BlindedHotBlockMigration<
     maybeBlock.ifPresent(
         block -> {
           final Bytes32 root = block.getRoot();
-          LOG.info("Setting Lowest finalized Block at {}({})", root, block.getSlot());
+          LOG.info("Setting lowest finalized block at {}({})", root, block.getSlot());
           try (KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded blindedUpdater =
                   dao.finalizedUpdaterBlinded();
               KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded unblindedUpdater =
