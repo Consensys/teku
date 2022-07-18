@@ -26,8 +26,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
@@ -38,6 +40,7 @@ public class OkHttpValidatorTypeDefClient {
 
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
+  private final GetSyncingStatusRequest getSyncingStatusRequest;
   private final GetGenesisRequest getGenesisRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
@@ -51,11 +54,16 @@ public class OkHttpValidatorTypeDefClient {
     this.baseEndpoint = baseEndpoint;
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
+    this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.sendSignedBlockRequest =
         new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
+  }
+
+  public SyncingStatus getSyncingStatus() {
+    return getSyncingStatusRequest.getSyncingStatus();
   }
 
   public Optional<GenesisData> getGenesis() {

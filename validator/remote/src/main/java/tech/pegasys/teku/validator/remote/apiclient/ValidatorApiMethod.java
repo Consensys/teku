@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Map;
 
 public enum ValidatorApiMethod {
+  GET_SYNCING_STATUS("/eth/v1/node/syncing"),
   GET_GENESIS("eth/v1/beacon/genesis"),
   GET_VALIDATORS("eth/v1/beacon/states/head/validators"),
   GET_DUTIES("validator/duties"),
