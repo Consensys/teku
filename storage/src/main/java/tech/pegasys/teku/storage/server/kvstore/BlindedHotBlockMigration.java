@@ -71,9 +71,7 @@ public class BlindedHotBlockMigration<
           double percentCompleted = counter;
           percentCompleted /= countBlocks;
           percentCompleted *= 100;
-          LOG.info(
-              "{} hot blocks moved ({} %)",
-              counter, String.format("%.2f", percentCompleted));
+          LOG.info("{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
 
           blindedUpdater.commit();
           unblindedUpdater.commit();
