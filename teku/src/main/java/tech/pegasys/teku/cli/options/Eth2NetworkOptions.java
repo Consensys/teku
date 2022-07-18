@@ -45,6 +45,15 @@ public class Eth2NetworkOptions {
       arity = "1")
   private String initialState;
 
+  @CommandLine.Option(
+      names = {"--Xgenesis-state"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description =
+          "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
+      arity = "1")
+  private String genesisState;
+
   @Option(
       names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
@@ -188,6 +197,9 @@ public class Eth2NetworkOptions {
     }
     if (StringUtils.isNotBlank(initialState)) {
       builder.customInitialState(initialState);
+    }
+    if (StringUtils.isNotBlank(genesisState)) {
+      builder.customGenesisState(genesisState);
     }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);
