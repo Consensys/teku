@@ -35,8 +35,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> BELLATRIX_NETWORKS =
-      Set.of("ropsten", "kiln", "sepolia", "prater");
+  private static final Set<String> NON_BELLATRIX_NETWORKS =
+      Set.of("mainnet", "gnosis", "swift", "less-swift");
 
   @Test
   public void defaultFactoryShouldScheduleAltairForMainNet() {
@@ -50,11 +50,11 @@ public class SpecFactoryTest {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
-    } else if (BELLATRIX_NETWORKS.contains(configName)) {
+    } else if (NON_BELLATRIX_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
+    } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
-    } else {
-      assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
     }
   }
 
