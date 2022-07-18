@@ -241,7 +241,7 @@ public class TekuConfiguration {
       if (storageConfiguration.isReconstructHistoricStates()
           && PRUNE.equals(storageConfiguration.getDataStorageMode())) {
         throw new InvalidConfigurationException(
-            "Cannot reconstruct historic states when prune mode on");
+            "Cannot reconstruct historic states when using prune data storage mode");
       }
 
       return new TekuConfiguration(
