@@ -14,8 +14,12 @@
 package tech.pegasys.teku.validator.api;
 
 import java.net.URI;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
 public interface RemoteValidatorApiChannel extends ValidatorApiChannel {
 
   URI getEndpoint();
+
+  SafeFuture<SyncingStatus> getSyncingStatus();
 }
