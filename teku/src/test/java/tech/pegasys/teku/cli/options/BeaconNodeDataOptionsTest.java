@@ -195,6 +195,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                         b -> b.dataStorageMode(PRUNE).reconstructHistoricStates(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Cannot reconstruct historic states when prune mode on");
+        .hasMessage("Cannot reconstruct historic states when using prune data storage mode");
   }
 }
