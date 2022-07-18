@@ -59,7 +59,7 @@ public class BlindedHotBlockMigration<
               KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded unblindedUpdater =
                   dao.finalizedUpdaterUnblinded()) {
 
-            blindedUpdater.addBlindedFinalizedBlock(block, spec);
+            blindedUpdater.addBlindedFinalizedBlock(block, root, spec);
             unblindedUpdater.deleteUnblindedFinalizedBlock(block.getSlot(), root);
             blindedUpdater.commit();
             unblindedUpdater.commit();
@@ -83,7 +83,7 @@ public class BlindedHotBlockMigration<
                 dao.hotUpdaterUnblinded()) {
           for (int i = 0; i < BATCH_SIZE && it.hasNext(); i++) {
             final SignedBeaconBlock block = it.next();
-            blindedUpdater.addBlindedBlock(block, spec);
+            blindedUpdater.addBlindedBlock(block, block.getRoot(), spec);
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
           }

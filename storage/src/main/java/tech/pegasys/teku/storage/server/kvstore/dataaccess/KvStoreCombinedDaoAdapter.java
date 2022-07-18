@@ -501,18 +501,14 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addFinalizedBlockRootBySlot(final SignedBeaconBlock block) {
-      finalizedUpdater.addFinalizedBlockRootBySlot(block);
+    public void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root) {
+      finalizedUpdater.addFinalizedBlockRootBySlot(slot, root);
     }
 
     @Override
-    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
-      finalizedUpdater.addBlindedBlock(block, spec);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlock(final SignedBeaconBlock block, final Spec spec) {
-      finalizedUpdater.addBlindedFinalizedBlock(block, spec);
+    public void addBlindedFinalizedBlock(
+        final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
+      finalizedUpdater.addBlindedFinalizedBlock(block, root, spec);
     }
 
     @Override

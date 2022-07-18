@@ -242,19 +242,15 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addFinalizedBlockRootBySlot(final SignedBeaconBlock block) {
-      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), block.getSlot(), block.getRoot());
+    public void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root) {
+      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), slot, root);
     }
 
     @Override
-    public void addBlindedBlock(final SignedBeaconBlock block, final Spec spec) {
-      addBlindedBlock(block, block.getRoot(), spec);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlock(final SignedBeaconBlock block, final Spec spec) {
-      addBlindedBlock(block, spec);
-      addFinalizedBlockRootBySlot(block);
+    public void addBlindedFinalizedBlock(
+        final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
+      addBlindedBlock(block, root, spec);
+      addFinalizedBlockRootBySlot(block.getSlot(), root);
     }
 
     @Override

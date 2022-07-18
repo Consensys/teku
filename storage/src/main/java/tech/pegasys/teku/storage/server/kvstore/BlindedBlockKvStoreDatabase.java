@@ -153,7 +153,7 @@ public class BlindedBlockKvStoreDatabase
       final CombinedUpdaterBlinded updater,
       final BeaconState anchorState,
       final SignedBeaconBlock block) {
-    updater.addBlindedBlock(block, spec);
+    updater.addBlindedBlock(block, block.getRoot(), spec);
     updater.addHotBlockCheckpointEpochs(
         block.getRoot(),
         new BlockCheckpoints(
@@ -161,7 +161,7 @@ public class BlindedBlockKvStoreDatabase
             anchorState.getFinalizedCheckpoint(),
             anchorState.getCurrentJustifiedCheckpoint(),
             anchorState.getFinalizedCheckpoint()));
-    updater.addFinalizedBlockRootBySlot(block);
+    updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
   }
 
   @Override
@@ -169,13 +169,13 @@ public class BlindedBlockKvStoreDatabase
     try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
-            updater.addBlindedBlock(block, spec);
+            updater.addBlindedBlock(block, block.getRoot(), spec);
             block
                 .getMessage()
                 .getBody()
                 .getOptionalExecutionPayload()
                 .ifPresent(updater::addExecutionPayload);
-            updater.addFinalizedBlockRootBySlot(block);
+            updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
           });
       updater.commit();
     }
@@ -248,9 +248,9 @@ public class BlindedBlockKvStoreDatabase
       final boolean isRemovedFromHotBlocks,
       final FinalizedUpdaterBlinded updater) {
     if (isRemovedFromHotBlocks) {
-      updater.addBlindedBlock(block, spec);
+      updater.addBlindedBlock(block, block.getRoot(), spec);
     }
-    updater.addFinalizedBlockRootBySlot(block);
+    updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
   }
 
   @Override
@@ -262,7 +262,8 @@ public class BlindedBlockKvStoreDatabase
     try (final FinalizedUpdaterBlinded finalizedUpdater = dao.finalizedUpdaterBlinded()) {
       addedBlocks
           .values()
-          .forEach(block -> finalizedUpdater.addBlindedBlock(block.getBlock(), spec));
+          .forEach(
+              block -> finalizedUpdater.addBlindedBlock(block.getBlock(), block.getRoot(), spec));
       if (!storeNonCanonicalBlocks) {
         deletedHotBlockRoots.stream()
             .filter(blockRoot -> !finalizedBlockRoots.contains(blockRoot))
