@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.block;
 import com.google.common.base.Throwables;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,6 +35,8 @@ public class FailedExecutionPool {
   private static final Logger LOG = LogManager.getLogger();
   static final Duration MAX_RETRY_DELAY = Duration.ofSeconds(30);
   static final Duration SHORT_DELAY = Duration.ofSeconds(2);
+  private static final List<Class<? extends Throwable>> TIMEOUT_EXCEPTIONS =
+      List.of(InterruptedException.class, SocketTimeoutException.class, TimeoutException.class);
   private final Queue<SignedBeaconBlock> awaitingExecution = new ArrayBlockingQueue<>(10);
   private final BlockManager blockManager;
   private final AsyncRunner asyncRunner;
@@ -92,8 +95,7 @@ public class FailedExecutionPool {
         .getFailureCause()
         .map(
             error ->
-                ExceptionUtil.hasCause(error, TimeoutException.class)
-                    || ExceptionUtil.hasCause(error, SocketTimeoutException.class))
+                TIMEOUT_EXCEPTIONS.stream().anyMatch(type -> ExceptionUtil.hasCause(error, type)))
         .orElse(false);
   }
 
