@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.block;
 
 import com.google.common.base.Throwables;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Queue;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -88,7 +90,10 @@ public class FailedExecutionPool {
   private boolean isTimeout(final BlockImportResult importResult) {
     return importResult
         .getFailureCause()
-        .map(error -> error instanceof TimeoutException)
+        .map(
+            error ->
+                ExceptionUtil.hasCause(error, TimeoutException.class)
+                    || ExceptionUtil.hasCause(error, SocketTimeoutException.class))
         .orElse(false);
   }
 

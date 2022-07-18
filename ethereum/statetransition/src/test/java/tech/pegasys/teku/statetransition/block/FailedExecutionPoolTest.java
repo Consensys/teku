@@ -23,8 +23,9 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -38,7 +39,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class FailedExecutionPoolTest {
 
   public static final BlockImportResult FAILED_EXECUTION_TIMEOUT =
-      BlockImportResult.failedExecutionPayloadExecution(new TimeoutException());
+      BlockImportResult.failedExecutionPayloadExecution(timeoutException());
+
   public static final BlockImportResult FAILED_EXECUTION_ERROR =
       BlockImportResult.failedExecutionPayloadExecution(new IOException());
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
@@ -327,5 +329,13 @@ class FailedExecutionPoolTest {
 
   private void withImportResult(final BlockImportResult result) {
     when(blockManager.importBlock(any())).thenReturn(SafeFuture.completedFuture(result));
+  }
+
+  private static InterruptedIOException timeoutException() {
+    // Awkward but this is the timeout exception we actually get.
+    final SocketTimeoutException cause = new SocketTimeoutException("Read timed out");
+    final InterruptedIOException interruptedIOException = new InterruptedIOException("timeout");
+    interruptedIOException.initCause(cause);
+    return interruptedIOException;
   }
 }
