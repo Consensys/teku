@@ -48,25 +48,6 @@ public class BlindedHotBlockMigration<
     moveHotBlocksToBlindedStorage();
   }
 
-  private void moveFirstFinalizedBlockToBlindedStorage() {
-    Optional<SignedBeaconBlock> maybeBlock = dao.getEarliestFinalizedBlock();
-    maybeBlock.ifPresent(
-        block -> {
-          final Bytes32 root = block.getRoot();
-          LOG.info("Setting lowest finalized block at {}({})", root, block.getSlot());
-          try (KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded blindedUpdater =
-                  dao.finalizedUpdaterBlinded();
-              KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded unblindedUpdater =
-                  dao.finalizedUpdaterUnblinded()) {
-
-            blindedUpdater.addBlindedFinalizedBlock(block, root, spec);
-            unblindedUpdater.deleteUnblindedFinalizedBlock(block.getSlot(), root);
-            blindedUpdater.commit();
-            unblindedUpdater.commit();
-          }
-        });
-  }
-
   private void moveHotBlocksToBlindedStorage() {
     final long countBlocks = dao.countUnblindedHotBlocks();
     if (countBlocks == 0) {
@@ -87,12 +68,37 @@ public class BlindedHotBlockMigration<
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
           }
+          double percentCompleted = counter;
+          percentCompleted /= countBlocks;
+          percentCompleted *= 100;
+          LOG.info(
+              "{} hot blocks moved ({} %)",
+              counter, String.format("%.2f", percentCompleted));
+
           blindedUpdater.commit();
           unblindedUpdater.commit();
         }
       }
     }
-    LOG.info("Hot blocks all moved ({} blocks)", counter);
     moveFirstFinalizedBlockToBlindedStorage();
+  }
+
+  private void moveFirstFinalizedBlockToBlindedStorage() {
+    Optional<SignedBeaconBlock> maybeBlock = dao.getEarliestFinalizedBlock();
+    maybeBlock.ifPresent(
+        block -> {
+          final Bytes32 root = block.getRoot();
+          LOG.info("Setting lowest finalized block at {}({})", root, block.getSlot());
+          try (KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded blindedUpdater =
+                  dao.finalizedUpdaterBlinded();
+              KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded unblindedUpdater =
+                  dao.finalizedUpdaterUnblinded()) {
+
+            blindedUpdater.addBlindedFinalizedBlock(block, root, spec);
+            unblindedUpdater.deleteUnblindedFinalizedBlock(block.getSlot(), root);
+            blindedUpdater.commit();
+            unblindedUpdater.commit();
+          }
+        });
   }
 }
