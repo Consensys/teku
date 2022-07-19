@@ -24,10 +24,10 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.teku.GetEth1DataCacheResponse;
+import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -42,13 +42,16 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
 
   @Test
   public void shouldReturnAllEth1BlocksFromCache() throws IOException {
-    List<tech.pegasys.teku.spec.datastructures.blocks.Eth1Data> eth1DataCacheList = new ArrayList<>();
+    List<tech.pegasys.teku.spec.datastructures.blocks.Eth1Data> eth1DataCacheList =
+        new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       eth1DataCacheList.add(dataStructureUtil.randomEth1Data());
     }
     List<Eth1Data> eth1DataCacheBlocks = new ArrayList<>();
-    eth1DataCacheList.stream().map(Eth1Data::new).forEach(eth1Block -> eth1DataCacheBlocks.add(eth1Block));
-    when(eth1DataCache.getAllEth1Blocks()).thenReturn(eth1DataCacheList);
+    eth1DataCacheList.stream()
+        .map(Eth1Data::new)
+        .forEach(eth1Block -> eth1DataCacheBlocks.add(eth1Block));
+    when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(eth1DataCacheList);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     GetEth1DataCacheResponse getEth1DataResponse =

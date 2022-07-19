@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1DataCache extends MigratingEndpointAdapter {
 
@@ -53,9 +53,9 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
               Function.identity())
           .build();
 
-  private final Eth1DataCache eth1DataCache;
+  private final Eth1DataProvider eth1DataProvider;
 
-  public GetEth1DataCache(Eth1DataCache eth1DataCache) {
+  public GetEth1DataCache(Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getTekuV1BeaconPoolEth1cache")
@@ -65,7 +65,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
             .response(SC_OK, "OK", ETH1DATA_CACHE_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
-    this.eth1DataCache = eth1DataCache;
+    this.eth1DataProvider = eth1DataProvider;
   }
 
   @OpenApi(
@@ -89,7 +89,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    List<Eth1Data> eth1CachedBlocks = this.eth1DataCache.getAllEth1Blocks();
+    List<Eth1Data> eth1CachedBlocks = this.eth1DataProvider.getEth1CachedBlocks();
     if (eth1CachedBlocks.isEmpty()) {
       request.respondWithCode(
           SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Eth1 blocks cache is empty"));

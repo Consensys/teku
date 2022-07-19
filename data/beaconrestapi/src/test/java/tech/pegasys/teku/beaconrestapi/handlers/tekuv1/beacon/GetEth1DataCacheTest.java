@@ -29,12 +29,12 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
+import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1DataCacheTest extends AbstractMigratedBeaconHandlerTest {
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
   private final List<Eth1Data> eth1DataCacheBlocks =
       Arrays.asList(
@@ -44,23 +44,21 @@ public class GetEth1DataCacheTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    setHandler(new GetEth1DataCache(eth1DataCache));
+    setHandler(new GetEth1DataCache(eth1DataProvider));
   }
 
   @Test
   public void shouldReturnListOfCachedEth1Blocks() throws JsonProcessingException {
-    when(eth1DataCache.getAllEth1Blocks()).thenReturn(eth1DataCacheBlocks);
+    when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(eth1DataCacheBlocks);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(
-            ((List<Eth1Data>) request.getResponseBody())
-                .containsAll(eth1DataCache.getAllEth1Blocks()))
+    assertThat(((List<Eth1Data>) request.getResponseBody()).containsAll(eth1DataCacheBlocks))
         .isTrue();
   }
 
   @Test
   public void shouldReturnNotFoundWhenCacheIsEmpty() throws JsonProcessingException {
-    when(eth1DataCache.getAllEth1Blocks()).thenReturn(new ArrayList<>());
+    when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(new ArrayList<>());
     handler.handleRequest(request);
     assertThat(request.getResponseBody())
         .isEqualTo(

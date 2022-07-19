@@ -161,7 +161,6 @@ public class ReflectionBasedBeaconRestApiV1Test {
     new ReflectionBasedBeaconRestApi(
         dataProvider,
         eth1DataProvider,
-        eth1DataCache,
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),

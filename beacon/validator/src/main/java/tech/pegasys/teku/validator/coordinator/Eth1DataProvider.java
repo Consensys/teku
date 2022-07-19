@@ -47,6 +47,10 @@ public class Eth1DataProvider {
     return eth1DataCache.getEth1Vote(stateAndMetaData.getData());
   }
 
+  public List<Eth1Data> getEth1CachedBlocks() {
+    return this.eth1DataCache.getAllEth1Blocks();
+  }
+
   public List<Pair<Eth1Data, UInt64>> getEth1DataVotes(final StateAndMetaData stateAndMetaData) {
     final Map<Eth1Data, Eth1Vote> votes = eth1DataCache.countVotes(stateAndMetaData.getData());
     return votes.entrySet().stream()

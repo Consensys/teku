@@ -146,7 +146,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   private void initialize(
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
-      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -186,7 +185,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, eth1DataProvider, eth1DataCache, spec);
+    addTekuSpecificHandlers(dataProvider, eth1DataProvider, spec);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -310,7 +309,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     initialize(
         dataProvider,
         eth1DataProvider,
-        eth1DataCache,
         configuration,
         eventChannels,
         asyncRunner,
@@ -321,7 +319,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   ReflectionBasedBeaconRestApi(
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
-      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
@@ -332,7 +329,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     initialize(
         dataProvider,
         eth1DataProvider,
-        eth1DataCache,
         configuration,
         eventChannels,
         asyncRunner,
@@ -390,10 +386,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider,
-      final Eth1DataProvider eth1DataProvider,
-      final Eth1DataCache eth1DataCache,
-      final Spec spec) {
+      final DataProvider provider, final Eth1DataProvider eth1DataProvider, final Spec spec) {
     addMigratedEndpoint(new PutLogLevel());
     addMigratedEndpoint(new GetStateByBlockRoot(provider, spec));
     addMigratedEndpoint(new Liveness(provider));
@@ -404,7 +397,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addMigratedEndpoint(new GetProposersData(provider));
     addMigratedEndpoint(new GetDeposits(eth1DataProvider));
     addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetEth1DataCache(eth1DataCache));
+    addMigratedEndpoint(new GetEth1DataCache(eth1DataProvider));
     addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
     addMigratedEndpoint(new GetDepositSnapshot(eth1DataProvider));
     addMigratedEndpoint(new GetGlobalValidatorInclusion(provider));
