@@ -1,0 +1,13 @@
+{
+  "title" : "GetEth1DataCacheResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Eth1Data"
+      }
+    }
+  }
+}

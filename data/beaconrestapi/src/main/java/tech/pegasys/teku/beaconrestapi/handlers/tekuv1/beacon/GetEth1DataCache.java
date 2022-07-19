@@ -58,11 +58,11 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   public GetEth1DataCache(Eth1DataCache eth1DataCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getAllEth1DataCacheBlocks")
-            .summary("Get all cached Eth1 blocks.")
+            .operationId("getTekuV1BeaconPoolEth1cache")
+            .summary("Get all cached Eth1 blocks")
             .description("Get all cached Eth1 blocks.")
             .tags(TAG_TEKU)
-            .response(SC_OK, "Request successful", ETH1DATA_CACHE_RESPONSE_TYPE)
+            .response(SC_OK, "OK", ETH1DATA_CACHE_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.eth1DataCache = eth1DataCache;

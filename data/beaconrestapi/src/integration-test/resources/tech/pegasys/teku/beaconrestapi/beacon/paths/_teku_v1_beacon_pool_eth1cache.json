@@ -1,0 +1,28 @@
+{
+  "get": {
+    "tags": [
+      "Teku"
+    ],
+    "summary": "Get all cached Eth1 blocks",
+    "description": "Get all cached Eth1 blocks.",
+    "operationId": "getTekuV1BeaconPoolEth1cache",
+    "responses": {
+      "200": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetEth1DataCacheResponse"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Not Found"
+      },
+      "500": {
+        "description": "Server Error"
+      }
+    }
+  }
+}
