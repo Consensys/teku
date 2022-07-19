@@ -16,7 +16,7 @@ package tech.pegasys.teku.api.response.v1.teku;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.api.schema.Eth1Data;
 
 public class GetEth1DataCacheResponse {
 
