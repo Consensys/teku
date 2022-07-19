@@ -18,12 +18,12 @@ import static java.util.Collections.emptyMap;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.EventSource.Builder;
 import com.launchdarkly.eventsource.ReadyState;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
@@ -45,41 +45,40 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
-  private static final Duration PING_PRIMARY_BEACON_NODE_PERIOD = Duration.ofSeconds(30);
+  private static final Duration PING_PRIMARY_BEACON_NODE_DURING_FAILOVER = Duration.ofSeconds(30);
 
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
-  private final AtomicBoolean failoverInProgress = new AtomicBoolean(false);
   private final AtomicReference<Cancellable> primaryBeaconNodeCheckStatusTask =
       new AtomicReference<>();
 
   private volatile EventSource primaryEventSource;
   private volatile Optional<EventSource> maybeFailoverEventSource = Optional.empty();
 
-  private final ValidatorLogger validatorLogger;
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
   private final List<RemoteValidatorApiChannel> failoversBeaconNodeApis;
   private final OkHttpClient okHttpClient;
-  private final BeaconChainEventAdapter timeBasedEventAdapter;
+  private final ValidatorLogger validatorLogger;
   private final AsyncRunner asyncRunner;
+  private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
 
   public EventSourceBeaconChainEventAdapter(
-      final ValidatorLogger validatorLogger,
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
       final List<RemoteValidatorApiChannel> failoversBeaconNodeApis,
       final OkHttpClient okHttpClient,
+      final ValidatorLogger validatorLogger,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations) {
-    this.validatorLogger = validatorLogger;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoversBeaconNodeApis = failoversBeaconNodeApis;
     this.okHttpClient = okHttpClient;
-    this.timeBasedEventAdapter = timeBasedEventAdapter;
+    this.validatorLogger = validatorLogger;
     this.asyncRunner = asyncRunner;
+    this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.eventSourceHandler =
         new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
     this.primaryEventSource = createEventSource(primaryBeaconNodeApi);
@@ -108,11 +107,13 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
-    return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
+    return new Builder(eventSourceHandler, eventSourceUrl)
         .maxReconnectTime(MAX_RECONNECT_TIME)
         .connectionErrorHandler(
             __ -> {
-              switchToFailoverEventStreamIfNeeded(beaconNodeApi);
+              if (switchToFailoverEventStreamIfNeeded(beaconNodeApi)) {
+                return Action.SHUTDOWN;
+              }
               return Action.PROCEED;
             })
         .client(okHttpClient)
@@ -128,20 +129,19 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   // only switch to failover event stream if the sync status call to the current Beacon Node throws
   // an exception and there is a ready failover Beacon Node
-  private synchronized void switchToFailoverEventStreamIfNeeded(
+  @SuppressWarnings({"FutureReturnValueIgnored"})
+  private boolean switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
-    if (failoversBeaconNodeApis.isEmpty() || failoverInProgress.get()) {
-      return;
+    if (failoversBeaconNodeApis.isEmpty()) {
+      return false;
     }
-    failoverInProgress.set(true);
     currentBeaconNodeApi
         .getSyncingStatus()
         .finish(
-            __ -> failoverInProgress.set(false),
             __ ->
                 findReadyFailover(currentBeaconNodeApi.getEndpoint())
-                    .thenAccept(this::switchToFailoverEventStream)
-                    .alwaysRun(() -> failoverInProgress.set(false)));
+                    .thenAccept(this::switchToFailoverEventStream));
+    return true;
   }
 
   private SafeFuture<RemoteValidatorApiChannel> findReadyFailover(final HttpUrl endpointToIgnore) {
@@ -174,18 +174,18 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 checkBeaconNodeIsReadyForEventStreaming(primaryBeaconNodeApi)
                     .thenAccept(
                         __ -> {
-                          primaryEventSource = createEventSource(primaryBeaconNodeApi);
                           closeCurrentEventStream();
+                          primaryEventSource = createEventSource(primaryBeaconNodeApi);
                           validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming(
                               primaryBeaconNodeApi.getEndpoint().uri());
                           primaryEventSource.start();
                           maybeFailoverEventSource = Optional.empty();
                           cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask();
                         }),
-            PING_PRIMARY_BEACON_NODE_PERIOD,
-            PING_PRIMARY_BEACON_NODE_PERIOD,
+            PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
+            PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             throwable ->
-                LOG.error("Error while checking status of primary Beacon Node", throwable));
+                LOG.error("Error while checking status of the primary Beacon Node", throwable));
     primaryBeaconNodeCheckStatusTask.set(checkStatusTask);
   }
 

@@ -111,10 +111,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
-            ValidatorLogger.VALIDATOR_LOGGER,
             primaryValidatorApi,
             failoversValidatorApis,
             okHttpClient,
+            ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApiWithMetrics),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
