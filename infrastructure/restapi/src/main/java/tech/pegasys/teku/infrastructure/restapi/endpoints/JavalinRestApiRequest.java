@@ -149,6 +149,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   public void respondWithCode(int statusCode, Object response) throws JsonProcessingException {
     respond(statusCode, response, getResponseOutputStream());
   }
+
   @Override
   public void respondWithCode(final int statusCode, final CacheLength cacheLength) {
     context.header(Header.CACHE_CONTROL, cacheLength.getHttpHeaderValue());

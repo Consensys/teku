@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -20,6 +28,8 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.response.v1.teku.GetEth1DataCacheResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -30,26 +40,18 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
-import java.util.List;
-import java.util.function.Function;
-
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-
 public class GetEth1DataCache extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/teku/v1/beacon/pool/eth1cache";
 
   private static final SerializableTypeDefinition<List<Eth1Data>> ETH1DATA_CACHE_RESPONSE_TYPE =
-          SerializableTypeDefinition.<List<Eth1Data>>object()
-                  .name("GetEth1DataCacheResponse")
-                  .withField("data", SerializableTypeDefinition.listOf(Eth1Data.SSZ_SCHEMA.getJsonTypeDefinition()), Function.identity())
-                  .build();
+      SerializableTypeDefinition.<List<Eth1Data>>object()
+          .name("GetEth1DataCacheResponse")
+          .withField(
+              "data",
+              SerializableTypeDefinition.listOf(Eth1Data.SSZ_SCHEMA.getJsonTypeDefinition()),
+              Function.identity())
+          .build();
 
   private final Eth1DataCache eth1DataCache;
 
@@ -60,10 +62,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
             .summary("Get all cached Eth1 blocks.")
             .description("Get all cached Eth1 blocks.")
             .tags(TAG_TEKU)
-            .response(
-                SC_OK,
-                "Request successful",
-                ETH1DATA_CACHE_RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", ETH1DATA_CACHE_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.eth1DataCache = eth1DataCache;
@@ -92,7 +91,8 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<Eth1Data> eth1CachedBlocks = this.eth1DataCache.getAllEth1Blocks();
     if (eth1CachedBlocks.isEmpty()) {
-      request.respondWithCode(SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Eth1 blocks cache is empty"));
+      request.respondWithCode(
+          SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Eth1 blocks cache is empty"));
     } else {
       request.respondOk(eth1CachedBlocks);
     }
