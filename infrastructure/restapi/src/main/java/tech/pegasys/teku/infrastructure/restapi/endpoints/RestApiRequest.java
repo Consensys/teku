@@ -33,6 +33,7 @@ public interface RestApiRequest {
   void respondError(int statusCode, String message) throws JsonProcessingException;
 
   void respondWithCode(int statusCode);
+  void respondWithCode(int statusCode, Object response) throws JsonProcessingException;
 
   /**
    * Respond with a status code that may not be declared in the endpoint metadata. This is very

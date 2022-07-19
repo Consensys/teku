@@ -860,6 +860,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
+                eth1DataCache,
                 beaconConfig.beaconRestApiConfig(),
                 eventChannels,
                 eventAsyncRunner,

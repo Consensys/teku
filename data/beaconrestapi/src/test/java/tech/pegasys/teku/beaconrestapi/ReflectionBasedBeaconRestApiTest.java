@@ -105,6 +105,7 @@ class ReflectionBasedBeaconRestApiTest {
     new ReflectionBasedBeaconRestApi(
         dataProvider,
         eth1DataProvider,
+        eth1DataCache,
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),

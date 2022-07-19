@@ -14,9 +14,11 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -122,6 +124,10 @@ public class Eth1DataCache {
             .map(Map.Entry::getKey);
 
     return vote.orElse(defaultVote);
+  }
+
+  public List<Eth1Data> getAllEth1Blocks() {
+    return new ArrayList<>(this.eth1ChainCache.values());
   }
 
   public void updateMetrics(final BeaconState state) {
