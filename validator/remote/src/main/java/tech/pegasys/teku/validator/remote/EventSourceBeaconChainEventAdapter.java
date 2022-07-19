@@ -56,7 +56,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private volatile Optional<EventSource> maybeFailoverEventSource = Optional.empty();
 
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
-  private final List<RemoteValidatorApiChannel> failoversBeaconNodeApis;
+  private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
   private final OkHttpClient okHttpClient;
   private final ValidatorLogger validatorLogger;
   private final AsyncRunner asyncRunner;
@@ -65,7 +65,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   public EventSourceBeaconChainEventAdapter(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
-      final List<RemoteValidatorApiChannel> failoversBeaconNodeApis,
+      final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
       final OkHttpClient okHttpClient,
       final ValidatorLogger validatorLogger,
       final BeaconChainEventAdapter timeBasedEventAdapter,
@@ -74,7 +74,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
-    this.failoversBeaconNodeApis = failoversBeaconNodeApis;
+    this.failoverBeaconNodeApis = failoverBeaconNodeApis;
     this.okHttpClient = okHttpClient;
     this.validatorLogger = validatorLogger;
     this.asyncRunner = asyncRunner;
@@ -130,7 +130,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   @SuppressWarnings({"FutureReturnValueIgnored"})
   private void switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
-    if (failoversBeaconNodeApis.isEmpty()) {
+    if (failoverBeaconNodeApis.isEmpty()) {
       return;
     }
     final HttpUrl currentEndpoint = currentBeaconNodeApi.getEndpoint();
@@ -142,7 +142,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   private SafeFuture<RemoteValidatorApiChannel> findReadyFailover(final HttpUrl endpointToIgnore) {
     final List<SafeFuture<RemoteValidatorApiChannel>> failoverReadinessCheck =
-        failoversBeaconNodeApis.stream()
+        failoverBeaconNodeApis.stream()
             .filter(api -> !api.getEndpoint().equals(endpointToIgnore))
             .map(this::checkBeaconNodeIsReadyForEventStreaming)
             .collect(Collectors.toList());

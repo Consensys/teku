@@ -79,7 +79,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final RemoteValidatorApiChannel primaryValidatorApi =
         createRemoteValidatorApi(
             primaryEndpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner);
-    final List<RemoteValidatorApiChannel> failoversValidatorApis =
+    final List<RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
             .map(
                 endpoint ->
@@ -98,7 +98,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       validatorApi =
           new FailoverValidatorApiHandler(
               primaryValidatorApi,
-              failoversValidatorApis,
+              failoverValidatorApis,
               failoversSendSubnetSubscriptions,
               ValidatorLogger.VALIDATOR_LOGGER);
     }
@@ -112,7 +112,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
             primaryValidatorApi,
-            failoversValidatorApis,
+            failoverValidatorApis,
             okHttpClient,
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
