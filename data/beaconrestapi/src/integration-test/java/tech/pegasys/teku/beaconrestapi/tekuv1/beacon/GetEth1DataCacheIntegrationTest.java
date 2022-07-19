@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.tekuv1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -58,6 +59,14 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
         jsonProvider.jsonToObject(response.body().string(), GetEth1DataCacheResponse.class);
     assertThat(getEth1DataResponse).isNotNull();
     assertThat(getEth1DataResponse.data.containsAll(eth1DataCacheBlocks)).isTrue();
+  }
+
+  @Test
+  public void shouldReturnNotFoundWhenCacheIsEmpty() throws IOException {
+    when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(new ArrayList<>());
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+    assertThat(response.body().string()).contains("Eth1 blocks cache is empty");
   }
 
   private Response get() throws IOException {
