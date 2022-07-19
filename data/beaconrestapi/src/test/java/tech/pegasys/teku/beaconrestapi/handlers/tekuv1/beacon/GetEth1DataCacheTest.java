@@ -28,12 +28,9 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 public class GetEth1DataCacheTest extends AbstractMigratedBeaconHandlerTest {
-
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
   private final List<Eth1Data> eth1DataCacheBlocks =
@@ -52,8 +49,8 @@ public class GetEth1DataCacheTest extends AbstractMigratedBeaconHandlerTest {
     when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(eth1DataCacheBlocks);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(((List<Eth1Data>) request.getResponseBody()).containsAll(eth1DataCacheBlocks))
-        .isTrue();
+
+    assertThat(request.getResponseBody()).isEqualTo(eth1DataCacheBlocks);
   }
 
   @Test
