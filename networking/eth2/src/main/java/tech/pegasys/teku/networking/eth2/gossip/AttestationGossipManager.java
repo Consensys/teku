@@ -38,6 +38,7 @@ public class AttestationGossipManager implements GossipManager {
 
   private UInt64 lastErroredCommitteeIndex;
   private UInt64 lastErroredSlot;
+  private Throwable lastRootCause;
 
   public AttestationGossipManager(
       final MetricsSystem metricsSystem,
@@ -75,18 +76,21 @@ public class AttestationGossipManager implements GossipManager {
 
   synchronized void logWithSuppression(final Throwable error, final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
+    final Throwable rootCause = Throwables.getRootCause(error);
     if (attestationData.getSlot().equals(lastErroredSlot)
-        && attestationData.getIndex().equals(lastErroredCommitteeIndex)) {
+        && attestationData.getIndex().equals(lastErroredCommitteeIndex)
+        && rootCause.equals(lastRootCause)) {
       return;
     }
     lastErroredSlot = attestationData.getSlot();
     lastErroredCommitteeIndex = attestationData.getIndex();
-    if (Throwables.getRootCause(error) instanceof MessageAlreadySeenException) {
+    lastRootCause = rootCause;
+    if (lastRootCause instanceof MessageAlreadySeenException) {
       LOG.debug(
           "Failed to publish attestation(s) for slot {} and committee index {} because the message has already been seen",
           lastErroredSlot,
           lastErroredCommitteeIndex);
-    } else if (Throwables.getRootCause(error) instanceof NoPeersForOutboundMessageException) {
+    } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
       LOG.warn(
           "Failed to publish attestations(s) for slot {} and committee index {} because no peers were available on the required gossip topic",
           lastErroredSlot,
