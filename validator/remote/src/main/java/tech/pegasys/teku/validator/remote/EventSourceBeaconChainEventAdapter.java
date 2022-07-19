@@ -185,16 +185,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
         asyncRunner.runWithFixedDelay(
             () ->
                 checkBeaconNodeIsReadyForEventStreaming(primaryBeaconNodeApi)
-                    .thenAccept(
-                        __ -> {
-                          closeCurrentEventStream();
-                          primaryEventSource = createEventSource(primaryBeaconNodeApi);
-                          maybeFailoverEventSource = Optional.empty();
-                          validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming(
-                              primaryBeaconNodeApi.getEndpoint().uri());
-                          primaryEventSource.start();
-                          cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask();
-                        }),
+                    .thenRun(this::switchToPrimaryEventStream),
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             throwable ->
@@ -202,8 +193,14 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     primaryBeaconNodeCheckStatusTask.set(checkStatusTask);
   }
 
-  private void cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask() {
-    Optional.ofNullable(primaryBeaconNodeCheckStatusTask.get()).ifPresent(Cancellable::cancel);
+  private void switchToPrimaryEventStream() {
+    closeCurrentEventStream();
+    primaryEventSource = createEventSource(primaryBeaconNodeApi);
+    maybeFailoverEventSource = Optional.empty();
+    validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming(
+        primaryBeaconNodeApi.getEndpoint().uri());
+    primaryEventSource.start();
+    cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask();
   }
 
   private SafeFuture<RemoteValidatorApiChannel> checkBeaconNodeIsReadyForEventStreaming(
@@ -229,6 +226,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       primaryEventSource.close();
     }
     maybeFailoverEventSource.ifPresent(EventSource::close);
+  }
+
+  private void cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask() {
+    Optional.ofNullable(primaryBeaconNodeCheckStatusTask.get()).ifPresent(Cancellable::cancel);
   }
 
   private void waitForExit() {
