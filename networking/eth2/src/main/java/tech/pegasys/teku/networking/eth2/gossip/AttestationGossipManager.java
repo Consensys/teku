@@ -22,9 +22,11 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class AttestationGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -33,6 +35,9 @@ public class AttestationGossipManager implements GossipManager {
 
   private final Counter attestationPublishSuccessCounter;
   private final Counter attestationPublishFailureCounter;
+
+  private UInt64 lastErroredCommitteeIndex;
+  private UInt64 lastErroredSlot;
 
   public AttestationGossipManager(
       final MetricsSystem metricsSystem,
@@ -63,23 +68,36 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              if (Throwables.getRootCause(error) instanceof MessageAlreadySeenException) {
-                LOG.debug(
-                    "Failed to publish attestation for slot {} because the message has already been seen",
-                    attestation.getData().getSlot());
-              } else if (Throwables.getRootCause(error)
-                  instanceof NoPeersForOutboundMessageException) {
-                LOG.warn(
-                    "Failed to publish attestation for slot {} because no peers were available on the required gossip topic",
-                    attestation.getData().getSlot());
-              } else {
-                LOG.error(
-                    "Failed to publish attestation for slot {}",
-                    attestation.getData().getSlot(),
-                    error);
-              }
+              logWithSuppression(error, attestation);
               attestationPublishFailureCounter.inc();
             });
+  }
+
+  synchronized void logWithSuppression(final Throwable error, final Attestation attestation) {
+    final AttestationData attestationData = attestation.getData();
+    if (attestationData.getSlot().equals(lastErroredSlot)
+        && attestationData.getIndex().equals(lastErroredCommitteeIndex)) {
+      return;
+    }
+    lastErroredSlot = attestationData.getSlot();
+    lastErroredCommitteeIndex = attestationData.getIndex();
+    if (Throwables.getRootCause(error) instanceof MessageAlreadySeenException) {
+      LOG.debug(
+          "Failed to publish attestation(s) for slot {} and committee index {} because the message has already been seen",
+          lastErroredSlot,
+          lastErroredCommitteeIndex);
+    } else if (Throwables.getRootCause(error) instanceof NoPeersForOutboundMessageException) {
+      LOG.warn(
+          "Failed to publish attestations(s) for slot {} and committee index {} because no peers were available on the required gossip topic",
+          lastErroredSlot,
+          lastErroredCommitteeIndex);
+    } else {
+      LOG.error(
+          "Failed to publish attestation(s) for slot {} and committee index {}",
+          lastErroredSlot,
+          lastErroredCommitteeIndex,
+          error);
+    }
   }
 
   public void subscribeToSubnetId(final int subnetId) {
