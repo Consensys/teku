@@ -18,7 +18,6 @@ import static java.util.Collections.emptyMap;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.EventSource.Builder;
 import com.launchdarkly.eventsource.ReadyState;
 import java.time.Duration;
 import java.util.List;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
 
   private static final Logger LOG = LogManager.getLogger();
+
   private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
   private static final Duration PING_PRIMARY_BEACON_NODE_DURING_FAILOVER = Duration.ofSeconds(30);
 
@@ -107,7 +107,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
-    return new Builder(eventSourceHandler, eventSourceUrl)
+    return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
         .maxReconnectTime(MAX_RECONNECT_TIME)
         .connectionErrorHandler(
             __ -> {
