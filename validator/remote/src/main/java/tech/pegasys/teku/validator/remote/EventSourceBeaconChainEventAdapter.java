@@ -111,9 +111,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
         .maxReconnectTime(MAX_RECONNECT_TIME)
         .connectionErrorHandler(
             __ -> {
-              if (switchToFailoverEventStreamIfNeeded(beaconNodeApi)) {
-                return Action.SHUTDOWN;
-              }
+              switchToFailoverEventStreamIfNeeded(beaconNodeApi);
               return Action.PROCEED;
             })
         .client(okHttpClient)
@@ -127,21 +125,19 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // only switch to failover event stream if the sync status call to the current Beacon Node throws
+  // connect to a failover event stream only if syncing status call throws
   // an exception and there is a ready failover Beacon Node
   @SuppressWarnings({"FutureReturnValueIgnored"})
-  private boolean switchToFailoverEventStreamIfNeeded(
+  private void switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
     if (failoversBeaconNodeApis.isEmpty()) {
-      return false;
+      return;
     }
+    final HttpUrl currentEndpoint = currentBeaconNodeApi.getEndpoint();
     currentBeaconNodeApi
         .getSyncingStatus()
         .finish(
-            __ ->
-                findReadyFailover(currentBeaconNodeApi.getEndpoint())
-                    .thenAccept(this::switchToFailoverEventStream));
-    return true;
+            __ -> findReadyFailover(currentEndpoint).thenAccept(this::switchToFailoverEventStream));
   }
 
   private SafeFuture<RemoteValidatorApiChannel> findReadyFailover(final HttpUrl endpointToIgnore) {
@@ -150,10 +146,20 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             .filter(api -> !api.getEndpoint().equals(endpointToIgnore))
             .map(this::checkBeaconNodeIsReadyForEventStreaming)
             .collect(Collectors.toList());
-    return SafeFuture.firstSuccess(failoverReadinessCheck);
+    return SafeFuture.firstSuccess(failoverReadinessCheck)
+        .catchAndRethrow(
+            __ ->
+                LOG.warn(
+                    "There are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover"));
   }
 
-  private void switchToFailoverEventStream(final RemoteValidatorApiChannel beaconNodeApi) {
+  // because switchToFailoverEventStreamIfNeeded is async process, there could be
+  // multiple calls to this method since connectionErrorHandler is synchronous
+  private synchronized void switchToFailoverEventStream(
+      final RemoteValidatorApiChannel beaconNodeApi) {
+    if (alreadyFailovered(beaconNodeApi)) {
+      return;
+    }
     final HttpUrl failoverEndpoint = beaconNodeApi.getEndpoint();
     closeCurrentEventStream();
     final EventSource failoverEventSource = createEventSource(beaconNodeApi);
@@ -161,6 +167,13 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     failoverEventSource.start();
     maybeFailoverEventSource = Optional.of(failoverEventSource);
     startPrimaryBeaconNodeCheckStatusTask();
+  }
+
+  private boolean alreadyFailovered(final RemoteValidatorApiChannel beaconNodeApi) {
+    return maybeFailoverEventSource
+        .map(EventSource::getHttpUrl)
+        .map(endpoint -> endpoint.equals(createHeadEventSourceUrl(beaconNodeApi.getEndpoint())))
+        .orElse(false);
   }
 
   private void startPrimaryBeaconNodeCheckStatusTask() {
@@ -176,10 +189,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                         __ -> {
                           closeCurrentEventStream();
                           primaryEventSource = createEventSource(primaryBeaconNodeApi);
+                          maybeFailoverEventSource = Optional.empty();
                           validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming(
                               primaryBeaconNodeApi.getEndpoint().uri());
                           primaryEventSource.start();
-                          maybeFailoverEventSource = Optional.empty();
                           cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask();
                         }),
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
