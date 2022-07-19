@@ -129,7 +129,6 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
@@ -283,7 +282,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   public ReflectionBasedBeaconRestApi(
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
-      final Eth1DataCache eth1DataCache,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,

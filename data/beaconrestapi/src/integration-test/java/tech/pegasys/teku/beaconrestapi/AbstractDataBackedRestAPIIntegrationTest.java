@@ -197,7 +197,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         new ReflectionBasedBeaconRestApi(
             dataProvider,
             eth1DataProvider,
-            eth1DataCache,
             config,
             eventChannels,
             SyncAsyncRunner.SYNC_RUNNER,
