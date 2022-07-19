@@ -131,6 +131,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long countUnblindedFinalizedBlocks() {
+    return 0;
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return Stream.empty();
   }

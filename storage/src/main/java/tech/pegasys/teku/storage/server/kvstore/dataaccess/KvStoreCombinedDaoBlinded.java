@@ -77,9 +77,12 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
   interface FinalizedUpdaterBlinded extends FinalizedUpdaterCommon {
 
-    void addFinalizedBlockRootBySlot(final SignedBeaconBlock block);
+    void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root);
 
-    void addBlindedBlock(final SignedBeaconBlock block, final Spec spec);
+    void addBlindedFinalizedBlock(
+        final SignedBeaconBlock block, final Bytes32 root, final Spec spec);
+
+    void addBlindedBlock(final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec);
 
     void addExecutionPayload(final ExecutionPayload payload);
 

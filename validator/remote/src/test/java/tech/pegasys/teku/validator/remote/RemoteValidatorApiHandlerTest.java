@@ -78,6 +78,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -105,6 +106,19 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void getsEndpoint() {
     assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint.uri());
+  }
+
+  @Test
+  public void getSyncingStatus_ReturnsSyncingStatus() {
+    final SyncingStatus syncingStatus =
+        new SyncingStatus(UInt64.ONE, UInt64.ONE, true, Optional.of(true));
+    when(typeDefClient.getSyncingStatus()).thenReturn(syncingStatus);
+
+    final SafeFuture<SyncingStatus> future = apiHandler.getSyncingStatus();
+
+    asyncRunner.executeQueuedActions();
+
+    assertThat(future).isCompletedWithValue(syncingStatus);
   }
 
   @Test
