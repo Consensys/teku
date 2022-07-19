@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class Eth1DataProvider {
     return eth1DataCache.getEth1Vote(stateAndMetaData.getData());
   }
 
-  public List<Eth1Data> getEth1CachedBlocks() {
+  public Collection<Eth1Data> getEth1CachedBlocks() {
     return this.eth1DataCache.getAllEth1Blocks();
   }
 

@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
@@ -89,7 +90,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    List<Eth1Data> eth1CachedBlocks = this.eth1DataProvider.getEth1CachedBlocks();
+    Collection<Eth1Data> eth1CachedBlocks = this.eth1DataProvider.getEth1CachedBlocks();
     if (eth1CachedBlocks.isEmpty()) {
       request.respondWithCode(
           SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Eth1 blocks cache is empty"));
