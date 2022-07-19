@@ -127,7 +127,6 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   // connect to a failover event stream only if syncing status call throws
   // an exception and there is a ready failover Beacon Node
-  @SuppressWarnings({"FutureReturnValueIgnored"})
   private void switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
     if (failoverBeaconNodeApis.isEmpty()) {
@@ -136,18 +135,18 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     final HttpUrl currentEndpoint = currentBeaconNodeApi.getEndpoint();
     currentBeaconNodeApi
         .getSyncingStatus()
-        .finish(
-            __ -> findReadyFailover(currentEndpoint).thenAccept(this::switchToFailoverEventStream));
+        .finish(__ -> findReadyFailoverAndSwitch(currentEndpoint));
   }
 
-  private SafeFuture<RemoteValidatorApiChannel> findReadyFailover(final HttpUrl endpointToIgnore) {
+  private void findReadyFailoverAndSwitch(final HttpUrl endpointToIgnore) {
     final List<SafeFuture<RemoteValidatorApiChannel>> failoverReadinessCheck =
         failoverBeaconNodeApis.stream()
             .filter(api -> !api.getEndpoint().equals(endpointToIgnore))
             .map(this::checkBeaconNodeIsReadyForEventStreaming)
             .collect(Collectors.toList());
-    return SafeFuture.firstSuccess(failoverReadinessCheck)
-        .catchAndRethrow(
+    SafeFuture.firstSuccess(failoverReadinessCheck)
+        .thenAccept(this::switchToFailoverEventStream)
+        .finish(
             __ ->
                 LOG.warn(
                     "There are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover"));
