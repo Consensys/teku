@@ -1196,4 +1196,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public SyncService getSyncService() {
     return syncService;
   }
+
+  @Override
+  public ForkChoice getForkChoice() {
+    return forkChoice;
+  }
 }
