@@ -50,55 +50,53 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-registration-default-enabled"},
+      names = {"--validators-builder-registration-default-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enable validators registration to builder infrastructure.",
       arity = "0..1",
-      fallbackValue = "true",
-      hidden = true)
-  private boolean validatorsRegistrationDefaultEnabled =
-      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_DEFAULT_ENABLED;
+      fallbackValue = "true")
+  private boolean builderRegistrationDefaultEnabled =
+      ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-registration-default-gas-limit"},
+      names = {"--Xvalidators-builder-registration-default-gas-limit"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Change the default gas limit used for the validators registration.",
       arity = "1",
       hidden = true,
       converter = UInt64Converter.class)
-  private UInt64 registrationDefaultGasLimit =
-      ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_GAS_LIMIT;
+  private UInt64 builderRegistrationDefaultGasLimit =
+      ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
 
   @Option(
-      names = {"--Xvalidators-registration-sending-batch-size"},
+      names = {"--Xvalidators-builder-registration-sending-batch-size"},
       paramLabel = "<INTEGER>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Change the default batch size for sending validator registrations to the Beacon Node.",
       arity = "1",
       hidden = true)
-  private int registrationSendingBatchSize =
+  private int builderRegistrationSendingBatchSize =
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
-      names = {"--Xvalidators-registration-timestamp-override"},
+      names = {"--validators-builder-registration-timestamp-override"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Set a constant timestamp in Unix format to be used in validator registrations against builder infrastructure.",
       arity = "1",
       hidden = true)
-  private UInt64 validatorsRegistrationTimestampOverride = null;
+  private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-blinded-blocks-enabled"},
+      names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Use blinded blocks when in block production duties",
       fallbackValue = "true",
-      hidden = true,
       arity = "0..1")
   private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
@@ -109,10 +107,10 @@ public class ValidatorProposerOptions {
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
-                .validatorsRegistrationDefaultEnabled(validatorsRegistrationDefaultEnabled)
+                .builderRegistrationDefaultEnabled(builderRegistrationDefaultEnabled)
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
-                .validatorsRegistrationDefaultGasLimit(registrationDefaultGasLimit)
-                .validatorsRegistrationSendingBatchSize(registrationSendingBatchSize)
-                .validatorsRegistrationTimestampOverride(validatorsRegistrationTimestampOverride));
+                .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
+                .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
+                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride));
   }
 }

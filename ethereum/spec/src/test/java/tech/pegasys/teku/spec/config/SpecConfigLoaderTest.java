@@ -63,8 +63,7 @@ public class SpecConfigLoaderTest {
   @ValueSource(strings = {"prater", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name);
-    final String expectedName = name.equals("prater") ? "goerli" : name;
-    assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(expectedName);
+    assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
   }
 
   @Test

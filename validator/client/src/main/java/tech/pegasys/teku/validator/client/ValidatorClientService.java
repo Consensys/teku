@@ -187,7 +187,7 @@ public class ValidatorClientService extends Service {
                   validatorConfig,
                   beaconProposerPreparer.get(),
                   new ValidatorRegistrationBatchSender(
-                      validatorConfig.getValidatorsRegistrationSendingBatchSize(),
+                      validatorConfig.getBuilderRegistrationSendingBatchSize(),
                       validatorApiChannel)));
     }
     if (validatorApiConfig.isRestApiEnabled()) {
