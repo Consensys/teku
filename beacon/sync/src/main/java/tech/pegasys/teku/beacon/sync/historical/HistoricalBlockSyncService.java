@@ -145,10 +145,7 @@ public class HistoricalBlockSyncService extends Service {
     LOG.debug("Stop {}", getClass().getSimpleName());
     syncStateProvider.unsubscribeFromSyncStateChanges(syncStateSubscription.get());
     badPeerCache.clear();
-    reconstructHistoricalStatesService
-        .doStop()
-        .finish(error -> LOG.error(error.getMessage())); // fixme log error not working
-    return SafeFuture.COMPLETE;
+    return reconstructHistoricalStatesService.stop();
   }
 
   private SafeFuture<Void> initialize() {
@@ -182,9 +179,12 @@ public class HistoricalBlockSyncService extends Service {
               if (isSyncDone()) {
                 stop().ifExceptionGetsHereRaiseABug();
 
+                // fixme only start service if reconstructing historical states is enabled
                 reconstructHistoricalStatesService
-                    .doStart()
-                    .finish(error -> LOG.error(error.getMessage())); // fixme log error not working
+                    .start()
+                    .finish(
+                        error ->
+                            LOG.error(error.getMessage())); // fixme make sure log goes to console
               }
             });
   }
