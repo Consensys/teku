@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 
@@ -21,15 +20,11 @@ public class ReconstructHistoricalStatesService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.failedFuture(
-        new NotImplementedException(
-            "ReconstructHistoricalStatesService start has not been implemented"));
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.failedFuture(
-        new NotImplementedException(
-            "ReconstructHistoricalStatesService stop has not been implemented"));
+    return SafeFuture.COMPLETE;
   }
 }
