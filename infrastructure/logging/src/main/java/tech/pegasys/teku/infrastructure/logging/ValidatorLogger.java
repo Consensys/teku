@@ -43,20 +43,20 @@ public class ValidatorLogger {
   public void connectedToBeaconNodeEventStream() {
     log.info(
         ColorConsolePrinter.print(
-            String.format("%sSuccessfully connected to Beacon Node event stream", PREFIX),
+            String.format("%sSuccessfully connected to Beacon Node event stream.", PREFIX),
             Color.GREEN));
   }
 
   public void beaconNodeEventStreamClosed() {
     log.info(
         ColorConsolePrinter.print(
-            String.format("%sBeacon Node event stream closed", PREFIX), Color.GREEN));
+            String.format("%sBeacon Node event stream closed.", PREFIX), Color.GREEN));
   }
 
   public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
-            String.format("%sError while connecting to Beacon Node event stream", PREFIX),
+            String.format("%sError while connecting to Beacon Node event stream.", PREFIX),
             Color.RED),
         t);
   }

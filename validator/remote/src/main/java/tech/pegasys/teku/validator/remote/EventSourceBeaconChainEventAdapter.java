@@ -25,10 +25,8 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -117,21 +115,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
               return Action.PROCEED;
             })
         .client(okHttpClient)
-        .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
         .build();
-  }
-
-  private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {
-    if (!eventSourceUrl.username().isEmpty()) {
-      return request
-          .newBuilder()
-          .header(
-              "Authorization",
-              Credentials.basic(eventSourceUrl.encodedUsername(), eventSourceUrl.encodedPassword()))
-          .build();
-    } else {
-      return request;
-    }
   }
 
   private HttpUrl createHeadEventSourceUrl(final HttpUrl endpoint) {
@@ -141,8 +125,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // connect to a failover event stream only if syncing status call throws
-  // an exception and there is a ready failover Beacon Node
+  // connect to a failover event stream only if there are failovers configured, the syncing status
+  // call throws an exception and there is a ready failover Beacon Node
   private void switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
     if (failoverBeaconNodeApis.isEmpty()) {
@@ -168,8 +152,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                     "There are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover"));
   }
 
-  // because switchToFailoverEventStreamIfNeeded is async process, there could be
-  // multiple calls to this method since connectionErrorHandler is synchronous
+  // switchToFailoverEventStreamIfNeeded is async, so there could be multiple quick calls to
+  // this method for the same failover endpoint because of the ConnectionErrorHandler callback
   private synchronized void switchToFailoverEventStream(
       final RemoteValidatorApiChannel beaconNodeApi) {
     if (alreadyFailovered(beaconNodeApi)) {
