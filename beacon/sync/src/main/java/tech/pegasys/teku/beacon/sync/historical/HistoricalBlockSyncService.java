@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import java.time.Duration;
@@ -187,9 +189,7 @@ public class HistoricalBlockSyncService extends Service {
                 if (reconstructHistoricStatesEnabled) {
                   reconstructHistoricalStatesService
                       .start()
-                      .finish(
-                          error ->
-                              LOG.error(error.getMessage())); // fixme make sure log goes to console
+                      .finish(STATUS_LOG::reconstructHistoricalStatesServiceDown);
                 }
               }
             });
