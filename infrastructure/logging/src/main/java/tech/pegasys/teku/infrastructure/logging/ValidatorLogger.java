@@ -47,12 +47,6 @@ public class ValidatorLogger {
             Color.GREEN));
   }
 
-  public void beaconNodeEventStreamClosed() {
-    log.info(
-        ColorConsolePrinter.print(
-            String.format("%sBeacon Node event stream closed.", PREFIX), Color.GREEN));
-  }
-
   public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
@@ -65,7 +59,7 @@ public class ValidatorLogger {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sSwitching to failover Beacon Node %s for event streaming",
+                "%sSwitching to failover Beacon Node %s for event streaming.",
                 PREFIX, failoverEndpoint),
             Color.GREEN));
   }
