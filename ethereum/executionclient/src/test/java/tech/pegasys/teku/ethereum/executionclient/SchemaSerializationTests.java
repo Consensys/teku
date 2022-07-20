@@ -165,6 +165,60 @@ public class SchemaSerializationTests {
         });
   }
 
+  @TestTemplate
+  void shouldThrowDeserializingUIntQuantityWithTrailingZeros() {
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("\"0x00123\"");
+          UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("\"0x00123\"");
+          UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+  }
+
+  @TestTemplate
+  void shouldThrowDeserializingUInt0xQuantity() {
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("\"0x\"");
+          UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          JsonParser parser = prepareDeserializationContext("\"0x\"");
+          UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
+          deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+        });
+  }
+
+  @TestTemplate
+  void shouldDeserializingUInt256Quantity0x0() throws IOException {
+    JsonParser parser = prepareDeserializationContext("\"0x0\"");
+    UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
+    deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+  }
+
+  @TestTemplate
+  void shouldDeserializingUInt64Quantity0x0() throws IOException {
+    JsonParser parser = prepareDeserializationContext("\"0x0\"");
+    UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
+    deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+  }
+
   private JsonParser prepareDeserializationContext(String serializedValue) throws IOException {
     String json = String.format("{\"value\":%s}", serializedValue);
     JsonParser parser = objectMapper.getFactory().createParser(json);

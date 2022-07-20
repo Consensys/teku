@@ -67,7 +67,7 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
       "1",
       "--ee-endpoint",
       "http://example.com:1234/path/",
-      "--Xeb-endpoint",
+      "--builder-endpoint",
       "http://example2.com:1234/path2/"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);

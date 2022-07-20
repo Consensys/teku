@@ -75,6 +75,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 @SuppressWarnings("unchecked")
@@ -114,6 +115,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
+  protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
 
   private StorageSystem storageSystem;
 
