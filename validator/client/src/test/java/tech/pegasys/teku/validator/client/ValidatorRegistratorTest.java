@@ -98,10 +98,8 @@ class ValidatorRegistratorTest {
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
 
-    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(any()))
-        .thenReturn(Optional.of(true));
-    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(any()))
-        .thenReturn(Optional.of(gasLimit));
+    when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
+    when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
 
     when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
     when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
@@ -156,7 +154,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersValidators_shouldRegisterWithTimestampOverride() {
-    when(validatorConfig.getValidatorsRegistrationTimestampOverride())
+    when(validatorConfig.getBuilderRegistrationTimestampOverride())
         .thenReturn(Optional.of(UInt64.valueOf(140)));
     setActiveValidators(validator1);
 
@@ -201,7 +199,7 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.of(otherEth1Address));
 
     // gas limit changed for validator3
-    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator3.getPublicKey()))
+    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.of(otherGasLimit));
 
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
@@ -276,13 +274,13 @@ class ValidatorRegistratorTest {
     setActiveValidators(validator1, validator2, validator3);
 
     // validator registration is disabled for validator2
-    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(validator2.getPublicKey()))
+    when(proposerConfig.isBuilderEnabledForPubKey(validator2.getPublicKey()))
         .thenReturn(Optional.of(false));
     // validator registration enabled flag is not present for validator 3, so will fall back to
     // false
-    when(proposerConfig.isValidatorRegistrationEnabledForPubKey(validator3.getPublicKey()))
+    when(proposerConfig.isBuilderEnabledForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
-    when(validatorConfig.isValidatorsRegistrationDefaultEnabled()).thenReturn(false);
+    when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(false);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
@@ -298,12 +296,12 @@ class ValidatorRegistratorTest {
     final UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
 
     // validator2 will have custom gas limit
-    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator2.getPublicKey()))
+    when(proposerConfig.getBuilderGasLimitForPubKey(validator2.getPublicKey()))
         .thenReturn(Optional.of(validator2GasLimit));
     // validator3 gas limit will fall back to a default
-    when(proposerConfig.getValidatorRegistrationGasLimitForPubKey(validator3.getPublicKey()))
+    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
-    when(validatorConfig.getValidatorsRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
+    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
@@ -380,7 +378,7 @@ class ValidatorRegistratorTest {
 
     final UInt64 expectedTimestamp =
         validatorConfig
-            .getValidatorsRegistrationTimestampOverride()
+            .getBuilderRegistrationTimestampOverride()
             .orElse(stubTimeProvider.getTimeInSeconds());
 
     assertThat(validatorRegistrations)

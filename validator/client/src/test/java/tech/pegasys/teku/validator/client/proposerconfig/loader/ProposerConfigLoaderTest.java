@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
+import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 
 public class ProposerConfigLoaderTest {
@@ -43,15 +44,22 @@ public class ProposerConfigLoaderTest {
   }
 
   @Test
+  void shouldLoadNullFeeRecipient() {
+    final URL resource = Resources.getResource("proposerConfigValid3.json");
+
+    validateContent3(loader.getProposerConfig(resource));
+  }
+
+  @Test
   void shouldLoadConfigWithOnlyDefaultValidatorRegistrationEnabled() {
-    final URL resource = Resources.getResource("proposerConfigWithRegistrationValid1.json");
+    final URL resource = Resources.getResource("proposerConfigWithBuilderValid1.json");
 
     validateContentWithValidatorRegistration1(loader.getProposerConfig(resource));
   }
 
   @Test
   void shouldLoadConfigWithDefaultValidatorRegistrationDisabled() {
-    final URL resource = Resources.getResource("proposerConfigWithRegistrationValid2.json");
+    final URL resource = Resources.getResource("proposerConfigWithBuilderValid2.json");
 
     validateContentWithValidatorRegistration2(loader.getProposerConfig(resource));
   }
@@ -64,7 +72,7 @@ public class ProposerConfigLoaderTest {
   }
 
   @Test
-  void shouldNotLoadNullFeeRecipient() {
+  void shouldNodLoadNullFeeRecipientInDefaultConfig() {
     final URL resource = Resources.getResource("proposerConfigInvalid2.json");
 
     assertThatThrownBy(() -> loader.getProposerConfig(resource));
@@ -86,7 +94,7 @@ public class ProposerConfigLoaderTest {
 
   @Test
   void shouldNotLoadMissingEnabledInRegistration() {
-    final URL resource = Resources.getResource("proposerConfigWithRegistrationInvalid1.json");
+    final URL resource = Resources.getResource("proposerConfigWithBuilderInvalid1.json");
 
     assertThatThrownBy(() -> loader.getProposerConfig(resource));
   }
@@ -104,11 +112,13 @@ public class ProposerConfigLoaderTest {
             "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a");
     assertThat(theConfig).isPresent();
     assertThat(theConfig.get().getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3")));
 
     Config defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig.getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
   }
 
   private void validateContent2(ProposerConfig config) {
@@ -119,7 +129,21 @@ public class ProposerConfigLoaderTest {
 
     Config defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig.getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
+  }
+
+  private void validateContent3(ProposerConfig config) {
+    Optional<Config> theConfig =
+        config.getConfigForPubKey(
+            "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a");
+    assertThat(theConfig).isPresent();
+    assertThat(theConfig.get().getFeeRecipient()).isEmpty();
+
+    Config defaultConfig = config.getDefaultConfig();
+    assertThat(defaultConfig.getFeeRecipient())
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
   }
 
   private void validateContentWithValidatorRegistration1(ProposerConfig config) {
@@ -130,10 +154,11 @@ public class ProposerConfigLoaderTest {
 
     Config defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig.getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
 
-    assertThat(defaultConfig.getValidatorRegistration()).isPresent();
-    assertThat(defaultConfig.getValidatorRegistration().get().isEnabled()).isTrue();
+    assertThat(defaultConfig.getBuilder()).isPresent();
+    assertThat(defaultConfig.getBuilder().get().isEnabled()).isTrue();
   }
 
   private void validateContentWithValidatorRegistration2(ProposerConfig config) {
@@ -142,21 +167,21 @@ public class ProposerConfigLoaderTest {
             "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a");
     assertThat(theConfig).isPresent();
     assertThat(theConfig.get().getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3")));
 
-    assertThat(theConfig.get().getValidatorRegistration()).isPresent();
-    ProposerConfig.ValidatorRegistration validatorRegistration =
-        theConfig.get().getValidatorRegistration().get();
-    assertThat(validatorRegistration.isEnabled()).isTrue();
-    assertThat(validatorRegistration.getGasLimit().orElseThrow())
-        .isEqualTo(UInt64.valueOf(12345654321L));
+    assertThat(theConfig.get().getBuilder()).isPresent();
+    BuilderConfig builder = theConfig.get().getBuilder().get();
+    assertThat(builder.isEnabled()).isTrue();
+    assertThat(builder.getGasLimit().orElseThrow()).isEqualTo(UInt64.valueOf(12345654321L));
 
     Config defaultConfig = config.getDefaultConfig();
     assertThat(defaultConfig.getFeeRecipient())
-        .isEqualTo(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A"));
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
 
-    assertThat(defaultConfig.getValidatorRegistration()).isPresent();
-    assertThat(defaultConfig.getValidatorRegistration().get().isEnabled()).isFalse();
-    assertThat(defaultConfig.getValidatorRegistration().get().getGasLimit()).isEmpty();
+    assertThat(defaultConfig.getBuilder()).isPresent();
+    assertThat(defaultConfig.getBuilder().get().isEnabled()).isFalse();
+    assertThat(defaultConfig.getBuilder().get().getGasLimit()).isEmpty();
   }
 }
