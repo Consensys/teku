@@ -34,7 +34,6 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.response.v1.teku.GetEth1DataCacheResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -92,8 +91,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     Collection<Eth1Data> eth1CachedBlocks = this.eth1DataProvider.getEth1CachedBlocks();
     if (eth1CachedBlocks.isEmpty()) {
-      request.respondWithCode(
-          SC_NOT_FOUND, new HttpErrorResponse(SC_NOT_FOUND, "Eth1 blocks cache is empty"));
+      request.respondError(SC_NOT_FOUND, "Eth1 blocks cache is empty");
     } else {
       request.respondOk(eth1CachedBlocks);
     }

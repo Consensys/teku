@@ -153,14 +153,6 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public void respondWithCode(int statusCode, Object response) throws JsonProcessingException {
-    assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
-    this.responseCode = statusCode;
-    this.responseObject = response;
-    verifyResponseMatchesMetadata();
-  }
-
-  @Override
   public void respondWithUndocumentedCode(final int statusCode) {
     assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
     this.responseCode = statusCode;
