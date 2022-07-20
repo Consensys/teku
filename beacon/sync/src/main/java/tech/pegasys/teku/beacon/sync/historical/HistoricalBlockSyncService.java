@@ -68,6 +68,7 @@ public class HistoricalBlockSyncService extends Service {
   final Set<NodeId> badPeerCache;
 
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService;
+  private final boolean reconstructHistoricStatesEnabled;
 
   @VisibleForTesting
   HistoricalBlockSyncService(
@@ -80,7 +81,8 @@ public class HistoricalBlockSyncService extends Service {
       final SyncStateProvider syncStateProvider,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final UInt64 batchSize,
-      final ReconstructHistoricalStatesService reconstructHistoricalStatesService) {
+      final ReconstructHistoricalStatesService reconstructHistoricalStatesService,
+      boolean reconstructHistoricStatesEnabled) {
     this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
 
@@ -91,6 +93,7 @@ public class HistoricalBlockSyncService extends Service {
     this.batchSize = batchSize;
     this.signatureVerifier = signatureVerifier;
     this.reconstructHistoricalStatesService = reconstructHistoricalStatesService;
+    this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -117,7 +120,8 @@ public class HistoricalBlockSyncService extends Service {
       final P2PNetwork<Eth2Peer> network,
       final CombinedChainDataClient chainData,
       final AsyncBLSSignatureVerifier signatureVerifier,
-      final SyncStateProvider syncStateProvider) {
+      final SyncStateProvider syncStateProvider,
+      final boolean reconstructHistoricStatesEnabled) {
     ReconstructHistoricalStatesService reconstructHistoricalStatesService =
         new ReconstructHistoricalStatesService();
 
@@ -131,7 +135,8 @@ public class HistoricalBlockSyncService extends Service {
         syncStateProvider,
         signatureVerifier,
         BATCH_SIZE,
-        reconstructHistoricalStatesService);
+        reconstructHistoricalStatesService,
+        reconstructHistoricStatesEnabled);
   }
 
   @Override
@@ -179,12 +184,13 @@ public class HistoricalBlockSyncService extends Service {
               if (isSyncDone()) {
                 stop().ifExceptionGetsHereRaiseABug();
 
-                // fixme only start service if reconstructing historical states is enabled
-                reconstructHistoricalStatesService
-                    .start()
-                    .finish(
-                        error ->
-                            LOG.error(error.getMessage())); // fixme make sure log goes to console
+                if (reconstructHistoricStatesEnabled) {
+                  reconstructHistoricalStatesService
+                      .start()
+                      .finish(
+                          error ->
+                              LOG.error(error.getMessage())); // fixme make sure log goes to console
+                }
               }
             });
   }
