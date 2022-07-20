@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import com.google.common.base.Throwables;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -36,7 +37,6 @@ public class AttestationGossipManager implements GossipManager {
   private final Counter attestationPublishSuccessCounter;
   private final Counter attestationPublishFailureCounter;
 
-  private UInt64 lastErroredCommitteeIndex;
   private UInt64 lastErroredSlot;
   private Throwable lastRootCause;
 
@@ -77,29 +77,28 @@ public class AttestationGossipManager implements GossipManager {
   synchronized void logWithSuppression(final Throwable error, final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
     final Throwable rootCause = Throwables.getRootCause(error);
-    if (attestationData.getSlot().equals(lastErroredSlot)
-        && attestationData.getIndex().equals(lastErroredCommitteeIndex)
-        && rootCause.equals(lastRootCause)) {
-      return;
-    }
+
+    final boolean suppress =
+        attestationData.getSlot().equals(lastErroredSlot)
+            && rootCause.getClass().equals(lastRootCause.getClass());
+
     lastErroredSlot = attestationData.getSlot();
-    lastErroredCommitteeIndex = attestationData.getIndex();
     lastRootCause = rootCause;
+
     if (lastRootCause instanceof MessageAlreadySeenException) {
       LOG.debug(
-          "Failed to publish attestation(s) for slot {} and committee index {} because the message has already been seen",
-          lastErroredSlot,
-          lastErroredCommitteeIndex);
+          "Failed to publish attestation(s) for slot {} because the message has already been seen",
+          lastErroredSlot);
     } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
-      LOG.warn(
-          "Failed to publish attestations(s) for slot {} and committee index {} because no peers were available on the required gossip topic",
-          lastErroredSlot,
-          lastErroredCommitteeIndex);
+      LOG.log(
+          suppress ? Level.DEBUG : Level.WARN,
+          "Failed to publish attestations(s) for slot {} because no peers were available on the required gossip topic",
+          lastErroredSlot);
     } else {
-      LOG.error(
-          "Failed to publish attestation(s) for slot {} and committee index {}",
+      LOG.log(
+          suppress ? Level.DEBUG : Level.ERROR,
+          "Failed to publish attestation(s) for slot {}",
           lastErroredSlot,
-          lastErroredCommitteeIndex,
           error);
     }
   }
