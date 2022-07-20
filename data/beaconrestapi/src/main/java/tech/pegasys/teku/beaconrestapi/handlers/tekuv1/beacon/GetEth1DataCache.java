@@ -58,7 +58,7 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   public GetEth1DataCache(Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getTekuV1BeaconPoolEth1Cache")
+            .operationId("getTekuV1BeaconPoolEth1cache")
             .summary("Get cached eth1 blocks")
             .description(
                 "Get all of the eth1 blocks currently cached by the beacon node, that could be considered for inclusion during block production.")

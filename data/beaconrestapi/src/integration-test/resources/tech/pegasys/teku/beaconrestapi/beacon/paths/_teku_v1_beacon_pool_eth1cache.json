@@ -3,8 +3,8 @@
     "tags": [
       "Teku"
     ],
-    "summary": "Get all cached Eth1 blocks",
-    "description": "Get all cached Eth1 blocks.",
+    "summary": "Get cached eth1 blocks",
+    "description": "Get all of the eth1 blocks currently cached by the beacon node, that could be considered for inclusion during block production.",
     "operationId": "getTekuV1BeaconPoolEth1cache",
     "responses": {
       "200": {
