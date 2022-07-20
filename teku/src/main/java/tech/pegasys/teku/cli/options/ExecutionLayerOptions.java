@@ -50,7 +50,7 @@ public class ExecutionLayerOptions {
   @Option(
       names = {"--builder-endpoint"},
       paramLabel = "<NETWORK>",
-      description = "URL for an external Execution Builder node (optional).",
+      description = "URL for an external Builder node (optional).",
       arity = "1")
   private String executionBuilderEndpoint = null;
 
