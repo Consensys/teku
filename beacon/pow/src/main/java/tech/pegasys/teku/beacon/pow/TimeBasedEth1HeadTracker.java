@@ -41,7 +41,7 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
 
-  private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
+  private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.createWithReplay(true);
 
   private boolean searchForwards = false;
   private UInt64 nextAdvanceTimeInSeconds = UInt64.ZERO;

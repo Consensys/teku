@@ -13,16 +13,10 @@
 
 package tech.pegasys.teku.ethereum.pow.api;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 
-public interface Eth1EventsChannel extends VoidReturningChannelInterface {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
-
-  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
-
-  default void onEth1Block(Bytes32 blockHash, UInt64 blockTimestamp) {}
-
-  default void onInitialDepositTreeSnapshot(final DepositTreeSnapshot depositTreeSnapshot) {}
+public interface Eth1SnapshotLoaderChannel extends ChannelInterface {
+  SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot();
 }

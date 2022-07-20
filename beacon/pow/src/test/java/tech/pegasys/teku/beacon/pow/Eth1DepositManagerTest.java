@@ -32,7 +32,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.beacon.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
+import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
@@ -41,7 +43,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 
 class Eth1DepositManagerTest {
 
@@ -57,6 +58,8 @@ class Eth1DepositManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
       mock(ValidatingEth1EventsPublisher.class);
+  private final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel =
+      mock(Eth1SnapshotLoaderChannel.class);
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
   private final DepositProcessingController depositProcessingController =
@@ -81,6 +84,7 @@ class Eth1DepositManagerTest {
           asyncRunner,
           eth1EventsChannel,
           eth1DepositStorageChannel,
+          eth1SnapshotLoaderChannel,
           depositProcessingController,
           minimumGenesisTimeBlockFinder,
           Optional.empty(),

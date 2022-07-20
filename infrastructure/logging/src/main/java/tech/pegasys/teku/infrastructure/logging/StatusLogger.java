@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -33,6 +34,8 @@ public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
+
+  private static final int ROOTS_LIMIT = 6;
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
@@ -377,6 +380,30 @@ public class StatusLogger {
   public void posActivated(final String pandas) {
     log.info(print("Merge Completed", Color.GREEN));
     log.info(pandas);
+  }
+
+  public void loadingDepositSnapshot(final String snapshotResource) {
+    log.info("Loading deposit tree snapshot from {}", snapshotResource);
+  }
+
+  public void loadedDepositSnapshotResource(
+      final List<Bytes32> finalized, final long deposits, final Bytes32 executionBlockHash) {
+    log.info(
+        "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash. Finalized: {}.",
+        deposits,
+        executionBlockHash,
+        formatRoots(finalized));
+  }
+
+  private String formatRoots(final List<Bytes32> roots) {
+    if (roots.isEmpty()) {
+      return "";
+    }
+    final String suffix = roots.size() > ROOTS_LIMIT ? "… (" + roots.size() + " total)" : "";
+    return roots.stream()
+        .limit(ROOTS_LIMIT)
+        .map(root -> root.slice(0, 5).toHexString())
+        .collect(Collectors.joining(", ", "", suffix));
   }
 
   private void logWithColorIfLevelGreaterThanInfo(

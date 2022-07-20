@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.subscribers;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -49,12 +50,22 @@ public class Subscribers<T> {
 
   private final boolean suppressCallbackExceptions;
 
-  private Subscribers(final boolean suppressCallbackExceptions) {
+  private final boolean replayLastActionOnSubscription;
+
+  private Optional<Consumer<T>> lastAction = Optional.empty();
+
+  private Subscribers(
+      final boolean suppressCallbackExceptions, final boolean replayLastActionOnSubscription) {
     this.suppressCallbackExceptions = suppressCallbackExceptions;
+    this.replayLastActionOnSubscription = replayLastActionOnSubscription;
   }
 
   public static <T> Subscribers<T> create(final boolean suppressCallbackExceptions) {
-    return new Subscribers<>(suppressCallbackExceptions);
+    return new Subscribers<>(suppressCallbackExceptions, false);
+  }
+
+  public static <T> Subscribers<T> createWithReplay(final boolean suppressCallbackExceptions) {
+    return new Subscribers<>(suppressCallbackExceptions, true);
   }
 
   /**
@@ -65,6 +76,9 @@ public class Subscribers<T> {
    */
   public long subscribe(final T subscriber) {
     final long id = subscriberId.getAndIncrement();
+    if (replayLastActionOnSubscription) {
+      lastAction.ifPresent(action -> runOnSubscriber(action, subscriber));
+    }
     subscribers.put(id, subscriber);
     return id;
   }
@@ -90,20 +104,22 @@ public class Subscribers<T> {
    * @param action the action to perform for each subscriber
    */
   public void forEach(final Consumer<T> action) {
-    subscribers
-        .values()
-        .forEach(
-            subscriber -> {
-              try {
-                action.accept(subscriber);
-              } catch (Throwable throwable) {
-                if (suppressCallbackExceptions) {
-                  LOG.error("Error in callback: ", throwable);
-                } else {
-                  throw throwable;
-                }
-              }
-            });
+    if (replayLastActionOnSubscription) {
+      this.lastAction = Optional.of(action);
+    }
+    subscribers.values().forEach(subscriber -> runOnSubscriber(action, subscriber));
+  }
+
+  private void runOnSubscriber(final Consumer<T> action, final T subscriber) {
+    try {
+      action.accept(subscriber);
+    } catch (Throwable throwable) {
+      if (suppressCallbackExceptions) {
+        LOG.error("Error in callback: ", throwable);
+      } else {
+        throw throwable;
+      }
+    }
   }
 
   /**
