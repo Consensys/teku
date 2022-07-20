@@ -58,9 +58,10 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   public GetEth1DataCache(Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getTekuV1BeaconPoolEth1cache")
-            .summary("Get all cached Eth1 blocks")
-            .description("Get all cached Eth1 blocks.")
+            .operationId("getTekuV1BeaconPoolEth1Cache")
+            .summary("Get cached eth1 blocks")
+            .description(
+                "Get all of the eth1 blocks currently cached by the beacon node, that could be considered for inclusion during block production.")
             .tags(TAG_TEKU)
             .response(SC_OK, "OK", ETH1DATA_CACHE_RESPONSE_TYPE)
             .withNotFoundResponse()
@@ -71,8 +72,9 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get all cached Eth1 blocks",
-      description = "Get all cached Eth1 blocks.",
+      summary = "Get cached eth1 blocks",
+      description =
+          "Get all of the eth1 blocks currently cached by the beacon node, that could be considered for inclusion during block production.",
       tags = {TAG_TEKU},
       responses = {
         @OpenApiResponse(
