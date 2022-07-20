@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
@@ -102,7 +103,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private Boolean reconstructHistoricStates =
-      StorageConfiguration.DEFAULT_RECONSTRUCT_HISTORIC_STATES;
+      SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
@@ -123,8 +124,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
-                .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
-                .reconstructHistoricStates(reconstructHistoricStates));
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
+    builder.sync(b -> b.isReconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
   private DatabaseVersion parseDatabaseVersion() {

@@ -137,13 +137,12 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             GENESIS_STATE,
             "--Xreconstruct-historic-states",
             "true");
-    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
-    assertThat(config.isReconstructHistoricStates()).isEqualTo(true);
+    assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
-                .storageConfiguration(
-                    b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
+                .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
+                .sync(b -> b.isReconstructHistoricStatesEnabled(true))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
@@ -155,8 +154,8 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             () ->
                 createConfigBuilder()
                     .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MINIMAL))
-                    .storageConfiguration(
-                        b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
+                    .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
+                    .sync(b -> b.isReconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Genesis state required when reconstructing historic states");
@@ -173,13 +172,12 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xreconstruct-historic-states",
             "true");
 
-    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
-    assertThat(config.isReconstructHistoricStates()).isEqualTo(true);
+    assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
-                .storageConfiguration(
-                    b -> b.dataStorageMode(ARCHIVE).reconstructHistoricStates(true))
+                .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
+                .sync(b -> b.isReconstructHistoricStatesEnabled(true))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
@@ -191,8 +189,8 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             () ->
                 createConfigBuilder()
                     .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
-                    .storageConfiguration(
-                        b -> b.dataStorageMode(PRUNE).reconstructHistoricStates(true))
+                    .storageConfiguration(b -> b.dataStorageMode(PRUNE))
+                    .sync(b -> b.isReconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Cannot reconstruct historic states when using prune data storage mode");
