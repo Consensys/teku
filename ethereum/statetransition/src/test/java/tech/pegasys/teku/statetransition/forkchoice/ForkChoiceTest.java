@@ -565,7 +565,7 @@ class ForkChoiceTest {
     importBlockWithError(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
 
-    assertHeadIsFullyValidated(maybeValidBlock);
+    assertHeadIsOptimistic(maybeValidBlock);
     assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
         .isEqualTo(maybeValidBlock.getRoot());
   }
@@ -780,8 +780,8 @@ class ForkChoiceTest {
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
     assertThat(lastNotifiedState.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
 
-    // we have now no optimistic head
-    assertHeadIsFullyValidated(blockAndState);
+    // New head is optimistic because latestValidHash might still point to an optimistic block
+    assertHeadIsOptimistic(blockAndState);
   }
 
   private void assertHeadIsOptimistic(final SignedBlockAndState blockAndState) {
@@ -790,14 +790,6 @@ class ForkChoiceTest {
     assertThat(optimisticHead.getRoot()).isEqualTo(blockAndState.getRoot());
     assertThat(optimisticHead.isOptimistic()).isTrue();
     assertThat(recentChainData.isChainHeadOptimistic()).isTrue();
-  }
-
-  private void assertHeadIsFullyValidated(final SignedBlockAndState blockAndState) {
-    assertThat(recentChainData.isChainHeadOptimistic()).isFalse();
-    assertThat(recentChainData.getChainHead().orElseThrow().getSlot())
-        .isEqualTo(blockAndState.getSlot());
-    assertThat(recentChainData.getChainHead().orElseThrow().getRoot())
-        .isEqualTo(blockAndState.getRoot());
   }
 
   private boolean isFullyValidated(final Bytes32 root) {
