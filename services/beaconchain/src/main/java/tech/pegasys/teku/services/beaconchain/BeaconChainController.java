@@ -97,7 +97,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager;
+import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -897,29 +897,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? Optional.of(BlockImportMetrics.create(metricsSystem))
             : Optional.empty();
 
+    blockManager =
+        new BlockManager(
+            recentChainData,
+            blockImporter,
+            pendingBlocks,
+            futureBlocks,
+            blockValidator,
+            timeProvider,
+            EVENT_LOG,
+            importMetrics);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      blockManager =
-          new ReexecutingExecutionPayloadBlockManager(
-              recentChainData,
-              blockImporter,
-              pendingBlocks,
-              futureBlocks,
-              blockValidator,
-              timeProvider,
-              EVENT_LOG,
-              beaconAsyncRunner,
-              importMetrics);
-    } else {
-      blockManager =
-          new BlockManager(
-              recentChainData,
-              blockImporter,
-              pendingBlocks,
-              futureBlocks,
-              blockValidator,
-              timeProvider,
-              EVENT_LOG,
-              importMetrics);
+      final FailedExecutionPool failedExecutionPool =
+          new FailedExecutionPool(blockManager, beaconAsyncRunner);
+      blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

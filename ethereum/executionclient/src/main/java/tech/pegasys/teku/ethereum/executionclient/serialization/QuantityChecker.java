@@ -13,18 +13,20 @@
 
 package tech.pegasys.teku.ethereum.executionclient.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import org.apache.tuweni.units.bigints.UInt256;
+import static com.google.common.base.Preconditions.checkArgument;
 
-public class UInt256AsHexDeserializer extends JsonDeserializer<UInt256> {
+public class QuantityChecker {
 
-  @Override
-  public UInt256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    final String hexValue = p.getValueAsString();
-    QuantityChecker.check(hexValue);
-    return UInt256.fromHexString(hexValue);
+  /**
+   * Applies additional checks on top of the Bytes.fromHexStringLenient to match the QUANTITY
+   * pattern ^0x(?:0|(?:[a-fA-F1-9][a-fA-F0-9]*))$
+   */
+  public static void check(final String hexQuantity) {
+    checkArgument(
+        hexQuantity.startsWith("0x") && hexQuantity.length() >= 3,
+        "Hex QUANTITY must start with 0x and can't be empty");
+    checkArgument(
+        hexQuantity.charAt(2) != '0' || hexQuantity.length() == 3,
+        "Hex QUANTITY must not have trailing zeros");
   }
 }

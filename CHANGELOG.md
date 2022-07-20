@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Added Bellatrix fork epoch and terminal total difficulty to schedule the Prater/Görli merge 
  - Support `--network=goerli` as an alias for `--network=prater`
  - Added a panda banner to celebrate the merge completing
  - Log a warning instead of a verbose error if node is syncing while performing sync committee duties
@@ -22,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Ensured dependencies are up to date
  - Validator Registration signature integration with external signer
  - Teku-specific Beacon Node API on `/teku/v1/beacon/deposit_snapshot` providing finalized Deposit Tree Snapshot according to the draft EIP-4881
+ - Added support for Builder API
 
 ### Bug Fixes
  - Fix not rendering emoticons correctly in graffiti when running in a Docker container

@@ -74,8 +74,7 @@ public class BatchImporter {
               lastBlockImportResult -> {
                 if (lastBlockImportResult.isSuccessful()) {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
-                } else if (lastBlockImportResult.getFailureReason()
-                    == BlockImportResult.FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION) {
+                } else if (lastBlockImportResult.hasFailedExecutingExecutionPayload()) {
                   return BatchImportResult.SERVICE_OFFLINE;
                 }
                 LOG.debug(
