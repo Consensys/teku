@@ -158,9 +158,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
     if (!isAbleToVerifyEpoch(slot)) {
       LOG.info(
-          "Not performing {} duties for slot {} because it is too far ahead of the current slot {}",
+          "Not performing {} duties for slot {} because epoch {} is too far ahead of the current epoch {}",
           dutyType,
           slot,
+          spec.computeEpochAtSlot(slot),
           getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }
@@ -179,9 +180,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {
     if (!isAbleToVerifyEpoch(slot)) {
       LOG.info(
-          "Not performing {} aggregation duties for slot {} because it is too far ahead of the current slot {}",
+          "Not performing {} aggregation duties for slot {} because epoch {} is too far ahead of the current epoch {}",
           dutyType,
           slot,
+          spec.computeEpochAtSlot(slot),
           getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }

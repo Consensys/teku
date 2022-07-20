@@ -276,7 +276,7 @@ class ProtoArrayTest {
   }
 
   @Test
-  void markNodeInvalid_shouldMarkLastValidBlockAndAncestorsAsValid() {
+  void markNodeInvalid_shouldLeaveLastValidBlockAndAncestorsAsOptimistic() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
@@ -291,8 +291,8 @@ class ProtoArrayTest {
     assertThat(protoArray.contains(block3a)).isFalse();
     assertThat(protoArray.contains(block2a)).isTrue();
     assertThat(protoArray.contains(block1a)).isTrue();
-    assertThat(protoArray.getProtoNode(block1a).map(ProtoNode::isOptimistic)).contains(false);
-    assertThat(protoArray.getProtoNode(block2a).map(ProtoNode::isOptimistic)).contains(false);
+    assertThat(protoArray.getProtoNode(block1a).map(ProtoNode::isOptimistic)).contains(true);
+    assertThat(protoArray.getProtoNode(block2a).map(ProtoNode::isOptimistic)).contains(true);
   }
 
   @Test
