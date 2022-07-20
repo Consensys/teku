@@ -76,10 +76,16 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   long countNonCanonicalSlots();
 
+  long countNonCanonicalBlocks();
+
   @MustBeClosed
   Stream<Bytes> streamExecutionPayloads();
 
   Optional<UInt64> getOptimisticTransitionBlockSlot();
+
+  long countUnblindedFinalizedBlockIndices();
+
+  long countBlindedFinalizedBlockIndices();
 
   interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 

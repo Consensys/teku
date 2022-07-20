@@ -153,6 +153,10 @@ public class V4HotKvStoreDao {
     return db.getRaw(var);
   }
 
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
+    return db.getRaw(column, key);
+  }
+
   @MustBeClosed
   public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {

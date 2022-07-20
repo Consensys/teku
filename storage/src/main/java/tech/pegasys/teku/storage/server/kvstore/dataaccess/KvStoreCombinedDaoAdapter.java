@@ -203,13 +203,18 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  public long countNonCanonicalBlocks() {
+    return finalizedDao.countNonCanonicalBlocks();
+  }
+
+  @Override
   public long countBlindedBlocks() {
     return finalizedDao.countBlindedBlocks();
   }
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
   }
@@ -286,14 +291,47 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  public long countUnblindedFinalizedBlockIndices() {
+    return finalizedDao.countUnblindedFinalizedBlockIndices();
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return finalizedDao.getNonCanonicalBlock(root);
+  }
+
+  @Override
+  public Optional<Bytes> getUnblindedFinalizedBlockRaw(final UInt64 slot) {
+    return finalizedDao.getUnblindedFinalizedBlockRaw(slot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return finalizedDao.streamUnblindedFinalizedBlocksRaw();
   }
 
   @Override
   @MustBeClosed
   public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlockRoots(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
+    return finalizedDao.streamUnblindedFinalizedBlockRoots();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
+    return finalizedDao.streamUnblindedNonCanonicalBlocks();
+  }
+
+  @Override
+  public long countBlindedFinalizedBlockIndices() {
+    return finalizedDao.countBlindedFinalizedBlockIndices();
   }
 
   @Override
@@ -368,6 +406,15 @@ public class KvStoreCombinedDaoAdapter
       return hotDao.getRawVariable(var);
     } else {
       return finalizedDao.getRawVariable(var);
+    }
+  }
+
+  @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    if (hotDao.getColumnMap().containsValue(kvStoreColumn)) {
+      return hotDao.getRaw(kvStoreColumn, key);
+    } else {
+      return finalizedDao.getRaw(kvStoreColumn, key);
     }
   }
 
@@ -512,6 +559,12 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void addBlindedFinalizedBlockRaw(
+        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
+      finalizedUpdater.addBlindedFinalizedBlockRaw(blockBytes, root, slot);
+    }
+
+    @Override
     public void addBlindedBlock(
         final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       finalizedUpdater.addBlindedBlock(block, blockRoot, spec);
@@ -540,6 +593,11 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       finalizedUpdater.deleteUnblindedFinalizedBlock(slot, blockRoot);
+    }
+
+    @Override
+    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteUnblindedNonCanonicalBlockOnly(blockRoot);
     }
 
     @Override

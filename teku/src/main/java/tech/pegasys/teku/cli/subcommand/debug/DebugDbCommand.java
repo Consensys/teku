@@ -208,6 +208,7 @@ public class DebugDbCommand implements Runnable {
         printIfPresent("Hot blocks", stream.count());
       }
       printIfPresent("Finalized blocks", database.countUnblindedFinalizedBlocks());
+      printIfPresent("Finalized Indices", database.countUnblindedFinalizedBlockIndices());
       try (Stream<?> stream = database.streamBlockCheckpoints()) {
         printIfPresent("Checkpoint Epochs", stream.count());
       }
@@ -216,8 +217,10 @@ public class DebugDbCommand implements Runnable {
         createDatabase(beaconNodeDataOptions, true, eth2NetworkOptions)) {
 
       printIfPresent("Blinded blocks", database.countBlindedBlocks());
+      printIfPresent("Blinded indices", database.countBlindedFinalizedBlockIndices());
       printIfPresent("Execution Payloads", database.countExecutionPayloads());
       printIfPresent("Non-canonical Slots", database.countNonCanonicalSlots());
+      printIfPresent("Non-canonical blocks", database.countNonCanonicalBlocks());
 
       return 0;
     }
@@ -225,7 +228,7 @@ public class DebugDbCommand implements Runnable {
 
   private void printIfPresent(final String label, final long count) {
     if (count > 0L) {
-      final String formatString = "%19s: %d%n";
+      final String formatString = "%20s: %d%n";
       System.out.printf(formatString, label, count);
     }
   }

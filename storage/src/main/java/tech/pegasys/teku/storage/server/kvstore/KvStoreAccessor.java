@@ -76,6 +76,8 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   Stream<ColumnEntry<Bytes, Bytes>> streamRaw(KvStoreColumn<?, ?> column);
 
+  <K, V> Optional<Bytes> getRaw(KvStoreColumn<K, V> column, K key);
+
   /**
    * Stream entries from a column between keys from and to fully inclusive.
    *

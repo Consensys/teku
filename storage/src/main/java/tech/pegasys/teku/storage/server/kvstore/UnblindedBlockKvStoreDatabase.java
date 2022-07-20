@@ -139,7 +139,7 @@ public class UnblindedBlockKvStoreDatabase
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return dao.streamFinalizedBlocks(startSlot, endSlot);
+    return dao.streamUnblindedFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
@@ -205,6 +205,16 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   public long countBlindedBlocks() {
     return 0;
+  }
+
+  @Override
+  public long countUnblindedFinalizedBlockIndices() {
+    return dao.countUnblindedFinalizedBlockIndices();
+  }
+
+  @Override
+  public long countBlindedFinalizedBlockIndices() {
+    return dao.countBlindedFinalizedBlockIndices();
   }
 
   @Override

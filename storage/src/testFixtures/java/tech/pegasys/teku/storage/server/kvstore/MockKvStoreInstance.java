@@ -155,6 +155,12 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
+    final Bytes keyBytes = keyToBytes(column, key);
+    return Optional.ofNullable(columnData.get(column).get(keyBytes));
+  }
+
+  @Override
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();

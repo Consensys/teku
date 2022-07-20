@@ -235,6 +235,12 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
+    assertOpen();
+    return Optional.ofNullable(db.get(getColumnKey(column, key))).map(Bytes::wrap);
+  }
+
+  @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final K from, final K to) {

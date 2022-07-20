@@ -37,6 +37,7 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.kvstore.BlindedBlockMigration;
 
 public class NoOpDatabase implements Database {
 
@@ -198,6 +199,26 @@ public class NoOpDatabase implements Database {
 
   @Override
   public long countNonCanonicalSlots() {
+    return 0;
+  }
+
+  @Override
+  public long countNonCanonicalBlocks() {
+    return 0;
+  }
+
+  @Override
+  public Optional<BlindedBlockMigration<?>> getBlindedBlockMigrater() {
+    return Optional.empty();
+  }
+
+  @Override
+  public long countUnblindedFinalizedBlockIndices() {
+    return 0;
+  }
+
+  @Override
+  public long countBlindedFinalizedBlockIndices() {
     return 0;
   }
 

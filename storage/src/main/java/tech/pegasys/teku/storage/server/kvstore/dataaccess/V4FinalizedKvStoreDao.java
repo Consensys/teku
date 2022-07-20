@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -98,6 +100,10 @@ public class V4FinalizedKvStoreDao {
 
   public long countNonCanonicalSlots() {
     return db.size(schema.getColumnNonCanonicalRootsBySlot());
+  }
+
+  public long countNonCanonicalBlocks() {
+    return db.size(schema.getColumnNonCanonicalBlocksByRoot());
   }
 
   public long countBlindedBlocks() {
@@ -215,7 +221,39 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
   }
 
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot());
+  }
+
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
+    return db.stream(schema.getColumnNonCanonicalBlocksByRoot());
+  }
+
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
+  public Optional<Bytes> getUnblindedFinalizedBlockRaw(final UInt64 slot) {
+    return db.getRaw(schema.getColumnFinalizedBlocksBySlot(), slot);
+  }
+
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
+  }
+
+  public long countUnblindedFinalizedBlockIndices() {
+    return db.size(schema.getColumnSlotsByFinalizedRoot());
+  }
+
+  public long countBlindedFinalizedBlockIndices() {
+    return db.size(schema.getColumnFinalizedBlockRootBySlot());
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
+    private static final Logger LOG = LogManager.getLogger();
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalizedSnapshotStateAdapter schema;
@@ -251,6 +289,13 @@ public class V4FinalizedKvStoreDao {
         final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
       addBlindedBlock(block, root, spec);
       addFinalizedBlockRootBySlot(block.getSlot(), root);
+    }
+
+    @Override
+    public void addBlindedFinalizedBlockRaw(
+        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
+      transaction.putRaw(schema.getColumnBlindedBlocksByRoot(), root, blockBytes);
+      addFinalizedBlockRootBySlot(slot, root);
     }
 
     @Override
@@ -293,6 +338,7 @@ public class V4FinalizedKvStoreDao {
 
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
+      LOG.info("non-canonical block added: {} ({})", block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
 
@@ -303,8 +349,15 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      LOG.info("non-canonical block deleted: {}", blockRoot);
+      transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
+    }
+
+    @Override
     public void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots) {
       Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+      LOG.info("non-canonical slot updated: {}", slot);
       final Set<Bytes32> roots = maybeRoots.orElse(new HashSet<>());
       if (roots.addAll(blockRoots)) {
         transaction.put(schema.getColumnNonCanonicalRootsBySlot(), slot, roots);

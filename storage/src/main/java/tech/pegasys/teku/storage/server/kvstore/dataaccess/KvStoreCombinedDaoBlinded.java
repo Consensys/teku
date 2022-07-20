@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 
 public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
@@ -62,6 +63,12 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
   @MustBeClosed
   Stream<Bytes32> streamFinalizedBlockRoots(UInt64 startSlot, UInt64 endSlot);
 
+  @MustBeClosed
+  Stream<ColumnEntry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots();
+
+  @MustBeClosed
+  Stream<ColumnEntry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks();
+
   interface CombinedUpdaterBlinded
       extends HotUpdaterBlinded, FinalizedUpdaterBlinded, CombinedUpdaterCommon {}
 
@@ -81,6 +88,8 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
     void addBlindedFinalizedBlock(
         final SignedBeaconBlock block, final Bytes32 root, final Spec spec);
+
+    void addBlindedFinalizedBlockRaw(Bytes blockBytes, Bytes32 root, UInt64 slot);
 
     void addBlindedBlock(final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec);
 

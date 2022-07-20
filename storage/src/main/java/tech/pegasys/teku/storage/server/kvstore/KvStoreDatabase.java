@@ -116,7 +116,12 @@ public abstract class KvStoreDatabase<
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     if (storeBlockExecutionPayloadSeparately) {
       BlindedHotBlockMigration.migrateBlocks(dao, spec);
-      return new BlindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+      return new BlindedBlockKvStoreDatabase(
+          dao,
+          new BlindedBlockMigration<>(spec, dao),
+          stateStorageMode,
+          storeNonCanonicalBlocks,
+          spec);
     }
     return new UnblindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
@@ -175,7 +180,12 @@ public abstract class KvStoreDatabase<
         new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
     if (storeBlockExecutionPayloadSeparately) {
       BlindedHotBlockMigration.migrateBlocks(dao, spec);
-      return new BlindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+      return new BlindedBlockKvStoreDatabase(
+          dao,
+          new BlindedBlockMigration<>(spec, dao),
+          stateStorageMode,
+          storeNonCanonicalBlocks,
+          spec);
     }
     return new UnblindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
@@ -464,6 +474,16 @@ public abstract class KvStoreDatabase<
   @Override
   public long countNonCanonicalSlots() {
     return dao.countNonCanonicalSlots();
+  }
+
+  @Override
+  public long countNonCanonicalBlocks() {
+    return dao.countNonCanonicalBlocks();
+  }
+
+  @Override
+  public Optional<BlindedBlockMigration<?>> getBlindedBlockMigrater() {
+    return Optional.empty();
   }
 
   @Override

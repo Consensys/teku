@@ -15,6 +15,8 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -31,11 +33,14 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service implements StorageServiceFacade {
+  private static final Logger LOG = LogManager.getLogger();
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
+
+  private volatile BlindedBlockMigrationService blockMigrationService;
 
   public StorageService(
       final ServiceConfig serviceConfig, final StorageConfiguration storageConfiguration) {
@@ -80,12 +85,19 @@ public class StorageService extends Service implements StorageServiceFacade {
               .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
+
+          blockMigrationService =
+              new BlindedBlockMigrationService(
+                  serviceConfig.createAsyncRunner("blindedBlockMigration"), database);
+          blockMigrationService
+              .start()
+              .finish(error -> LOG.error("error starting block migration", error));
         });
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.fromRunnable(database::close);
+    return SafeFuture.allOf(blockMigrationService.stop(), SafeFuture.fromRunnable(database::close));
   }
 
   @Override

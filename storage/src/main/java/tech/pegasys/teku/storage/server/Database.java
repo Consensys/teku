@@ -35,6 +35,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.server.kvstore.BlindedBlockMigration;
 
 public interface Database extends AutoCloseable {
 
@@ -138,4 +139,12 @@ public interface Database extends AutoCloseable {
   long countExecutionPayloads();
 
   long countNonCanonicalSlots();
+
+  long countNonCanonicalBlocks();
+
+  Optional<BlindedBlockMigration<?>> getBlindedBlockMigrater();
+
+  long countUnblindedFinalizedBlockIndices();
+
+  long countBlindedFinalizedBlockIndices();
 }

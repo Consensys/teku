@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
@@ -263,6 +265,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
+  @Override
   @MustBeClosed
   public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
@@ -331,13 +338,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long countNonCanonicalBlocks() {
+    return db.size(schema.getColumnNonCanonicalBlocksByRoot());
+  }
+
+  @Override
   public long countBlindedBlocks() {
     return db.size(schema.getColumnBlindedBlocksByRoot());
   }
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
@@ -426,8 +438,24 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long countUnblindedFinalizedBlockIndices() {
+    return db.size(schema.getColumnSlotsByFinalizedRoot());
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
+  }
+
+  @Override
+  public Optional<Bytes> getUnblindedFinalizedBlockRaw(final UInt64 slot) {
+    return db.getRaw(schema.getColumnFinalizedBlocksBySlot(), slot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
   }
 
   @Override
@@ -435,6 +463,23 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlockRootBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot());
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnEntry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
+    return db.stream(schema.getColumnNonCanonicalBlocksByRoot());
+  }
+
+  @Override
+  public long countBlindedFinalizedBlockIndices() {
+    return db.size(schema.getColumnFinalizedBlockRootBySlot());
   }
 
   private Optional<UInt64> displayCopyColumnMessage(
@@ -482,6 +527,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   static class V4CombinedUpdater<S extends SchemaCombined>
       implements CombinedUpdaterBlinded, CombinedUpdaterUnblinded, CombinedUpdaterCommon {
+    private static final Logger LOG = LogManager.getLogger();
     private final KvStoreTransaction transaction;
 
     private final KvStoreAccessor db;
@@ -647,6 +693,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addBlindedFinalizedBlockRaw(
+        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
+      transaction.putRaw(schema.getColumnBlindedBlocksByRoot(), root, blockBytes);
+      addFinalizedBlockRootBySlot(slot, root);
+    }
+
+    @Override
     public void addBlindedBlock(
         final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       transaction.put(
@@ -686,6 +739,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
+      LOG.info("non-canonical block added: {} ({})", block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
 
@@ -696,8 +750,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      LOG.info("non-canonical block deleted: {}", blockRoot);
+      transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
+    }
+
+    @Override
     public void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots) {
       Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+      LOG.info("non-canonical slot updated: {}", slot);
       final Set<Bytes32> roots = maybeRoots.orElse(new HashSet<>());
       if (roots.addAll(blockRoots)) {
         transaction.put(schema.getColumnNonCanonicalRootsBySlot(), slot, roots);
