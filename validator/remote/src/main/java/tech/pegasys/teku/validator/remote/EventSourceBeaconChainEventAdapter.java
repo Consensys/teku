@@ -25,8 +25,10 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -115,7 +117,21 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
               return Action.PROCEED;
             })
         .client(okHttpClient)
+        .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
         .build();
+  }
+
+  private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {
+    if (!eventSourceUrl.username().isEmpty()) {
+      return request
+          .newBuilder()
+          .header(
+              "Authorization",
+              Credentials.basic(eventSourceUrl.encodedUsername(), eventSourceUrl.encodedPassword()))
+          .build();
+    } else {
+      return request;
+    }
   }
 
   private HttpUrl createHeadEventSourceUrl(final HttpUrl endpoint) {
