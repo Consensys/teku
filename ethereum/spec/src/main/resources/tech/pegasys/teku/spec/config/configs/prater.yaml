@@ -2,7 +2,7 @@
 PRESET_BASE: 'mainnet'
 
 # For backwards compatibility in the config/spec API
-CONFIG_NAME: "goerli"
+CONFIG_NAME: "prater"
 
 # Transition
 # ---------------------------------------------------------------
