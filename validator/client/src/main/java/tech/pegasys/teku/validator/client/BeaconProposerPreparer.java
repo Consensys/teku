@@ -136,7 +136,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
         .or(() -> runtimeProposerConfig.getEth1AddressForPubKey(publicKey))
         .or(
             () ->
-                maybeProposerConfig.map(
+                maybeProposerConfig.flatMap(
                     proposerConfig -> proposerConfig.getDefaultConfig().getFeeRecipient()))
         .or(() -> defaultFeeRecipient);
   }
@@ -226,7 +226,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
 
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config.getConfigForPubKey(publicKey).map(Config::getFeeRecipient);
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getFeeRecipient);
   }
 
   private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {

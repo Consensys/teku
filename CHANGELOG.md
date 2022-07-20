@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Ensured dependencies are up to date
  - Validator Registration signature integration with external signer
  - Teku-specific Beacon Node API on `/teku/v1/beacon/deposit_snapshot` providing finalized Deposit Tree Snapshot according to the draft EIP-4881
+ - Added support for Builder API
 
 ### Bug Fixes
  - Fix not rendering emoticons correctly in graffiti when running in a Docker container

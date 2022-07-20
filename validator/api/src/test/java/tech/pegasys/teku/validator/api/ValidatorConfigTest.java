@@ -101,12 +101,12 @@ class ValidatorConfigTest {
   public void
       shouldThrowIfValidatorsRegistrationDefaultEnabledAndValidatorProposerConfigSpecified() {
     final ValidatorConfig.Builder builder =
-        configBuilder.validatorsRegistrationDefaultEnabled(true).proposerConfigSource("somepath");
+        configBuilder.builderRegistrationDefaultEnabled(true).proposerConfigSource("somepath");
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-registration-default-enabled cannot be specified when --validators-proposer-config is used");
+            "Invalid configuration. --validators-builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
   }
 
   @Test
