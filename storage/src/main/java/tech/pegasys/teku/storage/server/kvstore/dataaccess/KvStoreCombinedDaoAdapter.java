@@ -217,17 +217,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public long countUnblindedFinalizedBlocks() {
-    return finalizedDao.countUnblindedFinalizedBlocks();
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<Bytes> streamExecutionPayloads() {
-    return finalizedDao.streamExecutionPayloads();
-  }
-
-  @Override
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return finalizedDao.getBlindedBlock(root);
   }

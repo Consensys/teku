@@ -351,14 +351,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public long countUnblindedFinalizedBlocks() {
-    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
-        db.streamRaw(schema.getColumnSlotsByFinalizedRoot())) {
-      return entries.count();
-    }
-  }
-
-  @Override
   public Optional<UInt64> getEarliestBlindedBlockSlot() {
     return db.getFirstEntry(schema.getColumnFinalizedBlockRootBySlot()).map(ColumnEntry::getKey);
   }
