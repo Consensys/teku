@@ -74,7 +74,7 @@ public class Subscribers<T> {
    * @param subscriber the subscriber to add
    * @return the ID assigned to this subscriber
    */
-  public long subscribe(final T subscriber) {
+  public synchronized long subscribe(final T subscriber) {
     final long id = subscriberId.getAndIncrement();
     if (replayLastActionOnSubscription) {
       lastAction.ifPresent(action -> runOnSubscriber(action, subscriber));
@@ -90,7 +90,7 @@ public class Subscribers<T> {
    * @return <code>true</code> if a subscriber with that ID was found and removed, otherwise <code>
    *     false</code>
    */
-  public boolean unsubscribe(final long subscriberId) {
+  public synchronized boolean unsubscribe(final long subscriberId) {
     return subscribers.remove(subscriberId) != null;
   }
 
@@ -103,7 +103,7 @@ public class Subscribers<T> {
    *
    * @param action the action to perform for each subscriber
    */
-  public void forEach(final Consumer<T> action) {
+  public synchronized void forEach(final Consumer<T> action) {
     if (replayLastActionOnSubscription) {
       this.lastAction = Optional.of(action);
     }
