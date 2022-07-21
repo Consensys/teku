@@ -45,6 +45,17 @@ public class ValidatorClientOptions {
   private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
 
   @Option(
+      names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Send subnet subscriptions to Beacon Nodes which are used as failovers",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean failoversSendSubnetSubscriptionsEnabled =
+      ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
+
+  @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use SSZ encoding for API block requests",
@@ -60,7 +71,8 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoint(getBeaconNodeApiEndpoint())
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
-                .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled));
+                .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
+                .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled));
   }
 
   public URI getBeaconNodeApiEndpoint() {
