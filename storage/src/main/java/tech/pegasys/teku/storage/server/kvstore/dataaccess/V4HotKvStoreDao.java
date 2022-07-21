@@ -171,6 +171,10 @@ public class V4HotKvStoreDao {
     return schema.getVariableMap();
   }
 
+  public <V, K> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
   static class V4HotUpdater implements HotUpdaterBlinded, HotUpdaterUnblinded {
 
     private final KvStoreTransaction transaction;
