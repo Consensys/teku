@@ -293,7 +293,7 @@ public class StatusLogger {
   }
 
   public void eth1AtHead(final BigInteger headBlockNumber) {
-    log.info("Successfully loaded deposits up to Eth1 block {}", headBlockNumber);
+    log.info("Loading deposits up to Eth1 block {}", headBlockNumber);
   }
 
   public void usingGeneratedP2pPrivateKey(final String key, final boolean justGenerated) {
