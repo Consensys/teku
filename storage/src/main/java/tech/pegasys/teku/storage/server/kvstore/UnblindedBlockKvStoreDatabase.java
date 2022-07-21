@@ -208,6 +208,9 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public void migrate() {}
+
+  @Override
   protected void updateHotBlocks(
       final HotUpdaterUnblinded updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
