@@ -113,6 +113,8 @@ public class ValidatorClientService extends Service {
             "validator", validatorConfig.getExecutorMaxQueueSize());
     final boolean generateEarlyAttestations = validatorConfig.generateEarlyAttestations();
     final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
+    final boolean failoversSendSubnetSubscriptions =
+        validatorConfig.isFailoversSendSubnetSubscriptionsEnabled();
     final List<URI> beaconNodeApiEndpoints = validatorConfig.getBeaconNodeApiEndpoints();
 
     BeaconNodeApi beaconNodeApi;
@@ -128,7 +130,8 @@ public class ValidatorClientService extends Service {
                           List.of(endpoint),
                           config.getSpec(),
                           generateEarlyAttestations,
-                          preferSszBlockEncoding))
+                          preferSszBlockEncoding,
+                          failoversSendSubnetSubscriptions))
               .orElseGet(
                   () ->
                       InProcessBeaconNodeApi.create(
@@ -141,7 +144,8 @@ public class ValidatorClientService extends Service {
               beaconNodeApiEndpoints,
               config.getSpec(),
               generateEarlyAttestations,
-              preferSszBlockEncoding);
+              preferSszBlockEncoding,
+              failoversSendSubnetSubscriptions);
     }
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
