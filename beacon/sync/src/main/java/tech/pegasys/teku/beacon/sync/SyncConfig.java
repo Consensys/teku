@@ -22,15 +22,15 @@ public class SyncConfig {
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
-  private final boolean isReconstructHistoricStatesEnabled;
+  private final boolean reconstructHistoricStatesEnabled;
 
   private SyncConfig(
       final boolean isEnabled,
       final boolean isMultiPeerSyncEnabled,
-      final boolean isReconstructHistoricStatesEnabled) {
+      final boolean reconstructHistoricStatesEnabled) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
-    this.isReconstructHistoricStatesEnabled = isReconstructHistoricStatesEnabled;
+    this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
   }
 
   public static Builder builder() {
@@ -46,20 +46,19 @@ public class SyncConfig {
   }
 
   public boolean isReconstructHistoricStatesEnabled() {
-    return isReconstructHistoricStatesEnabled;
+    return reconstructHistoricStatesEnabled;
   }
 
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
-    private Boolean isReconstructHistoricStatesEnabled =
-        DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
+    private Boolean reconstructHistoricStatesEnabled = DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
     private Builder() {}
 
     public SyncConfig build() {
       initMissingDefaults();
-      return new SyncConfig(isEnabled, isMultiPeerSyncEnabled, isReconstructHistoricStatesEnabled);
+      return new SyncConfig(isEnabled, isMultiPeerSyncEnabled, reconstructHistoricStatesEnabled);
     }
 
     private void initMissingDefaults() {
@@ -90,7 +89,7 @@ public class SyncConfig {
     public Builder isReconstructHistoricStatesEnabled(
         final Boolean reconstructHistoricStatesEnabled) {
       checkNotNull(reconstructHistoricStatesEnabled);
-      isReconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
+      this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
       return this;
     }
   }
