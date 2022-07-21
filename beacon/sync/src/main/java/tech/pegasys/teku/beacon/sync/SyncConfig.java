@@ -18,13 +18,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class SyncConfig {
 
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
+  public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED = false;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
+  private final boolean reconstructHistoricStatesEnabled;
 
-  private SyncConfig(final boolean isEnabled, final boolean isMultiPeerSyncEnabled) {
+  private SyncConfig(
+      final boolean isEnabled,
+      final boolean isMultiPeerSyncEnabled,
+      final boolean reconstructHistoricStatesEnabled) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
+    this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
   }
 
   public static Builder builder() {
@@ -39,15 +45,20 @@ public class SyncConfig {
     return isMultiPeerSyncEnabled;
   }
 
+  public boolean isReconstructHistoricStatesEnabled() {
+    return reconstructHistoricStatesEnabled;
+  }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
+    private Boolean reconstructHistoricStatesEnabled = DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
     private Builder() {}
 
     public SyncConfig build() {
       initMissingDefaults();
-      return new SyncConfig(isEnabled, isMultiPeerSyncEnabled);
+      return new SyncConfig(isEnabled, isMultiPeerSyncEnabled, reconstructHistoricStatesEnabled);
     }
 
     private void initMissingDefaults() {
@@ -72,6 +83,13 @@ public class SyncConfig {
     public Builder isMultiPeerSyncEnabled(final Boolean multiPeerSyncEnabled) {
       checkNotNull(multiPeerSyncEnabled);
       isMultiPeerSyncEnabled = multiPeerSyncEnabled;
+      return this;
+    }
+
+    public Builder isReconstructHistoricStatesEnabled(
+        final Boolean reconstructHistoricStatesEnabled) {
+      checkNotNull(reconstructHistoricStatesEnabled);
+      this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
       return this;
     }
   }

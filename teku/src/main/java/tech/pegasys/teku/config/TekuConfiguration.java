@@ -183,7 +183,7 @@ public class TekuConfiguration {
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
     private final P2PConfig.Builder p2pConfigBuilder = P2PConfig.builder();
-    private final SyncConfig.Builder syncConfig = SyncConfig.builder();
+    private final SyncConfig.Builder syncConfigBuilder = SyncConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
         BeaconRestApiConfig.builder();
     private final ValidatorRestApiConfig.ValidatorRestApiConfigBuilder
@@ -227,18 +227,19 @@ public class TekuConfiguration {
       ValidatorConfig validatorConfig = validatorConfigBuilder.build();
 
       P2PConfig p2PConfig = p2pConfigBuilder.build();
-      syncConfig.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
+      syncConfigBuilder.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
       StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
+      SyncConfig syncConfig = syncConfigBuilder.build();
 
       // Check for invalid config settings
-      if (storageConfiguration.isReconstructHistoricStates()
+      if (syncConfig.isReconstructHistoricStatesEnabled()
           && eth2NetworkConfiguration.getGenesisState().isEmpty()) {
         throw new InvalidConfigurationException(
             "Genesis state required when reconstructing historic states");
       }
 
-      if (storageConfiguration.isReconstructHistoricStates()
+      if (syncConfig.isReconstructHistoricStatesEnabled()
           && PRUNE.equals(storageConfiguration.getDataStorageMode())) {
         throw new InvalidConfigurationException(
             "Cannot reconstruct historic states when using prune data storage mode");
@@ -255,7 +256,7 @@ public class TekuConfiguration {
           interopConfigBuilder.build(),
           dataConfig,
           p2PConfig,
-          syncConfig.build(),
+          syncConfig,
           restApiBuilder.build(),
           metricsConfigBuilder.build(),
           storeConfigBuilder.build(),
@@ -331,7 +332,7 @@ public class TekuConfiguration {
     }
 
     public Builder sync(final Consumer<SyncConfig.Builder> consumer) {
-      consumer.accept(syncConfig);
+      consumer.accept(syncConfigBuilder);
       return this;
     }
 

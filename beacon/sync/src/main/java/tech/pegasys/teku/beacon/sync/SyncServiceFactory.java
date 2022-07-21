@@ -151,7 +151,8 @@ public class SyncServiceFactory {
         p2pNetwork,
         combinedChainDataClient,
         signatureVerifier,
-        syncStateProvider);
+        syncStateProvider,
+        syncConfig.isReconstructHistoricStatesEnabled());
   }
 
   private SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {

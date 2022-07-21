@@ -70,6 +70,9 @@ public class HistoricalBlockSyncServiceTest {
 
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
 
+  private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
+      new ReconstructHistoricalStatesService();
+
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =
       new HistoricalBlockSyncService(
@@ -81,7 +84,9 @@ public class HistoricalBlockSyncServiceTest {
           storageSystem.combinedChainDataClient(),
           syncStateProvider,
           signatureVerificationService,
-          batchSize);
+          batchSize,
+          reconstructHistoricalStatesService,
+          true);
   private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
       Subscribers.create(false);
 
