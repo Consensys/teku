@@ -40,12 +40,7 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
   List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(UInt64 slot);
 
-  long countBlindedBlocks();
-
   Optional<SignedBeaconBlock> getBlindedBlock(Bytes32 root);
-
-  @MustBeClosed
-  Stream<SignedBeaconBlock> streamBlindedHotBlocks();
 
   Optional<Bytes> getExecutionPayload(Bytes32 root);
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -169,6 +170,17 @@ public class V4HotKvStoreDao {
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return schema.getVariableMap();
+  }
+
+  public Map<String, Long> getColumnCounts() {
+    final Map<String, Long> columnCounts = new LinkedHashMap<>();
+    schema
+        .getColumnMap()
+        .forEach(
+            (k, v) -> {
+              columnCounts.put(k, db.size(v));
+            });
+    return columnCounts;
   }
 
   static class V4HotUpdater implements HotUpdaterBlinded, HotUpdaterUnblinded {
