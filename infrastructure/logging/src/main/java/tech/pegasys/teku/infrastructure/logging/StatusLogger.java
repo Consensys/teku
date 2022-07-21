@@ -285,6 +285,10 @@ public class StatusLogger {
     log.warn("Eth1 service down or still syncing for {}s, retrying", interval);
   }
 
+  public void reconstructHistoricalStatesServiceFailedStartup(final Throwable throwable) {
+    log.error("ReconstructHistoricalStatesService unable to start", throwable);
+  }
+
   public void eth1AtHead(final BigInteger headBlockNumber) {
     log.info("Successfully loaded deposits up to Eth1 block {}", headBlockNumber);
   }

@@ -320,10 +320,6 @@ public class ProtoArray {
 
       index = maybeFirstInvalidNodeIndex.orElse(maybeIndex.get());
       node = getNodeByIndex(index);
-      // We found the latestValidHash so mark it as valid
-      if (maybeFirstInvalidNodeIndex.isPresent()) {
-        markNodeValid(node.getParentRoot());
-      }
     } else {
       index = maybeIndex.get();
       node = getNodeByIndex(index);
