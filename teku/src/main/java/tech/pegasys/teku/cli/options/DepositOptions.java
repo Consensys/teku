@@ -51,10 +51,11 @@ public class DepositOptions {
       PowchainConfiguration.DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
 
   @CommandLine.Option(
-      names = {"--deposit-snapshot"},
+      names = {"--Xdeposit-snapshot"},
       paramLabel = "<STRING>",
       description =
           "Deposit tree snapshot. This value should be a file or URL pointing to a SSZ-encoded finalized deposit tree snapshot.",
+      hidden = true,
       arity = "1")
   private String depositSnapshot;
 
