@@ -189,7 +189,7 @@ public class HistoricalBlockSyncService extends Service {
                 if (reconstructHistoricStatesEnabled) {
                   reconstructHistoricalStatesService
                       .start()
-                      .finish(STATUS_LOG::reconstructHistoricalStatesServiceDown);
+                      .finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup);
                 }
               }
             });
