@@ -64,17 +64,20 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final RemoteValidatorApiChannel primaryDelegate;
   private final List<RemoteValidatorApiChannel> failoverDelegates;
+  private final boolean failoversSendSubnetSubscriptions;
   private final ValidatorLogger validatorLogger;
 
   public FailoverValidatorApiHandler(
       final RemoteValidatorApiChannel primaryDelegate,
       final List<RemoteValidatorApiChannel> failoverDelegates,
+      final boolean failoversSendSubnetSubscriptions,
       final ValidatorLogger validatorLogger) {
     this.primaryDelegate = primaryDelegate;
     checkArgument(
         !failoverDelegates.isEmpty(),
         "One or more Beacon Nodes should be defined as a failover to use the failover feature.");
     this.failoverDelegates = failoverDelegates;
+    this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
     this.validatorLogger = validatorLogger;
   }
 
@@ -149,19 +152,25 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
-    return relayRequest(apiChannel -> apiChannel.subscribeToBeaconCommittee(requests));
+    return relayRequest(
+        apiChannel -> apiChannel.subscribeToBeaconCommittee(requests),
+        failoversSendSubnetSubscriptions);
   }
 
   @Override
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    return relayRequest(apiChannel -> apiChannel.subscribeToSyncCommitteeSubnets(subscriptions));
+    return relayRequest(
+        apiChannel -> apiChannel.subscribeToSyncCommitteeSubnets(subscriptions),
+        failoversSendSubnetSubscriptions);
   }
 
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
       Set<SubnetSubscription> subnetSubscriptions) {
-    return relayRequest(apiChannel -> apiChannel.subscribeToPersistentSubnets(subnetSubscriptions));
+    return relayRequest(
+        apiChannel -> apiChannel.subscribeToPersistentSubnets(subnetSubscriptions),
+        failoversSendSubnetSubscriptions);
   }
 
   @Override
@@ -205,17 +214,25 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(apiChannel -> apiChannel.registerValidators(validatorRegistrations));
   }
 
+  private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
+    return relayRequest(request, true);
+  }
+
   /**
    * Relays the given request to the primary Beacon Node along with all failover Beacon Node
-   * endpoints. The returned {@link SafeFuture} will complete with the response from the primary
-   * Beacon Node or in case in failure, it will complete with the first successful response from a
-   * failover node. The returned {@link SafeFuture} will only complete exceptionally when the
-   * request to the primary Beacon Node and all the requests to the failover nodes fail. In this
-   * case, the returned error will be the primary Beacon Node error and all the failovers errors
-   * will be part of it as suppressed.
+   * endpoints if relayRequestToFailovers flag is true. The returned {@link SafeFuture} will
+   * complete with the response from the primary Beacon Node or in case in failure, it will complete
+   * with the first successful response from a failover node. The returned {@link SafeFuture} will
+   * only complete exceptionally when the request to the primary Beacon Node and all the requests to
+   * the failover nodes fail. In this case, the returned error will be the primary Beacon Node error
+   * and all the failovers errors will be part of it as suppressed.
    */
-  private <T> SafeFuture<T> relayRequest(final ValidatorApiChannelRequest<T> request) {
+  private <T> SafeFuture<T> relayRequest(
+      final ValidatorApiChannelRequest<T> request, final boolean relayRequestToFailovers) {
     final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
+    if (!relayRequestToFailovers) {
+      return primaryResponse;
+    }
     final List<SafeFuture<T>> failoversResponses =
         failoverDelegates.stream().map(request::run).collect(Collectors.toList());
     return primaryResponse.exceptionallyCompose(
