@@ -51,7 +51,6 @@ public class Subscribers<T> {
   private final boolean suppressCallbackExceptions;
 
   private final boolean replayLastActionOnSubscription;
-
   private Optional<Consumer<T>> lastAction = Optional.empty();
 
   private Subscribers(

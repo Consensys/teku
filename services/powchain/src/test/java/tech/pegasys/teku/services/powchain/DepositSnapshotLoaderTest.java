@@ -89,8 +89,10 @@ public class DepositSnapshotLoaderTest {
 
   @Test
   public void shouldHaveCorrectDepositsData_whenAllServicesAvailable() throws Exception {
+    final int deposits = 16430;
+    final int blockNumber = 100;
     final EthBlock.Block block = mock(EthBlock.Block.class);
-    when(block.getNumber()).thenReturn(BigInteger.valueOf(100));
+    when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(eth1Provider.getGuaranteedEth1Block(any(String.class)))
         .thenReturn(SafeFuture.completedFuture(block));
     final SafeFuture<LoadDepositSnapshotResult> result =
@@ -99,11 +101,12 @@ public class DepositSnapshotLoaderTest {
         result.get(),
         snapshotResult -> {
           assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
-          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDeposits()).isEqualTo(16430);
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDeposits())
+              .isEqualTo(deposits);
           assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
-              .contains(BigInteger.valueOf(16429));
+              .contains(BigInteger.valueOf(deposits - 1));
           assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
-              .isEqualTo(100);
+              .isEqualTo(blockNumber);
         });
   }
 
