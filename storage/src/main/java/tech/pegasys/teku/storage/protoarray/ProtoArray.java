@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.protoarray;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.INVALID;
 import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
 import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.VALID;
@@ -35,6 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -49,6 +49,7 @@ public class ProtoArray {
   // The epoch of our initial startup state
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
+  private final StatusLogger statusLog;
 
   /**
    * Lists all the known nodes. It is guaranteed that a node will be after its parent in the list.
@@ -72,11 +73,13 @@ public class ProtoArray {
       final int pruneThreshold,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
-      final UInt64 initialEpoch) {
+      final UInt64 initialEpoch,
+      final StatusLogger statusLog) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
     this.initialEpoch = initialEpoch;
+    this.statusLog = statusLog;
   }
 
   public static ProtoArrayBuilder builder() {
@@ -339,7 +342,7 @@ public class ProtoArray {
   private Optional<Integer> findFirstInvalidNodeIndex(
       final int invalidNodeIndex, final Bytes32 latestValidHash) {
     int firstInvalidNodeIndex = invalidNodeIndex;
-    Optional<Integer> parentIndex = getNodeByIndex(invalidNodeIndex).getParentIndex();
+    Optional<Integer> parentIndex = Optional.of(invalidNodeIndex);
     while (parentIndex.isPresent()) {
       final ProtoNode parentNode = getNodeByIndex(parentIndex.get());
       if (parentNode.getExecutionBlockHash().equals(latestValidHash)) {
@@ -351,7 +354,7 @@ public class ProtoArray {
     // Couldn't find the last valid hash - so can't take advantage of it.
     // Alert this user as it may indicate that invalid payloads have been finalized
     // (or the EL client is malfunctioning somehow).
-    STATUS_LOG.unknownLatestValidHash(latestValidHash);
+    statusLog.unknownLatestValidHash(latestValidHash);
     return Optional.empty();
   }
 
