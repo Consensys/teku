@@ -289,7 +289,6 @@ public class BlindedBlockKvStoreDatabase
     if (storeNonCanonicalBlocks) {
       final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       for (Bytes32 blockRoot : blockRoots) {
-        // TODO #5955
         if (finalizedChildToParentMap.containsKey(blockRoot)) {
           continue;
         }
