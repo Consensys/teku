@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -118,11 +119,6 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  @MustBeClosed
-  public Stream<Bytes> streamExecutionPayloads() {
-    return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
-  }
-
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return db.get(schema.getColumnBlindedBlocksByRoot(), root);
   }
@@ -213,6 +209,12 @@ public class V4FinalizedKvStoreDao {
 
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
+  }
+
+  public Map<String, Long> getColumnCounts() {
+    final Map<String, Long> columnCounts = new HashMap<>();
+    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
   }
 
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {

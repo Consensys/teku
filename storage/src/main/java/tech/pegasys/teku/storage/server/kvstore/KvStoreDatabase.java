@@ -463,18 +463,6 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public long countExecutionPayloads() {
-    try (final Stream<?> stream = dao.streamExecutionPayloads()) {
-      return stream.count();
-    }
-  }
-
-  @Override
-  public long countNonCanonicalSlots() {
-    return dao.countNonCanonicalSlots();
-  }
-
-  @Override
   public void close() throws Exception {
     dao.close();
   }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.noop;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,16 +127,6 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return Stream.empty();
-  }
-
-  @Override
-  public long countUnblindedFinalizedBlocks() {
-    return 0;
-  }
-
-  @Override
   public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return Stream.empty();
   }
@@ -187,18 +178,8 @@ public class NoOpDatabase implements Database {
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
 
   @Override
-  public long countBlindedBlocks() {
-    return 0;
-  }
-
-  @Override
-  public long countExecutionPayloads() {
-    return 0;
-  }
-
-  @Override
-  public long countNonCanonicalSlots() {
-    return 0;
+  public Map<String, Long> getColumnCounts() {
+    return new HashMap<>();
   }
 
   @Override
