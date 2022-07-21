@@ -138,4 +138,6 @@ public interface Database extends AutoCloseable {
   long countExecutionPayloads();
 
   long countNonCanonicalSlots();
+
+  void migrate();
 }

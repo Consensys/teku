@@ -62,6 +62,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                   config.getSpec());
           database = dbFactory.createDatabase();
 
+          database.migrate();
+
           chainStorage = ChainStorage.create(database, config.getSpec());
           final DepositStorage depositStorage =
               DepositStorage.create(

@@ -47,13 +47,16 @@ public class BlindedBlockKvStoreDatabase
         CombinedUpdaterBlinded,
         HotUpdaterBlinded,
         FinalizedUpdaterBlinded> {
+  final BlindedHotBlockMigration<?> migrater;
 
   BlindedBlockKvStoreDatabase(
       final KvStoreCombinedDaoBlinded dao,
+      final BlindedHotBlockMigration<?> hotBlockMigrater,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     super(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    this.migrater = hotBlockMigrater;
   }
 
   @Override
@@ -240,6 +243,11 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public long countBlindedBlocks() {
     return dao.countBlindedBlocks();
+  }
+
+  @Override
+  public void migrate() {
+    migrater.migrateBlocks();
   }
 
   @Override

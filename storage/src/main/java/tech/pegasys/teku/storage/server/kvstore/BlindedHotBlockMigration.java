@@ -32,16 +32,13 @@ public class BlindedHotBlockMigration<
 
   private final T dao;
 
-  private BlindedHotBlockMigration(final Spec spec, final T dao) {
+  BlindedHotBlockMigration(final Spec spec, final T dao) {
     this.spec = spec;
     this.dao = dao;
   }
 
-  static <T extends KvStoreCombinedDaoBlinded & KvStoreCombinedDaoUnblinded> void migrateBlocks(
-      final T dao, final Spec spec) {
-    final BlindedHotBlockMigration<T> blindedHotBlockMigration =
-        new BlindedHotBlockMigration<>(spec, dao);
-    blindedHotBlockMigration.performBatchMigration();
+  void migrateBlocks() {
+    performBatchMigration();
   }
 
   private void performBatchMigration() {
