@@ -27,7 +27,6 @@ public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
-  public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES = false;
 
   private final Eth1Address eth1DepositContract;
 
@@ -39,7 +38,6 @@ public class StorageConfiguration {
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
   private final boolean storeVotesEquivocation;
-  private final boolean reconstructHistoricStates;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -50,7 +48,6 @@ public class StorageConfiguration {
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
-      final boolean reconstructHistoricStates,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -60,7 +57,6 @@ public class StorageConfiguration {
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.storeVotesEquivocation = storeVotesEquivocation;
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-    this.reconstructHistoricStates = reconstructHistoricStates;
     this.spec = spec;
   }
 
@@ -104,10 +100,6 @@ public class StorageConfiguration {
     return spec;
   }
 
-  public boolean isReconstructHistoricStates() {
-    return reconstructHistoricStates;
-  }
-
   public static final class Builder {
 
     private Eth1Address eth1DepositContract;
@@ -120,7 +112,6 @@ public class StorageConfiguration {
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
     private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-    private boolean reconstructHistoricStates = DEFAULT_RECONSTRUCT_HISTORIC_STATES;
 
     private Builder() {}
 
@@ -179,11 +170,6 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder reconstructHistoricStates(final boolean reconstructHistoricStates) {
-      this.reconstructHistoricStates = reconstructHistoricStates;
-      return this;
-    }
-
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -194,7 +180,6 @@ public class StorageConfiguration {
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
-          reconstructHistoricStates,
           spec);
     }
 

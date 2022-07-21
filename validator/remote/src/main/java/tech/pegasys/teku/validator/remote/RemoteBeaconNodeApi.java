@@ -64,7 +64,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final List<URI> beaconNodeApiEndpoints,
       final Spec spec,
       final boolean generateEarlyAttestations,
-      final boolean preferSszBlockEncoding) {
+      final boolean preferSszBlockEncoding,
+      final boolean failoversSendSubnetSubscriptions) {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
         "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
@@ -97,7 +98,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
               .collect(Collectors.toList());
       validatorApi =
           new FailoverValidatorApiHandler(
-              primaryValidatorApi, failoversValidatorApis, ValidatorLogger.VALIDATOR_LOGGER);
+              primaryValidatorApi,
+              failoversValidatorApis,
+              failoversSendSubnetSubscriptions,
+              ValidatorLogger.VALIDATOR_LOGGER);
     }
 
     final ValidatorApiChannel validatorApiWithMetrics =
