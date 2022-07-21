@@ -59,7 +59,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   void shouldCreateAttestationsWithRemoteValidatorStartingFirst() throws Exception {
     validatorClient.start();
     validatorClient.waitForLogMessageContaining(
-        "Error while connecting to Beacon Node event stream");
+        "Error while connecting to beacon node event stream");
 
     beaconNode.start();
 

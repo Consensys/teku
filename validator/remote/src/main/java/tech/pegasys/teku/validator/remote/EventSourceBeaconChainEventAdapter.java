@@ -125,16 +125,15 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // connect to a failover event stream only if there are failovers configured, the syncing status
-  // call throws an exception and there is a ready failover Beacon Node
+  // connect to a failover event stream only if there are failovers configured and there is a ready
+  // failover Beacon Node
   private void switchToFailoverEventStreamIfNeeded(
       final RemoteValidatorApiChannel currentBeaconNodeApi) {
     if (failoverBeaconNodeApis.isEmpty()) {
       return;
     }
     final HttpUrl currentEndpoint = currentBeaconNodeApi.getEndpoint();
-    currentBeaconNodeApi
-        .getSyncingStatus()
+    checkBeaconNodeIsReadyForEventStreaming(currentBeaconNodeApi)
         .finish(__ -> findReadyFailoverAndSwitch(currentEndpoint));
   }
 
@@ -156,7 +155,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   // this method for the same failover endpoint because of the ConnectionErrorHandler callback
   private synchronized void switchToFailoverEventStream(
       final RemoteValidatorApiChannel beaconNodeApi) {
-    if (alreadyFailovered(beaconNodeApi)) {
+    if (alreadyFailedOver(beaconNodeApi)) {
       return;
     }
     final HttpUrl failoverEndpoint = beaconNodeApi.getEndpoint();
@@ -168,7 +167,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     startPrimaryBeaconNodeCheckStatusTask();
   }
 
-  private boolean alreadyFailovered(final RemoteValidatorApiChannel beaconNodeApi) {
+  private boolean alreadyFailedOver(final RemoteValidatorApiChannel beaconNodeApi) {
     return maybeFailoverEventSource
         .map(EventSource::getHttpUrl)
         .map(endpoint -> endpoint.equals(createHeadEventSourceUrl(beaconNodeApi.getEndpoint())))

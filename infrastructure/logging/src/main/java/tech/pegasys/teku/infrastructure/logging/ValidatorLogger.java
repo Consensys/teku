@@ -43,14 +43,14 @@ public class ValidatorLogger {
   public void connectedToBeaconNodeEventStream() {
     log.info(
         ColorConsolePrinter.print(
-            String.format("%sSuccessfully connected to Beacon Node event stream.", PREFIX),
+            String.format("%sSuccessfully connected to beacon node event stream.", PREFIX),
             Color.GREEN));
   }
 
   public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
-            String.format("%sError while connecting to Beacon Node event stream", PREFIX),
+            String.format("%sError while connecting to beacon node event stream", PREFIX),
             Color.RED),
         t);
   }
@@ -59,7 +59,7 @@ public class ValidatorLogger {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sSwitching to failover Beacon Node %s for event streaming.",
+                "%sSwitching to failover beacon node %s for event streaming.",
                 PREFIX, failoverEndpoint),
             Color.GREEN));
   }
@@ -68,7 +68,7 @@ public class ValidatorLogger {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPrimary Beacon Node %s is back and ready for event streaming. Will attempt connecting.",
+                "%sPrimary beacon node %s is back and ready for event streaming. Will attempt connecting.",
                 PREFIX, primaryEndpoint),
             Color.GREEN));
   }
