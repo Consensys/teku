@@ -60,8 +60,6 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
   @MustBeClosed
   Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw();
 
-  long countUnblindedFinalizedBlocks();
-
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);

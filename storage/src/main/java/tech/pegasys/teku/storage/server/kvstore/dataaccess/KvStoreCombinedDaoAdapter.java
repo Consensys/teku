@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -203,11 +204,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public long countBlindedBlocks() {
-    return finalizedDao.countBlindedBlocks();
-  }
-
-  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
@@ -234,15 +230,6 @@ public class KvStoreCombinedDaoAdapter
   @Override
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return finalizedDao.getBlindedBlock(root);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedHotBlocks() {
-    return hotDao
-        .streamBlockCheckpoints()
-        .map(Map.Entry::getKey)
-        .flatMap(blockRoot -> getBlindedBlock(blockRoot).stream());
   }
 
   @Override
@@ -289,6 +276,13 @@ public class KvStoreCombinedDaoAdapter
   @Override
   public Optional<UInt64> getOptimisticTransitionBlockSlot() {
     return finalizedDao.getOptimisticTransitionBlockSlot();
+  }
+
+  @Override
+  public Map<String, Long> getColumnCounts() {
+    final HashMap<String, Long> result = new LinkedHashMap<>(hotDao.getColumnCounts());
+    result.putAll(finalizedDao.getColumnCounts());
+    return result;
   }
 
   @Override

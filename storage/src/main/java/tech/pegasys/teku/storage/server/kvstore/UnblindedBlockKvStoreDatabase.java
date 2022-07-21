@@ -126,17 +126,6 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return dao.streamHotBlocks();
-  }
-
-  @Override
-  public long countUnblindedFinalizedBlocks() {
-    return dao.countUnblindedFinalizedBlocks();
-  }
-
-  @Override
-  @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamUnblindedFinalizedBlocks(startSlot, endSlot);
@@ -203,8 +192,8 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
-  public long countBlindedBlocks() {
-    return 0;
+  public Map<String, Long> getColumnCounts() {
+    return dao.getColumnCounts();
   }
 
   @Override
