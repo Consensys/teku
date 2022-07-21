@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -40,6 +43,7 @@ class ProtoArrayTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final VoteUpdater voteUpdater = new StubVoteUpdater();
+  private final StatusLogger statusLog = mock(StatusLogger.class);
 
   private final Bytes32 block1a = dataStructureUtil.randomBytes32();
   private final Bytes32 block1b = dataStructureUtil.randomBytes32();
@@ -50,6 +54,7 @@ class ProtoArrayTest {
 
   private ProtoArray protoArray =
       new ProtoArrayBuilder()
+          .statusLog(statusLog)
           .justifiedCheckpoint(GENESIS_CHECKPOINT)
           .finalizedCheckpoint(GENESIS_CHECKPOINT)
           .build();
@@ -360,6 +365,7 @@ class ProtoArrayTest {
 
     assertHead(block3a);
     assertThat(protoArray.contains(block3a)).isTrue();
+    verifyNoInteractions(statusLog);
   }
 
   @Test

@@ -18,3 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
  - Fix `latestValidHash`with invalid Execution Payload in response from execution engine didn't trigger appropriate ForkChoice changes 
+ - Remove incorrect error about potentially finalizing an invalid execution payload when importing a block with an invalid payload
