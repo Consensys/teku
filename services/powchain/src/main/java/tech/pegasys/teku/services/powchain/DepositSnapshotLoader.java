@@ -17,6 +17,8 @@ import com.google.common.base.Suppliers;
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.pow.Eth1Provider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -26,13 +28,13 @@ import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final DepositSnapshotResourceLoader depositSnapshotResourceLoader =
       new DepositSnapshotResourceLoader();
 
   private final Optional<String> depositSnapshotResource;
-
   private final Eth1Provider eth1Provider;
-
   private final Supplier<SafeFuture<LoadDepositSnapshotResult>> replayResult;
 
   public DepositSnapshotLoader(
@@ -47,7 +49,7 @@ public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
     return replayResult.get();
   }
 
-  public SafeFuture<LoadDepositSnapshotResult> loadSnapshot() {
+  private SafeFuture<LoadDepositSnapshotResult> loadSnapshot() {
     final Optional<DepositTreeSnapshot> depositTreeSnapshot =
         depositSnapshotResourceLoader.loadDepositSnapshot(depositSnapshotResource);
     if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDeposits() == 0) {
@@ -63,7 +65,12 @@ public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
                       ReplayDepositsResult.create(
                           block.getNumber(),
                           BigInteger.valueOf(depositTreeSnapshot.get().getDeposits() - 1),
-                          true)));
+                          true)))
+          .exceptionally(
+              ex -> {
+                LOG.error("Failed to load DepositTreeSnapshot info", ex);
+                return LoadDepositSnapshotResult.EMPTY;
+              });
     }
   }
 }

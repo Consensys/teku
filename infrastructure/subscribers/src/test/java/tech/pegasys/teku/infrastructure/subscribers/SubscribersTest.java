@@ -101,4 +101,39 @@ public class SubscribersTest {
     verify(subscriber1).accept(event);
     verify(subscriber2).accept(event);
   }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void shouldNotDeliverEventToNewSubscriberWithoutReplay() {
+    final Subscribers<Consumer<String>> subscribers = Subscribers.create(false);
+    final Consumer<String> subscriber1 = mock(Consumer.class);
+    subscribers.subscribe(subscriber1);
+
+    final String event = "Hello";
+    subscribers.deliver(Consumer::accept, event);
+    verify(subscriber1).accept(event);
+
+    final Consumer<String> subscriber2 = mock(Consumer.class);
+    subscribers.subscribe(subscriber2);
+    verifyNoInteractions(subscriber2);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void shouldDeliverEventToNewSubscribersWithReplay() {
+    final Subscribers<Consumer<String>> subscribers = Subscribers.createWithReplay(false);
+    final Consumer<String> subscriber1 = mock(Consumer.class);
+    subscribers.subscribe(subscriber1);
+
+    final String event = "Hello";
+    subscribers.deliver(Consumer::accept, event);
+    verify(subscriber1).accept(event);
+
+    final Consumer<String> subscriber2 = mock(Consumer.class);
+    subscribers.subscribe(subscriber2);
+    verify(subscriber2).accept(event);
+    final Consumer<String> subscriber3 = mock(Consumer.class);
+    subscribers.subscribe(subscriber3);
+    verify(subscriber3).accept(event);
+  }
 }

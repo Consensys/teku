@@ -20,10 +20,12 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,16 +34,21 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.beacon.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 
 class Eth1DepositManagerTest {
@@ -54,6 +61,9 @@ class Eth1DepositManagerTest {
           "minimal",
           builder ->
               builder.minGenesisTime(UInt64.valueOf(10_300)).genesisDelay(UInt64.valueOf(300)));
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
@@ -92,6 +102,8 @@ class Eth1DepositManagerTest {
 
   @BeforeEach
   public void setup() {
+    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
+        .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
     Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
   }
 
@@ -367,6 +379,37 @@ class Eth1DepositManagerTest {
     inOrder
         .verify(depositProcessingController)
         .startSubscription(lastReplayedBlock.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldStartFromSnapshotWhenLoaded() {
+    final UInt64 deposits = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
+
+    final DepositTreeSnapshot depositTreeSnapshot =
+        new DepositTreeSnapshot(
+            List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
+            deposits.longValue(),
+            dataStructureUtil.randomBytes32());
+    final ReplayDepositsResult replayDepositsResult =
+        ReplayDepositsResult.create(lastBlockNumber, Optional.of(BigInteger.valueOf(99)), true);
+
+    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new LoadDepositSnapshotResult(
+                    Optional.of(depositTreeSnapshot), replayDepositsResult)));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verifyNoInteractions(eth1DepositStorageChannel);
+    verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
     assertNoUncaughtExceptions();
   }
