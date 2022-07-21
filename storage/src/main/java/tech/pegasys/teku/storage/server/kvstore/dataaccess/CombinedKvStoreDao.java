@@ -402,12 +402,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Map<String, Long> getColumnCounts() {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
-    schema
-        .getColumnMap()
-        .forEach(
-            (k, v) -> {
-              columnCounts.put(k, db.size(v));
-            });
+    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 

@@ -213,12 +213,7 @@ public class V4FinalizedKvStoreDao {
 
   public Map<String, Long> getColumnCounts() {
     final Map<String, Long> columnCounts = new HashMap<>();
-    schema
-        .getColumnMap()
-        .forEach(
-            (k, v) -> {
-              columnCounts.put(k, db.size(v));
-            });
+    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 

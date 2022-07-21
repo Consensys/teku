@@ -209,8 +209,7 @@ public class DebugDbCommand implements Runnable {
   }
 
   private void printColumn(final String label, final long count) {
-    final String formatString = "%40s: %d%n";
-    System.out.printf(formatString, label, count);
+    System.out.printf("%40s: %d%n", label, count);
   }
 
   private Database createDatabase(
