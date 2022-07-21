@@ -16,12 +16,15 @@ package tech.pegasys.teku.storage.protoarray;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoArrayBuilder {
+
+  private StatusLogger statusLog = StatusLogger.STATUS_LOG;
   private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
   private Checkpoint justifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
@@ -30,7 +33,13 @@ public class ProtoArrayBuilder {
   public ProtoArray build() {
     checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
     checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
-    return new ProtoArray(pruneThreshold, justifiedCheckpoint, finalizedCheckpoint, initialEpoch);
+    return new ProtoArray(
+        pruneThreshold, justifiedCheckpoint, finalizedCheckpoint, initialEpoch, statusLog);
+  }
+
+  public ProtoArrayBuilder statusLog(final StatusLogger statusLog) {
+    this.statusLog = statusLog;
+    return this;
   }
 
   public ProtoArrayBuilder pruneThreshold(final int pruneThreshold) {
