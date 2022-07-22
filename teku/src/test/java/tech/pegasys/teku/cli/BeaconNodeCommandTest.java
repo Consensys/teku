@@ -396,8 +396,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         Eth2NetworkConfiguration.builder("mainnet").build();
 
     return expectedConfigurationBuilder()
-        .eth2NetworkConfig(
-            b -> b.applyNetworkDefaults("mainnet").forkChoiceBeforeProposingEnabled(false))
+        .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
         .executionLayer(b -> b.engineEndpoint(null))
         .powchain(
             b -> {
