@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -184,7 +185,7 @@ public class DatabaseMigrater {
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             databasePath,
-            asyncRunnerFactory.create("database-migrator", 1),
+            Optional.empty(),
             storageMode,
             databaseVersion,
             DEFAULT_STORAGE_FREQUENCY,

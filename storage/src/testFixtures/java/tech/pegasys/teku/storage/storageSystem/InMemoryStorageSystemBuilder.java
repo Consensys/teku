@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.storageSystem;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
@@ -43,7 +44,7 @@ public class InMemoryStorageSystemBuilder {
   private boolean storeNonCanonicalBlocks = false;
   private boolean storeVotesEquivocation = false;
 
-  private AsyncRunner asyncRunner;
+  private Optional<AsyncRunner> asyncRunner = Optional.empty();
 
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -126,7 +127,7 @@ public class InMemoryStorageSystemBuilder {
     return copy;
   }
 
-  public InMemoryStorageSystemBuilder asyncRunner(final AsyncRunner asyncRunner) {
+  public InMemoryStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
     this.asyncRunner = asyncRunner;
     return this;
   }

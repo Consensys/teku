@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -36,7 +37,7 @@ public class FileBackedStorageSystemBuilder {
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
-  private AsyncRunner asyncRunner;
+  private Optional<AsyncRunner> asyncRunner = Optional.empty();
   private Spec spec;
 
   // Version-dependent fields
@@ -55,7 +56,6 @@ public class FileBackedStorageSystemBuilder {
   }
 
   public StorageSystem build() {
-    checkNotNull(asyncRunner, "Must supply async runner");
     final Database database;
     switch (version) {
       case LEVELDB_TREE:
@@ -113,7 +113,7 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
-  public FileBackedStorageSystemBuilder asyncRunner(final AsyncRunner asyncRunner) {
+  public FileBackedStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
     this.asyncRunner = asyncRunner;
     return this;
   }

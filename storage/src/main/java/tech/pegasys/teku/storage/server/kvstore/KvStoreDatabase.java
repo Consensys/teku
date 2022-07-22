@@ -106,7 +106,7 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
@@ -134,7 +134,7 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
@@ -158,7 +158,7 @@ public abstract class KvStoreDatabase<
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final int maxKnownNodeCacheSize,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
@@ -179,7 +179,7 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =

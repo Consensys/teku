@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -59,12 +60,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final boolean storeNonCanonicalBlocks;
   private final boolean storeVotesEquivocation;
 
-  private final AsyncRunner asyncRunner;
+  private final Optional<AsyncRunner> asyncRunner;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final StateStorageMode dataStorageMode,
       final Eth1Address depositContractAddress,
       final boolean storeNonCanonicalBlocks,
@@ -89,7 +90,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,

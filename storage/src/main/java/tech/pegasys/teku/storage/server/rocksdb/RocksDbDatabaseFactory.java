@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
@@ -41,7 +42,7 @@ public class RocksDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedSnapshot combinedSchema =
@@ -78,7 +79,7 @@ public class RocksDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final AsyncRunner asyncRunner,
+      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final KvStoreAccessor db =

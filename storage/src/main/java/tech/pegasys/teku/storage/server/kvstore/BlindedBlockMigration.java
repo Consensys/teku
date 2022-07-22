@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -35,20 +33,23 @@ public class BlindedBlockMigration<
 
   private final T dao;
 
-  private final AsyncRunner asyncRunner;
+  private final Optional<AsyncRunner> asyncRunner;
 
-  BlindedBlockMigration(final Spec spec, final T dao, final AsyncRunner asyncRunner) {
-    checkNotNull(asyncRunner, "Must supply an async runner");
+  BlindedBlockMigration(final Spec spec, final T dao, final Optional<AsyncRunner> asyncRunner) {
     this.spec = spec;
     this.dao = dao;
     this.asyncRunner = asyncRunner;
   }
 
   void migrateBlocks() {
+    if (asyncRunner.isEmpty()) {
+      throw new IllegalStateException("Not able to migrate blocks without an async runner");
+    }
     performBatchMigration();
     asyncRunner
+        .get()
         .runAsync(this::migrateRemainingBlocks)
-        .finish(error -> LOG.debug("Failed to complete block migration", error));
+        .finish(error -> LOG.error("Failed to complete block migration", error));
   }
 
   private void migrateRemainingBlocks() {

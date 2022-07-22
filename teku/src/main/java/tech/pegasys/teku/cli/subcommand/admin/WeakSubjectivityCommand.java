@@ -15,13 +15,12 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
-import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
@@ -105,15 +104,12 @@ public class WeakSubjectivityCommand implements Runnable {
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
-    final AsyncRunnerFactory asyncRunnerFactory =
-        AsyncRunnerFactory.createDefault(
-            new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
-            asyncRunnerFactory.create("database-migrator", 1),
+            Optional.empty(),
             beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),

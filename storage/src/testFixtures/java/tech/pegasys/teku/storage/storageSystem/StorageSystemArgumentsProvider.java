@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -38,8 +37,6 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
   protected LongList getStateStorageFrequencies() {
     return LongList.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
   }
-
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   protected List<StateStorageMode> getStorageModes() {
     return List.of(StateStorageMode.values());
@@ -65,7 +62,6 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                             .specProvider(spec)
                             .version(databaseVersion)
                             .storageMode(mode)
-                            .asyncRunner(asyncRunner)
                             .stateStorageFrequency(storageFrequency)
                             .build()));
           }
@@ -80,7 +76,6 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                           .version(databaseVersion)
                           .dataDir(dataPath)
                           .storageMode(mode)
-                          .asyncRunner(asyncRunner)
                           .stateStorageFrequency(storageFrequency)
                           .build()));
         }
