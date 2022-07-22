@@ -86,6 +86,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected SpecConfig specConfig;
 
   private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+  private static final MediaType SSZ = MediaType.parse("application/octet-stream");
   private static final BeaconRestApiConfig CONFIG =
       BeaconRestApiConfig.builder()
           .restApiPort(0)
@@ -326,6 +327,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected Response post(final String route, final String postData) throws IOException {
     final RequestBody body = RequestBody.create(postData, JSON);
+    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
+    return client.newCall(request).execute();
+  }
+
+  protected Response postSsz(final String route, final byte[] postData) throws IOException {
+    final RequestBody body = RequestBody.create(postData, SSZ);
     final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
     return client.newCall(request).execute();
   }

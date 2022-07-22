@@ -31,13 +31,16 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
@@ -52,8 +55,10 @@ class OkHttpValidatorTypeDefClientTest {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private DataStructureUtil dataStructureUtil;
+  private Spec spec;
 
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
+  private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClientWithPreferredSsz;
 
   private RegisterValidatorsRequest sszRegisterValidatorsRequest;
 
@@ -66,14 +71,61 @@ class OkHttpValidatorTypeDefClientTest {
     okHttpValidatorTypeDefClient =
         new OkHttpValidatorTypeDefClient(
             okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
+    okHttpValidatorTypeDefClientWithPreferredSsz =
+        new OkHttpValidatorTypeDefClient(
+            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), true);
     sszRegisterValidatorsRequest =
         new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
     dataStructureUtil = specContext.getDataStructureUtil();
+    spec = specContext.getSpec();
   }
 
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
+  }
+
+  @TestTemplate
+  void publishesBlindedBlockSszEncoded() throws InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+
+    final SendSignedBlockResult result =
+        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBeaconBlock);
+
+    assertThat(result.isPublished()).isTrue();
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getBody().readByteArray())
+        .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
+  }
+
+  @TestTemplate
+  void publishesBlindedBlockJsonEncoded() throws InterruptedException, JsonProcessingException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(UInt64.ONE);
+
+    final SendSignedBlockResult result =
+        okHttpValidatorTypeDefClient.sendSignedBlock(signedBeaconBlock);
+
+    assertThat(result.isPublished()).isTrue();
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+    final String expectedRequest =
+        JsonUtil.serialize(
+            signedBeaconBlock,
+            spec.atSlot(UInt64.ONE)
+                .getSchemaDefinitions()
+                .getSignedBlindedBeaconBlockSchema()
+                .getJsonTypeDefinition());
+
+    String actualRequest = recordedRequest.getBody().readUtf8();
+
+    assertJsonEquals(actualRequest, expectedRequest);
   }
 
   @TestTemplate
