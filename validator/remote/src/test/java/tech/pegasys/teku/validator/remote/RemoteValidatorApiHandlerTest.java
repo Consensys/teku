@@ -105,7 +105,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getsEndpoint() {
-    assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint.uri());
+    assertThat(apiHandler.getEndpoint()).isEqualTo(endpoint);
   }
 
   @Test
