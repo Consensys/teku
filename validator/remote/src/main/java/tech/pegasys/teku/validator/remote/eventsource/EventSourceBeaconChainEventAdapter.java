@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.validator.remote.eventsource;
 
 import static java.util.Collections.emptyMap;
 
@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
@@ -187,7 +188,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             throwable ->
                 LOG.trace(
-                    "The primary beacon node is not ready for event streaming or switching over to it failed",
+                    "The primary beacon node is not ready for event streaming or switching over to it failed.",
                     throwable));
     primaryBeaconNodeCheckStatusTask.set(checkStatusTask);
   }
