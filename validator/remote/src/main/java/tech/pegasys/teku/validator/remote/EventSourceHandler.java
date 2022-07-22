@@ -83,6 +83,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onMessage(final String event, final MessageEvent messageEvent) {
+    LOG.trace("Received {} event from beacon node {}", event, messageEvent.getOrigin());
     try {
       if (EventType.valueOf(event) == EventType.head) {
         handleHeadEvent(messageEvent.getData());
