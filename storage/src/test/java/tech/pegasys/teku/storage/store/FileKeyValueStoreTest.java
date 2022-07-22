@@ -78,7 +78,7 @@ public class FileKeyValueStoreTest {
     }
 
     SafeFuture<Void> allFut = SafeFuture.allOfFailFast(futs);
-    assertThatCode(() -> allFut.get(30, TimeUnit.SECONDS)).doesNotThrowAnyException();
+    assertThatCode(() -> allFut.get(60, TimeUnit.SECONDS)).doesNotThrowAnyException();
 
     Optional<Bytes> finalVal = store.get("aaa");
     assertThat(finalVal).isNotEmpty();
