@@ -187,7 +187,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
             throwable ->
-                LOG.debug("Error while checking the status of the primary Beacon Node", throwable));
+                LOG.trace(
+                    "The primary beacon node is not ready for event streaming or switching over to it failed",
+                    throwable));
     primaryBeaconNodeCheckStatusTask.set(checkStatusTask);
   }
 
