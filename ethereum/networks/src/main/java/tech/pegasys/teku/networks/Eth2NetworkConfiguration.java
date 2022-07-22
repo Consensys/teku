@@ -460,7 +460,9 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyTestnetDefaults() {
-      return reset().forkChoiceBeforeProposingEnabled(true);
+      return reset()
+          .forkChoiceBeforeProposingEnabled(true)
+          .progressiveBalancesEnabled(ProgressiveBalancesMode.USED);
     }
 
     public Builder applyMinimalNetworkDefaults() {
