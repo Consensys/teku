@@ -146,8 +146,7 @@ public class Eth2NetworkOptions {
       description = "Progressive balance optimization mode to use.",
       arity = "1",
       hidden = true)
-  private ProgressiveBalancesMode progressiveBalancesMode =
-      Eth2NetworkConfiguration.DEFAULT_PROGRESSIVE_BALANCES_MODE;
+  private ProgressiveBalancesMode progressiveBalancesMode = null;
 
   @Option(
       names = {"--Xfork-choice-equivocating-indices-enabled"},
@@ -219,11 +218,13 @@ public class Eth2NetworkOptions {
     if (forkChoiceBeforeProposingEnabled != null) {
       builder.forkChoiceBeforeProposingEnabled(forkChoiceBeforeProposingEnabled);
     }
+    if (progressiveBalancesMode != null) {
+      builder.progressiveBalancesEnabled(progressiveBalancesMode);
+    }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .proposerBoostEnabled(proposerBoostEnabled)
-        .progressiveBalancesEnabled(progressiveBalancesMode);
+        .proposerBoostEnabled(proposerBoostEnabled);
   }
 
   public String getNetwork() {
