@@ -455,12 +455,12 @@ public class Eth2NetworkConfiguration {
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
       forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
-
+      progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
       return this;
     }
 
     public Builder applyTestnetDefaults() {
-      return reset();
+      return reset().progressiveBalancesEnabled(ProgressiveBalancesMode.USED);
     }
 
     public Builder applyMinimalNetworkDefaults() {
