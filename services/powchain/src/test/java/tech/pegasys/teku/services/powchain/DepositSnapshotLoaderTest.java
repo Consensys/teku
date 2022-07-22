@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.beacon.pow.Eth1Provider;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
-import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
@@ -70,21 +69,6 @@ public class DepositSnapshotLoaderTest {
     final SafeFuture<LoadDepositSnapshotResult> result =
         depositSnapshotLoader.loadDepositSnapshot();
     assertThatThrownBy(result::get).cause().isInstanceOf(InvalidConfigurationException.class);
-  }
-
-  @Test
-  public void shouldReturnEmptyResult_whenELIsDown() throws Exception {
-    when(eth1Provider.getGuaranteedEth1Block(any(String.class)))
-        .thenReturn(SafeFuture.failedFuture(new Error("")));
-    final SafeFuture<LoadDepositSnapshotResult> result =
-        depositSnapshotLoader.loadDepositSnapshot();
-    assertWith(
-        result.get(),
-        snapshotResult -> {
-          assertThat(snapshotResult.getDepositTreeSnapshot().isEmpty()).isTrue();
-          assertThat(snapshotResult.getReplayDepositsResult())
-              .isEqualTo(ReplayDepositsResult.empty());
-        });
   }
 
   @Test
