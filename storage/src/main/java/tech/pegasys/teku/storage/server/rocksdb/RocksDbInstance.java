@@ -150,6 +150,18 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
+    assertOpen();
+    final ColumnFamilyHandle handle = columnHandles.get(column);
+    final byte[] keyBytes = column.getKeySerializer().serialize(key);
+    try {
+      return Optional.ofNullable(db.get(handle, keyBytes)).map(Bytes::wrap);
+    } catch (RocksDBException e) {
+      throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
+    }
+  }
+
+  @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final K from, final K to) {

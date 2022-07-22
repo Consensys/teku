@@ -93,6 +93,11 @@ public class V4FinalizedKvStoreDao {
         .collect(Collectors.toList());
   }
 
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
+  }
+
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
   }
@@ -209,6 +214,10 @@ public class V4FinalizedKvStoreDao {
 
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
+  }
+
+  public <V, K> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
   }
 
   public Map<String, Long> getColumnCounts() {

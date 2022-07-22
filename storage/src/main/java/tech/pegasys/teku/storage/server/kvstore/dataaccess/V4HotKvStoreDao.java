@@ -172,6 +172,10 @@ public class V4HotKvStoreDao {
     return schema.getVariableMap();
   }
 
+  public <V, K> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
   public Map<String, Long> getColumnCounts() {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));

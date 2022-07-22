@@ -77,6 +77,15 @@ public interface KvStoreAccessor extends AutoCloseable {
   Stream<ColumnEntry<Bytes, Bytes>> streamRaw(KvStoreColumn<?, ?> column);
 
   /**
+   * WARNING: should only be used to migrate data between tables
+   *
+   * @param column column to get value from
+   * @param key key of the data to retrieve
+   * @return Bytes representing the value found at key
+   */
+  <K, V> Optional<Bytes> getRaw(KvStoreColumn<K, V> column, K key);
+
+  /**
    * Stream entries from a column between keys from and to fully inclusive.
    *
    * @param column the column to stream entries from
