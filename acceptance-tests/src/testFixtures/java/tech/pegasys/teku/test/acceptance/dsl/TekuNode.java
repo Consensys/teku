@@ -588,6 +588,7 @@ public class TekuNode extends Node {
           }
         });
     container.stop();
+    started = false;
   }
 
   @Override
