@@ -47,11 +47,11 @@ public class BlindedBlockKvStoreDatabase
         CombinedUpdaterBlinded,
         HotUpdaterBlinded,
         FinalizedUpdaterBlinded> {
-  final BlindedHotBlockMigration<?> migrator;
+  final BlindedBlockMigration<?> migrator;
 
   BlindedBlockKvStoreDatabase(
       final KvStoreCombinedDaoBlinded dao,
-      final BlindedHotBlockMigration<?> migrator,
+      final BlindedBlockMigration<?> migrator,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {

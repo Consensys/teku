@@ -22,10 +22,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -38,6 +41,9 @@ public class VersionedDatabaseFactoryTest {
   public static final int MAX_KNOWN_NODE_CACHE_SIZE = 10_000;
   private final Eth1Address eth1Address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+
+  final AsyncRunnerFactory asyncRunnerFactory =
+      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   @TempDir Path dataDir;
 
@@ -47,6 +53,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            asyncRunnerFactory.create("async", 1),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -74,6 +81,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            asyncRunnerFactory.create("async", 1),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -95,6 +103,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            asyncRunnerFactory.create("async", 1),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -114,6 +123,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            asyncRunnerFactory.create("async", 1),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -133,6 +143,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            asyncRunnerFactory.create("async", 1),
             DATA_STORAGE_MODE,
             version,
             1L,

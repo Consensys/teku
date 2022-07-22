@@ -13,18 +13,21 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded;
 
-public class BlindedHotBlockMigration<
+public class BlindedBlockMigration<
     T extends KvStoreCombinedDaoBlinded & KvStoreCombinedDaoUnblinded> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int BATCH_SIZE = 1_000;
@@ -32,13 +35,24 @@ public class BlindedHotBlockMigration<
 
   private final T dao;
 
-  BlindedHotBlockMigration(final Spec spec, final T dao) {
+  private final AsyncRunner asyncRunner;
+
+  BlindedBlockMigration(final Spec spec, final T dao, final AsyncRunner asyncRunner) {
+    checkNotNull(asyncRunner, "Must supply an async runner");
     this.spec = spec;
     this.dao = dao;
+    this.asyncRunner = asyncRunner;
   }
 
   void migrateBlocks() {
     performBatchMigration();
+    asyncRunner
+        .runAsync(this::migrateRemainingBlocks)
+        .finish(error -> LOG.debug("Failed to complete block migration", error));
+  }
+
+  private void migrateRemainingBlocks() {
+    LOG.debug("migrate finalized un-blinded blocks to blinded storage.");
   }
 
   private void performBatchMigration() {

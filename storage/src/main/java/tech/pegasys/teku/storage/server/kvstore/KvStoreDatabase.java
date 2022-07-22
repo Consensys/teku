@@ -37,6 +37,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -105,6 +106,7 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
@@ -117,7 +119,7 @@ public abstract class KvStoreDatabase<
     if (storeBlockExecutionPayloadSeparately) {
       return new BlindedBlockKvStoreDatabase(
           dao,
-          new BlindedHotBlockMigration<>(spec, dao),
+          new BlindedBlockMigration<>(spec, dao, asyncRunner),
           stateStorageMode,
           storeNonCanonicalBlocks,
           spec);
@@ -132,6 +134,7 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
@@ -142,6 +145,7 @@ public abstract class KvStoreDatabase<
         stateStorageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec,
         finalizedStateStorageLogic);
   }
@@ -154,6 +158,7 @@ public abstract class KvStoreDatabase<
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final int maxKnownNodeCacheSize,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
@@ -163,6 +168,7 @@ public abstract class KvStoreDatabase<
         stateStorageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec,
         finalizedStateStorageLogic);
   }
@@ -173,6 +179,7 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final AsyncRunner asyncRunner,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
@@ -180,7 +187,7 @@ public abstract class KvStoreDatabase<
     if (storeBlockExecutionPayloadSeparately) {
       return new BlindedBlockKvStoreDatabase(
           dao,
-          new BlindedHotBlockMigration<>(spec, dao),
+          new BlindedBlockMigration<>(spec, dao, asyncRunner),
           stateStorageMode,
           storeNonCanonicalBlocks,
           spec);

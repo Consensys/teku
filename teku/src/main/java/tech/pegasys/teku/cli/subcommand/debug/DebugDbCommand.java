@@ -217,11 +217,16 @@ public class DebugDbCommand implements Runnable {
       final boolean isStoreBlockExecutionPayloadSeparately,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunner asyncRunner = asyncRunnerFactory.create("database-migrator", 1);
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
+            asyncRunner,
             beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),

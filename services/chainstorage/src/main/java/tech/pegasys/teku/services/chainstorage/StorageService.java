@@ -51,6 +51,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               new VersionedDatabaseFactory(
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
+                  serviceConfig.createAsyncRunner("database-migrator"),
                   config.getDataStorageMode(),
                   config.getDataStorageCreateDbVersion(),
                   config.getDataStorageFrequency(),

@@ -78,6 +78,7 @@ public class VoteUpdateChannelBenchmark {
         FileBackedStorageSystemBuilder.create()
             .specProvider(TestSpecFactory.createDefault())
             .dataDir(tempDirectory)
+            .asyncRunner(asyncRunnerFactory.create("database-migrator", 1))
             .version(DatabaseVersion.DEFAULT_VERSION)
             .build();
     realChannel = storageSystem.chainStorage();

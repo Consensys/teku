@@ -22,6 +22,7 @@ import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
@@ -58,9 +59,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final boolean storeNonCanonicalBlocks;
   private final boolean storeVotesEquivocation;
 
+  private final AsyncRunner asyncRunner;
+
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
+      final AsyncRunner asyncRunner,
       final StateStorageMode dataStorageMode,
       final Eth1Address depositContractAddress,
       final boolean storeNonCanonicalBlocks,
@@ -70,6 +74,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this(
         metricsSystem,
         dataPath,
+        asyncRunner,
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
@@ -84,6 +89,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
+      final AsyncRunner asyncRunner,
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
@@ -95,6 +101,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
+    this.asyncRunner = asyncRunner;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -197,6 +204,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -223,6 +231,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -244,6 +253,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -270,6 +280,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
           storeVotesEquivocation,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -288,6 +299,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
           storeVotesEquivocation,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -306,6 +318,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
+          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -40,6 +41,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
@@ -63,6 +65,7 @@ public class LevelDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec);
   }
 
@@ -74,6 +77,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot schema =
         V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
@@ -88,6 +92,7 @@ public class LevelDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec);
   }
 
@@ -99,6 +104,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeBlockExecutionPayloadSeparately,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedTreeState schema =
@@ -114,6 +120,7 @@ public class LevelDbDatabaseFactory {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         maxKnownNodeCacheSize,
+        asyncRunner,
         spec);
   }
 }
