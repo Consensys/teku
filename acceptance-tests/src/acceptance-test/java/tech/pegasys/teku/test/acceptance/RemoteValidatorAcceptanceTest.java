@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -20,6 +21,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
+
   static final int VALIDATOR_COUNT = 8;
 
   private TekuNode beaconNode;
@@ -48,11 +50,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
-    validatorClient.waitForLogMessageContaining("Published block");
-    validatorClient.waitForLogMessageContaining("Published attestation");
-    validatorClient.waitForLogMessageContaining("Published aggregate");
-    validatorClient.waitForLogMessageContaining("Published sync_signature");
-    validatorClient.waitForLogMessageContaining("Published sync_contribution");
+    waitForValidatorDutiesToComplete();
   }
 
   @Test
@@ -63,7 +61,60 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
     beaconNode.start();
 
-    validatorClient.waitForLogMessageContaining("Connected to EventSource stream");
+    waitForSuccessfulEventStreamConnection();
+    waitForValidatorDutiesToComplete();
+  }
+
+  @Test
+  void shouldFailoverWhenPrimaryBeaconNodeGoesDown() throws Exception {
+    final TekuNode failoverBeaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork("swift")
+                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                    .withInteropValidators(0, 0)
+                    .withPeers(beaconNode));
+
+    beaconNode.start();
+    failoverBeaconNode.start();
+
+    validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withNetwork("swift")
+                    .withInteropValidators(0, VALIDATOR_COUNT)
+                    .withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(Duration.ofMillis(100))
+                    .withBeaconNodes(beaconNode, failoverBeaconNode));
+
+    validatorClient.start();
+
+    waitForSuccessfulEventStreamConnection();
+    waitForValidatorDutiesToComplete();
+
+    beaconNode.stop();
+
+    validatorClient.waitForLogMessageContaining(
+        "Switching to failover beacon node for event streaming");
+    waitForSuccessfulEventStreamConnection();
+    waitForValidatorDutiesToComplete();
+
+    // primary beacon node recovers
+    beaconNode.start();
+
+    validatorClient.waitForLogMessageContaining(
+        "Primary beacon node is back and ready for event streaming. Will attempt connecting.");
+    waitForSuccessfulEventStreamConnection();
+    waitForValidatorDutiesToComplete();
+  }
+
+  private void waitForSuccessfulEventStreamConnection() {
+    validatorClient.waitForLogMessageContaining(
+        "Successfully connected to beacon node event stream");
+  }
+
+  private void waitForValidatorDutiesToComplete() {
     validatorClient.waitForLogMessageContaining("Published block");
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
