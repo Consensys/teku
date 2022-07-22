@@ -260,6 +260,21 @@ class TimeBasedEth1HeadTrackerTest {
     assertThat(headTracker.advance()).isCompleted();
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  void verifyLateSubscriberGetsHeadEvent() {
+    timeProvider.advanceTimeBySeconds(FOLLOW_TIME + 1000);
+    withBlockTimestamps(5, 10, 100);
+    assertThat(headTracker.init()).isCompleted();
+
+    verify(eth1Provider).getLatestEth1Block();
+    verify(subscriber).onValueChanged(UInt64.valueOf(2));
+
+    final ValueObserver<UInt64> subscriber2 = mock(ValueObserver.class);
+    headTracker.subscribe(subscriber2);
+    verify(subscriber2).onValueChanged(UInt64.valueOf(2));
+  }
+
   private void verifyBlockRequested(final long blockNumber) {
     verify(eth1Provider).getEth1Block(UInt64.valueOf(blockNumber));
   }
