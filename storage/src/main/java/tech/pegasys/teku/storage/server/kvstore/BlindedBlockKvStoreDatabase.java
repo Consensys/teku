@@ -278,6 +278,9 @@ public class BlindedBlockKvStoreDatabase
     if (storeNonCanonicalBlocks) {
       final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       for (Bytes32 blockRoot : blockRoots) {
+        if (finalizedChildToParentMap.containsKey(blockRoot)) {
+          continue;
+        }
         dao.getBlindedBlock(blockRoot)
             .map(SignedBeaconBlock::getSlot)
             .ifPresent(

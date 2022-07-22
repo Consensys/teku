@@ -271,6 +271,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
+  @Override
   public void close() throws Exception {
     db.close();
   }
@@ -333,10 +338,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
   }
 
   @Override

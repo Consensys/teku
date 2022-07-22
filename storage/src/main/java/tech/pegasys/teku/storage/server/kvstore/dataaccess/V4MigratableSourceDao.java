@@ -31,4 +31,6 @@ public interface V4MigratableSourceDao {
 
   @MustBeClosed
   <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(final KvStoreColumn<K, V> kvStoreColumn);
+
+  <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, K key);
 }

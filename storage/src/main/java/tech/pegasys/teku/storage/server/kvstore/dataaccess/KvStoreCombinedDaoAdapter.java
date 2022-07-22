@@ -205,9 +205,15 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return finalizedDao.streamUnblindedFinalizedBlocksRaw();
   }
 
   @Override
@@ -362,6 +368,15 @@ public class KvStoreCombinedDaoAdapter
       return hotDao.streamRawColumn(kvStoreColumn);
     } else {
       return finalizedDao.streamRawColumn(kvStoreColumn);
+    }
+  }
+
+  @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    if (hotDao.getColumnMap().containsValue(kvStoreColumn)) {
+      return hotDao.getRaw(kvStoreColumn, key);
+    } else {
+      return finalizedDao.getRaw(kvStoreColumn, key);
     }
   }
 
