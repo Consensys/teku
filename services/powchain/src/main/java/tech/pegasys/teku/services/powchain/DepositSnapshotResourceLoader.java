@@ -37,9 +37,7 @@ public class DepositSnapshotResourceLoader {
             STATUS_LOG.loadingDepositSnapshot(sanitizedResource);
             final DepositTreeSnapshot depositSnapshot = loadFromResource(snapshotResource);
             STATUS_LOG.loadedDepositSnapshotResource(
-                depositSnapshot.getFinalized(),
-                depositSnapshot.getDeposits(),
-                depositSnapshot.getExecutionBlockHash());
+                depositSnapshot.getDeposits(), depositSnapshot.getExecutionBlockHash());
             return depositSnapshot;
           } catch (IOException e) {
             LOG.error("Failed to load deposit tree snapshot", e);
