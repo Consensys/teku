@@ -26,7 +26,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.runloop.AsyncRunLoop;
 import tech.pegasys.teku.infrastructure.async.runloop.RunLoopLogic;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,7 +42,7 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
 
-  private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.createWithReplay(true);
+  private final ObservableValue<UInt64> headSubscription = new ObservableValue<>(true);
 
   private boolean searchForwards = false;
   private UInt64 nextAdvanceTimeInSeconds = UInt64.ZERO;
@@ -212,19 +213,18 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
           headBlock.getNumber(),
           headBlock.getTimestamp());
       lastNotifiedChainHead = headBlock;
-      subscribers.deliver(
-          HeadUpdatedSubscriber::onHeadUpdated, UInt64.valueOf(headBlock.getNumber()));
+      headSubscription.set(UInt64.valueOf(headBlock.getNumber()));
     }
   }
 
   @Override
-  public long subscribe(final HeadUpdatedSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
+  public long subscribe(final ValueObserver<UInt64> subscriber) {
+    return headSubscription.subscribe(subscriber);
   }
 
   @Override
   public void unsubscribe(final long subscriberId) {
-    subscribers.unsubscribe(subscriberId);
+    headSubscription.unsubscribe(subscriberId);
   }
 
   private static class BlockUnavailableException extends RuntimeException {

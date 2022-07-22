@@ -31,11 +31,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.beacon.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
@@ -208,12 +208,13 @@ public class DepositProcessingControllerTest {
         .thenReturn(SafeFuture.completedFuture(block));
   }
 
+  @SuppressWarnings("unchecked")
   private void pushLatestCanonicalBlockWithNumber(long latestBlockNumber) {
-    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
-        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+    final ArgumentCaptor<ValueObserver<UInt64>> captor =
+        ArgumentCaptor.forClass(ValueObserver.class);
     verify(headTracker).subscribe(captor.capture());
-    final HeadUpdatedSubscriber subscriber = captor.getValue();
-    subscriber.onHeadUpdated(UInt64.valueOf(latestBlockNumber));
+    final ValueObserver<UInt64> subscriber = captor.getValue();
+    subscriber.onValueChanged(UInt64.valueOf(latestBlockNumber));
   }
 
   private ArgumentMatcher<MinGenesisTimeBlockEvent> isEvent(

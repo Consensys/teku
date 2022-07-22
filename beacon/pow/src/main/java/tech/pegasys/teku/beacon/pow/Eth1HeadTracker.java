@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.pow;
 
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface Eth1HeadTracker {
@@ -21,12 +22,7 @@ public interface Eth1HeadTracker {
 
   void stop();
 
-  long subscribe(HeadUpdatedSubscriber subscriber);
+  long subscribe(ValueObserver<UInt64> subscriber);
 
   void unsubscribe(long subscriberId);
-
-  interface HeadUpdatedSubscriber {
-
-    void onHeadUpdated(final UInt64 canonicalHead);
-  }
 }

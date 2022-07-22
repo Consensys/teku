@@ -32,8 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
-import tech.pegasys.teku.beacon.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -132,29 +133,20 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldRetryIfEth1ProviderFails() {
-    final int retryCount = 10;
-
+  void shouldWaitUntilEth1ProviderSucceeds() {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
 
-    // Notify head block but retrieving it will fail
-    notifyHeadBlockAndFailToRetrieve(headBlockNumber);
+    // Notify head block but retrieving it will not succeed for a while
+    final SafeFuture<Block> blockFuture = notifyHeadBlockAndPauseToRetrieve(headBlockNumber);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
 
-    // Set up initial request to eth1 node to fail
-    // We should retry until it succeeds
-    for (int i = 0; i < retryCount; i++) {
-      assertThat(asyncRunner.countDelayedActions()).describedAs("on attempt " + i).isEqualTo(1);
-      asyncRunner.executeQueuedActions();
-      notifyHeadBlockAndFailToRetrieve(headBlockNumber);
-    }
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
-    // Next getHead request succeeds
-    asyncRunner.executeQueuedActions();
-    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
+    // Succeed request
+    final Block latestBlock = block(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
+    blockFuture.complete(latestBlock);
 
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
@@ -169,13 +161,17 @@ class Eth1DepositManagerTest {
     assertNoUncaughtExceptions();
   }
 
-  private void notifyHeadBlockAndFailToRetrieve(final BigInteger headBlockNumber) {
-    when(eth1Provider.getGuaranteedEth1Block(any(UInt64.class)))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Unknown Error")));
-    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
-        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+  @SuppressWarnings("unchecked")
+  private SafeFuture<EthBlock.Block> notifyHeadBlockAndPauseToRetrieve(
+      final BigInteger headBlockNumber) {
+    final SafeFuture<EthBlock.Block> blockFuture = new SafeFuture<>();
+    when(eth1Provider.getGuaranteedEth1Block(any(UInt64.class))).thenReturn(blockFuture);
+
+    final ArgumentCaptor<ValueObserver<UInt64>> captor =
+        ArgumentCaptor.forClass(ValueObserver.class);
     verify(eth1HeadTracker, atLeastOnce()).subscribe(captor.capture());
-    captor.getValue().onHeadUpdated(UInt64.valueOf(headBlockNumber));
+    captor.getValue().onValueChanged(UInt64.valueOf(headBlockNumber));
+    return blockFuture;
   }
 
   @Test
@@ -430,15 +426,16 @@ class Eth1DepositManagerTest {
     return block;
   }
 
+  @SuppressWarnings("unchecked")
   private void notifyHeadBlock(final BigInteger blockNumber, final long timestamp) {
     final Block latestBlock = block(blockNumber, timestamp);
     when(eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(latestBlock));
 
-    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
-        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+    final ArgumentCaptor<ValueObserver<UInt64>> captor =
+        ArgumentCaptor.forClass(ValueObserver.class);
     verify(eth1HeadTracker, atLeastOnce()).subscribe(captor.capture());
-    captor.getValue().onHeadUpdated(UInt64.valueOf(blockNumber));
+    captor.getValue().onValueChanged(UInt64.valueOf(blockNumber));
   }
 
   private void assertNoUncaughtExceptions() {
