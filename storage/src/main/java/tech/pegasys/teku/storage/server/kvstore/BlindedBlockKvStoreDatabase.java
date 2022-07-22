@@ -48,13 +48,16 @@ public class BlindedBlockKvStoreDatabase
         CombinedUpdaterBlinded,
         HotUpdaterBlinded,
         FinalizedUpdaterBlinded> {
+  final BlindedHotBlockMigration<?> migrator;
 
   BlindedBlockKvStoreDatabase(
       final KvStoreCombinedDaoBlinded dao,
+      final BlindedHotBlockMigration<?> migrator,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     super(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    this.migrator = migrator;
   }
 
   @Override
@@ -119,17 +122,6 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
     return getUnblindedBlock(dao.getBlindedBlock(blockRoot));
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return dao.streamBlindedHotBlocks().map(this::getUnblindedBlock);
-  }
-
-  @Override
-  public long countUnblindedFinalizedBlocks() {
-    return 0;
   }
 
   @Override
@@ -244,8 +236,13 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
-  public long countBlindedBlocks() {
-    return dao.countBlindedBlocks();
+  public Map<String, Long> getColumnCounts() {
+    return dao.getColumnCounts();
+  }
+
+  @Override
+  public void migrate() {
+    migrator.migrateBlocks();
   }
 
   @Override
@@ -287,6 +284,9 @@ public class BlindedBlockKvStoreDatabase
     if (storeNonCanonicalBlocks) {
       final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       for (Bytes32 blockRoot : blockRoots) {
+        if (finalizedChildToParentMap.containsKey(blockRoot)) {
+          continue;
+        }
         dao.getBlindedBlock(blockRoot)
             .map(SignedBeaconBlock::getSlot)
             .ifPresent(

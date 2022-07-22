@@ -106,11 +106,6 @@ public interface Database extends AutoCloseable {
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
-  Stream<SignedBeaconBlock> streamHotBlocks();
-
-  long countUnblindedFinalizedBlocks();
-
-  @MustBeClosed
   Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints();
 
   List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
@@ -136,11 +131,9 @@ public interface Database extends AutoCloseable {
 
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
-  long countBlindedBlocks();
+  Map<String, Long> getColumnCounts();
 
-  long countExecutionPayloads();
-
-  long countNonCanonicalSlots();
+  void migrate();
 
   Optional<Checkpoint> getAnchor();
 }

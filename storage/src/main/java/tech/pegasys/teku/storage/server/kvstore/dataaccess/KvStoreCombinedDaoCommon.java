@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -76,10 +75,9 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   long countNonCanonicalSlots();
 
-  @MustBeClosed
-  Stream<Bytes> streamExecutionPayloads();
-
   Optional<UInt64> getOptimisticTransitionBlockSlot();
+
+  Map<String, Long> getColumnCounts();
 
   interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 

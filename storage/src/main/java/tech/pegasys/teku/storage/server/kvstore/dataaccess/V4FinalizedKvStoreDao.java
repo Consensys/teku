@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,11 @@ public class V4FinalizedKvStoreDao {
         .collect(Collectors.toList());
   }
 
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
+  }
+
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
   }
@@ -116,11 +122,6 @@ public class V4FinalizedKvStoreDao {
         db.streamRaw(schema.getColumnFinalizedBlocksBySlot())) {
       return entries.count();
     }
-  }
-
-  @MustBeClosed
-  public Stream<Bytes> streamExecutionPayloads() {
-    return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
   }
 
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
@@ -213,6 +214,16 @@ public class V4FinalizedKvStoreDao {
 
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
+  }
+
+  public <V, K> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
+  public Map<String, Long> getColumnCounts() {
+    final Map<String, Long> columnCounts = new HashMap<>();
+    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
   }
 
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {

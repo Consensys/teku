@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.Streams;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -102,7 +103,10 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            primaryApiChannel, List.of(failoverApiChannel1, failoverApiChannel2), validatorLogger);
+            primaryApiChannel,
+            List.of(failoverApiChannel1, failoverApiChannel2),
+            true,
+            validatorLogger);
   }
 
   @Test
@@ -111,7 +115,8 @@ class FailoverValidatorApiHandlerTest {
         IllegalArgumentException.class,
         () ->
             failoverApiHandler =
-                new FailoverValidatorApiHandler(primaryApiChannel, List.of(), validatorLogger));
+                new FailoverValidatorApiHandler(
+                    primaryApiChannel, List.of(), true, validatorLogger));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -161,6 +166,30 @@ class FailoverValidatorApiHandlerTest {
             });
 
     verify(validatorLogger).remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getSubscriptionRequests")
+  <T> void requestIsNotRelayedToFailoversIfFailoversSendSubnetSubscriptionsIsDisabled(
+      final ValidatorApiChannelRequest<T> request,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade,
+      final T response) {
+
+    failoverApiHandler =
+        new FailoverValidatorApiHandler(
+            primaryApiChannel,
+            List.of(failoverApiChannel1, failoverApiChannel2),
+            false,
+            validatorLogger);
+
+    setupSuccesses(request, response, primaryApiChannel);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+    verifyCallIsMade.accept(primaryApiChannel);
+
+    verifyNoInteractions(validatorLogger, failoverApiChannel1, failoverApiChannel2);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -351,11 +380,6 @@ class FailoverValidatorApiHandlerTest {
   }
 
   private static Stream<Arguments> getRelayRequests() {
-    final CommitteeSubscriptionRequest committeeSubscriptionRequest =
-        new CommitteeSubscriptionRequest(0, 0, UInt64.ZERO, UInt64.ONE, true);
-    final SyncCommitteeSubnetSubscription syncCommitteeSubnetSubscription =
-        new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO);
-    final SubnetSubscription subnetSubscription = new SubnetSubscription(0, UInt64.ONE);
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final SubmitDataError submitDataError =
         new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
@@ -369,6 +393,53 @@ class FailoverValidatorApiHandlerTest {
         DATA_STRUCTURE_UTIL.randomSignedContributionAndProof(2);
     final SszList<SignedValidatorRegistration> validatorRegistrations =
         DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
+
+    return Streams.concat(
+        getSubscriptionRequests(),
+        Stream.of(
+            getArguments(
+                "sendSignedAttestations",
+                apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
+                apiChannel -> verify(apiChannel).sendSignedAttestations(List.of(attestation)),
+                List.of(submitDataError)),
+            getArguments(
+                "sendAggregateAndProofs",
+                apiChannel -> apiChannel.sendAggregateAndProofs(List.of(signedAggregateAndProof)),
+                apiChannel ->
+                    verify(apiChannel).sendAggregateAndProofs(List.of(signedAggregateAndProof)),
+                List.of(submitDataError)),
+            getArguments(
+                "sendSignedBlock",
+                apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
+                apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock),
+                mock(SendSignedBlockResult.class)),
+            getArguments(
+                "sendSyncCommitteeMessages",
+                apiChannel -> apiChannel.sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
+                apiChannel ->
+                    verify(apiChannel).sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
+                List.of(submitDataError)),
+            getArguments(
+                "sendSignedContributionAndProofs",
+                apiChannel ->
+                    apiChannel.sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
+                apiChannel ->
+                    verify(apiChannel)
+                        .sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
+                null),
+            getArguments(
+                "registerValidators",
+                apiChannel -> apiChannel.registerValidators(validatorRegistrations),
+                apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations),
+                null)));
+  }
+
+  private static Stream<Arguments> getSubscriptionRequests() {
+    final CommitteeSubscriptionRequest committeeSubscriptionRequest =
+        new CommitteeSubscriptionRequest(0, 0, UInt64.ZERO, UInt64.ONE, true);
+    final SyncCommitteeSubnetSubscription syncCommitteeSubnetSubscription =
+        new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO);
+    final SubnetSubscription subnetSubscription = new SubnetSubscription(0, UInt64.ONE);
 
     return Stream.of(
         getArguments(
@@ -393,41 +464,6 @@ class FailoverValidatorApiHandlerTest {
             apiChannel -> apiChannel.subscribeToPersistentSubnets(Set.of(subnetSubscription)),
             apiChannel ->
                 verify(apiChannel).subscribeToPersistentSubnets(Set.of(subnetSubscription)),
-            null),
-        getArguments(
-            "sendSignedAttestations",
-            apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
-            apiChannel -> verify(apiChannel).sendSignedAttestations(List.of(attestation)),
-            List.of(submitDataError)),
-        getArguments(
-            "sendAggregateAndProofs",
-            apiChannel -> apiChannel.sendAggregateAndProofs(List.of(signedAggregateAndProof)),
-            apiChannel ->
-                verify(apiChannel).sendAggregateAndProofs(List.of(signedAggregateAndProof)),
-            List.of(submitDataError)),
-        getArguments(
-            "sendSignedBlock",
-            apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
-            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock),
-            mock(SendSignedBlockResult.class)),
-        getArguments(
-            "sendSyncCommitteeMessages",
-            apiChannel -> apiChannel.sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
-            apiChannel ->
-                verify(apiChannel).sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
-            List.of(submitDataError)),
-        getArguments(
-            "sendSignedContributionAndProofs",
-            apiChannel ->
-                apiChannel.sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
-            apiChannel ->
-                verify(apiChannel)
-                    .sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
-            null),
-        getArguments(
-            "registerValidators",
-            apiChannel -> apiChannel.registerValidators(validatorRegistrations),
-            apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations),
             null));
   }
 
