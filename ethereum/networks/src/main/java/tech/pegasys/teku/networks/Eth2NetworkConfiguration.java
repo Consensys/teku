@@ -46,7 +46,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
-  public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = false;
+  public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
       ProgressiveBalancesMode.DISABLED;
 
@@ -455,12 +455,12 @@ public class Eth2NetworkConfiguration {
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
       forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
-
+      progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
       return this;
     }
 
     public Builder applyTestnetDefaults() {
-      return reset().forkChoiceBeforeProposingEnabled(true);
+      return reset().progressiveBalancesEnabled(ProgressiveBalancesMode.USED);
     }
 
     public Builder applyMinimalNetworkDefaults() {
