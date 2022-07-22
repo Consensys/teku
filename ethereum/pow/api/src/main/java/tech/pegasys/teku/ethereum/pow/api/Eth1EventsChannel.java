@@ -24,5 +24,5 @@ public interface Eth1EventsChannel extends VoidReturningChannelInterface {
 
   default void onEth1Block(Bytes32 blockHash, UInt64 blockTimestamp) {}
 
-  default void onInitialDepositTreeSnapshot(final DepositTreeSnapshot depositTreeSnapshot) {}
+  default void onInitialDepositTreeSnapshot(DepositTreeSnapshot depositTreeSnapshot) {}
 }
