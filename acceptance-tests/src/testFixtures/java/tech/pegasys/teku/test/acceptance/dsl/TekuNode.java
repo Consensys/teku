@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -90,7 +91,7 @@ public class TekuNode extends Node {
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
 
-  private boolean started = false;
+  private AtomicBoolean started = new AtomicBoolean(false);
   private Set<File> configFiles;
 
   private TekuNode(final Network network, final DockerVersion version, final Config config) {
@@ -134,9 +135,9 @@ public class TekuNode extends Node {
   }
 
   public void start() throws Exception {
-    assertThat(started).isFalse();
+    assertThat(started.get()).isFalse();
     LOG.debug("Start node {}", nodeAlias);
-    started = true;
+    started.set(true);
     final Map<File, String> configFiles = config.write();
     this.configFiles = configFiles.keySet();
     configFiles.forEach(
@@ -576,7 +577,7 @@ public class TekuNode extends Node {
 
   @Override
   public void stop() {
-    if (!started) {
+    if (started.compareAndSet(false, false)) {
       return;
     }
     LOG.debug("Shutting down");
@@ -588,7 +589,6 @@ public class TekuNode extends Node {
           }
         });
     container.stop();
-    started = false;
   }
 
   @Override
