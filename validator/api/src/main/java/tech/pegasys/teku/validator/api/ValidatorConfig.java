@@ -51,6 +51,8 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
+  public static final Duration DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD =
+      Duration.ofSeconds(30);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -78,8 +80,8 @@ public class ValidatorConfig {
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
-
   private final int executorMaxQueueSize;
+  private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -108,7 +110,8 @@ public class ValidatorConfig {
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
-      final int executorMaxQueueSize) {
+      final int executorMaxQueueSize,
+      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -139,6 +142,8 @@ public class ValidatorConfig {
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
+    this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+        primaryBeaconNodeEventStreamReconnectAttemptPeriod;
   }
 
   public static Builder builder() {
@@ -248,6 +253,10 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
+  public Duration getPrimaryBeaconNodeEventStreamReconnectAttemptPeriod() {
+    return primaryBeaconNodeEventStreamReconnectAttemptPeriod;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -293,6 +302,8 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
+    private Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+        DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD;
 
     private Builder() {}
 
@@ -465,6 +476,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder primaryBeaconNodeEventStreamReconnectAttemptPeriod(
+        final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
+      this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+          primaryBeaconNodeEventStreamReconnectAttemptPeriod;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -499,7 +517,8 @@ public class ValidatorConfig {
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
-          executorMaxQueueSize);
+          executorMaxQueueSize,
+          primaryBeaconNodeEventStreamReconnectAttemptPeriod);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

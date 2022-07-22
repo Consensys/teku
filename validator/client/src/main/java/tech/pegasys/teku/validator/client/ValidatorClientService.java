@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -115,6 +116,8 @@ public class ValidatorClientService extends Service {
     final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
     final boolean failoversSendSubnetSubscriptions =
         validatorConfig.isFailoversSendSubnetSubscriptionsEnabled();
+    final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+        validatorConfig.getPrimaryBeaconNodeEventStreamReconnectAttemptPeriod();
     final List<URI> beaconNodeApiEndpoints = validatorConfig.getBeaconNodeApiEndpoints();
 
     BeaconNodeApi beaconNodeApi;
@@ -131,7 +134,8 @@ public class ValidatorClientService extends Service {
                           config.getSpec(),
                           generateEarlyAttestations,
                           preferSszBlockEncoding,
-                          failoversSendSubnetSubscriptions))
+                          failoversSendSubnetSubscriptions,
+                          primaryBeaconNodeEventStreamReconnectAttemptPeriod))
               .orElseGet(
                   () ->
                       InProcessBeaconNodeApi.create(
@@ -145,7 +149,8 @@ public class ValidatorClientService extends Service {
               config.getSpec(),
               generateEarlyAttestations,
               preferSszBlockEncoding,
-              failoversSendSubnetSubscriptions);
+              failoversSendSubnetSubscriptions,
+              primaryBeaconNodeEventStreamReconnectAttemptPeriod);
     }
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
