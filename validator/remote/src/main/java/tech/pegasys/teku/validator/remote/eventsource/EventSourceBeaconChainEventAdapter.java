@@ -62,7 +62,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final AsyncRunner asyncRunner;
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
-  private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover;
+  private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
 
   public EventSourceBeaconChainEventAdapter(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
@@ -74,7 +74,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations,
-      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover) {
+      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
     this.okHttpClient = okHttpClient;
@@ -83,8 +83,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.eventSourceHandler =
         new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
-    this.primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover =
-        primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover;
+    this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+        primaryBeaconNodeEventStreamReconnectAttemptPeriod;
     this.primaryEventSource = createEventSource(primaryBeaconNodeApi);
   }
 
@@ -193,8 +193,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             () ->
                 checkBeaconNodeIsReadyForEventStreaming(primaryBeaconNodeApi)
                     .thenRun(this::switchToPrimaryEventStream),
-            primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover,
-            primaryBeaconNodeEventStreamReconnectAttemptPeriodDuringFailover,
+            primaryBeaconNodeEventStreamReconnectAttemptPeriod,
+            primaryBeaconNodeEventStreamReconnectAttemptPeriod,
             throwable ->
                 LOG.trace(
                     "Couldn't reconnect to the primary Beacon Node event stream.", throwable));
