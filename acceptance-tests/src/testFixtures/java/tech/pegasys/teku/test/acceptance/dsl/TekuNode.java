@@ -579,8 +579,8 @@ public class TekuNode extends Node {
     if (!started) {
       return;
     }
-    started = false;
     LOG.debug("Shutting down");
+    started = false;
     maybeEventStreamListener.ifPresent(EventStreamListener::close);
     configFiles.forEach(
         configFile -> {

@@ -119,8 +119,8 @@ public class TekuValidatorNode extends Node {
     if (!started) {
       return;
     }
-    started = false;
     LOG.debug("Shutting down");
+    started = false;
     configFiles.forEach(
         configFile -> {
           if (!configFile.delete() && configFile.exists()) {
