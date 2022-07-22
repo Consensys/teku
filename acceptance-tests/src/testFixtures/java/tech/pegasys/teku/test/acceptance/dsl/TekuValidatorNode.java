@@ -24,11 +24,14 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -117,6 +120,7 @@ public class TekuValidatorNode extends Node {
       return;
     }
     LOG.debug("Shutting down");
+    started = false;
     configFiles.forEach(
         configFile -> {
           if (!configFile.delete() && configFile.exists()) {
@@ -185,6 +189,23 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
       configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
+      return this;
+    }
+
+    public TekuValidatorNode.Config withBeaconNodes(final TekuNode... beaconNodes) {
+      configMap.put(
+          "Xbeacon-node-api-endpoints",
+          Arrays.stream(beaconNodes)
+              .map(TekuNode::getBeaconRestApiUrl)
+              .collect(Collectors.toList()));
+      return this;
+    }
+
+    public TekuValidatorNode.Config withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(
+        final Duration reconnectAttemptPeriod) {
+      configMap.put(
+          "Xprimary-beacon-node-event-stream-reconnect-attempt-period",
+          reconnectAttemptPeriod.toMillis());
       return this;
     }
 

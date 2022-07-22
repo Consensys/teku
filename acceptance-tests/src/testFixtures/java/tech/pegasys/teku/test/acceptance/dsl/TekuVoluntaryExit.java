@@ -85,6 +85,7 @@ public class TekuVoluntaryExit extends Node {
       return;
     }
     LOG.debug("Shutting down");
+    started = false;
     configFiles.forEach(
         configFile -> {
           if (!configFile.delete() && configFile.exists()) {
