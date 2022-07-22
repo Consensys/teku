@@ -40,6 +40,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBli
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.CombinedUpdaterBlinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.HotUpdaterBlinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
 
 public class BlindedBlockKvStoreDatabase
     extends KvStoreDatabase<
@@ -179,6 +180,11 @@ public class BlindedBlockKvStoreDatabase
           });
       updater.commit();
     }
+  }
+
+  @Override
+  protected KvStoreCombinedDaoCommon.FinalizedUpdaterCommon getFinalizedUpdater() {
+    return dao.finalizedUpdaterBlinded();
   }
 
   @Override

@@ -301,6 +301,21 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public void storeFinalizedState(BeaconState state) {
+    if (state == null) {
+      return;
+    }
+
+    final Bytes32 blockRoot = spec.getBlockRootAtSlot(state, state.getSlot());
+    try (final FinalizedUpdaterCommon updater = getFinalizedUpdater()) {
+      updater.addFinalizedState(blockRoot, state);
+      updater.commit();
+    }
+  }
+
+  protected abstract FinalizedUpdaterCommon getFinalizedUpdater();
+
+  @Override
   public Optional<OnDiskStoreData> createMemoryStore() {
     return createMemoryStore(() -> Instant.now().getEpochSecond());
   }
@@ -464,6 +479,11 @@ public abstract class KvStoreDatabase<
   @Override
   public long countNonCanonicalSlots() {
     return dao.countNonCanonicalSlots();
+  }
+
+  @Override
+  public Optional<Checkpoint> getAnchor() {
+    return dao.getAnchor();
   }
 
   @Override

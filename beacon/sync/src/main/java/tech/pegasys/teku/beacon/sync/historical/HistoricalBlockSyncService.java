@@ -123,9 +123,11 @@ public class HistoricalBlockSyncService extends Service {
       final CombinedChainDataClient chainData,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final SyncStateProvider syncStateProvider,
-      final boolean reconstructHistoricStatesEnabled) {
+      final boolean reconstructHistoricStatesEnabled,
+      final Optional<String> genesisStateResource) {
     ReconstructHistoricalStatesService reconstructHistoricalStatesService =
-        new ReconstructHistoricalStatesService();
+        new ReconstructHistoricalStatesService(
+            storageUpdateChannel, chainData, spec, genesisStateResource);
 
     return new HistoricalBlockSyncService(
         spec,

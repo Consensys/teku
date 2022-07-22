@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.CombinedUpdaterUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded;
@@ -195,6 +196,11 @@ public class UnblindedBlockKvStoreDatabase
       blocks.forEach(updater::addFinalizedBlock);
       updater.commit();
     }
+  }
+
+  @Override
+  protected KvStoreCombinedDaoCommon.FinalizedUpdaterCommon getFinalizedUpdater() {
+    return dao.finalizedUpdaterUnblinded();
   }
 
   @Override

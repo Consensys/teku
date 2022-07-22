@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -100,6 +101,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
     return SafeFuture.fromRunnable(() -> database.storeFinalizedBlocks(finalizedBlocks));
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState) {
+    return SafeFuture.fromRunnable(() -> database.storeFinalizedState(finalizedState));
   }
 
   @Override
@@ -201,6 +207,11 @@ public class ChainStorage
   @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
+  }
+
+  @Override
+  public SafeFuture<Optional<Checkpoint>> getAnchor() {
+    return SafeFuture.of(database::getAnchor);
   }
 
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UInt64 slot) {

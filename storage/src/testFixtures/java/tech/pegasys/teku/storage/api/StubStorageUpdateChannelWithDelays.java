@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -33,6 +34,11 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 

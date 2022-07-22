@@ -18,12 +18,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event);
 
   SafeFuture<Void> onFinalizedBlocks(Collection<SignedBeaconBlock> finalizedBlocks);
+
+  SafeFuture<Void> onFinalizedState(BeaconState finalizedState);
 
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
 

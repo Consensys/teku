@@ -604,4 +604,8 @@ public class CombinedChainDataClient {
                     .isOptimistic(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
                     .orElseThrow());
   }
+
+  public SafeFuture<Optional<Checkpoint>> getInitialAnchor() {
+    return historicalChainData.getAnchor();
+  }
 }

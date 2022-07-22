@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
@@ -107,5 +108,10 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.completedFuture(new ArrayList<>());
+  }
+
+  @Override
+  public SafeFuture<Optional<Checkpoint>> getAnchor() {
+    return SafeFuture.completedFuture(Optional.empty());
   }
 }

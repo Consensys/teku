@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -70,8 +71,13 @@ public class HistoricalBlockSyncServiceTest {
 
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
 
+  private final CombinedChainDataClient chainData = mock(CombinedChainDataClient.class);
+  private final Optional<String> genesisStateResource =
+      Optional.of(
+          "https://2driVVdXx:5058c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
-      new ReconstructHistoricalStatesService();
+      new ReconstructHistoricalStatesService(
+          storageUpdateChannel, chainData, spec, genesisStateResource);
 
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =
