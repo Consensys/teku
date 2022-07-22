@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.logging;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.base.Strings;
-import java.net.URI;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,21 +54,19 @@ public class ValidatorLogger {
         t);
   }
 
-  public void switchingToFailoverBeaconNodeForEventStreaming(final URI failoverEndpoint) {
+  public void switchingToFailoverBeaconNodeForEventStreaming() {
     log.info(
         ColorConsolePrinter.print(
-            String.format(
-                "%sSwitching to failover beacon node %s for event streaming.",
-                PREFIX, failoverEndpoint),
+            String.format("%sSwitching to failover beacon node for event streaming.", PREFIX),
             Color.GREEN));
   }
 
-  public void primaryBeaconNodeIsBackOnlineForEventStreaming(final URI primaryEndpoint) {
+  public void primaryBeaconNodeIsBackOnlineForEventStreaming() {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPrimary beacon node %s is back and ready for event streaming. Will attempt connecting.",
-                PREFIX, primaryEndpoint),
+                "%sPrimary beacon node is back and ready for event streaming. Will attempt connecting.",
+                PREFIX),
             Color.GREEN));
   }
 

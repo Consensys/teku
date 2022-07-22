@@ -158,10 +158,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     if (alreadyFailedOver(beaconNodeApi)) {
       return;
     }
-    final HttpUrl failoverEndpoint = beaconNodeApi.getEndpoint();
     closeCurrentEventStream();
     final EventSource failoverEventSource = createEventSource(beaconNodeApi);
-    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(failoverEndpoint.uri());
+    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming();
     failoverEventSource.start();
     maybeFailoverEventSource = Optional.of(failoverEventSource);
     startPrimaryBeaconNodeCheckStatusTask();
@@ -197,8 +196,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     closeCurrentEventStream();
     primaryEventSource = createEventSource(primaryBeaconNodeApi);
     maybeFailoverEventSource = Optional.empty();
-    validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming(
-        primaryBeaconNodeApi.getEndpoint().uri());
+    validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming();
     primaryEventSource.start();
     cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask();
   }
