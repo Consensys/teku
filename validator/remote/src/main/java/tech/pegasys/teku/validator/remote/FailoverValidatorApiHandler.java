@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
-import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import okhttp3.HttpUrl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -271,7 +270,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         .run(currentDelegate)
         .exceptionallyCompose(
             throwable -> {
-              final URI failedEndpoint = currentDelegate.getEndpoint();
+              final HttpUrl failedEndpoint = currentDelegate.getEndpoint();
               if (!failoverDelegates.hasNext()) {
                 validatorLogger.remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
                 capturedExceptions.forEach(throwable::addSuppressed);

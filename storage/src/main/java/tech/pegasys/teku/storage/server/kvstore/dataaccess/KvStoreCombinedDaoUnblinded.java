@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -54,9 +55,10 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
   List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(UInt64 slot);
 
   @MustBeClosed
-  Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+  Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
-  long countUnblindedFinalizedBlocks();
+  @MustBeClosed
+  Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw();
 
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 

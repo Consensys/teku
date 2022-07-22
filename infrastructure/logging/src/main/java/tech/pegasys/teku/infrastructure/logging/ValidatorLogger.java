@@ -39,17 +39,35 @@ public class ValidatorLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void connectedToBeaconNode() {
+  public void connectedToBeaconNodeEventStream() {
     log.info(
         ColorConsolePrinter.print(
-            "Validator   *** Successfully connected to beacon chain event stream", Color.GREEN));
+            String.format("%sSuccessfully connected to beacon node event stream", PREFIX),
+            Color.GREEN));
   }
 
-  public void beaconNodeConnectionError(final Throwable t) {
+  public void beaconNodeEventStreamConnectionError(final Throwable t) {
     log.error(
         ColorConsolePrinter.print(
-            "Validator   *** Error while connecting to beacon node event stream", Color.RED),
+            String.format("%sError while connecting to beacon node event stream", PREFIX),
+            Color.RED),
         t);
+  }
+
+  public void switchingToFailoverBeaconNodeForEventStreaming() {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format("%sSwitching to failover beacon node for event streaming", PREFIX),
+            Color.GREEN));
+  }
+
+  public void primaryBeaconNodeIsBackOnlineForEventStreaming() {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPrimary beacon node is back and ready for event streaming. Will attempt connecting.",
+                PREFIX),
+            Color.GREEN));
   }
 
   public void dutyCompleted(

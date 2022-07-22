@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -187,8 +186,8 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
-      name = "get-block-counts",
-      description = "Count blocks in block storage tables",
+      name = "get-column-counts",
+      description = "Count entries in columns in storage tables",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
@@ -198,36 +197,19 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int getBlockCounts(
+  public int getColumnCounts(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
     try (final Database database =
         createDatabase(beaconNodeDataOptions, false, eth2NetworkOptions)) {
-      try (Stream<SignedBeaconBlock> stream = database.streamHotBlocks()) {
-        printIfPresent("Hot blocks", stream.count());
-      }
-      printIfPresent("Finalized blocks", database.countUnblindedFinalizedBlocks());
-      try (Stream<?> stream = database.streamBlockCheckpoints()) {
-        printIfPresent("Checkpoint Epochs", stream.count());
-      }
+      database.getColumnCounts().forEach(this::printColumn);
     }
-    try (final Database database =
-        createDatabase(beaconNodeDataOptions, true, eth2NetworkOptions)) {
-
-      printIfPresent("Blinded blocks", database.countBlindedBlocks());
-      printIfPresent("Execution Payloads", database.countExecutionPayloads());
-      printIfPresent("Non-canonical Slots", database.countNonCanonicalSlots());
-
-      return 0;
-    }
+    return 0;
   }
 
-  private void printIfPresent(final String label, final long count) {
-    if (count > 0L) {
-      final String formatString = "%19s: %d%n";
-      System.out.printf(formatString, label, count);
-    }
+  private void printColumn(final String label, final long count) {
+    System.out.printf("%40s: %d%n", label, count);
   }
 
   private Database createDatabase(

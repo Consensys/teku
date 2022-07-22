@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.api.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
@@ -80,6 +80,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final RemoteValidatorApiChannel primaryValidatorApi =
         createRemoteValidatorApi(
             primaryEndpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner);
+    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+        failoverEndpoints.stream()
+            .map(
+                endpoint ->
+                    createRemoteValidatorApi(
+                        endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
+            .collect(Collectors.toList());
 
     ValidatorApiChannel validatorApi;
     if (failoverEndpoints.isEmpty()) {
@@ -89,17 +96,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
           "Will use {} as a primary Beacon Node endpoint and {} as failovers",
           primaryEndpoint,
           failoverEndpoints);
-      final List<RemoteValidatorApiChannel> failoversValidatorApis =
-          failoverEndpoints.stream()
-              .map(
-                  endpoint ->
-                      createRemoteValidatorApi(
-                          endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
-              .collect(Collectors.toList());
       validatorApi =
           new FailoverValidatorApiHandler(
               primaryValidatorApi,
-              failoversValidatorApis,
+              failoverValidatorApis,
               failoversSendSubnetSubscriptions,
               ValidatorLogger.VALIDATOR_LOGGER);
     }
@@ -112,8 +112,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
-            primaryEndpoint,
+            primaryValidatorApi,
+            failoverValidatorApis,
             okHttpClient,
+            ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApiWithMetrics),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
@@ -121,6 +123,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 validatorTimingChannel,
                 spec),
             validatorTimingChannel,
+            asyncRunner,
             serviceConfig.getMetricsSystem(),
             generateEarlyAttestations);
 

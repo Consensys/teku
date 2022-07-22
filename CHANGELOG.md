@@ -15,6 +15,8 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
  - Added support for Builder API
+ - Enables fork choice before block proposals by default on MainNet (previously on by default on testnets only)
 
 ### Bug Fixes
  - Fix `latestValidHash`with invalid Execution Payload in response from execution engine didn't trigger appropriate ForkChoice changes 
+ - Remove incorrect error about potentially finalizing an invalid execution payload when importing a block with an invalid payload

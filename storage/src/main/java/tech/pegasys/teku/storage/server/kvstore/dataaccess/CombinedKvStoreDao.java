@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -270,6 +271,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> kvStoreColumn, final K key) {
+    return db.getRaw(kvStoreColumn, key);
+  }
+
+  @Override
   public void close() throws Exception {
     db.close();
   }
@@ -331,24 +337,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public long countBlindedBlocks() {
-    return db.size(schema.getColumnBlindedBlocksByRoot());
-  }
-
-  @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
   }
 
   @Override
-  public long countUnblindedFinalizedBlocks() {
-    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
-        db.streamRaw(schema.getColumnSlotsByFinalizedRoot())) {
-      return entries.count();
-    }
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
+    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
   }
 
   @Override
@@ -377,22 +376,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  @MustBeClosed
-  public Stream<Bytes> streamExecutionPayloads() {
-    return db.stream(schema.getColumnExecutionPayloadByPayloadHash()).map(ColumnEntry::getValue);
-  }
-
-  @Override
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return db.get(schema.getColumnBlindedBlocksByRoot(), root);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedHotBlocks() {
-    return db.stream(schema.getColumnHotBlockCheckpointEpochsByRoot())
-        .map(ColumnEntry::getKey)
-        .flatMap(root -> getBlindedBlock(root).stream());
   }
 
   @Override
@@ -423,6 +408,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<UInt64> getOptimisticTransitionBlockSlot() {
     return db.get(schema.getOptimisticTransitionBlockSlot());
+  }
+
+  @Override
+  public Map<String, Long> getColumnCounts() {
+    final Map<String, Long> columnCounts = new LinkedHashMap<>();
+    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
   }
 
   @Override
