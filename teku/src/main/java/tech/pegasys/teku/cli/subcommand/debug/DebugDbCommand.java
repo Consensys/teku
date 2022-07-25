@@ -212,7 +212,6 @@ public class DebugDbCommand implements Runnable {
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
-                          .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
               .map(UpdatableStore::getLatestFinalized);
@@ -265,6 +264,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
+            Optional.empty(),
             beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
