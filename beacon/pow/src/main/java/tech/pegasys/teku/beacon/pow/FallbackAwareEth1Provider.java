@@ -157,10 +157,11 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
               return task.apply(nextAvailableProvider)
                   .exceptionallyCompose(
                       taskErr -> {
-                        if(taskErr instanceof SocketTimeoutException) {
-                            LOG.warn("Connection timeout to remote eth1 node. Retrying with next eth1 endpoint");
+                        if (taskErr instanceof SocketTimeoutException) {
+                          LOG.warn(
+                              "Connection timeout to remote eth1 node. Retrying with next eth1 endpoint");
                         } else {
-                            LOG.warn("Retrying with next eth1 endpoint", taskErr);
+                          LOG.warn("Retrying with next eth1 endpoint", taskErr);
                         }
                         exceptionsContainer.addSuppressed(taskErr);
                         return run(task, providers, exceptionsContainer);

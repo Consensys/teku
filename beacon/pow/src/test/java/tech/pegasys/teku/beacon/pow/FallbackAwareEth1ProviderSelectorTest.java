@@ -120,22 +120,23 @@ public class FallbackAwareEth1ProviderSelectorTest {
     when(node2.isValid()).thenReturn(false);
     when(node3.isValid()).thenReturn(false);
     when(node1.ethGetLogs(ethLogFilter))
-            .thenReturn(
-                    failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
+        .thenReturn(
+            failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
 
     assertThat(
             fallbackAwareEth1Provider
-                    .ethGetLogs(ethLogFilter)
-                    .thenRun(() -> fail("should fail!"))
-                    .exceptionallyCompose(
-                            err -> {
-                              final Throwable errCause = err.getCause();
-                              assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                              assertThat(errCause.getSuppressed().length).isEqualTo(1);
-                              assertThat(errCause.getSuppressed()[0]).isInstanceOf(SocketTimeoutException.class);
-                              return SafeFuture.COMPLETE;
-                            }))
-            .isCompleted();
+                .ethGetLogs(ethLogFilter)
+                .thenRun(() -> fail("should fail!"))
+                .exceptionallyCompose(
+                    err -> {
+                      final Throwable errCause = err.getCause();
+                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
+                      assertThat(errCause.getSuppressed().length).isEqualTo(1);
+                      assertThat(errCause.getSuppressed()[0])
+                          .isInstanceOf(SocketTimeoutException.class);
+                      return SafeFuture.COMPLETE;
+                    }))
+        .isCompleted();
   }
 
   @Test
