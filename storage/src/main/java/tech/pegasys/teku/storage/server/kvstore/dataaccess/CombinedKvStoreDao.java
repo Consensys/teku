@@ -418,6 +418,19 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
+  @SuppressWarnings("unchecked")
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    if (schema.getColumnMap().containsKey("FINALIZED_STATES_BY_SLOT")) {
+      KvStoreColumn<UInt64, BeaconState> column =
+          (KvStoreColumn<UInt64, BeaconState>)
+              schema.getColumnMap().get("FINALIZED_STATES_BY_SLOT");
+      return db.stream(column, startSlot, endSlot).map(ColumnEntry::getKey);
+    }
+    return Stream.empty();
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
