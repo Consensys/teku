@@ -116,7 +116,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
 
   @Test
   void shouldContainSuppressedSocketTimeoutException() {
-    // all nodes failing, one with socket timeout error
+    // One node failing with socket timeout error
     when(node2.isValid()).thenReturn(false);
     when(node3.isValid()).thenReturn(false);
     when(node1.ethGetLogs(ethLogFilter))
