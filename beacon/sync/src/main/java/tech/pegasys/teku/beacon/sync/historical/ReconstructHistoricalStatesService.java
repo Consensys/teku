@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -96,27 +95,18 @@ public class ReconstructHistoricalStatesService extends Service {
 
     return chainDataClient
         .getBlockAtSlotExact(context.slot)
-        .thenAccept(
+        .thenComposeChecked(
             block -> {
-              try {
-                if (block.isEmpty()) {
-                  return;
-                }
-
-                context.currentState =
-                    spec.replayValidatedBlock(context.currentState, block.orElseThrow());
-                if (context.checkStoringHistoricalStates()) {
-                  storageUpdateChannel
-                      .onFinalizedState(context.currentState)
-                      .finish(LOG::error); // todo ignores return value
-                }
-
-                context.incrementSlot();
-
-              } catch (StateTransitionException e) {
-                LOG.error(e); // todo check approach - crash
+              if (block.isEmpty()) {
+                return SafeFuture.COMPLETE;
               }
+
+              context.currentState = spec.replayValidatedBlock(context.currentState, block.get());
+              return context.checkStoringHistoricalStates()
+                  ? storageUpdateChannel.onFinalizedState(context.currentState)
+                  : SafeFuture.COMPLETE;
             })
+        .thenRun(context::incrementSlot)
         .thenCompose(__ -> applyNextBlock(context));
   }
 
