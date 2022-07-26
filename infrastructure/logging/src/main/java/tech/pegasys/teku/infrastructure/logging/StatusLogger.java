@@ -290,7 +290,7 @@ public class StatusLogger {
   }
 
   public void eth1AtHead(final BigInteger headBlockNumber) {
-    log.info("Successfully loaded deposits up to Eth1 block {}", headBlockNumber);
+    log.info("Loading deposits up to Eth1 block {}", headBlockNumber);
   }
 
   public void usingGeneratedP2pPrivateKey(final String key, final boolean justGenerated) {
@@ -381,6 +381,17 @@ public class StatusLogger {
   public void posActivated(final String pandas) {
     log.info(print("Merge Completed", Color.GREEN));
     log.info(pandas);
+  }
+
+  public void loadingDepositSnapshot(final String snapshotResource) {
+    log.info("Loading deposit tree snapshot from {}", snapshotResource);
+  }
+
+  public void loadedDepositSnapshotResource(final long deposits, final Bytes32 executionBlockHash) {
+    log.info(
+        "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash.",
+        deposits,
+        executionBlockHash);
   }
 
   private void logWithColorIfLevelGreaterThanInfo(

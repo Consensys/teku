@@ -30,9 +30,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
-import tech.pegasys.teku.beacon.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -56,7 +56,9 @@ class TimeBasedEth1HeadTrackerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
-  private final HeadUpdatedSubscriber subscriber = mock(HeadUpdatedSubscriber.class);
+
+  @SuppressWarnings("unchecked")
+  private final ValueObserver<UInt64> subscriber = mock(ValueObserver.class);
 
   private final TimeBasedEth1HeadTracker headTracker =
       new TimeBasedEth1HeadTracker(spec, timeProvider, asyncRunner, eth1Provider);
@@ -88,7 +90,7 @@ class TimeBasedEth1HeadTrackerTest {
     assertThat(headTracker.init()).isCompleted();
 
     verify(eth1Provider).getLatestEth1Block();
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(2));
+    verify(subscriber).onValueChanged(UInt64.valueOf(2));
   }
 
   @Test
@@ -101,7 +103,7 @@ class TimeBasedEth1HeadTrackerTest {
     verify(eth1Provider).getLatestEth1Block();
     final int followDistanceBlockNumber = blocks.size() - FOLLOW_DISTANCE - 1;
     verifyBlockRequested(followDistanceBlockNumber);
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(followDistanceBlockNumber));
+    verify(subscriber).onValueChanged(UInt64.valueOf(followDistanceBlockNumber));
     verifyNoMoreInteractions(subscriber);
 
     // Since follow distance block is old enough, next advance should begin searching forward
@@ -136,7 +138,7 @@ class TimeBasedEth1HeadTrackerTest {
     // Finally reach a block in the range
     assertThat(headTracker.advance()).isCompleted();
     verifyBlockRequested(1);
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(1));
+    verify(subscriber).onValueChanged(UInt64.valueOf(1));
     verifyNoMoreInteractions(subscriber);
   }
 
@@ -157,7 +159,7 @@ class TimeBasedEth1HeadTrackerTest {
     // Finally reach a block in the range
     assertThat(headTracker.advance()).isCompleted();
     verifyBlockRequested(1);
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(1));
+    verify(subscriber).onValueChanged(UInt64.valueOf(1));
     verifyNoMoreInteractions(subscriber);
 
     // Should start stepping forward again, waiting for block 2 to be within the time period
@@ -167,7 +169,7 @@ class TimeBasedEth1HeadTrackerTest {
     assertThat(headTracker.advance()).isCompleted();
     // Shouldn't request block 2 again as we already have it
     verifyBlockRequested(2);
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(2));
+    verify(subscriber).onValueChanged(UInt64.valueOf(2));
   }
 
   @Test
@@ -181,7 +183,7 @@ class TimeBasedEth1HeadTrackerTest {
     timeProvider.advanceTimeBy(delayUntilNextBlockIncluded);
 
     assertThat(headTracker.advance()).isCompleted();
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(nextHeadBlockNumber));
+    verify(subscriber).onValueChanged(UInt64.valueOf(nextHeadBlockNumber));
 
     assertThat(headTracker.getDelayUntilNextAdvance()).isEqualTo(Duration.ofSeconds(100));
   }
@@ -208,7 +210,7 @@ class TimeBasedEth1HeadTrackerTest {
     withBlockTimestamps(1, 100, 200);
 
     assertThat(headTracker.init()).isCompleted();
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(2));
+    verify(subscriber).onValueChanged(UInt64.valueOf(2));
 
     assertThat(headTracker.getDelayUntilNextAdvance())
         .isEqualTo(Duration.ofSeconds(SECONDS_PER_BLOCK));
@@ -241,7 +243,7 @@ class TimeBasedEth1HeadTrackerTest {
     while (headTracker.getDelayUntilNextAdvance().equals(Duration.ZERO)) {
       assertThat(headTracker.advance()).isCompleted();
     }
-    verify(subscriber).onHeadUpdated(UInt64.valueOf(blocks.size() - 1));
+    verify(subscriber).onValueChanged(UInt64.valueOf(blocks.size() - 1));
     // Should have tried to get the next block but found it doesn't exist
     verifyBlockRequested(blocks.size());
 
@@ -258,6 +260,21 @@ class TimeBasedEth1HeadTrackerTest {
     assertThat(headTracker.advance()).isCompleted();
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  void verifyLateSubscriberGetsHeadEvent() {
+    timeProvider.advanceTimeBySeconds(FOLLOW_TIME + 1000);
+    withBlockTimestamps(5, 10, 100);
+    assertThat(headTracker.init()).isCompleted();
+
+    verify(eth1Provider).getLatestEth1Block();
+    verify(subscriber).onValueChanged(UInt64.valueOf(2));
+
+    final ValueObserver<UInt64> subscriber2 = mock(ValueObserver.class);
+    headTracker.subscribe(subscriber2);
+    verify(subscriber2).onValueChanged(UInt64.valueOf(2));
+  }
+
   private void verifyBlockRequested(final long blockNumber) {
     verify(eth1Provider).getEth1Block(UInt64.valueOf(blockNumber));
   }
@@ -270,7 +287,7 @@ class TimeBasedEth1HeadTrackerTest {
     while (firstHead.get() == null) {
       assertThat(headTracker.advance()).isCompleted();
     }
-    verify(subscriber).onHeadUpdated(firstHead.get());
+    verify(subscriber).onValueChanged(firstHead.get());
     return firstHead.get().longValue();
   }
 

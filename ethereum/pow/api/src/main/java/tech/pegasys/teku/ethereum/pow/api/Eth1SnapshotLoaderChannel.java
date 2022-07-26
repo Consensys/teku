@@ -11,18 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.pow;
+package tech.pegasys.teku.ethereum.pow.api;
 
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 
-public interface Eth1HeadTracker {
-
-  void start();
-
-  void stop();
-
-  long subscribe(ValueObserver<UInt64> subscriber);
-
-  void unsubscribe(long subscriberId);
+public interface Eth1SnapshotLoaderChannel extends ChannelInterface {
+  SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot();
 }

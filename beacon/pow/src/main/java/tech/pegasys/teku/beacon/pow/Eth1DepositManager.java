@@ -23,6 +23,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
+import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
@@ -30,7 +32,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 
 public class Eth1DepositManager {
 
@@ -41,6 +42,7 @@ public class Eth1DepositManager {
   private final AsyncRunner asyncRunner;
   private final ValidatingEth1EventsPublisher eth1EventsPublisher;
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
+  private final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -52,6 +54,7 @@ public class Eth1DepositManager {
       final AsyncRunner asyncRunner,
       final ValidatingEth1EventsPublisher eth1EventsPublisher,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
+      final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -61,6 +64,7 @@ public class Eth1DepositManager {
     this.asyncRunner = asyncRunner;
     this.eth1EventsPublisher = eth1EventsPublisher;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
+    this.eth1SnapshotLoaderChannel = eth1SnapshotLoaderChannel;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -68,8 +72,18 @@ public class Eth1DepositManager {
   }
 
   public void start() {
-    eth1DepositStorageChannel
-        .replayDepositEvents()
+    eth1SnapshotLoaderChannel
+        .loadDepositSnapshot()
+        .thenCompose(
+            loadSnapshotResult -> {
+              if (loadSnapshotResult.getDepositTreeSnapshot().isEmpty()) {
+                return eth1DepositStorageChannel.replayDepositEvents();
+              } else {
+                eth1EventsPublisher.onInitialDepositTreeSnapshot(
+                    loadSnapshotResult.getDepositTreeSnapshot().get());
+                return SafeFuture.completedFuture(loadSnapshotResult.getReplayDepositsResult());
+              }
+            })
         .thenCompose(
             replayDepositsResult -> {
               replayDepositsResult
