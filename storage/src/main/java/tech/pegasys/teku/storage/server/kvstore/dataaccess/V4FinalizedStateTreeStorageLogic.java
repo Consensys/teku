@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
@@ -83,6 +86,17 @@ public class V4FinalizedStateTreeStorageLogic
         branchNodeStoredCounter,
         statesStoredCounter,
         leafNodeStoredCounter);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(
+      final KvStoreAccessor db,
+      final SchemaCombinedTreeState schema,
+      final UInt64 startSlot,
+      final UInt64 endSlot) {
+    return db.stream(schema.getColumnFinalizedStateRootsBySlot(), startSlot, endSlot)
+        .map(ColumnEntry::getKey);
   }
 
   private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaCombinedTreeState> {
