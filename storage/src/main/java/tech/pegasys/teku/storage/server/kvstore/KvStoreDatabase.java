@@ -310,10 +310,6 @@ public abstract class KvStoreDatabase<
 
   @Override
   public void storeFinalizedState(BeaconState state) {
-    if (state == null) {
-      return;
-    }
-
     final Bytes32 blockRoot = spec.getBlockRootAtSlot(state, state.getSlot());
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
