@@ -33,12 +33,12 @@ import tech.pegasys.teku.ethereum.pow.api.Deposit;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 

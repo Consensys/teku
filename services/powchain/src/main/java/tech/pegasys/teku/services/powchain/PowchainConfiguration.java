@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -32,6 +33,7 @@ public class PowchainConfiguration {
   private final List<String> eth1Endpoints;
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
+  private final Optional<String> depositSnapshot;
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
 
@@ -40,12 +42,14 @@ public class PowchainConfiguration {
       final List<String> eth1Endpoints,
       final Eth1Address depositContract,
       final Optional<UInt64> depositContractDeployBlock,
+      final Optional<String> depositSnapshot,
       final int eth1LogsMaxBlockRange,
       final boolean useMissingDepositEventLogging) {
     this.spec = spec;
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
+    this.depositSnapshot = depositSnapshot;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
@@ -74,6 +78,10 @@ public class PowchainConfiguration {
     return depositContractDeployBlock;
   }
 
+  public Optional<String> getDepositSnapshot() {
+    return depositSnapshot;
+  }
+
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
   }
@@ -87,6 +95,7 @@ public class PowchainConfiguration {
     private List<String> eth1Endpoints = new ArrayList<>();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
+    private Optional<String> depositSnapshot = Optional.empty();
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
 
@@ -99,6 +108,7 @@ public class PowchainConfiguration {
           eth1Endpoints,
           depositContract,
           depositContractDeployBlock,
+          depositSnapshot,
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging);
     }
@@ -149,6 +159,13 @@ public class PowchainConfiguration {
       checkNotNull(depositContractDeployBlock);
       if (this.depositContractDeployBlock.isEmpty()) {
         this.depositContractDeployBlock = depositContractDeployBlock;
+      }
+      return this;
+    }
+
+    public Builder depositSnapshot(final String depositSnapshot) {
+      if (StringUtils.isNotBlank(depositSnapshot)) {
+        this.depositSnapshot = Optional.of(depositSnapshot);
       }
       return this;
     }

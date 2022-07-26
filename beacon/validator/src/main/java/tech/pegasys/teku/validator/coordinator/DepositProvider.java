@@ -59,7 +59,7 @@ public class DepositProvider
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
-  private final DepositTree depositMerkleTree;
+  private DepositTree depositMerkleTree;
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
@@ -257,6 +257,12 @@ public class DepositProvider
               return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
         .collect(depositsSchema.collector());
+  }
+
+  @Override
+  public synchronized void onInitialDepositTreeSnapshot(
+      final DepositTreeSnapshot depositTreeSnapshot) {
+    this.depositMerkleTree = DepositTree.fromSnapshot(depositTreeSnapshot);
   }
 
   private static class DepositsSchemaCache {
