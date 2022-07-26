@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -123,20 +124,9 @@ public class FallbackAwareEth1ProviderSelectorTest {
         .thenReturn(
             failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
 
-    assertThat(
-            fallbackAwareEth1Provider
-                .ethGetLogs(ethLogFilter)
-                .thenRun(() -> fail("should fail!"))
-                .exceptionallyCompose(
-                    err -> {
-                      final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                      assertThat(errCause.getSuppressed().length).isEqualTo(1);
-                      assertThat(errCause.getSuppressed()[0])
-                          .isInstanceOf(SocketTimeoutException.class);
-                      return SafeFuture.COMPLETE;
-                    }))
-        .isCompleted();
+    SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
   }
 
   @Test
