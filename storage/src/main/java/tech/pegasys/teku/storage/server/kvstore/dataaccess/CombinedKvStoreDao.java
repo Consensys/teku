@@ -418,6 +418,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    return stateStorageLogic.streamFinalizedStateSlots(db, schema, startSlot, endSlot);
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }

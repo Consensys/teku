@@ -166,7 +166,7 @@ public class PostBlindedBlock extends MigratingEndpointAdapter {
                     json,
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlindedBeaconBlockSchema),
-            spec::deserializeSignedBeaconBlock)
+            spec::deserializeSignedBlindedBeaconBlock)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,

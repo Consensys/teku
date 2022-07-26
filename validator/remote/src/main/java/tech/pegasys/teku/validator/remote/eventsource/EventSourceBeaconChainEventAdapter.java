@@ -46,11 +46,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
-  private static final Duration PING_PRIMARY_BEACON_NODE_DURING_FAILOVER = Duration.ofSeconds(30);
 
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
-  private final AtomicReference<Cancellable> primaryBeaconNodeCheckStatusTask =
+  private final AtomicReference<Cancellable> primaryBeaconNodeReconnectAttemptTask =
       new AtomicReference<>();
 
   private volatile EventSource primaryEventSource;
@@ -63,6 +62,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final AsyncRunner asyncRunner;
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
+  private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
 
   public EventSourceBeaconChainEventAdapter(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
@@ -73,7 +73,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       final ValidatorTimingChannel validatorTimingChannel,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
     this.okHttpClient = okHttpClient;
@@ -82,6 +83,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.eventSourceHandler =
         new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
+    this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+        primaryBeaconNodeEventStreamReconnectAttemptPeriod;
     this.primaryEventSource = createEventSource(primaryBeaconNodeApi);
   }
 
@@ -153,7 +156,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   }
 
   // switchToFailoverEventStreamIfNeeded is async, so there could be multiple quick calls to
-  // this method for the same failover endpoint because of the ConnectionErrorHandler callback
+  // this method for different failover endpoints because of the ConnectionErrorHandler callback
   private synchronized void switchToFailoverEventStream(
       final RemoteValidatorApiChannel beaconNodeApi) {
     if (alreadyFailedOver(beaconNodeApi)) {
@@ -164,18 +167,24 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     validatorLogger.switchingToFailoverBeaconNodeForEventStreaming();
     failoverEventSource.start();
     maybeFailoverEventSource = Optional.of(failoverEventSource);
-    startPrimaryBeaconNodeCheckStatusTask();
+    startPrimaryBeaconNodeReconnectAttemptTask();
   }
 
   private boolean alreadyFailedOver(final RemoteValidatorApiChannel beaconNodeApi) {
     return maybeFailoverEventSource
-        .map(EventSource::getHttpUrl)
-        .map(endpoint -> endpoint.equals(createHeadEventSourceUrl(beaconNodeApi.getEndpoint())))
+        .map(
+            eventSource -> {
+              final boolean isSameEndpoint =
+                  eventSource
+                      .getHttpUrl()
+                      .equals(createHeadEventSourceUrl(beaconNodeApi.getEndpoint()));
+              return isSameEndpoint || eventSource.getState().equals(ReadyState.OPEN);
+            })
         .orElse(false);
   }
 
-  private void startPrimaryBeaconNodeCheckStatusTask() {
-    final Cancellable currentCheckStatusTask = primaryBeaconNodeCheckStatusTask.get();
+  private void startPrimaryBeaconNodeReconnectAttemptTask() {
+    final Cancellable currentCheckStatusTask = primaryBeaconNodeReconnectAttemptTask.get();
     if (currentCheckStatusTask != null && !currentCheckStatusTask.isCancelled()) {
       return;
     }
@@ -184,13 +193,12 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             () ->
                 checkBeaconNodeIsReadyForEventStreaming(primaryBeaconNodeApi)
                     .thenRun(this::switchToPrimaryEventStream),
-            PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
-            PING_PRIMARY_BEACON_NODE_DURING_FAILOVER,
+            primaryBeaconNodeEventStreamReconnectAttemptPeriod,
+            primaryBeaconNodeEventStreamReconnectAttemptPeriod,
             throwable ->
                 LOG.trace(
-                    "The primary beacon node is not ready for event streaming or switching over to it failed.",
-                    throwable));
-    primaryBeaconNodeCheckStatusTask.set(checkStatusTask);
+                    "Couldn't reconnect to the primary Beacon Node event stream.", throwable));
+    primaryBeaconNodeReconnectAttemptTask.set(checkStatusTask);
   }
 
   private void switchToPrimaryEventStream() {
@@ -221,14 +229,12 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   }
 
   private void closeCurrentEventStream() {
-    if (primaryEventSource.getState() != ReadyState.SHUTDOWN) {
-      primaryEventSource.close();
-    }
+    primaryEventSource.close();
     maybeFailoverEventSource.ifPresent(EventSource::close);
   }
 
   private void cancelScheduledCheckPrimaryBeaconNodeCheckStatusTask() {
-    Optional.ofNullable(primaryBeaconNodeCheckStatusTask.get()).ifPresent(Cancellable::cancel);
+    Optional.ofNullable(primaryBeaconNodeReconnectAttemptTask.get()).ifPresent(Cancellable::cancel);
   }
 
   private void waitForExit() {

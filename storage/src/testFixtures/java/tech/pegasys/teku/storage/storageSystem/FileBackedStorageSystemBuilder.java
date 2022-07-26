@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -34,6 +36,8 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
+
+  private Optional<AsyncRunner> asyncRunner = Optional.empty();
   private Spec spec;
 
   // Version-dependent fields
@@ -92,6 +96,7 @@ public class FileBackedStorageSystemBuilder {
         .version(version)
         .dataDir(dataDir)
         .storageMode(storageMode)
+        .asyncRunner(asyncRunner)
         .stateStorageFrequency(stateStorageFrequency)
         .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
         .storeConfig(storeConfig);
@@ -105,6 +110,11 @@ public class FileBackedStorageSystemBuilder {
   public FileBackedStorageSystemBuilder version(final DatabaseVersion version) {
     checkNotNull(version);
     this.version = version;
+    return this;
+  }
+
+  public FileBackedStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
+    this.asyncRunner = asyncRunner;
     return this;
   }
 
@@ -164,6 +174,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 
@@ -180,6 +191,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec);
   }
 
@@ -193,6 +205,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 
@@ -206,6 +219,7 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         10_000,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 
@@ -219,6 +233,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec);
   }
 
@@ -232,6 +247,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        asyncRunner,
         spec);
   }
 }

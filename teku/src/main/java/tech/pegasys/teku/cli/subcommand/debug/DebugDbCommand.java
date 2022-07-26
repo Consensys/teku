@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -126,6 +127,48 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
+      name = "get-finalized-state-indices",
+      description = "Display the slots of finalized states that are stored.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getFinalizedStateIndices(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              required = true,
+              names = {"--start-slot"},
+              defaultValue = "0",
+              description = "The start index of the range to display")
+          final long startSlot,
+      @Option(
+              required = true,
+              names = {"--end-slot"},
+              defaultValue = "9223372036854775807",
+              description = "The end index of the range to display")
+          final long endSlot)
+      throws Exception {
+    try (final Database database =
+        createDatabase(
+            beaconNodeDataOptions,
+            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            eth2NetworkOptions)) {
+      System.out.println("Searching for finalized states in the finalized store");
+      try (Stream<UInt64> stream =
+          database.streamFinalizedStateSlots(UInt64.valueOf(startSlot), UInt64.valueOf(endSlot))) {
+        stream.forEach(System.out::println);
+      }
+    }
+    return 0;
+  }
+
+  @Command(
       name = "get-latest-finalized-state",
       description = "Get the latest finalized state, if available, as SSZ",
       mixinStandardHelpOptions = true,
@@ -169,7 +212,6 @@ public class DebugDbCommand implements Runnable {
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
-                          .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
               .map(UpdatableStore::getLatestFinalized);
@@ -222,6 +264,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
+            Optional.empty(),
             beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),

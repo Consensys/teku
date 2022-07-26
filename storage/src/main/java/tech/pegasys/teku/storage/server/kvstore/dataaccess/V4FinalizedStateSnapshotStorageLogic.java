@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
@@ -40,6 +42,17 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
   @Override
   public FinalizedStateUpdater<S> updater() {
     return new FinalizedStateSnapshotUpdater<>(stateStorageFrequency);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(
+      final KvStoreAccessor db,
+      final SchemaFinalizedSnapshotState schema,
+      final UInt64 startSlot,
+      final UInt64 endSlot) {
+    return db.stream(schema.getColumnFinalizedStatesBySlot(), startSlot, endSlot)
+        .map(ColumnEntry::getKey);
   }
 
   private static class FinalizedStateSnapshotUpdater<S extends SchemaFinalizedSnapshotState>

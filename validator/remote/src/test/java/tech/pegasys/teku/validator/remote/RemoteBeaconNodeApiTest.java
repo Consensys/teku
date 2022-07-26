@@ -17,6 +17,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -41,7 +42,8 @@ class RemoteBeaconNodeApiTest {
                     spec,
                     false,
                     false,
-                    true))
+                    true,
+                    Duration.ofMillis(1)))
         .hasMessageContaining("Failed to convert remote api endpoint");
   }
 }
