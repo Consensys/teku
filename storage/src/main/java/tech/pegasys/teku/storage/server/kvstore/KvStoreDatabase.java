@@ -315,13 +315,11 @@ public abstract class KvStoreDatabase<
     }
 
     final Bytes32 blockRoot = spec.getBlockRootAtSlot(state, state.getSlot());
-    try (final FinalizedUpdaterCommon updater = getFinalizedUpdater()) {
+    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
       updater.commit();
     }
   }
-
-  protected abstract FinalizedUpdaterCommon getFinalizedUpdater();
 
   @Override
   public Optional<OnDiskStoreData> createMemoryStore() {
