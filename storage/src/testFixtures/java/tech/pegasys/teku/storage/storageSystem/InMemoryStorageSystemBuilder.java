@@ -16,7 +16,9 @@ package tech.pegasys.teku.storage.storageSystem;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -41,6 +43,8 @@ public class InMemoryStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
   private boolean storeVotesEquivocation = false;
+
+  private Optional<AsyncRunner> asyncRunner = Optional.empty();
 
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -111,6 +115,7 @@ public class InMemoryStorageSystemBuilder {
             .version(version)
             .storageMode(storageMode)
             .stateStorageFrequency(stateStorageFrequency)
+            .asyncRunner(asyncRunner)
             .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
             .storeConfig(storeConfig);
 
@@ -120,6 +125,11 @@ public class InMemoryStorageSystemBuilder {
     copy.spec = spec;
 
     return copy;
+  }
+
+  public InMemoryStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
+    this.asyncRunner = asyncRunner;
+    return this;
   }
 
   public InMemoryStorageSystemBuilder version(final DatabaseVersion version) {
@@ -182,6 +192,7 @@ public class InMemoryStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 
@@ -198,6 +209,7 @@ public class InMemoryStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 
@@ -230,6 +242,7 @@ public class InMemoryStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        asyncRunner,
         spec);
   }
 

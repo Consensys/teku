@@ -208,8 +208,8 @@ public class ExternalMetricNode extends Node {
     if (!started) {
       return;
     }
-    started = false;
     LOG.debug("Shutting down");
+    started = false;
     container.stop();
   }
 }

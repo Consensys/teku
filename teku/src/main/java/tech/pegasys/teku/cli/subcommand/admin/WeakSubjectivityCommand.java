@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -108,6 +109,7 @@ public class WeakSubjectivityCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
+            Optional.empty(),
             beaconNodeDataOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),

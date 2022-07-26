@@ -17,6 +17,7 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import picocli.CommandLine;
@@ -55,6 +56,17 @@ public class ValidatorClientOptions {
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--Xprimary-beacon-node-event-stream-reconnect-attempt-period"},
+      paramLabel = "<INTEGER>",
+      description =
+          "How often (in milliseconds) will a reconnection to the primary Beacon Node event stream be attempted during a failover.",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "1")
+  private long primaryBeaconNodeEventStreamReconnectAttemptPeriod =
+      ValidatorConfig.DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD.toMillis();
+
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -72,7 +84,9 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoint(getBeaconNodeApiEndpoint())
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
-                .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled));
+                .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
+                .primaryBeaconNodeEventStreamReconnectAttemptPeriod(
+                    Duration.ofMillis(primaryBeaconNodeEventStreamReconnectAttemptPeriod)));
   }
 
   public URI getBeaconNodeApiEndpoint() {

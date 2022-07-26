@@ -97,6 +97,7 @@ public class Web3SignerNode extends Node {
       return;
     }
     LOG.debug("Shutting down web3signer");
+    started = false;
     configFiles.forEach(
         configFile -> {
           if (!configFile.delete() && configFile.exists()) {

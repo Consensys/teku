@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.validator.remote.eventsource;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
@@ -32,9 +32,11 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandler implements EventHandler {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final JsonProvider jsonProvider = new JsonProvider();
+
   private final ValidatorTimingChannel validatorTimingChannel;
   private final Counter disconnectCounter;
   private final Counter invalidEventCounter;
@@ -67,7 +69,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onOpen() {
-    VALIDATOR_LOGGER.connectedToBeaconNode();
+    VALIDATOR_LOGGER.connectedToBeaconNodeEventStream();
     // We might have missed some events while connecting or reconnected so ensure the duties are
     // recalculated
     validatorTimingChannel.onPossibleMissedEvents();
@@ -76,11 +78,12 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onClosed() {
     disconnectCounter.inc();
-    LOG.info("Beacon chain event stream closed");
+    LOG.info("Beacon Node event stream closed");
   }
 
   @Override
   public void onMessage(final String event, final MessageEvent messageEvent) {
+    LOG.trace("Received {} event from beacon node {}", event, messageEvent.getOrigin());
     try {
       if (EventType.valueOf(event) == EventType.head) {
         handleHeadEvent(messageEvent.getData());
@@ -121,7 +124,7 @@ class EventSourceHandler implements EventHandler {
               + "Reconnecting. This is normal if the beacon node is still syncing.");
     } else {
       errorCounter.inc();
-      VALIDATOR_LOGGER.beaconNodeConnectionError(t);
+      VALIDATOR_LOGGER.beaconNodeEventStreamConnectionError(t);
     }
   }
 }

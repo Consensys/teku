@@ -24,7 +24,6 @@ import com.google.common.collect.Streams;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +31,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -94,12 +93,12 @@ class FailoverValidatorApiHandlerTest {
 
     validatorLogger = mock(ValidatorLogger.class);
 
-    final Supplier<URI> randomUriGenerator =
-        () -> URI.create("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
+    final Supplier<HttpUrl> randomHttpUrlGenerator =
+        () -> HttpUrl.get("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
-    when(primaryApiChannel.getEndpoint()).thenReturn(randomUriGenerator.get());
-    when(failoverApiChannel1.getEndpoint()).thenReturn(randomUriGenerator.get());
-    when(failoverApiChannel2.getEndpoint()).thenReturn(randomUriGenerator.get());
+    when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
+    when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
+    when(failoverApiChannel2.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
