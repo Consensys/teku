@@ -45,7 +45,7 @@ public class BlindedBlockMigration<
     if (asyncRunner.isEmpty()) {
       throw new IllegalStateException("Not able to migrate blocks without an async runner");
     }
-    performBatchMigration();
+    moveHotBlocksToBlindedStorage();
     asyncRunner
         .get()
         .runAsync(this::migrateRemainingBlocks)
@@ -54,10 +54,6 @@ public class BlindedBlockMigration<
 
   private void migrateRemainingBlocks() {
     LOG.debug("migrate finalized un-blinded blocks to blinded storage.");
-  }
-
-  private void performBatchMigration() {
-    moveHotBlocksToBlindedStorage();
   }
 
   private void moveHotBlocksToBlindedStorage() {
