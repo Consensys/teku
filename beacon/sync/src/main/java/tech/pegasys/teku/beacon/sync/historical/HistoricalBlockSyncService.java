@@ -69,8 +69,7 @@ public class HistoricalBlockSyncService extends Service {
   private volatile BeaconBlockSummary earliestBlock;
   final Set<NodeId> badPeerCache;
 
-  private final ReconstructHistoricalStatesService reconstructHistoricalStatesService;
-  private final boolean reconstructHistoricStatesEnabled;
+  private final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService;
 
   @VisibleForTesting
   HistoricalBlockSyncService(
@@ -83,8 +82,7 @@ public class HistoricalBlockSyncService extends Service {
       final SyncStateProvider syncStateProvider,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final UInt64 batchSize,
-      final ReconstructHistoricalStatesService reconstructHistoricalStatesService,
-      boolean reconstructHistoricStatesEnabled) {
+      final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService) {
     this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
 
@@ -95,7 +93,6 @@ public class HistoricalBlockSyncService extends Service {
     this.batchSize = batchSize;
     this.signatureVerifier = signatureVerifier;
     this.reconstructHistoricalStatesService = reconstructHistoricalStatesService;
-    this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -126,8 +123,10 @@ public class HistoricalBlockSyncService extends Service {
       final boolean reconstructHistoricStatesEnabled,
       final Optional<String> genesisStateResource) {
     ReconstructHistoricalStatesService reconstructHistoricalStatesService =
-        new ReconstructHistoricalStatesService(
-            storageUpdateChannel, chainData, spec, genesisStateResource);
+        reconstructHistoricStatesEnabled
+            ? new ReconstructHistoricalStatesService(
+                storageUpdateChannel, chainData, spec, genesisStateResource)
+            : null;
 
     return new HistoricalBlockSyncService(
         spec,
@@ -139,8 +138,7 @@ public class HistoricalBlockSyncService extends Service {
         syncStateProvider,
         signatureVerifier,
         BATCH_SIZE,
-        reconstructHistoricalStatesService,
-        reconstructHistoricStatesEnabled);
+        Optional.ofNullable(reconstructHistoricalStatesService));
   }
 
   @Override
@@ -154,7 +152,9 @@ public class HistoricalBlockSyncService extends Service {
     LOG.debug("Stop {}", getClass().getSimpleName());
     syncStateProvider.unsubscribeFromSyncStateChanges(syncStateSubscription.get());
     badPeerCache.clear();
-    return reconstructHistoricalStatesService.stop();
+    return reconstructHistoricalStatesService.isPresent()
+        ? reconstructHistoricalStatesService.get().stop()
+        : SafeFuture.COMPLETE;
   }
 
   private SafeFuture<Void> initialize() {
@@ -188,11 +188,11 @@ public class HistoricalBlockSyncService extends Service {
               if (isSyncDone()) {
                 stop().ifExceptionGetsHereRaiseABug();
 
-                if (reconstructHistoricStatesEnabled) {
-                  reconstructHistoricalStatesService
-                      .start()
-                      .finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup);
-                }
+                reconstructHistoricalStatesService.ifPresent(
+                    service ->
+                        service
+                            .start()
+                            .finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup));
               }
             });
   }
