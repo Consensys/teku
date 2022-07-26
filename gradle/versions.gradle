@@ -128,6 +128,10 @@ dependencyManagement {
       entry 'mockito-junit-jupiter'
     }
 
+    dependencySet(group: 'io.github.hakky54', version: '2.7.10') {
+      entry 'logcaptor'
+    }
+
     dependencySet(group: "org.openjdk.jmh", version: "1.35") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
