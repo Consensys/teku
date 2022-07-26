@@ -73,8 +73,7 @@ public class HistoricalBlockSyncServiceTest {
 
   private final CombinedChainDataClient chainData = mock(CombinedChainDataClient.class);
   private final Optional<String> genesisStateResource =
-      Optional.of(
-          "https://2driVVdXx:5058c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized");
+      Optional.of("https://example.com/state.ssz");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
       new ReconstructHistoricalStatesService(
           storageUpdateChannel, chainData, spec, genesisStateResource);
