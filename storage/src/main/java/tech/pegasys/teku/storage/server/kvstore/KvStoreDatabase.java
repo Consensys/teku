@@ -446,6 +446,12 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamFinalizedStateSlots(startSlot, endSlot);
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final HotUpdaterCommon updater = hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);

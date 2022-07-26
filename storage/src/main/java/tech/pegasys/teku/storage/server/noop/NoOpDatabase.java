@@ -169,6 +169,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override
