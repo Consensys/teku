@@ -70,11 +70,10 @@ public class ReconstructHistoricalStatesService extends Service {
         .thenAccept(
             checkpoint -> {
               if (checkpoint.isEmpty()) {
-                return; // todo confirm skip
+                return; // todo confirm skip, or should I throw exception
               }
 
-              final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
-              applyBlocks(genesisState, anchorSlot);
+              applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
             })
         .finish(LOG::error); // todo ignores return value
 
