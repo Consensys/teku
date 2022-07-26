@@ -112,7 +112,7 @@ public class ReconstructHistoricalStatesService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return null;
+    return SafeFuture.COMPLETE; // todo implement doStop method
   }
 
   private static class Context {
