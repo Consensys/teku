@@ -74,22 +74,20 @@ public class ReconstructHistoricalStatesService extends Service {
               }
 
               final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
-              applyBlocks(genesisState, 100, anchorSlot);
+              applyBlocks(genesisState, anchorSlot);
             })
         .finish(LOG::error); // todo ignores return value
 
     return SafeFuture.COMPLETE; // todo check
   }
 
-  public void applyBlocks(
-      final BeaconState genesisState, final int dataStorageFrequency, final UInt64 anchorSlot) {
-    Context context =
-        new Context(genesisState, UInt64.ZERO, UInt64.ONE, dataStorageFrequency, anchorSlot);
+  public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
+    Context context = new Context(genesisState, UInt64.ONE, anchorSlot); // todo correct slot 1?
     applyNextBlock(context).finish(LOG::error); // todo ignores return value
   }
 
   private SafeFuture<Void> applyNextBlock(Context context) {
-    if (context.slot.isGreaterThanOrEqualTo(context.anchorSlot)) {
+    if (context.checkStopApplyBlock()) {
       return SafeFuture.COMPLETE;
     }
 
@@ -102,9 +100,7 @@ public class ReconstructHistoricalStatesService extends Service {
               }
 
               context.currentState = spec.replayValidatedBlock(context.currentState, block.get());
-              return context.checkStoringHistoricalStates()
-                  ? storageUpdateChannel.onFinalizedState(context.currentState)
-                  : SafeFuture.COMPLETE;
+              return storageUpdateChannel.onFinalizedState(context.currentState);
             })
         .thenRun(context::incrementSlot)
         .thenCompose(__ -> applyNextBlock(context));
@@ -117,26 +113,17 @@ public class ReconstructHistoricalStatesService extends Service {
 
   private static class Context {
     private BeaconState currentState;
-    private final UInt64 lastStoredSlot;
     private UInt64 slot;
-    private final int dataStorageFrequency;
     private final UInt64 anchorSlot;
 
-    Context(
-        BeaconState currentState,
-        UInt64 lastStoredSlot,
-        UInt64 slot,
-        int dataStorageFrequency,
-        UInt64 anchorSlot) {
+    Context(BeaconState currentState, UInt64 slot, UInt64 anchorSlot) {
       this.currentState = currentState;
-      this.lastStoredSlot = lastStoredSlot;
       this.slot = slot;
-      this.dataStorageFrequency = dataStorageFrequency;
       this.anchorSlot = anchorSlot;
     }
 
-    private boolean checkStoringHistoricalStates() {
-      return lastStoredSlot.plus(dataStorageFrequency).isLessThan(currentState.getSlot());
+    private boolean checkStopApplyBlock() {
+      return slot.isGreaterThanOrEqualTo(anchorSlot);
     }
 
     private void incrementSlot() {
