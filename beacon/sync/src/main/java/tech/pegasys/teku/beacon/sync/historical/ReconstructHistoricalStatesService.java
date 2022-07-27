@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -77,7 +79,7 @@ public class ReconstructHistoricalStatesService extends Service {
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
     Context context = new Context(genesisState, UInt64.ONE, anchorSlot); // todo correct slot 1?
-    applyNextBlock(context).finish(LOG::error); // todo ignores return value
+    applyNextBlock(context).finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup);
   }
 
   private SafeFuture<Void> applyNextBlock(Context context) {
