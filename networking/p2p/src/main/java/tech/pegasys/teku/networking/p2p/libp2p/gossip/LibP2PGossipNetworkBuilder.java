@@ -32,13 +32,13 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.pubsub.gossip.GossipScoreParams;
+import io.libp2p.pubsub.gossip.builders.GossipRouterBuilder;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -69,16 +69,16 @@ public class LibP2PGossipNetworkBuilder {
 
   public LibP2PGossipNetwork build() {
     GossipTopicHandlers topicHandlers = new GossipTopicHandlers();
-    Gossip gossip =
-        createGossip(
-            gossipConfig, logWireGossip, defaultMessageFactory, gossipTopicFilter, topicHandlers);
+    Gossip gossip = createGossip(gossipConfig, logWireGossip, gossipTopicFilter, topicHandlers);
     PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
   }
 
   protected GossipRouter createGossipRouter(
-      GossipConfig gossipConfig, GossipTopicFilter gossipTopicFilter) {
+      GossipConfig gossipConfig,
+      GossipTopicFilter gossipTopicFilter,
+      GossipTopicHandlers topicHandlers) {
 
     final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
     final GossipScoreParams scoreParams =
@@ -89,33 +89,20 @@ public class LibP2PGossipNetworkBuilder {
             MAX_SUBSCIPTIONS_PER_MESSAGE,
             MAX_SUBSCRIBED_TOPICS,
             gossipTopicFilter::isRelevantTopic);
-    return new GossipRouter(
-        gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {
 
-      final SeenCache<Optional<ValidationResult>> seenCache =
-          new TTLSeenCache<>(
-              new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
-              gossipParams.getSeenTTL(),
-              getCurTimeMillis());
+    final GossipRouterBuilder builder = new GossipRouterBuilder();
+    final SeenCache<Optional<ValidationResult>> seenCache =
+        new TTLSeenCache<>(
+            new FastIdSeenCache<>(msg -> Bytes.wrap(msg.messageSha256())),
+            gossipParams.getSeenTTL(),
+            builder.getCurrentTimeSuppluer());
 
-      @NotNull
-      @Override
-      protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
-        return seenCache;
-      }
-    };
-  }
-
-  protected Gossip createGossip(
-      GossipConfig gossipConfig,
-      boolean gossipLogsEnabled,
-      PreparedGossipMessageFactory defaultMessageFactory,
-      GossipTopicFilter gossipTopicFilter,
-      GossipTopicHandlers topicHandlers) {
-
-    GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter);
-
-    router.setMessageFactory(
+    builder.setParams(gossipParams);
+    builder.setScoreParams(scoreParams);
+    builder.setProtocol(PubsubProtocol.Gossip_V_1_1);
+    builder.setSubscriptionTopicSubscriptionFilter(subscriptionFilter);
+    builder.setSeenCache(seenCache);
+    builder.setMessageFactory(
         msg -> {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
@@ -131,7 +118,17 @@ public class LibP2PGossipNetworkBuilder {
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
-    router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
+    builder.setMessageValidator(STRICT_FIELDS_VALIDATOR);
+    return builder.build();
+  }
+
+  protected Gossip createGossip(
+      GossipConfig gossipConfig,
+      boolean gossipLogsEnabled,
+      GossipTopicFilter gossipTopicFilter,
+      GossipTopicHandlers topicHandlers) {
+
+    GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter, topicHandlers);
 
     if (gossipLogsEnabled) {
       if (debugGossipHandler != null) {
