@@ -22,6 +22,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -52,201 +53,66 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
-  public static final String GENESIS_TIME_REQUESTS_COUNTER_NAME =
-      "beacon_node_genesis_time_requests_total";
-  public static final String GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME =
-      "beacon_node_get_validator_indices_requests_total";
-  public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
-      "beacon_node_attestation_duties_requests_total";
-  public static final String PROPOSER_DUTIES_REQUESTS_COUNTER_NAME =
-      "beacon_node_proposer_duties_requests_total";
-  public static final String SYNC_COMMITTEE_DUTIES_REQUESTS_COUNTER_NAME =
-      "beacon_node_sync_committee_duties_requests_total";
-  public static final String UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME =
-      "beacon_node_unsigned_block_requests_total";
-  public static final String ATTESTATION_DATA_REQUEST_COUNTER_NAME =
-      "beacon_node_attestation_data_requests_total";
-  public static final String AGGREGATE_REQUESTS_COUNTER_NAME =
-      "beacon_node_aggregate_requests_total";
-  public static final String CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME =
-      "beacon_node_create_sync_committee_contribution_requests_total";
-  public static final String AGGREGATION_SUBSCRIPTION_COUNTER_NAME =
-      "beacon_node_aggregation_subscription_requests_total";
-  public static final String PERSISTENT_SUBSCRIPTION_COUNTER_NAME =
-      "beacon_node_persistent_subscription_requests_total";
-  public static final String PUBLISHED_ATTESTATION_COUNTER_NAME =
-      "beacon_node_published_attestation_total";
-  public static final String PUBLISHED_AGGREGATE_COUNTER_NAME =
-      "beacon_node_published_aggregate_total";
-  public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
-  public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME =
-      "beacon_node_subscribe_sync_committee_subnet_total";
-  public static final String SYNC_COMMITTEE_SEND_MESSAGES_NAME =
-      "beacon_node_send_sync_committee_messages_total";
-  public static final String SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME =
-      "beacon_node_send_sync_committee_contributions_total";
-  public static final String PREPARE_BEACON_PROPOSER_NAME =
-      "beacon_node_prepare_beacon_proposer_requests_total";
-  public static final String REGISTER_VALIDATOR_NAME =
-      "beacon_node_register_validator_requests_total";
+  public static final String BEACON_NODE_REQUEST_COUNTER_NAME = "beacon_node_requests_total";
+
   private final ValidatorApiChannel delegate;
-  private final BeaconChainRequestCounter genesisTimeRequestCounter;
-  private final BeaconChainRequestCounter attestationDutiesRequestCounter;
-  private final BeaconChainRequestCounter syncCommitteeDutiesRequestCounter;
-  private final BeaconChainRequestCounter proposerDutiesRequestCounter;
-  private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
-  private final BeaconChainRequestCounter attestationDataRequestsCounter;
-  private final BeaconChainRequestCounter aggregateRequestsCounter;
-  private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
-  private final BeaconChainRequestCounter sendAttestationRequestCounter;
-  private final BeaconChainRequestCounter sendAggregateRequestCounter;
-  private final BeaconChainRequestCounter sendSyncCommitteeMessagesRequestCounter;
-  private final Counter getValidatorIndicesRequestCounter;
-  private final Counter subscribeAggregationRequestCounter;
-  private final Counter subscribePersistentRequestCounter;
-  private final Counter subscribeSyncCommitteeRequestCounter;
-  private final Counter sendBlockRequestCounter;
-  private final Counter sendContributionAndProofsRequestCounter;
-  private final Counter prepareBeaconProposerCounter;
-  private final Counter registerValidatorCounter;
+  private final LabelledMetric<Counter> beaconNodeRequestCounter;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
     this.delegate = delegate;
-
-    genesisTimeRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            GENESIS_TIME_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for genesis time");
-    attestationDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for validator attestation duties");
-    syncCommitteeDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            SYNC_COMMITTEE_DUTIES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for validator sync committee duties");
-    proposerDutiesRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            PROPOSER_DUTIES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for validator proposer duties");
-    unsignedBlockRequestsCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for unsigned blocks");
-    attestationDataRequestsCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            ATTESTATION_DATA_REQUEST_COUNTER_NAME,
-            "Counter recording the number of requests for attestation data");
-    aggregateRequestsCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            AGGREGATE_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for aggregate attestations");
-    createSyncCommitteeContributionCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for aggregate attestations");
-    getValidatorIndicesRequestCounter =
-        metricsSystem.createCounter(
+    beaconNodeRequestCounter =
+        metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for validator indices");
-    subscribeAggregationRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            AGGREGATION_SUBSCRIPTION_COUNTER_NAME,
-            "Counter recording the number of requests to subscribe to committees for aggregation");
-    subscribePersistentRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            PERSISTENT_SUBSCRIPTION_COUNTER_NAME,
-            "Counter recording the number of requests to subscribe to persistent committees");
-    sendAttestationRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            PUBLISHED_ATTESTATION_COUNTER_NAME,
-            "Counter recording the number of signed attestations sent to the beacon node");
-    sendAggregateRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            PUBLISHED_AGGREGATE_COUNTER_NAME,
-            "Counter recording the number of signed aggregate attestations sent to the beacon node");
-    sendBlockRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            PUBLISHED_BLOCK_COUNTER_NAME,
-            "Counter recording the number of signed blocks sent to the beacon node");
-    subscribeSyncCommitteeRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
-            "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
-    sendSyncCommitteeMessagesRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            SYNC_COMMITTEE_SEND_MESSAGES_NAME,
-            "Counter recording the number of sync committee messages sent to the beacon node");
-    sendContributionAndProofsRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME,
-            "Counter recording the number of signed contributions and proofs sent to the beacon node");
-    prepareBeaconProposerCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            PREPARE_BEACON_PROPOSER_NAME,
-            "Counter recording the number of prepare beacon proposer requests sent to the beacon node");
-    registerValidatorCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
-            REGISTER_VALIDATOR_NAME,
-            "Counter recording the number of validator registration requests sent to the beacon node");
+            BEACON_NODE_REQUEST_COUNTER_NAME,
+            "Counter recording the number of requests to the beacon node",
+            "method",
+            "outcome");
   }
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
-    return countDataRequest(delegate.getGenesisData(), genesisTimeRequestCounter);
+    return countOptionalDataRequest(
+        delegate.getGenesisData(), BeaconNodeRequestLabels.GET_GENESIS_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final Collection<BLSPublicKey> publicKeys) {
-    getValidatorIndicesRequestCounter.inc();
-    return delegate.getValidatorIndices(publicKeys);
+    return countDataRequest(
+        delegate.getValidatorIndices(publicKeys),
+        BeaconNodeRequestLabels.GET_VALIDATOR_INDICES_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
-    return delegate.getValidatorStatuses(validatorIdentifiers);
+    return countOptionalDataRequest(
+        delegate.getValidatorStatuses(validatorIdentifiers),
+        BeaconNodeRequestLabels.GET_VALIDATOR_STATUSES_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return countDataRequest(
-        delegate.getAttestationDuties(epoch, validatorIndices), attestationDutiesRequestCounter);
+    return countOptionalDataRequest(
+        delegate.getAttestationDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_ATTESTATION_DUTIES_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.getSyncCommitteeDuties(epoch, validatorIndices),
-        syncCommitteeDutiesRequestCounter);
+        BeaconNodeRequestLabels.GET_SYNC_COMMITTEE_DUTIES_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return countDataRequest(delegate.getProposerDuties(epoch), proposerDutiesRequestCounter);
+    return countOptionalDataRequest(
+        delegate.getProposerDuties(epoch),
+        BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 
   @Override
@@ -255,72 +121,79 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
       final boolean blinded) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.createUnsignedBlock(slot, randaoReveal, graffiti, blinded),
-        unsignedBlockRequestsCounter);
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
-    return countDataRequest(
-        delegate.createAttestationData(slot, committeeIndex), attestationDataRequestsCounter);
+    return countOptionalDataRequest(
+        delegate.createAttestationData(slot, committeeIndex),
+        BeaconNodeRequestLabels.CREATE_ATTESTATION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return countDataRequest(
-        delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
+    return countOptionalDataRequest(
+        delegate.createAggregate(slot, attestationHashTreeRoot),
+        BeaconNodeRequestLabels.CREATE_AGGREGATE_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
-        createSyncCommitteeContributionCounter);
+        BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(
       final List<CommitteeSubscriptionRequest> requests) {
-    subscribeAggregationRequestCounter.inc();
-    return delegate.subscribeToBeaconCommittee(requests);
+    return countDataRequest(
+        delegate.subscribeToBeaconCommittee(requests),
+        BeaconNodeRequestLabels.BEACON_COMMITTEE_SUBSCRIPTION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    subscribeSyncCommitteeRequestCounter.inc();
-    return delegate.subscribeToSyncCommitteeSubnets(subscriptions);
+    return countDataRequest(
+        delegate.subscribeToSyncCommitteeSubnets(subscriptions),
+        BeaconNodeRequestLabels.SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
       final Set<SubnetSubscription> subnetSubscriptions) {
-    subscribePersistentRequestCounter.inc();
-    return delegate.subscribeToPersistentSubnets(subnetSubscriptions);
+    return countDataRequest(
+        delegate.subscribeToPersistentSubnets(subnetSubscriptions),
+        BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return countSendRequest(
-        delegate.sendSignedAttestations(attestations), sendAttestationRequestCounter);
+        delegate.sendSignedAttestations(attestations),
+        BeaconNodeRequestLabels.PUBLISH_ATTESTATION_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return countSendRequest(
-        delegate.sendAggregateAndProofs(aggregateAndProofs), sendAggregateRequestCounter);
+        delegate.sendAggregateAndProofs(aggregateAndProofs),
+        BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    sendBlockRequestCounter.inc();
-    return delegate.sendSignedBlock(block);
+    return countDataRequest(
+        delegate.sendSignedBlock(block), BeaconNodeRequestLabels.PUBLISH_BLOCK_REQUEST_METHOD);
   }
 
   @Override
@@ -328,50 +201,94 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return countSendRequest(
         delegate.sendSyncCommitteeMessages(syncCommitteeMessages),
-        sendSyncCommitteeMessagesRequestCounter);
+        BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    sendContributionAndProofsRequestCounter.inc();
-    return delegate.sendSignedContributionAndProofs(signedContributionAndProofs);
+    return countDataRequest(
+        delegate.sendSignedContributionAndProofs(signedContributionAndProofs),
+        BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    prepareBeaconProposerCounter.inc();
-    return delegate.prepareBeaconProposer(beaconPreparableProposers);
+    return countDataRequest(
+        delegate.prepareBeaconProposer(beaconPreparableProposers),
+        BeaconNodeRequestLabels.PREPARE_BEACON_PROPOSERS_REQUEST_METHOD);
   }
 
   @Override
   public SafeFuture<Void> registerValidators(
       SszList<SignedValidatorRegistration> validatorRegistrations) {
-    registerValidatorCounter.inc();
-    return delegate.registerValidators(validatorRegistrations);
+    return countDataRequest(
+        delegate.registerValidators(validatorRegistrations),
+        BeaconNodeRequestLabels.REGISTER_VALIDATORS_REQUEST_METHOD);
+  }
+
+  private <T> SafeFuture<T> countDataRequest(
+      final SafeFuture<T> request, final String requestName) {
+    return request
+        .catchAndRethrow(__ -> recordError(requestName))
+        .thenPeek(__ -> recordSuccess(requestName));
+  }
+
+  private <T> SafeFuture<Optional<T>> countOptionalDataRequest(
+      final SafeFuture<Optional<T>> request, final String requestName) {
+    return request
+        .catchAndRethrow(__ -> recordError(requestName))
+        .thenPeek(
+            result ->
+                result.ifPresentOrElse(
+                    __ -> recordSuccess(requestName), () -> recordDataUnavailable(requestName)));
   }
 
   private <T> SafeFuture<List<T>> countSendRequest(
-      final SafeFuture<List<T>> request, final BeaconChainRequestCounter counter) {
+      final SafeFuture<List<T>> request, final String requestName) {
     return request
-        .catchAndRethrow(__ -> counter.onError())
+        .catchAndRethrow(__ -> recordError(requestName))
         .thenPeek(
             result -> {
               if (result.isEmpty()) {
-                counter.onSuccess();
+                recordSuccess(requestName);
               } else {
-                counter.onError();
+                recordError(requestName);
               }
             });
   }
 
-  private <T> SafeFuture<Optional<T>> countDataRequest(
-      final SafeFuture<Optional<T>> request, final BeaconChainRequestCounter counter) {
-    return request
-        .catchAndRethrow(__ -> counter.onError())
-        .thenPeek(
-            result ->
-                result.ifPresentOrElse(__ -> counter.onSuccess(), counter::onDataUnavailable));
+  private void recordSuccess(final String requestName) {
+    recordRequest(requestName, RequestOutcome.SUCCESS);
+  }
+
+  private void recordError(final String requestName) {
+    recordRequest(requestName, RequestOutcome.ERROR);
+  }
+
+  private void recordDataUnavailable(final String requestName) {
+    recordRequest(requestName, RequestOutcome.DATA_UNAVAILABLE);
+  }
+
+  private void recordRequest(final String name, final RequestOutcome outcome) {
+    beaconNodeRequestCounter.labels(name, outcome.displayName).inc();
+  }
+
+  protected enum RequestOutcome {
+    SUCCESS("success"),
+    ERROR("error"),
+    DATA_UNAVAILABLE("data_unavailable");
+
+    private final String displayName;
+
+    RequestOutcome(final String displayName) {
+      this.displayName = displayName;
+    }
+
+    @Override
+    public String toString() {
+      return displayName;
+    }
   }
 }

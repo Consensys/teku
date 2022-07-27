@@ -79,6 +79,9 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Map<String, Long> getColumnCounts();
 
+  @MustBeClosed
+  Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
+
   interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 
   interface HotUpdaterCommon extends AutoCloseable {

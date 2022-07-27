@@ -14,6 +14,8 @@
 package tech.pegasys.teku.storage.server;
 
 import java.nio.file.Path;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -72,6 +74,7 @@ public class DatabaseContext {
         .version(getDatabaseVersion())
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
+        .asyncRunner(Optional.of(new StubAsyncRunner()))
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())

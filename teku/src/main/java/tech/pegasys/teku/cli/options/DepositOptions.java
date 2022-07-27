@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
+import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -49,11 +50,21 @@ public class DepositOptions {
   private boolean useMissingDepositEventLogging =
       PowchainConfiguration.DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
 
+  @CommandLine.Option(
+      names = {"--Xdeposit-snapshot"},
+      paramLabel = "<STRING>",
+      description =
+          "Deposit tree snapshot. This value should be a file or URL pointing to a SSZ-encoded finalized deposit tree snapshot.",
+      hidden = true,
+      arity = "1")
+  private String depositSnapshot;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b ->
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
-                .useMissingDepositEventLogging(useMissingDepositEventLogging));
+                .useMissingDepositEventLogging(useMissingDepositEventLogging)
+                .depositSnapshot(depositSnapshot));
   }
 }
