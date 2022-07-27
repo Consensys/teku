@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.pow;
 
 import java.math.BigInteger;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -156,7 +157,12 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
               return task.apply(nextAvailableProvider)
                   .exceptionallyCompose(
                       taskErr -> {
-                        LOG.warn("Retrying with next eth1 endpoint", taskErr);
+                        if (taskErr instanceof SocketTimeoutException) {
+                          LOG.warn(
+                              "Connection timeout to remote eth1 node. Retrying with next eth1 endpoint");
+                        } else {
+                          LOG.warn("Retrying with next eth1 endpoint", taskErr);
+                        }
                         exceptionsContainer.addSuppressed(taskErr);
                         return run(task, providers, exceptionsContainer);
                       });
