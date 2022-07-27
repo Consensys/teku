@@ -80,11 +80,12 @@ public class ReconstructHistoricalStatesService extends Service {
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
     Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
-    applyNextBlock(context).finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup);
+    applyNextBlock(context).finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedProcess);
   }
 
   private SafeFuture<Void> applyNextBlock(Context context) {
     if (context.checkStopApplyBlock()) {
+      STATUS_LOG.reconstructHistoricalStatesServiceComplete();
       return SafeFuture.COMPLETE;
     }
 
