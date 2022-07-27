@@ -128,9 +128,7 @@ dependencyManagement {
       entry 'mockito-junit-jupiter'
     }
 
-    dependencySet(group: 'io.github.hakky54', version: '2.7.10') {
-      entry 'logcaptor'
-    }
+    dependency 'io.github.hakky54:logcaptor:2.7.10'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.35") {
       entry 'jmh-core'
