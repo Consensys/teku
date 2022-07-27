@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
@@ -79,6 +80,26 @@ public class DatabaseContext {
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .build();
+  }
+
+  public Database createFileBasedStorageDatabaseOnly(
+      final Spec spec,
+      final Path tmpDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final AsyncRunner asyncRunner,
+      final boolean storeNonCanonicalBlocks) {
+    return FileBackedStorageSystemBuilder.create()
+        .specProvider(spec)
+        .dataDir(tmpDir)
+        .version(getDatabaseVersion())
+        .storageMode(storageMode)
+        .stateStorageFrequency(1L)
+        .asyncRunner(Optional.of(asyncRunner))
+        .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
+        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
+        .buildDatabaseOnly();
   }
 
   private boolean isStoreExecutionPayloadSeparately() {
