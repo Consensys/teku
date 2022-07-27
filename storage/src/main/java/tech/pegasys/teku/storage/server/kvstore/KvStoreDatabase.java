@@ -322,6 +322,15 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public void storeFinalizedState(BeaconState state) {
+    final Bytes32 blockRoot = spec.getBlockRootAtSlot(state, state.getSlot());
+    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
+      updater.addFinalizedState(blockRoot, state);
+      updater.commit();
+    }
+  }
+
+  @Override
   public Optional<OnDiskStoreData> createMemoryStore() {
     return createMemoryStore(() -> Instant.now().getEpochSecond());
   }
@@ -479,6 +488,11 @@ public abstract class KvStoreDatabase<
       hotUpdater.addVotes(votes);
       hotUpdater.commit();
     }
+  }
+
+  @Override
+  public Optional<Checkpoint> getAnchor() {
+    return dao.getAnchor();
   }
 
   @Override

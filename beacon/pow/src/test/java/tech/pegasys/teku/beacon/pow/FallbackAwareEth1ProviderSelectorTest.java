@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -112,6 +114,26 @@ public class FallbackAwareEth1ProviderSelectorTest {
                       return SafeFuture.COMPLETE;
                     }))
         .isCompleted();
+  }
+
+  @Test
+  void shouldNotIncludeTimeoutExceptionStacktraceInLogs() {
+    // One node failing with socket timeout error
+    when(node2.isValid()).thenReturn(false);
+    when(node3.isValid()).thenReturn(false);
+    when(node1.ethGetLogs(ethLogFilter))
+        .thenReturn(
+            failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
+    LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class);
+    SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
+    final String expectedWarningMessage =
+        "Connection timeout to remote eth1 node. Retrying with next eth1 endpoint";
+    assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
+    assertThat(logCaptor.getLogEvents()).isNotEmpty();
+    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
+    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
   }
 
   @Test

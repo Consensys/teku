@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -70,8 +71,12 @@ public class HistoricalBlockSyncServiceTest {
 
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
 
+  private final CombinedChainDataClient chainData = mock(CombinedChainDataClient.class);
+  private final Optional<String> genesisStateResource =
+      Optional.of("https://example.com/state.ssz");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
-      new ReconstructHistoricalStatesService();
+      new ReconstructHistoricalStatesService(
+          storageUpdateChannel, chainData, spec, genesisStateResource);
 
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =
@@ -85,8 +90,7 @@ public class HistoricalBlockSyncServiceTest {
           syncStateProvider,
           signatureVerificationService,
           batchSize,
-          reconstructHistoricalStatesService,
-          true);
+          Optional.of(reconstructHistoricalStatesService));
   private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
       Subscribers.create(false);
 

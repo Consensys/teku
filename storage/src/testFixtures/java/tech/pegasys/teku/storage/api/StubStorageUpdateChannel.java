@@ -17,6 +17,7 @@ import java.util.Collection;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
@@ -27,6 +28,11 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState) {
     return SafeFuture.COMPLETE;
   }
 

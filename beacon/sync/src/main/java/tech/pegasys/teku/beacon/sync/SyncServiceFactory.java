@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync;
 
 import java.time.Duration;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncServiceFactory {
   private final SyncConfig syncConfig;
+  private final Optional<String> genesisStateResource;
   private final MetricsSystem metrics;
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final AsyncRunner asyncRunner;
@@ -56,6 +58,7 @@ public class SyncServiceFactory {
 
   private SyncServiceFactory(
       final SyncConfig syncConfig,
+      final Optional<String> genesisStateResource,
       final MetricsSystem metrics,
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
@@ -71,6 +74,7 @@ public class SyncServiceFactory {
       final Duration startupTimeout,
       final Spec spec) {
     this.syncConfig = syncConfig;
+    this.genesisStateResource = genesisStateResource;
     this.metrics = metrics;
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.asyncRunner = asyncRunner;
@@ -89,6 +93,7 @@ public class SyncServiceFactory {
 
   public static SyncService createSyncService(
       final SyncConfig syncConfig,
+      final Optional<String> genesisStateResource,
       final MetricsSystem metrics,
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
@@ -106,6 +111,7 @@ public class SyncServiceFactory {
     final SyncServiceFactory factory =
         new SyncServiceFactory(
             syncConfig,
+            genesisStateResource,
             metrics,
             asyncRunnerFactory,
             asyncRunner,
@@ -152,7 +158,8 @@ public class SyncServiceFactory {
         combinedChainDataClient,
         signatureVerifier,
         syncStateProvider,
-        syncConfig.isReconstructHistoricStatesEnabled());
+        syncConfig.isReconstructHistoricStatesEnabled(),
+        genesisStateResource);
   }
 
   private SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {
