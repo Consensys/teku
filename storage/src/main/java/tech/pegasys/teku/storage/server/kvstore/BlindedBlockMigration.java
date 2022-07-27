@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.Longs;
 import java.util.Iterator;
 import java.util.Map;
@@ -65,7 +66,14 @@ public class BlindedBlockMigration<
     asyncRunner
         .get()
         .runAsync(this::migrateRemainingBlocks)
-        .finish(error -> LOG.error("Failed to complete block migration", error));
+        .finish(
+            error -> {
+              if (Throwables.getRootCause(error) instanceof ShuttingDownException) {
+                LOG.debug("Shutting down");
+              } else {
+                LOG.error("Failed to complete block migration", error);
+              }
+            });
   }
 
   private void moveHotBlocksToBlindedStorage() {
@@ -88,11 +96,13 @@ public class BlindedBlockMigration<
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
           }
-          double percentCompleted = counter;
-          percentCompleted /= countBlocks;
-          percentCompleted *= 100;
-          LOG.info("{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
-
+          if (counter % LOGGING_FREQUENCY == 0 || counter == countBlocks) {
+            double percentCompleted = counter;
+            percentCompleted /= countBlocks;
+            percentCompleted *= 100;
+            LOG.info(
+                "{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
+          }
           blindedUpdater.commit();
           unblindedUpdater.commit();
         }
@@ -201,10 +211,6 @@ public class BlindedBlockMigration<
 
         pause();
       }
-    } catch (ShuttingDownException e) {
-      LOG.debug("Shutting down.");
-    } catch (Exception e) {
-      LOG.error("Failed to migrate finalized blocks", e);
     }
     if (counter > 0) {
       LOG.info("{} pre-bellatrix blocks moved", counter);
@@ -241,10 +247,6 @@ public class BlindedBlockMigration<
         }
         pause();
       }
-    } catch (ShuttingDownException e) {
-      LOG.debug("Shutting down.");
-    } catch (Exception e) {
-      LOG.error("Failed to migrate post-bellatrix blocks", e);
     }
     if (counter > 0) {
       LOG.info("{} post-bellatrix blocks moved", counter);
