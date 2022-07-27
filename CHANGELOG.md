@@ -16,6 +16,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
  - Added support for Builder API
  - Enables fork choice before block proposals by default on MainNet (previously on by default on testnets only)
+ - Optimisations in jvm-libp2p to reduce CPU usage
 
 ### Bug Fixes
  - Fix `latestValidHash`with invalid Execution Payload in response from execution engine didn't trigger appropriate ForkChoice changes 
