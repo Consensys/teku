@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -65,19 +64,15 @@ public class ReconstructHistoricalStatesService extends Service {
               "Failed to load initial state from " + resource + ": " + e.getMessage()));
     }
 
-    final SafeFuture<Optional<Checkpoint>> future = chainDataClient.getInitialAnchor();
-    future
+    return chainDataClient
+        .getInitialAnchor()
         .thenAccept(
             checkpoint -> {
               if (checkpoint.isEmpty()) {
                 return; // todo confirm skip, or should I throw exception
               }
-
               applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
-            })
-        .finish(LOG::error); // todo ignores return value
-
-    return SafeFuture.COMPLETE; // todo check
+            });
   }
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
