@@ -923,6 +923,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     syncService =
         SyncServiceFactory.createSyncService(
             beaconConfig.syncConfig(),
+            beaconConfig.eth2NetworkConfig().getGenesisState(),
             metricsSystem,
             asyncRunnerFactory,
             beaconAsyncRunner,

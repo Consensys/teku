@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -43,6 +44,8 @@ public interface Database extends AutoCloseable {
   UpdateResult update(StorageUpdate event);
 
   void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
+
+  void storeFinalizedState(BeaconState state);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
@@ -134,4 +137,6 @@ public interface Database extends AutoCloseable {
   Map<String, Long> getColumnCounts();
 
   void migrate();
+
+  Optional<Checkpoint> getAnchor();
 }

@@ -289,6 +289,14 @@ public class StatusLogger {
     log.error("ReconstructHistoricalStatesService unable to start", throwable);
   }
 
+  public void reconstructHistoricalStatesServiceFailedProcess(final Throwable throwable) {
+    log.error("ReconstructHistoricalStatesService failed constructing states", throwable);
+  }
+
+  public void reconstructHistoricalStatesServiceComplete() {
+    log.info("ReconstructHistoricalStatesService reconstruction complete");
+  }
+
   public void eth1AtHead(final BigInteger headBlockNumber) {
     log.info("Loading deposits up to Eth1 block {}", headBlockNumber);
   }
