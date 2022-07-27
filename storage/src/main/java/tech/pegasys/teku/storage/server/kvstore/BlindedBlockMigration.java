@@ -40,7 +40,7 @@ public class BlindedBlockMigration<
   private final int finalizedBlockBatchSize;
   private static final int INDEX_BATCH_SIZE = 10_000;
   private static final int PAUSE_BETWEEN_BATCH_MS = 100;
-  private static final int LOGGING_FREQUENCY = 10_000;
+  private static final int LOGGING_FREQUENCY = 100_000;
   private final Spec spec;
 
   private final T dao;
