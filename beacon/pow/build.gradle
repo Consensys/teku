@@ -23,6 +23,14 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
 
+  testImplementation 'io.github.hakky54:logcaptor'
+
+  configurations {
+    testImplementation {
+      exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+    }
+  }
+
   testFixturesImplementation project(':ethereum:pow:api')
   testFixturesImplementation project(':infrastructure:events')
 }
