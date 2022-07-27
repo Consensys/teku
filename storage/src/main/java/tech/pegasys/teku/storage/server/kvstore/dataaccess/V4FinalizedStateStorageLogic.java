@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -24,6 +26,10 @@ public interface V4FinalizedStateStorageLogic<S> {
       KvStoreAccessor db, S schema, UInt64 maxSlot);
 
   FinalizedStateUpdater<S> updater();
+
+  @MustBeClosed
+  Stream<UInt64> streamFinalizedStateSlots(
+      KvStoreAccessor db, final S schema, UInt64 startSlot, UInt64 endSlot);
 
   interface FinalizedStateUpdater<S> {
     void addFinalizedState(

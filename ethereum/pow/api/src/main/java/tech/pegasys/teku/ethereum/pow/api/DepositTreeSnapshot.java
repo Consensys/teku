@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.pow.api;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -58,6 +59,10 @@ public class DepositTreeSnapshot
 
   public static DeserializableTypeDefinition<DepositTreeSnapshot> getJsonTypeDefinition() {
     return SCHEMA.getJsonTypeDefinition();
+  }
+
+  public static DepositTreeSnapshot fromBytes(final Bytes bytes) {
+    return SCHEMA.sszDeserialize(bytes);
   }
 
   public DepositTreeSnapshot(

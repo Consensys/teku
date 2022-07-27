@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +39,7 @@ public class VersionedDatabaseFactoryTest {
   public static final int MAX_KNOWN_NODE_CACHE_SIZE = 10_000;
   private final Eth1Address eth1Address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   @TempDir Path dataDir;
 
@@ -47,6 +49,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            Optional.empty(),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -74,6 +77,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            Optional.empty(),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -95,6 +99,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            Optional.empty(),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -114,6 +119,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            Optional.empty(),
             DATA_STORAGE_MODE,
             eth1Address,
             false,
@@ -133,6 +139,7 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
+            Optional.empty(),
             DATA_STORAGE_MODE,
             version,
             1L,
