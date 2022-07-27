@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -71,14 +72,14 @@ public class ReconstructHistoricalStatesService extends Service {
         .thenAccept(
             checkpoint -> {
               if (checkpoint.isEmpty()) {
-                return; // todo confirm skip, or should I throw exception
+                return;
               }
               applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
             });
   }
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
-    Context context = new Context(genesisState, UInt64.ONE, anchorSlot); // todo correct slot 1?
+    Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
     applyNextBlock(context).finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedStartup);
   }
 
