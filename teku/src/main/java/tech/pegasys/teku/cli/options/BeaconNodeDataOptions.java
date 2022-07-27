@@ -80,15 +80,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean storeBlockExecutionPayloadSeparately =
       StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 
-  @CommandLine.Option(
-      names = {"--Xdata-storage-block-migrate-batch-size"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the batch size for migrating finalized blocks to blinded storage",
-      hidden = true,
-      arity = "1")
-  private int blockMigrationBatchSize = StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
    * time. Not that states later in the chain with more validators have more branches so need a
@@ -133,7 +124,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
-                .blockMigrationBatchSize(blockMigrationBatchSize)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
     builder.sync(b -> b.isReconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
@@ -153,9 +143,5 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   public boolean isStoreBlockExecutionPayloadSeparately() {
     return storeBlockExecutionPayloadSeparately;
-  }
-
-  public int getBlockMigrationBatchSize() {
-    return blockMigrationBatchSize;
   }
 }

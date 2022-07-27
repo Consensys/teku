@@ -41,7 +41,6 @@ public class LevelDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
@@ -67,7 +66,6 @@ public class LevelDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -79,7 +77,6 @@ public class LevelDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
@@ -96,7 +93,6 @@ public class LevelDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -107,7 +103,6 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
@@ -125,7 +120,6 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         maxKnownNodeCacheSize,
         asyncRunner,
         spec);

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.services.chainstorage.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
 import static tech.pegasys.teku.services.chainstorage.StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
@@ -195,7 +194,6 @@ public class DatabaseMigrater {
             0,
             false,
             DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY,
-            DEFAULT_BLOCK_MIGRATION_BATCH_SIZE,
             spec);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {

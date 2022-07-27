@@ -28,14 +28,11 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
 
-  public static final int DEFAULT_BLOCK_MIGRATION_BATCH_SIZE = 25;
-
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
-  private final int blockMigrationBatchSize;
   private boolean storeBlockExecutionPayloadSeparately;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
@@ -51,7 +48,6 @@ public class StorageConfiguration {
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -61,7 +57,6 @@ public class StorageConfiguration {
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.storeVotesEquivocation = storeVotesEquivocation;
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-    this.blockMigrationBatchSize = blockMigrationBatchSize;
     this.spec = spec;
   }
 
@@ -101,10 +96,6 @@ public class StorageConfiguration {
     return storeBlockExecutionPayloadSeparately;
   }
 
-  public int getBlockMigrationBatchSize() {
-    return blockMigrationBatchSize;
-  }
-
   public Spec getSpec() {
     return spec;
   }
@@ -121,7 +112,6 @@ public class StorageConfiguration {
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
     private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-    private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
 
     private Builder() {}
 
@@ -190,18 +180,12 @@ public class StorageConfiguration {
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
           spec);
     }
 
     public Builder storeBlockExecutionPayloadSeparately(
         final boolean storeBlockExecutionPayloadSeparately) {
       this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-      return this;
-    }
-
-    public Builder blockMigrationBatchSize(final int blockMigrationBatchSize) {
-      this.blockMigrationBatchSize = blockMigrationBatchSize;
       return this;
     }
   }

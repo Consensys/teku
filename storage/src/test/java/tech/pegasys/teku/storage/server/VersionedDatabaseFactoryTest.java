@@ -37,8 +37,6 @@ public class VersionedDatabaseFactoryTest {
 
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
   public static final int MAX_KNOWN_NODE_CACHE_SIZE = 10_000;
-
-  public static final int DEFAULT_BLOCK_BATCH_SIZE = 25;
   private final Eth1Address eth1Address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
@@ -57,7 +55,6 @@ public class VersionedDatabaseFactoryTest {
             false,
             false,
             false,
-            DEFAULT_BLOCK_BATCH_SIZE,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -86,7 +83,6 @@ public class VersionedDatabaseFactoryTest {
             false,
             false,
             false,
-            DEFAULT_BLOCK_BATCH_SIZE,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -109,7 +105,6 @@ public class VersionedDatabaseFactoryTest {
             false,
             false,
             false,
-            DEFAULT_BLOCK_BATCH_SIZE,
             spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -130,7 +125,6 @@ public class VersionedDatabaseFactoryTest {
             false,
             false,
             false,
-            DEFAULT_BLOCK_BATCH_SIZE,
             spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -154,7 +148,6 @@ public class VersionedDatabaseFactoryTest {
             MAX_KNOWN_NODE_CACHE_SIZE,
             false,
             false,
-            DEFAULT_BLOCK_BATCH_SIZE,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }

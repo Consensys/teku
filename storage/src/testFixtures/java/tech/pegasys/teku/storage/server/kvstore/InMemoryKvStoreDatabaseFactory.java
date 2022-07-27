@@ -33,7 +33,6 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
@@ -51,7 +50,6 @@ public class InMemoryKvStoreDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -62,7 +60,6 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
       final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
@@ -75,7 +72,6 @@ public class InMemoryKvStoreDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -86,7 +82,6 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
-      final int blockMigrationBatchSize,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema =
@@ -98,7 +93,6 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
         1000,
         asyncRunner,
         spec);

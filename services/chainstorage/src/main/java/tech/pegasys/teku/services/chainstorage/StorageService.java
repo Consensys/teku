@@ -61,7 +61,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                   config.getMaxKnownNodeCacheSize(),
                   config.isStoreVotesEquivocation(),
                   config.isStoreBlockExecutionPayloadSeparately(),
-                  config.getBlockMigrationBatchSize(),
                   config.getSpec());
           database = dbFactory.createDatabase();
 
