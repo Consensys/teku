@@ -36,8 +36,7 @@ public class BlindedBlockMigration<
   private static final Logger LOG = LogManager.getLogger();
   private static final int HOT_BLOCK_BATCH_SIZE = 1_000;
 
-  private static final int FINALIZED_BLOCK_BATCH_SIZE = 25;
-
+  private final int finalizedBlockBatchSize;
   private static final int INDEX_BATCH_SIZE = 10_000;
   private static final int PAUSE_BETWEEN_BATCH_MS = 100;
   private static final int LOGGING_FREQUENCY = 10_000;
@@ -47,9 +46,14 @@ public class BlindedBlockMigration<
 
   private final Optional<AsyncRunner> asyncRunner;
 
-  BlindedBlockMigration(final Spec spec, final T dao, final Optional<AsyncRunner> asyncRunner) {
+  BlindedBlockMigration(
+      final Spec spec,
+      final T dao,
+      final int finalizedBlockBatchSize,
+      final Optional<AsyncRunner> asyncRunner) {
     this.spec = spec;
     this.dao = dao;
+    this.finalizedBlockBatchSize = finalizedBlockBatchSize;
     this.asyncRunner = asyncRunner;
   }
 
@@ -169,7 +173,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext() && preBellatrix; i++) {
+          for (int i = 0; i < finalizedBlockBatchSize && it.hasNext() && preBellatrix; i++) {
             final Map.Entry<Bytes, Bytes> entry = it.next();
             final UInt64 slot =
                 UInt64.fromLongBits(Longs.fromByteArray(entry.getKey().toArrayUnsafe()));
@@ -222,7 +226,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext(); i++) {
+          for (int i = 0; i < finalizedBlockBatchSize && it.hasNext(); i++) {
             final SignedBeaconBlock block = it.next();
             finalizedUpdaterBlinded.addBlindedFinalizedBlock(block, block.getRoot(), spec);
             finalizedUpdaterUnblinded.deleteUnblindedFinalizedBlock(
@@ -268,7 +272,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext(); i++) {
+          for (int i = 0; i < finalizedBlockBatchSize && it.hasNext(); i++) {
             final Map.Entry<Bytes32, SignedBeaconBlock> entry = it.next();
             final Bytes32 root = entry.getKey();
             final SignedBeaconBlock block = entry.getValue();

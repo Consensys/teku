@@ -115,6 +115,7 @@ public class WeakSubjectivityCommand implements Runnable {
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
             eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
             beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            beaconNodeDataOptions.getBlockMigrationBatchSize(),
             spec);
     return databaseFactory.createDatabase();
   }

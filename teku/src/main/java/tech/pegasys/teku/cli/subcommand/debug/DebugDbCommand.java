@@ -227,6 +227,7 @@ public class DebugDbCommand implements Runnable {
             beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
             eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
             isStoreBlockExecutionPayloadSeparately,
+            beaconNodeDataOptions.getBlockMigrationBatchSize(),
             spec);
     return databaseFactory.createDatabase();
   }

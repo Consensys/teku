@@ -54,6 +54,8 @@ public class InMemoryStorageSystemBuilder {
   private MockKvStoreInstance coldDb;
   private boolean storeBlockExecutionPayloadSeparately = false;
 
+  private int blockMigrationBatchSize = 25;
+
   private InMemoryStorageSystemBuilder() {}
 
   public static InMemoryStorageSystemBuilder create() {
@@ -192,6 +194,7 @@ public class InMemoryStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
         storeVotesEquivocation,
+        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -208,6 +211,7 @@ public class InMemoryStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         storeVotesEquivocation,
         asyncRunner,
         spec);
@@ -241,6 +245,7 @@ public class InMemoryStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         storeVotesEquivocation,
         asyncRunner,
         spec);

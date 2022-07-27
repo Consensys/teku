@@ -49,6 +49,8 @@ public class FileBackedStorageSystemBuilder {
   private boolean storeVotesEquivocation = false;
   private boolean storeBlockExecutionPayloadSeparately = false;
 
+  private int blockMigrationBatchSize = 25;
+
   private FileBackedStorageSystemBuilder() {}
 
   public static FileBackedStorageSystemBuilder create() {
@@ -178,6 +180,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         storeVotesEquivocation,
         asyncRunner,
         spec);
@@ -196,6 +199,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -209,6 +213,7 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         storeVotesEquivocation,
         asyncRunner,
         spec);
@@ -222,6 +227,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         10_000,
         storeVotesEquivocation,
         asyncRunner,
@@ -238,6 +244,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
@@ -252,6 +259,7 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
         asyncRunner,
         spec);
   }
