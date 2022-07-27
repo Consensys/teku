@@ -275,6 +275,12 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamFinalizedStateSlots(startSlot, endSlot);
+  }
+
+  @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return finalizedDao.getNonCanonicalBlock(root);
   }

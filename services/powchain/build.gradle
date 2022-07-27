@@ -12,6 +12,8 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:version')
   implementation project(':storage:api')
+  implementation project(':infrastructure:http')
+  implementation project(':infrastructure:io')
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 

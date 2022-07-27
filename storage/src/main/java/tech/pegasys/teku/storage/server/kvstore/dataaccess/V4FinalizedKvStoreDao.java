@@ -229,6 +229,12 @@ public class V4FinalizedKvStoreDao {
     return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
   }
 
+  @MustBeClosed
+  public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
+    return db.stream(schema.getColumnFinalizedStatesBySlot(), startSlot, endSlot)
+        .map(ColumnEntry::getKey);
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
