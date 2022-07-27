@@ -127,11 +127,10 @@ public class BlindedBlockMigration<
   }
 
   private void migrateRemainingBlocks() {
-    LOG.debug("migrate finalized un-blinded blocks to blinded storage.");
     final long finalizedBlockIndexCounter = copyFinalizedBlockIndexToBlindedStorage();
     final long preBellatrixMigratedBlocks =
         migrateFinalizedBlocksPreBellatrix(finalizedBlockIndexCounter);
-    migrateFinalizedBlocks(finalizedBlockIndexCounter - preBellatrixMigratedBlocks);
+    migrateRemainingFinalizedBlocks(finalizedBlockIndexCounter - preBellatrixMigratedBlocks);
     migrateNonCanonicalBlocks();
   }
 
@@ -190,7 +189,7 @@ public class BlindedBlockMigration<
             }
             final Optional<Bytes32> maybeRoot = dao.getFinalizedBlockRootAtSlot(slot);
             if (maybeRoot.isEmpty()) {
-              LOG.warn("Could not find block root for slot {}", slot);
+              LOG.debug("Could not find block root for slot {}", slot);
               continue;
             }
             finalizedUpdaterBlinded.addBlindedFinalizedBlockRaw(
@@ -209,12 +208,12 @@ public class BlindedBlockMigration<
       }
     }
     if (counter > 0) {
-      LOG.info("{} pre-bellatrix blocks moved", counter);
+      LOG.info("Done - {} pre-bellatrix blocks moved", counter);
     }
     return counter;
   }
 
-  private void migrateFinalizedBlocks(final long migrationCounter) {
+  private void migrateRemainingFinalizedBlocks(final long migrationCounter) {
     long counter = 0;
     if (migrationCounter > 0) {
       LOG.info(
@@ -245,7 +244,7 @@ public class BlindedBlockMigration<
       }
     }
     if (counter > 0) {
-      LOG.info("{} post-bellatrix blocks moved", counter);
+      LOG.info("Done - {} post-bellatrix blocks moved", counter);
     }
   }
 
@@ -286,6 +285,9 @@ public class BlindedBlockMigration<
         }
         pause();
       }
+    }
+    if (counter > 0) {
+      LOG.info("Done - {} non-canonical blocks moved", counter);
     }
   }
 }
