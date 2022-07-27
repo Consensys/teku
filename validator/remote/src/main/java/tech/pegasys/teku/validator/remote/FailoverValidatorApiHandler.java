@@ -91,7 +91,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
             FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the failover Beacon Nodes",
+            "Counter recording the number of requests sent to the configured failover Beacon Nodes",
             "failover_endpoint",
             "method",
             "outcome");
@@ -385,6 +385,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @VisibleForTesting
+  @FunctionalInterface
   interface ValidatorApiChannelRequest<T> {
     SafeFuture<T> run(final ValidatorApiChannel apiChannel);
   }
