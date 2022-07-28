@@ -65,19 +65,24 @@ public class BlindedBlockMigrationTest {
         context.createFileBasedStorage(
             spec, tempDir, StateStorageMode.PRUNE, StoreConfig.createDefault(), true)) {
       final Database database = storage.database();
-      assertHotBlockCounts(database.getColumnCounts(), blockCount, blockCount, 0, 0);
+      assertUnblindedStorageCounts(database.getColumnCounts(), 1, blockCount, blockCount);
+      // checkpoint epochs doesn't change, so it is always the expected size for blinded storage and
+      // unblinded
+      assertBlindedStorageCounts(database.getColumnCounts(), 0, blockCount, 0, 0);
       database.migrate();
+      assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, blockCount);
       // payloads do get separated out, but there's only 1 default payload, so only 1 entry
-      assertHotBlockCounts(database.getColumnCounts(), blockCount, 0, blockCount, 1);
+      assertBlindedStorageCounts(database.getColumnCounts(), blockCount, blockCount, 1, 1);
     }
   }
 
   @Test
   void shouldMigrateFinalizedBlocks(@TempDir final Path tempDir) throws Exception {
     final int totalBlocks = 39;
-    final int finalizedBlocks = 3 * spec.getGenesisSpec().getSlotsPerEpoch() + 1;
+    // 39 blocks total, 25 finalized + 14 hot
+    final int finalizedBlocks = 25;
     // hot storage has all hot blocks plus current finalized block
-    final int hotBlocks = totalBlocks - finalizedBlocks + 1;
+    final int unblindedHotBlockCount = 14 + 1;
     setupStorage(tempDir, totalBlocks, 3);
     try (final Database database =
         context.createFileBasedStorageDatabaseOnly(
@@ -87,47 +92,59 @@ public class BlindedBlockMigrationTest {
             StoreConfig.createDefault(),
             stubAsyncRunner,
             true)) {
-      assertHotBlockCounts(database.getColumnCounts(), hotBlocks, hotBlocks, 0, 0);
-      assertFinalizedBlockCounts(database.getColumnCounts(), finalizedBlocks, 0, 0);
+      // PRE migrate, all storage is in unblinded storage
+      assertUnblindedStorageCounts(
+          database.getColumnCounts(),
+          finalizedBlocks,
+          unblindedHotBlockCount,
+          unblindedHotBlockCount);
+      // checkpoint epochs doesn't change, so it is always the expected size for blinded storage and
+      // unblinded
+      assertBlindedStorageCounts(database.getColumnCounts(), 0, unblindedHotBlockCount, 0, 0);
 
       database.migrate();
-      // moves all hot blocks plus the earliest finalized
-      assertHotBlockCounts(database.getColumnCounts(), hotBlocks, 0, hotBlocks + 1, 1);
-      assertThat(stubAsyncRunner.countDelayedActions()).isEqualTo(1);
-      assertFinalizedBlockCounts(database.getColumnCounts(), finalizedBlocks - 1, hotBlocks + 1, 1);
+      // migrated hot blocks only, plus 1 finalized block initially
+      assertUnblindedStorageCounts(
+          database.getColumnCounts(), finalizedBlocks - 1, 0, unblindedHotBlockCount);
+      assertBlindedStorageCounts(
+          database.getColumnCounts(), unblindedHotBlockCount + 1, unblindedHotBlockCount, 1, 1);
 
+      assertThat(stubAsyncRunner.countDelayedActions()).isEqualTo(1);
       // run async action, then will have all blinded blocks
       stubAsyncRunner.executeQueuedActions();
       assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
-      assertFinalizedBlockCounts(database.getColumnCounts(), 0, totalBlocks, 1);
+      assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, unblindedHotBlockCount);
+      assertBlindedStorageCounts(
+          database.getColumnCounts(), totalBlocks, unblindedHotBlockCount, finalizedBlocks, 1);
     }
   }
 
-  private void assertFinalizedBlockCounts(
+  private void assertUnblindedStorageCounts(
       final Map<String, Long> counts,
       final long expectedFinalizedBlocks,
-      final long expectedBlindedBlocks,
-      final long payloads) {
+      final long expectedHotBlocks,
+      final long expectedCheckpoints) {
     final Map<String, Long> expected =
         Map.of(
             "FINALIZED_BLOCKS_BY_SLOT", expectedFinalizedBlocks,
-            "BLINDED_BLOCKS_BY_ROOT", expectedBlindedBlocks,
-            "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", payloads);
+            "SLOTS_BY_FINALIZED_ROOT", expectedFinalizedBlocks,
+            "HOT_BLOCKS_BY_ROOT", expectedHotBlocks,
+            "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", expectedCheckpoints);
     assertThat(counts).containsAllEntriesOf(expected);
   }
 
-  private void assertHotBlockCounts(
+  private void assertBlindedStorageCounts(
       final Map<String, Long> counts,
-      final long expectedCheckpoints,
-      final long expectedHotBlocks,
       final long expectedBlindedBlocks,
-      final long payloads) {
+      final long expectedCheckpoints,
+      final long expectedFinalizedBlockIndices,
+      final long expectedPayloads) {
     final Map<String, Long> expected =
         Map.of(
-            "HOT_BLOCKS_BY_ROOT", expectedHotBlocks,
             "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", expectedCheckpoints,
             "BLINDED_BLOCKS_BY_ROOT", expectedBlindedBlocks,
-            "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", payloads);
+            "FINALIZED_BLOCK_ROOT_BY_SLOT", expectedFinalizedBlockIndices,
+            "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", expectedPayloads);
     assertThat(counts).containsAllEntriesOf(expected);
   }
 

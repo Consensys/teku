@@ -35,9 +35,8 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnb
 public class BlindedBlockMigration<
     T extends KvStoreCombinedDaoBlinded & KvStoreCombinedDaoUnblinded> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int HOT_BLOCK_BATCH_SIZE = 1_000;
 
-  private static final int FINALIZED_BLOCK_BATCH_SIZE = 25;
+  private static final int BLOCK_BATCH_SIZE = 25;
 
   private static final int INDEX_BATCH_SIZE = 10_000;
   private static final int PAUSE_BETWEEN_BATCH_MS = 100;
@@ -86,7 +85,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.HotUpdaterUnblinded unblindedUpdater =
                 dao.hotUpdaterUnblinded()) {
-          for (int i = 0; i < HOT_BLOCK_BATCH_SIZE && it.hasNext(); i++) {
+          for (int i = 0; i < BLOCK_BATCH_SIZE && it.hasNext(); i++) {
             final SignedBeaconBlock block = it.next();
             blindedUpdater.addBlindedBlock(block, block.getRoot(), spec);
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
@@ -178,7 +177,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext() && preBellatrix; i++) {
+          for (int i = 0; i < BLOCK_BATCH_SIZE && it.hasNext() && preBellatrix; i++) {
             final Map.Entry<Bytes, Bytes> entry = it.next();
             final UInt64 slot =
                 UInt64.fromLongBits(Longs.fromByteArray(entry.getKey().toArrayUnsafe()));
@@ -227,7 +226,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext(); i++) {
+          for (int i = 0; i < BLOCK_BATCH_SIZE && it.hasNext(); i++) {
             final SignedBeaconBlock block = it.next();
             finalizedUpdaterBlinded.addBlindedFinalizedBlock(block, block.getRoot(), spec);
             finalizedUpdaterUnblinded.deleteUnblindedFinalizedBlock(
@@ -269,7 +268,7 @@ public class BlindedBlockMigration<
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < FINALIZED_BLOCK_BATCH_SIZE && it.hasNext(); i++) {
+          for (int i = 0; i < BLOCK_BATCH_SIZE && it.hasNext(); i++) {
             final Map.Entry<Bytes32, SignedBeaconBlock> entry = it.next();
             final Bytes32 root = entry.getKey();
             final SignedBeaconBlock block = entry.getValue();
