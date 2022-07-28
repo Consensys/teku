@@ -23,7 +23,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.storage.api.DatabaseVersion;
 import tech.pegasys.teku.storage.api.StateStorageMode;
-import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
@@ -49,7 +48,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
           "Sets the frequency, in slots, at which to store finalized states to disk. "
               + "This option is ignored if --data-storage-mode is set to PRUNE",
       arity = "1")
-  private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
+  private long dataStorageFrequency = StorageConfiguration.DEFAULT_STORAGE_FREQUENCY;
 
   @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},

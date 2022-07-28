@@ -41,7 +41,6 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";

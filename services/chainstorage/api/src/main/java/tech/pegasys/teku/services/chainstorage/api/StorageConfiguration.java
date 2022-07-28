@@ -24,6 +24,7 @@ public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
 
+  public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final int DEFAULT_BLOCK_MIGRATION_BATCH_SIZE = 25;
@@ -119,7 +120,7 @@ public class StorageConfiguration {
 
     private Eth1Address eth1DepositContract;
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
-    private long dataStorageFrequency = 2048L;
+    private long dataStorageFrequency = DEFAULT_STORAGE_FREQUENCY;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
     private boolean storeVotesEquivocation =
         Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;

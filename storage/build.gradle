@@ -51,6 +51,7 @@ dependencies {
   testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':infrastructure:bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
+  testFixturesImplementation project(':services:chainstorage:api')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
