@@ -91,10 +91,8 @@ public class BlindedBlockMigration<
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
           }
-          if (counter % LOGGING_FREQUENCY == 0 || counter == countBlocks) {
-            double percentCompleted = counter;
-            percentCompleted /= countBlocks;
-            percentCompleted *= 100;
+          if (counter % 128 == 0 || counter == countBlocks) {
+            double percentCompleted = counter * 100.0 / countBlocks;
             LOG.info(
                 "{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
           }
