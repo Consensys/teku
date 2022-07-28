@@ -15,17 +15,17 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
-import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.api.StateStorageMode.ARCHIVE;
+import static tech.pegasys.teku.storage.api.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
 
 public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final Path TEST_PATH = Path.of("/tmp/teku");

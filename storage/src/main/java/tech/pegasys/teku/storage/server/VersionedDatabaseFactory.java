@@ -24,8 +24,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
+import tech.pegasys.teku.storage.api.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
@@ -66,56 +69,25 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final Optional<AsyncRunner> asyncRunner,
-      final StateStorageMode dataStorageMode,
-      final Eth1Address depositContractAddress,
-      final boolean storeNonCanonicalBlocks,
-      final boolean storeVotesEquivocation,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Spec spec) {
-    this(
-        metricsSystem,
-        dataPath,
-        asyncRunner,
-        dataStorageMode,
-        DatabaseVersion.DEFAULT_VERSION,
-        DEFAULT_STORAGE_FREQUENCY,
-        depositContractAddress,
-        storeNonCanonicalBlocks,
-        0,
-        storeVotesEquivocation,
-        storeBlockExecutionPayloadSeparately,
-        spec);
-  }
+      final StorageConfiguration config) {
 
-  public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem,
-      final Path dataPath,
-      final Optional<AsyncRunner> asyncRunner,
-      final StateStorageMode dataStorageMode,
-      final DatabaseVersion createDatabaseVersion,
-      final long stateStorageFrequency,
-      final Eth1Address eth1Address,
-      final boolean storeNonCanonicalBlocks,
-      final int maxKnownNodeCacheSize,
-      final boolean storeVotesEquivocation,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.asyncRunner = asyncRunner;
-    this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
+
+    this.stateStorageMode = config.getDataStorageMode();
+    this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
+    this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
+    this.storeBlockExecutionPayloadSeparately = config.isStoreBlockExecutionPayloadSeparately();
+    this.stateStorageFrequency = config.getDataStorageFrequency();
+    this.eth1Address = config.getEth1DepositContract();
+    this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
+    this.storeVotesEquivocation = config.isStoreVotesEquivocation();
+    this.spec = config.getSpec();
+
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
-    this.stateStorageMode = dataStorageMode;
-    this.stateStorageFrequency = stateStorageFrequency;
-    this.eth1Address = eth1Address;
-    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
-    this.storeVotesEquivocation = storeVotesEquivocation;
-    this.spec = spec;
-
-    this.createDatabaseVersion = createDatabaseVersion;
   }
 
   @Override

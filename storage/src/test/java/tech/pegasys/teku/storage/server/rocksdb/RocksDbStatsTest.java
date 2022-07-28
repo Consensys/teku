@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDB;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
 
 class RocksDbStatsTest {
 

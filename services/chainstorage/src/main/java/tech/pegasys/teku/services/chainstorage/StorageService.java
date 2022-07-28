@@ -21,6 +21,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
+import tech.pegasys.teku.services.chainstorage.api.StorageServiceFacade;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -53,15 +55,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                   Optional.of(serviceConfig.createAsyncRunner("database_migrator")),
-                  config.getDataStorageMode(),
-                  config.getDataStorageCreateDbVersion(),
-                  config.getDataStorageFrequency(),
-                  config.getEth1DepositContract(),
-                  config.isStoreNonCanonicalBlocksEnabled(),
-                  config.getMaxKnownNodeCacheSize(),
-                  config.isStoreVotesEquivocation(),
-                  config.isStoreBlockExecutionPayloadSeparately(),
-                  config.getSpec());
+                  config);
           database = dbFactory.createDatabase();
 
           database.migrate();

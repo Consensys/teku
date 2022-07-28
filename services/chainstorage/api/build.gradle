@@ -1,0 +1,14 @@
+
+dependencies {
+    implementation project(':ethereum:networks')
+    implementation project(':infrastructure:events')
+    implementation project(':infrastructure:exceptions')
+    implementation project(':infrastructure:serviceutils')
+    implementation project(':storage:api')
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) { artifactId 'chainstorage-api' }
+    }
+}

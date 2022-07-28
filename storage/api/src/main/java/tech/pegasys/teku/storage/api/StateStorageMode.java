@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.storage.api;
 
 public enum StateStorageMode {
 

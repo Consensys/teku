@@ -4,6 +4,11 @@ dependencies {
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:spec')
 
+    implementation 'org.rocksdb:rocksdbjni'
+    implementation 'org.fusesource.leveldbjni:leveldbjni-win64'
+    implementation 'org.fusesource.leveldbjni:leveldbjni-win32'
+    implementation 'tech.pegasys:leveldb-native'
+
     implementation 'org.apache.tuweni:tuweni-bytes'
 }
 

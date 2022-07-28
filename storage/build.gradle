@@ -15,6 +15,7 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:time')
   implementation project(':storage:api')
+  implementation project(':services:chainstorage:api')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

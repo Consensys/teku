@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.api.StateStorageMode.PRUNE;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
-import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;

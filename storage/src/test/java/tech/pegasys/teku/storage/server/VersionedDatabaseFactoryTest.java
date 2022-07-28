@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.api.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +28,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
+import tech.pegasys.teku.storage.api.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider;
 
 public class VersionedDatabaseFactoryTest {
@@ -50,12 +53,10 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -78,12 +79,11 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -100,19 +100,18 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
   }
 
   @Test
-  public void createDatabase_dbExistsButNoVersionIsSaved() throws Exception {
+  public void createDatabase_dbExistsButNoVersionIsSaved() {
     createDbDirectory(dataDir);
 
     final DatabaseFactory dbFactory =
@@ -120,12 +119,11 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -135,20 +133,17 @@ public class VersionedDatabaseFactoryTest {
   @ArgumentsSource(SupportedDatabaseVersionArgumentsProvider.class)
   public void createDatabase_shouldAllowAllSupportedDatabases(final DatabaseVersion version) {
     createDbDirectory(dataDir);
+    StorageConfiguration.builder().build();
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            version,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .eth1DepositContract(eth1Address)
+                .dataStorageMode(DATA_STORAGE_MODE)
+                .dataStorageCreateDbVersion(version)
+                .build());
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 

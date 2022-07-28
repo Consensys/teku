@@ -22,6 +22,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
@@ -110,12 +111,13 @@ public class WeakSubjectivityCommand implements Runnable {
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
             Optional.empty(),
-            beaconNodeDataOptions.getDataStorageMode(),
-            eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
-            beaconNodeDataOptions.isStoreNonCanonicalBlocks(),
-            eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled(),
-            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
-            spec);
+            StorageConfiguration.builder()
+                .eth1DepositContract(
+                    eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())
+                .storeVotesEquivocation(
+                    eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled())
+                .specProvider(spec)
+                .build());
     return databaseFactory.createDatabase();
   }
 

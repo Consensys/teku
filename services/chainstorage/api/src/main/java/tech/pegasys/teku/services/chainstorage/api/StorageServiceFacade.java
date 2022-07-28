@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.chainstorage;
+package tech.pegasys.teku.services.chainstorage.api;
 
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
-import tech.pegasys.teku.storage.server.ChainStorageFacade;
+import tech.pegasys.teku.storage.api.ChainStorageFacade;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API

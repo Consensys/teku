@@ -27,8 +27,8 @@ import tech.pegasys.teku.cli.util.DatabaseMigraterError;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
+import tech.pegasys.teku.storage.api.StateStorageMode;
 
 @CommandLine.Command(
     name = "migrate-database",

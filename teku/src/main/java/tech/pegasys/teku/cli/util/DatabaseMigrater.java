@@ -14,8 +14,6 @@
 package tech.pegasys.teku.cli.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.services.chainstorage.StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -32,10 +30,11 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
+import tech.pegasys.teku.storage.api.StateStorageMode;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 
@@ -186,15 +185,13 @@ public class DatabaseMigrater {
             new NoOpMetricsSystem(),
             databasePath,
             Optional.empty(),
-            storageMode,
-            databaseVersion,
-            DEFAULT_STORAGE_FREQUENCY,
-            config.getEth1DepositContractAddress(),
-            true,
-            0,
-            false,
-            DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY,
-            spec);
+            StorageConfiguration.builder()
+                .dataStorageMode(storageMode)
+                .specProvider(spec)
+                .storeNonCanonicalBlocks(true)
+                .eth1DepositContract(config.getEth1DepositContractAddress())
+                .dataStorageCreateDbVersion(databaseVersion)
+                .build());
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
       throw new DatabaseMigraterError(

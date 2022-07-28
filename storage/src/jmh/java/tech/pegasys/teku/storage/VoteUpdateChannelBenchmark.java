@@ -38,9 +38,9 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.storage.api.DatabaseVersion;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
-import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 

@@ -15,7 +15,7 @@ package tech.pegasys.teku;
 
 import java.util.Optional;
 import tech.pegasys.teku.services.beaconchain.BeaconChainServiceFacade;
-import tech.pegasys.teku.services.chainstorage.StorageServiceFacade;
+import tech.pegasys.teku.services.chainstorage.api.StorageServiceFacade;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
