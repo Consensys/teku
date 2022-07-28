@@ -292,6 +292,18 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
+    return finalizedDao.streamUnblindedNonCanonicalBlocks();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
+    return finalizedDao.streamUnblindedFinalizedBlockRoots();
+  }
+
+  @Override
   public void ingest(
       final KvStoreCombinedDaoCommon dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
@@ -516,6 +528,12 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void addBlindedFinalizedBlockRaw(
+        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
+      finalizedUpdater.addBlindedFinalizedBlockRaw(blockBytes, root, slot);
+    }
+
+    @Override
     public void addBlindedBlock(
         final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
       finalizedUpdater.addBlindedBlock(block, blockRoot, spec);
@@ -544,6 +562,11 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       finalizedUpdater.deleteUnblindedFinalizedBlock(slot, blockRoot);
+    }
+
+    @Override
+    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteUnblindedNonCanonicalBlockOnly(blockRoot);
     }
 
     @Override

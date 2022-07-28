@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -24,10 +25,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.BlockStorage;
@@ -51,33 +55,100 @@ public class BlindedBlockMigrationTest {
   private final DatabaseContext fullBlockContext =
       new DatabaseContext(DatabaseVersion.DEFAULT_VERSION, BlockStorage.FULL_BLOCK, false);
 
+  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
+
   @Test
   void shouldMigrateHotBlocks(@TempDir final Path tempDir) throws Exception {
-    setupStorageWithHotBlocks(tempDir, 10);
+    final int blockCount = 10;
+    setupStorage(tempDir, blockCount, 0);
     try (final StorageSystem storage =
         context.createFileBasedStorage(
             spec, tempDir, StateStorageMode.PRUNE, StoreConfig.createDefault(), true)) {
       final Database database = storage.database();
-      assertHotBlockCounts(database.getColumnCounts(), 11, 11, 0, 0);
+      assertUnblindedStorageCounts(database.getColumnCounts(), 1, blockCount, blockCount);
+      // checkpoint epochs doesn't change, so it is always the expected size for blinded storage and
+      // unblinded
+      assertBlindedStorageCounts(database.getColumnCounts(), 0, blockCount, 0, 0);
       database.migrate();
+      assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, blockCount);
       // payloads do get separated out, but there's only 1 default payload, so only 1 entry
-      assertHotBlockCounts(database.getColumnCounts(), 11, 0, 11, 1);
+      assertBlindedStorageCounts(database.getColumnCounts(), blockCount, blockCount, 1, 1);
     }
   }
 
-  private void assertHotBlockCounts(
-      final Map<String, Long> counts,
-      final int expectedCheckpoints,
-      final int expectedHotBlocks,
-      final int expectedBlindedBlocks,
-      final int payloads) {
-    assertThat(counts.get("HOT_BLOCKS_BY_ROOT")).isEqualTo(expectedHotBlocks);
-    assertThat(counts.get("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT")).isEqualTo(expectedCheckpoints);
-    assertThat(counts.get("BLINDED_BLOCKS_BY_ROOT")).isEqualTo(expectedBlindedBlocks);
-    assertThat(counts.get("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH")).isEqualTo(payloads);
+  @Test
+  void shouldMigrateFinalizedBlocks(@TempDir final Path tempDir) throws Exception {
+    final int totalBlocks = 39;
+    // 39 blocks total, 25 finalized + 14 hot
+    final int finalizedBlocks = 25;
+    // hot storage has all hot blocks plus current finalized block
+    final int unblindedHotBlockCount = 14 + 1;
+    setupStorage(tempDir, totalBlocks, 3);
+    try (final Database database =
+        context.createFileBasedStorageDatabaseOnly(
+            spec,
+            tempDir,
+            StateStorageMode.PRUNE,
+            StoreConfig.createDefault(),
+            stubAsyncRunner,
+            true)) {
+      // PRE migrate, all storage is in unblinded storage
+      assertUnblindedStorageCounts(
+          database.getColumnCounts(),
+          finalizedBlocks,
+          unblindedHotBlockCount,
+          unblindedHotBlockCount);
+      // checkpoint epochs doesn't change, so it is always the expected size for blinded storage and
+      // unblinded
+      assertBlindedStorageCounts(database.getColumnCounts(), 0, unblindedHotBlockCount, 0, 0);
+
+      database.migrate();
+      // migrated hot blocks only, plus 1 finalized block initially
+      assertUnblindedStorageCounts(
+          database.getColumnCounts(), finalizedBlocks - 1, 0, unblindedHotBlockCount);
+      assertBlindedStorageCounts(
+          database.getColumnCounts(), unblindedHotBlockCount + 1, unblindedHotBlockCount, 1, 1);
+
+      assertThat(stubAsyncRunner.countDelayedActions()).isEqualTo(1);
+      // run async action, then will have all blinded blocks
+      stubAsyncRunner.executeQueuedActions();
+      assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
+      assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, unblindedHotBlockCount);
+      assertBlindedStorageCounts(
+          database.getColumnCounts(), totalBlocks, unblindedHotBlockCount, finalizedBlocks, 1);
+    }
   }
 
-  private void setupStorageWithHotBlocks(final Path tempDir, final int blockCount)
+  private void assertUnblindedStorageCounts(
+      final Map<String, Long> counts,
+      final long expectedFinalizedBlocks,
+      final long expectedHotBlocks,
+      final long expectedCheckpoints) {
+    final Map<String, Long> expected =
+        Map.of(
+            "FINALIZED_BLOCKS_BY_SLOT", expectedFinalizedBlocks,
+            "SLOTS_BY_FINALIZED_ROOT", expectedFinalizedBlocks,
+            "HOT_BLOCKS_BY_ROOT", expectedHotBlocks,
+            "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", expectedCheckpoints);
+    assertThat(counts).containsAllEntriesOf(expected);
+  }
+
+  private void assertBlindedStorageCounts(
+      final Map<String, Long> counts,
+      final long expectedBlindedBlocks,
+      final long expectedCheckpoints,
+      final long expectedFinalizedBlockIndices,
+      final long expectedPayloads) {
+    final Map<String, Long> expected =
+        Map.of(
+            "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", expectedCheckpoints,
+            "BLINDED_BLOCKS_BY_ROOT", expectedBlindedBlocks,
+            "FINALIZED_BLOCK_ROOT_BY_SLOT", expectedFinalizedBlockIndices,
+            "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", expectedPayloads);
+    assertThat(counts).containsAllEntriesOf(expected);
+  }
+
+  private void setupStorage(final Path tempDir, final int blockCount, final int finalizedEpoch)
       throws Exception {
 
     try (final StorageSystem storage =
@@ -86,11 +157,35 @@ public class BlindedBlockMigrationTest {
       recentChainData = storage.recentChainData();
       SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
       recentChainData.initializeFromGenesis(genesisBlockAndState.getState(), UInt64.ZERO);
-      final UpdatableStore.StoreTransaction transaction = recentChainData.startStoreTransaction();
-      final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(blockCount);
+      UpdatableStore.StoreTransaction transaction = recentChainData.startStoreTransaction();
+      final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(blockCount - 1);
       add(blocks);
-      commit(transaction);
+
+      assertThat(transaction.commit()).isCompleted();
+      if (finalizedEpoch > 0) {
+        final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
+        final int finalizedBlock = (finalizedEpoch * slotsPerEpoch) - 1;
+        final int justifiedBlock = finalizedBlock + slotsPerEpoch;
+        transaction = recentChainData.startStoreTransaction();
+        transaction.setJustifiedCheckpoint(
+            getCheckpointForBlock(blocks.get(justifiedBlock).getBlock()));
+        transaction.setFinalizedCheckpoint(
+            getCheckpointForBlock(blocks.get(finalizedBlock).getBlock()), false);
+        assertThat(transaction.commit()).isCompleted();
+      }
     }
+  }
+
+  private Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {
+    final UInt64 blockEpoch = spec.computeEpochAtSlot(block.getSlot());
+    final UInt64 blockEpochBoundary = spec.computeStartSlotAtEpoch(blockEpoch);
+    final UInt64 checkpointEpoch =
+        equivalentLongs(block.getSlot(), blockEpochBoundary) ? blockEpoch : blockEpoch.plus(ONE);
+    return new Checkpoint(checkpointEpoch, block.getMessage().hashTreeRoot());
+  }
+
+  private boolean equivalentLongs(final UInt64 valA, final UInt64 valB) {
+    return valA.compareTo(valB) == 0;
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {

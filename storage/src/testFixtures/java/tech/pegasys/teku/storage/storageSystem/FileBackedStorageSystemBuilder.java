@@ -56,6 +56,19 @@ public class FileBackedStorageSystemBuilder {
   }
 
   public StorageSystem build() {
+    final Database database = buildDatabaseOnly();
+
+    validate();
+    return StorageSystem.create(
+        database,
+        createRestartSupplier(),
+        storageMode,
+        storeConfig,
+        spec,
+        ChainBuilder.create(spec));
+  }
+
+  public Database buildDatabaseOnly() {
     final Database database;
     switch (version) {
       case LEVELDB_TREE:
@@ -79,15 +92,7 @@ public class FileBackedStorageSystemBuilder {
       default:
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
-
-    validate();
-    return StorageSystem.create(
-        database,
-        createRestartSupplier(),
-        storageMode,
-        storeConfig,
-        spec,
-        ChainBuilder.create(spec));
+    return database;
   }
 
   private FileBackedStorageSystemBuilder copy() {
