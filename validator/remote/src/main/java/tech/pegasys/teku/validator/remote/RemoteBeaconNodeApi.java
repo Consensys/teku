@@ -22,6 +22,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -89,6 +90,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
             .collect(Collectors.toList());
 
+    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+
     ValidatorApiChannel validatorApi;
     if (failoverEndpoints.isEmpty()) {
       validatorApi = primaryValidatorApi;
@@ -102,11 +105,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
               primaryValidatorApi,
               failoverValidatorApis,
               failoversSendSubnetSubscriptions,
+              metricsSystem,
               ValidatorLogger.VALIDATOR_LOGGER);
     }
 
     final ValidatorApiChannel validatorApiWithMetrics =
-        new MetricRecordingValidatorApiChannel(serviceConfig.getMetricsSystem(), validatorApi);
+        new MetricRecordingValidatorApiChannel(metricsSystem, validatorApi);
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
@@ -125,7 +129,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 spec),
             validatorTimingChannel,
             asyncRunner,
-            serviceConfig.getMetricsSystem(),
+            metricsSystem,
             generateEarlyAttestations,
             primaryBeaconNodeEventStreamReconnectAttemptPeriod);
 

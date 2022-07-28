@@ -56,7 +56,7 @@ class MetricRecordingValidatorApiChannelTest {
   @MethodSource("getDataRequestArguments")
   public void shouldRecordSuccessfulRequestForData(
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
-      final String counterMethod,
+      final String methodLabel,
       final Object value) {
     final Optional<Object> response = Optional.of(value);
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(response));
@@ -65,16 +65,16 @@ class MetricRecordingValidatorApiChannelTest {
 
     assertThat(result).isCompletedWithValue(response);
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
   public void shouldRecordFailedRequestForData(
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
-      final String counterMethod) {
+      final String methodLabel) {
     final RuntimeException exception = new RuntimeException("Nope");
     when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(exception));
 
@@ -82,47 +82,47 @@ class MetricRecordingValidatorApiChannelTest {
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCause(exception);
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
   public void shouldRecordRequestForDataWhenDataUnavailable(
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
-      final String counterMethod) {
+      final String methodLabel) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<Object>> result = method.apply(apiChannel);
     assertThat(result).isCompletedWithValue(Optional.empty());
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isZero();
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getSendDataArguments")
   void shouldRecordSuccessfulSendRequest(
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
-      final String counterMethod) {
+      final String methodLabel) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(emptyList()));
 
     final SafeFuture<List<Object>> result = method.apply(apiChannel);
 
     assertThat(result).isCompletedWithValue(emptyList());
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getSendDataArguments")
   void shouldRecordFailingSendRequest(
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
-      final String counterMethod,
+      final String methodLabel,
       final List<Object> failures) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(failures));
 
@@ -130,24 +130,24 @@ class MetricRecordingValidatorApiChannelTest {
 
     assertThat(result).isCompletedWithValue(failures);
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getNoResponseCallArguments")
   public void shouldRecordCallsWithNoResponse(
-      final Function<ValidatorApiChannel, SafeFuture<Void>> method, final String counterMethod) {
+      final Function<ValidatorApiChannel, SafeFuture<Void>> method, final String methodLabel) {
     when(method.apply(delegate)).thenReturn(SafeFuture.COMPLETE);
 
     final SafeFuture<Void> result = method.apply(apiChannel);
 
     assertThat(result).isCompleted();
 
-    assertThat(getCounterValue(counterMethod, RequestOutcome.SUCCESS)).isEqualTo(1);
-    assertThat(getCounterValue(counterMethod, RequestOutcome.ERROR)).isZero();
-    assertThat(getCounterValue(counterMethod, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isEqualTo(1);
+    assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
   }
 
   public static Stream<Arguments> getNoResponseCallArguments() {
@@ -155,18 +155,18 @@ class MetricRecordingValidatorApiChannelTest {
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
             channel -> channel.subscribeToBeaconCommittee(emptyList()),
-            BeaconNodeRequestLabels.BEACON_COMMITTEE_SUBSCRIPTION_REQUEST_METHOD),
+            BeaconNodeRequestLabels.BEACON_COMMITTEE_SUBSCRIPTION_METHOD),
         noResponseTest(
             "subscribeToPersistentSubnets",
             channel -> channel.subscribeToPersistentSubnets(emptySet()),
-            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_REQUEST_METHOD));
+            BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD));
   }
 
   private static Arguments noResponseTest(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Void>> method,
-      final String counterMethod) {
-    return Arguments.of(Named.named(name, method), counterMethod);
+      final String methodLabel) {
+    return Arguments.of(Named.named(name, method), methodLabel);
   }
 
   public static Stream<Arguments> getDataRequestArguments() {
@@ -181,29 +181,29 @@ class MetricRecordingValidatorApiChannelTest {
         requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,
-            BeaconNodeRequestLabels.GET_GENESIS_REQUEST_METHOD,
+            BeaconNodeRequestLabels.GET_GENESIS_METHOD,
             new GenesisData(dataStructureUtil.randomUInt64(), Bytes32.random())),
         requestDataTest(
             "createUnsignedBlock",
             channel -> channel.createUnsignedBlock(slot, signature, Optional.empty(), false),
-            BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_REQUEST_METHOD,
+            BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             dataStructureUtil.randomBeaconBlock(slot)),
         requestDataTest(
             "createAttestationData",
             channel -> channel.createAttestationData(slot, 4),
-            BeaconNodeRequestLabels.CREATE_ATTESTATION_REQUEST_METHOD,
+            BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD,
             dataStructureUtil.randomAttestationData()),
         requestDataTest(
             "createAggregate",
             channel ->
                 channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
-            BeaconNodeRequestLabels.CREATE_AGGREGATE_REQUEST_METHOD,
+            BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
             dataStructureUtil.randomAttestation()),
         requestDataTest(
             "createSyncCommitteeContribution",
             channel ->
                 channel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
-            BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUEST_METHOD,
+            BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD,
             dataStructureUtil.randomSyncCommitteeContribution(slot)));
   }
 
@@ -221,41 +221,41 @@ class MetricRecordingValidatorApiChannelTest {
         sendDataTest(
             "sendSignedAttestations",
             channel -> channel.sendSignedAttestations(attestations),
-            BeaconNodeRequestLabels.PUBLISH_ATTESTATION_REQUEST_METHOD,
+            BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
             submissionErrors),
         sendDataTest(
             "sendSyncCommitteeMessages",
             channel -> channel.sendSyncCommitteeMessages(syncCommitteeMessages),
-            BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_REQUEST_METHOD,
+            BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
             submissionErrors),
         sendDataTest(
             "sendAggregateAndProofs",
             channel -> channel.sendAggregateAndProofs(aggregateAndProofs),
-            BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_REQUEST_METHOD,
+            BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
             submissionErrors));
   }
 
   private static <T> Arguments requestDataTest(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<T>>> method,
-      final String counterMethod,
+      final String methodLabel,
       final T presentValue) {
-    return Arguments.of(Named.named(name, method), counterMethod, presentValue);
+    return Arguments.of(Named.named(name, method), methodLabel, presentValue);
   }
 
   private static <T> Arguments sendDataTest(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<List<T>>> method,
-      final String counterMethod,
+      final String methodLabel,
       final List<T> errors) {
-    return Arguments.of(Named.named(name, method), counterMethod, errors);
+    return Arguments.of(Named.named(name, method), methodLabel, errors);
   }
 
-  private long getCounterValue(final String counterMethod, final RequestOutcome outcome) {
+  private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
     return metricsSystem
         .getCounter(
             TekuMetricCategory.VALIDATOR,
-            MetricRecordingValidatorApiChannel.BEACON_NODE_REQUEST_COUNTER_NAME)
-        .getValue(counterMethod, outcome.toString());
+            MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME)
+        .getValue(methodLabel, outcome.toString());
   }
 }
