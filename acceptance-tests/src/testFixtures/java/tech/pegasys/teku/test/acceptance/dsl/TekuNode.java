@@ -765,6 +765,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withSafeSlotsToImportOptimistically(final Integer slots) {
+      configMap.put("Xnetwork-safe-slots-to-import-optimistically", slots);
+      return this;
+    }
+
     public Config withStartupTargetPeerCount(Integer startupTargetPeerCount) {
       configMap.put("Xstartup-target-peer-count", startupTargetPeerCount);
       return this;
