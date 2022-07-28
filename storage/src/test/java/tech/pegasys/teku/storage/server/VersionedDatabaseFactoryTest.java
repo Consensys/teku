@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.storage.api.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.storage.api.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider;
 
 public class VersionedDatabaseFactoryTest {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.storage.api.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.util.Optional;
 import java.util.function.Consumer;

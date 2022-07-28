@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.generator.ChainProperties;
-import tech.pegasys.teku.storage.api.StateStorageMode;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class PruningModeCombinedChainDataClientTest extends AbstractCombinedChainDataClientTest {
 

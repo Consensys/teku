@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.stategenerator.CheckpointStateGenerator;
-import tech.pegasys.teku.storage.api.StateStorageMode;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class ArchiveModeCombinedChainDataClientTest extends AbstractCombinedChainDataClientTest {
   @Override
