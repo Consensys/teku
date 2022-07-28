@@ -50,12 +50,10 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -78,12 +76,11 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -100,19 +97,18 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
   }
 
   @Test
-  public void createDatabase_dbExistsButNoVersionIsSaved() throws Exception {
+  public void createDatabase_dbExistsButNoVersionIsSaved() {
     createDbDirectory(dataDir);
 
     final DatabaseFactory dbFactory =
@@ -120,12 +116,11 @@ public class VersionedDatabaseFactoryTest {
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            eth1Address,
-            false,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .specProvider(spec)
+                .eth1DepositContract(eth1Address)
+                .build());
+
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -135,20 +130,17 @@ public class VersionedDatabaseFactoryTest {
   @ArgumentsSource(SupportedDatabaseVersionArgumentsProvider.class)
   public void createDatabase_shouldAllowAllSupportedDatabases(final DatabaseVersion version) {
     createDbDirectory(dataDir);
+    StorageConfiguration.builder().build();
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
             Optional.empty(),
-            DATA_STORAGE_MODE,
-            version,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            false,
-            false,
-            spec);
+            StorageConfiguration.builder()
+                .eth1DepositContract(eth1Address)
+                .dataStorageMode(DATA_STORAGE_MODE)
+                .dataStorageCreateDbVersion(version)
+                .build());
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 
