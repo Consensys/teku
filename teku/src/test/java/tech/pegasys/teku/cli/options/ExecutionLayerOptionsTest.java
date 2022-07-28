@@ -29,8 +29,7 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromFile("executionLayerOptions_config.yaml");
 
-    // Spec doesn't include the merge so execution engine is disabled
-    assertThat(config.executionLayer().isEnabled()).isFalse();
+    assertThat(config.executionLayer().isEnabled()).isTrue();
     assertThat(config.executionLayer().getEngineEndpoint())
         .isEqualTo("http://example.com:1234/path/");
   }
