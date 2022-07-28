@@ -93,7 +93,7 @@ public class ValidatorProposerOptions {
 
   @Option(
       names = {"--validators-builder-registration-pubkey-override"},
-      paramLabel = "<uint64>",
+      paramLabel = "<BLSPublicKey>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Set a constant pubkey in BLS format to be used in validator registrations against builder infrastructure.",
