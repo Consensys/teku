@@ -42,6 +42,8 @@ public class RocksDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
@@ -67,6 +69,8 @@ public class RocksDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec);
   }
@@ -79,6 +83,8 @@ public class RocksDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
@@ -93,6 +99,8 @@ public class RocksDbDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec);
   }
