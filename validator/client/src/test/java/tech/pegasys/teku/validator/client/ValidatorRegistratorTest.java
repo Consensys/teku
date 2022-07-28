@@ -170,6 +170,23 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registersValidators_shouldRegisterWithPubkeyOverride() {
+    when(validatorConfig.getBuilderRegistrationPubkeyOverride())
+        .thenReturn(Optional.of(BLSPublicKey.valueOf(140)));
+    setActiveValidators(validator1);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    registrationCalls.forEach(
+        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
   void cleanupsCache_ifValidatorIsNoLongerActive() {
     setActiveValidators(validator1, validator2, validator3);
 
@@ -380,6 +397,11 @@ class ValidatorRegistratorTest {
         validatorConfig
             .getBuilderRegistrationTimestampOverride()
             .orElse(stubTimeProvider.getTimeInSeconds());
+
+    final UInt64 expectedPubkey =
+        validatorConfig
+            .getBuilderRegistrationPubkeyOverride()
+            .orElse();
 
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())

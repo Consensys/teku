@@ -80,6 +80,7 @@ public class ValidatorConfig {
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
+  private final Optional<BLSPublicKey> builderRegistrationPubkeyOverride;
   private final int executorMaxQueueSize;
   private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
 
@@ -110,6 +111,7 @@ public class ValidatorConfig {
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
+      final Optional<BLSPublicKey> builderRegistrationPubkeyOverride,
       final int executorMaxQueueSize,
       final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
     this.validatorKeys = validatorKeys;
@@ -141,6 +143,7 @@ public class ValidatorConfig {
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
+    this.builderRegistrationPubkeyOverride = builderRegistrationPubkeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         primaryBeaconNodeEventStreamReconnectAttemptPeriod;
@@ -229,6 +232,10 @@ public class ValidatorConfig {
     return builderRegistrationTimestampOverride;
   }
 
+  public Optional<BLSPublicKey> getBuilderRegistrationPubkeyOverride() {
+    return builderRegistrationPubkeyOverride;
+  }
+
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
   }
@@ -301,6 +308,7 @@ public class ValidatorConfig {
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
+    private Optional<BLSPublicKey> builderRegistrationPubkeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD;
@@ -471,6 +479,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder builderRegistrationPubkeyOverride(
+        final BLSPublicKey builderRegistrationPubkeyOverride) {
+      this.builderRegistrationPubkeyOverride =
+          Optional.ofNullable(builderRegistrationPubkeyOverride);
+      return this;
+    }
+
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
       return this;
@@ -517,6 +532,7 @@ public class ValidatorConfig {
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
+          builderRegistrationPubkeyOverride,
           executorMaxQueueSize,
           primaryBeaconNodeEventStreamReconnectAttemptPeriod);
     }

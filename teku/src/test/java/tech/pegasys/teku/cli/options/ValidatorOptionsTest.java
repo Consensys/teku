@@ -155,6 +155,15 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldEnableValidatorRegistrationPubkeyOverride() {
+    final String[] args = {"--validators-builder-registration-pubkey-override", "120000"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(
+            config.validatorClient().getValidatorConfig().getBuilderRegistrationPubkeyOverride())
+        .isEqualTo(Optional.of(BLSPublicKey.valueOf(120000)));
+  }
+
+  @Test
   public void shouldNotUseValidatorsRegistrationByDefault() {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);

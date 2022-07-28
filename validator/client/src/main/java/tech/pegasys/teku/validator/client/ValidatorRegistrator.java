@@ -253,6 +253,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         validatorConfig
             .getBuilderRegistrationTimestampOverride()
             .orElse(timeProvider.getTimeInSeconds());
+    final BLSPublicKey publickey =
+        validatorConfig
+            .getBuilderRegistrationPubkeyOverride()
+            .orElse(public);
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
   }

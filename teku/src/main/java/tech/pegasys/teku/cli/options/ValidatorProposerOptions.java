@@ -92,6 +92,16 @@ public class ValidatorProposerOptions {
   private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
+      names = {"--validators-builder-registration-pubkey-override"},
+      paramLabel = "<uint64>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Set a constant pubkey in BLS format to be used in validator registrations against builder infrastructure.",
+      arity = "1",
+      hidden = true)
+  private BLSPublicKey builderRegistrationPubkeyOverride = null;
+
+  @Option(
       names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -111,6 +121,7 @@ public class ValidatorProposerOptions {
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
                 .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
-                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride));
+                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride)
+                .builderRegistrationPubkeyOverride(builderRegistrationPubkeyOverride));
   }
 }
