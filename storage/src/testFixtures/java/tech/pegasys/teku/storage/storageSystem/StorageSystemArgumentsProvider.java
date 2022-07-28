@@ -25,10 +25,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
-import tech.pegasys.teku.services.chainstorage.api.StorageConfiguration;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.storage.api.DatabaseVersion;
 import tech.pegasys.teku.storage.api.StateStorageMode;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 

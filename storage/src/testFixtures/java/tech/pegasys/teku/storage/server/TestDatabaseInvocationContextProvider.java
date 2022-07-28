@@ -22,7 +22,6 @@ import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
-import tech.pegasys.teku.storage.api.DatabaseVersion;
 import tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider;
 
 class TestDatabaseInvocationContextProvider implements TestTemplateInvocationContextProvider {

@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.storage.api.DatabaseVersion;
 import tech.pegasys.teku.storage.api.StateStorageMode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;

@@ -9,7 +9,6 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
   implementation project(':infrastructure:events')
-  implementation project(':services:chainstorage:api')
 
   implementation 'org.hyperledger.besu:plugin-api'
  }

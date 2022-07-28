@@ -1,6 +1,7 @@
 dependencies {
   implementation project(':beacon:pow')
   implementation project(':ethereum:dataproviders')
+  implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
@@ -15,7 +16,6 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:time')
   implementation project(':storage:api')
-  implementation project(':services:chainstorage:api')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -51,7 +51,6 @@ dependencies {
   testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':infrastructure:bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
-  testFixturesImplementation project(':services:chainstorage:api')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))

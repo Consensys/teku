@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
-import tech.pegasys.teku.storage.api.DatabaseVersion;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvider {
 
