@@ -145,7 +145,7 @@ public class LoggingOptions {
       hidden = true,
       names = {"--Xlog-db-op-alert-threshold"},
       paramLabel = "<INTEGER>",
-      description = "Duration in milliseconds from which alerts are triggered",
+      description = "Execution duration in milliseconds at which warning logs are raised",
       arity = "1")
   private int dbOpAlertThreshold = LoggingConfig.DEFAULT_DB_OP_ALERT_THRESHOLD;
 
