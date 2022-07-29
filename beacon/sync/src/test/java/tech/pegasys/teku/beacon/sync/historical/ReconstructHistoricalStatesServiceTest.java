@@ -58,7 +58,7 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   public void shouldCompleteExceptionallyWithFailedLoadState() {
-    createService(Optional.of("invalid")); // invalid resource
+    createService(Optional.of("invalid resource"));
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompletedExceptionally();
