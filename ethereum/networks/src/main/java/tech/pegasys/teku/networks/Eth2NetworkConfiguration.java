@@ -48,7 +48,7 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
-      ProgressiveBalancesMode.DISABLED;
+      ProgressiveBalancesMode.USED;
 
   private final Spec spec;
   private final String constants;
@@ -460,7 +460,7 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyTestnetDefaults() {
-      return reset().progressiveBalancesEnabled(ProgressiveBalancesMode.USED);
+      return reset();
     }
 
     public Builder applyMinimalNetworkDefaults() {
