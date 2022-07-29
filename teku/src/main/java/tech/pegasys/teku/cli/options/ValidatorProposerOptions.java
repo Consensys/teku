@@ -92,7 +92,7 @@ public class ValidatorProposerOptions {
   private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
-      names = {"--validators-builder-registration-public-key-override"},
+      names = {"--Xvalidators-builder-registration-public-key-override"},
       paramLabel = "<PUBLIC_KEY>",
       showDefaultValue = Visibility.ALWAYS,
       description =
