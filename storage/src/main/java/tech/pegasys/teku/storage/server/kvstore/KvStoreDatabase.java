@@ -106,6 +106,8 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
@@ -119,7 +121,8 @@ public abstract class KvStoreDatabase<
     if (storeBlockExecutionPayloadSeparately) {
       return new BlindedBlockKvStoreDatabase(
           dao,
-          new BlindedBlockMigration<>(spec, dao, asyncRunner),
+          new BlindedBlockMigration<>(
+              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
           stateStorageMode,
           storeNonCanonicalBlocks,
           spec);
@@ -134,6 +137,8 @@ public abstract class KvStoreDatabase<
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
@@ -145,6 +150,8 @@ public abstract class KvStoreDatabase<
         stateStorageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec,
         finalizedStateStorageLogic);
@@ -157,6 +164,8 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
@@ -168,6 +177,8 @@ public abstract class KvStoreDatabase<
         stateStorageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec,
         finalizedStateStorageLogic);
@@ -179,6 +190,8 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
+      final int blockMigrationBatchSize,
+      final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
@@ -187,7 +200,8 @@ public abstract class KvStoreDatabase<
     if (storeBlockExecutionPayloadSeparately) {
       return new BlindedBlockKvStoreDatabase(
           dao,
-          new BlindedBlockMigration<>(spec, dao, asyncRunner),
+          new BlindedBlockMigration<>(
+              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
           stateStorageMode,
           storeNonCanonicalBlocks,
           spec);
