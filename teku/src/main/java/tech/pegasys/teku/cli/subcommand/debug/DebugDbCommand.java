@@ -234,6 +234,101 @@ public class DebugDbCommand implements Runnable {
     return 0;
   }
 
+  @Command(
+      name = "validate-block-history",
+      description = "Validate the chain of finalized blocks via parent references",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int validateBlockHistory(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    final long startTimeMillis = System.currentTimeMillis();
+    long counter = 0;
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+
+      Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
+      Optional<SignedBeaconBlock> maybeEarliestBlock = database.getEarliestAvailableBlock();
+      while (maybeFinalizedBlock.isPresent()
+          && maybeFinalizedBlock.get().getSlot().isGreaterThanOrEqualTo(UInt64.ZERO)) {
+        SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
+        if (counter == 0) {
+          System.out.printf(
+              "Tracing chain from best finalized block %s (%s)%n",
+              currentBlock.getRoot(), currentBlock.getSlot());
+        }
+        final Optional<SignedBeaconBlock> maybeParent =
+            database.getSignedBlock(currentBlock.getParentRoot());
+        if (maybeParent.isEmpty()) {
+          if (maybeEarliestBlock.isPresent()
+              && maybeEarliestBlock.get().getRoot().equals(currentBlock.getRoot())) {
+            System.out.printf(
+                "Found back to earliest block %s (%s)%n",
+                currentBlock.getRoot(), currentBlock.getSlot());
+            break;
+          }
+          System.err.printf(
+              "ERROR: Unable to locate parent %s of block %s (%s)%n",
+              currentBlock.getParentRoot(), currentBlock.getRoot(), currentBlock.getSlot());
+          return 1;
+        }
+        checkFinalizedIndices(
+            database,
+            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+            currentBlock,
+            maybeParent.get());
+        counter++;
+        if (counter % 5_000 == 0) {
+          System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
+        }
+        maybeFinalizedBlock = maybeParent;
+      }
+    }
+    final long endTime = System.currentTimeMillis();
+    System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
+    return 0;
+  }
+
+  private void checkFinalizedIndices(
+      final Database database,
+      final boolean blindedBlocksEnabled,
+      final SignedBeaconBlock currentBlock,
+      final SignedBeaconBlock parentBlock) {
+
+    UInt64 parentSlot = parentBlock.getSlot();
+    Optional<UInt64> indexSlot = database.getSlotForFinalizedBlockRoot(parentBlock.getRoot());
+    if (indexSlot.isEmpty() || !indexSlot.get().equals(parentSlot)) {
+      System.err.printf(
+          "Finalized block index for root %s reports slot %s, expected slot %s",
+          parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
+    } else {
+      if (blindedBlocksEnabled) {
+        // check for any finalized indexes in the gap
+        UInt64 counter = indexSlot.get();
+        counter = counter.increment();
+        while (counter.isLessThan(currentBlock.getSlot())) {
+          if (database.getFinalizedBlockRootBySlot(counter).isPresent()) {
+            System.err.printf(
+                "Found an unexpected block root at slot %s, should be no finalized blocks between %s (%s) and %s (%s)%n",
+                counter,
+                parentBlock.getRoot(),
+                parentSlot,
+                currentBlock.getRoot(),
+                currentBlock.getSlot());
+          }
+          counter = counter.increment();
+        }
+      }
+    }
+  }
+
   private void printColumn(final String label, final long count) {
     System.out.printf("%40s: %d%n", label, count);
   }

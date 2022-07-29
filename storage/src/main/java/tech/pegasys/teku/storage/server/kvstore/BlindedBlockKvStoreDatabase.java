@@ -230,6 +230,18 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getLastAvailableFinalizedBlock() {
+    return dao.getFinalizedCheckpoint()
+        .flatMap(
+            checkpoint -> getFinalizedBlock(checkpoint.toSlotAndBlockRoot(spec).getBlockRoot()));
+  }
+
+  @Override
+  public Optional<Bytes32> getFinalizedBlockRootBySlot(final UInt64 slot) {
+    return dao.getFinalizedBlockRootAtSlot(slot);
+  }
+
+  @Override
   public Map<String, Long> getColumnCounts() {
     return dao.getColumnCounts();
   }
