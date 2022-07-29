@@ -482,12 +482,9 @@ public class ValidatorConfig {
 
     public Builder builderRegistrationPublicKeyOverride(
         final String builderRegistrationPublicKeyOverride) {
-      if (builderRegistrationPublicKeyOverride == null) {
-        this.builderRegistrationPublicKeyOverride = Optional.empty();
-      } else {
-        this.builderRegistrationPublicKeyOverride =
-            Optional.of(BLSPublicKey.fromHexString(builderRegistrationPublicKeyOverride));
-      }
+      this.builderRegistrationPublicKeyOverride =
+          Optional.ofNullable(builderRegistrationPublicKeyOverride)
+              .map(BLSPublicKey::fromHexString);
       return this;
     }
 
