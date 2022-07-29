@@ -141,6 +141,14 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
 
+  @Option(
+      hidden = true,
+      names = {"--Xlog-db-op-alert-threshold"},
+      paramLabel = "<INTEGER>",
+      description = "Duration in milliseconds from which alerts are triggered",
+      arity = "1")
+  private int dbOpAlertThreshold = LoggingConfig.DEFAULT_DB_OP_ALERT_THRESHOLD;
+
   private boolean containsPath(String file) {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
@@ -173,6 +181,7 @@ public class LoggingOptions {
         loggingBuilder.logFileNamePattern(logFileNamePattern);
       }
     }
+    loggingBuilder.dbOpAlertThreshold(dbOpAlertThreshold);
     loggingBuilder
         .logLevel(logLevel)
         .colorEnabled(logColorEnabled)

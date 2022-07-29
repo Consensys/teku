@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -520,6 +521,7 @@ public abstract class KvStoreDatabase<
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
+    long startTime = System.nanoTime();
     try (final HotUpdaterT updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -554,6 +556,8 @@ public abstract class KvStoreDatabase<
       LOG.trace("Committing hot db changes");
       updater.commit();
     }
+    long endTime = System.nanoTime();
+    DB_LOGGER.onDbOpAlertThreshold("KvStoreDatabase update", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
