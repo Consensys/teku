@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -155,12 +156,26 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableValidatorRegistrationPubkeyOverride() {
-    final String[] args = {"--validators-builder-registration-pubkey-override", "120000"};
+  public void shouldReportEmptyIfValidatorRegistrationPublicKeyOverrideNotSpecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(
+            config.validatorClient().getValidatorConfig().getBuilderRegistrationPublicKeyOverride())
+        .isEmpty();
+  }
+
+  @Test
+  public void shouldSetValidatorRegistrationPublicKeyOverride() {
+    final String[] args = {
+      "--validators-builder-registration-public-key-override",
+      "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"
+    };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
-            config.validatorClient().getValidatorConfig().getBuilderRegistrationPubkeyOverride())
-        .isEqualTo(Optional.of(BLSPublicKey.valueOf(120000)));
+            config.validatorClient().getValidatorConfig().getBuilderRegistrationPublicKeyOverride())
+        .isEqualTo(
+            Optional.of(
+                BLSPublicKey.fromHexString(
+                    "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a")));
   }
 
   @Test

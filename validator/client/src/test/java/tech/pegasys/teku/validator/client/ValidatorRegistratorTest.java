@@ -170,18 +170,26 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
-  void registersValidators_shouldRegisterWithPubkeyOverride() {
-    when(validatorConfig.getBuilderRegistrationPubkeyOverride())
-        .thenReturn(Optional.of(BLSPublicKey.valueOf(140)));
-    setActiveValidators(validator1);
+  void registersValidators_shouldRegisterWithPublicKeyOverride() {
+    final BLSPublicKey publicKeyOverride = dataStructureUtil.randomPublicKey();
+    when(validatorConfig.getBuilderRegistrationPublicKeyOverride())
+        .thenReturn(Optional.of(publicKeyOverride));
+
+    setActiveValidators(validator1, validator2);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
+    final Validator validatorWithOverridenPublicKey =
+        new Validator(publicKeyOverride, signer, Optional::empty);
+
     registrationCalls.forEach(
-        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(validatorWithOverridenPublicKey, validatorWithOverridenPublicKey)));
 
     verify(signer, times(1)).signValidatorRegistration(any());
   }
@@ -397,11 +405,6 @@ class ValidatorRegistratorTest {
         validatorConfig
             .getBuilderRegistrationTimestampOverride()
             .orElse(stubTimeProvider.getTimeInSeconds());
-
-    final UInt64 expectedPubkey =
-        validatorConfig
-            .getBuilderRegistrationPubkeyOverride()
-            .orElse();
 
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())

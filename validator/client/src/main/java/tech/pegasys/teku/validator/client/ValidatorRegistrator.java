@@ -192,7 +192,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
       final Optional<ProposerConfig> maybeProposerConfig, final Validator validator) {
-    final BLSPublicKey publicKey = validator.getPublicKey();
+    final BLSPublicKey publicKey =
+        validatorConfig
+            .getBuilderRegistrationPublicKeyOverride()
+            .orElseGet(validator::getPublicKey);
 
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
       LOG.trace("Validator registration is disabled for {}", publicKey);
@@ -253,10 +256,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         validatorConfig
             .getBuilderRegistrationTimestampOverride()
             .orElse(timeProvider.getTimeInSeconds());
-    final BLSPublicKey publickey =
-        validatorConfig
-            .getBuilderRegistrationPubkeyOverride()
-            .orElse(public);
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
   }
@@ -301,8 +300,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .keySet()
         .removeIf(
             cachedPublicKey -> {
+              final boolean cachedKeyIsTheConfiguredOverride =
+                  validatorConfig
+                      .getBuilderRegistrationPublicKeyOverride()
+                      .map(keyOverride -> keyOverride.equals(cachedPublicKey))
+                      .orElse(false);
               final boolean requiresRemoving =
-                  !activeValidatorsPublicKeys.contains(cachedPublicKey);
+                  !activeValidatorsPublicKeys.contains(cachedPublicKey)
+                      && !cachedKeyIsTheConfiguredOverride;
               if (requiresRemoving) {
                 LOG.debug(
                     "Removing cached registration for {} because validator is no longer active.",
