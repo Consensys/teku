@@ -220,7 +220,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countSendRequest(
         delegate.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
-        Optional.of(sendAttestationRequestCounter));
+        sendAttestationRequestCounter);
   }
 
   @Override
@@ -229,7 +229,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countSendRequest(
         delegate.sendAggregateAndProofs(aggregateAndProofs),
         BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
-        Optional.of(sendAggregateRequestCounter));
+        sendAggregateRequestCounter);
   }
 
   @Override
@@ -245,7 +245,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countSendRequest(
         delegate.sendSyncCommitteeMessages(syncCommitteeMessages),
         BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
-        Optional.of(sendSyncCommitteeMessagesRequestCounter));
+        sendSyncCommitteeMessagesRequestCounter);
   }
 
   @Override
@@ -293,21 +293,21 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private <T> SafeFuture<List<T>> countSendRequest(
       final SafeFuture<List<T>> request,
       final String requestName,
-      final Optional<BeaconChainRequestCounter> legacyCounter) {
+      final BeaconChainRequestCounter legacyCounter) {
     return request
         .catchAndRethrow(
             __ -> {
               recordError(requestName);
-              legacyCounter.ifPresent(BeaconChainRequestCounter::onError);
+              legacyCounter.onError();
             })
         .thenPeek(
             result -> {
               if (result.isEmpty()) {
                 recordSuccess(requestName);
-                legacyCounter.ifPresent(BeaconChainRequestCounter::onSuccess);
+                legacyCounter.onSuccess();
               } else {
                 recordError(requestName);
-                legacyCounter.ifPresent(BeaconChainRequestCounter::onError);
+                legacyCounter.onError();
               }
             });
   }
