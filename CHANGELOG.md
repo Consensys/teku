@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Enables fork choice before block proposals by default on MainNet (previously on by default on testnets only)
  - Optimisations in jvm-libp2p to reduce CPU usage
  - Updated Sepolia bootnodes
+ - Enabled progressive balance tracking optimisation on MainNet
 
 ### Bug Fixes
  - `--ee-endpoint` option was not used to retrieve deposits for networks where Bellatrix was not yet scheduled
