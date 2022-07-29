@@ -25,6 +25,10 @@ import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class InMemoryKvStoreDatabaseFactory {
+  // block migration is for file based storage that gets migrated to blinded storage,
+  // and is not particularly useful in-memory, so just defaulting some sensible values.
+  private static final int BLOCK_MIGRATION_BATCH_SIZE = 25;
+  private static final int BLOCK_MIGRATION_BATCH_DELAY = 100;
 
   public static Database createV4(
       MockKvStoreInstance hotDb,
@@ -50,6 +54,8 @@ public class InMemoryKvStoreDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        BLOCK_MIGRATION_BATCH_SIZE,
+        BLOCK_MIGRATION_BATCH_DELAY,
         asyncRunner,
         spec);
   }
@@ -72,6 +78,8 @@ public class InMemoryKvStoreDatabaseFactory {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        BLOCK_MIGRATION_BATCH_SIZE,
+        BLOCK_MIGRATION_BATCH_DELAY,
         asyncRunner,
         spec);
   }
@@ -93,6 +101,8 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        BLOCK_MIGRATION_BATCH_SIZE,
+        BLOCK_MIGRATION_BATCH_DELAY,
         1000,
         asyncRunner,
         spec);

@@ -49,7 +49,7 @@ public class ExecutionLayerConfiguration {
   }
 
   public boolean isEnabled() {
-    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
+    return engineEndpoint.isPresent() || spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
 
   public Spec getSpec() {

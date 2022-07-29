@@ -47,6 +47,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
+  private final int blockMigrationBatchSize;
+  private final int blockMigrationBatchDelay;
   private boolean storeBlockExecutionPayloadSeparately;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
@@ -57,6 +59,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+
   private final boolean storeVotesEquivocation;
 
   private final Optional<AsyncRunner> asyncRunner;
@@ -78,6 +81,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = config.getDataStorageFrequency();
     this.eth1Address = config.getEth1DepositContract();
     this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
+    this.blockMigrationBatchSize = config.getBlockMigrationBatchSize();
+    this.blockMigrationBatchDelay = config.getBlockMigrationBatchDelay();
     this.storeVotesEquivocation = config.isStoreVotesEquivocation();
     this.spec = config.getSpec();
 
@@ -173,6 +178,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -200,6 +207,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -222,6 +231,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -248,6 +259,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           storeVotesEquivocation,
           asyncRunner,
           spec);
@@ -267,6 +280,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           storeVotesEquivocation,
           asyncRunner,
           spec);
@@ -285,6 +300,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
           asyncRunner,
