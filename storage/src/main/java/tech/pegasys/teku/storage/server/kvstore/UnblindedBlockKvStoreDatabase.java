@@ -101,6 +101,18 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getLastAvailableFinalizedBlock() {
+    return dao.getFinalizedCheckpoint()
+        .flatMap(
+            checkpoint -> getFinalizedBlock(checkpoint.toSlotAndBlockRoot(spec).getBlockRoot()));
+  }
+
+  @Override
+  public Optional<Bytes32> getFinalizedBlockRootBySlot(final UInt64 slot) {
+    return dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getRoot);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getLatestFinalizedBlockAtSlot(slot);
   }
