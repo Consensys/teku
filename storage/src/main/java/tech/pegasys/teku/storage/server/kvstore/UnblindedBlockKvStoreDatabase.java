@@ -109,7 +109,7 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public Optional<Bytes32> getFinalizedBlockRootBySlot(final UInt64 slot) {
-    return Optional.empty();
+    return dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getRoot);
   }
 
   @Override
