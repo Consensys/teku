@@ -28,14 +28,14 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 
   private final LongList stateStorageFrequencyOptions = getStateStorageFrequencies();
 
   protected LongList getStateStorageFrequencies() {
-    return LongList.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
+    return LongList.of(StorageConfiguration.DEFAULT_STORAGE_FREQUENCY);
   }
 
   protected List<StateStorageMode> getStorageModes() {

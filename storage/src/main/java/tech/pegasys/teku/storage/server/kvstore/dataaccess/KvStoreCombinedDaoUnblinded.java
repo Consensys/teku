@@ -88,5 +88,7 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
   }
 }

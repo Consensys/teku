@@ -59,7 +59,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -450,7 +450,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.eth1DepositContract(address)
                     .dataStorageMode(PRUNE)
-                    .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
+                    .dataStorageFrequency(StorageConfiguration.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
                     .maxKnownNodeCacheSize(100_000))
         .data(b -> b.dataBasePath(dataPath))

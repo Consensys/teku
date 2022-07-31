@@ -29,6 +29,7 @@ import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service implements StorageServiceFacade {
@@ -53,15 +54,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                   Optional.of(serviceConfig.createAsyncRunner("database_migrator")),
-                  config.getDataStorageMode(),
-                  config.getDataStorageCreateDbVersion(),
-                  config.getDataStorageFrequency(),
-                  config.getEth1DepositContract(),
-                  config.isStoreNonCanonicalBlocksEnabled(),
-                  config.getMaxKnownNodeCacheSize(),
-                  config.isStoreVotesEquivocation(),
-                  config.isStoreBlockExecutionPayloadSeparately(),
-                  config.getSpec());
+                  config);
           database = dbFactory.createDatabase();
 
           database.migrate();

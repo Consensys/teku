@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
+import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -48,6 +50,8 @@ public class FileBackedStorageSystemBuilder {
   private boolean storeNonCanonicalBlocks = false;
   private boolean storeVotesEquivocation = false;
   private boolean storeBlockExecutionPayloadSeparately = false;
+  private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
+  private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
 
   private FileBackedStorageSystemBuilder() {}
 
@@ -56,6 +60,19 @@ public class FileBackedStorageSystemBuilder {
   }
 
   public StorageSystem build() {
+    final Database database = buildDatabaseOnly();
+
+    validate();
+    return StorageSystem.create(
+        database,
+        createRestartSupplier(),
+        storageMode,
+        storeConfig,
+        spec,
+        ChainBuilder.create(spec));
+  }
+
+  public Database buildDatabaseOnly() {
     final Database database;
     switch (version) {
       case LEVELDB_TREE:
@@ -79,15 +96,7 @@ public class FileBackedStorageSystemBuilder {
       default:
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
-
-    validate();
-    return StorageSystem.create(
-        database,
-        createRestartSupplier(),
-        storageMode,
-        storeConfig,
-        spec,
-        ChainBuilder.create(spec));
+    return database;
   }
 
   private FileBackedStorageSystemBuilder copy() {
@@ -173,6 +182,8 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         storeVotesEquivocation,
         asyncRunner,
         spec);
@@ -191,6 +202,8 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec);
   }
@@ -204,6 +217,8 @@ public class FileBackedStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         storeVotesEquivocation,
         asyncRunner,
         spec);
@@ -217,6 +232,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         10_000,
         storeVotesEquivocation,
         asyncRunner,
@@ -233,6 +250,8 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec);
   }
@@ -247,6 +266,8 @@ public class FileBackedStorageSystemBuilder {
         storeNonCanonicalBlocks,
         storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
+        blockMigrationBatchSize,
+        blockMigrationBatchDelay,
         asyncRunner,
         spec);
   }

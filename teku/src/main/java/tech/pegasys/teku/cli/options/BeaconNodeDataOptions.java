@@ -20,10 +20,9 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
-import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 
 public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
@@ -49,7 +48,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
           "Sets the frequency, in slots, at which to store finalized states to disk. "
               + "This option is ignored if --data-storage-mode is set to PRUNE",
       arity = "1")
-  private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
+  private long dataStorageFrequency = StorageConfiguration.DEFAULT_STORAGE_FREQUENCY;
 
   @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},
@@ -80,6 +79,25 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean storeBlockExecutionPayloadSeparately =
       StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-block-migrate-batch-size"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Set the batch size for migrating finalized blocks to blinded storage",
+      hidden = true,
+      arity = "1")
+  private int blockMigrationBatchSize = StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-block-migrate-batch-delay-ms"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Set the delay time in millis to wait after committing a batch of blocks",
+      hidden = true,
+      arity = "1")
+  private int blockMigrationBatchDelayMillis =
+      StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
+
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
    * time. Not that states later in the chain with more validators have more branches so need a
@@ -105,10 +123,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private Boolean reconstructHistoricStates =
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
-  public StateStorageMode getDataStorageMode() {
-    return dataStorageMode;
-  }
-
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -124,6 +138,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
+                .blockMigrationBatchSize(blockMigrationBatchSize)
+                .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
     builder.sync(b -> b.isReconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
@@ -135,10 +151,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
           : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
-  }
-
-  public boolean isStoreNonCanonicalBlocks() {
-    return storeNonCanonicalBlocksEnabled;
   }
 
   public boolean isStoreBlockExecutionPayloadSeparately() {

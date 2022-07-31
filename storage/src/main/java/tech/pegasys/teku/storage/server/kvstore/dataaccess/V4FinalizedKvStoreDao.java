@@ -117,13 +117,6 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getValue);
   }
 
-  public long countUnblindedFinalizedBlocks() {
-    try (Stream<ColumnEntry<Bytes, Bytes>> entries =
-        db.streamRaw(schema.getColumnFinalizedBlocksBySlot())) {
-      return entries.count();
-    }
-  }
-
   public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
     return db.get(schema.getColumnBlindedBlocksByRoot(), root);
   }
@@ -227,6 +220,16 @@ public class V4FinalizedKvStoreDao {
   }
 
   @MustBeClosed
+  public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
+    return db.stream(schema.getColumnNonCanonicalBlocksByRoot()).map(entry -> entry);
+  }
+
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
+  }
+
+  @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedStatesBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getKey);
@@ -268,6 +271,13 @@ public class V4FinalizedKvStoreDao {
         final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
       addBlindedBlock(block, root, spec);
       addFinalizedBlockRootBySlot(block.getSlot(), root);
+    }
+
+    @Override
+    public void addBlindedFinalizedBlockRaw(
+        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
+      transaction.putRaw(schema.getColumnBlindedBlocksByRoot(), root, blockBytes);
+      addFinalizedBlockRootBySlot(slot, root);
     }
 
     @Override
@@ -317,6 +327,11 @@ public class V4FinalizedKvStoreDao {
     public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+    }
+
+    @Override
+    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
     }
 
     @Override

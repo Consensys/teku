@@ -38,7 +38,6 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
@@ -48,6 +47,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
+  private final int blockMigrationBatchSize;
+  private final int blockMigrationBatchDelay;
   private boolean storeBlockExecutionPayloadSeparately;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
@@ -58,6 +59,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+
   private final boolean storeVotesEquivocation;
 
   private final Optional<AsyncRunner> asyncRunner;
@@ -66,56 +68,27 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final Optional<AsyncRunner> asyncRunner,
-      final StateStorageMode dataStorageMode,
-      final Eth1Address depositContractAddress,
-      final boolean storeNonCanonicalBlocks,
-      final boolean storeVotesEquivocation,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Spec spec) {
-    this(
-        metricsSystem,
-        dataPath,
-        asyncRunner,
-        dataStorageMode,
-        DatabaseVersion.DEFAULT_VERSION,
-        DEFAULT_STORAGE_FREQUENCY,
-        depositContractAddress,
-        storeNonCanonicalBlocks,
-        0,
-        storeVotesEquivocation,
-        storeBlockExecutionPayloadSeparately,
-        spec);
-  }
+      final StorageConfiguration config) {
 
-  public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem,
-      final Path dataPath,
-      final Optional<AsyncRunner> asyncRunner,
-      final StateStorageMode dataStorageMode,
-      final DatabaseVersion createDatabaseVersion,
-      final long stateStorageFrequency,
-      final Eth1Address eth1Address,
-      final boolean storeNonCanonicalBlocks,
-      final int maxKnownNodeCacheSize,
-      final boolean storeVotesEquivocation,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.asyncRunner = asyncRunner;
-    this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
+
+    this.stateStorageMode = config.getDataStorageMode();
+    this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
+    this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
+    this.storeBlockExecutionPayloadSeparately = config.isStoreBlockExecutionPayloadSeparately();
+    this.stateStorageFrequency = config.getDataStorageFrequency();
+    this.eth1Address = config.getEth1DepositContract();
+    this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
+    this.blockMigrationBatchSize = config.getBlockMigrationBatchSize();
+    this.blockMigrationBatchDelay = config.getBlockMigrationBatchDelay();
+    this.storeVotesEquivocation = config.isStoreVotesEquivocation();
+    this.spec = config.getSpec();
+
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
-    this.stateStorageMode = dataStorageMode;
-    this.stateStorageFrequency = stateStorageFrequency;
-    this.eth1Address = eth1Address;
-    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
-    this.storeVotesEquivocation = storeVotesEquivocation;
-    this.spec = spec;
-
-    this.createDatabaseVersion = createDatabaseVersion;
   }
 
   @Override
@@ -205,6 +178,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -232,6 +207,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeNonCanonicalBlocks,
           storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -254,6 +231,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -280,6 +259,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           storeVotesEquivocation,
           asyncRunner,
           spec);
@@ -299,6 +280,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           storeVotesEquivocation,
           asyncRunner,
           spec);
@@ -317,6 +300,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           storeNonCanonicalBlocks,
           storeBlockExecutionPayloadSeparately,
+          blockMigrationBatchSize,
+          blockMigrationBatchDelay,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
           asyncRunner,
