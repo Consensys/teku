@@ -50,8 +50,9 @@ public class ReconstructHistoricalStatesServiceTest {
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompletedExceptionally();
+    assertThatSafeFuture(res).isCompletedExceptionallyWith(IllegalStateException.class);
     assertThatSafeFuture(res)
-        .isCompletedExceptionallyWith(IllegalStateException.class); // todo check exception message
+        .isCompletedExceptionallyWithMessage("Genesis state resource not provided");
 
     verify(chainDataClient, never()).getInitialAnchor();
   }
@@ -63,6 +64,9 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompletedExceptionally();
     assertThatSafeFuture(res).isCompletedExceptionallyWith(InvalidConfigurationException.class);
+    assertThatSafeFuture(res)
+        .isCompletedExceptionallyWithMessage(
+            "Failed to load initial state from invalid resource: Not found");
 
     verify(chainDataClient, never()).getInitialAnchor();
   }
