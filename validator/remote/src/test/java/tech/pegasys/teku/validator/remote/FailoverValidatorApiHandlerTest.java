@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,7 +35,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -115,16 +113,6 @@ class FailoverValidatorApiHandlerTest {
             validatorLogger);
   }
 
-  @Test
-  void initializationFailsWhenNoFailoversAreDefined() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            failoverApiHandler =
-                new FailoverValidatorApiHandler(
-                    primaryApiChannel, List.of(), true, stubMetricsSystem, validatorLogger));
-  }
-
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestsUsingFailover")
   <T> void requestSucceedsWithoutFailover(
@@ -190,7 +178,7 @@ class FailoverValidatorApiHandlerTest {
               assertThat(throwable.getSuppressed()).hasSize(2);
             });
 
-    verify(validatorLogger).remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+    verify(validatorLogger).remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(methodLabel);
 
     verifyFailoverCounters(
         failoverApiChannel1,
@@ -200,6 +188,23 @@ class FailoverValidatorApiHandlerTest {
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRequestsUsingFailover")
+  <T> void requestFailsAndNoFailoversConfigured(final ValidatorApiChannelRequest<T> request) {
+
+    failoverApiHandler =
+        new FailoverValidatorApiHandler(
+            primaryApiChannel, List.of(), true, stubMetricsSystem, validatorLogger);
+
+    setupFailures(request, primaryApiChannel);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedExceptionally();
+
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -265,6 +270,28 @@ class FailoverValidatorApiHandlerTest {
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void requestIsNotRelayedIfNoFailoversAreConfigured(
+      final ValidatorApiChannelRequest<T> request,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade,
+      final String ignoredMethodLabel,
+      final T response) {
+
+    failoverApiHandler =
+        new FailoverValidatorApiHandler(
+            primaryApiChannel, List.of(), true, stubMetricsSystem, validatorLogger);
+
+    setupSuccesses(request, response, primaryApiChannel);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+    verifyCallIsMade.accept(primaryApiChannel);
+
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -387,7 +414,7 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verify(validatorLogger).remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+    verify(validatorLogger).remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(methodLabel);
 
     verifyFailoverCounters(
         failoverApiChannel1,

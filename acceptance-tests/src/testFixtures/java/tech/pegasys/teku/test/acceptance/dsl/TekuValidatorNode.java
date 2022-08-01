@@ -194,7 +194,7 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withBeaconNodes(final TekuNode... beaconNodes) {
       configMap.put(
-          "Xbeacon-node-api-endpoints",
+          "beacon-node-api-endpoints",
           Arrays.stream(beaconNodes)
               .map(TekuNode::getBeaconRestApiUrl)
               .collect(Collectors.toList()));
