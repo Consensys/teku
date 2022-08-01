@@ -557,7 +557,7 @@ public abstract class KvStoreDatabase<
       updater.commit();
     }
     long endTime = System.nanoTime();
-    DB_LOGGER.onDbOpAlertThreshold("KvStoreDatabase update", startTime, endTime);
+    DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
