@@ -16,8 +16,10 @@ package tech.pegasys.teku.cli.subcommand.debug;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -277,23 +279,67 @@ public class DebugDbCommand implements Runnable {
           System.err.printf(
               "ERROR: Unable to locate parent %s of block %s (%s)%n",
               currentBlock.getParentRoot(), currentBlock.getRoot(), currentBlock.getSlot());
+          maybeFinalizedBlock = findFinalizedBlockBeforeSlot(database, currentBlock.getSlot());
+          if (maybeFinalizedBlock.isEmpty()) {
+            // could move on to going through blocks and checking they all have an entry in the
+            // index...
+            checkBlockIndicesArePopulatedCorrectly(database);
+          }
           return 1;
+        } else {
+          checkFinalizedIndices(
+              database,
+              beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+              currentBlock,
+              maybeParent.get());
+          maybeFinalizedBlock = maybeParent;
         }
-        checkFinalizedIndices(
-            database,
-            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
-            currentBlock,
-            maybeParent.get());
         counter++;
         if (counter % 5_000 == 0) {
           System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
         }
-        maybeFinalizedBlock = maybeParent;
       }
     }
     final long endTime = System.currentTimeMillis();
     System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
     return 0;
+  }
+
+  private void checkBlockIndicesArePopulatedCorrectly(final Database database) {
+    System.out.printf("Checking integrity of blocks table to ensure indices exist");
+    try (final Stream<SignedBeaconBlock> stream = database.streamBlindedBlocks()) {
+      for (Iterator<SignedBeaconBlock> it = stream.iterator(); it.hasNext(); ) {
+        final SignedBeaconBlock block = it.next();
+        final Optional<UInt64> finalSlot = database.getSlotForFinalizedBlockRoot(block.getRoot());
+        if (database.getSlotForFinalizedBlockRoot(block.getRoot()).isEmpty()
+            && database.getHotBlock(block.getRoot()).isEmpty()) {
+          System.err.printf(
+              "ERROR: Block %s (%s) is missing an entry in blinded indices.%n",
+              block.getRoot(), block.getSlot());
+        } else if (finalSlot.isPresent() && !finalSlot.get().equals(block.getSlot())) {
+          System.err.printf(
+              "ERROR: Block %s (%s) has incorrect slot in finalized index:%s%n",
+              block.getRoot(), block.getSlot(), finalSlot.get());
+        }
+      }
+    }
+  }
+
+  private Optional<SignedBeaconBlock> findFinalizedBlockBeforeSlot(
+      final Database database, final UInt64 knownSlot) {
+    UInt64 parentSearchSlot = knownSlot.decrement().decrement();
+    while (parentSearchSlot.isGreaterThan(knownSlot.minus(128))) {
+      Optional<Bytes32> blockRoot = database.getFinalizedBlockRootBySlot(parentSearchSlot);
+      if (blockRoot.isPresent()) {
+        return database.getSignedBlock(blockRoot.get());
+      } else {
+        System.err.printf("WARNING: No block found at slot %s%n", parentSearchSlot);
+      }
+      parentSearchSlot = parentSearchSlot.decrement();
+    }
+    System.err.printf(
+        "Searched back 128 blocks from last known block, and couldn't find anything helpful, cannot continue checking via parent references..%n");
+    return Optional.empty();
   }
 
   private void checkFinalizedIndices(
