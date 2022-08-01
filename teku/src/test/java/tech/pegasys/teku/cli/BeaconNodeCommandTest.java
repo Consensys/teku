@@ -333,7 +333,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private Path createConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.yaml");
+    final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
             .replace(
@@ -343,7 +343,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private Path createInvalidConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.yaml");
+    final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8).replace("network:", "xnetwork:");
     return createTempFile(updatedConfig.getBytes(UTF_8));
