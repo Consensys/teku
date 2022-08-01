@@ -284,8 +284,12 @@ public class DebugDbCommand implements Runnable {
             // could move on to going through blocks and checking they all have an entry in the
             // index...
             checkBlockIndicesArePopulatedCorrectly(database);
+            return 1;
+          } else {
+            System.out.printf(
+                "Starting to dig back from new parent: %s (%s)%n",
+                maybeFinalizedBlock.get().getRoot(), maybeFinalizedBlock.get().getSlot());
           }
-          return 1;
         } else {
           checkFinalizedIndices(
               database,
@@ -306,8 +310,9 @@ public class DebugDbCommand implements Runnable {
   }
 
   private void checkBlockIndicesArePopulatedCorrectly(final Database database) {
-    System.out.printf("Checking integrity of blocks table to ensure indices exist");
+    System.out.printf("Checking integrity of blocks table to ensure indices exist%n");
     try (final Stream<SignedBeaconBlock> stream = database.streamBlindedBlocks()) {
+      long counter = 0;
       for (Iterator<SignedBeaconBlock> it = stream.iterator(); it.hasNext(); ) {
         final SignedBeaconBlock block = it.next();
         final Optional<UInt64> finalSlot = database.getSlotForFinalizedBlockRoot(block.getRoot());
@@ -321,6 +326,10 @@ public class DebugDbCommand implements Runnable {
               "ERROR: Block %s (%s) has incorrect slot in finalized index:%s%n",
               block.getRoot(), block.getSlot(), finalSlot.get());
         }
+        counter++;
+        if (counter % 100_000 == 0) {
+          System.out.printf("Checked %s blocks to their index...%n", counter);
+        }
       }
     }
   }
@@ -328,10 +337,18 @@ public class DebugDbCommand implements Runnable {
   private Optional<SignedBeaconBlock> findFinalizedBlockBeforeSlot(
       final Database database, final UInt64 knownSlot) {
     UInt64 parentSearchSlot = knownSlot.decrement().decrement();
+
     while (parentSearchSlot.isGreaterThan(knownSlot.minus(128))) {
       Optional<Bytes32> blockRoot = database.getFinalizedBlockRootBySlot(parentSearchSlot);
       if (blockRoot.isPresent()) {
-        return database.getSignedBlock(blockRoot.get());
+        Optional<SignedBeaconBlock> block = database.getSignedBlock(blockRoot.get());
+        if (block.isEmpty()) {
+          System.err.printf(
+              "ERROR: Found index at slot %s (%s), but block could not be retrieved%n",
+              blockRoot.get(), parentSearchSlot);
+        } else {
+          return block;
+        }
       } else {
         System.err.printf("WARNING: No block found at slot %s%n", parentSearchSlot);
       }
@@ -352,7 +369,7 @@ public class DebugDbCommand implements Runnable {
     Optional<UInt64> indexSlot = database.getSlotForFinalizedBlockRoot(parentBlock.getRoot());
     if (indexSlot.isEmpty() || !indexSlot.get().equals(parentSlot)) {
       System.err.printf(
-          "Finalized block index for root %s reports slot %s, expected slot %s",
+          "Finalized block index for root %s reports slot %s, expected slot %s%n",
           parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
     } else {
       if (blindedBlocksEnabled) {
