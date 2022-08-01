@@ -94,6 +94,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void unknownOptionInConfigFileShouldDisplayShortHelpMessage() throws IOException {
+    final Path configFile = createInvalidConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Unknown option");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
+
+  @Test
   public void unmatchedOptionsNotAllowedAsOptionParameters() {
     final String[] args = {"--eth1-endpoints http://localhost:8545 --foo"};
 
@@ -326,6 +339,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             .replace(
                 "data-path: \".\"",
                 "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
+    return createTempFile(updatedConfig.getBytes(UTF_8));
+  }
+
+  private Path createInvalidConfigFile() throws IOException {
+    final URL configFile = this.getClass().getResource("/complete_config.yaml");
+    final String updatedConfig =
+            Resources.toString(configFile, UTF_8)
+                    .replace("network:", "xnetwork:");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
