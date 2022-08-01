@@ -345,8 +345,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private Path createInvalidConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
-            Resources.toString(configFile, UTF_8)
-                    .replace("network:", "xnetwork:");
+        Resources.toString(configFile, UTF_8).replace("network:", "xnetwork:");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
