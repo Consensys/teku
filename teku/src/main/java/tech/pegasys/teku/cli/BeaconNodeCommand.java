@@ -243,8 +243,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     final AdditionalParamsProvider additionalParamsProvider =
         additionalParamsProvider(commandLine, configFile);
 
-    final Map<String, String> additionalParams =
-        additionalParamsProvider.getAdditionalParams(potentialAdditionalParams);
+    final Map<String, String> additionalParams;
+    try {
+      additionalParams = additionalParamsProvider.getAdditionalParams(potentialAdditionalParams);
+    } catch (ParameterException e) {
+      return handleParseException(e, args);
+    }
 
     // build new argument list by concatenating original args and the additional params
     final String[] enrichedArgs =
