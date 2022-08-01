@@ -146,6 +146,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
         setUpValidatorLogger(consoleAppender);
+        setUpDbLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
@@ -155,6 +156,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
         setUpValidatorLogger(fileAppender);
+        setUpDbLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
@@ -168,9 +170,11 @@ public class LoggingConfigurator {
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
         final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
+        final LoggerConfig dbLogger = setUpDbLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
         configuration.addLogger(statusLogger.getName(), statusLogger);
         configuration.addLogger(validatorLogger.getName(), validatorLogger);
+        configuration.addLogger(dbLogger.getName(), dbLogger);
 
         fileAppender = fileAppender(configuration);
 
@@ -280,6 +284,12 @@ public class LoggingConfigurator {
             ? rootLogLevel
             : Level.ERROR;
     final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
+    logger.addAppender(appender, rootLogLevel, null);
+    return logger;
+  }
+
+  private static LoggerConfig setUpDbLogger(final Appender appender) {
+    final LoggerConfig logger = new LoggerConfig(DB_LOGGER_NAME, rootLogLevel, true);
     logger.addAppender(appender, rootLogLevel, null);
     return logger;
   }
