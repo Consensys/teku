@@ -15,8 +15,10 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -80,6 +83,7 @@ public class ReconstructHistoricalStatesServiceTest {
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
   }
 
   @Test
@@ -87,12 +91,13 @@ public class ReconstructHistoricalStatesServiceTest {
     createService(createGenesisStateResource(tempDir));
     when(chainDataClient.getInitialAnchor())
         .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomCheckpoint())));
-    when(chainDataClient.getBlockAtSlotExact(any()))
+    when(chainDataClient.getBlockAtSlotExact(eq(UInt64.ONE)))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock(1))));
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
   }
 
   private Optional<String> createGenesisStateResource(final Path tempDir) throws IOException {
