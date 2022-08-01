@@ -45,4 +45,28 @@ class UrlSanitizerTest {
     final String result = UrlSanitizer.sanitizePotentialUrl(input);
     assertThat(result).isEqualTo("user:passlocalhost:2993/some%20path/b/c/?foo=bar#1234");
   }
+
+  @Test
+  void shouldDetectPathInUrl() {
+    final String input = "https://someurl.xyz/path";
+    assertThat(UrlSanitizer.urlContainsNonEmptyPath(input)).isTrue();
+  }
+
+  @Test
+  void shouldDetectNoPathInUrl() {
+    final String input = "https://someurl.xyz";
+    assertThat(UrlSanitizer.urlContainsNonEmptyPath(input)).isFalse();
+  }
+
+  @Test
+  void shouldIgnoreEmptyPath() {
+    final String input = "https://someurl.xyz/";
+    assertThat(UrlSanitizer.urlContainsNonEmptyPath(input)).isFalse();
+  }
+
+  @Test
+  void shouldNotDetectPathInStringThatIsNonUrl() {
+    final String input = "\\not-a-url/path";
+    assertThat(UrlSanitizer.urlContainsNonEmptyPath(input)).isFalse();
+  }
 }
