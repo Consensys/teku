@@ -138,10 +138,12 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldSetDbOpAlertThresholdFromCommandLine() {
-    final int dbOpAlertThreshold = 250;
-    final String[] args = {"--Xlog-db-op-alert-threshold", String.valueOf(dbOpAlertThreshold)};
+    final int dbOpAlertThresholdMillis = 250;
+    final String[] args = {
+      "--Xlog-db-op-alert-threshold", String.valueOf(dbOpAlertThresholdMillis)
+    };
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
-    assertThat(config.getDbOpAlertThreshold()).isEqualTo(dbOpAlertThreshold);
+    assertThat(config.getDbOpAlertThresholdMillis()).isEqualTo(dbOpAlertThresholdMillis);
   }
 
   @Test

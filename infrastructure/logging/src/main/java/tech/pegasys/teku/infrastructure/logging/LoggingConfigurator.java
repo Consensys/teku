@@ -59,7 +59,7 @@ public class LoggingConfigurator {
   private static String file;
   private static String filePattern;
   private static Level rootLogLevel = Level.INFO;
-  private static int dbOpAlertThreshold;
+  private static int dbOpAlertThresholdMillis;
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static boolean isColorEnabled() {
@@ -70,8 +70,8 @@ public class LoggingConfigurator {
     return includeP2pWarnings;
   }
 
-  public static int dbOpAlertThreshold() {
-    return dbOpAlertThreshold;
+  public static int dbOpAlertThresholdMillis() {
+    return dbOpAlertThresholdMillis;
   }
 
   public static synchronized void setColorEnabled(final boolean isEnabled) {
@@ -106,7 +106,7 @@ public class LoggingConfigurator {
     includeP2pWarnings = configuration.isIncludeP2pWarningsEnabled();
     file = configuration.getLogFile();
     filePattern = configuration.getLogFileNamePattern();
-    dbOpAlertThreshold = configuration.getDbOpAlertThreshold();
+    dbOpAlertThresholdMillis = configuration.getDbOpAlertThresholdMillis();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggers((AbstractConfiguration) ctx.getConfiguration());

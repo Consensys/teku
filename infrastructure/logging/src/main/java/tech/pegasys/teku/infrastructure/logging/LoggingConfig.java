@@ -24,7 +24,7 @@ public class LoggingConfig {
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
 
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
-  public static final int DEFAULT_DB_OP_ALERT_THRESHOLD = 0;
+  public static final int DEFAULT_DB_OP_ALERT_THRESHOLD_MILLIS = 0;
   private final Optional<Level> logLevel;
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
@@ -33,7 +33,7 @@ public class LoggingConfig {
   private final LoggingDestination destination;
   private final String logFile;
   private final String logFileNamePattern;
-  private final int dbOpAlertThreshold;
+  private final int dbOpAlertThresholdMillis;
 
   private LoggingConfig(
       final Optional<Level> logLevel,
@@ -44,7 +44,7 @@ public class LoggingConfig {
       final LoggingDestination destination,
       final String logFile,
       final String logFileNamePattern,
-      final int dbOpAlertThreshold) {
+      final int dbOpAlertThresholdMillis) {
     this.logLevel = logLevel;
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
@@ -53,7 +53,7 @@ public class LoggingConfig {
     this.destination = destination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
-    this.dbOpAlertThreshold = dbOpAlertThreshold;
+    this.dbOpAlertThresholdMillis = dbOpAlertThresholdMillis;
   }
 
   public static LoggingConfigBuilder builder() {
@@ -92,8 +92,8 @@ public class LoggingConfig {
     return logFileNamePattern;
   }
 
-  public int getDbOpAlertThreshold() {
-    return dbOpAlertThreshold;
+  public int getDbOpAlertThresholdMillis() {
+    return dbOpAlertThresholdMillis;
   }
 
   public static final class LoggingConfigBuilder {
@@ -114,7 +114,7 @@ public class LoggingConfig {
     private String logDirectory;
     private String logPath;
     private String logPathPattern;
-    private int dbOpAlertThreshold;
+    private int dbOpAlertThresholdMillis;
 
     private LoggingConfigBuilder() {}
 
@@ -148,7 +148,7 @@ public class LoggingConfig {
           logPathPattern != null,
           "LoggingConfig error: none of logPathPattern, dataDirectory or logDirectory values was specified");
       checkArgument(
-          !(dbOpAlertThreshold < 0),
+          !(dbOpAlertThresholdMillis < 0),
           "LoggingConfig error: dbOpAlertThreshold must be a positive value");
     }
 
@@ -218,8 +218,8 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder dbOpAlertThreshold(int dbOpAlertThreshold) {
-      this.dbOpAlertThreshold = dbOpAlertThreshold;
+    public LoggingConfigBuilder dbOpAlertThresholdMillis(int dbOpAlertThresholdMillis) {
+      this.dbOpAlertThresholdMillis = dbOpAlertThresholdMillis;
       return this;
     }
 
@@ -235,7 +235,7 @@ public class LoggingConfig {
           destination,
           logPath,
           logPathPattern,
-          dbOpAlertThreshold);
+          dbOpAlertThresholdMillis);
     }
   }
 }
