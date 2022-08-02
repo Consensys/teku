@@ -18,6 +18,7 @@ import com.google.common.primitives.Longs;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +41,12 @@ public class BlindedBlockMigration<
 
   private static final int INDEX_BATCH_SIZE = 10_000;
   private final int blockMigrationBatchDelay;
-  private static final int LOGGING_FREQUENCY = 100_000;
+  private static final int LOGGING_FREQUENCY = 50_000;
+
+  private static final int STREAM_OPEN_LENGTH = 1_000;
+
+  private final AtomicBoolean preBellatrix = new AtomicBoolean(true);
+
   private final Spec spec;
 
   private final T dao;
@@ -131,10 +137,31 @@ public class BlindedBlockMigration<
   }
 
   private void migrateRemainingBlocks() {
-    final long finalizedBlockIndexCounter = copyFinalizedBlockIndexToBlindedStorage();
-    final long preBellatrixMigratedBlocks =
-        migrateFinalizedBlocksPreBellatrix(finalizedBlockIndexCounter);
-    migrateRemainingFinalizedBlocks(finalizedBlockIndexCounter - preBellatrixMigratedBlocks);
+    long finalizedblockTotal = 0;
+
+    copyFinalizedBlockIndexToBlindedStorage();
+
+    long counter;
+    do {
+      counter = migrateFinalizedBlocksPreBellatrix();
+      finalizedblockTotal += counter;
+      if (finalizedblockTotal % LOGGING_FREQUENCY == 0) {
+        LOG.info("{} blocks moved", finalizedblockTotal);
+      }
+    } while (counter > 0 && preBellatrix.get());
+
+    do {
+      counter = migrateRemainingFinalizedBlocks();
+      finalizedblockTotal += counter;
+      if (finalizedblockTotal % LOGGING_FREQUENCY == 0) {
+        LOG.info("{} blocks moved", finalizedblockTotal);
+      }
+    } while (counter > 0);
+
+    if (finalizedblockTotal > 0) {
+      LOG.info("DONE - {} blocks moved", finalizedblockTotal);
+    }
+
     migrateNonCanonicalBlocks();
   }
 
@@ -167,79 +194,66 @@ public class BlindedBlockMigration<
     return counter;
   }
 
-  private long migrateFinalizedBlocksPreBellatrix(final long migrationCounter) {
+  private long migrateFinalizedBlocksPreBellatrix() {
     long counter = 0;
-    boolean preBellatrix = true;
-    if (migrationCounter > 0) {
-      LOG.info(
-          "Migrating pre-bellatrix blocks to blinded storage, {} finalized blocks to migrate",
-          migrationCounter);
-    }
     try (final Stream<Map.Entry<Bytes, Bytes>> stream = dao.streamUnblindedFinalizedBlocksRaw()) {
       for (Iterator<Map.Entry<Bytes, Bytes>> it = stream.iterator();
-          it.hasNext() && preBellatrix; ) {
+          it.hasNext() && preBellatrix.get() && counter < STREAM_OPEN_LENGTH; ) {
         try (KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded finalizedUpdaterBlinded =
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < blockBatchSize && it.hasNext() && preBellatrix; i++) {
+          for (int i = 0;
+              i < blockBatchSize
+                  && it.hasNext()
+                  && preBellatrix.get()
+                  && counter < STREAM_OPEN_LENGTH;
+              i++) {
             final Map.Entry<Bytes, Bytes> entry = it.next();
             final UInt64 slot =
                 UInt64.fromLongBits(Longs.fromByteArray(entry.getKey().toArrayUnsafe()));
             if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-              preBellatrix = false;
-              LOG.info("At slot {}, detected bellatrix block, stopping direct copy", slot);
+              preBellatrix.set(false);
+              if (counter > 0) {
+                LOG.info("At slot {}, detected bellatrix block, stopping direct copy", slot);
+              }
               continue;
             }
             final Optional<Bytes32> maybeRoot = dao.getFinalizedBlockRootAtSlot(slot);
             if (maybeRoot.isEmpty()) {
-              LOG.debug("Could not find block root for slot {}", slot);
+              LOG.error("Could not find block root for slot {}", slot);
               continue;
             }
             finalizedUpdaterBlinded.addBlindedFinalizedBlockRaw(
                 entry.getValue(), maybeRoot.get(), slot);
             finalizedUpdaterUnblinded.deleteUnblindedFinalizedBlock(slot, maybeRoot.get());
             counter++;
-            if (counter % LOGGING_FREQUENCY == 0) {
-              LOG.info("{} pre-bellatrix blocks moved", counter);
-            }
           }
           finalizedUpdaterBlinded.commit();
           finalizedUpdaterUnblinded.commit();
         }
-
         pause();
       }
-    }
-    if (counter > 0) {
-      LOG.info("Done - {} pre-bellatrix blocks moved", counter);
     }
     return counter;
   }
 
-  private void migrateRemainingFinalizedBlocks(final long migrationCounter) {
+  private long migrateRemainingFinalizedBlocks() {
     long counter = 0;
-    if (migrationCounter > 0) {
-      LOG.info(
-          "Migrating any remaining finalized blocks to blinded storage, {} blocks to migrate",
-          migrationCounter);
-    }
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamUnblindedFinalizedBlocks(UInt64.ZERO, UInt64.MAX_VALUE)) {
-      for (Iterator<SignedBeaconBlock> it = stream.iterator(); it.hasNext(); ) {
+      for (Iterator<SignedBeaconBlock> it = stream.iterator();
+          it.hasNext() && counter < STREAM_OPEN_LENGTH; ) {
         try (KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded finalizedUpdaterBlinded =
                 dao.finalizedUpdaterBlinded();
             KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded finalizedUpdaterUnblinded =
                 dao.finalizedUpdaterUnblinded()) {
-          for (int i = 0; i < blockBatchSize && it.hasNext(); i++) {
+          for (int i = 0; i < blockBatchSize && it.hasNext() && counter < STREAM_OPEN_LENGTH; i++) {
             final SignedBeaconBlock block = it.next();
             finalizedUpdaterBlinded.addBlindedFinalizedBlock(block, block.getRoot(), spec);
             finalizedUpdaterUnblinded.deleteUnblindedFinalizedBlock(
                 block.getSlot(), block.getRoot());
             counter++;
-            if (counter % LOGGING_FREQUENCY == 0) {
-              LOG.info("{} post-bellatrix blocks moved", counter);
-            }
           }
           finalizedUpdaterBlinded.commit();
           finalizedUpdaterUnblinded.commit();
@@ -247,9 +261,7 @@ public class BlindedBlockMigration<
         pause();
       }
     }
-    if (counter > 0) {
-      LOG.info("Done - {} post-bellatrix blocks moved", counter);
-    }
+    return counter;
   }
 
   private void pause() {
