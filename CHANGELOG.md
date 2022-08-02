@@ -14,11 +14,12 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
- - Added support for Builder API
+ - MEV-Boost\Builder support
  - Enables fork choice before block proposals by default on MainNet (previously on by default on testnets only)
  - Optimisations in jvm-libp2p to reduce CPU usage
  - Updated Sepolia bootnodes
  - Enabled progressive balance tracking optimisation on MainNet
+ - Replaced separate metrics for each beacon node request with one metric `beacon_node_requests_total`. Some old metrics were kept for backwards compatibility, but will be removed in future versions.
 
 ### Bug Fixes
  - `--ee-endpoint` option was not used to retrieve deposits for networks where Bellatrix was not yet scheduled
