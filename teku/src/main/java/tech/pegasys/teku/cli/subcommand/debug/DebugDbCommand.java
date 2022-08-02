@@ -316,8 +316,7 @@ public class DebugDbCommand implements Runnable {
       for (Iterator<SignedBeaconBlock> it = stream.iterator(); it.hasNext(); ) {
         final SignedBeaconBlock block = it.next();
         final Optional<UInt64> finalSlot = database.getSlotForFinalizedBlockRoot(block.getRoot());
-        if (database.getSlotForFinalizedBlockRoot(block.getRoot()).isEmpty()
-            && database.getHotBlock(block.getRoot()).isEmpty()) {
+        if (finalSlot.isEmpty() && database.getHotBlock(block.getRoot()).isEmpty()) {
           System.err.printf(
               "ERROR: Block %s (%s) is missing an entry in blinded indices.%n",
               block.getRoot(), block.getSlot());
