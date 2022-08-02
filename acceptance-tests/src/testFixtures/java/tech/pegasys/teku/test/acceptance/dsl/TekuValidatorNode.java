@@ -157,7 +157,7 @@ public class TekuValidatorNode extends Node {
       configMap.put("Xinterop-enabled", true);
       configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
-      configMap.put("beacon-node-api-endpoints", List.of("http://notvalid.restapi.com"));
+      configMap.put("beacon-node-api-endpoint", List.of("http://notvalid.restapi.com"));
     }
 
     public TekuValidatorNode.Config withInteropModeDisabled() {
@@ -194,7 +194,7 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withBeaconNodes(final TekuNode... beaconNodes) {
       configMap.put(
-          "beacon-node-api-endpoints",
+          "beacon-node-api-endpoint",
           Arrays.stream(beaconNodes)
               .map(TekuNode::getBeaconRestApiUrl)
               .collect(Collectors.toList()));
