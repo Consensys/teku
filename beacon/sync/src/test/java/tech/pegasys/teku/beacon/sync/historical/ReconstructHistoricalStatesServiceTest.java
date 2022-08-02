@@ -15,7 +15,6 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -28,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,8 +35,9 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -44,8 +45,16 @@ public class ReconstructHistoricalStatesServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private ReconstructHistoricalStatesService service;
+
+  @BeforeEach
+  void setup() {
+    chainBuilder.generateGenesis();
+    chainBuilder.generateBlocksUpToSlot(10);
+
+    when(storageUpdateChannel.onFinalizedState(any())).thenReturn(SafeFuture.COMPLETE);
+  }
 
   @Test
   public void shouldCompleteExceptionallyWithEmptyResource() {
@@ -58,6 +67,7 @@ public class ReconstructHistoricalStatesServiceTest {
         .isCompletedExceptionallyWithMessage("Genesis state resource not provided");
 
     verify(chainDataClient, never()).getInitialAnchor();
+    verify(storageUpdateChannel, never()).onFinalizedState(any());
   }
 
   @Test
@@ -72,6 +82,7 @@ public class ReconstructHistoricalStatesServiceTest {
             "Failed to load initial state from invalid resource: Not found");
 
     verify(chainDataClient, never()).getInitialAnchor();
+    verify(storageUpdateChannel, never()).onFinalizedState(any());
   }
 
   @Test
@@ -84,24 +95,32 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, never()).onFinalizedState(any());
   }
 
   @Test
   public void shouldCompleteStart(@TempDir final Path tempDir) throws IOException {
+    final Checkpoint initialAnchor =
+        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     createService(createGenesisStateResource(tempDir));
     when(chainDataClient.getInitialAnchor())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomCheckpoint())));
-    when(chainDataClient.getBlockAtSlotExact(eq(UInt64.ONE)))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock(1))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(initialAnchor)));
+    when(chainDataClient.getBlockAtSlotExact(any()))
+        .thenAnswer(
+            invocation -> {
+              UInt64 argument = invocation.getArgument(0);
+              return SafeFuture.completedFuture(Optional.of(chainBuilder.getBlockAtSlot(argument)));
+            });
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
+        .onFinalizedState(any());
   }
 
   private Optional<String> createGenesisStateResource(final Path tempDir) throws IOException {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconState state = chainBuilder.getGenesis().getState();
     final File file =
         Files.write(tempDir.resolve("initial-state.ssz"), state.sszSerialize().toArrayUnsafe())
             .toFile();
