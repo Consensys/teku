@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -100,6 +101,30 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   public void shouldCompleteStart(@TempDir final Path tempDir) throws IOException {
+    final Checkpoint initialAnchor = setUpService(tempDir);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
+        .onFinalizedState(any());
+  }
+
+  @Test
+  void shouldCompleteStartMissedSlots(@TempDir final Path tempDir) throws IOException {
+    chainBuilder.generateBlockAtSlot(12);
+    chainBuilder.generateBlocksUpToSlot(18);
+    final Checkpoint initialAnchor = setUpService(tempDir);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(2).intValue()))
+        .onFinalizedState(any());
+  }
+
+  @NotNull
+  private Checkpoint setUpService(Path tempDir) throws IOException {
     final Checkpoint initialAnchor =
         chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     createService(createGenesisStateResource(tempDir));
@@ -108,15 +133,11 @@ public class ReconstructHistoricalStatesServiceTest {
     when(chainDataClient.getBlockAtSlotExact(any()))
         .thenAnswer(
             invocation -> {
-              UInt64 argument = invocation.getArgument(0);
-              return SafeFuture.completedFuture(Optional.of(chainBuilder.getBlockAtSlot(argument)));
+              final UInt64 slot = invocation.getArgument(0);
+              return SafeFuture.completedFuture(
+                  Optional.ofNullable(chainBuilder.getBlockAtSlot(slot)));
             });
-
-    final SafeFuture<?> res = service.start();
-    assertThat(res).isCompleted();
-    verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
-        .onFinalizedState(any());
+    return initialAnchor;
   }
 
   private Optional<String> createGenesisStateResource(final Path tempDir) throws IOException {
