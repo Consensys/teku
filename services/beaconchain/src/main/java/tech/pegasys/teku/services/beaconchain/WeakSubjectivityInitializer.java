@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.INITIAL_STATE_URL_PATH;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
@@ -46,22 +48,51 @@ public class WeakSubjectivityInitializer {
         stateResource -> {
           final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(stateResource);
           try {
-            STATUS_LOG.loadingInitialStateResource(sanitizedResource);
-            final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
-            final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
-            STATUS_LOG.loadedInitialStateResource(
-                state.hashTreeRoot(),
-                anchor.getRoot(),
-                state.getSlot(),
-                anchor.getEpoch(),
-                anchor.getEpochStartSlot());
-            return anchor;
+            return getAnchorPoint(spec, stateResource, sanitizedResource);
           } catch (IOException e) {
-            LOG.error("Failed to load initial state", e);
-            throw new InvalidConfigurationException(
-                "Failed to load initial state from " + sanitizedResource + ": " + e.getMessage());
+            LOG.error(
+                String.format("Failed to load initial state from %s : ", sanitizedResource), e);
+            if (!UrlSanitizer.urlContainsNonEmptyPath(stateResource)) {
+              String stateResourceWithPath =
+                  stateResource.endsWith("/")
+                      ? stateResource + INITIAL_STATE_URL_PATH
+                      : stateResource + "/" + INITIAL_STATE_URL_PATH;
+              String sanitizedResourceWithPath =
+                  UrlSanitizer.sanitizePotentialUrl(stateResourceWithPath);
+              LOG.info(
+                  String.format(
+                      "Trying to load initial state from %s instead", sanitizedResourceWithPath));
+              try {
+                return getAnchorPoint(spec, stateResourceWithPath, sanitizedResourceWithPath);
+              } catch (IOException ex) {
+                throw new InvalidConfigurationException(
+                    String.format(
+                        "Failed to load initial state from both %s and %s : %s",
+                        sanitizedResource, sanitizedResourceWithPath, e.getMessage()));
+              }
+            } else {
+              throw new InvalidConfigurationException(
+                  String.format(
+                      "Failed to load initial state from %s : %s",
+                      sanitizedResource, e.getMessage()));
+            }
           }
         });
+  }
+
+  @NotNull
+  private AnchorPoint getAnchorPoint(Spec spec, String stateResource, String sanitizedResource)
+      throws IOException {
+    STATUS_LOG.loadingInitialStateResource(sanitizedResource);
+    final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
+    final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
+    STATUS_LOG.loadedInitialStateResource(
+        state.hashTreeRoot(),
+        anchor.getRoot(),
+        state.getSlot(),
+        anchor.getEpoch(),
+        anchor.getEpochStartSlot());
+    return anchor;
   }
 
   public SafeFuture<WeakSubjectivityConfig> finalizeAndStoreConfig(
