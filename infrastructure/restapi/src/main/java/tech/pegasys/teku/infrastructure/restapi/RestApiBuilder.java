@@ -124,12 +124,14 @@ public class RestApiBuilder {
   }
 
   public RestApi build() {
+    final SwaggerBuilder swaggerBuilder = new SwaggerBuilder(openApiDocsEnabled);
     final Javalin app =
         Javalin.create(
             config -> {
               config.defaultContentType = "application/json";
               config.showJavalinBanner = false;
               configureCors(config);
+              swaggerBuilder.configureUI(config);
               config.server(this::createJettyServer);
             });
 
@@ -140,13 +142,7 @@ public class RestApiBuilder {
     endpoints.forEach(endpoint -> JavalinEndpointAdapter.addEndpoint(app, endpoint));
 
     addExceptionHandlers(app);
-
-    Optional<String> restApiDocs = Optional.empty();
-    if (openApiDocsEnabled) {
-      final String apiDocs = openApiDocBuilder.build();
-      app.get("/swagger-docs", ctx -> ctx.json(apiDocs));
-      restApiDocs = Optional.of(apiDocs);
-    }
+    Optional<String> restApiDocs = swaggerBuilder.configureDocs(app, openApiDocBuilder);
     return new RestApi(app, restApiDocs, passwordFilePath);
   }
 
