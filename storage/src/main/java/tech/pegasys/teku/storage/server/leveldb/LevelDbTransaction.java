@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.leveldb;
 
+import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getColumnKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getVariableKey;
 
@@ -92,7 +93,10 @@ public class LevelDbTransaction implements KvStoreTransaction {
     applyUpdate(
         () -> {
           try {
+            long startTime = System.nanoTime();
             db.write(writeBatch);
+            long endTime = System.nanoTime();
+            DB_LOGGER.onDbOpAlertThreshold("Transaction Commit", startTime, endTime);
           } finally {
             close();
           }

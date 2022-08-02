@@ -137,6 +137,16 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldSetDbOpAlertThresholdFromCommandLine() {
+    final int dbOpAlertThresholdMillis = 250;
+    final String[] args = {
+      "--Xlog-db-op-alert-threshold", String.valueOf(dbOpAlertThresholdMillis)
+    };
+    final LoggingConfig config = getLoggingConfigurationFromArguments(args);
+    assertThat(config.getDbOpAlertThresholdMillis()).isEqualTo(dbOpAlertThresholdMillis);
+  }
+
+  @Test
   public void shouldSetLogPatternOnWithoutPath() {
     final String[] args = {"--log-file-name-pattern", "%d.log"};
     final String expectedLogPatternPath =
