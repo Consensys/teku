@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -145,7 +144,6 @@ public class ReconstructHistoricalStatesServiceTest {
     return chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
   }
 
-  @NotNull
   private void setUpService(final Path tempDir, final Checkpoint initialAnchor) throws IOException {
     createService(createGenesisStateResource(tempDir));
     when(chainDataClient.getInitialAnchor())
