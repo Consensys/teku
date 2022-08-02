@@ -254,6 +254,7 @@ public class DebugDbCommand implements Runnable {
       throws Exception {
     final long startTimeMillis = System.currentTimeMillis();
     long counter = 0;
+    boolean runFinalizedBlockToIndexValidation = false;
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
 
       Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
@@ -281,10 +282,8 @@ public class DebugDbCommand implements Runnable {
               currentBlock.getParentRoot(), currentBlock.getRoot(), currentBlock.getSlot());
           maybeFinalizedBlock = findFinalizedBlockBeforeSlot(database, currentBlock.getSlot());
           if (maybeFinalizedBlock.isEmpty()) {
-            // could move on to going through blocks and checking they all have an entry in the
-            // index...
-            checkBlockIndicesArePopulatedCorrectly(database);
-            return 1;
+            runFinalizedBlockToIndexValidation = true;
+            break;
           } else {
             System.out.printf(
                 "Starting to dig back from new parent: %s (%s)%n",
@@ -302,6 +301,9 @@ public class DebugDbCommand implements Runnable {
         if (counter % 5_000 == 0) {
           System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
         }
+      }
+      if (runFinalizedBlockToIndexValidation) {
+        checkBlockIndicesArePopulatedCorrectly(database);
       }
     }
     final long endTime = System.currentTimeMillis();
