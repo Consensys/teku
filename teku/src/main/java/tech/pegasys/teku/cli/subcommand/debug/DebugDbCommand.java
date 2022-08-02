@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.subcommand.debug;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -254,7 +254,6 @@ public class DebugDbCommand implements Runnable {
       throws Exception {
     final long startTimeMillis = System.currentTimeMillis();
     long counter = 0;
-    boolean runFinalizedBlockToIndexValidation = false;
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
 
       Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
@@ -282,7 +281,6 @@ public class DebugDbCommand implements Runnable {
               currentBlock.getParentRoot(), currentBlock.getRoot(), currentBlock.getSlot());
           maybeFinalizedBlock = findFinalizedBlockBeforeSlot(database, currentBlock.getSlot());
           if (maybeFinalizedBlock.isEmpty()) {
-            runFinalizedBlockToIndexValidation = true;
             break;
           } else {
             System.out.printf(
@@ -302,37 +300,12 @@ public class DebugDbCommand implements Runnable {
           System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
         }
       }
-      if (runFinalizedBlockToIndexValidation) {
-        checkBlockIndicesArePopulatedCorrectly(database);
-      }
+    } catch (DatabaseStorageException ex) {
+      System.out.println("Failed to open database");
     }
     final long endTime = System.currentTimeMillis();
     System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
     return 0;
-  }
-
-  private void checkBlockIndicesArePopulatedCorrectly(final Database database) {
-    System.out.printf("Checking integrity of blocks table to ensure indices exist%n");
-    try (final Stream<SignedBeaconBlock> stream = database.streamBlindedBlocks()) {
-      long counter = 0;
-      for (Iterator<SignedBeaconBlock> it = stream.iterator(); it.hasNext(); ) {
-        final SignedBeaconBlock block = it.next();
-        final Optional<UInt64> finalSlot = database.getSlotForFinalizedBlockRoot(block.getRoot());
-        if (finalSlot.isEmpty() && database.getHotBlock(block.getRoot()).isEmpty()) {
-          System.err.printf(
-              "ERROR: Block %s (%s) is missing an entry in blinded indices.%n",
-              block.getRoot(), block.getSlot());
-        } else if (finalSlot.isPresent() && !finalSlot.get().equals(block.getSlot())) {
-          System.err.printf(
-              "ERROR: Block %s (%s) has incorrect slot in finalized index:%s%n",
-              block.getRoot(), block.getSlot(), finalSlot.get());
-        }
-        counter++;
-        if (counter % 100_000 == 0) {
-          System.out.printf("Checked %s blocks to their index...%n", counter);
-        }
-      }
-    }
   }
 
   private Optional<SignedBeaconBlock> findFinalizedBlockBeforeSlot(
