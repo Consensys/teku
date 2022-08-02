@@ -170,6 +170,32 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registersValidators_shouldRegisterWithRequestPayloadEndpoint() {
+    // mock returned payload for RequestPayloadEndpoint
+
+    when(validatorConfig.getBuilderRegistrationRequestPayload())
+        .thenReturn(Optional.of(BuilderRegistrationRequestPayload));
+
+    setActiveValidators(validator1, validator2);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    final Validator validatorWithOverridenPublicKey =
+        new Validator(publicKeyOverride, signer, Optional::empty);
+
+    registrationCalls.forEach(
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(validatorWithOverridenPublicKey, validatorWithOverridenPublicKey)));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
   void cleanupsCache_ifValidatorIsNoLongerActive() {
     setActiveValidators(validator1, validator2, validator3);
 

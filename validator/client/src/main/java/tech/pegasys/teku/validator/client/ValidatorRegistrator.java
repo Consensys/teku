@@ -210,12 +210,37 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
     final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
+    final UInt64 timestamp =
+        validatorConfig
+            .getBuilderRegistrationTimestampOverride()
+            .orElse(payload.timestamp);
+
+    final boolean reRequestPayload = registrationReRequestPayload(cachedValidatorRegistration, timestamp);
+
+    if validatorConfig.getBuilderRegistrationRequestPayloadEndpoint() && reRequestPayload {
+
+      final String response = httpClient.get(
+            validatorConfig.getBuilderRegistrationRequestPayloadEndpoint(), "/{publicKey}")
+
+      final ValidatorRegistrationSchema payload = jsonProvider.jsonToObject(response, ValidatorRegistrationSchema)
+
+      // want timestamp override to take priority if set
+      final UInt64 timestamp =
+        validatorConfig
+            .getBuilderRegistrationTimestampOverride()
+            .orElse(payload.timestamp);
+
+
+      feeRecipient = payload.payload.feeRecipient
+      gasLimit = payload.gasLimit
+      publicKey = payload.publicKey
+    }
 
     return Optional.ofNullable(cachedValidatorRegistrations.get(publicKey))
         .filter(
             cachedValidatorRegistration -> {
               final boolean needsUpdate =
-                  registrationNeedsUpdating(cachedValidatorRegistration, feeRecipient, gasLimit);
+                  registrationNeedsUpdating(cachedValidatorRegistration, feeRecipient, gasLimit, timestamp);
               if (needsUpdate) {
                 LOG.debug(
                     "The cached registration for {} needs updating. Will create a new one.",
@@ -248,11 +273,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private ValidatorRegistration createValidatorRegistration(
-      final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit) {
-    final UInt64 timestamp =
-        validatorConfig
-            .getBuilderRegistrationTimestampOverride()
-            .orElse(timeProvider.getTimeInSeconds());
+      final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit, final UInt64 timestamp) {
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
   }
@@ -280,6 +301,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
     return !validatorRegistration.getFeeRecipient().equals(feeRecipient)
         || !validatorRegistration.getGasLimit().equals(gasLimit);
+  }
+
+  public boolean registrationReRequestPayload(
+      final SignedValidatorRegistration signedValidatorRegistration,
+      final UInt64 timestamp) {
+    final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
+    return !validatorRegistration.timestamp().equals(timestamp);
   }
 
   private void cleanupCache(final List<Validator> activeValidators) {

@@ -92,6 +92,16 @@ public class ValidatorProposerOptions {
   private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
+    names = {"--Xvalidators-builder-registration-request-payload-endpoint"},
+    paramLabel = "<ENDPOINT>",
+    showDefaultValue = Visibility.ALWAYS,
+    description =
+        "Endpoint will be called with postfix /{pubkey} to get validator registration payload. Will only re-request when timestamp field changes. Secondary to overrides",
+    arity = "1",
+    hidden = true)
+    private String builderRegistrationRequestPayloadEndpoint = null;
+
+  @Option(
       names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -111,6 +121,7 @@ public class ValidatorProposerOptions {
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
                 .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
-                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride));
+                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride)
+                .builderRegistrationRequestPayloadEndpoint(builderRegistrationRequestPayloadEndpoint));
   }
 }

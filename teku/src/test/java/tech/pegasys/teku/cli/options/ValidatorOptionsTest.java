@@ -178,4 +178,25 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             config.validatorClient().getValidatorConfig().getBuilderRegistrationDefaultGasLimit())
         .isEqualTo(UInt64.valueOf(1000));
   }
+
+  @Test
+  public void shouldReportEmptyIfValidatorRegistrationRequestPayloadEndpointNotSpecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(
+            config.validatorClient().getValidatorConfig().getBuilderRegistrationRequestPayloadEndpoint())
+        .isEmpty();
+  }
+
+    @Test
+  public void shouldSetValidatorRegistrationRequestPayloadEndpoint() {
+    final String[] args = {
+      "--Xvalidators-builder-registration-request-payload-endpoint",
+      "https://localhost:8080"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(
+            config.validatorClient().getValidatorConfig().getBuilderRegistrationRequestPayloadEndpoint())
+        .isEqualTo(
+            Optional.of("https://localhost:8080"));
+  }
 }
