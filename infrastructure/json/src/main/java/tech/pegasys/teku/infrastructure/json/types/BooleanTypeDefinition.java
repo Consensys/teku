@@ -64,4 +64,21 @@ public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean>
   public Boolean deserializeFromString(final String value) {
     return Boolean.valueOf(value);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BooleanTypeDefinition that = (BooleanTypeDefinition) o;
+    return Objects.equals(description, that.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(description);
+  }
 }

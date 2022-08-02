@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 
 public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
@@ -63,5 +64,22 @@ public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable
   @Override
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
     return itemType.getSelfAndReferencedTypeDefinitions();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SerializableArrayTypeDefinition<?, ?> that = (SerializableArrayTypeDefinition<?, ?>) o;
+    return Objects.equals(itemType, that.itemType) && Objects.equals(description, that.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(itemType, description);
   }
 }

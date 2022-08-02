@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -99,5 +100,25 @@ public class DeserializableMapTypeDefinition<TKey, TValue>
     gen.writeStringField("type", "string");
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    DeserializableMapTypeDefinition<?, ?> that = (DeserializableMapTypeDefinition<?, ?>) o;
+    return Objects.equals(keyType, that.keyType) && Objects.equals(valueType, that.valueType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), keyType, valueType);
   }
 }

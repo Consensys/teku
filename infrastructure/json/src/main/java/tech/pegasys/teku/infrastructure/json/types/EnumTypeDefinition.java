@@ -67,4 +67,21 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     }
     throw new IllegalArgumentException("Unknown enum value: " + value);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    EnumTypeDefinition<?> that = (EnumTypeDefinition<?>) o;
+    return Objects.equals(itemType, that.itemType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(itemType);
+  }
 }

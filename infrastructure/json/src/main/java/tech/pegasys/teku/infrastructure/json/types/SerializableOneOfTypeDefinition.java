@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -109,5 +110,25 @@ public class SerializableOneOfTypeDefinition<TObject>
     return types.values().stream()
         .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
         .collect(toSet());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SerializableOneOfTypeDefinition<?> that = (SerializableOneOfTypeDefinition<?>) o;
+    return Objects.equals(types, that.types)
+        && Objects.equals(name, that.name)
+        && Objects.equals(title, that.title)
+        && Objects.equals(description, that.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(types, name, title, description);
   }
 }

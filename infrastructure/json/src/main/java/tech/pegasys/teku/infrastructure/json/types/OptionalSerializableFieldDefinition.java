@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -57,5 +58,22 @@ class OptionalSerializableFieldDefinition<TObject, TField>
   @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    OptionalSerializableFieldDefinition<?, ?> that = (OptionalSerializableFieldDefinition<?, ?>) o;
+    return Objects.equals(name, that.name) && Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, type);
   }
 }

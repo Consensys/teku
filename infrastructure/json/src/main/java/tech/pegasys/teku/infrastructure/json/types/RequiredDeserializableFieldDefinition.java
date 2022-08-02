@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -39,5 +40,26 @@ class RequiredDeserializableFieldDefinition<TObject, TBuilder, TField>
   public void readField(final TBuilder target, final JsonParser parser) throws IOException {
     final TField value = deserializableType.deserialize(parser);
     setter.accept(target, value);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    RequiredDeserializableFieldDefinition<?, ?, ?> that =
+        (RequiredDeserializableFieldDefinition<?, ?, ?>) o;
+    return Objects.equals(deserializableType, that.deserializableType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), deserializableType);
   }
 }

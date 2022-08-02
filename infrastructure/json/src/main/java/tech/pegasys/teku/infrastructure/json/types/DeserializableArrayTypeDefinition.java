@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
@@ -61,5 +62,22 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
   @Override
   public DeserializableTypeDefinition<CollectionT> withDescription(final String description) {
     return new DeserializableArrayTypeDefinition<>(itemType, createFromList, description);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    DeserializableArrayTypeDefinition<?, ?> that = (DeserializableArrayTypeDefinition<?, ?>) o;
+    return Objects.equals(itemType, that.itemType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(itemType);
   }
 }

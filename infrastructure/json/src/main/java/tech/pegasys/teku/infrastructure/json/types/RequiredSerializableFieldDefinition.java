@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Function;
 
 class RequiredSerializableFieldDefinition<TObject, TField>
@@ -58,5 +59,22 @@ class RequiredSerializableFieldDefinition<TObject, TField>
   @Override
   public boolean isRequired() {
     return true;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RequiredSerializableFieldDefinition<?, ?> that = (RequiredSerializableFieldDefinition<?, ?>) o;
+    return Objects.equals(name, that.name) && Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, type);
   }
 }
