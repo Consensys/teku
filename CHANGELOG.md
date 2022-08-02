@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Updated Sepolia bootnodes
  - Enabled progressive balance tracking optimisation on MainNet
  - Replaced separate metrics for each beacon node request with one metric `beacon_node_requests_total`. Some old metrics were kept for backwards compatibility, but will be removed in future versions.
+ - Automatically add `/eth/v2/debug/beacon/states/finalized` to the initial state file url (`--initial-state` configuration parameter) when the provided url doesn't work and doesn't contain any path
 
 ### Bug Fixes
  - `--ee-endpoint` option was not used to retrieve deposits for networks where Bellatrix was not yet scheduled
