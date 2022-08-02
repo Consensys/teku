@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
@@ -37,16 +38,27 @@ public class ReconstructHistoricalStatesService extends Service {
   private final Spec spec;
   private final Optional<String> genesisStateResource;
   private final StorageUpdateChannel storageUpdateChannel;
+  private final StatusLogger statusLogger;
 
   public ReconstructHistoricalStatesService(
       final StorageUpdateChannel storageUpdateChannel,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
       final Optional<String> genesisStateResource) {
+    this(storageUpdateChannel, chainDataClient, spec, genesisStateResource, STATUS_LOG);
+  }
+
+  public ReconstructHistoricalStatesService(
+      final StorageUpdateChannel storageUpdateChannel,
+      final CombinedChainDataClient chainDataClient,
+      final Spec spec,
+      final Optional<String> genesisStateResource,
+      final StatusLogger statusLogger) {
     this.storageUpdateChannel = storageUpdateChannel;
     this.chainDataClient = chainDataClient;
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
+    this.statusLogger = statusLogger;
   }
 
   @Override
@@ -80,12 +92,12 @@ public class ReconstructHistoricalStatesService extends Service {
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
     Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
-    applyNextBlock(context).finish(STATUS_LOG::reconstructHistoricalStatesServiceFailedProcess);
+    applyNextBlock(context).finish(statusLogger::reconstructHistoricalStatesServiceFailedProcess);
   }
 
   private SafeFuture<Void> applyNextBlock(Context context) {
     if (context.checkStopApplyBlock()) {
-      STATUS_LOG.reconstructHistoricalStatesServiceComplete();
+      statusLogger.reconstructHistoricalStatesServiceComplete();
       return SafeFuture.COMPLETE;
     }
 

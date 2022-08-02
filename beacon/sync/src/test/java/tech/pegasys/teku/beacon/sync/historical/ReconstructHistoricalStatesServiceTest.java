@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,6 +49,7 @@ public class ReconstructHistoricalStatesServiceTest {
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private ReconstructHistoricalStatesService service;
+  private final StatusLogger statusLogger = mock(StatusLogger.class);
 
   @BeforeEach
   void setup() {
@@ -101,7 +103,8 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   public void shouldCompleteStart(@TempDir final Path tempDir) throws IOException {
-    final Checkpoint initialAnchor = setUpService(tempDir);
+    final Checkpoint initialAnchor = getInitialAnchor();
+    setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
@@ -114,7 +117,8 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldCompleteStartMissedSlots(@TempDir final Path tempDir) throws IOException {
     chainBuilder.generateBlockAtSlot(12);
     chainBuilder.generateBlocksUpToSlot(18);
-    final Checkpoint initialAnchor = setUpService(tempDir);
+    final Checkpoint initialAnchor = getInitialAnchor();
+    setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
@@ -123,10 +127,26 @@ public class ReconstructHistoricalStatesServiceTest {
         .onFinalizedState(any());
   }
 
+  @Test
+  void shouldLogFailServiceProcess(@TempDir final Path tempDir) throws IOException {
+    when(storageUpdateChannel.onFinalizedState(any()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException()));
+    final Checkpoint initialAnchor = getInitialAnchor();
+    setUpService(tempDir, initialAnchor);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(1)).onFinalizedState(any());
+    verify(statusLogger, times(1)).reconstructHistoricalStatesServiceFailedProcess(any());
+  }
+
+  private Checkpoint getInitialAnchor() {
+    return chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+  }
+
   @NotNull
-  private Checkpoint setUpService(Path tempDir) throws IOException {
-    final Checkpoint initialAnchor =
-        chainBuilder.getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+  private void setUpService(final Path tempDir, final Checkpoint initialAnchor) throws IOException {
     createService(createGenesisStateResource(tempDir));
     when(chainDataClient.getInitialAnchor())
         .thenReturn(SafeFuture.completedFuture(Optional.of(initialAnchor)));
@@ -137,7 +157,6 @@ public class ReconstructHistoricalStatesServiceTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(chainBuilder.getBlockAtSlot(slot)));
             });
-    return initialAnchor;
   }
 
   private Optional<String> createGenesisStateResource(final Path tempDir) throws IOException {
@@ -151,6 +170,6 @@ public class ReconstructHistoricalStatesServiceTest {
   private void createService(final Optional<String> genesisStateResource) {
     service =
         new ReconstructHistoricalStatesService(
-            storageUpdateChannel, chainDataClient, spec, genesisStateResource);
+            storageUpdateChannel, chainDataClient, spec, genesisStateResource, statusLogger);
   }
 }
