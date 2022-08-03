@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.fail;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
@@ -31,6 +32,8 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class MigratedSwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
   private static final String SWAGGER_PATH = "/swagger-ui";
+  private static final String INITIALIZER_JS = "swagger-initializer.js";
+  private static final String JSON_SCHEMA_PATH = "/swagger-docs";
 
   @BeforeEach
   public void setup() {
@@ -42,6 +45,22 @@ public class MigratedSwaggerUiTest extends AbstractDataBackedRestAPIIntegrationT
     Set<String> links = findAssets(getUrl(SWAGGER_PATH));
 
     links.forEach(this::checkPath);
+  }
+
+  @Test
+  public void shouldContainInitializerWithPatchedJsonSchemaLink() throws IOException {
+    Set<String> links = findAssets(getUrl(SWAGGER_PATH));
+    Optional<String> initializerPath = Optional.empty();
+    for (String link : links) {
+      if (link.endsWith(INITIALIZER_JS)) {
+        initializerPath = Optional.of(link);
+        break;
+      }
+    }
+    assertThat(initializerPath).isNotEmpty();
+
+    Response response = getResponse(initializerPath.get());
+    assertThat(response.body().string()).contains(JSON_SCHEMA_PATH);
   }
 
   private void checkPath(String path) {
