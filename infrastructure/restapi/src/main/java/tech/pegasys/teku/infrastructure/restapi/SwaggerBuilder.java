@@ -42,10 +42,13 @@ public class SwaggerBuilder {
   private static final String RESOURCES_WEBJARS_SWAGGER_UI =
       "/META-INF/resources/webjars/swagger-ui/";
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
+  private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui";
   // Be careful when modifying this, it's used in static js files for serving Swagger UI
   private static final String SWAGGER_DOCS_PATH = "/swagger-docs";
   private static final Set<String> MODIFIED_FILES =
-      Set.of("/swagger-ui/swagger-initializer.js", "/swagger-ui/swagger-initializer.js.gz");
+      Set.of(
+          SWAGGER_HOSTED_PATH + "/swagger-initializer.js",
+          SWAGGER_HOSTED_PATH + "/swagger-initializer.js.gz");
 
   private final boolean enabled;
 
@@ -66,7 +69,7 @@ public class SwaggerBuilder {
     }
     config.addStaticFiles(
         staticFileConfig -> {
-          staticFileConfig.hostedPath = SWAGGER_UI_PATH;
+          staticFileConfig.hostedPath = SWAGGER_HOSTED_PATH;
           staticFileConfig.directory = swaggerVersionPaths.get(0);
           staticFileConfig.location = Location.CLASSPATH;
           staticFileConfig.skipFileFunction =
@@ -76,13 +79,16 @@ public class SwaggerBuilder {
                           && MODIFIED_FILES.contains(httpServletRequest.getPathInfo());
         });
     config.addSinglePageRoot(
-        SWAGGER_UI_PATH + "/swagger-initializer.js",
+        SWAGGER_HOSTED_PATH + "/swagger-initializer.js",
         "/swagger-ui/patched/swagger-initializer.js",
         Location.CLASSPATH);
     config.addSinglePageRoot(
-        SWAGGER_UI_PATH + "/swagger-initializer.js.gz",
+        SWAGGER_HOSTED_PATH + "/swagger-initializer.js.gz",
         "/swagger-ui/patched/swagger-initializer.js.gz",
         Location.CLASSPATH);
+    config.addSinglePageRoot(SWAGGER_UI_PATH, "/swagger-ui/patched/index.html", Location.CLASSPATH);
+    config.addSinglePageRoot(
+        SWAGGER_UI_PATH + ".gz", "/swagger-ui/patched/index.html.gz", Location.CLASSPATH);
   }
 
   public Optional<String> configureDocs(
