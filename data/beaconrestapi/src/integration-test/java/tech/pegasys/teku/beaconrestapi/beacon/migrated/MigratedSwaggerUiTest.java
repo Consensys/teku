@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class MigratedSwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private static final String SWAGGER_PATH = "/swagger-ui/";
+  private static final String SWAGGER_PATH = "/swagger-ui";
 
   @BeforeEach
   public void setup() {
