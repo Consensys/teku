@@ -89,7 +89,7 @@ public class OkHttpValidatorTypeDefClient {
     try {
       return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
     } catch (BlindedBlockEndpointNotAvailableException ex) {
-      LOG.debug(
+      LOG.warn(
           "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
           baseEndpoint);
       return createUnsignedBlock(slot, randaoReveal, graffiti, false);
