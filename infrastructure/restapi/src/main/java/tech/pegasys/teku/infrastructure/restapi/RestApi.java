@@ -65,6 +65,10 @@ public class RestApi extends Service {
     return SafeFuture.COMPLETE;
   }
 
+  public int getListenPort() {
+    return app.port();
+  }
+
   private void checkAccessFile(final Path path) {
     if (!path.toFile().exists()) {
       try {

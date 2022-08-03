@@ -16,22 +16,23 @@ package tech.pegasys.teku.beaconrestapi.beacon.migrated;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Path;
-import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 
-public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+public class OldMigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private JsonNode currentJsonNodes;
-  private final OpenApiTestUtil<MigratedOpenApiIntegrationTest> util =
-      new OpenApiTestUtil<>(MigratedOpenApiIntegrationTest.class);
+  private final OpenApiTestUtil<OldMigratedOpenApiIntegrationTest> util =
+      new OpenApiTestUtil<>(OldMigratedOpenApiIntegrationTest.class);
 
   @BeforeEach
   public void setup() throws IOException {
-    startMigratedRestAPIAtGenesis();
-    currentJsonNodes = util.parseSwagger(getOpenApiDoc().body().string());
+    startRestAPIAtGenesis();
+    currentJsonNodes =
+        util.parseSwagger(((ReflectionBasedBeaconRestApi) beaconRestApi).getMigratedOpenApi());
   }
 
   @Test
@@ -50,9 +51,5 @@ public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIInt
     final JsonNode paths = currentJsonNodes.findPath("paths");
 
     util.compareToKnownDefinitions(tempDir, "paths", paths);
-  }
-
-  public Response getOpenApiDoc() throws IOException {
-    return getResponse("/swagger-docs");
   }
 }

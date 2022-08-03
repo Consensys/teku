@@ -28,6 +28,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
@@ -129,6 +130,11 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   @Override
   public SafeFuture<?> stop() {
     return restApi.stop();
+  }
+
+  @Override
+  public int getListenPort() {
+    return restApi.getListenPort();
   }
 
   private static RestApi create(
