@@ -92,6 +92,16 @@ public class ValidatorProposerOptions {
   private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
+      names = {"--Xvalidators-builder-registration-public-key-override"},
+      paramLabel = "<PUBLIC_KEY>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Set a constant public key to be used in validator registrations against builder infrastructure.",
+      arity = "1",
+      hidden = true)
+  private String builderRegistrationPublicKeyOverride = null;
+
+  @Option(
       names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -111,6 +121,7 @@ public class ValidatorProposerOptions {
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
                 .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
-                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride));
+                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride)
+                .builderRegistrationPublicKeyOverride(builderRegistrationPublicKeyOverride));
   }
 }

@@ -52,6 +52,13 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
                 exceptionType, ThrowableAssert::new));
   }
 
+  public void isCompletedExceptionallyWithMessage(final String expectedMessage) {
+    isCompletedExceptionally();
+    Assertions.assertThatThrownBy(actual::join)
+        .extracting(Throwable::getMessage)
+        .matches(m -> m.contains(expectedMessage));
+  }
+
   public void isCompletedWithEmptyOptional() {
     isCompleted();
     assertThat(actual.join()).isEqualTo(Optional.empty());
