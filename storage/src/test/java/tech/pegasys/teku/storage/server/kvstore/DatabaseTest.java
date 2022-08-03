@@ -1589,6 +1589,48 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void startupFromNonGenesisAndFinalizeShouldStoreFinalizedBlocksCorrectly(
+      final DatabaseContext context) throws IOException {
+    final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    primaryChain.generateGenesis(genesisTime, true);
+    primaryChain.generateBlocksUpToSlot(6);
+    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
+    final List<SignedBlockAndState> hotData = primaryChain.generateBlocksUpToSlot(21);
+    // hot data includes the finalized block also
+    hotData.add(finalizedBlock);
+
+    // Setup database
+    initialize(context, StateStorageMode.PRUNE);
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        primaryChain.streamBlocksAndStates().collect(Collectors.toSet());
+    addBlocks(new ArrayList<>(allBlocksAndStates));
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+    final Set<Bytes32> blocksToPrune =
+        primaryChain
+            .streamBlocksAndStates(0, finalizedBlock.getSlot().longValue() - 1)
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toSet());
+    assertRecentDataWasPruned(store, blocksToPrune);
+    restartStorage();
+
+    // After restarting storage, we finalize a new block. This results in a number of finalized
+    // blocks being pushed in the update that aren't currently hot blocks,
+    // and they should end up in finalized storage within the same transaction
+    final SignedBlockAndState finalizedBlock2 = hotData.get(5);
+    final Checkpoint finalizedCheckpoint2 = getCheckpointForBlock(finalizedBlock2.getBlock());
+    justifyAndFinalizeEpoch(finalizedCheckpoint2.getEpoch(), finalizedBlock2);
+
+    // Check finalized data
+    final List<SignedBeaconBlock> expectedFinalizedBlocks =
+        primaryChain
+            .streamBlocksAndStates(0, 12)
+            .map(SignedBlockAndState::getBlock)
+            .collect(toList());
+    assertBlocksFinalized(expectedFinalizedBlocks);
+  }
+
+  @TestTemplate
   void shouldStoreAndRetrieveVotes(final DatabaseContext context) throws IOException {
     createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
     assertThat(database.getVotes()).isEmpty();
@@ -1881,15 +1923,26 @@ public class DatabaseTest {
 
   private void assertRecentDataWasPruned(
       final UpdatableStore store, final Set<Bytes32> prunedBlocks) {
+    int index = 0;
     for (Bytes32 prunedBlock : prunedBlocks) {
       // Check pruned data has been removed from store
-      assertThat(store.containsBlock(prunedBlock)).isFalse();
-      assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
-      assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
+      assertThat(store.containsBlock(prunedBlock))
+          .withFailMessage(
+              "Store should not contain pruned block: " + prunedBlock + " (" + index + ")")
+          .isFalse();
+      assertThatSafeFuture(store.retrieveBlock(prunedBlock))
+          .withFailMessage(
+              "Store should not return a block from: " + prunedBlock + " (" + index + ")")
+          .isCompletedWithEmptyOptional();
+      assertThatSafeFuture(store.retrieveBlockState(prunedBlock))
+          .withFailMessage(
+              "Store should not return a state from: " + prunedBlock + " (" + index + ")")
+          .isCompletedWithEmptyOptional();
 
       // Check hot data was pruned from db
       assertThat(database.getHotBlocks(Set.of(prunedBlock))).isEmpty();
       assertThat(database.getHotState(prunedBlock)).isEmpty();
+      index++;
     }
   }
 

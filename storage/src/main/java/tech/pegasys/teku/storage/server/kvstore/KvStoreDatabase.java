@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -538,11 +539,13 @@ public abstract class KvStoreDatabase<
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
+      final Set<Bytes32> finalizedBlockRoots =
+          new HashSet<>(update.getFinalizedChildToParentMap().keySet());
+      finalizedBlockRoots.addAll(update.getFinalizedChildToParentMap().values());
+      finalizedBlockRoots.addAll(update.getFinalizedBlocks().keySet());
+
       updateHotBlocks(
-          updater,
-          update.getHotBlocks(),
-          update.getDeletedHotBlocks(),
-          update.getFinalizedBlocks().keySet());
+          updater, update.getHotBlocks(), update.getDeletedHotBlocks(), finalizedBlockRoots);
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {

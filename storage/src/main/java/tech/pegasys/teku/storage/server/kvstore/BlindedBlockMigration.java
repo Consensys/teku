@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.beacon.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -76,7 +77,10 @@ public class BlindedBlockMigration<
         .runAsync(this::migrateRemainingBlocks)
         .finish(
             error -> {
-              if (Throwables.getRootCause(error) instanceof ShuttingDownException) {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof ShuttingDownException
+                  || rootCause instanceof InterruptedException
+                  || rootCause instanceof RejectedRequestException) {
                 LOG.debug("Shutting down");
               } else {
                 LOG.error("Failed to complete block migration", error);
@@ -103,7 +107,7 @@ public class BlindedBlockMigration<
             blindedUpdater.addBlindedBlock(block, block.getRoot(), spec);
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
-            if (counter % 128 == 0 || counter == countBlocks) {
+            if (counter % 32 == 0 || counter == countBlocks) {
               double percentCompleted = counter * 100.0 / countBlocks;
               LOG.info(
                   "{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
@@ -139,8 +143,8 @@ public class BlindedBlockMigration<
   private void migrateRemainingBlocks() {
     long finalizedblockTotal = 0;
 
+    LOG.info("Migrating finalized blocks to blinded storage");
     copyFinalizedBlockIndexToBlindedStorage();
-
     long counter;
     do {
       counter = migrateFinalizedBlocksPreBellatrix();
@@ -269,6 +273,7 @@ public class BlindedBlockMigration<
       Thread.sleep(blockMigrationBatchDelay);
     } catch (InterruptedException e) {
       LOG.debug("Interrupted while processing blocks", e);
+      throw new ShuttingDownException();
     }
   }
 
