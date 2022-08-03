@@ -272,6 +272,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new GetProposersData(dataProvider))
         .endpoint(new GetDeposits(eth1DataProvider))
         .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
+        .endpoint(new GetEth1DataCache(eth1DataProvider))
         .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
         .endpoint(new GetDepositSnapshot(eth1DataProvider))
         .endpoint(new GetGlobalValidatorInclusion(dataProvider))
