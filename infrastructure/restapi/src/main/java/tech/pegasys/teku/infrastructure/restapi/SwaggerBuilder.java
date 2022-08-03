@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 public class SwaggerBuilder {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String RESOURCES_WEBJARS_SWAGGER_UI =
+  public static final String RESOURCES_WEBJARS_SWAGGER_UI =
       "/META-INF/resources/webjars/swagger-ui/";
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
   private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui";
@@ -101,7 +101,7 @@ public class SwaggerBuilder {
     return Optional.of(apiDocs);
   }
 
-  private List<String> listClasspathDir(final String path) {
+  public static List<String> listClasspathDir(final String path) {
     try {
       final URI uri = SwaggerBuilder.class.getResource(path).toURI();
       if (uri.getScheme().equals("jar")) {
@@ -117,7 +117,7 @@ public class SwaggerBuilder {
     }
   }
 
-  private List<String> listPath(final Path path) throws IOException {
+  private static List<String> listPath(final Path path) throws IOException {
     try (Stream<Path> stream = Files.list(path)) {
       return stream.map(Path::toString).collect(Collectors.toList());
     }
