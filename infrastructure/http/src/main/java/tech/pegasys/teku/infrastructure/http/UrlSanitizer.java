@@ -34,4 +34,13 @@ public class UrlSanitizer {
       return possibleUrl;
     }
   }
+
+  public static boolean urlContainsNonEmptyPath(final String url) {
+    try {
+      final URI uri = new URI(url);
+      return uri.getPath() != null && uri.getPath().length() > 1;
+    } catch (URISyntaxException e) {
+      return false;
+    }
+  }
 }

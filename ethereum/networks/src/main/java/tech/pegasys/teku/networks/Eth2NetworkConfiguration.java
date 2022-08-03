@@ -50,6 +50,8 @@ public class Eth2NetworkConfiguration {
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
       ProgressiveBalancesMode.USED;
 
+  public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+
   private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
