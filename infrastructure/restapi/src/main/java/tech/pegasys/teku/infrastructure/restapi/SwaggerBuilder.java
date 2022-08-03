@@ -16,19 +16,36 @@ package tech.pegasys.teku.infrastructure.restapi;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import kotlin.jvm.functions.Function1;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class SwaggerBuilder {
-  private static final String SWAGGER_VERSION = "4.10.3";
-  private static final Set<String> MODIFIED_FILES =
-      Set.of("/swagger-ui/swagger-initializer.js", "/swagger-ui/swagger-initializer.js.gz");
+  private static final Logger LOG = LogManager.getLogger();
+
+  private static final String RESOURCES_WEBJARS_SWAGGER_UI =
+      "/META-INF/resources/webjars/swagger-ui/";
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
   // Be careful when modifying this, it's used in static js files for serving Swagger UI
   private static final String SWAGGER_DOCS_PATH = "/swagger-docs";
+  private static final Set<String> MODIFIED_FILES =
+      Set.of("/swagger-ui/swagger-initializer.js", "/swagger-ui/swagger-initializer.js.gz");
 
   private final boolean enabled;
 
@@ -40,10 +57,17 @@ public class SwaggerBuilder {
     if (!enabled) {
       return;
     }
+    List<String> swaggerVersionPaths = listClasspathDir(RESOURCES_WEBJARS_SWAGGER_UI);
+    if (swaggerVersionPaths.size() != 1) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "Swagger UI not found or several versions found in paths: %s",
+              String.join(",", swaggerVersionPaths)));
+    }
     config.addStaticFiles(
         staticFileConfig -> {
           staticFileConfig.hostedPath = SWAGGER_UI_PATH;
-          staticFileConfig.directory = "/META-INF/resources/webjars/swagger-ui/" + SWAGGER_VERSION;
+          staticFileConfig.directory = swaggerVersionPaths.get(0);
           staticFileConfig.location = Location.CLASSPATH;
           staticFileConfig.skipFileFunction =
               (Function1<HttpServletRequest, Boolean>)
@@ -69,5 +93,27 @@ public class SwaggerBuilder {
     final String apiDocs = openApiDocBuilder.build();
     app.get(SWAGGER_DOCS_PATH, ctx -> ctx.json(apiDocs));
     return Optional.of(apiDocs);
+  }
+
+  private List<String> listClasspathDir(final String path) {
+    try {
+      final URI uri = SwaggerBuilder.class.getResource(path).toURI();
+      if (uri.getScheme().equals("jar")) {
+        try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+          return listPath(fileSystem.getPath(path));
+        }
+      } else {
+        return listPath(Paths.get(uri));
+      }
+    } catch (Exception ex) {
+      LOG.error("Cannot get \"Swagger-UI\" version information", ex);
+      throw new InvalidConfigurationException(ex);
+    }
+  }
+
+  private List<String> listPath(final Path path) throws IOException {
+    try (Stream<Path> stream = Files.list(path)) {
+      return stream.map(Path::toString).collect(Collectors.toList());
+    }
   }
 }
