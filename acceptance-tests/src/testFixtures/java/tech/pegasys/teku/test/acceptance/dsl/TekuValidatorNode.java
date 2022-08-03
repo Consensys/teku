@@ -27,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -157,7 +156,7 @@ public class TekuValidatorNode extends Node {
       configMap.put("Xinterop-enabled", true);
       configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
-      configMap.put("beacon-node-api-endpoint", List.of("http://notvalid.restapi.com"));
+      configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
     }
 
     public TekuValidatorNode.Config withInteropModeDisabled() {
@@ -197,7 +196,7 @@ public class TekuValidatorNode extends Node {
           "beacon-node-api-endpoint",
           Arrays.stream(beaconNodes)
               .map(TekuNode::getBeaconRestApiUrl)
-              .collect(Collectors.toList()));
+              .collect(Collectors.joining(",")));
       return this;
     }
 
