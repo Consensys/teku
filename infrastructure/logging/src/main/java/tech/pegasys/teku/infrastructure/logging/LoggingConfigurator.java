@@ -42,6 +42,7 @@ public class LoggingConfigurator {
   static final String STATUS_LOGGER_NAME = "teku-status-log";
   static final String VALIDATOR_LOGGER_NAME = "teku-validator-log";
   static final String P2P_LOGGER_NAME = "teku-p2p-log";
+  static final String DB_LOGGER_NAME = "teku-db-log";
 
   private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
@@ -58,6 +59,7 @@ public class LoggingConfigurator {
   private static String file;
   private static String filePattern;
   private static Level rootLogLevel = Level.INFO;
+  private static int dbOpAlertThresholdMillis;
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static boolean isColorEnabled() {
@@ -66,6 +68,10 @@ public class LoggingConfigurator {
 
   public static boolean isIncludeP2pWarnings() {
     return includeP2pWarnings;
+  }
+
+  public static int dbOpAlertThresholdMillis() {
+    return dbOpAlertThresholdMillis;
   }
 
   public static synchronized void setColorEnabled(final boolean isEnabled) {
@@ -100,6 +106,7 @@ public class LoggingConfigurator {
     includeP2pWarnings = configuration.isIncludeP2pWarningsEnabled();
     file = configuration.getLogFile();
     filePattern = configuration.getLogFileNamePattern();
+    dbOpAlertThresholdMillis = configuration.getDbOpAlertThresholdMillis();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggers((AbstractConfiguration) ctx.getConfiguration());
@@ -139,6 +146,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
         setUpValidatorLogger(consoleAppender);
+        setUpDbLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
@@ -148,6 +156,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
         setUpValidatorLogger(fileAppender);
+        setUpDbLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
@@ -161,9 +170,11 @@ public class LoggingConfigurator {
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
         final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
+        final LoggerConfig dbLogger = setUpDbLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
         configuration.addLogger(statusLogger.getName(), statusLogger);
         configuration.addLogger(validatorLogger.getName(), validatorLogger);
+        configuration.addLogger(dbLogger.getName(), dbLogger);
 
         fileAppender = fileAppender(configuration);
 
@@ -273,6 +284,12 @@ public class LoggingConfigurator {
             ? rootLogLevel
             : Level.ERROR;
     final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
+    logger.addAppender(appender, rootLogLevel, null);
+    return logger;
+  }
+
+  private static LoggerConfig setUpDbLogger(final Appender appender) {
+    final LoggerConfig logger = new LoggerConfig(DB_LOGGER_NAME, rootLogLevel, true);
     logger.addAppender(appender, rootLogLevel, null);
     return logger;
   }
