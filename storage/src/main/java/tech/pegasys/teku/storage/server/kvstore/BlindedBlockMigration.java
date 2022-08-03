@@ -107,7 +107,7 @@ public class BlindedBlockMigration<
             blindedUpdater.addBlindedBlock(block, block.getRoot(), spec);
             unblindedUpdater.deleteUnblindedHotBlockOnly(block.getRoot());
             counter++;
-            if (counter % 32 == 0 || counter == countBlocks) {
+            if (counter % 128 == 0 || counter == countBlocks) {
               double percentCompleted = counter * 100.0 / countBlocks;
               LOG.info(
                   "{} hot blocks moved ({} %)", counter, String.format("%.2f", percentCompleted));
@@ -149,17 +149,13 @@ public class BlindedBlockMigration<
     do {
       counter = migrateFinalizedBlocksPreBellatrix();
       finalizedblockTotal += counter;
-      if (finalizedblockTotal % LOGGING_FREQUENCY == 0) {
-        LOG.info("{} blocks moved", finalizedblockTotal);
-      }
+      statusUpdate(finalizedblockTotal);
     } while (counter > 0 && preBellatrix.get());
 
     do {
       counter = migrateRemainingFinalizedBlocks();
       finalizedblockTotal += counter;
-      if (finalizedblockTotal % LOGGING_FREQUENCY == 0) {
-        LOG.info("{} blocks moved", finalizedblockTotal);
-      }
+      statusUpdate(finalizedblockTotal);
     } while (counter > 0);
 
     if (finalizedblockTotal > 0) {
@@ -167,6 +163,12 @@ public class BlindedBlockMigration<
     }
 
     migrateNonCanonicalBlocks();
+  }
+
+  private void statusUpdate(final long counter) {
+    if (counter % LOGGING_FREQUENCY == 0) {
+      LOG.info("{} blocks moved", counter);
+    }
   }
 
   private long copyFinalizedBlockIndexToBlindedStorage() {
@@ -297,9 +299,7 @@ public class BlindedBlockMigration<
             finalizedUpdaterBlinded.addBlindedBlock(block, root, spec);
             finalizedUpdaterUnblinded.deleteUnblindedNonCanonicalBlockOnly(root);
             counter++;
-            if (counter % LOGGING_FREQUENCY == 0) {
-              LOG.info("{} non-canonical blocks moved", counter);
-            }
+            statusUpdate(counter);
           }
           finalizedUpdaterBlinded.commit();
           finalizedUpdaterUnblinded.commit();
