@@ -251,6 +251,12 @@ public class BlindedBlockKvStoreDatabase
     migrator.migrateBlocks();
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return dao.streamBlindedBlocks();
+  }
+
   @Override
   protected void addFinalizedBlock(
       final SignedBeaconBlock block,

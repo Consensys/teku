@@ -143,4 +143,7 @@ public interface Database extends AutoCloseable {
   void migrate();
 
   Optional<Checkpoint> getAnchor();
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamBlindedBlocks();
 }

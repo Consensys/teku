@@ -235,6 +235,11 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getKey);
   }
 
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
