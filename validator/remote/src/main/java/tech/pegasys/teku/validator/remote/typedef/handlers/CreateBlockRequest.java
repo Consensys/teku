@@ -48,10 +48,10 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
   private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 slot;
-  private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final ValidatorApiMethod apiMethod;
   private final boolean preferSszBlockEncoding;
+  private final ValidatorApiMethod apiMethod;
+  private final BeaconBlockSchema beaconBlockSchema;
+  private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
   private final ResponseHandler<GetBlockResponse> responseHandler;
 
   public CreateBlockRequest(
@@ -64,11 +64,11 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
+    apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
     beaconBlockSchema =
         blinded
             ? spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockSchema()
             : spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema();
-    apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
     getBlockResponseDefinition =
         DeserializableTypeDefinition.object(GetBlockResponse.class)
             .initializer(GetBlockResponse::new)
@@ -107,8 +107,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       // application/octet-stream is preferred, but will accept application/json
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
-    return get(
-            apiMethod, Map.of("slot", this.slot.toString()), queryParams, headers, responseHandler)
+    return get(apiMethod, Map.of("slot", slot.toString()), queryParams, headers, responseHandler)
         .map(GetBlockResponse::getData);
   }
 
