@@ -101,7 +101,7 @@ public class ReconstructHistoricalStatesServiceTest {
   }
 
   @Test
-  public void shouldCompleteStart(@TempDir final Path tempDir) throws IOException {
+  public void shouldRegenerateStates(@TempDir final Path tempDir) throws IOException {
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 
@@ -113,7 +113,7 @@ public class ReconstructHistoricalStatesServiceTest {
   }
 
   @Test
-  void shouldCompleteStartMissedSlots(@TempDir final Path tempDir) throws IOException {
+  void shouldRegenerateStatesWithEmptySlots(@TempDir final Path tempDir) throws IOException {
     chainBuilder.generateBlockAtSlot(12);
     chainBuilder.generateBlocksUpToSlot(18);
     final Checkpoint initialAnchor = getInitialAnchor();
