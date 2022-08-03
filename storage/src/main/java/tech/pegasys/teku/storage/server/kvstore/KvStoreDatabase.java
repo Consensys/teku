@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -520,6 +522,7 @@ public abstract class KvStoreDatabase<
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
+    long startTime = System.nanoTime();
     try (final HotUpdaterT updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -538,11 +541,13 @@ public abstract class KvStoreDatabase<
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
+      final Set<Bytes32> finalizedBlockRoots =
+          new HashSet<>(update.getFinalizedChildToParentMap().keySet());
+      finalizedBlockRoots.addAll(update.getFinalizedChildToParentMap().values());
+      finalizedBlockRoots.addAll(update.getFinalizedBlocks().keySet());
+
       updateHotBlocks(
-          updater,
-          update.getHotBlocks(),
-          update.getDeletedHotBlocks(),
-          update.getFinalizedBlocks().keySet());
+          updater, update.getHotBlocks(), update.getDeletedHotBlocks(), finalizedBlockRoots);
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
@@ -554,6 +559,8 @@ public abstract class KvStoreDatabase<
       LOG.trace("Committing hot db changes");
       updater.commit();
     }
+    long endTime = System.nanoTime();
+    DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }

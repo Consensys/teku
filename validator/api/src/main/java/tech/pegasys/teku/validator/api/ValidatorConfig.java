@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -80,6 +81,7 @@ public class ValidatorConfig {
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
+  private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
   private final int executorMaxQueueSize;
   private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
 
@@ -110,6 +112,7 @@ public class ValidatorConfig {
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
+      final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
     this.validatorKeys = validatorKeys;
@@ -141,6 +144,7 @@ public class ValidatorConfig {
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
+    this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         primaryBeaconNodeEventStreamReconnectAttemptPeriod;
@@ -229,6 +233,10 @@ public class ValidatorConfig {
     return builderRegistrationTimestampOverride;
   }
 
+  public Optional<BLSPublicKey> getBuilderRegistrationPublicKeyOverride() {
+    return builderRegistrationPublicKeyOverride;
+  }
+
   public boolean getRefreshProposerConfigFromSource() {
     return refreshProposerConfigFromSource;
   }
@@ -301,6 +309,7 @@ public class ValidatorConfig {
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
+    private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD;
@@ -471,6 +480,14 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder builderRegistrationPublicKeyOverride(
+        final String builderRegistrationPublicKeyOverride) {
+      this.builderRegistrationPublicKeyOverride =
+          Optional.ofNullable(builderRegistrationPublicKeyOverride)
+              .map(BLSPublicKey::fromHexString);
+      return this;
+    }
+
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
       return this;
@@ -517,6 +534,7 @@ public class ValidatorConfig {
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
+          builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           primaryBeaconNodeEventStreamReconnectAttemptPeriod);
     }

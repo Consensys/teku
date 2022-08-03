@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -277,23 +279,58 @@ public class DebugDbCommand implements Runnable {
           System.err.printf(
               "ERROR: Unable to locate parent %s of block %s (%s)%n",
               currentBlock.getParentRoot(), currentBlock.getRoot(), currentBlock.getSlot());
-          return 1;
+          maybeFinalizedBlock = findFinalizedBlockBeforeSlot(database, currentBlock.getSlot());
+          if (maybeFinalizedBlock.isEmpty()) {
+            break;
+          } else {
+            System.out.printf(
+                "Starting to dig back from new parent: %s (%s)%n",
+                maybeFinalizedBlock.get().getRoot(), maybeFinalizedBlock.get().getSlot());
+          }
+        } else {
+          checkFinalizedIndices(
+              database,
+              beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
+              currentBlock,
+              maybeParent.get());
+          maybeFinalizedBlock = maybeParent;
         }
-        checkFinalizedIndices(
-            database,
-            beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
-            currentBlock,
-            maybeParent.get());
         counter++;
         if (counter % 5_000 == 0) {
           System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
         }
-        maybeFinalizedBlock = maybeParent;
       }
+    } catch (DatabaseStorageException ex) {
+      System.out.println("Failed to open database");
     }
     final long endTime = System.currentTimeMillis();
     System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
     return 0;
+  }
+
+  private Optional<SignedBeaconBlock> findFinalizedBlockBeforeSlot(
+      final Database database, final UInt64 knownSlot) {
+    UInt64 parentSearchSlot = knownSlot.decrement().decrement();
+
+    while (parentSearchSlot.isGreaterThan(knownSlot.minus(128))) {
+      Optional<Bytes32> blockRoot = database.getFinalizedBlockRootBySlot(parentSearchSlot);
+      if (blockRoot.isPresent()) {
+        Optional<SignedBeaconBlock> block = database.getSignedBlock(blockRoot.get());
+        if (block.isEmpty()) {
+          System.err.printf(
+              "ERROR: Found index at slot %s (%s), but block could not be retrieved%n",
+              blockRoot.get(), parentSearchSlot);
+        } else {
+          return block;
+        }
+      } else {
+        System.err.printf("WARNING: No block found at slot %s%n", parentSearchSlot);
+      }
+      parentSearchSlot = parentSearchSlot.decrement();
+    }
+    System.err.printf(
+        "Searched back 128 blocks from last known block, and couldn't find anything helpful, cannot continue checking via parent references..%n");
+    return Optional.empty();
   }
 
   private void checkFinalizedIndices(
@@ -306,7 +343,7 @@ public class DebugDbCommand implements Runnable {
     Optional<UInt64> indexSlot = database.getSlotForFinalizedBlockRoot(parentBlock.getRoot());
     if (indexSlot.isEmpty() || !indexSlot.get().equals(parentSlot)) {
       System.err.printf(
-          "Finalized block index for root %s reports slot %s, expected slot %s",
+          "Finalized block index for root %s reports slot %s, expected slot %s%n",
           parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
     } else {
       if (blindedBlocksEnabled) {

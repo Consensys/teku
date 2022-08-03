@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.noop;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -207,6 +208,12 @@ public class NoOpDatabase implements Database {
   @Override
   public Optional<Checkpoint> getAnchor() {
     return Optional.empty();
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return Stream.empty();
   }
 
   @Override

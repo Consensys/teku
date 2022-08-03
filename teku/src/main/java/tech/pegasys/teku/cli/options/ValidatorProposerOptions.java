@@ -82,7 +82,7 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
 
   @Option(
-      names = {"--validators-builder-registration-timestamp-override"},
+      names = {"--Xvalidators-builder-registration-timestamp-override"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description =
@@ -90,6 +90,16 @@ public class ValidatorProposerOptions {
       arity = "1",
       hidden = true)
   private UInt64 builderRegistrationTimestampOverride = null;
+
+  @Option(
+      names = {"--Xvalidators-builder-registration-public-key-override"},
+      paramLabel = "<PUBLIC_KEY>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Set a constant public key to be used in validator registrations against builder infrastructure.",
+      arity = "1",
+      hidden = true)
+  private String builderRegistrationPublicKeyOverride = null;
 
   @Option(
       names = {"--validators-proposer-blinded-blocks-enabled"},
@@ -111,6 +121,7 @@ public class ValidatorProposerOptions {
                 .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
                 .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
-                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride));
+                .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride)
+                .builderRegistrationPublicKeyOverride(builderRegistrationPublicKeyOverride));
   }
 }

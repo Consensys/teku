@@ -447,6 +447,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
   private Optional<UInt64> displayCopyColumnMessage(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
