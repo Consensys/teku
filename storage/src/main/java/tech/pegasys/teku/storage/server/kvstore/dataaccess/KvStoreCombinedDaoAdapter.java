@@ -303,6 +303,12 @@ public class KvStoreCombinedDaoAdapter
     return finalizedDao.streamUnblindedFinalizedBlockRoots();
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
+    return finalizedDao.streamBlindedBlocks();
+  }
+
   @Override
   public void ingest(
       final KvStoreCombinedDaoCommon dao, final int batchSize, final Consumer<String> logger) {

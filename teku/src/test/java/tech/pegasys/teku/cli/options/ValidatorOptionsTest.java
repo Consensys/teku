@@ -136,7 +136,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableValidatorRegistrationtWithBlindedBlocks() {
+  public void shouldEnableValidatorRegistrationWithBlindedBlocks() {
     final String[] args = {"--validators-builder-registration-default-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().isBuilderRegistrationDefaultEnabled())
@@ -146,8 +146,8 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableValidatorRegistrationTimestampOverride() {
-    final String[] args = {"--validators-builder-registration-timestamp-override", "120000"};
+  public void shouldSetValidatorRegistrationTimestampOverride() {
+    final String[] args = {"--Xvalidators-builder-registration-timestamp-override", "120000"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
             config.validatorClient().getValidatorConfig().getBuilderRegistrationTimestampOverride())
@@ -171,7 +171,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldSETDefaultGasLimitIfRegistrationDefaultGasLimitIsSpecified() {
+  public void shouldSetDefaultGasLimitIfRegistrationDefaultGasLimitIsSpecified() {
     final String[] args = {"--Xvalidators-builder-registration-default-gas-limit", "1000"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
