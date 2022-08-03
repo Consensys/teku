@@ -197,6 +197,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             .getBuilderRegistrationPublicKeyOverride()
             .orElseGet(validator::getPublicKey);
 
+    // publicKey in config takes priority over override
+    final BLSPublicKey publicKey =
+    validatorConfig
+        .getPublicKey(maybeProposerConfig, validator::getPublicKey)
+        .orElse(publicKey);
+
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
       LOG.trace("Validator registration is disabled for {}", publicKey);
       return Optional.empty();
@@ -248,6 +254,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return maybeProposerConfig
         .flatMap(proposerConfig -> proposerConfig.getBuilderGasLimitForPubKey(publicKey))
         .orElse(validatorConfig.getBuilderRegistrationDefaultGasLimit());
+  }
+
+  private UInt64 getPublicKey(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+    return maybeProposerConfig
+        .flatMap(proposerConfig -> proposerConfig.getBuilderPublicKeyForPubKey(publicKey))
+        .orElse(validatorConfig.getBuilderRegistrationDefaultPublicKey());
   }
 
   private ValidatorRegistration createValidatorRegistration(

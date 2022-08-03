@@ -83,6 +83,7 @@ class ValidatorRegistratorTest {
 
     eth1Address = dataStructureUtil.randomEth1Address();
     gasLimit = dataStructureUtil.randomUInt64();
+    publicKey = dataStructureUtil.randomPublicKey();
 
     validatorRegistrator =
         new ValidatorRegistrator(
@@ -100,6 +101,7 @@ class ValidatorRegistratorTest {
 
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
     when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
+    when(proposerConfig.getBuilderPublicKeyForPubKey(any())).thenReturn(Optional.of(publicKey));
 
     when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
     when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));

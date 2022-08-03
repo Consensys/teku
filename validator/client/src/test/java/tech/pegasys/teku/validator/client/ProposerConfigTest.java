@@ -106,4 +106,42 @@ class ProposerConfigTest {
             proposerConfig.getBuilderGasLimitForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
         .isEmpty();
   }
+
+  @Test
+  void gets_validatorRegistrationPublicKey_forPubKey() {
+    Map<Bytes48, Config> configByPubKey = new HashMap<>();
+    configByPubKey.put(
+        PUB_KEY, new Config(ETH1_ADDRESS, new BuilderConfig(true, null, new RegistrationOverridesConfig(CUSTOM_PUBLIC_KEY)));
+    ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
+
+    assertThat(
+            proposerConfig.getBuilderPublicKeyForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+        .hasValue(CUSTOM_PUBLIC_KEY);
+
+    // defaults to default config
+    assertThat(
+            proposerConfig.getBuilderPublicKeyForPubKey(
+                BLSPublicKey.fromBytesCompressed(ANOTHER_PUB_KEY)))
+        .hasValue(DEFAULT_PUBLIC_KEY);
+  }
+
+  @Test
+  void registrationPublicKeyDoesNotExist_whenRegistrationIsNull() {
+    ProposerConfig proposerConfig = new ProposerConfig(new HashMap<>(), NO_BUILDER_CONFIG);
+
+    assertThat(
+            proposerConfig.getBuilderPublicKeyForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+        .isEmpty();
+  }
+
+  @Test
+  void registrationPublicKeyDoesNotExist_whenPublicKeyIsNull() {
+    Map<Bytes48, Config> configByPubKey = new HashMap<>();
+    configByPubKey.put(PUB_KEY, new Config(ETH1_ADDRESS, new BuilderConfig(true, null, new RegistrationOverridesConfig(null))));
+    ProposerConfig proposerConfig = new ProposerConfig(configByPubKey, DEFAULT_CONFIG);
+
+    assertThat(
+            proposerConfig.getBuilderPublicKeyForPubKey(BLSPublicKey.fromBytesCompressed(PUB_KEY)))
+        .isEmpty();
+  }
 }
