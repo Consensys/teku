@@ -17,6 +17,7 @@ dependencies {
   implementation 'commons-io:commons-io'
   implementation 'io.javalin:javalin'
   implementation 'it.unimi.dsi:fastutil'
+  implementation 'org.webjars:swagger-ui'
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:json'))
