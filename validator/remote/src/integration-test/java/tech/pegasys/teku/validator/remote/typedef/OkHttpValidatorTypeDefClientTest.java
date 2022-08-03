@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -27,14 +28,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
+import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -52,10 +57,11 @@ class OkHttpValidatorTypeDefClientTest {
   private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
   private static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
 
   private DataStructureUtil dataStructureUtil;
   private Spec spec;
+  private SpecMilestone specMilestone;
 
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClientWithPreferredSsz;
@@ -78,11 +84,43 @@ class OkHttpValidatorTypeDefClientTest {
         new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
   }
 
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
+  }
+
+  @TestTemplate
+  void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
+      throws JsonProcessingException, InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final GetNewBlockResponseV2 beaconNodeResponse =
+        new GetNewBlockResponseV2(specMilestone, new BeaconBlockBellatrix(beaconBlock));
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(JSON_PROVIDER.objectToJSON(beaconNodeResponse)));
+
+    final Optional<BeaconBlock> producedBlock =
+        okHttpValidatorTypeDefClient.createUnsignedBlock(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            true);
+
+    assertThat(producedBlock).hasValue(beaconBlock);
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
+
+    final RecordedRequest firstRequest = mockWebServer.takeRequest();
+    assertThat(firstRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
+    final RecordedRequest secondRequest = mockWebServer.takeRequest();
+    assertThat(secondRequest.getPath()).startsWith("/eth/v2/validator/blocks");
   }
 
   @TestTemplate
@@ -274,7 +312,8 @@ class OkHttpValidatorTypeDefClientTest {
 
   private void assertJsonEquals(String actual, String expected) {
     try {
-      assertThat(OBJECT_MAPPER.readTree(actual)).isEqualTo(OBJECT_MAPPER.readTree(expected));
+      final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
+      assertThat(objectMapper.readTree(actual)).isEqualTo(objectMapper.readTree(expected));
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
