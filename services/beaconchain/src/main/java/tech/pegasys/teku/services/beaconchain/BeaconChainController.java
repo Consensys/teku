@@ -108,6 +108,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -1126,8 +1127,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
     final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+    final Optional<TickProcessingPerformance> performanceRecord =
+        beaconConfig.getMetricsConfig().isTickPerformanceEnabled()
+            ? Optional.of(new TickProcessingPerformance(timeProvider, currentTimeMillis))
+            : Optional.empty();
 
-    forkChoice.onTick(currentTimeMillis);
+    forkChoice.onTick(currentTimeMillis, performanceRecord);
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     if (genesisTime.isGreaterThan(currentTimeSeconds)) {
@@ -1139,7 +1144,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       }
     }
 
-    slotProcessor.onTick(currentTimeMillis);
+    slotProcessor.onTick(currentTimeMillis, performanceRecord);
+    performanceRecord.ifPresent(TickProcessingPerformance::complete);
   }
 
   @Override
