@@ -19,7 +19,11 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -27,7 +31,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandle
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.InvalidRpcMethodVersion;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -41,10 +44,24 @@ public class BeaconBlocksByRootMessageHandler
 
   private final Spec spec;
   private final RecentChainData storageClient;
+  private final Counter totalBlocksRequestedCounter;
+  private final LabelledMetric<Counter> requestCounter;
 
-  public BeaconBlocksByRootMessageHandler(final Spec spec, final RecentChainData storageClient) {
+  public BeaconBlocksByRootMessageHandler(
+      final Spec spec, final MetricsSystem metricsSystem, final RecentChainData storageClient) {
     this.spec = spec;
     this.storageClient = storageClient;
+    requestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blocks_by_root_requests_total",
+            "Total number of blocks by root requests received",
+            "status");
+    totalBlocksRequestedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blocks_by_root_requested_blocks_total",
+            "Total number of blocks requested in accepted blocks by root requests from peers");
   }
 
   @Override
@@ -57,10 +74,12 @@ public class BeaconBlocksByRootMessageHandler
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
       if (!peer.wantToMakeRequest() || !peer.wantToReceiveObjects(callback, message.size())) {
-        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
+        requestCounter.labels("rate_limited").inc();
         return;
       }
 
+      requestCounter.labels("ok").inc();
+      totalBlocksRequestedCounter.inc(message.size());
       for (SszBytes32 blockRoot : message) {
         future =
             future.thenCompose(
@@ -80,6 +99,7 @@ public class BeaconBlocksByRootMessageHandler
       }
       future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
     } else {
+      requestCounter.labels("ok").inc();
       callback.completeSuccessfully();
     }
   }
