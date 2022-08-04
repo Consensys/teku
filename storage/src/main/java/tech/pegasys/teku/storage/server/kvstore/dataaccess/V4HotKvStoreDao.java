@@ -88,6 +88,11 @@ public class V4HotKvStoreDao {
     return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
+  @MustBeClosed
+  public Stream<Bytes> streamUnblindedHotBlocksAsSsz() {
+    return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
   public long countUnblindedHotBlocks() {
     try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
         db.streamRaw(schema.getColumnHotBlocksByRoot())) {

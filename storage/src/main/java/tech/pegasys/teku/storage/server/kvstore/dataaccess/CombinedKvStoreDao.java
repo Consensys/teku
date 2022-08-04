@@ -113,6 +113,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Bytes> streamUnblindedHotBlocksAsSsz() {
+    return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
   public long countUnblindedHotBlocks() {
     try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
         db.streamRaw(schema.getColumnHotBlocksByRoot())) {
@@ -451,6 +457,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes> streamBlindedHotBlocksAsSsz() {
+    return streamBlockCheckpoints()
+        .map(Map.Entry::getKey)
+        .flatMap(root -> getRaw(schema.getColumnBlindedBlocksByRoot(), root).stream());
   }
 
   private Optional<UInt64> displayCopyColumnMessage(

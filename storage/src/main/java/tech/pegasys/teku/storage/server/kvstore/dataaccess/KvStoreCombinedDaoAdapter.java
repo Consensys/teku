@@ -120,6 +120,21 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Bytes> streamUnblindedHotBlocksAsSsz() {
+    return hotDao.streamUnblindedHotBlocksAsSsz();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes> streamBlindedHotBlocksAsSsz() {
+    return hotDao
+        .streamBlockCheckpoints()
+        .map(Map.Entry::getKey)
+        .flatMap(root -> finalizedDao.getBlindedBlockAsSsz(root).stream());
+  }
+
+  @Override
   public long countUnblindedHotBlocks() {
     return hotDao.countUnblindedHotBlocks();
   }
