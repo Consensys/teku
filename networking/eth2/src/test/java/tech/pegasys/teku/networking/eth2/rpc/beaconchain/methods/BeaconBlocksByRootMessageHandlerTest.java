@@ -72,7 +72,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
   final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final BeaconBlocksByRootMessageHandler handler =
-      new BeaconBlocksByRootMessageHandler(spec, recentChainData);
+      new BeaconBlocksByRootMessageHandler(spec, storageSystem.getMetricsSystem(), recentChainData);
   final Eth2Peer peer = mock(Eth2Peer.class);
 
   @SuppressWarnings("unchecked")
@@ -186,7 +186,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
   public void validateResponse_altairSpec_v1RequestForPhase0Block() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRootMessageHandler handler =
-        new BeaconBlocksByRootMessageHandler(spec, recentChainData);
+        new BeaconBlocksByRootMessageHandler(
+            spec, storageSystem.getMetricsSystem(), recentChainData);
 
     final Optional<RpcException> result =
         handler.validateResponse(V1_PROTOCOL_ID, chainUpdater.advanceChain(5).getBlock());
