@@ -27,7 +27,11 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -50,14 +54,28 @@ public class BeaconBlocksByRangeMessageHandler
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
+  private final LabelledMetric<Counter> requestCounter;
+  private final Counter totalBlocksRequestedCounter;
 
   public BeaconBlocksByRangeMessageHandler(
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
+    requestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blocks_by_range_requests_total",
+            "Total number of blocks by range requests received",
+            "status");
+    totalBlocksRequestedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blocks_by_range_requested_blocks_total",
+            "Total number of blocks requested in accepted blocks by range requests from peers");
   }
 
   @Override
@@ -90,11 +108,13 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
     if (message.getStep().compareTo(ONE) < 0) {
+      requestCounter.labels("invalid_step").inc();
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
       return;
     }
     if (message.getCount().compareTo(UInt64.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
+      requestCounter.labels("count_too_big").inc();
       callback.completeWithErrorResponse(
           new RpcException(
               INVALID_REQUEST_CODE,
@@ -104,9 +124,12 @@ public class BeaconBlocksByRangeMessageHandler
     if (!peer.wantToMakeRequest()
         || !peer.wantToReceiveObjects(
             callback, maxRequestSize.min(message.getCount()).longValue())) {
+      requestCounter.labels("rate_limited").inc();
       return;
     }
 
+    requestCounter.labels("ok").inc();
+    totalBlocksRequestedCounter.inc(message.getCount().longValue());
     sendMatchingBlocks(message, callback)
         .finish(
             callback::completeSuccessfully,

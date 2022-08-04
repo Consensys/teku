@@ -16,6 +16,8 @@ package tech.pegasys.teku.validator.remote.typedef;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsReq
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
 public class OkHttpValidatorTypeDefClient {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
@@ -82,7 +86,14 @@ public class OkHttpValidatorTypeDefClient {
     final CreateBlockRequest createBlockRequest =
         new CreateBlockRequest(
             baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
-    return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    try {
+      return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    } catch (BlindedBlockEndpointNotAvailableException ex) {
+      LOG.warn(
+          "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
+          baseEndpoint);
+      return createUnsignedBlock(slot, randaoReveal, graffiti, false);
+    }
   }
 
   public void registerValidators(
