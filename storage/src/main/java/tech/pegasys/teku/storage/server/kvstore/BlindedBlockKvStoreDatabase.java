@@ -125,6 +125,12 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   @MustBeClosed
+  public Stream<Bytes> streamHotBlocksAsSsz() {
+    return dao.streamBlindedHotBlocksAsSsz();
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamFinalizedBlockRoots(startSlot, endSlot)

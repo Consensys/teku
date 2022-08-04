@@ -16,8 +16,13 @@ package tech.pegasys.teku.cli.subcommand.debug;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
@@ -305,6 +310,44 @@ public class DebugDbCommand implements Runnable {
     }
     final long endTime = System.currentTimeMillis();
     System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
+    return 0;
+  }
+
+  @Command(
+      name = "dump-hot-blocks",
+      description = "Writes all non-finalized blocks in the database as a zip of SSZ files",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int validateBlockHistory(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              required = true,
+              names = {"--output", "-o"},
+              description = "File to write blocks to")
+          final Path outputFile)
+      throws Exception {
+    int index = 0;
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
+        final Stream<Bytes> blockStream = database.streamHotBlocksAsSsz();
+        final ZipOutputStream out =
+            new ZipOutputStream(
+                Files.newOutputStream(outputFile, StandardOpenOption.TRUNCATE_EXISTING))) {
+      for (final Iterator<Bytes> iterator = blockStream.iterator(); iterator.hasNext(); ) {
+        out.putNextEntry(new ZipEntry(index + ".ssz"));
+        final Bytes blockData = iterator.next();
+        out.write(blockData.toArrayUnsafe());
+        index++;
+      }
+    }
+    System.out.println("Wrote " + index + " blocks to " + outputFile.toAbsolutePath());
     return 0;
   }
 
