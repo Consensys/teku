@@ -155,7 +155,7 @@ public class SlotProcessorTest {
 
   @Test
   public void onTick_shouldNotProcessPreGenesis() {
-    slotProcessor.onTick(genesisTimeMillis.minus(1000));
+    slotProcessor.onTick(genesisTimeMillis.minus(1000), Optional.empty());
   }
 
   @Test
@@ -164,7 +164,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
 
     verify(slotEventsChannel).onSlot(captor.capture());
@@ -180,7 +180,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.OPTIMISTIC_SYNCING);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
 
     verify(slotEventsChannel).onSlot(captor.capture());
@@ -196,7 +196,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.AWAITING_EL);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
 
     verify(slotEventsChannel).onSlot(captor.capture());
@@ -212,7 +212,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
     verify(slotEventsChannel).onSlot(captor.capture());
     assertThat(captor.getValue()).isEqualTo(ZERO);
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
@@ -235,7 +235,7 @@ public class SlotProcessorTest {
 
     UInt64 slotProcessingTimeMillis = genesisTimeMillis.plus(slot.times(millisPerSlot));
     // slot processor starts at slot 0, but fast forwards to slot 100
-    slotProcessor.onTick(slotProcessingTimeMillis);
+    slotProcessor.onTick(slotProcessingTimeMillis, Optional.empty());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(slot);
 
     // slot event to notify we're at slot 100
@@ -274,7 +274,7 @@ public class SlotProcessorTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(genesisTimeMillis.plus(millisPerSlot / 3L));
+    slotProcessor.onTick(genesisTimeMillis.plus(millisPerSlot / 3L), Optional.empty());
 
     final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
@@ -295,7 +295,7 @@ public class SlotProcessorTest {
     slotProcessor.setOnTickSlotStart(ZERO);
     slotProcessor.setOnTickSlotAttestation(ZERO);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
 
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ZERO);
   }
@@ -325,18 +325,18 @@ public class SlotProcessorTest {
     SlotProcessor slotProcessor = createSlotProcessor(spec);
 
     // Slot 0 start
-    slotProcessor.onTick(genesisTimeMillis);
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
-    slotProcessor.onTick(genesisTimeMillis.plus(oneThirdMillis(millisPerSlot)));
+    slotProcessor.onTick(genesisTimeMillis.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = genesisTimeMillis.plus(millisPerSlot);
-    slotProcessor.onTick(slot1Start);
+    slotProcessor.onTick(slot1Start, Optional.empty());
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
-    slotProcessor.onTick(slot1Start.plus(oneThirdMillis(millisPerSlot)));
+    slotProcessor.onTick(slot1Start.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ONE);
   }
 
@@ -378,22 +378,28 @@ public class SlotProcessorTest {
         secondsToMillis(spec.getSlotStartTime(currentSlot.plus(1), genesisTime));
 
     // Progress through to end of initial epoch
-    slotProcessor.onTick(nextEpochSlotMinusTwo);
-    slotProcessor.onTick(nextEpochSlotMinusTwo.plus(oneThirdMillis(millisPerSlot)));
-    slotProcessor.onTick(nextEpochSlotMinusTwo.plus(oneThirdMillis(millisPerSlot) * 2L));
-    slotProcessor.onTick(nextEpochSlotMinusOne);
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot)));
+    slotProcessor.onTick(nextEpochSlotMinusTwo, Optional.empty());
+    slotProcessor.onTick(
+        nextEpochSlotMinusTwo.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
+    slotProcessor.onTick(
+        nextEpochSlotMinusTwo.plus(oneThirdMillis(millisPerSlot) * 2L), Optional.empty());
+    slotProcessor.onTick(nextEpochSlotMinusOne, Optional.empty());
+    slotProcessor.onTick(
+        nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
 
     // Shouldn't have precomputed epoch transition yet.
     verify(recentChainData, never()).retrieveStateAtSlot(any());
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus(((millisPerSlot / 3) * 2L) + 5L));
+    slotProcessor.onTick(
+        nextEpochSlotMinusOne.plus(((millisPerSlot / 3) * 2L) + 5L), Optional.empty());
     verify(epochCachePrimer).primeCacheForEpoch(ONE);
 
     // Should not repeat computation
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 1000));
-    slotProcessor.onTick(nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 2000));
+    slotProcessor.onTick(
+        nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 1000), Optional.empty());
+    slotProcessor.onTick(
+        nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 2000), Optional.empty());
     verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
   }
 
