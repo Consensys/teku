@@ -44,7 +44,7 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withMiningEnabled(true)
                     .withMergeSupport(true)
-                    .withP2pEnabled(false)
+                    .withP2pEnabled(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     executionNode1.start();
@@ -53,7 +53,7 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMergeSupport(true)
-                    .withP2pEnabled(false)
+                    .withP2pEnabled(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     executionNode2.start();
@@ -75,9 +75,13 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldPassMergeOptimisticallyAndBeginFinalizationAfterSafeSlotsToImport() {
+  void shouldPassMergeOptimisticallyAndBeginFinalizationAfterSafeSlotsToImport() throws Exception {
     tekuNode2.waitForNonDefaultExecutionPayload();
     tekuNode2.waitForOptimisticBlock();
+
+    // Now make execution node sync and clarify switch from optimistic sync back to the normal
+    executionNode2.addPeer(executionNode1);
+    tekuNode2.waitForNonOptimisticBlock();
   }
 
   private TekuNode.Config configureTekuNode(
