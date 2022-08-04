@@ -410,7 +410,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     Eth1Address.fromBytes(
                         executionPayloadHeader.getFeeRecipient().getWrappedBytes());
                 LOG.warn(
-                    "The fee recipient in the builder bid ({}) does not match suggested"
+                    "The fee recipient in the builder bid ({}) does not match the suggested"
                         + " fee recipient ({}) in the validator registration. Going to proceed"
                         + " anyway, but please verify that the builder is trusted and that the"
                         + " suggested fee recipient is properly configured.",
