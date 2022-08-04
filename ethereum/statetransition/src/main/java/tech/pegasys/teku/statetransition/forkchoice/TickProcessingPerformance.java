@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class TickProcessingPerformance {
 
   public static final String COMPLETE_LABEL = "complete";
-  public static final int LATE_EVENT_MS = 100;
+  public static final int LATE_EVENT_MS = 500;
   private final PerformanceTracker performanceTracker;
   private final UInt64 startTime;
 
