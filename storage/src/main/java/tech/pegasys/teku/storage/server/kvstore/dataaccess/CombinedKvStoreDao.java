@@ -381,8 +381,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getExecutionPayload(final Bytes32 root) {
-    return db.get(schema.getColumnExecutionPayloadByPayloadHash(), root);
+  public Optional<Bytes> getExecutionPayload(final Bytes32 blockRoot) {
+    return db.get(schema.getColumnExecutionPayloadByBlockRoot(), blockRoot);
   }
 
   @Override
@@ -678,15 +678,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
           block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
       final Optional<ExecutionPayload> maybePayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
-      maybePayload.ifPresent(this::addExecutionPayload);
+      maybePayload.ifPresent(payload -> addExecutionPayload(blockRoot, payload));
     }
 
     @Override
-    public void addExecutionPayload(final ExecutionPayload payload) {
+    public void addExecutionPayload(final Bytes32 blockRoot, final ExecutionPayload payload) {
       transaction.put(
-          schema.getColumnExecutionPayloadByPayloadHash(),
-          payload.hashTreeRoot(),
-          payload.sszSerialize());
+          schema.getColumnExecutionPayloadByBlockRoot(), blockRoot, payload.sszSerialize());
     }
 
     @Override
@@ -703,8 +701,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void deleteExecutionPayload(final Bytes32 payloadHash) {
-      transaction.delete(schema.getColumnExecutionPayloadByPayloadHash(), payloadHash);
+    public void deleteExecutionPayload(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnExecutionPayloadByBlockRoot(), blockRoot);
     }
 
     @Override

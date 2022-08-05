@@ -546,8 +546,8 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addExecutionPayload(final ExecutionPayload payload) {
-      finalizedUpdater.addExecutionPayload(payload);
+    public void addExecutionPayload(final Bytes32 blockRoot, final ExecutionPayload payload) {
+      finalizedUpdater.addExecutionPayload(blockRoot, payload);
     }
 
     @Override
@@ -556,8 +556,8 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void deleteExecutionPayload(final Bytes32 payloadHash) {
-      finalizedUpdater.deleteExecutionPayload(payloadHash);
+    public void deleteExecutionPayload(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteExecutionPayload(blockRoot);
     }
 
     @Override

@@ -45,8 +45,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnFinalizedBlockRootBySlot();
   }
 
-  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash() {
-    return delegate.getColumnExecutionPayloadByPayloadHash();
+  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot() {
+    return delegate.getColumnExecutionPayloadByBlockRoot();
   }
 
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
@@ -58,7 +58,7 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
         "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot(),
         "BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot(),
-        "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash(),
+        "EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot(),
         "FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot());
   }
 
