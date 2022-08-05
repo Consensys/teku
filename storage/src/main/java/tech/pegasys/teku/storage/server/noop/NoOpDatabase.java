@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -136,6 +137,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
+    return Stream.empty();
+  }
+
+  @Override
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
@@ -215,6 +221,14 @@ public class NoOpDatabase implements Database {
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return Stream.empty();
   }
+
+  @Override
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return Optional.empty();
+  }
+
+  @Override
+  public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
 
   @Override
   public void close() {}

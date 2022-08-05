@@ -261,11 +261,20 @@ public class EventLogger {
 
   public void lateBlockImport(
       final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
-    String reorgEventLog =
+    String slowBlockLog =
         String.format(
             "Late Block Import *** Block: %s proposer %s %s",
             LogFormatter.formatBlock(slot, root), proposer, timings);
-    warn(reorgEventLog, Color.YELLOW);
+    warn(slowBlockLog, Color.YELLOW);
+  }
+
+  public void slowTickEvent(
+      final UInt64 tickTime, final UInt64 totalProcessingDuration, final String timings) {
+    final String slowTickLog =
+        String.format(
+            "Slow Tick Event   *** Time: %s %s total: %sms",
+            tickTime, timings, totalProcessingDuration);
+    warn(slowTickLog, Color.YELLOW);
   }
 
   public void executionLayerStubEnabled() {

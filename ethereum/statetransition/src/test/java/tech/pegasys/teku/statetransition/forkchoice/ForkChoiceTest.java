@@ -965,7 +965,8 @@ class ForkChoiceTest {
 
     // Should apply at start of next slot.
     forkChoice.onTick(
-        spec.getSlotStartTimeMillis(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()));
+        spec.getSlotStartTimeMillis(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()),
+        Optional.empty());
     processHead(currentSlot.plus(1));
 
     assertThat(forkChoiceStrategy.getWeight(targetBlock.getRoot()).orElseThrow())

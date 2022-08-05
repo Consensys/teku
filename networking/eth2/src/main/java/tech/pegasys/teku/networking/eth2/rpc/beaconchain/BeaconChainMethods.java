@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -67,7 +66,7 @@ public class BeaconChainMethods {
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
-  private final Collection<Eth2RpcMethod<?, ?>> allMethods;
+  private final Collection<RpcMethod<?, ?, ?>> allMethods;
 
   private BeaconChainMethods(
       final Eth2RpcMethod<StatusMessage, StatusMessage> status,
@@ -99,9 +98,16 @@ public class BeaconChainMethods {
     return new BeaconChainMethods(
         createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
-        createBeaconBlocksByRoot(spec, asyncRunner, recentChainData, peerLookup, rpcEncoding),
+        createBeaconBlocksByRoot(
+            spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBeaconBlocksByRange(
-            spec, asyncRunner, recentChainData, combinedChainDataClient, peerLookup, rpcEncoding),
+            spec,
+            metricsSystem,
+            asyncRunner,
+            recentChainData,
+            combinedChainDataClient,
+            peerLookup,
+            rpcEncoding),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -149,12 +155,13 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRoot(
           final Spec spec,
+          final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final RecentChainData recentChainData,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
-        new BeaconBlocksByRootMessageHandler(spec, recentChainData);
+        new BeaconBlocksByRootMessageHandler(spec, metricsSystem, recentChainData);
 
     final BeaconBlocksByRootRequestMessageSchema requestType =
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
@@ -207,6 +214,7 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRange(
           final Spec spec,
+          final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final RecentChainData recentChainData,
           final CombinedChainDataClient combinedChainDataClient,
@@ -215,7 +223,7 @@ public class BeaconChainMethods {
 
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(
-            spec, combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+            spec, metricsSystem, combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     // V1 request only deal with Phase0 blocks
     final SignedBeaconBlockSchema phase0BlockSchema =
         spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getSignedBeaconBlockSchema();
@@ -344,7 +352,7 @@ public class BeaconChainMethods {
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {
-    return Collections.unmodifiableCollection(allMethods);
+    return allMethods;
   }
 
   public Eth2RpcMethod<StatusMessage, StatusMessage> status() {
