@@ -115,7 +115,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   @MustBeClosed
   public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
-    return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(a -> a);
+    return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
   }
 
   @Override

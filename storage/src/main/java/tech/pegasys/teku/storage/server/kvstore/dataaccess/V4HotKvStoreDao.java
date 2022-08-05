@@ -90,7 +90,7 @@ public class V4HotKvStoreDao {
 
   @MustBeClosed
   public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
-    return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(a -> a);
+    return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
   }
 
   public long countUnblindedHotBlocks() {
