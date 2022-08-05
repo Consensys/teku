@@ -361,7 +361,6 @@ public class TerminalPowBlockMonitorTest {
     try (LogCaptor logCaptor = LogCaptor.forClass(TerminalPowBlockMonitor.class)) {
       // AT BELLATRIX FORK, TTD reached but block is null (EL not in sync or doing something weird)
       goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-      Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
       when(executionLayer.eth1GetPowChainHead()).thenReturn(completedFuture(null));
 
       asyncRunner.executeQueuedActions();
