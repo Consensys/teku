@@ -123,7 +123,11 @@ public class BlockImporter {
             })
         .exceptionally(
             (e) -> {
-              LOG.error("Internal error while importing block: {}", formatBlock(block), e);
+              String internalErrorMessage =
+                  String.format(
+                      "Internal error while importing block: %s. Block content: %s",
+                      formatBlock(block), getBlockContent(block));
+              LOG.error(internalErrorMessage, e);
               return BlockImportResult.internalError(e);
             });
   }
@@ -211,6 +215,10 @@ public class BlockImporter {
 
   private String formatBlock(final SignedBeaconBlock block) {
     return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
+  }
+
+  private String getBlockContent(final SignedBeaconBlock block) {
+    return block.getMessage().sszSerialize().toHexString();
   }
 
   private ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
