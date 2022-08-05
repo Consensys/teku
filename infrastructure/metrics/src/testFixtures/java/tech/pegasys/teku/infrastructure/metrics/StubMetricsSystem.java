@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
 import java.util.regex.Pattern;
-
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
@@ -33,8 +32,8 @@ public class StubMetricsSystem implements MetricsSystem {
   private final Map<MetricCategory, Map<String, StubLabelledGauge>> labelledGauges =
       new ConcurrentHashMap<>();
 
-  private final static Pattern metricNamePattern = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
-  private final static Pattern labelNamePattern = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+  private static final Pattern METRIC_NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
+  private static final Pattern LABEL_NAME_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
@@ -113,15 +112,19 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   private void validateMetricName(String metricName) {
-    if(!metricNamePattern.matcher(metricName).matches()) {
-      throw new IllegalArgumentException(String.format("Invalid metric name %s. Must match the regex [a-zA-Z_:][a-zA-Z0-9_:]*", metricName));
+    if (!METRIC_NAME_PATTERN.matcher(metricName).matches()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid metric name %s. Must match the regex [a-zA-Z_:][a-zA-Z0-9_:]*", metricName));
     }
   }
 
   private void validateLabelName(String... labelNames) {
-    for (String labelName: labelNames) {
-      if(!labelNamePattern.matcher(labelName).matches()) {
-        throw new IllegalArgumentException(String.format("Invalid label name %s. Must match the regex [a-zA-Z_][a-zA-Z0-9_]*", labelName));
+    for (String labelName : labelNames) {
+      if (!LABEL_NAME_PATTERN.matcher(labelName).matches()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Invalid label name %s. Must match the regex [a-zA-Z_][a-zA-Z0-9_]*", labelName));
       }
     }
   }
