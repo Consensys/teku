@@ -18,10 +18,19 @@ import static tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder.RESOURCES_
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class SwaggerWebjarIntegrityTest {
   private static final String VENDOR_COPY_PATH = "/swagger-ui/vendor";
@@ -35,13 +44,12 @@ class SwaggerWebjarIntegrityTest {
    * changed links) should be updated
    */
   @Test
-  public void shouldHaveTheSameVersionOfFilesInVendorFolderAndSwaggerJar() throws IOException {
-    final String swaggerJarPath = getSwaggerJarPath();
-    final List<String> vendorFiles = SwaggerBuilder.listClasspathDir(VENDOR_COPY_PATH);
+  public void shouldHaveTheSameVersionOfFilesInVendorFolderAndSwaggerJar() throws Exception {
+    final List<String> vendorFiles = listClasspathDir(VENDOR_COPY_PATH);
     for (String filePath : vendorFiles) {
       final byte[] resourceFileContents = getClasspathFile(filePath);
       final byte[] jarFileContents =
-          getClasspathFile(swaggerJarPath + "/" + FilenameUtils.getName(filePath));
+          getClasspathFile(RESOURCES_WEBJARS_SWAGGER_UI + FilenameUtils.getName(filePath));
 
       assertThat(jarFileContents).isEqualTo(resourceFileContents);
     }
@@ -53,15 +61,21 @@ class SwaggerWebjarIntegrityTest {
     }
   }
 
-  private String getSwaggerJarPath() {
-    List<String> swaggerVersionPaths =
-        SwaggerBuilder.listClasspathDir(RESOURCES_WEBJARS_SWAGGER_UI);
-    if (swaggerVersionPaths.size() != 1) {
-      throw new InvalidConfigurationException(
-          String.format(
-              "Swagger UI not found or several versions found in paths: %s",
-              String.join(",", swaggerVersionPaths)));
+  private static List<String> listClasspathDir(final String path)
+      throws IOException, URISyntaxException {
+    final URI uri = SwaggerBuilder.class.getResource(path).toURI();
+    if (uri.getScheme().equals("jar")) {
+      try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+        return listPath(fileSystem.getPath(path));
+      }
+    } else {
+      return listPath(Paths.get(uri));
     }
-    return swaggerVersionPaths.get(0);
+  }
+
+  private static List<String> listPath(final Path path) throws IOException {
+    try (Stream<Path> stream = Files.list(path)) {
+      return stream.map(Path::toString).collect(Collectors.toList());
+    }
   }
 }
