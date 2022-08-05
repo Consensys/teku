@@ -920,7 +920,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(BlockImportNotifications.class, blockManager);
   }
 
-  protected SyncServiceFactory getSyncServiceFactory() {
+  protected SyncServiceFactory createSyncServiceFactory() {
     return new DefaultSyncServiceFactory(
         beaconConfig.syncConfig(),
         beaconConfig.eth2NetworkConfig().getGenesisState(),
@@ -942,7 +942,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initSyncService() {
     LOG.debug("BeaconChainController.initSyncService()");
-    syncService = getSyncServiceFactory().create();
+    syncService = createSyncServiceFactory().create();
 
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
