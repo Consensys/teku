@@ -17,8 +17,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -27,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -40,8 +44,10 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -325,7 +331,7 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int validateBlockHistory(
+  public int dumpHotBlocks(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
@@ -336,7 +342,7 @@ public class DebugDbCommand implements Runnable {
       throws Exception {
     int index = 0;
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
-        final Stream<Bytes> blockStream = database.streamHotBlocksAsSsz();
+        final Stream<Bytes> blockStream = database.streamHotBlocksAsSsz().map(Map.Entry::getValue);
         final ZipOutputStream out =
             new ZipOutputStream(
                 Files.newOutputStream(outputFile, StandardOpenOption.TRUNCATE_EXISTING))) {
@@ -349,6 +355,95 @@ public class DebugDbCommand implements Runnable {
     }
     System.out.println("Wrote " + index + " blocks to " + outputFile.toAbsolutePath());
     return 0;
+  }
+
+  @Command(
+      name = "delete-hot-blocks",
+      description = "Writes all non-justified blocks in the database as a zip of SSZ files",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int deleteHotBlocks(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--delete-all", "-a"},
+              description =
+                  "Delete all blocks that have not been justified, not just those from an invalid hard fork",
+              defaultValue = "false",
+              fallbackValue = "true",
+              showDefaultValue = Visibility.ALWAYS)
+          final boolean deleteAll)
+      throws Exception {
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions); ) {
+      final Optional<Checkpoint> justified = database.getJustifiedCheckpoint();
+      if (justified.isEmpty()) {
+        System.out.println(
+            "Unable to delete hot blocks because the justified checkpoint is not available");
+        return 1;
+      }
+      final UInt64 justifiedSlot = justified.get().getEpochStartSlot(spec);
+      System.out.println("Justified slot is " + justifiedSlot);
+      final Set<Bytes32> blockRootsToDelete = new HashSet<>();
+      try (final Stream<Map.Entry<Bytes, Bytes>> blockStream = database.streamHotBlocksAsSsz()) {
+        // Iterate through and find the block roots to delete first
+        for (final Iterator<Map.Entry<Bytes, Bytes>> iterator = blockStream.iterator();
+            iterator.hasNext(); ) {
+          final Map.Entry<Bytes, Bytes> rootAndBlock = iterator.next();
+          final Bytes blockData = rootAndBlock.getValue();
+          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(blockData);
+          final boolean shouldDelete;
+          final boolean isJustifiedBlock = blockSlot.isLessThanOrEqualTo(justifiedSlot);
+          if (deleteAll) {
+            if (isJustifiedBlock) {
+              System.out.printf(
+                  "Not deleting block at slot %s as it has been justified%n", blockSlot);
+              shouldDelete = false;
+            } else {
+              shouldDelete = true;
+            }
+          } else {
+            final boolean canParse = canParseBlock(beaconNodeDataOptions, spec, blockData);
+            if (!canParse && isJustifiedBlock) {
+              System.out.printf(
+                  "Block at slot %s is justified but cannot be parsed. Unable to recover this database.%n",
+                  blockSlot);
+              return 1;
+            }
+            shouldDelete = !canParse;
+          }
+
+          if (shouldDelete) {
+            blockRootsToDelete.add(Bytes32.wrap(rootAndBlock.getKey()));
+          }
+        }
+      }
+
+      System.out.printf("Deleting %d blocks%n", blockRootsToDelete.size());
+      database.deleteHotBlocks(blockRootsToDelete);
+    }
+    return 0;
+  }
+
+  private boolean canParseBlock(
+      final BeaconNodeDataOptions beaconNodeDataOptions, final Spec spec, final Bytes blockData) {
+    try {
+      if (beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately()) {
+        spec.deserializeSignedBlindedBeaconBlock(blockData);
+      } else {
+        spec.deserializeSignedBeaconBlock(blockData);
+      }
+      return true;
+    } catch (final Exception e) {
+      return false;
+    }
   }
 
   private Optional<SignedBeaconBlock> findFinalizedBlockBeforeSlot(

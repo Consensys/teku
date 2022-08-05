@@ -138,7 +138,7 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
-  public Stream<Bytes> streamHotBlocksAsSsz() {
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return dao.streamUnblindedHotBlocksAsSsz();
   }
 
@@ -221,6 +221,14 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return Stream.empty();
+  }
+
+  @Override
+  public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
+    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+      blockRootsToDelete.forEach(updater::deleteHotBlock);
+      updater.commit();
+    }
   }
 
   @Override

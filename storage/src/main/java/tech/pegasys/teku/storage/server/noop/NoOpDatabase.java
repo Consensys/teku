@@ -137,7 +137,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<Bytes> streamHotBlocksAsSsz() {
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return Stream.empty();
   }
 
@@ -221,6 +221,14 @@ public class NoOpDatabase implements Database {
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return Stream.empty();
   }
+
+  @Override
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return Optional.empty();
+  }
+
+  @Override
+  public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
 
   @Override
   public void close() {}

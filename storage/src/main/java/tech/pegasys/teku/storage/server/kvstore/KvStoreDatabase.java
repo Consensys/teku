@@ -506,6 +506,11 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return dao.getJustifiedCheckpoint();
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }

@@ -101,7 +101,7 @@ public interface Database extends AutoCloseable {
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
 
   @MustBeClosed
-  Stream<Bytes> streamHotBlocksAsSsz();
+  Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
 
   /**
    * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
@@ -150,4 +150,8 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamBlindedBlocks();
+
+  Optional<Checkpoint> getJustifiedCheckpoint();
+
+  void deleteHotBlocks(Set<Bytes32> blockRootsToDelete);
 }

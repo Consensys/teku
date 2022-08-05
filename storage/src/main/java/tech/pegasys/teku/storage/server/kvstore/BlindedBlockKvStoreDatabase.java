@@ -125,7 +125,7 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   @MustBeClosed
-  public Stream<Bytes> streamHotBlocksAsSsz() {
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return dao.streamBlindedHotBlocksAsSsz();
   }
 
@@ -261,6 +261,18 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return dao.streamBlindedBlocks();
+  }
+
+  @Override
+  public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
+    try (final CombinedUpdaterBlinded updater = dao.combinedUpdaterBlinded()) {
+      blockRootsToDelete.forEach(
+          root -> {
+            updater.deleteBlindedBlock(root);
+            updater.pruneHotBlockContext(root);
+          });
+      updater.commit();
+    }
   }
 
   @Override

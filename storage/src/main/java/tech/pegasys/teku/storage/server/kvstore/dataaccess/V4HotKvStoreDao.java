@@ -89,8 +89,8 @@ public class V4HotKvStoreDao {
   }
 
   @MustBeClosed
-  public Stream<Bytes> streamUnblindedHotBlocksAsSsz() {
-    return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
+  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
+    return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
   }
 
   public long countUnblindedHotBlocks() {
