@@ -123,7 +123,7 @@ public class BlockImporter {
             })
         .exceptionally(
             (e) -> {
-              String internalErrorMessage =
+              final String internalErrorMessage =
                   String.format(
                       "Internal error while importing block: %s. Block content: %s",
                       formatBlock(block), getBlockContent(block));
