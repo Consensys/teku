@@ -170,7 +170,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SettableLabelledGauge futureItemsMetric;
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
   protected volatile BeaconChainConfiguration beaconConfig;
@@ -219,14 +218,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
-  private volatile KeyValueStore<String, Bytes> keyValueStore;
+  protected volatile KeyValueStore<String, Bytes> keyValueStore;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
-  private TimerService timerService;
-  private PendingPoolFactory pendingPoolFactory;
-
-  private IntSupplier rejectedExecutionCountSupplier;
+  protected TimerService timerService;
+  protected PendingPoolFactory pendingPoolFactory;
+  protected SettableLabelledGauge futureItemsMetric;
+  protected IntSupplier rejectedExecutionCountSupplier;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
