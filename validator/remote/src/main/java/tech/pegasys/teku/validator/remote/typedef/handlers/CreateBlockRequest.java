@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
@@ -39,15 +40,18 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
+import tech.pegasys.teku.validator.remote.typedef.BlindedBlockEndpointNotAvailableException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateBlockRequest extends AbstractTypeDefRequest {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final UInt64 slot;
-  private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final ValidatorApiMethod apiMethod;
   private final boolean preferSszBlockEncoding;
+  private final ValidatorApiMethod apiMethod;
+  private final BeaconBlockSchema beaconBlockSchema;
+  private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
   private final ResponseHandler<GetBlockResponse> responseHandler;
 
   public CreateBlockRequest(
@@ -58,14 +62,14 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       final boolean blinded,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
-    apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    this.beaconBlockSchema =
+    apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
+    beaconBlockSchema =
         blinded
             ? spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockSchema()
             : spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema();
-    this.getBlockResponseDefinition =
+    getBlockResponseDefinition =
         DeserializableTypeDefinition.object(GetBlockResponse.class)
             .initializer(GetBlockResponse::new)
             .withField(
@@ -79,9 +83,17 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
                 GetBlockResponse::getSpecMilestone,
                 GetBlockResponse::setSpecMilestone)
             .build();
-    this.responseHandler =
+    final ResponseHandler<GetBlockResponse> responseHandler =
         new ResponseHandler<>(getBlockResponseDefinition)
             .withHandler(SC_OK, this::handleBeaconBlockResult);
+    this.responseHandler =
+        blinded
+            ? responseHandler.withHandler(
+                SC_NOT_FOUND,
+                (__, ___) -> {
+                  throw new BlindedBlockEndpointNotAvailableException();
+                })
+            : responseHandler;
   }
 
   public Optional<BeaconBlock> createUnsignedBlock(
@@ -95,7 +107,6 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       // application/octet-stream is preferred, but will accept application/json
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
-
     return get(apiMethod, Map.of("slot", slot.toString()), queryParams, headers, responseHandler)
         .map(GetBlockResponse::getData);
   }

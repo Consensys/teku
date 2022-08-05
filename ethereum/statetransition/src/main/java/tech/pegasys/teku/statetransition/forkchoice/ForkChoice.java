@@ -635,13 +635,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void onTick(final UInt64 currentTimeMillis) {
+  public void onTick(
+      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
     final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
     tickProcessor.onTick(currentTimeMillis).join();
+    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
     if (currentSlot.isGreaterThan(previousSlot)) {
       applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
     }
+    performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
   }
 
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {

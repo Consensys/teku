@@ -11,13 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync;
+package tech.pegasys.teku.validator.remote.typedef;
 
-/**
- * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
- * might be changed in any version in backward incompatible way
- */
-public interface SyncServiceFactory {
-
-  SyncService create();
-}
+public class BlindedBlockEndpointNotAvailableException extends RuntimeException {}

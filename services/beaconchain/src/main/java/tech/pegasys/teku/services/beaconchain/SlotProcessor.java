@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SlotProcessor {
@@ -101,7 +103,8 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
-  public void onTick(final UInt64 currentTimeMillis) {
+  public void onTick(
+      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
 
     final UInt64 genesisTimeMillis = recentChainData.getGenesisTimeMillis();
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
@@ -128,14 +131,17 @@ public class SlotProcessor {
 
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
+      performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
     }
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
-      processSlotAttestation();
+      processSlotAttestation(performanceRecord);
       nodeSlot.inc();
+      performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
     }
 
     if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTimeMillis)) {
       processEpochPrecompute(epoch);
+      performanceRecord.ifPresent(TickProcessingPerformance::precomputeEpochComplete);
     }
   }
 
@@ -233,10 +239,12 @@ public class SlotProcessor {
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
 
-  private void processSlotAttestation() {
+  private void processSlotAttestation(final Optional<TickProcessingPerformance> performanceRecord) {
     onTickSlotAttestation = nodeSlot.getValue();
     forkChoiceTrigger.onAttestationsDueForSlot(onTickSlotAttestation);
+    performanceRecord.ifPresent(TickProcessingPerformance::forkChoiceTriggerUpdated);
     forkChoiceNotifier.onAttestationsDue(onTickSlotAttestation);
+    performanceRecord.ifPresent(TickProcessingPerformance::forkChoiceNotifierUpdated);
     recentChainData
         .getChainHead()
         .ifPresent(
