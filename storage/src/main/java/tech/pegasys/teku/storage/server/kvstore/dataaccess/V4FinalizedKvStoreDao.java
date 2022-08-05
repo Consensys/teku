@@ -240,6 +240,10 @@ public class V4FinalizedKvStoreDao {
     return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
+  public Optional<Bytes> getBlindedBlockAsSsz(final Bytes32 blockRoot) {
+    return db.getRaw(schema.getColumnBlindedBlocksByRoot(), blockRoot);
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;

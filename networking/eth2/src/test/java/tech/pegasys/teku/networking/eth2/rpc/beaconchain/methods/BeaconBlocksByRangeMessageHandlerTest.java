@@ -35,6 +35,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -86,9 +88,11 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(1, RPC_ENCODING);
   private final BeaconBlocksByRangeMessageHandler handler =
-      new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+      new BeaconBlocksByRangeMessageHandler(
+          spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
   @BeforeEach
   public void setup() {
@@ -120,7 +124,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v1RequestForPhase0Block() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -133,7 +138,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v1RequestForAltairBlock() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -147,7 +153,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v1RequestForRangeOfBlocksAcrossForkBoundary() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -162,7 +169,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForPhase0Block() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -175,7 +183,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForAltairBlock() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -188,7 +197,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForRangeOfBlocksAcrossForkBoundary() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
 
     final Optional<RpcException> result =
         handler.validateRequest(
