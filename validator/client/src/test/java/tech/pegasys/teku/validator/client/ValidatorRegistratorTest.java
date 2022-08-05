@@ -24,7 +24,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
@@ -83,7 +86,7 @@ class ValidatorRegistratorTest {
 
     eth1Address = dataStructureUtil.randomEth1Address();
     gasLimit = dataStructureUtil.randomUInt64();
-    publicKey = dataStructureUtil.randomPublicKey();
+    //    publicKey = dataStructureUtil.randomPublicKey();
 
     validatorRegistrator =
         new ValidatorRegistrator(
@@ -101,7 +104,8 @@ class ValidatorRegistratorTest {
 
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
     when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
-    when(proposerConfig.getBuilderPublicKeyForPubKey(any())).thenReturn(Optional.of(publicKey));
+    //
+    // when(proposerConfig.getBuilderPublicKeyForPubKey(any())).thenReturn(Optional.of(publicKey));
 
     when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
     when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
@@ -156,8 +160,11 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersValidators_shouldRegisterWithTimestampOverride() {
+    final UInt64 timestampOverride = dataStructureUtil.randomUInt64();
+
     when(validatorConfig.getBuilderRegistrationTimestampOverride())
-        .thenReturn(Optional.of(UInt64.valueOf(140)));
+        .thenReturn(Optional.of(timestampOverride));
+
     setActiveValidators(validator1);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
@@ -166,7 +173,44 @@ class ValidatorRegistratorTest {
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     registrationCalls.forEach(
-        registrationCall -> verifyRegistrations(registrationCall, List.of(validator1)));
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(validator1),
+                Optional.of(
+                    validatorRegistration ->
+                        assertThat(validatorRegistration.getTimestamp())
+                            .isEqualTo(timestampOverride))));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
+  void registersValidators_shouldRegisterWithTimestampOverrideViaProposerConfig() {
+    final UInt64 timestampOverride = dataStructureUtil.randomUInt64();
+
+    when(proposerConfig.getBuilderRegistrationOverrides(validator1.getPublicKey()))
+        .thenReturn(Optional.of(new RegistrationOverrides(timestampOverride, null)));
+    // this override should not be used
+    when(validatorConfig.getBuilderRegistrationTimestampOverride())
+        .thenReturn(Optional.of(dataStructureUtil.randomUInt64()));
+
+    setActiveValidators(validator1);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    registrationCalls.forEach(
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(validator1),
+                Optional.of(
+                    validatorRegistration ->
+                        assertThat(validatorRegistration.getTimestamp())
+                            .isEqualTo(timestampOverride))));
 
     verify(signer, times(1)).signValidatorRegistration(any());
   }
@@ -184,16 +228,49 @@ class ValidatorRegistratorTest {
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
-    final Validator validatorWithOverridenPublicKey =
-        new Validator(publicKeyOverride, signer, Optional::empty);
+    registrationCalls.forEach(
+        registrationCall ->
+            verifyRegistrations(
+                registrationCall,
+                List.of(validator1, validator2),
+                Map.of(
+                    validator1.getPublicKey(),
+                    publicKeyOverride,
+                    validator2.getPublicKey(),
+                    publicKeyOverride)));
+
+    verify(signer, times(2)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
+  void registersValidators_shouldRegisterWithPublicKeyOverrideViaProposerConfig() {
+    final BLSPublicKey publicKeyOverride = dataStructureUtil.randomPublicKey();
+
+    when(proposerConfig.getBuilderRegistrationOverrides(any()))
+        .thenReturn(Optional.of(new RegistrationOverrides(null, publicKeyOverride)));
+    // this override should not be used
+    when(validatorConfig.getBuilderRegistrationPublicKeyOverride())
+        .thenReturn(Optional.of(dataStructureUtil.randomPublicKey()));
+
+    setActiveValidators(validator1, validator2);
+
+    runRegistrationFlowForSlot(UInt64.ZERO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
     registrationCalls.forEach(
         registrationCall ->
             verifyRegistrations(
                 registrationCall,
-                List.of(validatorWithOverridenPublicKey, validatorWithOverridenPublicKey)));
+                List.of(validator1, validator2),
+                Map.of(
+                    validator1.getPublicKey(),
+                    publicKeyOverride,
+                    validator2.getPublicKey(),
+                    publicKeyOverride)));
 
-    verify(signer, times(1)).signValidatorRegistration(any());
+    verify(signer, times(2)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -214,12 +291,19 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotUseCache_ifRegistrationsNeedUpdating() {
-    setActiveValidators(validator1, validator2, validator3);
+    final Validator validator4 =
+        new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
+    final Validator validator5 =
+        new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
+
+    setActiveValidators(validator1, validator2, validator3, validator4, validator5);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
     final Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
     final UInt64 otherGasLimit = dataStructureUtil.randomUInt64();
+    final BLSPublicKey otherPublicKey = dataStructureUtil.randomPublicKey();
+    final UInt64 otherTimestamp = dataStructureUtil.randomUInt64();
 
     // fee recipient changed for validator2
     when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
@@ -229,40 +313,57 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.of(otherGasLimit));
 
+    // public key overwritten for validator4
+    when(proposerConfig.getBuilderRegistrationOverrides(validator4.getPublicKey()))
+        .thenReturn(Optional.of(new RegistrationOverrides(null, otherPublicKey)));
+
+    // timestamp overwritten for validator5
+    when(proposerConfig.getBuilderRegistrationOverrides(validator5.getPublicKey()))
+        .thenReturn(Optional.of(new RegistrationOverrides(otherTimestamp, null)));
+
     runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch));
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
-    // first call should use the default fee recipient and gas limit
-    verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator2, validator3));
+    // first call should use the default fee recipient, gas limit and public key
+    verifyRegistrations(
+        registrationCalls.get(0),
+        List.of(validator1, validator2, validator3, validator4, validator5));
 
     final Consumer<ValidatorRegistration> updatedRegistrationsRequirements =
         (validatorRegistration) -> {
-          BLSPublicKey publicKey = validatorRegistration.getPublicKey();
-          Eth1Address feeRecipient = validatorRegistration.getFeeRecipient();
-          UInt64 gasLimit = validatorRegistration.getGasLimit();
-          if (publicKey.equals(validator1.getPublicKey())) {
+          final BLSPublicKey publicKey = validatorRegistration.getPublicKey();
+          final Eth1Address feeRecipient = validatorRegistration.getFeeRecipient();
+          final UInt64 gasLimit = validatorRegistration.getGasLimit();
+          final UInt64 timestamp = validatorRegistration.getTimestamp();
+
+          if (publicKey.equals(validator1.getPublicKey()) || publicKey.equals(otherPublicKey)) {
             assertThat(feeRecipient).isEqualTo(eth1Address);
-            assertThat(gasLimit).isEqualTo(gasLimit);
+            assertThat(gasLimit).isEqualTo(this.gasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
             assertThat(feeRecipient).isEqualTo(otherEth1Address);
-            assertThat(gasLimit).isEqualTo(gasLimit);
+            assertThat(gasLimit).isEqualTo(this.gasLimit);
           }
           if (publicKey.equals(validator3.getPublicKey())) {
             assertThat(feeRecipient).isEqualTo(eth1Address);
             assertThat(gasLimit).isEqualTo(otherGasLimit);
           }
+          if (publicKey.equals(validator5.getPublicKey())) {
+            assertThat(feeRecipient).isEqualTo(eth1Address);
+            assertThat(gasLimit).isEqualTo(this.gasLimit);
+            assertThat(timestamp).isEqualTo(otherTimestamp);
+          }
         };
 
-    // second call should use the changed fee recipient and gas limit
+    // second call should use the changed fee recipient and gas limit, public key and timestamp
     verifyRegistrations(
         registrationCalls.get(1),
-        List.of(validator1, validator2, validator3),
-        Optional.of(updatedRegistrationsRequirements));
+        List.of(validator1, validator2, validator3, validator4, validator5),
+        Optional.of(updatedRegistrationsRequirements),
+        Map.of(validator4.getPublicKey(), otherPublicKey));
 
-    // signer will be called in total 5 times
-    verify(signer, times(5)).signValidatorRegistration(any());
+    verify(signer, times(9)).signValidatorRegistration(any());
   }
 
   @TestTemplate
@@ -339,7 +440,7 @@ class ValidatorRegistratorTest {
           BLSPublicKey publicKey = validatorRegistration.getPublicKey();
           UInt64 gasLimit = validatorRegistration.getGasLimit();
           if (publicKey.equals(validator1.getPublicKey())) {
-            assertThat(gasLimit).isEqualTo(gasLimit);
+            assertThat(gasLimit).isEqualTo(this.gasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
             assertThat(gasLimit).isEqualTo(validator2GasLimit);
@@ -395,18 +496,37 @@ class ValidatorRegistratorTest {
   private void verifyRegistrations(
       final List<SignedValidatorRegistration> validatorRegistrations,
       final List<Validator> expectedRegisteredValidators) {
-    verifyRegistrations(validatorRegistrations, expectedRegisteredValidators, Optional.empty());
+    verifyRegistrations(
+        validatorRegistrations, expectedRegisteredValidators, Optional.empty(), new HashMap<>());
+  }
+
+  private void verifyRegistrations(
+      final List<SignedValidatorRegistration> validatorRegistrations,
+      final List<Validator> expectedRegisteredValidators,
+      final Map<BLSPublicKey, BLSPublicKey> expectedPublicKeyOverrides) {
+    verifyRegistrations(
+        validatorRegistrations,
+        expectedRegisteredValidators,
+        Optional.empty(),
+        expectedPublicKeyOverrides);
   }
 
   private void verifyRegistrations(
       final List<SignedValidatorRegistration> validatorRegistrations,
       final List<Validator> expectedRegisteredValidators,
       final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements) {
+    verifyRegistrations(
+        validatorRegistrations,
+        expectedRegisteredValidators,
+        alternativeRegistrationRequirements,
+        new HashMap<>());
+  }
 
-    final UInt64 expectedTimestamp =
-        validatorConfig
-            .getBuilderRegistrationTimestampOverride()
-            .orElse(stubTimeProvider.getTimeInSeconds());
+  private void verifyRegistrations(
+      final List<SignedValidatorRegistration> validatorRegistrations,
+      final List<Validator> expectedRegisteredValidators,
+      final Optional<Consumer<ValidatorRegistration>> alternativeRegistrationRequirements,
+      final Map<BLSPublicKey, BLSPublicKey> expectedPublicKeyOverrides) {
 
     assertThat(validatorRegistrations)
         .hasSize(expectedRegisteredValidators.size())
@@ -418,14 +538,19 @@ class ValidatorRegistratorTest {
                 alternativeRegistrationRequirements.get().accept(registration);
               } else {
                 assertThat(registration.getFeeRecipient()).isEqualTo(eth1Address);
-                assertThat(registration.getTimestamp()).isEqualTo(expectedTimestamp);
+                assertThat(registration.getTimestamp())
+                    .isEqualTo(stubTimeProvider.getTimeInSeconds());
                 assertThat(registration.getGasLimit()).isEqualTo(gasLimit);
               }
             })
         .map(ValidatorRegistration::getPublicKey)
         .containsExactlyInAnyOrderElementsOf(
             expectedRegisteredValidators.stream()
-                .map(Validator::getPublicKey)
+                .map(
+                    validator -> {
+                      final BLSPublicKey publicKey = validator.getPublicKey();
+                      return expectedPublicKeyOverrides.getOrDefault(publicKey, publicKey);
+                    })
                 .collect(Collectors.toList()));
   }
 }

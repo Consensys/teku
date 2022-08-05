@@ -52,7 +52,6 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
-  public static final Optional<BLSPublicKey> DEFAULT_BUILDER_REGISTRATION_PUBLIC_KEY = Optional.empty();
   public static final Duration DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD =
       Duration.ofSeconds(30);
 
@@ -80,7 +79,6 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
-  private final BLSPublicKey builderRegistrationDefaultPublicKey;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
@@ -112,7 +110,6 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
-      final BLSPublicKey builderRegistrationDefaultPublicKey,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
@@ -145,7 +142,6 @@ public class ValidatorConfig {
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
-    this.builderRegistrationDefaultPublicKey = builderRegistrationDefaultPublicKey;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
@@ -229,10 +225,6 @@ public class ValidatorConfig {
     return builderRegistrationDefaultGasLimit;
   }
 
-  public UInt64 getBuilderRegistrationDefaultPublicKey() {
-    return builderRegistrationDefaultPublicKey;
-  }
-
   public int getBuilderRegistrationSendingBatchSize() {
     return builderRegistrationSendingBatchSize;
   }
@@ -314,7 +306,6 @@ public class ValidatorConfig {
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
-    private BLSPublicKey builderRegistrationDefaultPublicKey = DEFAULT_BUILDER_REGISTRATION_PUBLIC_KEY;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
@@ -476,12 +467,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder builderRegistrationDefaultPublicKey(
-        final UInt64 builderRegistrationDefaultPublicKey) {
-      this.builderRegistrationDefaultPublicKey = builderRegistrationDefaultPublicKey;
-      return this;
-    }
-
     public Builder builderRegistrationSendingBatchSize(
         final int builderRegistrationSendingBatchSize) {
       this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
@@ -547,7 +532,6 @@ public class ValidatorConfig {
           validatorClientSszBlocksEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           builderRegistrationDefaultGasLimit,
-          builderRegistrationDefaultPublicKey,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
