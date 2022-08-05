@@ -359,7 +359,7 @@ public class DebugDbCommand implements Runnable {
 
   @Command(
       name = "delete-hot-blocks",
-      description = "Writes all non-finalized blocks in the database as a zip of SSZ files",
+      description = "Writes all non-justified blocks in the database as a zip of SSZ files",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
@@ -375,7 +375,7 @@ public class DebugDbCommand implements Runnable {
       @Option(
               names = {"--delete-all", "-a"},
               description =
-                  "Delete all non-finalized blocks, not just those from an invalid hard fork",
+                  "Delete all blocks that have not been justified, not just those from an invalid hard fork",
               defaultValue = "false",
               fallbackValue = "true",
               showDefaultValue = Visibility.ALWAYS)
