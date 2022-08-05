@@ -59,7 +59,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -369,8 +368,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     }
 
     final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
-    final Eth1Address suggestedFeeRecipient =
-        validatorRegistration.get().getMessage().getFeeRecipient();
 
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
@@ -402,21 +399,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                   builderBidValidator.validateAndGetPayloadHeader(
                       spec, signedBuilderBid, validatorRegistration.get(), state);
               slotToLocalElFallbackData.put(slot, Optional.empty());
-
-              // It's not clear from the builder-specs how the validator should react if the fee
-              // recipient differs from the registration. Technically, the payload is valid.
-              if (!executionPayloadHeader.getFeeRecipient().equals(suggestedFeeRecipient)) {
-                final Eth1Address payloadHeaderFeeRecipient =
-                    Eth1Address.fromBytes(
-                        executionPayloadHeader.getFeeRecipient().getWrappedBytes());
-                LOG.warn(
-                    "The fee recipient in the builder bid ({}) does not match the suggested"
-                        + " fee recipient ({}) in the validator registration. Going to proceed"
-                        + " anyway, but please verify that the builder is trusted and that the"
-                        + " suggested fee recipient is properly configured.",
-                    payloadHeaderFeeRecipient,
-                    suggestedFeeRecipient);
-              }
               return SafeFuture.completedFuture(executionPayloadHeader);
             })
         .exceptionallyCompose(
