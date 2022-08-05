@@ -36,7 +36,7 @@ public class SwaggerBuilder {
           SWAGGER_HOSTED_PATH + "/swagger-initializer.js.gz");
 
   public static final String RESOURCES_WEBJARS_SWAGGER_UI =
-    "/META-INF/resources/webjars/swagger-ui/" + SWAGGER_UI_VERSION + "/";
+      "/META-INF/resources/webjars/swagger-ui/" + SWAGGER_UI_VERSION + "/";
 
   private final boolean enabled;
 
