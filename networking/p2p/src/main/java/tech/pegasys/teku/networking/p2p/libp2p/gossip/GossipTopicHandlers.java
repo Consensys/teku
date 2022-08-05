@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
-class GossipTopicHandlers {
+public class GossipTopicHandlers {
 
   private final Map<String, TopicHandler> topicToHandlerMap = new ConcurrentHashMap<>();
 
