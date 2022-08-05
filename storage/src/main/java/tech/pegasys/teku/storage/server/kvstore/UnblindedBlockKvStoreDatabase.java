@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -137,6 +138,11 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
+    return dao.streamUnblindedHotBlocksAsSsz();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
@@ -215,6 +221,14 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   public Stream<SignedBeaconBlock> streamBlindedBlocks() {
     return Stream.empty();
+  }
+
+  @Override
+  public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
+    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+      blockRootsToDelete.forEach(updater::deleteHotBlock);
+      updater.commit();
+    }
   }
 
   @Override
