@@ -1613,6 +1613,17 @@ public class DatabaseTest {
     assertThat(database.getVotes()).isEqualTo(expected);
   }
 
+  @TestTemplate
+  public void shouldStoreFinalizedState(final DatabaseContext context) throws IOException {
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
+
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState(ONE);
+    database.storeFinalizedState(beaconState, dataStructureUtil.randomBytes32());
+
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEqualTo(Optional.of(beaconState));
+  }
+
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
     createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
