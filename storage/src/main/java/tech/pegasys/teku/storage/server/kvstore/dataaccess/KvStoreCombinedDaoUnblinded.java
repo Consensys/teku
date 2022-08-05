@@ -40,7 +40,7 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
-  Stream<Bytes> streamUnblindedHotBlocksAsSsz();
+  Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz();
 
   long countUnblindedHotBlocks();
 
