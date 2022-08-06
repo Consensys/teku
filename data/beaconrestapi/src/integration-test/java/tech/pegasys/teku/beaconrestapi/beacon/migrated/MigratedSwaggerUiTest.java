@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.beacon.migrated;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder.SWAGGER_INITIALIZER_JS;
 
 import java.io.IOException;
 import java.net.URL;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class MigratedSwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
   private static final String SWAGGER_PATH = "/swagger-ui";
-  private static final String INITIALIZER_JS = "swagger-initializer.js";
   private static final String JSON_SCHEMA_PATH = "/swagger-docs";
 
   @BeforeEach
@@ -52,7 +52,7 @@ public class MigratedSwaggerUiTest extends AbstractDataBackedRestAPIIntegrationT
     Set<String> links = findAssets(getUrl(SWAGGER_PATH));
     Optional<String> initializerPath = Optional.empty();
     for (String link : links) {
-      if (link.endsWith(INITIALIZER_JS)) {
+      if (link.endsWith(SWAGGER_INITIALIZER_JS)) {
         initializerPath = Optional.of(link);
         break;
       }

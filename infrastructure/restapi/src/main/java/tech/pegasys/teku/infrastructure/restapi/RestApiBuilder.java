@@ -124,7 +124,7 @@ public class RestApiBuilder {
   }
 
   public RestApi build() {
-    final SwaggerBuilder swaggerBuilder = new SwaggerBuilder(openApiDocsEnabled);
+    final SwaggerUIBuilder swaggerBuilder = new SwaggerUIBuilder(openApiDocsEnabled);
     final Javalin app =
         Javalin.create(
             config -> {

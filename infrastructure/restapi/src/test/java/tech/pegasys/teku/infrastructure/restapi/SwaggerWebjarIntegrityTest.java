@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder.RESOURCES_WEBJARS_SWAGGER_UI;
+import static tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder.RESOURCES_WEBJARS_SWAGGER_UI;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +45,7 @@ class SwaggerWebjarIntegrityTest {
    */
   @Test
   public void shouldHaveTheSameVersionOfFilesInVendorFolderAndSwaggerJar() throws Exception {
-    final List<String> vendorFiles = listClasspathDir(VENDOR_COPY_PATH);
+    final List<String> vendorFiles = listClasspathDir(VENDOR_COPY_PATH, SwaggerUIBuilder.class);
     assertThat(vendorFiles).isNotEmpty();
     for (String filePath : vendorFiles) {
       final byte[] resourceFileContents = getClasspathFile(filePath);
@@ -62,9 +62,9 @@ class SwaggerWebjarIntegrityTest {
     }
   }
 
-  private static List<String> listClasspathDir(final String path)
+  private static List<String> listClasspathDir(final String path, final Class<?> baseClass)
       throws IOException, URISyntaxException {
-    final URI uri = SwaggerBuilder.class.getResource(path).toURI();
+    final URI uri = baseClass.getResource(path).toURI();
     if (uri.getScheme().equals("jar")) {
       try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
         return listPath(fileSystem.getPath(path));

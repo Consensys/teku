@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import kotlin.jvm.functions.Function1;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
-public class SwaggerBuilder {
+public class SwaggerUIBuilder {
   // Version here MUST match `swagger-ui` library version
   private static final String SWAGGER_UI_VERSION = "4.10.3";
 
@@ -33,12 +33,13 @@ public class SwaggerBuilder {
   private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui/" + SWAGGER_UI_VERSION;
   // Be careful when modifying this, it's used in static js files for serving Swagger UI
   private static final String SWAGGER_DOCS_PATH = "/swagger-docs";
+  public static final String SWAGGER_INITIALIZER_JS = "/swagger-initializer.js";
   private static final Set<String> MODIFIED_FILES =
-      Set.of(SWAGGER_HOSTED_PATH + "/swagger-initializer.js");
+      Set.of(SWAGGER_HOSTED_PATH + SWAGGER_INITIALIZER_JS);
 
   public static final String RESOURCES_WEBJARS_SWAGGER_UI =
       "/META-INF/resources/webjars/swagger-ui/" + SWAGGER_UI_VERSION + "/";
-  private static final String SWAGGER_UI_PATCHED = "/swagger-ui/patched/";
+  private static final String SWAGGER_UI_PATCHED = "/swagger-ui/patched";
 
   private static final Handler INDEX =
       (ctx) -> {
@@ -50,7 +51,7 @@ public class SwaggerBuilder {
 
   private final boolean enabled;
 
-  public SwaggerBuilder(final boolean enabled) {
+  public SwaggerUIBuilder(final boolean enabled) {
     this.enabled = enabled;
   }
 
@@ -70,10 +71,10 @@ public class SwaggerBuilder {
                           && MODIFIED_FILES.contains(httpServletRequest.getPathInfo());
         });
     config.addSinglePageRoot(
-        SWAGGER_HOSTED_PATH + "/swagger-initializer.js",
-        "/swagger-ui/patched/swagger-initializer.js",
+        SWAGGER_HOSTED_PATH + SWAGGER_INITIALIZER_JS,
+        SWAGGER_UI_PATCHED + SWAGGER_INITIALIZER_JS,
         Location.CLASSPATH);
-    ThymeleafConfigurator.enableThymeleafTemplates(SWAGGER_UI_PATCHED);
+    ThymeleafConfigurator.enableThymeleafTemplates(SWAGGER_UI_PATCHED + "/");
     config.addSinglePageHandler(SWAGGER_UI_PATH, INDEX);
   }
 
