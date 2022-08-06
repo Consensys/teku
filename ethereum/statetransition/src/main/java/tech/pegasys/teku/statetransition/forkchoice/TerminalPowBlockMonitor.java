@@ -236,6 +236,10 @@ public class TerminalPowBlockMonitor {
         .eth1GetPowChainHead()
         .thenCompose(
             powBlock -> {
+              if (powBlock == null) {
+                LOG.debug("checkTerminalBlockByTTD: Not checking - Latest pow block is null");
+                return SafeFuture.COMPLETE;
+              }
               final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");

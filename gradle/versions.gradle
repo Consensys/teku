@@ -128,7 +128,9 @@ dependencyManagement {
       entry 'mockito-junit-jupiter'
     }
 
-    dependency 'io.github.hakky54:logcaptor:2.7.10'
+    dependency('io.github.hakky54:logcaptor:2.7.10') {
+      exclude 'org.apache.logging.log4j:log4j-slf4j-impl'
+    }
 
     dependencySet(group: "org.openjdk.jmh", version: "1.35") {
       entry 'jmh-core'
