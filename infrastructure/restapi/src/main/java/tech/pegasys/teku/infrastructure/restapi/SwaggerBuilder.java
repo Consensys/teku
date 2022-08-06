@@ -15,7 +15,10 @@ package tech.pegasys.teku.infrastructure.restapi;
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
+import io.javalin.http.Handler;
 import io.javalin.http.staticfiles.Location;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -27,15 +30,23 @@ public class SwaggerBuilder {
   private static final String SWAGGER_UI_VERSION = "4.10.3";
 
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
-  private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui";
+  private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui/" + SWAGGER_UI_VERSION;
   // Be careful when modifying this, it's used in static js files for serving Swagger UI
   private static final String SWAGGER_DOCS_PATH = "/swagger-docs";
   private static final Set<String> MODIFIED_FILES =
-      Set.of(
-          SWAGGER_HOSTED_PATH + "/swagger-initializer.js");
+      Set.of(SWAGGER_HOSTED_PATH + "/swagger-initializer.js");
 
   public static final String RESOURCES_WEBJARS_SWAGGER_UI =
       "/META-INF/resources/webjars/swagger-ui/" + SWAGGER_UI_VERSION + "/";
+  private static final String SWAGGER_UI_PATCHED = "/swagger-ui/patched/";
+
+  private static final Handler INDEX =
+      (ctx) -> {
+        Map<String, Object> model = new HashMap<>();
+        model.put("title", "Teku REST API");
+        model.put("basePath", SWAGGER_HOSTED_PATH);
+        ctx.render("index.html", model);
+      };
 
   private final boolean enabled;
 
@@ -62,7 +73,8 @@ public class SwaggerBuilder {
         SWAGGER_HOSTED_PATH + "/swagger-initializer.js",
         "/swagger-ui/patched/swagger-initializer.js",
         Location.CLASSPATH);
-    config.addSinglePageRoot(SWAGGER_UI_PATH, "/swagger-ui/patched/index.html", Location.CLASSPATH);
+    ThymeleafConfigurator.enableThymeleafTemplates(SWAGGER_UI_PATCHED);
+    config.addSinglePageHandler(SWAGGER_UI_PATH, INDEX);
   }
 
   public Optional<String> configureDocs(

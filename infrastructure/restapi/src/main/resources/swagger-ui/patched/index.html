@@ -3,17 +3,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="/webjars/swagger-ui/swagger-ui.css" />
-    <link rel="stylesheet" type="text/css" href="/webjars/swagger-ui/index.css" />
-    <link rel="icon" type="image/png" href="/webjars/swagger-ui/favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/webjars/swagger-ui/favicon-16x16.png" sizes="16x16" />
+    <title th:text="${title}"></title>
+    <link rel="stylesheet" type="text/css" th:href="${basePath} + '/swagger-ui.css'" />
+    <link rel="stylesheet" type="text/css" th:href="${basePath} + '/index.css'" />
+    <link rel="icon" type="image/png" th:href="${basePath} + '/favicon-32x32.png'" sizes="32x32" />
+    <link rel="icon" type="image/png" th:href="${basePath} + '/favicon-16x16.png'" sizes="16x16" />
   </head>
 
   <body>
     <div id="swagger-ui"></div>
-    <script src="/webjars/swagger-ui/swagger-ui-bundle.js" charset="UTF-8"> </script>
-    <script src="/webjars/swagger-ui/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
-    <script src="/webjars/swagger-ui/swagger-initializer.js" charset="UTF-8"> </script>
+    <script th:src="${basePath} + '/swagger-ui-bundle.js'" charset="UTF-8"> </script>
+    <script th:src="${basePath} + '/swagger-ui-standalone-preset.js'" charset="UTF-8"> </script>
+    <script th:src="${basePath} + '/swagger-initializer.js'" charset="UTF-8"> </script>
   </body>
 </html>

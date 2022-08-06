@@ -18,6 +18,7 @@ dependencies {
   implementation 'io.javalin:javalin'
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.webjars:swagger-ui'
+  implementation 'org.thymeleaf:thymeleaf'
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:json'))
