@@ -22,3 +22,4 @@ For information on changes in released versions of Teku, see the [releases page]
   This simplifies using the standard REST API to retrieve the initial state as just the base URL can be specified (e.g. `--initial-state https://<credentials@eth2-beacon-mainnet.infura.io`)
 
 ### Bug Fixes
+- Fixed `NullPointerException` when checking for the terminal PoW block while the EL was syncing
