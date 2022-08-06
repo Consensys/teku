@@ -40,12 +40,13 @@ class SwaggerWebjarIntegrityTest {
    *
    * <p>NOTICE: If it doesn't match due to swagger version update, both
    * `infrastructure/restapi/src/main/resources/swagger-ui/vendor` (just jar files copy) and
-   * `infrastructure/restapi/src/main/resources/swagger-ui/patched` (uptodate version files with
-   * changed links) should be updated
+   * `infrastructure/restapi/src/main/resources/swagger-ui/patched` (uptodate vendor files with
+   * changed links similar to the current modifications) should be updated
    */
   @Test
   public void shouldHaveTheSameVersionOfFilesInVendorFolderAndSwaggerJar() throws Exception {
     final List<String> vendorFiles = listClasspathDir(VENDOR_COPY_PATH);
+    assertThat(vendorFiles).isNotEmpty();
     for (String filePath : vendorFiles) {
       final byte[] resourceFileContents = getClasspathFile(filePath);
       final byte[] jarFileContents =
@@ -55,7 +56,7 @@ class SwaggerWebjarIntegrityTest {
     }
   }
 
-  public byte[] getClasspathFile(final String path) throws IOException {
+  private byte[] getClasspathFile(final String path) throws IOException {
     try (InputStream in = getClass().getResourceAsStream(path)) {
       return in.readAllBytes();
     }
