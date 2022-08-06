@@ -86,7 +86,7 @@ public class SszTypeDefinitionWrapper<DataT, SszDataT extends SszPrimitive<DataT
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SszTypeDefinitionWrapper<?, ?> that = (SszTypeDefinitionWrapper<?, ?>) o;
+    final SszTypeDefinitionWrapper<?, ?> that = (SszTypeDefinitionWrapper<?, ?>) o;
     return Objects.equals(schema, that.schema)
         && Objects.equals(primitiveTypeDefinition, that.primitiveTypeDefinition);
   }
