@@ -83,7 +83,7 @@ class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DescribedPrimitiveTypeDefinition<?> that = (DescribedPrimitiveTypeDefinition<?>) o;
+    final DescribedPrimitiveTypeDefinition<?> that = (DescribedPrimitiveTypeDefinition<?>) o;
     return Objects.equals(delegate, that.delegate) && Objects.equals(description, that.description);
   }
 

@@ -72,7 +72,8 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DeserializableArrayTypeDefinition<?, ?> that = (DeserializableArrayTypeDefinition<?, ?>) o;
+    final DeserializableArrayTypeDefinition<?, ?> that =
+        (DeserializableArrayTypeDefinition<?, ?>) o;
     return Objects.equals(itemType, that.itemType);
   }
 

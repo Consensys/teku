@@ -69,7 +69,8 @@ class RequiredSerializableFieldDefinition<TObject, TField>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RequiredSerializableFieldDefinition<?, ?> that = (RequiredSerializableFieldDefinition<?, ?>) o;
+    final RequiredSerializableFieldDefinition<?, ?> that =
+        (RequiredSerializableFieldDefinition<?, ?>) o;
     return Objects.equals(name, that.name) && Objects.equals(type, that.type);
   }
 

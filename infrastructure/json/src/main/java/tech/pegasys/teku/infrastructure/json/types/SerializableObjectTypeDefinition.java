@@ -125,7 +125,7 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SerializableObjectTypeDefinition<?> that = (SerializableObjectTypeDefinition<?>) o;
+    final SerializableObjectTypeDefinition<?> that = (SerializableObjectTypeDefinition<?>) o;
     return Objects.equals(name, that.name)
         && Objects.equals(title, that.title)
         && Objects.equals(description, that.description)

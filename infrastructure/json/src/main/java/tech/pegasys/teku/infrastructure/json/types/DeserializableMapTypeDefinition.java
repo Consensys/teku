@@ -113,7 +113,7 @@ public class DeserializableMapTypeDefinition<TKey, TValue>
     if (!super.equals(o)) {
       return false;
     }
-    DeserializableMapTypeDefinition<?, ?> that = (DeserializableMapTypeDefinition<?, ?>) o;
+    final DeserializableMapTypeDefinition<?, ?> that = (DeserializableMapTypeDefinition<?, ?>) o;
     return Objects.equals(keyType, that.keyType) && Objects.equals(valueType, that.valueType);
   }
 

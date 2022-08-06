@@ -68,7 +68,8 @@ class OptionalSerializableFieldDefinition<TObject, TField>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    OptionalSerializableFieldDefinition<?, ?> that = (OptionalSerializableFieldDefinition<?, ?>) o;
+    final OptionalSerializableFieldDefinition<?, ?> that =
+        (OptionalSerializableFieldDefinition<?, ?>) o;
     return Objects.equals(name, that.name) && Objects.equals(type, that.type);
   }
 

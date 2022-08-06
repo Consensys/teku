@@ -53,7 +53,7 @@ class RequiredDeserializableFieldDefinition<TObject, TBuilder, TField>
     if (!super.equals(o)) {
       return false;
     }
-    RequiredDeserializableFieldDefinition<?, ?, ?> that =
+    final RequiredDeserializableFieldDefinition<?, ?, ?> that =
         (RequiredDeserializableFieldDefinition<?, ?, ?>) o;
     return Objects.equals(deserializableType, that.deserializableType);
   }

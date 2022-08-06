@@ -120,7 +120,7 @@ public class SerializableOneOfTypeDefinition<TObject>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SerializableOneOfTypeDefinition<?> that = (SerializableOneOfTypeDefinition<?>) o;
+    final SerializableOneOfTypeDefinition<?> that = (SerializableOneOfTypeDefinition<?>) o;
     return Objects.equals(types, that.types)
         && Objects.equals(name, that.name)
         && Objects.equals(title, that.title)

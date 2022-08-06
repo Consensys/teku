@@ -73,7 +73,7 @@ public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    BooleanTypeDefinition that = (BooleanTypeDefinition) o;
+    final BooleanTypeDefinition that = (BooleanTypeDefinition) o;
     return Objects.equals(description, that.description);
   }
 

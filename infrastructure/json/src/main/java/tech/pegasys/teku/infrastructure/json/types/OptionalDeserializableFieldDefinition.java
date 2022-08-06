@@ -53,7 +53,7 @@ public class OptionalDeserializableFieldDefinition<TObject, TBuilder, TField>
     if (!super.equals(o)) {
       return false;
     }
-    OptionalDeserializableFieldDefinition<?, ?, ?> that =
+    final OptionalDeserializableFieldDefinition<?, ?, ?> that =
         (OptionalDeserializableFieldDefinition<?, ?, ?>) o;
     return Objects.equals(deserializableType, that.deserializableType);
   }

@@ -202,7 +202,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    StringBasedPrimitiveTypeDefinition<?> that = (StringBasedPrimitiveTypeDefinition<?>) o;
+    final StringBasedPrimitiveTypeDefinition<?> that = (StringBasedPrimitiveTypeDefinition<?>) o;
     return Objects.equals(name, that.name)
         && Objects.equals(title, that.title)
         && Objects.equals(description, that.description)

@@ -74,7 +74,7 @@ public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SerializableArrayTypeDefinition<?, ?> that = (SerializableArrayTypeDefinition<?, ?>) o;
+    final SerializableArrayTypeDefinition<?, ?> that = (SerializableArrayTypeDefinition<?, ?>) o;
     return Objects.equals(itemType, that.itemType) && Objects.equals(description, that.description);
   }
 

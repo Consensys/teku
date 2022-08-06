@@ -120,7 +120,8 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
     if (!super.equals(o)) {
       return false;
     }
-    DeserializableObjectTypeDefinition<?, ?> that = (DeserializableObjectTypeDefinition<?, ?>) o;
+    final DeserializableObjectTypeDefinition<?, ?> that =
+        (DeserializableObjectTypeDefinition<?, ?>) o;
     return Objects.equals(deserializableFields, that.deserializableFields);
   }
 

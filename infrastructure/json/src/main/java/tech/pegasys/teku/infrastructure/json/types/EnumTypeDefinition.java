@@ -76,7 +76,7 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    EnumTypeDefinition<?> that = (EnumTypeDefinition<?>) o;
+    final EnumTypeDefinition<?> that = (EnumTypeDefinition<?>) o;
     return Objects.equals(itemType, that.itemType);
   }
 
