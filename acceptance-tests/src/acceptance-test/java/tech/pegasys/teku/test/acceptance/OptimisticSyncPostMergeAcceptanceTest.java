@@ -80,6 +80,10 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     executionNode2.restartWithEmptyDatabase();
 
     tekuNode2.waitForOptimisticBlock();
+
+    // Now make execution node sync and clarify switch from optimistic sync back to the normal
+    executionNode2.addPeer(executionNode1);
+    tekuNode2.waitForNonOptimisticBlock();
   }
 
   private TekuNode.Config configureTekuNode(
