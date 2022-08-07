@@ -218,7 +218,7 @@ public class BlockImporter {
   }
 
   private String getBlockContent(final SignedBeaconBlock block) {
-    return block.getMessage().sszSerialize().toHexString();
+    return block.sszSerialize().toHexString();
   }
 
   private ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
