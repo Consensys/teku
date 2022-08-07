@@ -1663,7 +1663,7 @@ public class DatabaseTest {
     final BeaconState beaconState = dataStructureUtil.randomBeaconState(ONE);
     database.storeFinalizedState(beaconState, dataStructureUtil.randomBytes32());
 
-    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEqualTo(Optional.of(beaconState));
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(beaconState);
   }
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
