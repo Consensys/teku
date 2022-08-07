@@ -46,7 +46,7 @@ public interface Database extends AutoCloseable {
 
   void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
 
-  void storeFinalizedState(BeaconState state);
+  void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 

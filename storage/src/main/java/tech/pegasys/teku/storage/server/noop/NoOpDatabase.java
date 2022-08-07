@@ -56,7 +56,7 @@ public class NoOpDatabase implements Database {
   public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}
 
   @Override
-  public void storeFinalizedState(BeaconState state) {}
+  public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {}
 
   @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
