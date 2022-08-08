@@ -38,7 +38,16 @@ public class StubMetricSystemTest {
       };
 
   @ParameterizedTest
-  @ValueSource(strings = {"correctname", ":correctname", "_correctname", "correctNAME", "correct_name", "correct_name__", "correct_name::123"})
+  @ValueSource(
+      strings = {
+        "correctname",
+        ":correctname",
+        "_correctname",
+        "correctNAME",
+        "correct_name",
+        "correct_name__",
+        "correct_name::123"
+      })
   public void mustAcceptValidMetricNames(String input) {
     metricsSystem.createLabelledCounter(metricCategory, input, "", "correct_label");
   }
@@ -48,9 +57,7 @@ public class StubMetricSystemTest {
   public void mustRejectInvalidMetricNames(String input) {
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, input, "", "correct_label"));
+        () -> metricsSystem.createLabelledCounter(metricCategory, input, "", "correct_label"));
   }
 
   @ParameterizedTest
@@ -64,8 +71,6 @@ public class StubMetricSystemTest {
   public void mustRejectInvalidLabelNames() {
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, "correct_name", "", ""));
+        () -> metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", ""));
   }
 }

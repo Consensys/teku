@@ -115,7 +115,8 @@ public class StubMetricsSystem implements MetricsSystem {
     if (!METRIC_NAME_PATTERN.matcher(metricName).matches()) {
       throw new IllegalArgumentException(
           String.format(
-              "Invalid metric name %s. Must match the regex %s", metricName, METRIC_NAME_PATTERN.pattern()));
+              "Invalid metric name %s. Must match the regex %s",
+              metricName, METRIC_NAME_PATTERN.pattern()));
     }
   }
 
@@ -124,7 +125,8 @@ public class StubMetricsSystem implements MetricsSystem {
       if (!LABEL_NAME_PATTERN.matcher(labelName).matches()) {
         throw new IllegalArgumentException(
             String.format(
-                "Invalid label name %s. Must match the regex %s", labelName, LABEL_NAME_PATTERN.pattern()));
+                "Invalid label name %s. Must match the regex %s",
+                labelName, LABEL_NAME_PATTERN.pattern()));
       }
     }
   }
