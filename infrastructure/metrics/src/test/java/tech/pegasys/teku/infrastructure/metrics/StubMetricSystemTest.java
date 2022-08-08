@@ -17,7 +17,8 @@ import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class StubMetricSystemTest {
 
@@ -36,60 +37,35 @@ public class StubMetricSystemTest {
         }
       };
 
-  @Test
-  public void mustAcceptValidMetricNames() {
-    metricsSystem.createLabelledCounter(metricCategory, "correctname", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, ":correctname", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "_correctname", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "correctNAME", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name__", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name::123", "", "correct_label");
+  @ParameterizedTest
+  @ValueSource(strings = {"correctname", ":correctname", "_correctname", "correctNAME", "correct_name", "correct_name__", "correct_name::123"})
+  public void mustAcceptValidMetricNames(String input) {
+    metricsSystem.createLabelledCounter(metricCategory, input, "", "correct_label");
   }
 
-  @Test
-  public void mustRejectInvalidMetricNames() {
+  @ParameterizedTest
+  @ValueSource(strings = {"1incorrect_name", "$incorrect_name", "incorrect-name"})
+  public void mustRejectInvalidMetricNames(String input) {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
             metricsSystem.createLabelledCounter(
-                metricCategory, "1incorrect_name", "", "correct_label"));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, "$incorrect_name", "", "correct_label"));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, "incorrect-name", "", "correct_label"));
+                metricCategory, input, "", "correct_label"));
   }
 
-  @Test
-  public void mustAcceptValidLabelNames() {
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", "correctlabel");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", "correctLabel");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", "correct_label");
-    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", "_correct_label");
+  @ParameterizedTest
+  @ValueSource(strings = {"correctlabel", "correctLabel", "correct_label", "_correct_label"})
+  public void mustAcceptValidLabelNames(String input) {
+    metricsSystem.createLabelledCounter(metricCategory, "correct_name", "", input);
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(strings = {"1incorrect_label", "@incorrect_label", "incorrect-label"})
   public void mustRejectInvalidLabelNames() {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
             metricsSystem.createLabelledCounter(
-                metricCategory, "correct_name", "", "1incorrect_label"));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, "correct_name", "", "@incorrect_label"));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            metricsSystem.createLabelledCounter(
-                metricCategory, "correct_name", "", "incorrect-label"));
+                metricCategory, "correct_name", "", ""));
   }
 }
