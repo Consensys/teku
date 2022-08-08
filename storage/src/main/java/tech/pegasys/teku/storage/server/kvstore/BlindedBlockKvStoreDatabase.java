@@ -186,12 +186,8 @@ public class BlindedBlockKvStoreDatabase
                 .getMessage()
                 .getBody()
                 .getOptionalExecutionPayload()
-                .ifPresent(
-                    payload -> {
-                      if (!payload.isDefault()) {
-                        updater.addExecutionPayload(block.getRoot(), payload);
-                      }
-                    });
+                .filter(payload -> !payload.isDefault)
+                .ifPresent(updater::addExecutionPayload));
             updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
           });
       updater.commit();
