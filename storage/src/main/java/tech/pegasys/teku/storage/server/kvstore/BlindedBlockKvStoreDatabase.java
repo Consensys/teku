@@ -96,11 +96,11 @@ public class BlindedBlockKvStoreDatabase
       return maybeBlock;
     }
     final SignedBeaconBlock block = maybeBlock.get();
-    return Optional.of(getUnblindedBlock(blockRoot, block));
+    return Optional.of(getUnblindedBlock(block, blockRoot));
   }
 
   private SignedBeaconBlock getUnblindedBlock(
-      final Bytes32 blockRoot, final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final Bytes32 blockRoot) {
     if (!block.isBlinded()) {
       return block;
     }
@@ -120,7 +120,6 @@ public class BlindedBlockKvStoreDatabase
 
     final Optional<Bytes> maybePayload = dao.getExecutionPayload(blockRoot);
     if (maybePayload.isEmpty()) {
-      //      return block;
       throw new StorageException(
           "Blinded block had a non default payload, but payload could not be retrieved from store for block "
               + blockRoot
@@ -149,7 +148,7 @@ public class BlindedBlockKvStoreDatabase
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamFinalizedBlockRoots(startSlot, endSlot)
         .flatMap(root -> dao.getBlindedBlock(root).stream())
-        .map(block -> getUnblindedBlock(block.getRoot(), block));
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -186,8 +185,8 @@ public class BlindedBlockKvStoreDatabase
                 .getMessage()
                 .getBody()
                 .getOptionalExecutionPayload()
-                .filter(payload -> !payload.isDefault)
-                .ifPresent(updater::addExecutionPayload));
+                .filter(payload -> !payload.isDefault())
+                .ifPresent(payload -> updater.addExecutionPayload(block.getRoot(), payload));
             updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
           });
       updater.commit();
@@ -221,7 +220,7 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getLatestBlindedBlockAtSlot(slot)
-        .map(block -> getUnblindedBlock(block.getRoot(), block));
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -238,7 +237,7 @@ public class BlindedBlockKvStoreDatabase
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getFinalizedBlockRootAtSlot(slot)
         .flatMap(dao::getBlindedBlock)
-        .map(block -> getUnblindedBlock(block.getRoot(), block));
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -248,7 +247,7 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
-    return dao.getEarliestBlindedBlock().map(block -> getUnblindedBlock(block.getRoot(), block));
+    return dao.getEarliestBlindedBlock().map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
