@@ -124,7 +124,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
-  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByPayloadHash() {
+  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot() {
     return executionPayloadByBlockRoot;
   }
 
@@ -150,7 +150,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
         .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
-        .put("EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", getColumnExecutionPayloadByPayloadHash())
+        .put("EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot())
         .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .build();
   }
