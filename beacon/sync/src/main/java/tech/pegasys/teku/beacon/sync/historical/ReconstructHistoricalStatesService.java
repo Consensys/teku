@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -104,13 +105,14 @@ public class ReconstructHistoricalStatesService extends Service {
     return chainDataClient
         .getBlockAtSlotExact(context.slot)
         .thenComposeChecked(
-            block -> {
-              if (block.isEmpty()) {
+            maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
                 return SafeFuture.COMPLETE;
               }
 
-              context.currentState = spec.replayValidatedBlock(context.currentState, block.get());
-              return storageUpdateChannel.onFinalizedState(context.currentState);
+              final SignedBeaconBlock block = maybeBlock.get();
+              context.currentState = spec.replayValidatedBlock(context.currentState, block);
+              return storageUpdateChannel.onFinalizedState(context.currentState, block.getRoot());
             })
         .thenRun(context::incrementSlot)
         .thenCompose(__ -> applyNextBlock(context));
