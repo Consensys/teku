@@ -41,6 +41,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -110,7 +112,8 @@ public abstract class KvStoreDatabase<
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
@@ -124,8 +127,9 @@ public abstract class KvStoreDatabase<
       return new BlindedBlockKvStoreDatabase(
           dao,
           new BlindedBlockMigration<>(
-              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
+              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, storageAsyncRunner),
           stateStorageMode,
+          eventChannels.getPublisher(ExecutionLayerChannel.class, storageAsyncRunner),
           storeNonCanonicalBlocks,
           spec);
     }
@@ -141,7 +145,8 @@ public abstract class KvStoreDatabase<
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
@@ -154,7 +159,8 @@ public abstract class KvStoreDatabase<
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec,
         finalizedStateStorageLogic);
   }
@@ -169,7 +175,8 @@ public abstract class KvStoreDatabase<
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
@@ -181,7 +188,8 @@ public abstract class KvStoreDatabase<
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec,
         finalizedStateStorageLogic);
   }
@@ -194,7 +202,8 @@ public abstract class KvStoreDatabase<
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
@@ -203,8 +212,9 @@ public abstract class KvStoreDatabase<
       return new BlindedBlockKvStoreDatabase(
           dao,
           new BlindedBlockMigration<>(
-              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
+              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, storageAsyncRunner),
           stateStorageMode,
+          eventChannels.getPublisher(ExecutionLayerChannel.class, storageAsyncRunner),
           storeNonCanonicalBlocks,
           spec);
     }

@@ -31,6 +31,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   String STUB_ENDPOINT_PREFIX = "stub";
   ExecutionLayerChannel NOOP =
       new ExecutionLayerChannel() {
+        // FIXME will be calling this to get payload when its not stored
         @Override
         public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
           return SafeFuture.completedFuture(Optional.empty());

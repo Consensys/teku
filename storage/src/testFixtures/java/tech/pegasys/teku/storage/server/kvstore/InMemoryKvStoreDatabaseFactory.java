@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -38,7 +38,8 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedSnapshot combinedSchema =
@@ -56,7 +57,8 @@ public class InMemoryKvStoreDatabaseFactory {
         storeBlockExecutionPayloadSeparately,
         BLOCK_MIGRATION_BATCH_SIZE,
         BLOCK_MIGRATION_BATCH_DELAY,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -67,7 +69,8 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
@@ -80,7 +83,8 @@ public class InMemoryKvStoreDatabaseFactory {
         storeBlockExecutionPayloadSeparately,
         BLOCK_MIGRATION_BATCH_SIZE,
         BLOCK_MIGRATION_BATCH_DELAY,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -90,7 +94,8 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema =
         new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
@@ -104,6 +109,7 @@ public class InMemoryKvStoreDatabaseFactory {
         BLOCK_MIGRATION_BATCH_SIZE,
         BLOCK_MIGRATION_BATCH_DELAY,
         1000,
+        eventChannels,
         asyncRunner,
         spec);
   }

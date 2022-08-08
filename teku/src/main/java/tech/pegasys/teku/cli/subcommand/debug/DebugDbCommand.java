@@ -33,6 +33,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.TekuDefaultExceptionHandler;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -70,6 +72,13 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class DebugDbCommand implements Runnable {
+
+  private final AsyncRunnerFactory asyncRunnerFactory =
+      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+
+  private final EventChannels eventChannels =
+      new EventChannels(new TekuDefaultExceptionHandler(), new NoOpMetricsSystem());
+
   @Override
   public void run() {
     CommandLine.usage(this, System.out);
@@ -518,7 +527,8 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
-            Optional.empty(),
+            eventChannels,
+            asyncRunnerFactory.create("storage", 3),
             StorageConfiguration.builder()
                 .storeBlockExecutionPayloadSeparately(
                     beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately())

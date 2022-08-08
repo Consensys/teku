@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.exception.StorageException;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -48,16 +51,20 @@ public class BlindedBlockKvStoreDatabase
         CombinedUpdaterBlinded,
         HotUpdaterBlinded,
         FinalizedUpdaterBlinded> {
-  final BlindedBlockMigration<?> migrator;
+  private static final Logger LOG = LogManager.getLogger();
+  private final BlindedBlockMigration<?> migrator;
+  private final ExecutionLayerChannel executionLayer;
 
   BlindedBlockKvStoreDatabase(
       final KvStoreCombinedDaoBlinded dao,
       final BlindedBlockMigration<?> migrator,
       final StateStorageMode stateStorageMode,
+      final ExecutionLayerChannel executionLayerChannel,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     super(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
     this.migrator = migrator;
+    executionLayer = executionLayerChannel;
   }
 
   @Override
@@ -118,7 +125,7 @@ public class BlindedBlockKvStoreDatabase
               .getDefault());
     }
 
-    final Optional<Bytes> maybePayload = dao.getExecutionPayload(blockRoot);
+    final Optional<Bytes> maybePayload = getExecutionPayload(block.getRoot(), blockRoot);
     if (maybePayload.isEmpty()) {
       throw new StorageException(
           "Blinded block had a non default payload, but payload could not be retrieved from store for block "
@@ -129,6 +136,17 @@ public class BlindedBlockKvStoreDatabase
     final ExecutionPayload executionPayload =
         spec.deserializeExecutionPayload(maybePayload.get(), block.getSlot());
     return block.unblind(spec.atSlot(block.getSlot()).getSchemaDefinitions(), executionPayload);
+  }
+
+  private Optional<Bytes> getExecutionPayload(final Bytes32 blockRoot, final Bytes32 payloadRoot) {
+    Optional<Bytes> result = dao.getExecutionPayload(blockRoot);
+    if (result.isPresent()) {
+      return result;
+    } else {
+      executionLayer.eth1GetPowBlock(payloadRoot).finish(LOG::error);
+      return Optional.empty();
+      // FIXME fetch from w3j client
+    }
   }
 
   @Override

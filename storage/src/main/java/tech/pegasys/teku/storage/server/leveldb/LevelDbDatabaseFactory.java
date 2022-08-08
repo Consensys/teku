@@ -17,9 +17,9 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -44,7 +44,8 @@ public class LevelDbDatabaseFactory {
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema =
         V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
@@ -70,7 +71,8 @@ public class LevelDbDatabaseFactory {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -84,7 +86,8 @@ public class LevelDbDatabaseFactory {
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot schema =
         V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
@@ -101,7 +104,8 @@ public class LevelDbDatabaseFactory {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -115,7 +119,8 @@ public class LevelDbDatabaseFactory {
       final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
       final boolean storeVotesEquivocation,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedTreeState schema =
@@ -133,7 +138,8 @@ public class LevelDbDatabaseFactory {
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
         maxKnownNodeCacheSize,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 }

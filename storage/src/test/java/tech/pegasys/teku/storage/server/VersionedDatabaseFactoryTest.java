@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
@@ -22,11 +23,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -41,6 +44,8 @@ public class VersionedDatabaseFactoryTest {
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final AsyncRunner stubAsyncRunner = new StubAsyncRunner();
+  private final EventChannels eventChannels = mock(EventChannels.class);
   @TempDir Path dataDir;
 
   @Test
@@ -49,7 +54,8 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
+            eventChannels,
+            stubAsyncRunner,
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -75,7 +81,8 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
+            eventChannels,
+            stubAsyncRunner,
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -96,7 +103,8 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
+            eventChannels,
+            stubAsyncRunner,
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -115,7 +123,8 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
+            eventChannels,
+            stubAsyncRunner,
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -135,7 +144,8 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
+            eventChannels,
+            stubAsyncRunner,
             StorageConfiguration.builder()
                 .eth1DepositContract(eth1Address)
                 .dataStorageMode(DATA_STORAGE_MODE)

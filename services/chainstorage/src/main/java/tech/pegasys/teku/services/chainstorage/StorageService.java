@@ -15,7 +15,6 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import java.util.Optional;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -53,7 +52,8 @@ public class StorageService extends Service implements StorageServiceFacade {
               new VersionedDatabaseFactory(
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                  Optional.of(serviceConfig.createAsyncRunner("database_migrator")),
+                  serviceConfig.getEventChannels(),
+                  serviceConfig.createAsyncRunner("storage"),
                   config);
           database = dbFactory.createDatabase();
 

@@ -19,11 +19,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
@@ -56,23 +56,25 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
+  private final EventChannels eventChannels;
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
 
   private final boolean storeVotesEquivocation;
 
-  private final Optional<AsyncRunner> asyncRunner;
+  private final AsyncRunner storageAsyncRunner;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
-      final Optional<AsyncRunner> asyncRunner,
+      final EventChannels eventChannels,
+      final AsyncRunner storageAsyncRunner,
       final StorageConfiguration config) {
 
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
-    this.asyncRunner = asyncRunner;
+    this.storageAsyncRunner = storageAsyncRunner;
 
     this.stateStorageMode = config.getDataStorageMode();
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
@@ -85,6 +87,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.blockMigrationBatchDelay = config.getBlockMigrationBatchDelay();
     this.storeVotesEquivocation = config.isStoreVotesEquivocation();
     this.spec = config.getSpec();
+    this.eventChannels = eventChannels;
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
@@ -180,7 +183,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -209,7 +213,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -233,7 +238,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -262,7 +268,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
           storeVotesEquivocation,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -283,7 +290,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
           storeVotesEquivocation,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -304,7 +312,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           blockMigrationBatchDelay,
           maxKnownNodeCacheSize,
           storeVotesEquivocation,
-          asyncRunner,
+          eventChannels,
+          storageAsyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

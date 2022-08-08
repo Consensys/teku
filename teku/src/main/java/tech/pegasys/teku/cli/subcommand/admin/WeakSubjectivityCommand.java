@@ -15,12 +15,15 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
+import tech.pegasys.teku.TekuDefaultExceptionHandler;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
@@ -42,6 +45,12 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class WeakSubjectivityCommand implements Runnable {
+
+  private final AsyncRunnerFactory asyncRunnerFactory =
+      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+
+  private final EventChannels eventChannels =
+      new EventChannels(new TekuDefaultExceptionHandler(), new NoOpMetricsSystem());
 
   @Override
   public void run() {
@@ -110,7 +119,8 @@ public class WeakSubjectivityCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
-            Optional.empty(),
+            eventChannels,
+            asyncRunnerFactory.create("storage", 3),
             StorageConfiguration.builder()
                 .eth1DepositContract(
                     eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())

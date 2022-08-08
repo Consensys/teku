@@ -15,12 +15,14 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
 
 import java.nio.file.Path;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -39,7 +41,9 @@ public class FileBackedStorageSystemBuilder {
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
-  private Optional<AsyncRunner> asyncRunner = Optional.empty();
+  private AsyncRunner storageAsyncRunner = new StubAsyncRunner();
+
+  private EventChannels eventChannels = mock(EventChannels.class);
   private Spec spec;
 
   // Version-dependent fields
@@ -105,7 +109,8 @@ public class FileBackedStorageSystemBuilder {
         .version(version)
         .dataDir(dataDir)
         .storageMode(storageMode)
-        .asyncRunner(asyncRunner)
+        .eventChannels(eventChannels)
+        .storageAsyncRunner(storageAsyncRunner)
         .stateStorageFrequency(stateStorageFrequency)
         .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
         .storeConfig(storeConfig);
@@ -122,8 +127,13 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
-  public FileBackedStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
-    this.asyncRunner = asyncRunner;
+  public FileBackedStorageSystemBuilder storageAsyncRunner(final AsyncRunner storageAsyncRunner) {
+    this.storageAsyncRunner = storageAsyncRunner;
+    return this;
+  }
+
+  public FileBackedStorageSystemBuilder eventChannels(final EventChannels eventChannels) {
+    this.eventChannels = eventChannels;
     return this;
   }
 
@@ -185,7 +195,8 @@ public class FileBackedStorageSystemBuilder {
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
         storeVotesEquivocation,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -204,7 +215,8 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -220,7 +232,8 @@ public class FileBackedStorageSystemBuilder {
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
         storeVotesEquivocation,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -236,7 +249,8 @@ public class FileBackedStorageSystemBuilder {
         blockMigrationBatchDelay,
         10_000,
         storeVotesEquivocation,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -252,7 +266,8 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 
@@ -268,7 +283,8 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        asyncRunner,
+        eventChannels,
+        storageAsyncRunner,
         spec);
   }
 }

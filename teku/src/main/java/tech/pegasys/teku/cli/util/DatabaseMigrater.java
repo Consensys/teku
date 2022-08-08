@@ -20,13 +20,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.TekuDefaultExceptionHandler;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -45,8 +46,11 @@ public class DatabaseMigrater {
   private final Spec spec;
   private final String network;
   private final StateStorageMode storageMode;
-  final AsyncRunnerFactory asyncRunnerFactory =
+  private final AsyncRunnerFactory asyncRunnerFactory =
       AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+
+  private final EventChannels eventChannels =
+      new EventChannels(new TekuDefaultExceptionHandler(), new NoOpMetricsSystem());
   private KvStoreDatabase<?, ?, ?, ?> originalDatabase;
 
   KvStoreDatabase<?, ?, ?, ?> getOriginalDatabase() {
@@ -184,7 +188,8 @@ public class DatabaseMigrater {
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             databasePath,
-            Optional.empty(),
+            eventChannels,
+            asyncRunnerFactory.create("storage", 3),
             StorageConfiguration.builder()
                 .dataStorageMode(storageMode)
                 .specProvider(spec)

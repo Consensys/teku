@@ -52,14 +52,14 @@ public class BlindedBlockMigration<
 
   private final T dao;
 
-  private final Optional<AsyncRunner> asyncRunner;
+  private final AsyncRunner asyncRunner;
 
   BlindedBlockMigration(
       final Spec spec,
       final T dao,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner) {
+      final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.dao = dao;
     this.asyncRunner = asyncRunner;
@@ -68,12 +68,11 @@ public class BlindedBlockMigration<
   }
 
   void migrateBlocks() {
-    if (asyncRunner.isEmpty()) {
+    if (asyncRunner == null) {
       throw new IllegalStateException("Not able to migrate blocks without an async runner");
     }
     moveHotBlocksToBlindedStorage();
     asyncRunner
-        .get()
         .runAsync(this::migrateRemainingBlocks)
         .finish(
             error -> {
