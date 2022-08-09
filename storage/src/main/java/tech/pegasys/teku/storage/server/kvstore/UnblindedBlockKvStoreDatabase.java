@@ -114,6 +114,12 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public Optional<ExecutionPayload> getExecutionPayload(
+      final Bytes32 blockRoot, final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getLatestFinalizedBlockAtSlot(slot);
   }

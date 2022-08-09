@@ -103,6 +103,11 @@ public class ExecutionPayloadHeader
   }
 
   @Override
+  public boolean isDefault() {
+    return super.isDefault();
+  }
+
+  @Override
   public ExecutionPayloadHeaderSchema getSchema() {
     return (ExecutionPayloadHeaderSchema) super.getSchema();
   }

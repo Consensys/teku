@@ -19,28 +19,29 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class SlotAndExecutionPayload {
+public class SlotAndExecutionPayloadSummary {
   private final UInt64 slot;
-  private final ExecutionPayload executionPayload;
+  private final ExecutionPayloadSummary executionPayload;
 
-  public SlotAndExecutionPayload(final UInt64 slot, final ExecutionPayload executionPayload) {
+  public SlotAndExecutionPayloadSummary(
+      final UInt64 slot, final ExecutionPayloadSummary executionPayloadSummary) {
     this.slot = slot;
-    this.executionPayload = executionPayload;
+    this.executionPayload = executionPayloadSummary;
   }
 
-  public static Optional<SlotAndExecutionPayload> fromBlock(final SignedBeaconBlock block) {
+  public static Optional<SlotAndExecutionPayloadSummary> fromBlock(final SignedBeaconBlock block) {
     return block
         .getMessage()
         .getBody()
-        .getOptionalExecutionPayload()
-        .map(payload -> new SlotAndExecutionPayload(block.getSlot(), payload));
+        .getOptionalExecutionPayloadSummary()
+        .map(payload -> new SlotAndExecutionPayloadSummary(block.getSlot(), payload));
   }
 
   public UInt64 getSlot() {
     return slot;
   }
 
-  public ExecutionPayload getExecutionPayload() {
+  public ExecutionPayloadSummary getExecutionPayload() {
     return executionPayload;
   }
 
@@ -52,7 +53,7 @@ public class SlotAndExecutionPayload {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final SlotAndExecutionPayload that = (SlotAndExecutionPayload) o;
+    final SlotAndExecutionPayloadSummary that = (SlotAndExecutionPayloadSummary) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(executionPayload, that.executionPayload);
   }

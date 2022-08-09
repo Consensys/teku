@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -382,10 +382,10 @@ public abstract class KvStoreDatabase<
         getFinalizedBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
         AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
-    final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload =
+    final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(this::getFinalizedBlockAtSlot)
-            .flatMap(SlotAndExecutionPayload::fromBlock);
+            .flatMap(SlotAndExecutionPayloadSummary::fromBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -517,7 +517,7 @@ public abstract class KvStoreDatabase<
   private UpdateResult doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
-    final Optional<SlotAndExecutionPayload> finalizedOptimisticExecutionPayload =
+    final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticExecutionPayload =
         updateFinalizedData(
             update.getFinalizedChildToParentMap(),
             update.getFinalizedBlocks(),
@@ -575,7 +575,7 @@ public abstract class KvStoreDatabase<
       final Set<Bytes32> deletedHotBlockRoots,
       final Set<Bytes32> finalizedBlockRoots);
 
-  private Optional<SlotAndExecutionPayload> updateFinalizedData(
+  private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
@@ -587,7 +587,7 @@ public abstract class KvStoreDatabase<
       return Optional.empty();
     }
 
-    final Optional<SlotAndExecutionPayload> optimisticTransitionPayload =
+    final Optional<SlotAndExecutionPayloadSummary> optimisticTransitionPayload =
         updateFinalizedOptimisticTransitionBlock(
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     switch (stateStorageMode) {
@@ -608,7 +608,7 @@ public abstract class KvStoreDatabase<
     return optimisticTransitionPayload;
   }
 
-  private Optional<SlotAndExecutionPayload> updateFinalizedOptimisticTransitionBlock(
+  private Optional<SlotAndExecutionPayloadSummary> updateFinalizedOptimisticTransitionBlock(
       final boolean isFinalizedOptimisticBlockRootSet,
       final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
     if (isFinalizedOptimisticBlockRootSet) {
@@ -618,7 +618,7 @@ public abstract class KvStoreDatabase<
         updater.setOptimisticTransitionBlockSlot(transitionBlock.map(SignedBeaconBlock::getSlot));
         updater.commit();
       }
-      return transitionBlock.flatMap(SlotAndExecutionPayload::fromBlock);
+      return transitionBlock.flatMap(SlotAndExecutionPayloadSummary::fromBlock);
     } else {
       return Optional.empty();
     }

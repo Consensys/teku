@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -33,14 +33,14 @@ public class OnDiskStoreData {
   private final Checkpoint bestJustifiedCheckpoint;
   private final Map<Bytes32, StoredBlockMetadata> blockInformation;
   private final Map<UInt64, VoteTracker> votes;
-  private final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
+  private final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
 
   public OnDiskStoreData(
       final UInt64 time,
       final Optional<Checkpoint> anchor,
       final UInt64 genesisTime,
       final AnchorPoint latestFinalized,
-      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInformation,
@@ -89,7 +89,7 @@ public class OnDiskStoreData {
     return votes;
   }
 
-  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+  public Optional<SlotAndExecutionPayloadSummary> getFinalizedOptimisticTransitionPayload() {
     return finalizedOptimisticTransitionPayload;
   }
 

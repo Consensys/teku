@@ -281,5 +281,10 @@ class BlockProductionDutyTest {
     public Bytes32 getPayloadHash() {
       return null;
     }
+
+    @Override
+    public boolean isDefault() {
+      return false;
+    }
   }
 }
