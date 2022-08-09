@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.exception.StorageException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -32,8 +33,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded;
@@ -80,37 +81,49 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     return dao.getBlindedNonCanonicalBlocksAtSlot(slot).stream()
-        .flatMap(block -> getUnblindedBlock(Optional.of(block)).stream())
+        .flatMap(block -> getUnblindedBlock(Optional.of(block), block.getRoot()).stream())
         .collect(Collectors.toList());
   }
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    return getUnblindedBlock(dao.getBlindedBlock(root));
+    return getUnblindedBlock(dao.getBlindedBlock(root), root);
   }
 
   private Optional<SignedBeaconBlock> getUnblindedBlock(
-      final Optional<SignedBeaconBlock> maybeBlock) {
+      final Optional<SignedBeaconBlock> maybeBlock, final Bytes32 blockRoot) {
     if (maybeBlock.isEmpty()) {
       return maybeBlock;
     }
     final SignedBeaconBlock block = maybeBlock.get();
-    return Optional.of(getUnblindedBlock(block));
+    return Optional.of(getUnblindedBlock(block, blockRoot));
   }
 
-  private SignedBeaconBlock getUnblindedBlock(final SignedBeaconBlock block) {
+  private SignedBeaconBlock getUnblindedBlock(
+      final SignedBeaconBlock block, final Bytes32 blockRoot) {
     if (!block.isBlinded()) {
       return block;
     }
-    final Optional<Bytes32> payloadRoot =
-        block
-            .getMessage()
-            .getBody()
-            .getOptionalExecutionPayloadSummary()
-            .map(ExecutionPayloadSummary::getPayloadHash);
-    final Optional<Bytes> maybePayload = payloadRoot.flatMap(dao::getExecutionPayload);
+
+    if (block
+        .getMessage()
+        .getBody()
+        .getOptionalExecutionPayloadHeader()
+        .orElseThrow()
+        .isHeaderOfDefaultPayload()) {
+      return block.unblind(
+          spec.atSlot(block.getSlot()).getSchemaDefinitions(),
+          SchemaDefinitionsBellatrix.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
+              .getExecutionPayloadSchema()
+              .getDefault());
+    }
+
+    final Optional<Bytes> maybePayload = dao.getExecutionPayload(blockRoot);
     if (maybePayload.isEmpty()) {
-      return block;
+      throw new StorageException(
+          "Blinded block had a non default payload, but payload could not be retrieved from store for block "
+              + blockRoot
+              + ".");
     }
 
     final ExecutionPayload executionPayload =
@@ -120,7 +133,7 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
-    return getUnblindedBlock(dao.getBlindedBlock(blockRoot));
+    return getUnblindedBlock(dao.getBlindedBlock(blockRoot), blockRoot);
   }
 
   @Override
@@ -135,7 +148,7 @@ public class BlindedBlockKvStoreDatabase
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamFinalizedBlockRoots(startSlot, endSlot)
         .flatMap(root -> dao.getBlindedBlock(root).stream())
-        .map(this::getUnblindedBlock);
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -172,7 +185,8 @@ public class BlindedBlockKvStoreDatabase
                 .getMessage()
                 .getBody()
                 .getOptionalExecutionPayload()
-                .ifPresent(updater::addExecutionPayload);
+                .filter(payload -> !payload.isDefault())
+                .ifPresent(payload -> updater.addExecutionPayload(block.getRoot(), payload));
             updater.addFinalizedBlockRootBySlot(block.getSlot(), block.getRoot());
           });
       updater.commit();
@@ -200,12 +214,13 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   protected Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
-    return getUnblindedBlock(dao.getBlindedBlock(root));
+    return getUnblindedBlock(dao.getBlindedBlock(root), root);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    return getUnblindedBlock(dao.getLatestBlindedBlockAtSlot(slot));
+    return dao.getLatestBlindedBlockAtSlot(slot)
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -222,7 +237,7 @@ public class BlindedBlockKvStoreDatabase
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getFinalizedBlockRootAtSlot(slot)
         .flatMap(dao::getBlindedBlock)
-        .map(this::getUnblindedBlock);
+        .map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
@@ -232,7 +247,7 @@ public class BlindedBlockKvStoreDatabase
 
   @Override
   public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
-    return getUnblindedBlock(dao.getEarliestBlindedBlock());
+    return dao.getEarliestBlindedBlock().map(block -> getUnblindedBlock(block, block.getRoot()));
   }
 
   @Override
