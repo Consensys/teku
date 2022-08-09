@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -89,7 +89,7 @@ class Store implements UpdatableStore {
   AnchorPoint finalizedAnchor;
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload;
+  Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
@@ -108,7 +108,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
-      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final ForkChoiceStrategy forkChoiceStrategy,
@@ -172,7 +172,7 @@ class Store implements UpdatableStore {
       final UInt64 time,
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
-      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload,
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -351,7 +351,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<SlotAndExecutionPayload> getFinalizedOptimisticTransitionPayload() {
+  public Optional<SlotAndExecutionPayloadSummary> getFinalizedOptimisticTransitionPayload() {
     readLock.lock();
     try {
       return finalizedOptimisticTransitionPayload;

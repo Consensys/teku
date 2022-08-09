@@ -104,6 +104,11 @@ public class ExecutionPayload
   }
 
   @Override
+  public boolean isDefaultPayload() {
+    return super.isDefault();
+  }
+
+  @Override
   public ExecutionPayloadSchema getSchema() {
     return (ExecutionPayloadSchema) super.getSchema();
   }

@@ -26,7 +26,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -49,7 +49,8 @@ public class StoreBuilder {
   private Checkpoint justifiedCheckpoint;
   private Checkpoint bestJustifiedCheckpoint;
   private Map<UInt64, VoteTracker> votes;
-  private Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload = Optional.empty();
+  private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
+      Optional.empty();
 
   private StoreBuilder() {}
 
@@ -205,7 +206,7 @@ public class StoreBuilder {
   }
 
   public StoreBuilder finalizedOptimisticTransitionPayload(
-      final Optional<SlotAndExecutionPayload> finalizedOptimisticTransitionPayload) {
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload) {
     checkNotNull(finalizedOptimisticTransitionPayload);
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
     return this;
