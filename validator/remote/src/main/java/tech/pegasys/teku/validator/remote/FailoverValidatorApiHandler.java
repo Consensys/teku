@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
@@ -82,16 +80,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final MetricsSystem metricsSystem,
       final ValidatorLogger validatorLogger) {
     this.primaryDelegate = primaryDelegate;
-    checkArgument(
-        !failoverDelegates.isEmpty(),
-        "One or more Beacon Nodes should be defined as a failover to use the failover feature.");
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
             FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the configured failover Beacon Nodes",
+            "Counter recording the number of requests sent to the configured (if any) failover Beacon Nodes",
             "failover_endpoint",
             "method",
             "outcome");
@@ -278,7 +273,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final String method,
       final boolean relayRequestToFailovers) {
     final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
-    if (!relayRequestToFailovers) {
+    if (failoverDelegates.isEmpty() || !relayRequestToFailovers) {
       return primaryResponse;
     }
     final List<SafeFuture<T>> failoversResponses =
@@ -293,7 +288,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
           return SafeFuture.firstSuccess(failoversResponses)
               .exceptionallyCompose(
                   __ -> {
-                    validatorLogger.remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+                    validatorLogger.remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(
+                        method);
                     SafeFuture.addSuppressedErrors(
                         primaryThrowable, failoversResponses.toArray(new SafeFuture<?>[0]));
                     return SafeFuture.failedFuture(primaryThrowable);
@@ -309,6 +305,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
    */
   private <T> SafeFuture<T> tryRequestUntilSuccess(
       final ValidatorApiChannelRequest<T> request, final String method) {
+    if (failoverDelegates.isEmpty()) {
+      return request.run(primaryDelegate);
+    }
     return makeFailoverRequest(
         primaryDelegate, failoverDelegates.iterator(), request, false, method, new HashSet<>());
   }
@@ -324,7 +323,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         .exceptionallyCompose(
             throwable -> {
               if (!failoverDelegates.hasNext()) {
-                validatorLogger.remoteBeaconNodeRequestFailedOnAllConfiguredEndpoints();
+                validatorLogger.remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(method);
                 capturedExceptions.forEach(throwable::addSuppressed);
                 return SafeFuture.failedFuture(throwable);
               }
