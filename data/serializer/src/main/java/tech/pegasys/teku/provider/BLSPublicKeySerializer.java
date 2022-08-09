@@ -11,15 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.provider;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import tech.pegasys.teku.bls.BLSPublicKey;
 
-public interface BeaconRestApi {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  int getListenPort();
+public class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
+  @Override
+  public void serialize(BLSPublicKey value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
+  }
 }

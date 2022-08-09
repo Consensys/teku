@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.base.MoreObjects;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -191,5 +192,27 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
       return new StringBasedPrimitiveTypeDefinition<>(
           name, title.or(() -> name), parser, formatter, example, description, format, pattern);
     }
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final StringBasedPrimitiveTypeDefinition<?> that = (StringBasedPrimitiveTypeDefinition<?>) o;
+    return Objects.equals(name, that.name)
+        && Objects.equals(title, that.title)
+        && Objects.equals(description, that.description)
+        && Objects.equals(example, that.example)
+        && Objects.equals(format, that.format)
+        && Objects.equals(pattern, that.pattern);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, title, description, example, format, pattern);
   }
 }
