@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,8 @@ public class OpenApiTestUtil<TObject> {
     mapper
         .configure(SerializationFeature.INDENT_OUTPUT, true)
         .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-        .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+        .configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     this.clazz = clazz;
     this.path = clazz.getPackageName().replaceAll("\\.", "/");
   }

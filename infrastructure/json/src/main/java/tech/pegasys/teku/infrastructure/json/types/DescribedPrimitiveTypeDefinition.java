@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 
 class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T> {
@@ -72,5 +73,22 @@ class DescribedPrimitiveTypeDefinition<T> implements StringValueTypeDefinition<T
   @Override
   public T deserializeFromString(final String value) {
     return delegate.deserializeFromString(value);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DescribedPrimitiveTypeDefinition<?> that = (DescribedPrimitiveTypeDefinition<?>) o;
+    return Objects.equals(delegate, that.delegate) && Objects.equals(description, that.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(delegate, description);
   }
 }
