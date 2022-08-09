@@ -72,7 +72,7 @@ public class BlindedBlockMigrationTest {
       database.migrate();
       assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, blockCount);
       // payloads do get separated out, but there's only 1 default payload, so only 1 entry
-      assertBlindedStorageCounts(database.getColumnCounts(), blockCount, blockCount, 1, 1);
+      assertBlindedStorageCounts(database.getColumnCounts(), blockCount, blockCount, 1, blockCount);
     }
   }
 
@@ -107,7 +107,11 @@ public class BlindedBlockMigrationTest {
       assertUnblindedStorageCounts(
           database.getColumnCounts(), finalizedBlocks - 1, 0, unblindedHotBlockCount);
       assertBlindedStorageCounts(
-          database.getColumnCounts(), unblindedHotBlockCount + 1, unblindedHotBlockCount, 1, 1);
+          database.getColumnCounts(),
+          unblindedHotBlockCount + 1,
+          unblindedHotBlockCount,
+          1,
+          unblindedHotBlockCount + 1);
 
       assertThat(stubAsyncRunner.countDelayedActions()).isEqualTo(1);
       // run async action, then will have all blinded blocks
@@ -115,7 +119,11 @@ public class BlindedBlockMigrationTest {
       assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
       assertUnblindedStorageCounts(database.getColumnCounts(), 0, 0, unblindedHotBlockCount);
       assertBlindedStorageCounts(
-          database.getColumnCounts(), totalBlocks, unblindedHotBlockCount, finalizedBlocks, 1);
+          database.getColumnCounts(),
+          totalBlocks,
+          unblindedHotBlockCount,
+          finalizedBlocks,
+          totalBlocks);
     }
   }
 
@@ -144,7 +152,7 @@ public class BlindedBlockMigrationTest {
             "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", expectedCheckpoints,
             "BLINDED_BLOCKS_BY_ROOT", expectedBlindedBlocks,
             "FINALIZED_BLOCK_ROOT_BY_SLOT", expectedFinalizedBlockIndices,
-            "EXECUTION_PAYLOAD_BY_PAYLOAD_HASH", expectedPayloads);
+            "EXECUTION_PAYLOAD_BY_BLOCK_ROOT", expectedPayloads);
     assertThat(counts).containsAllEntriesOf(expected);
   }
 

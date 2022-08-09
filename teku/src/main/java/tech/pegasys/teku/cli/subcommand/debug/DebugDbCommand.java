@@ -345,7 +345,8 @@ public class DebugDbCommand implements Runnable {
         final Stream<Bytes> blockStream = database.streamHotBlocksAsSsz().map(Map.Entry::getValue);
         final ZipOutputStream out =
             new ZipOutputStream(
-                Files.newOutputStream(outputFile, StandardOpenOption.TRUNCATE_EXISTING))) {
+                Files.newOutputStream(
+                    outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
       for (final Iterator<Bytes> iterator = blockStream.iterator(); iterator.hasNext(); ) {
         out.putNextEntry(new ZipEntry(index + ".ssz"));
         final Bytes blockData = iterator.next();
