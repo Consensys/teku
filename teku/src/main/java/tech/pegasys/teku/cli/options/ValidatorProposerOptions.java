@@ -88,7 +88,8 @@ public class ValidatorProposerOptions {
       description =
           "Set a constant timestamp in Unix format to be used in validator registrations against builder infrastructure.",
       arity = "1",
-      hidden = true)
+      hidden = true,
+      converter = UInt64Converter.class)
   private UInt64 builderRegistrationTimestampOverride = null;
 
   @Option(
