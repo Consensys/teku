@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,7 +45,7 @@ public class ReconstructHistoricalStatesService extends Service {
   private final StorageUpdateChannel storageUpdateChannel;
   private final StatusLogger statusLogger;
 
-  private final AtomicBoolean shutDown;
+  private final AtomicBoolean shutdown;
   private final SafeFuture<Void> stopped = new SafeFuture<>();
 
   public ReconstructHistoricalStatesService(
@@ -68,7 +67,7 @@ public class ReconstructHistoricalStatesService extends Service {
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
     this.statusLogger = statusLogger;
-    this.shutDown = new AtomicBoolean(false);
+    this.shutdown = new AtomicBoolean(false);
   }
 
   @Override
@@ -119,15 +118,11 @@ public class ReconstructHistoricalStatesService extends Service {
   private SafeFuture<Void> applyNextBlock(Context context) {
     if (context.checkStopApplyBlock()) {
       statusLogger.reconstructHistoricalStatesServiceComplete();
-      stopped.complete(null); // fixme should this be set here too?
+      stopped.complete(null);
       return SafeFuture.COMPLETE;
     }
 
-    if (shutDown.get()) {
-      statusLogger.reconstructHistoricalStatesServiceFailedProcess( // fixme log out stop?
-          new FatalServiceFailureException(
-              "ReconstructHistoricalStatesService", "Service was stopped before complete"));
-
+    if (shutdown.get()) {
       stopped.complete(null);
       return SafeFuture.COMPLETE;
     }
@@ -150,7 +145,7 @@ public class ReconstructHistoricalStatesService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    shutDown.set(true);
+    shutdown.set(true);
     return stopped;
   }
 
