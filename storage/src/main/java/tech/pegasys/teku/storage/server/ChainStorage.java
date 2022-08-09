@@ -105,8 +105,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState) {
-    return SafeFuture.fromRunnable(() -> database.storeFinalizedState(finalizedState));
+  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot) {
+    return SafeFuture.fromRunnable(() -> database.storeFinalizedState(finalizedState, blockRoot));
   }
 
   @Override

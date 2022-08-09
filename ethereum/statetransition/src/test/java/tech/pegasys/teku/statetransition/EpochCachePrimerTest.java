@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -135,6 +136,21 @@ class EpochCachePrimerTest {
             any(),
             argThat(argument -> argument.isGreaterThanOrEqualTo(firstSlotAfterLookAheadPeriod)),
             any());
+  }
+
+  @Test
+  void shouldPrimeJustifiedCheckpoint() {
+    // Make sure we have a justified checkpoint to prime.
+    final SignedBlockAndState newHead = storageSystem.chainUpdater().finalizeCurrentChain();
+    final UInt64 epoch = realSpec.getCurrentEpoch(newHead.getState()).plus(1);
+
+    primer.primeCacheForEpoch(epoch);
+
+    final BeaconState state = getStateForEpoch(epoch);
+    final BeaconState justifiedState =
+        safeJoin(recentChainData.retrieveCheckpointState(state.getCurrentJustifiedCheckpoint()))
+            .orElseThrow();
+    verify(beaconStateUtil).getEffectiveBalances(justifiedState);
   }
 
   private void forEachSlotInEpoch(final UInt64 epoch, final Consumer<UInt64> action) {

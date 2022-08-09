@@ -20,5 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Automatically add `/eth/v2/debug/beacon/states/finalized` to the initial state file url (`--initial-state` configuration parameter) when the provided url doesn't work and doesn't contain any path.
   This simplifies using the standard REST API to retrieve the initial state as just the base URL can be specified (e.g. `--initial-state https://<credentials@eth2-beacon-mainnet.infura.io`)
+- Primed cache for new justified checkpoints to reduce time required to run fork choice immediately after justification
 
 ### Bug Fixes
+- Fixed `NullPointerException` when checking for the terminal PoW block while the EL was syncing

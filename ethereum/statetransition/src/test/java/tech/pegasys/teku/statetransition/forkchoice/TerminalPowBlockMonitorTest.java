@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
+import nl.altindag.log.LogCaptor;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -350,6 +351,21 @@ public class TerminalPowBlockMonitorTest {
 
     verify(eventLogger, never()).terminalPowBlockDetected(headBlockHash);
     verify(forkChoiceNotifier, never()).onTerminalBlockReached(headBlockHash);
+  }
+
+  @Test
+  public void shouldHandleLatestPowBlockBeingNull() {
+    setUpTTDConfig();
+
+    terminalPowBlockMonitor.start();
+    try (LogCaptor logCaptor = LogCaptor.forClass(TerminalPowBlockMonitor.class)) {
+      // AT BELLATRIX FORK, TTD reached but block is null (EL not in sync or doing something weird)
+      goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+      when(executionLayer.eth1GetPowChainHead()).thenReturn(completedFuture(null));
+
+      asyncRunner.executeQueuedActions();
+      assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
   }
 
   @Test
