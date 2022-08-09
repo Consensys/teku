@@ -23,10 +23,11 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 
-public class OldMigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+public class ReflectionBasedOptionApiIntegrationTest
+    extends AbstractDataBackedRestAPIIntegrationTest {
   private JsonNode currentJsonNodes;
-  private final OpenApiTestUtil<OldMigratedOpenApiIntegrationTest> util =
-      new OpenApiTestUtil<>(OldMigratedOpenApiIntegrationTest.class);
+  private final OpenApiTestUtil<ReflectionBasedOptionApiIntegrationTest> util =
+      new OpenApiTestUtil<>(ReflectionBasedOptionApiIntegrationTest.class);
 
   @BeforeEach
   public void setup() throws IOException {
