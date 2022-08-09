@@ -98,18 +98,6 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void
-      shouldThrowIfValidatorsRegistrationDefaultEnabledAndValidatorProposerConfigSpecified() {
-    final ValidatorConfig.Builder builder =
-        configBuilder.builderRegistrationDefaultEnabled(true).proposerConfigSource("somepath");
-
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(builder::build)
-        .withMessageContaining(
-            "Invalid configuration. --validators-builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
-  }
-
-  @Test
   public void shouldThrowIfExternalSignerTruststorePasswordFileIsSpecifiedWithoutTruststore() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerTruststorePasswordFile(Path.of("somepath"));
