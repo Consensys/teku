@@ -116,7 +116,10 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   public Optional<ExecutionPayload> getExecutionPayload(
       final Bytes32 blockRoot, final UInt64 slot) {
-    return Optional.empty();
+    return getFinalizedBlock(blockRoot)
+        .flatMap(
+            signedBeaconBlock ->
+                signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload());
   }
 
   @Override

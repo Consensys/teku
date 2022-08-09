@@ -103,8 +103,8 @@ public class ExecutionPayloadHeader
   }
 
   @Override
-  public boolean isDefault() {
-    return super.isDefault();
+  public boolean isDefaultPayload() {
+    return isHeaderOfDefaultPayload();
   }
 
   @Override

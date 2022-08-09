@@ -49,5 +49,5 @@ public interface ExecutionPayloadSummary {
 
   Bytes32 getPayloadHash();
 
-  boolean isDefault();
+  boolean isDefaultPayload();
 }

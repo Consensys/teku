@@ -104,7 +104,7 @@ public class ExecutionPayload
   }
 
   @Override
-  public boolean isDefault() {
+  public boolean isDefaultPayload() {
     return super.isDefault();
   }
 
