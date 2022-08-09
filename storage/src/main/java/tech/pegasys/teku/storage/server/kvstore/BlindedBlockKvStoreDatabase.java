@@ -118,7 +118,7 @@ public class BlindedBlockKvStoreDatabase
               .getDefault());
     }
 
-    final Optional<Bytes> maybePayload = dao.getExecutionPayload(blockRoot);
+    final Optional<ExecutionPayload> maybePayload = getExecutionPayload(blockRoot, block.getSlot());
     if (maybePayload.isEmpty()) {
       throw new StorageException(
           "Blinded block had a non default payload, but payload could not be retrieved from store for block "
@@ -126,9 +126,7 @@ public class BlindedBlockKvStoreDatabase
               + ".");
     }
 
-    final ExecutionPayload executionPayload =
-        spec.deserializeExecutionPayload(maybePayload.get(), block.getSlot());
-    return block.unblind(spec.atSlot(block.getSlot()).getSchemaDefinitions(), executionPayload);
+    return block.unblind(spec.atSlot(block.getSlot()).getSchemaDefinitions(), maybePayload.get());
   }
 
   @Override
@@ -260,6 +258,13 @@ public class BlindedBlockKvStoreDatabase
   @Override
   public Optional<Bytes32> getFinalizedBlockRootBySlot(final UInt64 slot) {
     return dao.getFinalizedBlockRootAtSlot(slot);
+  }
+
+  @Override
+  public Optional<ExecutionPayload> getExecutionPayload(
+      final Bytes32 blockRoot, final UInt64 slot) {
+    final Optional<Bytes> maybePayload = dao.getExecutionPayload(blockRoot);
+    return maybePayload.map(payload -> spec.deserializeExecutionPayload(payload, slot));
   }
 
   @Override

@@ -48,4 +48,6 @@ public interface ExecutionPayloadSummary {
   Bytes getExtraData();
 
   Bytes32 getPayloadHash();
+
+  boolean isDefaultPayload();
 }

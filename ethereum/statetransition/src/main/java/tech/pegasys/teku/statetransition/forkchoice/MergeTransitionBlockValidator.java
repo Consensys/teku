@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -90,7 +91,7 @@ public class MergeTransitionBlockValidator {
         .map(
             slotAndPayload ->
                 verifyTransitionPayload(
-                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayload()))
+                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayloadSummary()))
         .orElse(SafeFuture.completedFuture(PayloadStatus.VALID))
         .thenCompose(
             status -> {
@@ -134,7 +135,7 @@ public class MergeTransitionBlockValidator {
   }
 
   private SafeFuture<PayloadStatus> verifyTransitionPayload(
-      final UInt64 slot, final ExecutionPayload executionPayload) {
+      final UInt64 slot, final ExecutionPayloadSummary executionPayload) {
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(slot)
             .getBellatrixTransitionHelpers()
