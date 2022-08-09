@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -106,5 +107,26 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
     return deserializableFields.values().stream()
         .flatMap(field -> field.getReferencedTypeDefinitions().stream())
         .collect(toSet());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final DeserializableObjectTypeDefinition<?, ?> that =
+        (DeserializableObjectTypeDefinition<?, ?>) o;
+    return Objects.equals(deserializableFields, that.deserializableFields);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), deserializableFields);
   }
 }

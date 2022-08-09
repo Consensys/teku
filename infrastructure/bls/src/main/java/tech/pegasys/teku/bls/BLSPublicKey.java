@@ -154,6 +154,10 @@ public final class BLSPublicKey {
     return toBytesCompressed().toUnprefixedHexString().substring(0, 7);
   }
 
+  public String toHexString() {
+    return toBytesCompressed().toHexString();
+  }
+
   @Override
   public String toString() {
     return toBytesCompressed().toString();

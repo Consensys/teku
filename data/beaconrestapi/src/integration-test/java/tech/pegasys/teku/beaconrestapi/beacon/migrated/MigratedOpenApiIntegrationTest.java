@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.beacon.migrated;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Path;
+import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -29,8 +30,8 @@ public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIInt
 
   @BeforeEach
   public void setup() throws IOException {
-    startRestAPIAtGenesis();
-    currentJsonNodes = util.parseSwagger(beaconRestApi.getMigratedOpenApi());
+    startMigratedRestAPIAtGenesis();
+    currentJsonNodes = util.parseSwagger(getOpenApiDoc().body().string());
   }
 
   @Test
@@ -49,5 +50,9 @@ public class MigratedOpenApiIntegrationTest extends AbstractDataBackedRestAPIInt
     final JsonNode paths = currentJsonNodes.findPath("paths");
 
     util.compareToKnownDefinitions(tempDir, "paths", paths);
+  }
+
+  public Response getOpenApiDoc() throws IOException {
+    return getResponse("/swagger-docs");
   }
 }

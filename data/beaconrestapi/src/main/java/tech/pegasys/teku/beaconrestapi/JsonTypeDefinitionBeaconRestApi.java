@@ -28,6 +28,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
@@ -129,6 +130,11 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
   @Override
   public SafeFuture<?> stop() {
     return restApi.stop();
+  }
+
+  @Override
+  public int getListenPort() {
+    return restApi.getListenPort();
   }
 
   private static RestApi create(
@@ -266,6 +272,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new GetProposersData(dataProvider))
         .endpoint(new GetDeposits(eth1DataProvider))
         .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
+        .endpoint(new GetEth1DataCache(eth1DataProvider))
         .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
         .endpoint(new GetDepositSnapshot(eth1DataProvider))
         .endpoint(new GetGlobalValidatorInclusion(dataProvider))

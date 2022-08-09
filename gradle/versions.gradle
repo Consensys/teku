@@ -64,7 +64,9 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
+    // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder
     dependency 'org.webjars:swagger-ui:4.10.3'
+    dependency 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.149'
     dependency 'com.github.oshi:oshi-core-java11:6.2.1'
 

@@ -352,6 +352,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     return SafeFuture.COMPLETE;
   }
 
+  @Override
   public int getListenPort() {
     return app.jettyServer().getServerPort();
   }

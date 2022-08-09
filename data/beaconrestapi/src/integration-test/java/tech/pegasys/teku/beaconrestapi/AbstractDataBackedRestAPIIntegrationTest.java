@@ -97,6 +97,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .beaconLivenessTrackingEnabled(true)
           .eth1DepositContractAddress(Eth1Address.ZERO)
           .build();
+  private static final BeaconRestApiConfig MIGRATED_CONFIG =
+      BeaconRestApiConfig.builder()
+          .restApiPort(0)
+          .restApiEnabled(true)
+          .restApiDocsEnabled(true)
+          .enableMigratedRestApi(true)
+          .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+          .restApiCorsAllowedOrigins(new ArrayList<>())
+          .beaconLivenessTrackingEnabled(true)
+          .eth1DepositContractAddress(Eth1Address.ZERO)
+          .build();
 
   protected ActiveValidatorChannel activeValidatorChannel;
 
@@ -130,7 +141,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected DataProvider dataProvider;
-  protected ReflectionBasedBeaconRestApi beaconRestApi;
+  protected BeaconRestApi beaconRestApi;
 
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
@@ -195,14 +206,23 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        new ReflectionBasedBeaconRestApi(
-            dataProvider,
-            eth1DataProvider,
-            config,
-            eventChannels,
-            SyncAsyncRunner.SYNC_RUNNER,
-            StubTimeProvider.withTimeInMillis(1000),
-            spec);
+        config.isEnableMigratedRestApi()
+            ? new JsonTypeDefinitionBeaconRestApi(
+                dataProvider,
+                eth1DataProvider,
+                config,
+                eventChannels,
+                SyncAsyncRunner.SYNC_RUNNER,
+                StubTimeProvider.withTimeInMillis(1000),
+                spec)
+            : new ReflectionBasedBeaconRestApi(
+                dataProvider,
+                eth1DataProvider,
+                config,
+                eventChannels,
+                SyncAsyncRunner.SYNC_RUNNER,
+                StubTimeProvider.withTimeInMillis(1000),
+                spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }
@@ -218,11 +238,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected void startRestAPIAtGenesis(final SpecMilestone specMilestone) {
-    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, specMilestone);
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, specMilestone, CONFIG);
   }
 
   protected void startRestAPIAtGenesis() {
-    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0);
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, CONFIG);
+  }
+
+  protected void startMigratedRestAPIAtGenesis() {
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, MIGRATED_CONFIG);
   }
 
   protected void startRestApiAtGenesisStoringNonCanonicalBlocks() {
@@ -232,12 +256,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected void startRestAPIAtGenesis(
-      final StateStorageMode storageMode, final SpecMilestone specMilestone) {
+      final StateStorageMode storageMode,
+      final SpecMilestone specMilestone,
+      final BeaconRestApiConfig config) {
     // Initialize genesis
     setupStorage(storageMode, false, specMilestone);
     chainUpdater.initializeGenesis();
     // Start API
-    setupAndStartRestAPI();
+    setupAndStartRestAPI(config);
   }
 
   public List<SignedBlockAndState> createBlocksAtSlots(long... slots) {

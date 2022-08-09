@@ -92,25 +92,19 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
 
-    ValidatorApiChannel validatorApi;
-    if (failoverEndpoints.isEmpty()) {
-      validatorApi = primaryValidatorApi;
-    } else {
-      LOG.info(
-          "Will use {} as a primary Beacon Node endpoint and {} as failovers",
-          primaryEndpoint,
-          failoverEndpoints);
-      validatorApi =
-          new FailoverValidatorApiHandler(
-              primaryValidatorApi,
-              failoverValidatorApis,
-              failoversSendSubnetSubscriptions,
-              metricsSystem,
-              ValidatorLogger.VALIDATOR_LOGGER);
+    if (!failoverEndpoints.isEmpty()) {
+      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
     }
 
-    final ValidatorApiChannel validatorApiWithMetrics =
-        new MetricRecordingValidatorApiChannel(metricsSystem, validatorApi);
+    final ValidatorApiChannel validatorApi =
+        new MetricRecordingValidatorApiChannel(
+            metricsSystem,
+            new FailoverValidatorApiHandler(
+                primaryValidatorApi,
+                failoverValidatorApis,
+                failoversSendSubnetSubscriptions,
+                metricsSystem,
+                ValidatorLogger.VALIDATOR_LOGGER));
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
@@ -122,7 +116,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             okHttpClient,
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
-                new GenesisDataProvider(asyncRunner, validatorApiWithMetrics),
+                new GenesisDataProvider(asyncRunner, validatorApi),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel,
@@ -133,7 +127,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             generateEarlyAttestations,
             primaryBeaconNodeEventStreamReconnectAttemptPeriod);
 
-    return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiWithMetrics);
+    return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
   }
 
   @Override

@@ -20,4 +20,6 @@ public interface BeaconRestApi {
   SafeFuture<?> start();
 
   SafeFuture<?> stop();
+
+  int getListenPort();
 }

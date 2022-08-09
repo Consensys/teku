@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -47,30 +47,30 @@ public class BellatrixTransitionHelpers {
    * merges into the beacon chain.
    *
    * @param executionLayer the execution layer to use for verification
-   * @param executionPayload the first non-empty payload on the beacon chain
+   * @param executionPayloadSummary the first non-empty payload on the beacon chain
    * @param blockSlot the slot of the block the executionPayload is from
    * @return a future containing the validation result for the execution payload
    */
   public SafeFuture<PayloadStatus> validateMergeBlock(
       final ExecutionLayerChannel executionLayer,
-      final ExecutionPayload executionPayload,
+      final ExecutionPayloadSummary executionPayloadSummary,
       final UInt64 blockSlot) {
     if (!specConfig.getTerminalBlockHash().isZero()) {
-      return validateWithTerminalBlockHash(executionPayload, blockSlot);
+      return validateWithTerminalBlockHash(executionPayloadSummary, blockSlot);
     }
     return executionLayer
-        .eth1GetPowBlock(executionPayload.getParentHash())
+        .eth1GetPowBlock(executionPayloadSummary.getParentHash())
         .thenCompose(maybePowBlock -> validatePowBlock(executionLayer, maybePowBlock));
   }
 
   private SafeFuture<PayloadStatus> validateWithTerminalBlockHash(
-      final ExecutionPayload executionPayload, final UInt64 blockSlot) {
+      final ExecutionPayloadSummary executionPayloadSummary, final UInt64 blockSlot) {
     if (miscHelpers
         .computeEpochAtSlot(blockSlot)
         .isLessThan(specConfig.getTerminalBlockHashActivationEpoch())) {
       return invalid("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH has not been reached");
     }
-    if (!executionPayload.getParentHash().equals(specConfig.getTerminalBlockHash())) {
+    if (!executionPayloadSummary.getParentHash().equals(specConfig.getTerminalBlockHash())) {
       return invalid("Terminal PoW block does not match TERMINAL_BLOCK_HASH");
     }
     return SafeFuture.completedFuture(PayloadStatus.VALID);

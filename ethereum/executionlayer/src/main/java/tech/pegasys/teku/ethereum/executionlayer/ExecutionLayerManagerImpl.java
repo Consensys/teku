@@ -253,7 +253,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     if (!isFallbackCall
         && isBuilderAvailable()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      LOG.warn("builder endpoint is available but a non-blinded block has been requested");
+      LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
 
     return executionEngineClient
@@ -319,7 +319,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     if (!isBuilderAvailable()) {
       return SafeFuture.failedFuture(
-          new RuntimeException("unable to register validators: builder not available"));
+          new RuntimeException("Unable to register validators: builder not available"));
     }
 
     return executionBuilderClient
@@ -426,7 +426,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
-          "Blinded block seems not been built via either builder or local engine. Trying to unblind it via builder endpoint anyway.");
+          "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
@@ -467,7 +467,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .orElseThrow(
             () ->
                 new RuntimeException(
-                    "unable to get payload from builder: builder endpoint not available"))
+                    "Unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBeaconBlock)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
         .thenPeek(
