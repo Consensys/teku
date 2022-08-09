@@ -45,7 +45,7 @@ public class ReconstructHistoricalStatesService extends Service {
   private final StorageUpdateChannel storageUpdateChannel;
   private final StatusLogger statusLogger;
 
-  private final AtomicBoolean shutdown;
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final SafeFuture<Void> stopped = new SafeFuture<>();
 
   public ReconstructHistoricalStatesService(
@@ -67,7 +67,6 @@ public class ReconstructHistoricalStatesService extends Service {
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
     this.statusLogger = statusLogger;
-    this.shutdown = new AtomicBoolean(false);
   }
 
   @Override
