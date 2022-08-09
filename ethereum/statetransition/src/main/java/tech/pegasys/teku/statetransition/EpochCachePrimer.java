@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -63,6 +64,7 @@ public class EpochCachePrimer {
   }
 
   private void primeEpochStateCaches(final BeaconState state) {
+    primeJustifiedState(state.getCurrentJustifiedCheckpoint());
     UInt64.range(state.getSlot(), state.getSlot().plus(spec.getSlotsPerEpoch(state.getSlot())))
         .forEach(
             slot -> {
@@ -86,5 +88,20 @@ public class EpochCachePrimer {
             slot ->
                 UInt64.range(UInt64.ZERO, committeeCount)
                     .forEach(index -> spec.getBeaconCommittee(state, slot, index)));
+  }
+
+  private void primeJustifiedState(final Checkpoint justifiedCheckpoint) {
+    recentChainData
+        .retrieveCheckpointState(justifiedCheckpoint)
+        .thenAccept(
+            maybeJustifiedState -> {
+              if (maybeJustifiedState.isEmpty()) {
+                return;
+              }
+              final BeaconState justifiedState = maybeJustifiedState.get();
+              spec.getBeaconStateUtil(justifiedState.getSlot())
+                  .getEffectiveBalances(justifiedState);
+            })
+        .finish(error -> LOG.warn("Failed to prime justified state caches"));
   }
 }
