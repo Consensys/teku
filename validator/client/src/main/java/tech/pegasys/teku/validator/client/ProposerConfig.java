@@ -44,20 +44,12 @@ public class ProposerConfig {
     this.defaultConfig = defaultConfig;
   }
 
-  public Optional<Config> getConfigForPubKey(final String pubKey) {
-    return getConfigForPubKey(Bytes48.fromHexString(pubKey));
-  }
-
   public Optional<Config> getConfigForPubKey(final BLSPublicKey pubKey) {
     return getConfigForPubKey(pubKey.toBytesCompressed());
   }
 
-  public Optional<Config> getConfigForPubKey(final Bytes48 pubKey) {
-    return Optional.ofNullable(proposerConfig.get(pubKey));
-  }
-
-  public Config getConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
-    return getConfigForPubKey(pubKey).orElse(defaultConfig);
+  public Optional<Config> getConfigForPubKey(final String pubKey) {
+    return getConfigForPubKey(Bytes48.fromHexString(pubKey));
   }
 
   public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey pubKey) {
@@ -68,12 +60,27 @@ public class ProposerConfig {
     return getConfigForPubKeyOrDefault(pubKey).getBuilder().flatMap(BuilderConfig::getGasLimit);
   }
 
+  public Optional<RegistrationOverrides> getBuilderRegistrationOverrides(
+      final BLSPublicKey pubKey) {
+    return getConfigForPubKeyOrDefault(pubKey)
+        .getBuilder()
+        .flatMap(BuilderConfig::getRegistrationOverrides);
+  }
+
   public Config getDefaultConfig() {
     return defaultConfig;
   }
 
   public int getNumberOfProposerConfigs() {
     return proposerConfig.size();
+  }
+
+  private Optional<Config> getConfigForPubKey(final Bytes48 pubKey) {
+    return Optional.ofNullable(proposerConfig.get(pubKey));
+  }
+
+  private Config getConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
+    return getConfigForPubKey(pubKey).orElse(defaultConfig);
   }
 
   @Override
@@ -145,13 +152,19 @@ public class ProposerConfig {
     @JsonProperty(value = "gas_limit")
     private UInt64 gasLimit;
 
+    @JsonProperty(value = "registration_overrides")
+    private RegistrationOverrides registrationOverrides;
+
     @JsonCreator
     public BuilderConfig(
         @JsonProperty(value = "enabled") final Boolean enabled,
-        @JsonProperty(value = "gas_limit") final UInt64 gasLimit) {
+        @JsonProperty(value = "gas_limit") final UInt64 gasLimit,
+        @JsonProperty(value = "registration_overrides")
+            final RegistrationOverrides registrationOverrides) {
       checkNotNull(enabled, "enabled is required");
       this.enabled = enabled;
       this.gasLimit = gasLimit;
+      this.registrationOverrides = registrationOverrides;
     }
 
     public Boolean isEnabled() {
@@ -160,6 +173,10 @@ public class ProposerConfig {
 
     public Optional<UInt64> getGasLimit() {
       return Optional.ofNullable(gasLimit);
+    }
+
+    public Optional<RegistrationOverrides> getRegistrationOverrides() {
+      return Optional.ofNullable(registrationOverrides);
     }
 
     @Override
@@ -171,12 +188,55 @@ public class ProposerConfig {
         return false;
       }
       final BuilderConfig that = (BuilderConfig) o;
-      return Objects.equals(enabled, that.enabled) && Objects.equals(gasLimit, that.gasLimit);
+      return Objects.equals(enabled, that.enabled)
+          && Objects.equals(gasLimit, that.gasLimit)
+          && Objects.equals(registrationOverrides, that.registrationOverrides);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(enabled, gasLimit);
+      return Objects.hash(enabled, gasLimit, registrationOverrides);
+    }
+  }
+
+  public static class RegistrationOverrides {
+    @JsonProperty(value = "timestamp")
+    private UInt64 timestamp;
+
+    @JsonProperty(value = "public_key")
+    private BLSPublicKey publicKey;
+
+    @JsonCreator
+    public RegistrationOverrides(
+        @JsonProperty(value = "timestamp") final UInt64 timestamp,
+        @JsonProperty(value = "public_key") final BLSPublicKey publicKey) {
+      this.timestamp = timestamp;
+      this.publicKey = publicKey;
+    }
+
+    public Optional<UInt64> getTimestamp() {
+      return Optional.ofNullable(timestamp);
+    }
+
+    public Optional<BLSPublicKey> getPublicKey() {
+      return Optional.ofNullable(publicKey);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final RegistrationOverrides that = (RegistrationOverrides) o;
+      return Objects.equals(timestamp, that.timestamp) && Objects.equals(publicKey, that.publicKey);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(timestamp, publicKey);
     }
   }
 }
