@@ -143,7 +143,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     if (!beaconStateAccessors
         .getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state))
         .equals(executionPayloadHeader.getPrevRandao())) {
-      throw new BlockProcessingException("Execution payload random does not match state randao");
+      throw new BlockProcessingException("Execution payload randao does not match state randao");
     }
 
     if (!miscHelpersBellatrix
