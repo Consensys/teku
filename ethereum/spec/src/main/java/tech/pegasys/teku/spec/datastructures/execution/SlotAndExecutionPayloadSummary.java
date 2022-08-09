@@ -21,12 +21,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SlotAndExecutionPayloadSummary {
   private final UInt64 slot;
-  private final ExecutionPayloadSummary executionPayload;
+  private final ExecutionPayloadSummary executionPayloadSummary;
 
   public SlotAndExecutionPayloadSummary(
       final UInt64 slot, final ExecutionPayloadSummary executionPayloadSummary) {
     this.slot = slot;
-    this.executionPayload = executionPayloadSummary;
+    this.executionPayloadSummary = executionPayloadSummary;
   }
 
   public static Optional<SlotAndExecutionPayloadSummary> fromBlock(final SignedBeaconBlock block) {
@@ -41,8 +41,8 @@ public class SlotAndExecutionPayloadSummary {
     return slot;
   }
 
-  public ExecutionPayloadSummary getExecutionPayload() {
-    return executionPayload;
+  public ExecutionPayloadSummary getExecutionPayloadSummary() {
+    return executionPayloadSummary;
   }
 
   @Override
@@ -55,19 +55,19 @@ public class SlotAndExecutionPayloadSummary {
     }
     final SlotAndExecutionPayloadSummary that = (SlotAndExecutionPayloadSummary) o;
     return Objects.equals(slot, that.slot)
-        && Objects.equals(executionPayload, that.executionPayload);
+        && Objects.equals(executionPayloadSummary, that.executionPayloadSummary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, executionPayload);
+    return Objects.hash(slot, executionPayloadSummary);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("slot", slot)
-        .add("executionPayload", executionPayload)
+        .add("executionPayload", executionPayloadSummary)
         .toString();
   }
 }

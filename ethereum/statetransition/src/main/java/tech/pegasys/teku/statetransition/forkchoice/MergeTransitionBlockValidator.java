@@ -91,7 +91,7 @@ public class MergeTransitionBlockValidator {
         .map(
             slotAndPayload ->
                 verifyTransitionPayload(
-                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayload()))
+                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayloadSummary()))
         .orElse(SafeFuture.completedFuture(PayloadStatus.VALID))
         .thenCompose(
             status -> {

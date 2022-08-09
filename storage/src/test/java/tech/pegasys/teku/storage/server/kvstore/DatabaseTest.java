@@ -632,7 +632,7 @@ public class DatabaseTest {
     final Optional<SlotAndExecutionPayloadSummary> transitionPayload =
         SlotAndExecutionPayloadSummary.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayloadSummary().isDefaultPayload()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }
@@ -693,7 +693,7 @@ public class DatabaseTest {
     final Optional<SlotAndExecutionPayloadSummary> transitionPayload =
         SlotAndExecutionPayloadSummary.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayloadSummary().isDefaultPayload()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }
@@ -793,7 +793,7 @@ public class DatabaseTest {
     final Optional<SlotAndExecutionPayloadSummary> transitionPayload =
         SlotAndExecutionPayloadSummary.fromBlock(transitionBlock.getBlock());
     assertThat(transitionPayload).isPresent();
-    assertThat(transitionPayload.get().getExecutionPayload().isDefault()).isFalse();
+    assertThat(transitionPayload.get().getExecutionPayloadSummary().isDefaultPayload()).isFalse();
     assertThat(recentChainData.getStore().getFinalizedOptimisticTransitionPayload())
         .isEqualTo(transitionPayload);
   }
