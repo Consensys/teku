@@ -37,7 +37,7 @@ Binary builds that track the latest changes on the master branch are available o
 downloads ([tar.gz format](https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/develop/teku-develop.tar.gz) 
 or [zip format](https://artifacts.consensys.net/public/teku/raw/names/teku.zip/versions/develop/teku-develop.zip)).
 
-We recommend only using release versions for MainNet, but `develop` builds are useful for testing 
+We recommend only using release versions for Mainnet, but `develop` builds are useful for testing 
 the latest changes on testnets.
 
 Release notifications are available via:
