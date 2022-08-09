@@ -496,7 +496,6 @@ public class ValidatorConfig {
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
       validateValidatorsRegistrationAndBlindedBlocks();
-      validatorsRegistrationDefaultEnabledOrProposerConfigSource();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -579,13 +578,6 @@ public class ValidatorConfig {
         LOG.info(
             "'--validators-builder-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
         blindedBlocksEnabled = true;
-      }
-    }
-
-    private void validatorsRegistrationDefaultEnabledOrProposerConfigSource() {
-      if (validatorsRegistrationDefaultEnabled && proposerConfigSource.isPresent()) {
-        throw new InvalidConfigurationException(
-            "Invalid configuration. --validators-builder-registration-default-enabled cannot be specified when --validators-proposer-config is used");
       }
     }
 

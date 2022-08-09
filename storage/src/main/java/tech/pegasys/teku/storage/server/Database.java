@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -45,7 +46,7 @@ public interface Database extends AutoCloseable {
 
   void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
 
-  void storeFinalizedState(BeaconState state);
+  void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
@@ -99,6 +100,9 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
 
+  @MustBeClosed
+  Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
+
   /**
    * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
    *
@@ -146,4 +150,8 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamBlindedBlocks();
+
+  Optional<Checkpoint> getJustifiedCheckpoint();
+
+  void deleteHotBlocks(Set<Bytes32> blockRootsToDelete);
 }

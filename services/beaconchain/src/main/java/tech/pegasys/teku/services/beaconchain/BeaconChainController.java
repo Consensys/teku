@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
@@ -108,6 +109,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -168,7 +170,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SettableLabelledGauge futureItemsMetric;
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
   protected volatile BeaconChainConfiguration beaconConfig;
@@ -217,14 +218,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
-  private volatile KeyValueStore<String, Bytes> keyValueStore;
+  protected volatile KeyValueStore<String, Bytes> keyValueStore;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
-  private TimerService timerService;
-  private PendingPoolFactory pendingPoolFactory;
-
-  private IntSupplier rejectedExecutionCountSupplier;
+  protected TimerService timerService;
+  protected PendingPoolFactory pendingPoolFactory;
+  protected SettableLabelledGauge futureItemsMetric;
+  protected IntSupplier rejectedExecutionCountSupplier;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -918,26 +919,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(BlockImportNotifications.class, blockManager);
   }
 
+  protected SyncServiceFactory createSyncServiceFactory() {
+    return new DefaultSyncServiceFactory(
+        beaconConfig.syncConfig(),
+        beaconConfig.eth2NetworkConfig().getGenesisState(),
+        metricsSystem,
+        asyncRunnerFactory,
+        beaconAsyncRunner,
+        timeProvider,
+        recentChainData,
+        combinedChainDataClient,
+        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
+        p2pNetwork,
+        blockImporter,
+        pendingBlocks,
+        beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
+        signatureVerificationService,
+        Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
+        spec);
+  }
+
   public void initSyncService() {
     LOG.debug("BeaconChainController.initSyncService()");
-    syncService =
-        SyncServiceFactory.createSyncService(
-            beaconConfig.syncConfig(),
-            beaconConfig.eth2NetworkConfig().getGenesisState(),
-            metricsSystem,
-            asyncRunnerFactory,
-            beaconAsyncRunner,
-            timeProvider,
-            recentChainData,
-            combinedChainDataClient,
-            eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
-            p2pNetwork,
-            blockImporter,
-            pendingBlocks,
-            beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
-            signatureVerificationService,
-            Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
-            spec);
+    syncService = createSyncServiceFactory().create();
 
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
@@ -1126,8 +1130,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
     final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+    final Optional<TickProcessingPerformance> performanceRecord =
+        beaconConfig.getMetricsConfig().isTickPerformanceEnabled()
+            ? Optional.of(new TickProcessingPerformance(timeProvider, currentTimeMillis))
+            : Optional.empty();
 
-    forkChoice.onTick(currentTimeMillis);
+    forkChoice.onTick(currentTimeMillis, performanceRecord);
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     if (genesisTime.isGreaterThan(currentTimeSeconds)) {
@@ -1139,7 +1147,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       }
     }
 
-    slotProcessor.onTick(currentTimeMillis);
+    slotProcessor.onTick(currentTimeMillis, performanceRecord);
+    performanceRecord.ifPresent(TickProcessingPerformance::complete);
   }
 
   @Override
@@ -1185,5 +1194,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   @Override
   public SyncService getSyncService() {
     return syncService;
+  }
+
+  @Override
+  public ForkChoice getForkChoice() {
+    return forkChoice;
   }
 }

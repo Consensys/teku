@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.ByteArrayDeserializer;
@@ -57,6 +58,8 @@ public class JsonProvider {
 
     module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
     module.addDeserializer(BLSPubKey.class, new BLSPubKeyDeserializer());
+    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
+    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
     module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
 

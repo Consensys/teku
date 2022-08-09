@@ -14,7 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 public enum BesuDockerVersion {
-  STABLE("22.4.4");
+  STABLE("22.7.0");
 
   private final String version;
 

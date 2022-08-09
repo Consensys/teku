@@ -15,11 +15,9 @@ package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
-import it.unimi.dsi.fastutil.Pair;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,16 +36,15 @@ public class BlockImportPerformance {
 
   public static final String SUCCESS_RESULT_METRIC_LABEL_VALUE = "success";
 
-  private final TimeProvider timeProvider;
   private final BlockImportMetrics blockImportMetrics;
+  private final PerformanceTracker performanceTracker;
 
-  private final List<Pair<String, UInt64>> events = new ArrayList<>();
   private UInt64 timeWarningLimitTimeStamp;
   private UInt64 timeAtSlotStartTimeStamp;
 
   public BlockImportPerformance(
       final TimeProvider timeProvider, final BlockImportMetrics blockImportMetrics) {
-    this.timeProvider = timeProvider;
+    this.performanceTracker = new PerformanceTracker(timeProvider);
     this.blockImportMetrics = blockImportMetrics;
   }
 
@@ -56,69 +53,45 @@ public class BlockImportPerformance {
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
             secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
-    addEvent(ARRIVAL_EVENT_LABEL);
+    performanceTracker.addEvent(ARRIVAL_EVENT_LABEL);
   }
 
   public void preStateRetrieved() {
-    addEvent(PRESTATE_RETRIEVED_EVENT_LABEL);
+    performanceTracker.addEvent(PRESTATE_RETRIEVED_EVENT_LABEL);
   }
 
   public void postStateCreated() {
-    addEvent(PROCESSED_EVENT_LABEL);
+    performanceTracker.addEvent(PROCESSED_EVENT_LABEL);
   }
 
   public void transactionReady() {
-    addEvent(TRANSACTION_PREPARED_EVENT_LABEL);
+    performanceTracker.addEvent(TRANSACTION_PREPARED_EVENT_LABEL);
   }
 
   public void transactionCommitted() {
-    addEvent(TRANSACTION_COMMITTED_EVENT_LABEL);
+    performanceTracker.addEvent(TRANSACTION_COMMITTED_EVENT_LABEL);
   }
 
   public void processingComplete(
       final EventLogger eventLogger,
       final SignedBeaconBlock block,
       final BlockImportResult blockImportResult) {
-    final UInt64 importCompletedTimestamp = addEvent(COMPLETED_EVENT_LABEL);
-
-    final List<String> lateBlockEventTimings = new ArrayList<>();
+    final UInt64 importCompletedTimestamp = performanceTracker.addEvent(COMPLETED_EVENT_LABEL);
     final boolean isLateEvent = importCompletedTimestamp.isGreaterThan(timeWarningLimitTimeStamp);
-
     final String resultMetricLabelValue =
         blockImportResult.isSuccessful()
             ? SUCCESS_RESULT_METRIC_LABEL_VALUE
             : blockImportResult.getFailureReason().name().toLowerCase(Locale.ROOT);
-
-    UInt64 previousEventTimestamp = timeAtSlotStartTimeStamp;
-    for (Pair<String, UInt64> event : events) {
-
-      // minusMinZero because sometimes time does actually go backwards so be safe.
-      final UInt64 stepDuration = event.right().minusMinZero(previousEventTimestamp);
-      previousEventTimestamp = event.right();
-
-      blockImportMetrics.recordValue(stepDuration, event.left(), resultMetricLabelValue);
-
-      if (isLateEvent) {
-        lateBlockEventTimings.add(
-            event.left() + (lateBlockEventTimings.isEmpty() ? " " : " +") + stepDuration + "ms");
-      }
-    }
-
-    final UInt64 totalProcessingDuration =
-        importCompletedTimestamp.minusMinZero(events.get(0).right());
-    blockImportMetrics.recordValue(
-        totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, resultMetricLabelValue);
-
-    if (isLateEvent) {
-      final String combinedTimings = String.join(", ", lateBlockEventTimings);
-      eventLogger.lateBlockImport(
-          block.getRoot(), block.getSlot(), block.getProposerIndex(), combinedTimings);
-    }
-  }
-
-  private UInt64 addEvent(final String label) {
-    final UInt64 timestamp = timeProvider.getTimeInMillis();
-    events.add(Pair.of(label, timestamp));
-    return timestamp;
+    performanceTracker.report(
+        timeAtSlotStartTimeStamp,
+        isLateEvent,
+        (event, stepDuration) ->
+            blockImportMetrics.recordValue(stepDuration, event.getLeft(), resultMetricLabelValue),
+        totalProcessingDuration ->
+            blockImportMetrics.recordValue(
+                totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, resultMetricLabelValue),
+        (totalDuration, timings) ->
+            eventLogger.lateBlockImport(
+                block.getRoot(), block.getSlot(), block.getProposerIndex(), timings));
   }
 }

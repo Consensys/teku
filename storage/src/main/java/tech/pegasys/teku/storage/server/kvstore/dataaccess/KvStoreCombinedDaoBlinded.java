@@ -65,6 +65,9 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
   Stream<SignedBeaconBlock> streamBlindedBlocks();
 
+  @MustBeClosed
+  Stream<Map.Entry<Bytes, Bytes>> streamBlindedHotBlocksAsSsz();
+
   interface CombinedUpdaterBlinded
       extends HotUpdaterBlinded, FinalizedUpdaterBlinded, CombinedUpdaterCommon {}
 
@@ -89,10 +92,10 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
 
     void addBlindedBlock(final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec);
 
-    void addExecutionPayload(final ExecutionPayload payload);
+    void addExecutionPayload(final Bytes32 blockRoot, final ExecutionPayload payload);
 
     void deleteBlindedBlock(final Bytes32 root);
 
-    void deleteExecutionPayload(final Bytes32 payloadHash);
+    void deleteExecutionPayload(final Bytes32 blockRoot);
   }
 }

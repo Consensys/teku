@@ -169,7 +169,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         applyChecks(recentChainData, forkChoice, step);
 
       } else if (step.containsKey("tick")) {
-        forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")));
+        forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")), Optional.empty());
         final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
         LOG.info("Current slot: {} Epoch: {}", currentSlot, spec.computeEpochAtSlot(currentSlot));
       } else if (step.containsKey("block")) {
