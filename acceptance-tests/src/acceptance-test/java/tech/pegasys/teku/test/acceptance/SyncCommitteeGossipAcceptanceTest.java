@@ -71,7 +71,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     watcherNode.start();
     watcherNode.startEventListener(List.of(EventType.contribution_and_proof));
 
-    primaryNode.waitForEpoch(1);
+    primaryNode.waitForEpochAtOrAbove(1);
 
     // Wait until we get a contribution over gossip. The watcher node doesn't run any validators.
     watcherNode.waitForContributionAndProofEvent();
