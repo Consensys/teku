@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
@@ -192,10 +193,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
       final Optional<ProposerConfig> maybeProposerConfig, final Validator validator) {
-    final BLSPublicKey publicKey =
-        validatorConfig
-            .getBuilderRegistrationPublicKeyOverride()
-            .orElseGet(validator::getPublicKey);
+
+    final BLSPublicKey publicKey = validator.getPublicKey();
 
     if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
       LOG.trace("Validator registration is disabled for {}", publicKey);
@@ -214,11 +213,26 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
     final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
 
+    final Optional<UInt64> maybeTimestampOverride =
+        getTimestampOverride(maybeProposerConfig, publicKey);
+    final Optional<BLSPublicKey> maybePublicKeyOverride =
+        getPublicKeyOverride(maybeProposerConfig, publicKey);
+
+    final ValidatorRegistration validatorRegistration =
+        createValidatorRegistration(
+            maybePublicKeyOverride.orElse(publicKey),
+            feeRecipient,
+            gasLimit,
+            maybeTimestampOverride.orElse(timeProvider.getTimeInSeconds()));
+
     return Optional.ofNullable(cachedValidatorRegistrations.get(publicKey))
         .filter(
             cachedValidatorRegistration -> {
               final boolean needsUpdate =
-                  registrationNeedsUpdating(cachedValidatorRegistration, feeRecipient, gasLimit);
+                  registrationNeedsUpdating(
+                      cachedValidatorRegistration.getMessage(),
+                      validatorRegistration,
+                      maybeTimestampOverride);
               if (needsUpdate) {
                 LOG.debug(
                     "The cached registration for {} needs updating. Will create a new one.",
@@ -229,10 +243,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .map(SafeFuture::completedFuture)
         .or(
             () -> {
-              final ValidatorRegistration validatorRegistration =
-                  createValidatorRegistration(publicKey, feeRecipient, gasLimit);
               final Signer signer = validator.getSigner();
-              return Optional.of(signAndCacheValidatorRegistration(validatorRegistration, signer));
+              return Optional.of(
+                  signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer));
             });
   }
 
@@ -251,17 +264,34 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private ValidatorRegistration createValidatorRegistration(
-      final BLSPublicKey publicKey, final Eth1Address feeRecipient, final UInt64 gasLimit) {
-    final UInt64 timestamp =
-        validatorConfig
-            .getBuilderRegistrationTimestampOverride()
-            .orElse(timeProvider.getTimeInSeconds());
+      final BLSPublicKey publicKey,
+      final Eth1Address feeRecipient,
+      final UInt64 gasLimit,
+      final UInt64 timestamp) {
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
   }
 
+  private Optional<UInt64> getTimestampOverride(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+    return maybeProposerConfig
+        .flatMap(proposerConfig -> proposerConfig.getBuilderRegistrationOverrides(publicKey))
+        .flatMap(RegistrationOverrides::getTimestamp)
+        .or(validatorConfig::getBuilderRegistrationTimestampOverride);
+  }
+
+  private Optional<BLSPublicKey> getPublicKeyOverride(
+      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
+    return maybeProposerConfig
+        .flatMap(proposerConfig -> proposerConfig.getBuilderRegistrationOverrides(publicKey))
+        .flatMap(RegistrationOverrides::getPublicKey)
+        .or(validatorConfig::getBuilderRegistrationPublicKeyOverride);
+  }
+
   private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
-      final ValidatorRegistration validatorRegistration, final Signer signer) {
+      final BLSPublicKey cacheKey,
+      final ValidatorRegistration validatorRegistration,
+      final Signer signer) {
     return signer
         .signValidatorRegistration(validatorRegistration)
         .thenApply(
@@ -269,20 +299,30 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
               final SignedValidatorRegistration signedValidatorRegistration =
                   ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
                       validatorRegistration, signature);
-              final BLSPublicKey publicKey = validatorRegistration.getPublicKey();
-              LOG.debug("Validator registration signed for {}", publicKey);
-              cachedValidatorRegistrations.put(publicKey, signedValidatorRegistration);
+              LOG.debug("Validator registration signed for {}", cacheKey);
+              cachedValidatorRegistrations.put(cacheKey, signedValidatorRegistration);
               return signedValidatorRegistration;
             });
   }
 
   public boolean registrationNeedsUpdating(
-      final SignedValidatorRegistration signedValidatorRegistration,
-      final Eth1Address feeRecipient,
-      final UInt64 gasLimit) {
-    final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
-    return !validatorRegistration.getFeeRecipient().equals(feeRecipient)
-        || !validatorRegistration.getGasLimit().equals(gasLimit);
+      final ValidatorRegistration cachedValidatorRegistration,
+      final ValidatorRegistration newValidatorRegistration,
+      final Optional<UInt64> newMaybeTimestampOverride) {
+    final boolean cachedTimestampIsDifferentThanOverride =
+        newMaybeTimestampOverride
+            .map(
+                newTimestampOverride ->
+                    !cachedValidatorRegistration.getTimestamp().equals(newTimestampOverride))
+            .orElse(false);
+    return !cachedValidatorRegistration
+            .getFeeRecipient()
+            .equals(newValidatorRegistration.getFeeRecipient())
+        || !cachedValidatorRegistration.getGasLimit().equals(newValidatorRegistration.getGasLimit())
+        || !cachedValidatorRegistration
+            .getPublicKey()
+            .equals(newValidatorRegistration.getPublicKey())
+        || cachedTimestampIsDifferentThanOverride;
   }
 
   private void cleanupCache(final List<Validator> activeValidators) {
@@ -300,14 +340,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .keySet()
         .removeIf(
             cachedPublicKey -> {
-              final boolean cachedKeyIsTheConfiguredOverride =
-                  validatorConfig
-                      .getBuilderRegistrationPublicKeyOverride()
-                      .map(keyOverride -> keyOverride.equals(cachedPublicKey))
-                      .orElse(false);
               final boolean requiresRemoving =
-                  !activeValidatorsPublicKeys.contains(cachedPublicKey)
-                      && !cachedKeyIsTheConfiguredOverride;
+                  !activeValidatorsPublicKeys.contains(cachedPublicKey);
               if (requiresRemoving) {
                 LOG.debug(
                     "Removing cached registration for {} because validator is no longer active.",

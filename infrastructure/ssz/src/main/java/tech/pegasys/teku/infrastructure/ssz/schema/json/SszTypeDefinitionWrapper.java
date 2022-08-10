@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
@@ -75,5 +76,23 @@ public class SszTypeDefinitionWrapper<DataT, SszDataT extends SszPrimitive<DataT
   @Override
   public void serializeOpenApiTypeOrReference(final JsonGenerator gen) throws IOException {
     primitiveTypeDefinition.serializeOpenApiTypeOrReference(gen);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final SszTypeDefinitionWrapper<?, ?> that = (SszTypeDefinitionWrapper<?, ?>) o;
+    return Objects.equals(schema, that.schema)
+        && Objects.equals(primitiveTypeDefinition, that.primitiveTypeDefinition);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(schema, primitiveTypeDefinition);
   }
 }

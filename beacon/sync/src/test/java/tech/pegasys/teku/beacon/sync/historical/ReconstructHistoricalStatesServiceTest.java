@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -138,6 +139,20 @@ public class ReconstructHistoricalStatesServiceTest {
     verify(chainDataClient, times(1)).getInitialAnchor();
     verify(storageUpdateChannel, times(1)).onFinalizedState(any(), any());
     verify(statusLogger, times(1)).reconstructHistoricalStatesServiceFailedProcess(any());
+  }
+
+  @Test
+  void shouldHandleShutdown(@TempDir final Path tempDir) throws IOException {
+    when(storageUpdateChannel.onFinalizedState(any(), any()))
+        .thenThrow(new RejectedExecutionException());
+    final Checkpoint initialAnchor = getInitialAnchor();
+    setUpService(tempDir, initialAnchor);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(1)).onFinalizedState(any(), any());
+    verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
   private Checkpoint getInitialAnchor() {

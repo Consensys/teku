@@ -15,8 +15,11 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.base.Throwables;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class ReconstructHistoricalStatesService extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,6 +44,9 @@ public class ReconstructHistoricalStatesService extends Service {
   private final Optional<String> genesisStateResource;
   private final StorageUpdateChannel storageUpdateChannel;
   private final StatusLogger statusLogger;
+
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final SafeFuture<Void> stopped = new SafeFuture<>();
 
   public ReconstructHistoricalStatesService(
       final StorageUpdateChannel storageUpdateChannel,
@@ -93,12 +100,29 @@ public class ReconstructHistoricalStatesService extends Service {
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
     Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
-    applyNextBlock(context).finish(statusLogger::reconstructHistoricalStatesServiceFailedProcess);
+    applyNextBlock(context)
+        .finish(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof ShuttingDownException
+                  || rootCause instanceof InterruptedException
+                  || rootCause instanceof RejectedExecutionException) {
+                LOG.debug("Shutting down", rootCause);
+              } else {
+                statusLogger.reconstructHistoricalStatesServiceFailedProcess(error);
+              }
+            });
   }
 
   private SafeFuture<Void> applyNextBlock(Context context) {
     if (context.checkStopApplyBlock()) {
       statusLogger.reconstructHistoricalStatesServiceComplete();
+      stopped.complete(null);
+      return SafeFuture.COMPLETE;
+    }
+
+    if (shutdown.get()) {
+      stopped.complete(null);
       return SafeFuture.COMPLETE;
     }
 
@@ -120,7 +144,8 @@ public class ReconstructHistoricalStatesService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.COMPLETE;
+    shutdown.set(true);
+    return stopped;
   }
 
   private static class Context {

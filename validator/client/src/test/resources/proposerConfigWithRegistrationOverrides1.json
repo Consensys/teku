@@ -1,0 +1,24 @@
+{
+  "proposer_config": {
+    "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a": {
+      "fee_recipient": "0x50155530FCE8a85ec7055A5F8b2bE214B3DaeFd3",
+      "builder": {
+        "enabled": true,
+        "registration_overrides": {
+          "timestamp": "1234",
+          "public_key": "0xb53d21a4cfd562c469cc81514d4ce5a6b577d8403d32a394dc265dd190b47fa9f829fdd7963afdf972e5e77854051f6f"
+        }
+      }
+    }
+  },
+  "default_config": {
+    "fee_recipient": "0x6e35733c5af9B61374A128e6F85f553aF09ff89A",
+    "builder": {
+      "enabled": false,
+      "registration_overrides": {
+        "timestamp": "1235",
+        "public_key": "0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a"
+      }
+    }
+  }
+}

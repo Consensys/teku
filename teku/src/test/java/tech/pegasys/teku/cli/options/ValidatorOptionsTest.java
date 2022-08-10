@@ -96,9 +96,9 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void beaconNodeApiEndpoint_shouldBeEmptyByDefault() {
+  void beaconNodeApiEndpoints_shouldBeEmptyByDefault() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoint())
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoints())
         .isEmpty();
   }
 

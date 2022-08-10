@@ -188,16 +188,15 @@ public class TekuValidatorNode extends Node {
     }
 
     public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
-      configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
-      return this;
+      return withBeaconNodes(beaconNode);
     }
 
     public TekuValidatorNode.Config withBeaconNodes(final TekuNode... beaconNodes) {
       configMap.put(
-          "Xbeacon-node-api-endpoints",
+          "beacon-node-api-endpoint",
           Arrays.stream(beaconNodes)
               .map(TekuNode::getBeaconRestApiUrl)
-              .collect(Collectors.toList()));
+              .collect(Collectors.joining(",")));
       return this;
     }
 

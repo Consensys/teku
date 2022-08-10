@@ -225,7 +225,7 @@ public class VoluntaryExitCommand implements Runnable {
         config
             .validatorClient()
             .getValidatorConfig()
-            .getBeaconNodeApiEndpoint()
+            .getPrimaryBeaconNodeApiEndpoint()
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
@@ -309,7 +309,7 @@ public class VoluntaryExitCommand implements Runnable {
         config
             .validatorClient()
             .getValidatorConfig()
-            .getBeaconNodeApiEndpoint()
+            .getPrimaryBeaconNodeApiEndpoint()
             .orElse(URI.create("http://127.0.0.1:5051")));
   }
 }
