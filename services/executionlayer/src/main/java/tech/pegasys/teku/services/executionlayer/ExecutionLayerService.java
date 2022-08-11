@@ -16,10 +16,10 @@ package tech.pegasys.teku.services.executionlayer;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +58,7 @@ public class ExecutionLayerService extends Service {
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
-            EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
+            Duration.ofSeconds(30),
             true,
             config.getEngineJwtSecretFile(),
             beaconDataDirectory,
