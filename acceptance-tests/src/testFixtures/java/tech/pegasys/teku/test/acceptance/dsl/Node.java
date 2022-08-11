@@ -102,8 +102,22 @@ public abstract class Node {
     container.stop();
   }
 
-  public void waitForEpoch(final int epoch) {
-    waitFor(() -> assertThat(getMetricValue("beacon_epoch")).isEqualTo(epoch), 2, TimeUnit.MINUTES);
+  public int waitForEpochAtOrAbove(final int epoch) {
+    final AtomicInteger actualEpoch = new AtomicInteger();
+    waitFor(
+        () -> {
+          final int currentEpoch = (int) getMetricValue("beacon_epoch");
+          assertThat(currentEpoch).isGreaterThanOrEqualTo(epoch);
+          actualEpoch.set(currentEpoch);
+        },
+        2,
+        TimeUnit.MINUTES);
+    return actualEpoch.get();
+  }
+
+  public void waitForNextEpoch() {
+    final int currentEpoch = waitForEpochAtOrAbove(0);
+    waitForEpochAtOrAbove(currentEpoch + 1);
   }
 
   public double getMetricValue(final String metricName) throws IOException {

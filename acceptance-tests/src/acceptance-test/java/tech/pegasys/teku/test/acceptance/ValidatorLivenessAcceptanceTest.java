@@ -64,7 +64,7 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
   void shouldTrackValidatorLivenessOverEpochs() throws Exception {
     primaryNode.start();
 
-    primaryNode.waitForEpoch(2);
+    final int startEpoch = primaryNode.waitForEpochAtOrAbove(2);
     secondaryNode.start();
     primaryNode.checkValidatorLiveness(
         1,
@@ -72,9 +72,11 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
         expectLive(0, NODE_VALIDATORS),
         expectNotLive(NODE_VALIDATORS, NODE_VALIDATORS));
 
-    primaryNode.waitForEpoch(5);
-    primaryNode.checkValidatorLiveness(3, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
-    secondaryNode.checkValidatorLiveness(3, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
+    primaryNode.waitForEpochAtOrAbove(startEpoch + 3);
+    primaryNode.checkValidatorLiveness(
+        startEpoch + 1, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
+    secondaryNode.checkValidatorLiveness(
+        startEpoch + 1, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
 
     secondaryNode.stop();
     primaryNode.stop();
