@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.pow;
 
+import java.io.InterruptedIOException;
 import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.beacon.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
 
@@ -157,9 +159,10 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
               return task.apply(nextAvailableProvider)
                   .exceptionallyCompose(
                       taskErr -> {
-                        if (taskErr instanceof SocketTimeoutException) {
+                        if (ExceptionUtil.hasCause(
+                            taskErr, SocketTimeoutException.class, InterruptedIOException.class)) {
                           LOG.warn(
-                              "Connection timeout to remote eth1 node. Retrying with next eth1 endpoint");
+                              "Connection timeout to eth1 node. Retrying with next eth1 endpoint");
                         } else {
                           LOG.warn("Retrying with next eth1 endpoint", taskErr);
                         }
