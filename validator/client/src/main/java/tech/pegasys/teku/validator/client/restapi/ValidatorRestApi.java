@@ -40,6 +40,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
+import tech.pegasys.teku.validator.client.restapi.apis.SetGasLimit;
 
 public class ValidatorRestApi {
   public static final String TAG_KEY_MANAGEMENT = "Key Management";
@@ -91,6 +92,7 @@ public class ValidatorRestApi {
         .endpoint(new GetFeeRecipient(beaconProposerPreparer))
         .endpoint(new GetGasLimit(beaconProposerPreparer))
         .endpoint(new SetFeeRecipient(beaconProposerPreparer))
+        .endpoint(new SetGasLimit(beaconProposerPreparer))
         .endpoint(new DeleteFeeRecipient(beaconProposerPreparer))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(

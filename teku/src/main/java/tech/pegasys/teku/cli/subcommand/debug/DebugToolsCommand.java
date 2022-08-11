@@ -134,12 +134,7 @@ public class DebugToolsCommand implements Runnable {
     DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new NoOpKeyManager();
-    RestApi api =
-        ValidatorRestApi.create(
-            config,
-            Optional.empty(),
-            keyManager,
-            dataDirLayout);
+    RestApi api = ValidatorRestApi.create(config, Optional.empty(), keyManager, dataDirLayout);
 
     if (api.getRestApiDocs().isPresent()) {
       final String docs = api.getRestApiDocs().get();
