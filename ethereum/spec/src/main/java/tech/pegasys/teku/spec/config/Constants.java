@@ -43,7 +43,7 @@ public class Constants {
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
   public static final Duration EL_ENGINE_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(8);
-  public static final Duration EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(5);
+  public static final Duration EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT = Duration.ofSeconds(1);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable
