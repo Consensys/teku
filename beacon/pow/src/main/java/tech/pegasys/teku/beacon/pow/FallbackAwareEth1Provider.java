@@ -47,7 +47,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final UInt64 blockNumber) {
-    return run(eth1Provider -> eth1Provider.getEth1Block(blockNumber));
+    return run("getEth1Block", eth1Provider -> eth1Provider.getEth1Block(blockNumber));
   }
 
   @Override
@@ -55,12 +55,14 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
       final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
 
     return asyncRunner.runWithRetry(
-        () -> run(eth1Provider -> eth1Provider.getEth1Block(blockNumber)), retryDelay, maxRetries);
+        () -> run("getEth1BlockWithRetry", eth1Provider -> eth1Provider.getEth1Block(blockNumber)),
+        retryDelay,
+        maxRetries);
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
-    return run(eth1Provider -> eth1Provider.getEth1Block(blockHash))
+    return run("getGuarnateedEth1Block", eth1Provider -> eth1Provider.getEth1Block(blockHash))
         .thenApply(Optional::get)
         .exceptionallyCompose(
             (err) -> {
@@ -73,7 +75,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
-    return run(Eth1Provider::getLatestEth1Block)
+    return run("getGuaranteedLatestEth1Block", Eth1Provider::getLatestEth1Block)
         .exceptionallyCompose(
             (err) -> {
               LOG.debug("Retrying Eth1 request for latest block", err);
@@ -85,7 +87,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
-    return run(eth1Provider -> eth1Provider.getEth1Block(blockNumber))
+    return run("getGuaranteedEth1Block", eth1Provider -> eth1Provider.getEth1Block(blockNumber))
         .thenApply(Optional::get)
         .exceptionallyCompose(
             (err) -> {
@@ -98,7 +100,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
-    return run(eth1Provider -> eth1Provider.getEth1Block(blockHash));
+    return run("getEth1Block", eth1Provider -> eth1Provider.getEth1Block(blockHash));
   }
 
   @Override
@@ -106,40 +108,45 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
       final String blockHash, final Duration retryDelay, final int maxRetries) {
 
     return asyncRunner.runWithRetry(
-        () -> run(eth1Provider -> eth1Provider.getEth1Block(blockHash)), retryDelay, maxRetries);
+        () -> run("getEth1BlockWithRetry", eth1Provider -> eth1Provider.getEth1Block(blockHash)),
+        retryDelay,
+        maxRetries);
   }
 
   @Override
   public SafeFuture<Block> getLatestEth1Block() {
-    return run(Eth1Provider::getLatestEth1Block);
+    return run("getLatestEth1Block", Eth1Provider::getLatestEth1Block);
   }
 
   @Override
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
-    return run(eth1Provider -> eth1Provider.ethCall(from, to, data, blockNumber));
+    return run("ethCall", eth1Provider -> eth1Provider.ethCall(from, to, data, blockNumber));
   }
 
   @Override
   public SafeFuture<BigInteger> getChainId() {
-    return run(Eth1Provider::getChainId);
+    return run("getChainId", Eth1Provider::getChainId);
   }
 
   @Override
   public SafeFuture<Boolean> ethSyncing() {
-    return run(Eth1Provider::ethSyncing);
+    return run("ethSyncing", Eth1Provider::ethSyncing);
   }
 
   @Override
   public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
-    return run(eth1Provider -> eth1Provider.ethGetLogs(ethFilter));
-  }
-
-  private <T> SafeFuture<T> run(final Function<MonitorableEth1Provider, SafeFuture<T>> task) {
-    return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
+    return run("ethGetLogs", eth1Provider -> eth1Provider.ethGetLogs(ethFilter));
   }
 
   private <T> SafeFuture<T> run(
+      final String name, final Function<MonitorableEth1Provider, SafeFuture<T>> task) {
+    return run(
+        name, task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
+  }
+
+  private <T> SafeFuture<T> run(
+      final String name,
       final Function<MonitorableEth1Provider, SafeFuture<T>> task,
       final Eth1ProviderSelector.ValidEth1ProviderIterator providers,
       Eth1RequestException exceptionsContainer) {
@@ -162,12 +169,13 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
                         if (ExceptionUtil.hasCause(
                             taskErr, SocketTimeoutException.class, InterruptedIOException.class)) {
                           LOG.warn(
-                              "Connection timeout to eth1 node. Retrying with next eth1 endpoint");
+                              "Connection timeout to eth1 node for call {}. Retrying with next eth1 endpoint",
+                              name);
                         } else {
                           LOG.warn("Retrying with next eth1 endpoint", taskErr);
                         }
                         exceptionsContainer.addSuppressed(taskErr);
-                        return run(task, providers, exceptionsContainer);
+                        return run(name, task, providers, exceptionsContainer);
                       });
             });
   }
