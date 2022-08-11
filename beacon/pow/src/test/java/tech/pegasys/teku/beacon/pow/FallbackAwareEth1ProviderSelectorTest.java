@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.InterruptedIOException;
 import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
@@ -45,6 +46,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class FallbackAwareEth1ProviderSelectorTest {
+
+  public static final String EXPECTED_TIMEOUT_MESSAGE = "Request to eth1 endpoint timed out. Retrying with next eth1 endpoint";
   StubAsyncRunner asyncRunner;
   final MonitorableEth1Provider node1 = mock(MonitorableEth1Provider.class);
   final MonitorableEth1Provider node2 = mock(MonitorableEth1Provider.class);
@@ -117,6 +120,34 @@ public class FallbackAwareEth1ProviderSelectorTest {
   }
 
   @Test
+  void shouldFallbackOnGetLogs_smallerRangeException_interruptedIOException() {
+    // all nodes failing, one with socket timeout error
+    when(node1.ethGetLogs(ethLogFilter))
+        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
+    when(node2.ethGetLogs(ethLogFilter))
+        .thenReturn(
+            failingProviderGetLogsWithError(new InterruptedIOException("timeout")));
+    when(node3.ethGetLogs(ethLogFilter))
+        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
+
+    assertThat(
+            fallbackAwareEth1Provider
+                .ethGetLogs(ethLogFilter)
+                .thenRun(() -> fail("should fail!"))
+                .exceptionallyCompose(
+                    err -> {
+                      final Throwable errCause = err.getCause();
+                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
+                      assertThat(
+                              ((Eth1RequestException) errCause)
+                                  .containsExceptionSolvableWithSmallerRange())
+                          .isTrue();
+                      return SafeFuture.COMPLETE;
+                    }))
+        .isCompleted();
+  }
+
+  @Test
   void shouldNotIncludeTimeoutExceptionStacktraceInLogs() {
     // One node failing with socket timeout error
     when(node2.isValid()).thenReturn(false);
@@ -129,7 +160,27 @@ public class FallbackAwareEth1ProviderSelectorTest {
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
     final String expectedWarningMessage =
-        "Connection timeout to remote eth1 node. Retrying with next eth1 endpoint";
+        EXPECTED_TIMEOUT_MESSAGE;
+    assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
+    assertThat(logCaptor.getLogEvents()).isNotEmpty();
+    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
+    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+  }
+
+  @Test
+  void shouldNotIncludeTimeoutExceptionStacktraceInLogs_interruptedIOException() {
+    // One node failing with socket timeout error
+    when(node2.isValid()).thenReturn(false);
+    when(node3.isValid()).thenReturn(false);
+    when(node1.ethGetLogs(ethLogFilter))
+        .thenReturn(
+            failingProviderGetLogsWithError(new InterruptedIOException("socket timeout error")));
+    LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class);
+    SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
+    final String expectedWarningMessage =
+        EXPECTED_TIMEOUT_MESSAGE;
     assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
     assertThat(logCaptor.getLogEvents()).isNotEmpty();
     assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);

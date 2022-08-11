@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.exceptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.InvalidClassException;
 import org.junit.jupiter.api.Test;
 
 public class ExceptionUtilTest {
@@ -60,6 +62,31 @@ public class ExceptionUtilTest {
 
     // Match error
     assertThat(ExceptionUtil.getCause(err, RuntimeException.class)).contains(err);
+  }
+
+  @Test
+  void hasCause_shouldBeTrueWhenAnyCauseIsFound() {
+    final IllegalStateException rootCause = new IllegalStateException("Oops");
+    final RuntimeException err = new RuntimeException(rootCause);
+    assertThat(ExceptionUtil.hasCause(err, IOException.class, IllegalStateException.class))
+        .isTrue();
+  }
+
+  @Test
+  void hasCause_shouldBeTrueWhenExceptionIsOneOfTargetTypes() {
+    final Exception rootCause = new IOException("Oops");
+    final RuntimeException err = new IllegalStateException(rootCause);
+    assertThat(ExceptionUtil.hasCause(err, IOException.class, IllegalStateException.class))
+        .isTrue();
+  }
+
+  @Test
+  void hasCause_shouldBeFalseWhenNoCauseMatchesTargetTypes() {
+    final Exception rootCause = new IOException("Oops");
+    final RuntimeException err = new RuntimeException(rootCause);
+    assertThat(
+            ExceptionUtil.hasCause(err, InvalidClassException.class, IllegalStateException.class))
+        .isFalse();
   }
 
   private static class CustomRuntimeException extends RuntimeException {}
