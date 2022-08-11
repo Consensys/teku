@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.server.kvstore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -336,6 +338,19 @@ public abstract class KvStoreDatabase<
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
       updater.commit();
+
+      if (state.getSlot().equals(GENESIS_SLOT)) {
+        updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());
+      } else {
+        final Optional<BeaconState> lastState =
+            getLatestAvailableFinalizedState(state.getSlot().minus(ONE));
+        lastState.ifPresent( // TODO handle empty
+            s -> {
+              final StateRootRecorder recorder =
+                  new StateRootRecorder(s.getSlot(), updater::addFinalizedStateRoot, spec);
+              recorder.acceptNextState(state);
+            });
+      }
     }
   }
 
