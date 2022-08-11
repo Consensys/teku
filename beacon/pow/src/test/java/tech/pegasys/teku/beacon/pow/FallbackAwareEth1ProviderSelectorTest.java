@@ -47,7 +47,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class FallbackAwareEth1ProviderSelectorTest {
 
-  public static final String EXPECTED_TIMEOUT_MESSAGE = "Request to eth1 endpoint timed out. Retrying with next eth1 endpoint";
+  public static final String EXPECTED_TIMEOUT_MESSAGE =
+      "Request to eth1 endpoint timed out. Retrying with next eth1 endpoint";
   StubAsyncRunner asyncRunner;
   final MonitorableEth1Provider node1 = mock(MonitorableEth1Provider.class);
   final MonitorableEth1Provider node2 = mock(MonitorableEth1Provider.class);
@@ -125,8 +126,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
     when(node1.ethGetLogs(ethLogFilter))
         .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
     when(node2.ethGetLogs(ethLogFilter))
-        .thenReturn(
-            failingProviderGetLogsWithError(new InterruptedIOException("timeout")));
+        .thenReturn(failingProviderGetLogsWithError(new InterruptedIOException("timeout")));
     when(node3.ethGetLogs(ethLogFilter))
         .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
 
@@ -159,8 +159,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
     SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
-    final String expectedWarningMessage =
-        EXPECTED_TIMEOUT_MESSAGE;
+    final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
     assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
     assertThat(logCaptor.getLogEvents()).isNotEmpty();
     assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
@@ -179,8 +178,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
     SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
-    final String expectedWarningMessage =
-        EXPECTED_TIMEOUT_MESSAGE;
+    final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
     assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
     assertThat(logCaptor.getLogEvents()).isNotEmpty();
     assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
