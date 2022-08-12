@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -61,8 +60,7 @@ public class FailedExecutionPool {
       }
       if (!awaitingExecutionQueue.offer(block)) {
         LOG.info(
-            "Discarding block {} as execution retry pool capacity exceeded",
-            LogFormatter.formatBlock(block.getSlot(), block.getRoot()));
+            "Discarding block {} as execution retry pool capacity exceeded", block.toLogString());
       }
     }
   }
@@ -108,9 +106,7 @@ public class FailedExecutionPool {
   }
 
   private synchronized void retryExecution(final SignedBeaconBlock block) {
-    LOG.info(
-        "Retrying execution of block {}",
-        LogFormatter.formatBlock(block.getSlot(), block.getRoot()));
+    LOG.info("Retrying execution of block {}", block.toLogString());
     SafeFuture.of(() -> blockManager.importBlock(block))
         .exceptionally(BlockImportResult::internalError)
         .thenAccept(result -> handleExecutionResult(block, result))

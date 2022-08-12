@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -89,7 +88,7 @@ public class BlockImporter {
     if (knownOptimistic.isPresent()) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
-          () -> formatBlock(block));
+          () -> block.toLogString());
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
     }
 
@@ -106,10 +105,10 @@ public class BlockImporter {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
                     result::getFailureReason,
-                    () -> formatBlock(block));
+                    () -> block.toLogString());
                 return result;
               }
-              LOG.trace("Successfully imported block {}", () -> formatBlock(block));
+              LOG.trace("Successfully imported block {}", () -> block.toLogString());
 
               blockImportNotifications.onBlockImported(block);
 
@@ -126,7 +125,7 @@ public class BlockImporter {
               final String internalErrorMessage =
                   String.format(
                       "Internal error while importing block: %s. Block content: %s",
-                      formatBlock(block), getBlockContent(block));
+                      block.toLogString(), getBlockContent(block));
               LOG.error(internalErrorMessage, e);
               return BlockImportResult.internalError(e);
             });
@@ -211,10 +210,6 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockVoluntaryExits(
       VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
-  }
-
-  private String formatBlock(final SignedBeaconBlock block) {
-    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 
   private String getBlockContent(final SignedBeaconBlock block) {
