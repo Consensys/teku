@@ -25,3 +25,5 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed `NullPointerException` when checking for the terminal PoW block while the EL was syncing
+- Changed log level of `Ignoring calculated payload` message to debug level.
+- Fixed repeated timeout exceptions when requesting deposit logs from the `--ee-endpoint`

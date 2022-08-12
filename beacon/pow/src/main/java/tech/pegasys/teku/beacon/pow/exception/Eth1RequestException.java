@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.beacon.pow.exception;
 
-import com.google.common.base.Throwables;
+import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class Eth1RequestException extends RuntimeException {
 
@@ -26,10 +27,11 @@ public class Eth1RequestException extends RuntimeException {
   public boolean containsExceptionSolvableWithSmallerRange() {
     return Stream.of(getSuppressed())
         .anyMatch(
-            err -> {
-              final Throwable rootCause = Throwables.getRootCause(err);
-              return (rootCause instanceof SocketTimeoutException
-                  || rootCause instanceof RejectedRequestException);
-            });
+            err ->
+                ExceptionUtil.hasCause(
+                    err,
+                    SocketTimeoutException.class,
+                    RejectedRequestException.class,
+                    InterruptedIOException.class));
   }
 }
