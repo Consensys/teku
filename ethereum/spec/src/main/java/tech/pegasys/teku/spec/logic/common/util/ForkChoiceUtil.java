@@ -243,7 +243,7 @@ public class ForkChoiceUtil {
     }
 
     final UInt64 previousEpoch = miscHelpers.computeEpochAtSlot(previousSlot);
-    for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads()) {
+    for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads(true)) {
       if (miscHelpers.computeEpochAtSlot(nodeData.getSlot()).equals(previousEpoch)) {
         store.pullUpBlockCheckpoints(nodeData.getRoot());
         updateCheckpoints(
