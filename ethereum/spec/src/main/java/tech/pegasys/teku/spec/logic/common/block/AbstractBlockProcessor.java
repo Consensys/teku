@@ -34,7 +34,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
@@ -138,8 +137,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             payloadExecutor);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
-          "Batch signature verification failed for block "
-              + LogFormatter.formatBlock(signedBlock.getSlot(), signedBlock.getRoot()));
+          "Batch signature verification failed for block " + signedBlock.toLogString());
     }
     return result;
   }

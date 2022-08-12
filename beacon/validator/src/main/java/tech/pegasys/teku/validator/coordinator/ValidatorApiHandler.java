@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -553,15 +552,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
-                LOG.trace(
-                    "Successfully imported proposed block: {}",
-                    () -> formatBlock(block.getSlot(), block.getRoot()));
+                LOG.trace("Successfully imported proposed block: {}", block::toLogString);
                 dutyMetrics.onBlockPublished(block.getMessage().getSlot());
                 return SendSignedBlockResult.success(block.getRoot());
               } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
                 LOG.debug(
                     "Delayed processing proposed block {} because it is from the future",
-                    formatBlock(block.getSlot(), block.getRoot()));
+                    block::toLogString);
                 dutyMetrics.onBlockPublished(block.getMessage().getSlot());
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               } else {
