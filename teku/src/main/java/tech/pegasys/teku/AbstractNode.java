@@ -157,7 +157,7 @@ public abstract class AbstractNode implements Node {
     eventChannels
         .stop()
         .orTimeout(30, TimeUnit.SECONDS)
-        .handleException(error -> LOG.error("Failed to stop event channels", error))
+        .handleException(error -> LOG.warn("Failed to stop event channels cleanly", error))
         .join();
 
     threadPool.shutdownNow();
