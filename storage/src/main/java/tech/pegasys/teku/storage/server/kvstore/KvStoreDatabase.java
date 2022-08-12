@@ -337,7 +337,6 @@ public abstract class KvStoreDatabase<
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
-      updater.commit();
 
       if (state.getSlot().equals(GENESIS_SLOT)) {
         updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());
@@ -349,8 +348,9 @@ public abstract class KvStoreDatabase<
               final StateRootRecorder recorder =
                   new StateRootRecorder(s.getSlot(), updater::addFinalizedStateRoot, spec);
               recorder.acceptNextState(state);
-            });
+            }); // TODO if empty addFinalizedStateRoot... to using current slot
       }
+      updater.commit();
     }
   }
 
