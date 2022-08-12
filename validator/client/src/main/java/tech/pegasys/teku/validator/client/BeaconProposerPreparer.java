@@ -163,7 +163,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
       throw new SetFeeRecipientException(
           "Validator public key has been configured in validators-proposer-config file - cannot update via api.");
     }
-    runtimeProposerConfig.addOrUpdate(publicKey, eth1Address);
+    runtimeProposerConfig.addOrUpdateFeeRecipient(publicKey, eth1Address);
   }
 
   public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {
@@ -172,7 +172,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (maybeEth1Address.isPresent()) {
       return false;
     }
-    runtimeProposerConfig.delete(publicKey);
+    runtimeProposerConfig.deleteFeeRecipient(publicKey);
     return true;
   }
 
