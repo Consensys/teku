@@ -1666,6 +1666,22 @@ public class DatabaseTest {
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(beaconState);
   }
 
+  @TestTemplate
+  public void shouldStoreFinalizedStateAndRoots(final DatabaseContext context) throws IOException {
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+
+    final BeaconState state0 = dataStructureUtil.randomBeaconState(ZERO);
+    final BeaconState state1 = dataStructureUtil.randomBeaconState(ONE);
+
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
+    database.storeFinalizedState(state0, dataStructureUtil.randomBytes32());
+    database.storeFinalizedState(state1, dataStructureUtil.randomBytes32());
+    assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
+
+    // TODO check addFinalizedStateRoot call done successfully
+  }
+
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
     createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
