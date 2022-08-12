@@ -29,19 +29,11 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 public class ValidatorClientOptions {
 
   @Option(
-      names = {"--beacon-node-api-endpoint"},
-      paramLabel = "<ENDPOINT>",
-      description = "Endpoint of the Beacon Node REST API",
-      arity = "1")
-  private String beaconNodeApiEndpoint = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINT;
-
-  @Option(
-      names = {"--Xbeacon-node-api-endpoints"},
+      names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
       paramLabel = "<ENDPOINT>",
       description =
-          "Experimental support for multiple Beacon Node API endpoints. If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
+          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
       split = ",",
-      hidden = true,
       arity = "1..*")
   private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
 
@@ -81,7 +73,6 @@ public class ValidatorClientOptions {
     builder.validator(
         config ->
             config
-                .beaconNodeApiEndpoint(getBeaconNodeApiEndpoint())
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
@@ -89,8 +80,8 @@ public class ValidatorClientOptions {
                     Duration.ofMillis(primaryBeaconNodeEventStreamReconnectAttemptPeriod)));
   }
 
-  public URI getBeaconNodeApiEndpoint() {
-    return parseBeaconNodeApiEndpoint(beaconNodeApiEndpoint);
+  public URI getPrimaryBeaconNodeApiEndpoint() {
+    return getBeaconNodeApiEndpoints().get(0);
   }
 
   private List<URI> getBeaconNodeApiEndpoints() {

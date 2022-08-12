@@ -167,7 +167,7 @@ class EventChannel<T> {
     invoker.subscribe(listener, requestedParallelism);
   }
 
-  public void stop() {
-    invoker.stop();
+  public SafeFuture<Void> stop() {
+    return invoker.stop();
   }
 }

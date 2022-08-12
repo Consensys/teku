@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ExecutionPayloadSummary {
@@ -48,4 +49,10 @@ public interface ExecutionPayloadSummary {
   Bytes getExtraData();
 
   Bytes32 getPayloadHash();
+
+  boolean isDefaultPayload();
+
+  default String toLogString() {
+    return LogFormatter.formatBlock(getBlockNumber(), getBlockHash());
+  }
 }

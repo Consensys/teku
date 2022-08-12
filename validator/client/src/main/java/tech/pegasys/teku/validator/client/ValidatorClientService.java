@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -118,40 +117,25 @@ public class ValidatorClientService extends Service {
         validatorConfig.isFailoversSendSubnetSubscriptionsEnabled();
     final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         validatorConfig.getPrimaryBeaconNodeEventStreamReconnectAttemptPeriod();
-    final List<URI> beaconNodeApiEndpoints = validatorConfig.getBeaconNodeApiEndpoints();
 
-    BeaconNodeApi beaconNodeApi;
-    if (beaconNodeApiEndpoints.isEmpty()) {
-      beaconNodeApi =
-          validatorConfig
-              .getBeaconNodeApiEndpoint()
-              .map(
-                  endpoint ->
-                      RemoteBeaconNodeApi.create(
-                          services,
-                          asyncRunner,
-                          List.of(endpoint),
-                          config.getSpec(),
-                          generateEarlyAttestations,
-                          preferSszBlockEncoding,
-                          failoversSendSubnetSubscriptions,
-                          primaryBeaconNodeEventStreamReconnectAttemptPeriod))
-              .orElseGet(
-                  () ->
-                      InProcessBeaconNodeApi.create(
-                          services, asyncRunner, generateEarlyAttestations, config.getSpec()));
-    } else {
-      beaconNodeApi =
-          RemoteBeaconNodeApi.create(
-              services,
-              asyncRunner,
-              beaconNodeApiEndpoints,
-              config.getSpec(),
-              generateEarlyAttestations,
-              preferSszBlockEncoding,
-              failoversSendSubnetSubscriptions,
-              primaryBeaconNodeEventStreamReconnectAttemptPeriod);
-    }
+    final BeaconNodeApi beaconNodeApi =
+        validatorConfig
+            .getBeaconNodeApiEndpoints()
+            .map(
+                beaconNodeApiEndpoints ->
+                    RemoteBeaconNodeApi.create(
+                        services,
+                        asyncRunner,
+                        beaconNodeApiEndpoints,
+                        config.getSpec(),
+                        generateEarlyAttestations,
+                        preferSszBlockEncoding,
+                        failoversSendSubnetSubscriptions,
+                        primaryBeaconNodeEventStreamReconnectAttemptPeriod))
+            .orElseGet(
+                () ->
+                    InProcessBeaconNodeApi.create(
+                        services, asyncRunner, generateEarlyAttestations, config.getSpec()));
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =

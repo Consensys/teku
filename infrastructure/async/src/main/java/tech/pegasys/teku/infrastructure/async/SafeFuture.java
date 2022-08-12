@@ -158,6 +158,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     }
   }
 
+  public static SafeFuture<Void> allOf(final Stream<SafeFuture<?>> futures) {
+    return allOf(futures.toArray(SafeFuture[]::new));
+  }
+
   public static SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.allOf(futures))
         .catchAndRethrow(completionException -> addSuppressedErrors(completionException, futures));

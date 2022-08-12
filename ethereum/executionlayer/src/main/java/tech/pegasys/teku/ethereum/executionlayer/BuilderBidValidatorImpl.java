@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
@@ -69,10 +70,30 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
           "Invalid proposed payload with respect to consensus.", e);
     }
 
+    final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
+
+    // Show a debug message if the fee recipient in the builder bid differs from the fee recipient
+    // specified in the validator registration. This is expected behavior and is not a clear sign of
+    // a dishonest builder. They can build a block in advance of knowing who the fee recipient is
+    // (giving them more time) using their own fee recipient, then just insert one last transaction
+    // into the block to transfer the payment to the requested fee recipient. It probably indicates
+    // a smart builder optimizing things well.
+    final Eth1Address suggestedFeeRecipient = validatorRegistration.getFeeRecipient();
+    if (!executionPayloadHeader.getFeeRecipient().equals(suggestedFeeRecipient)) {
+      final Eth1Address payloadHeaderFeeRecipient =
+          Eth1Address.fromBytes(executionPayloadHeader.getFeeRecipient().getWrappedBytes());
+      LOG.debug(
+          "The fee recipient in the builder bid ({}) is not the same as the configured fee recipient ({}) for validator {}."
+              + " This is expected behavior. Most likely a builder optimization.",
+          payloadHeaderFeeRecipient,
+          suggestedFeeRecipient,
+          validatorRegistration.getPublicKey());
+    }
+
     // checking payload gas limit
     final UInt64 parentGasLimit =
         state.toVersionBellatrix().orElseThrow().getLatestExecutionPayloadHeader().getGasLimit();
-    final UInt64 preferredGasLimit = signedValidatorRegistration.getMessage().getGasLimit();
+    final UInt64 preferredGasLimit = validatorRegistration.getGasLimit();
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 
     if (parentGasLimit.equals(preferredGasLimit) && proposedGasLimit.equals(parentGasLimit)) {
@@ -90,24 +111,6 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     }
 
     eventLogger.builderBidNotHonouringGasLimit(parentGasLimit, proposedGasLimit, preferredGasLimit);
-
-    // Show a debug message if the fee recipient in the builder bid differs from the fee recipient
-    // specified in the validator registration. This is expected behavior and is not a clear sign of
-    // a dishonest builder. They can build a block in advance of knowing who the fee recipient is
-    // (giving them more time) using their own fee recipient, then just insert one last transaction
-    // into the block to transfer the payment to the requested fee recipient. It probably indicates
-    // a smart builder optimizing things well.
-    final Eth1Address suggestedFeeRecipient =
-        signedValidatorRegistration.getMessage().getFeeRecipient();
-    if (!executionPayloadHeader.getFeeRecipient().equals(suggestedFeeRecipient)) {
-      final Eth1Address payloadHeaderFeeRecipient =
-          Eth1Address.fromBytes(executionPayloadHeader.getFeeRecipient().getWrappedBytes());
-      LOG.debug(
-          "builderBid.feeRecipient ({}) != registration.feeRecipient ({})."
-              + " This is expected behavior. Most likely a builder optimization.",
-          payloadHeaderFeeRecipient,
-          suggestedFeeRecipient);
-    }
 
     return executionPayloadHeader;
   }

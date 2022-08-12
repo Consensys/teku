@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlotAndBlockRoot {
@@ -33,6 +34,10 @@ public class SlotAndBlockRoot {
 
   public Bytes32 getBlockRoot() {
     return blockRoot;
+  }
+
+  public String toLogString() {
+    return LogFormatter.formatBlock(slot, blockRoot);
   }
 
   @Override
