@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -90,8 +91,20 @@ public class SetGasLimitTest {
   }
 
   @Test
-  void metadata_shoulThrowInvalidArgument() {
+  void metadata_shouldThrowIllegalArgumentException() {
     assertThatThrownBy(() -> getRequestBodyFromMetadata(handler, "{\"gas_limit\":\"-45000\"}"))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenGasLimitIsZero() throws JsonProcessingException {
+    request.setPathParameter("pubkey", dataStructureUtil.randomPublicKey().toString());
+    request.setRequestBody(new SetGasLimit.SetGasLimitBody(UInt64.ZERO));
+    handler.handleRequest(request);
+    assertThat(request.getResponseBody())
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_BAD_REQUEST,
+                "Gas limit cannot be set to 0. It must match the regex: ^[1-9][0-9]{0,19}$"));
   }
 }

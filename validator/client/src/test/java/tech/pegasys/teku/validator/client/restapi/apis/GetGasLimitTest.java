@@ -23,7 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
-import static tech.pegasys.teku.validator.client.restapi.apis.GetGasLimit.PARAM_PUBKEY_TYPE;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -62,7 +62,7 @@ public class GetGasLimitTest {
 
   @Test
   void shouldDecodePubkey() {
-    final BLSPublicKey pubkey = request.getPathParameter(GetFeeRecipient.PARAM_PUBKEY_TYPE);
+    final BLSPublicKey pubkey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     assertThat(pubkey).isEqualTo(publicKey);
   }
 
@@ -87,7 +87,7 @@ public class GetGasLimitTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(new GetGasLimit.GetGasLimitResponse(gasLimit, Optional.of(publicKey)));
+        .isEqualTo(new GetGasLimit.GetGasLimitResponse(gasLimit, publicKey));
   }
 
   @Test
@@ -96,8 +96,7 @@ public class GetGasLimitTest {
         getResponseStringFromMetadata(
             handler,
             SC_OK,
-            new GetGasLimit.GetGasLimitResponse(
-                gasLimit, Optional.of(dataStructureUtil.randomPublicKey())));
+            new GetGasLimit.GetGasLimitResponse(gasLimit, dataStructureUtil.randomPublicKey()));
     assertThat(responseData)
         .isEqualTo(
             "{\"data\":{\"gas_limit\":\""
@@ -109,7 +108,10 @@ public class GetGasLimitTest {
   void metadata_shouldHandle200RequiredFieldsOnly() throws JsonProcessingException {
     final String responseData =
         getResponseStringFromMetadata(
-            handler, SC_OK, new GetGasLimit.GetGasLimitResponse(gasLimit));
-    assertThat(responseData).isEqualTo("{\"data\":{\"gas_limit\":\"" + gasLimit + "\"}}");
+            handler, SC_OK, new GetGasLimit.GetGasLimitResponse(gasLimit, publicKey));
+    assertThat(responseData)
+        .isEqualTo(
+            String.format(
+                "{\"data\":{\"gas_limit\":\"%s\",\"pubkey\":\"%s\"}}", gasLimit, publicKey));
   }
 }

@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GAS_LIMIT;
-import static tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient.PARAM_PUBKEY_TYPE;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
@@ -75,6 +75,12 @@ public class SetGasLimit extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final SetGasLimit.SetGasLimitBody body = request.getRequestBody();
+    if (body.gasLimit.equals(UInt64.ZERO)) {
+      request.respondError(
+          SC_BAD_REQUEST,
+          "Gas limit cannot be set to 0. It must match the regex: ^[1-9][0-9]{0,19}$");
+      return;
+    }
     try {
       beaconProposerPreparer
           .orElseThrow(

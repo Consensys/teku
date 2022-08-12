@@ -15,19 +15,18 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GAS_LIMIT;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -39,26 +38,13 @@ public class GetGasLimit extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/gas_limit";
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
 
-  private static final String PARAM_PUBKEY = "pubkey";
-
-  public static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
-      new ParameterMetadata<>(
-          PARAM_PUBKEY,
-          new StringBasedPrimitiveTypeDefinition.StringTypeBuilder<BLSPublicKey>()
-              .formatter(value -> value.toBytesCompressed().toHexString())
-              .parser(value -> BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(value)))
-              .pattern("^0x[a-fA-F0-9]{96}$")
-              .example(
-                  "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
-              .build());
-
   private static final SerializableTypeDefinition<GetGasLimit.GetGasLimitResponse> GAS_LIMIT_DATA =
       SerializableTypeDefinition.object(GetGasLimit.GetGasLimitResponse.class)
           .name("GetGasLimitData")
           .withField(
               "gas_limit", CoreTypes.UINT64_TYPE, GetGasLimit.GetGasLimitResponse::getGasLimit)
-          .withOptionalField(
-              "pubkey", ValidatorTypes.PUBKEY_TYPE, GetGasLimit.GetGasLimitResponse::getPublicKey)
+          .withField(
+              PUBKEY, ValidatorTypes.PUBKEY_TYPE, GetGasLimit.GetGasLimitResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetGasLimit.GetGasLimitResponse> RESPONSE_TYPE =
@@ -88,35 +74,33 @@ public class GetGasLimit extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    final Optional<UInt64> maybeGasLimit =
-        this.beaconProposerPreparer.isPresent()
-            ? this.beaconProposerPreparer.get().getGasLimit(publicKey)
-            : Optional.empty();
+    Optional<UInt64> maybeGasLimit =
+        this.beaconProposerPreparer.map(
+            preparer ->
+                preparer.getGasLimit(publicKey).isPresent()
+                    ? preparer.getGasLimit(publicKey).get()
+                    : null);
     if (maybeGasLimit.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Gas limit not found");
       return;
     }
-    request.respondOk(new GetGasLimitResponse(maybeGasLimit.get(), Optional.of(publicKey)));
+    request.respondOk(new GetGasLimitResponse(maybeGasLimit.get(), publicKey));
   }
 
   static class GetGasLimitResponse {
     private final UInt64 gasLimit;
-    private final Optional<BLSPublicKey> publicKey;
+    private final BLSPublicKey publicKey;
 
-    public GetGasLimitResponse(final UInt64 gasLimit, final Optional<BLSPublicKey> publicKey) {
+    public GetGasLimitResponse(final UInt64 gasLimit, final BLSPublicKey publicKey) {
       this.gasLimit = gasLimit;
       this.publicKey = publicKey;
-    }
-
-    public GetGasLimitResponse(final UInt64 gasLimit) {
-      this(gasLimit, Optional.empty());
     }
 
     public UInt64 getGasLimit() {
       return gasLimit;
     }
 
-    public Optional<BLSPublicKey> getPublicKey() {
+    public BLSPublicKey getPublicKey() {
       return publicKey;
     }
 

@@ -1,7 +1,7 @@
 {
   "title" : "GetGasLimitData",
   "type" : "object",
-  "required" : [ "gas_limit" ],
+  "required" : [ "gas_limit", "pubkey" ],
   "properties" : {
     "gas_limit" : {
       "type" : "string",
