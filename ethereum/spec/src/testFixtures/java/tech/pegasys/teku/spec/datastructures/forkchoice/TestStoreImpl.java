@@ -362,7 +362,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public List<ProtoNodeData> getChainHeads() {
+    public List<ProtoNodeData> getChainHeads(final boolean includeNonViableChainHeads) {
       final Map<Bytes32, ProtoNodeData> headsByRoot = new HashMap<>();
       getOrderedBlockRoots()
           .forEach(
