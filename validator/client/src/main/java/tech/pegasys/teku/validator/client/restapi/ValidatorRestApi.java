@@ -31,6 +31,7 @@ import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
@@ -94,6 +95,7 @@ public class ValidatorRestApi {
         .endpoint(new SetFeeRecipient(beaconProposerPreparer))
         .endpoint(new SetGasLimit(beaconProposerPreparer))
         .endpoint(new DeleteFeeRecipient(beaconProposerPreparer))
+        .endpoint(new DeleteGasLimit(beaconProposerPreparer))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))
