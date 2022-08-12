@@ -154,7 +154,12 @@ public abstract class AbstractNode implements Node {
   @Override
   public void stop() {
     // Stop processing new events
-    eventChannels.stop();
+    eventChannels
+        .stop()
+        .orTimeout(30, TimeUnit.SECONDS)
+        .handleException(error -> LOG.warn("Failed to stop event channels cleanly", error))
+        .join();
+
     threadPool.shutdownNow();
     counterMaintainer.ifPresent(Cancellable::cancel);
 

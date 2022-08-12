@@ -18,9 +18,11 @@ import static java.util.Collections.synchronizedMap;
 
 import java.lang.reflect.Method;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +37,7 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
   private final Map<T, BlockingQueue<Runnable>> eventQueuesBySubscriber =
       synchronizedMap(new IdentityHashMap<>());
+  private final List<QueueReader> queueReaders = new CopyOnWriteArrayList<>();
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ExecutorService executor;
 
@@ -52,7 +55,9 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
     eventQueuesBySubscriber.put(subscriber, queue);
     super.subscribe(subscriber, numberOfThreads);
     for (int i = 0; i < numberOfThreads; i++) {
-      executor.execute(new QueueReader(queue));
+      final QueueReader reader = new QueueReader(queue);
+      queueReaders.add(reader);
+      executor.execute(reader);
     }
   }
 
@@ -90,12 +95,14 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<Void> stop() {
     stopped.set(true);
     executor.shutdownNow();
+    return SafeFuture.allOf(queueReaders.stream().map(reader -> reader.readerStopped));
   }
 
   class QueueReader implements Runnable {
+    private final SafeFuture<Void> readerStopped = new SafeFuture<>();
     private final BlockingQueue<Runnable> queue;
 
     public QueueReader(final BlockingQueue<Runnable> queue) {
@@ -104,13 +111,14 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
     @Override
     public void run() {
-      while (!stopped.get()) {
+      while (!stopped.get() || !queue.isEmpty()) {
         try {
           deliverNextEvent();
         } catch (final InterruptedException e) {
           LOG.debug("Interrupted while waiting for next event", e);
         }
       }
+      readerStopped.complete(null);
     }
 
     void deliverNextEvent() throws InterruptedException {

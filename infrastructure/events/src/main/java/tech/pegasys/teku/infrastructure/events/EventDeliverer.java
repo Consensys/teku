@@ -75,5 +75,7 @@ abstract class EventDeliverer<T> {
   protected abstract <X> SafeFuture<X> deliverToWithResponse(
       T subscriber, Method method, Object[] args, AsyncRunner responseRunner);
 
-  public void stop() {}
+  public SafeFuture<Void> stop() {
+    return SafeFuture.COMPLETE;
+  }
 }
