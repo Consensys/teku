@@ -194,13 +194,6 @@ public class ChainStorage
           block.unblind(spec.atSlot(block.getSlot()).getSchemaDefinitions(), maybePayload.get()));
     }
 
-    if (executionLayerChannel.isEmpty()) {
-      throw new StorageException(
-          String.format(
-              "Needed a payload, but not able to retrieve from storage for block %s (%s)",
-              block.getRoot(), block.getSlot()));
-    }
-
     throw new StorageException(
         String.format(
             "Needed a payload, but not able to retrieve from storage for block %s (%s)",
