@@ -35,13 +35,13 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> NON_BELLATRIX_NETWORKS =
-      Set.of("mainnet", "gnosis", "swift", "less-swift");
+  private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("gnosis", "swift", "less-swift");
 
   @Test
-  public void defaultFactoryShouldScheduleAltairForMainNet() {
+  public void defaultFactoryShouldScheduleAltairAndBellatrixForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
-    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
+    assertThat(spec.getForkSchedule().getSupportedMilestones())
+        .containsExactly(PHASE0, ALTAIR, BELLATRIX);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -62,7 +62,7 @@ public class SpecFactoryTest {
   void shouldSupportAltairWhenForkEpochSetInConfig() {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
-            "mainnet",
+            "minimal",
             phase0Builder ->
                 phase0Builder.altairBuilder(
                     altairBuilder -> altairBuilder.altairForkEpoch(UInt64.valueOf(10))));
