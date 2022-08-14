@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ethtests.finder;
 
+import java.math.BigInteger;
 import java.nio.file.Path;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
@@ -23,6 +25,11 @@ import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
+
+  public static final UInt256 PLACEHOLDER_TERMINAL_DIFFICULTY =
+      UInt256.valueOf(
+          new BigInteger(
+              "115792089237316195423570985008687907853269984665640564039457584007913129638912"));
   private final String fork;
   private final String configName;
   private final String testType;
@@ -89,7 +96,11 @@ public class TestDefinition {
         TestSpecFactory.create(
             highestSupportedMilestone,
             network,
-            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.CHECKED));
+            builder ->
+                builder
+                    .progressiveBalancesMode(ProgressiveBalancesMode.CHECKED)
+                    .bellatrixBuilder(
+                        b -> b.terminalTotalDifficulty(PLACEHOLDER_TERMINAL_DIFFICULTY)));
   }
 
   public String getTestType() {
