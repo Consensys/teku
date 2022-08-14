@@ -109,7 +109,7 @@ public class ForkChoiceUpdateData {
               // to preserve ordering we make sure we haven't already calculated a payload that has
               // been requested later than the current one
               if (sequenceNumber <= payloadBuildingAttributesSequenceConsumer) {
-                LOG.warn(
+                LOG.debug(
                     "Ignoring calculated payload building attributes since it violates ordering");
                 return Optional.empty();
               }

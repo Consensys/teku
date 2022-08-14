@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SyncSourceBatch implements Batch {
@@ -285,19 +286,17 @@ public class SyncSourceBatch implements Batch {
                 .map(block -> LogFormatter.formatHashRoot(block.getParentRoot()))
                 .orElse("<unknown>"))
         .add("firstBlock", getFirstBlock().map(this::formatBlockAndParent).orElse("<none>"))
-        .add("lastBlock", getLastBlock().map(this::formatBlock).orElse("<none>"))
+        .add(
+            "lastBlock",
+            getLastBlock().map(MinimalBeaconBlockSummary::toLogString).orElse("<none>"))
         .toString();
   }
 
   private String formatBlockAndParent(final SignedBeaconBlock block1) {
-    return formatBlock(block1)
+    return block1.toLogString()
         + " (parent: "
         + LogFormatter.formatHashRoot(block1.getParentRoot())
         + ")";
-  }
-
-  private String formatBlock(final SignedBeaconBlock block) {
-    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 
   private static class RequestHandler implements RpcResponseListener<SignedBeaconBlock> {

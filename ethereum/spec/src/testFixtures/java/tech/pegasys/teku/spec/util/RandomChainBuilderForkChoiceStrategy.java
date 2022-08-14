@@ -92,7 +92,7 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public List<ProtoNodeData> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads(final boolean includeNonViableHeads) {
     return chainBuilder
         .getChainHead()
         .map(

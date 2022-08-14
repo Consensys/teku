@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class EventChannels {
 
@@ -107,7 +108,7 @@ public class EventChannels {
     return (EventChannel<T>) channels.computeIfAbsent(channelInterface, eventChannelFactory);
   }
 
-  public void stop() {
-    channels.values().forEach(EventChannel::stop);
+  public SafeFuture<Void> stop() {
+    return SafeFuture.allOf(channels.values().stream().map(EventChannel::stop));
   }
 }

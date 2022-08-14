@@ -278,6 +278,74 @@ class EventChannelTest {
     assertThat(result).isCompletedWithValue("Yay");
   }
 
+  @Test
+  @SuppressWarnings("rawtypes")
+  void shouldProcessAlreadyPublishedEventsBeforeStopping() {
+    final ExecutorService executor = mock(ExecutorService.class);
+    final EventChannel<EventWithArgument> channel =
+        EventChannel.createAsync(EventWithArgument.class, executor, metricsSystem);
+    final EventWithArgument subscriber = mock(EventWithArgument.class);
+    channel.subscribe(subscriber);
+
+    // Publish a sequence of events
+    channel.getPublisher(Optional.empty()).method1("Event1");
+    channel.getPublisher(Optional.empty()).method2("Event2");
+    channel.getPublisher(Optional.empty()).method1("Event3");
+
+    verifyNoInteractions(subscriber);
+
+    // Stop the channel, but it should still complete pending events
+    final SafeFuture<Void> stopFuture = channel.stop();
+    assertThat(stopFuture).isNotDone();
+
+    // Now actually run the consuming thread
+    final ArgumentCaptor<QueueReader> consumerCaptor = ArgumentCaptor.forClass(QueueReader.class);
+    verify(executor).execute(consumerCaptor.capture());
+    consumerCaptor.getValue().run(); // Should deliver pending events then stop
+
+    // Verify that the events were delivered in order
+    final InOrder inOrder = inOrder(subscriber);
+    inOrder.verify(subscriber).method1("Event1");
+    inOrder.verify(subscriber).method2("Event2");
+    inOrder.verify(subscriber).method1("Event3");
+    inOrder.verifyNoMoreInteractions();
+    assertThat(stopFuture).isCompleted();
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void shouldNotAcceptAdditionalEventsAfterStopped() {
+    final ExecutorService executor = mock(ExecutorService.class);
+    final EventChannel<EventWithArgument> channel =
+        EventChannel.createAsync(EventWithArgument.class, executor, metricsSystem);
+    final EventWithArgument subscriber = mock(EventWithArgument.class);
+    channel.subscribe(subscriber);
+
+    // Publish a sequence of events
+    channel.getPublisher(Optional.empty()).method1("Event1");
+
+    // Stop the channel, should only execute events added prior to this point.
+    final SafeFuture<Void> stopFuture = channel.stop();
+    assertThat(stopFuture).isNotDone();
+
+    channel.getPublisher(Optional.empty()).method2("Event2");
+    channel.getPublisher(Optional.empty()).method1("Event3");
+
+    verifyNoInteractions(subscriber);
+
+    // Now actually run the consuming thread
+    final ArgumentCaptor<QueueReader> consumerCaptor = ArgumentCaptor.forClass(QueueReader.class);
+    verify(executor).execute(consumerCaptor.capture());
+    consumerCaptor.getValue().run(); // Should deliver pending events then stop
+
+    // Verify that the events were delivered in order
+    final InOrder inOrder = inOrder(subscriber);
+    inOrder.verify(subscriber).method1("Event1");
+    // events 2 and 3 not executed because they were added after stop
+    inOrder.verifyNoMoreInteractions();
+    assertThat(stopFuture).isCompleted();
+  }
+
   private void waitForCountDownLatchComplete(final CountDownLatch started1)
       throws InterruptedException {
     assertThat(started1.await(5, TimeUnit.SECONDS)).isTrue();
