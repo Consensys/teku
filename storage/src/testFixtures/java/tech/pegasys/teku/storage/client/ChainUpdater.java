@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -143,31 +143,19 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeCurrentChain() {
-    final UInt64 chainHeadSlot = recentChainData.getHeadSlot();
-    final UInt64 finalizeEpoch = spec.computeEpochAtSlot(chainHeadSlot).max(2);
-    final UInt64 finalHeadEpoch = finalizeEpoch.plus(3);
-    final UInt64 finalHeadSlot = spec.computeStartSlotAtEpoch(finalHeadEpoch);
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    newBlocks.forEach(this::saveBlock);
+    final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
+    updateBestBlock(newHead);
+    return newHead;
+  }
 
-    SignedBlockAndState newChainHead = null;
-    for (UInt64 slot = chainHeadSlot.plus(1);
-        slot.isLessThan(finalHeadSlot);
-        slot = slot.increment()) {
-      final BlockOptions blockOptions = BlockOptions.create();
-      chainBuilder
-          .streamValidAttestationsForBlockAtSlot(slot)
-          .forEach(blockOptions::addAttestation);
-      newChainHead = chainBuilder.generateBlockAtSlot(slot, blockOptions);
-      saveBlock(newChainHead);
-      updateBestBlock(newChainHead);
-    }
-    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalizedCheckpoint();
-    assertThat(finalizedCheckpoint.getEpoch())
-        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
-        .isEqualTo(finalizeEpoch);
-    assertThat(finalizedCheckpoint.getRoot())
-        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
-        .isNotEqualTo(Bytes32.ZERO);
-    return newChainHead;
+  public SignedBlockAndState finalizeCurrentChainOptimistically() {
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    newBlocks.forEach(this::saveOptimisticBlock);
+    final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
+    updateBestBlock(newHead);
+    return newHead;
   }
 
   public SignedBlockAndState justifyEpoch(final long epoch) {

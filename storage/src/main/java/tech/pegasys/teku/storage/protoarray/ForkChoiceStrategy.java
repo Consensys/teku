@@ -200,7 +200,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headExecutionBlockHash,
           justifiedExecutionHash,
           finalizedExecutionHash,
-          headNode.isOptimistic());
+          headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode));
     } finally {
       protoArrayLock.readLock().unlock();
     }

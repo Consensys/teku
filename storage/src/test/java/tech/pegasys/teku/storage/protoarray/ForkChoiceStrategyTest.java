@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
@@ -47,10 +48,13 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -451,6 +455,64 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(transaction3.getVote(ZERO).isCurrentEquivocating()).isTrue();
     // Not updated after equivocation
     assertThat(transaction3.getVote(ZERO).getNextRoot()).isEqualTo(block1.getRoot());
+  }
+
+  @Test
+  void shouldConsiderHeadOptimisticWhenItIsNotViable() {
+    // If we optimistically import blocks which include enough attestations to update the justified
+    // checkpoint, then later invalidate some non-justified blocks such that the head block no
+    // longer includes enough attestations to support that justification, then none of our blocks
+    // will be viable because they won't have the same checkpoints as our store.
+    // In that case we will use the justified checkpoint as chain head and should remain in
+    // optimistic sync mode
+
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+    chainUpdater.initializeGenesisWithPayload(true);
+    final ForkChoiceStrategy protoArray = getProtoArray(storageSystem);
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    final SignedBlockAndState optimisticHead = chainUpdater.finalizeCurrentChainOptimistically();
+    ProtoNodeData firstJustifiedData =
+        protoArray.getBlockData(optimisticHead.getRoot()).orElseThrow();
+    ProtoNodeData lastUnjustifiedData =
+        protoArray.getBlockData(firstJustifiedData.getParentRoot()).orElseThrow();
+    final Checkpoint currentJustified = recentChainData.getJustifiedCheckpoint().orElseThrow();
+    while (lastUnjustifiedData.getCheckpoints().getJustifiedCheckpoint().equals(currentJustified)) {
+      firstJustifiedData = lastUnjustifiedData;
+      lastUnjustifiedData =
+          protoArray.getBlockData(lastUnjustifiedData.getParentRoot()).orElseThrow();
+    }
+    assertThat(firstJustifiedData.getCheckpoints().getJustifiedCheckpoint())
+        .isEqualTo(currentJustified);
+    assertThat(lastUnjustifiedData.getCheckpoints().getJustifiedCheckpoint())
+        .isNotEqualTo(currentJustified);
+
+    // Invalidate blocks that updated the justified checkpoint
+    protoArray.onExecutionPayloadResult(
+        firstJustifiedData.getRoot(),
+        PayloadStatus.invalid(Optional.empty(), Optional.of("No good, very bad block")),
+        true);
+    // And validate the justified checkpoint
+    protoArray.onExecutionPayloadResult(currentJustified.getRoot(), PayloadStatus.VALID, false);
+
+    // Find new chain head
+    final SlotAndBlockRoot revertHead =
+        protoArray.findHead(
+            recentChainData.getJustifiedCheckpoint().orElseThrow(),
+            recentChainData.getFinalizedCheckpoint().orElseThrow());
+    recentChainData.updateHead(revertHead.getBlockRoot(), optimisticHead.getSlot());
+
+    final ForkChoiceState forkChoiceState =
+        protoArray.getForkChoiceState(
+            recentChainData.getJustifiedCheckpoint().orElseThrow(),
+            recentChainData.getFinalizedCheckpoint().orElseThrow());
+
+    // Should have reverted to the justified checkpoint as head
+    assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
+    // The current head block itself is fully validated
+    assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
+    // But we consider the chain head optimistic because of the updated justified checkpoint
+    assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
   }
 
   private StorageSystem initStorageSystem() {
