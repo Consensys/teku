@@ -1673,13 +1673,17 @@ public class DatabaseTest {
     final BeaconState state0 = dataStructureUtil.randomBeaconState(ZERO);
     final BeaconState state1 = dataStructureUtil.randomBeaconState(ONE);
 
+    final Bytes32 blockRoot0 = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+
     assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
-    database.storeFinalizedState(state0, dataStructureUtil.randomBytes32());
-    database.storeFinalizedState(state1, dataStructureUtil.randomBytes32());
+    database.storeFinalizedState(state0, blockRoot0);
+    database.storeFinalizedState(state1, blockRoot1);
+
     assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
-
-    // TODO check addFinalizedStateRoot call done successfully
+    assertThat(database.getFinalizedStateRootsAtSlot(ZERO)).contains(state0.hashTreeRoot());
+    assertThat(database.getFinalizedStateRootsAtSlot(ONE)).contains(state1.hashTreeRoot());
   }
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(

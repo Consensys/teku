@@ -129,6 +129,8 @@ public interface Database extends AutoCloseable {
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
+  Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot);
+
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot);

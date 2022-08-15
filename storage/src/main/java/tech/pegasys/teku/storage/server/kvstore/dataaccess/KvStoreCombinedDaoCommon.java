@@ -71,6 +71,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
+  Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot);
+
   Set<Bytes32> getNonCanonicalBlockRootsAtSlot(UInt64 slot);
 
   long countNonCanonicalSlots();

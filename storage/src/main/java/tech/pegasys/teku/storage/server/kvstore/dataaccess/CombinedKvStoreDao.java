@@ -442,6 +442,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
+    return db.stream(schema.getColumnSlotsByFinalizedStateRoot())
+        .filter(entry -> slot.equals(entry.getValue()))
+        .map(ColumnEntry::getKey)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
   @MustBeClosed
   public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
     return db.stream(schema.getColumnNonCanonicalBlocksByRoot()).map(entry -> entry);

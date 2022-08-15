@@ -444,6 +444,11 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
+    return dao.getFinalizedStateRootsAtSlot(slot);
+  }
+
+  @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return dao.getHotState(root);
   }

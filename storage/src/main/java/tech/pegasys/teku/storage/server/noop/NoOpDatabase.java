@@ -182,6 +182,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
+    return Set.of();
+  }
+
+  @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return Optional.empty();
   }
