@@ -341,12 +341,12 @@ public abstract class KvStoreDatabase<
       if (state.getSlot().equals(GENESIS_SLOT)) {
         updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());
       } else {
-        final Optional<BeaconState> lastState =
+        final Optional<BeaconState> maybeLastState =
             getLatestAvailableFinalizedState(state.getSlot().minus(ONE));
-        lastState.ifPresentOrElse(
-            s -> {
+        maybeLastState.ifPresentOrElse(
+            lastState -> {
               final StateRootRecorder recorder =
-                  new StateRootRecorder(s.getSlot(), updater::addFinalizedStateRoot, spec);
+                  new StateRootRecorder(lastState.getSlot(), updater::addFinalizedStateRoot, spec);
               recorder.acceptNextState(state);
             },
             () ->
