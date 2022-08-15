@@ -164,10 +164,10 @@ public class ChainStorage
     if (maybeBlock.isEmpty()) {
       return SafeFuture.completedFuture(maybeBlock);
     }
-    return unblindedBlock(maybeBlock.get()).thenApply(Optional::of);
+    return unblindBlock(maybeBlock.get()).thenApply(Optional::of);
   }
 
-  private SafeFuture<SignedBeaconBlock> unblindedBlock(final SignedBeaconBlock block) {
+  private SafeFuture<SignedBeaconBlock> unblindBlock(final SignedBeaconBlock block) {
     if (!block.isBlinded()) {
       return SafeFuture.completedFuture(block);
     }
@@ -274,7 +274,7 @@ public class ChainStorage
   @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     final List<SignedBeaconBlock> blocks = database.getNonCanonicalBlocksAtSlot(slot);
-    return SafeFuture.collectAll(blocks.stream().map(this::unblindedBlock));
+    return SafeFuture.collectAll(blocks.stream().map(this::unblindBlock));
   }
 
   @Override
