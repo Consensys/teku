@@ -143,12 +143,23 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenAccept(
             maybeForkChoiceUpdatedResult ->
                 maybeForkChoiceUpdatedResult.ifPresent(
-                    forkChoiceUpdatedResult ->
-                        onExecutionPayloadResult(
-                            forkChoiceUpdatedResultNotification
-                                .getForkChoiceState()
-                                .getHeadBlockRoot(),
-                            forkChoiceUpdatedResult.getPayloadStatus())))
+                    forkChoiceUpdatedResult -> {
+                      if (forkChoiceUpdatedResultNotification.isTerminalBlockCall()
+                          && forkChoiceUpdatedResult.getPayloadStatus().hasInvalidStatus()) {
+                        throw new IllegalStateException(
+                            String.format(
+                                "Execution engine considers INVALID recently provided terminal block %s. "
+                                    + "Probably an execution engine misconfiguration.",
+                                forkChoiceUpdatedResultNotification
+                                    .getForkChoiceState()
+                                    .getHeadExecutionBlockHash()));
+                      }
+                      onExecutionPayloadResult(
+                          forkChoiceUpdatedResultNotification
+                              .getForkChoiceState()
+                              .getHeadBlockRoot(),
+                          forkChoiceUpdatedResult.getPayloadStatus());
+                    }))
         .finish(error -> LOG.error("Failed to update fork choice", error));
   }
 

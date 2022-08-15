@@ -1074,7 +1074,9 @@ class ForkChoiceTest {
     return invocation -> {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
-              invocation.getArgument(0), SafeFuture.completedFuture(Optional.ofNullable(result))));
+              invocation.getArgument(0),
+              false,
+              SafeFuture.completedFuture(Optional.ofNullable(result))));
       return null;
     };
   }
