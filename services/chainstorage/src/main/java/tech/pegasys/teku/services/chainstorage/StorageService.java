@@ -17,10 +17,12 @@ import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARA
 
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -49,17 +51,26 @@ public class StorageService extends Service implements StorageServiceFacade {
   protected SafeFuture<?> doStart() {
     return SafeFuture.fromRunnable(
         () -> {
+          final AsyncRunner storageAsyncRunner =
+              serviceConfig.createAsyncRunner("storageAsyncRunner");
           final VersionedDatabaseFactory dbFactory =
               new VersionedDatabaseFactory(
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                  Optional.of(serviceConfig.createAsyncRunner("database_migrator")),
+                  Optional.of(storageAsyncRunner),
                   config);
           database = dbFactory.createDatabase();
 
           database.migrate();
 
-          chainStorage = ChainStorage.create(database, config.getSpec());
+          chainStorage =
+              ChainStorage.create(
+                  database,
+                  Optional.of(
+                      serviceConfig
+                          .getEventChannels()
+                          .getPublisher(ExecutionLayerChannel.class, storageAsyncRunner)),
+                  config.getSpec());
           final DepositStorage depositStorage =
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
