@@ -162,14 +162,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public List<ProtoNodeData> getChainHeads() {
+  public List<ProtoNodeData> getChainHeads(final boolean includeNonViableHeads) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getNodes().stream()
           .filter(
               protoNode ->
                   protoNode.getBestChildIndex().isEmpty()
-                      && protoArray.nodeIsViableForHead(protoNode))
+                      && (includeNonViableHeads || protoArray.nodeIsViableForHead(protoNode)))
           .map(ProtoNode::getBlockData)
           .collect(Collectors.toList());
     } finally {
@@ -200,7 +200,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headExecutionBlockHash,
           justifiedExecutionHash,
           finalizedExecutionHash,
-          headNode.isOptimistic());
+          headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode));
     } finally {
       protoArrayLock.readLock().unlock();
     }

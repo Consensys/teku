@@ -33,12 +33,10 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /** Manages the sync process to reach a finalized chain. */
@@ -460,7 +458,7 @@ public class BatchSync implements Sync {
       activeBatches.removeAll();
       LOG.debug(
           "Unable to sync to target chain {} because it has no remaining peers",
-          () -> formatBlock(targetChain.getChainHead()));
+          () -> targetChain.getChainHead().toLogString());
       syncResult.complete(SyncResult.FAILED);
       return;
     }
@@ -517,7 +515,7 @@ public class BatchSync implements Sync {
             + "Common ancestor slot: %s%n"
             + "Active batches: %s%n"
             + "Peers on chain: %s",
-        formatBlock(targetChain.getChainHead()),
+        targetChain.getChainHead().toLogString(),
         switchingBranches,
         importingBatch.map(this::formatBatch).orElse("<none>"),
         commonAncestorSlot.isCompletedNormally() ? commonAncestorSlot.join() : commonAncestorSlot,
@@ -531,19 +529,11 @@ public class BatchSync implements Sync {
         batch.getFirstSlot(),
         batch.getLastSlot(),
         batch.getBlocks().size(),
-        batch.getFirstBlock().map(this::formatBlock).orElse("<none>"),
+        batch.getFirstBlock().map(MinimalBeaconBlockSummary::toLogString).orElse("<none>"),
         batch.isFirstBlockConfirmed() ? "confirmed" : "unconfirmed",
-        batch.getLastBlock().map(this::formatBlock).orElse("<none>"),
+        batch.getLastBlock().map(MinimalBeaconBlockSummary::toLogString).orElse("<none>"),
         batch.isConfirmed(),
         batch.isComplete(),
         batch.getSource());
-  }
-
-  private String formatBlock(final SlotAndBlockRoot block) {
-    return LogFormatter.formatBlock(block.getSlot(), block.getBlockRoot());
-  }
-
-  private String formatBlock(final BeaconBlockSummary block) {
-    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 }

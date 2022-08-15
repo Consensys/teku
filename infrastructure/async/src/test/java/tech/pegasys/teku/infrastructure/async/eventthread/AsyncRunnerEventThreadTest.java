@@ -31,7 +31,7 @@ class AsyncRunnerEventThreadTest {
       AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
 
   private final EventThread eventThread =
-      new AsyncRunnerEventThread(AsyncRunnerEventThreadTest.class.getName(), asyncRunnerFactory);
+      new AsyncRunnerEventThread("AsyncRunnerEventThreadTest", asyncRunnerFactory);
 
   @AfterEach
   void tearDown() {
