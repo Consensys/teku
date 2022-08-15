@@ -1682,8 +1682,22 @@ public class DatabaseTest {
 
     assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
-    assertThat(database.getFinalizedStateRootsAtSlot(ZERO)).contains(state0.hashTreeRoot());
-    assertThat(database.getFinalizedStateRootsAtSlot(ONE)).contains(state1.hashTreeRoot());
+
+    try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
+      assertThat(getFinalizedStateRootsAtSlot(roots, ZERO)).contains(state0.hashTreeRoot());
+    }
+
+    try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
+      assertThat(getFinalizedStateRootsAtSlot(roots, ONE)).contains(state1.hashTreeRoot());
+    }
+  }
+
+  private Set<Bytes32> getFinalizedStateRootsAtSlot(
+      final Stream<Map.Entry<Bytes32, UInt64>> roots, final UInt64 slot) {
+    return roots
+        .filter(entry -> slot.equals(entry.getValue()))
+        .map(entry -> entry.getKey())
+        .collect(Collectors.toSet());
   }
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(

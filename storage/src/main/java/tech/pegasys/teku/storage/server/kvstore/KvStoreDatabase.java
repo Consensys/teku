@@ -444,8 +444,9 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
-    return dao.getFinalizedStateRootsAtSlot(slot);
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return dao.getFinalizedStateRoots();
   }
 
   @Override

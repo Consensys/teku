@@ -129,7 +129,8 @@ public interface Database extends AutoCloseable {
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
-  Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot);
+  @MustBeClosed
+  Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots();
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 

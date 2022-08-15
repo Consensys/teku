@@ -182,8 +182,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
-    return Set.of();
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return Stream.empty();
   }
 
   @Override

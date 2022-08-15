@@ -312,8 +312,9 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public Set<Bytes32> getFinalizedStateRootsAtSlot(UInt64 slot) {
-    return finalizedDao.getFinalizedStateRootsAtSlot(slot);
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return finalizedDao.getFinalizedStateRoots();
   }
 
   @Override
