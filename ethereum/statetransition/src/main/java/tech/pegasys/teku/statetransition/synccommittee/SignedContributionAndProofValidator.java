@@ -293,8 +293,7 @@ public class SignedContributionAndProofValidator {
     } catch (IllegalStateException ex) {
       LOG.error("Exception", ex);
       LOG.info(
-          "Exception with state {}, syncCommittee {}, contribution {}, subcommiteeSize {}, pariticipantIndex {} ",
-          state,
+          "Exception with state [skip], syncCommittee {}, contribution {}, subcommiteeSize {}, pariticipantIndex {} ",
           syncCommittee,
           contribution,
           subcommitteeSize,

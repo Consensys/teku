@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
+  private static final Logger LOG = LogManager.getLogger();
   private final Cache<BLSPublicKey, Integer> validatorIndices;
   private final AtomicInteger lastIndex;
 
@@ -52,10 +55,29 @@ public class ValidatorIndexCache {
 
     final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
     if (validatorIndex.isPresent()) {
-      return validatorIndex.filter(index -> index < state.getValidators().size());
+      Optional<Integer> integer =
+          validatorIndex.filter(index -> index < state.getValidators().size());
+      if (integer.isEmpty()) {
+        LOG.info(
+            "Empty in if, state {}, publicKey {}, lastIndexSnapshot {}, validatorIndex {}",
+            state,
+            publicKey,
+            lastIndexSnapshot,
+            validatorIndex);
+      }
+      return integer;
     }
 
-    return findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
+    Optional<Integer> indexFromState =
+        findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
+    if (indexFromState.isEmpty()) {
+      LOG.info(
+          "Empty, state {}, publicKey {}, lastIndexSnapshot {}",
+          state,
+          publicKey,
+          lastIndexSnapshot);
+    }
+    return indexFromState;
   }
 
   private Optional<Integer> findIndexFromState(
