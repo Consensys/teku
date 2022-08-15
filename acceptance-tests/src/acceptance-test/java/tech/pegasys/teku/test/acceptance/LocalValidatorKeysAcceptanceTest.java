@@ -66,7 +66,11 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     // a random key won't be found, remove should give not_found
     api.removeLocalValidatorAndCheckStatus(extraKeys.getPublicKeys().get(0), "not_found");
 
+    // Wait for a full epoch to pass so that all validators have attested
+    // This ensures they have all generated slashing protection data
     beaconNode.waitForNextEpoch();
+    beaconNode.waitForNextEpoch();
+
     // remove a validator
     final BLSPublicKey removedPubkey = validatorKeystores.getPublicKeys().get(0);
     api.removeLocalValidatorAndCheckStatus(removedPubkey, "deleted");

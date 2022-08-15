@@ -87,7 +87,7 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReportEEDisabledIfEndpointNotSpecified() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network=minimal");
     assertThat(config.executionLayer().isEnabled()).isFalse();
   }
 
