@@ -241,7 +241,8 @@ public class ProtoArray {
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode) && !bestNode.equals(justifiedNode)) {
-      throw new IllegalStateException("ProtoArray: Best node is not viable for head");
+      throw new IllegalStateException(
+          "ProtoArray: Best node " + bestNode.toLogString() + " is not viable for head");
     }
     return Optional.of(bestNode);
   }
