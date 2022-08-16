@@ -443,6 +443,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedStateRoot()).map(entry -> entry);
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
     return db.stream(schema.getColumnNonCanonicalBlocksByRoot()).map(entry -> entry);
   }

@@ -1666,6 +1666,33 @@ public class DatabaseTest {
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(beaconState);
   }
 
+  @TestTemplate
+  public void shouldStoreFinalizedStateAndRoots(final DatabaseContext context) throws IOException {
+    createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
+
+    final BeaconState state0 = dataStructureUtil.randomBeaconState(ZERO);
+    final BeaconState state1 = dataStructureUtil.randomBeaconState(ONE);
+
+    final Bytes32 blockRoot0 = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
+    database.storeFinalizedState(state0, blockRoot0);
+    database.storeFinalizedState(state1, blockRoot1);
+
+    assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
+    assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
+    assertThat(getFinalizedStateRootsList())
+        .containsExactlyInAnyOrder(
+            Map.entry(state0.hashTreeRoot(), ZERO), Map.entry(state1.hashTreeRoot(), ONE));
+  }
+
+  private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
+    try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
+      return roots.map(entry -> Map.entry(entry.getKey(), entry.getValue())).collect(toList());
+    }
+  }
+
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
       final DatabaseContext context, final StateStorageMode storageMode) throws IOException {
     createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
