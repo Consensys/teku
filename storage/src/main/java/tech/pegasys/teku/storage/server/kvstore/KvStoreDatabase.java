@@ -350,9 +350,7 @@ public abstract class KvStoreDatabase<
                       lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
               recorder.acceptNextState(state);
             },
-            () ->
-                updater.addFinalizedStateRoot(
-                    state.hashTreeRoot(), state.getSlot())); // TODO check approach when empty
+            () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
       }
       updater.commit();
     }
