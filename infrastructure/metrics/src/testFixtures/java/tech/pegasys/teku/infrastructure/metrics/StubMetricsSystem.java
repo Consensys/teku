@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
+import java.util.regex.Pattern;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
@@ -31,12 +32,17 @@ public class StubMetricsSystem implements MetricsSystem {
   private final Map<MetricCategory, Map<String, StubLabelledGauge>> labelledGauges =
       new ConcurrentHashMap<>();
 
+  private static final Pattern METRIC_NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
+  private static final Pattern LABEL_NAME_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
       final MetricCategory category,
       final String name,
       final String help,
       final String... labelNames) {
+    validateMetricName(name);
+    validateLabelName(labelNames);
     return counters
         .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
         .computeIfAbsent(name, __ -> new StubCounter());
@@ -48,6 +54,8 @@ public class StubMetricsSystem implements MetricsSystem {
       final String name,
       final String help,
       final String... labelNames) {
+    validateMetricName(name);
+    validateLabelName(labelNames);
     return labelledGauges
         .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
         .computeIfAbsent(name, __ -> new StubLabelledGauge(category, name, help));
@@ -59,6 +67,7 @@ public class StubMetricsSystem implements MetricsSystem {
       final String name,
       final String help,
       final DoubleSupplier valueSupplier) {
+    validateMetricName(name);
     final StubGauge gauge = new StubGauge(category, name, help, valueSupplier);
     final Map<String, StubGauge> gaugesInCategory =
         gauges.computeIfAbsent(category, key -> new ConcurrentHashMap<>());
@@ -74,16 +83,20 @@ public class StubMetricsSystem implements MetricsSystem {
       final String name,
       final String help,
       final String... labelNames) {
+    validateMetricName(name);
+    validateLabelName(labelNames);
     throw new UnsupportedOperationException("Timers not supported");
   }
 
   public StubGauge getGauge(final MetricCategory category, final String name) {
+    validateMetricName(name);
     return Optional.ofNullable(gauges.get(category))
         .map(categoryGauges -> categoryGauges.get(name))
         .orElseThrow(() -> new IllegalArgumentException("Unknown gauge: " + category + " " + name));
   }
 
   public StubLabelledGauge getLabelledGauge(final MetricCategory category, final String name) {
+    validateMetricName(name);
     return Optional.ofNullable(labelledGauges.get(category))
         .map(categoryGauges -> categoryGauges.get(name))
         .orElseThrow(
@@ -91,9 +104,30 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   public StubCounter getCounter(final MetricCategory category, final String name) {
+    validateMetricName(name);
     return Optional.ofNullable(counters.get(category))
         .map(categoryCounters -> categoryCounters.get(name))
         .orElseThrow(
             () -> new IllegalArgumentException("Unknown counter: " + category + " " + name));
+  }
+
+  private void validateMetricName(String metricName) {
+    if (!METRIC_NAME_PATTERN.matcher(metricName).matches()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid metric name %s. Must match the regex %s",
+              metricName, METRIC_NAME_PATTERN.pattern()));
+    }
+  }
+
+  private void validateLabelName(String... labelNames) {
+    for (String labelName : labelNames) {
+      if (!LABEL_NAME_PATTERN.matcher(labelName).matches()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Invalid label name %s. Must match the regex %s",
+                labelName, LABEL_NAME_PATTERN.pattern()));
+      }
+    }
   }
 }
