@@ -146,13 +146,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     forkChoiceUpdatedResult -> {
                       if (forkChoiceUpdatedResultNotification.isTerminalBlockCall()
                           && forkChoiceUpdatedResult.getPayloadStatus().hasInvalidStatus()) {
-                        throw new IllegalStateException(
-                            String.format(
-                                "Execution engine considers INVALID recently provided terminal block %s. "
-                                    + "Probably an execution engine misconfiguration.",
-                                forkChoiceUpdatedResultNotification
-                                    .getForkChoiceState()
-                                    .getHeadExecutionBlockHash()));
+                        LOG.error(
+                            "Execution engine considers INVALID recently provided terminal block {}",
+                            forkChoiceUpdatedResultNotification
+                                .getForkChoiceState()
+                                .getHeadExecutionBlockHash());
+                        return;
                       }
                       onExecutionPayloadResult(
                           forkChoiceUpdatedResultNotification

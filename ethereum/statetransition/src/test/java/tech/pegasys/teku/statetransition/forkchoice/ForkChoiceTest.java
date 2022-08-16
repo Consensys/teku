@@ -30,8 +30,10 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import nl.altindag.log.LogCaptor;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -782,6 +784,39 @@ class ForkChoiceTest {
 
     // New head is optimistic because latestValidHash might still point to an optimistic block
     assertHeadIsOptimistic(blockAndState);
+  }
+
+  @ParameterizedTest(name = "onForkChoiceUpdatedResult_{0}")
+  @MethodSource("getForkChoiceUpdatedResults")
+  void onForkChoiceUpdatedResult_shouldLogWhenInvalidTerminalBlock(
+      final ForkChoiceUpdatedResult result) {
+    final ForkChoiceState state = mock(ForkChoiceState.class);
+    when(state.getHeadExecutionBlockHash()).thenReturn(Bytes32.random());
+    when(state.getHeadBlockRoot()).thenReturn(Bytes32.random());
+    try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
+      forkChoice.onForkChoiceUpdatedResult(
+          new ForkChoiceUpdatedResultNotification(
+              state, true, SafeFuture.completedFuture(Optional.ofNullable(result))));
+      if (result.getPayloadStatus().hasInvalidStatus()) {
+        final List<String> errorLogs = logCaptor.getErrorLogs();
+        assertThat(errorLogs).singleElement().asString().contains("INVALID", "terminal");
+      } else {
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+      }
+    }
+  }
+
+  private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {
+    Set<PayloadStatus> statuses =
+        Set.of(
+            PayloadStatus.invalid(Optional.empty(), Optional.empty()),
+            PayloadStatus.invalid(Optional.empty(), Optional.of("error")),
+            PayloadStatus.invalid(Optional.of(Bytes32.random()), Optional.empty()),
+            PayloadStatus.failedExecution(new RuntimeException("error")),
+            PayloadStatus.ACCEPTED,
+            PayloadStatus.SYNCING,
+            PayloadStatus.VALID);
+    return statuses.stream().map(status -> new ForkChoiceUpdatedResult(status, Optional.empty()));
   }
 
   private void assertHeadIsOptimistic(final SignedBlockAndState blockAndState) {
