@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,15 +36,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class RestExecutionBuilderClient implements ExecutionBuilderClient {
+public class RestBuilderClient implements BuilderClient {
 
   private final Map<
           SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>>
@@ -57,7 +57,7 @@ public class RestExecutionBuilderClient implements ExecutionBuilderClient {
   private final RestClient restClient;
   private final SchemaDefinitionCache schemaDefinitionCache;
 
-  public RestExecutionBuilderClient(final RestClient restClient, final Spec spec) {
+  public RestBuilderClient(final RestClient restClient, final Spec spec) {
     this.restClient = restClient;
     this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
   }
