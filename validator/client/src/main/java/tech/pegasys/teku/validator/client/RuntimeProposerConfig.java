@@ -76,11 +76,8 @@ public class RuntimeProposerConfig {
   }
 
   public Optional<UInt64> getGasLimitForPubKey(final BLSPublicKey publicKey) {
-    final Config config = proposerConfigMap.get(publicKey);
-    if (config == null) {
-      return Optional.empty();
-    }
-    return config.getGasLimit();
+    final Optional<Config> maybeConfig = Optional.ofNullable(proposerConfigMap.get(publicKey));
+    return maybeConfig.flatMap(Config::getGasLimit);
   }
 
   public synchronized void addOrUpdateFeeRecipient(

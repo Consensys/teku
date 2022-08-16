@@ -76,6 +76,12 @@ class RuntimeProposerConfigTest {
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).contains(address);
     proposerConfig.deleteFeeRecipient(pubkey);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).isEmpty();
+    proposerConfig.deleteFeeRecipient(pubkey2);
+    assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).isEmpty();
+    proposerConfig.addOrUpdateGasLimit(pubkey2, gasLimit2);
+    proposerConfig.deleteFeeRecipient(pubkey2);
+    assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).isEmpty();
+    assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).contains(gasLimit2);
   }
 
   @Test
@@ -84,6 +90,12 @@ class RuntimeProposerConfigTest {
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).contains(gasLimit);
     proposerConfig.deleteGasLimit(pubkey);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).isEmpty();
+    proposerConfig.deleteGasLimit(pubkey2);
+    assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).isEmpty();
+    proposerConfig.addOrUpdateFeeRecipient(pubkey2, address2);
+    proposerConfig.deleteGasLimit(pubkey2);
+    assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).isEmpty();
+    assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).contains(address2);
   }
 
   @Test
@@ -100,6 +112,21 @@ class RuntimeProposerConfigTest {
             String.format(
                 "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"},\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}",
                 pubkey, address, gasLimit, pubkey2, address2, gasLimit2));
+  }
+
+  @Test
+  void shouldSaveFeeRecipientAndGasLimitSolelyAndSeparately(@TempDir final Path tempDir)
+      throws IOException {
+    final Path testData = tempDir.resolve("test");
+    proposerConfig = new RuntimeProposerConfig(Optional.of(testData));
+    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
+    proposerConfig.addOrUpdateGasLimit(pubkey2, gasLimit2);
+    final String data = Files.readString(testData);
+    assertThat(data)
+        .isEqualTo(
+            String.format(
+                "{\"%s\":{\"fee_recipient\":\"%s\"},\"%s\":{\"gas_limit\":\"%s\"}}",
+                pubkey, address, pubkey2, gasLimit2));
   }
 
   @Test
