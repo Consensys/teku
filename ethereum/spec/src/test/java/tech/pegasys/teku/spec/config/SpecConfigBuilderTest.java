@@ -36,8 +36,11 @@ class SpecConfigBuilderTest {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(randomEpoch)));
+                phase0Builder
+                    .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(randomEpoch))
+                    .bellatrixBuilder(
+                        bellatrixBuilder ->
+                            bellatrixBuilder.bellatrixForkEpoch(randomEpoch.plus(1))));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("ALTAIR_FORK_EPOCH"))
         .isEqualTo(randomEpoch);

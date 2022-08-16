@@ -33,11 +33,11 @@ import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
-  void shouldEnableAltairByDefault() {
+  void shouldEnableBellatrixByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.ALTAIR);
+        .isEqualTo(SpecMilestone.BELLATRIX);
   }
 
   @Test
