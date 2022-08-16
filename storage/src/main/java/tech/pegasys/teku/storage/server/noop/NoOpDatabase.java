@@ -182,6 +182,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return Stream.empty();
+  }
+
+  @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return Optional.empty();
   }
