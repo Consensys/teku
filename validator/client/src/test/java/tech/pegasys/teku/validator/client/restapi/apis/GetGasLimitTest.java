@@ -94,24 +94,9 @@ public class GetGasLimitTest {
   void metadata_shouldHandle200() throws JsonProcessingException {
     final String responseData =
         getResponseStringFromMetadata(
-            handler,
-            SC_OK,
-            new GetGasLimit.GetGasLimitResponse(gasLimit, dataStructureUtil.randomPublicKey()));
-    assertThat(responseData)
-        .isEqualTo(
-            "{\"data\":{\"gas_limit\":\""
-                + gasLimit
-                + "\",\"pubkey\":\"0xb3f3faa8dfa1030714559b95cb0107e53c9ee9c6f2b4b11f29e60417dbc4462052ff2d2dbbe98d808e3093858a3acdcc\"}}");
-  }
-
-  @Test
-  void metadata_shouldHandle200RequiredFieldsOnly() throws JsonProcessingException {
-    final String responseData =
-        getResponseStringFromMetadata(
             handler, SC_OK, new GetGasLimit.GetGasLimitResponse(gasLimit, publicKey));
     assertThat(responseData)
         .isEqualTo(
-            String.format(
-                "{\"data\":{\"gas_limit\":\"%s\",\"pubkey\":\"%s\"}}", gasLimit, publicKey));
+            "{\"data\":{\"gas_limit\":\"" + gasLimit + "\",\"pubkey\":\"" + publicKey + "\"}}");
   }
 }
