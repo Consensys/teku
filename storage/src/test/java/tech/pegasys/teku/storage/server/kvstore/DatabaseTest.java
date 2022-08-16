@@ -1682,10 +1682,14 @@ public class DatabaseTest {
 
     assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
+    assertThat(getFinalizedStateRootsList())
+        .containsExactlyInAnyOrder(
+            Map.entry(state0.hashTreeRoot(), ZERO), Map.entry(state1.hashTreeRoot(), ONE));
+  }
 
+  private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
     try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
-      assertThat(roots).contains(Map.entry(state0.hashTreeRoot(), ZERO));
-      assertThat(roots).contains(Map.entry(state1.hashTreeRoot(), ONE));
+      return roots.map(entry -> Map.entry(entry.getKey(), entry.getValue())).collect(toList());
     }
   }
 

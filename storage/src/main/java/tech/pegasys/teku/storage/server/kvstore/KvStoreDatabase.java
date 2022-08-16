@@ -346,7 +346,8 @@ public abstract class KvStoreDatabase<
         maybeLastState.ifPresentOrElse(
             lastState -> {
               final StateRootRecorder recorder =
-                  new StateRootRecorder(lastState.getSlot(), updater::addFinalizedStateRoot, spec);
+                  new StateRootRecorder(
+                      lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
               recorder.acceptNextState(state);
             },
             () ->
