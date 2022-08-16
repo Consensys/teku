@@ -50,7 +50,7 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
-            forkChoiceState, forkChoiceUpdatedResultNotification));
+            forkChoiceState, false, forkChoiceUpdatedResultNotification));
   }
 
   @Override
