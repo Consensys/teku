@@ -205,6 +205,11 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getValue);
   }
 
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedStateRoot()).map(entry -> entry);
+  }
+
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
   }
