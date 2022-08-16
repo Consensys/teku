@@ -72,10 +72,11 @@ public class ValidatorIndexCache {
         findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
     if (indexFromState.isEmpty()) {
       LOG.info(
-          "Empty, state {}, publicKey {}, lastIndexSnapshot {}",
+          "Empty, state {}, publicKey {}, lastIndexSnapshot {}, validatorIndices {}",
           state,
           publicKey,
-          lastIndexSnapshot);
+          lastIndexSnapshot,
+          validatorIndices);
     }
     return indexFromState;
   }

@@ -82,4 +82,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
   public synchronized int size() {
     return cacheData.size();
   }
+
+  @Override
+  public String toString() {
+    return "LRUCache{" + "cacheData=" + cacheData + '}';
+  }
 }
