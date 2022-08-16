@@ -281,7 +281,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final boolean transitionNotFinalized) {
+      Optional<BuilderForcedFallbackReason> forcedFallbackReason) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",

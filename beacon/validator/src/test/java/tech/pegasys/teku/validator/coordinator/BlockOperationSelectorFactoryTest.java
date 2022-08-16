@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.BuilderForcedFallbackReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
@@ -377,7 +378,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, false))
+    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory
@@ -422,7 +423,10 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, true))
+    when(executionLayer.builderGetHeader(
+            executionPayloadContext,
+            blockSlotState,
+            Optional.of(BuilderForcedFallbackReason.TRANSITION_NOT_FINALIZED)))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory

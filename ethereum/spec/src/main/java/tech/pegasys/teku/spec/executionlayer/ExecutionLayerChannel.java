@@ -77,7 +77,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
-            final boolean transitionNotFinalized) {
+            final Optional<BuilderForcedFallbackReason> forcedFallbackReason) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -113,7 +113,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
-      boolean transitionNotFinalized);
+      Optional<BuilderForcedFallbackReason> forcedFallbackReason);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 
@@ -121,5 +121,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
     KILNV2;
 
     public static final Version DEFAULT_VERSION = KILNV2;
+  }
+
+  enum BuilderForcedFallbackReason {
+    TRANSITION_NOT_FINALIZED,
+    CIRCUIT_BREAKER_ENGAGED
   }
 }

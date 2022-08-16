@@ -129,6 +129,13 @@ public class BeaconStateAccessorsTest {
     assertDoesNotThrow(() -> beaconStateAccessors.getBeaconCommittee(state, oldSlot, ONE));
   }
 
+  @Test
+  public void getLatestUniqueBlockRootsCount_shouldCountCorrectRoots() {
+    BeaconState beaconState = createBeaconState();
+
+    beaconStateAccessors.getLatestUniqueBlockRootsCount(beaconState, 10);
+  }
+
   private BeaconState createBeaconState() {
     return new BeaconStateTestBuilder(dataStructureUtil)
         .forkVersion(specConfig.getGenesisForkVersion())

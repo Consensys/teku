@@ -337,7 +337,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final boolean transitionNotFinalized) {
+      final Optional<BuilderForcedFallbackReason> forcedFallbackReason) {
     final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
@@ -350,8 +350,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final FallbackReason fallbackReason;
     if (builderClient.isEmpty() && validatorRegistration.isEmpty()) {
       fallbackReason = FallbackReason.NOT_NEEDED;
-    } else if (transitionNotFinalized) {
-      fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
+    } else if (forcedFallbackReason.isPresent()) {
+      switch (forcedFallbackReason.get()) {
+        case TRANSITION_NOT_FINALIZED:
+          fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
+          break;
+        case CIRCUIT_BREAKER_ENGAGED:
+          fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
+          break;
+        default:
+          fallbackReason = FallbackReason.NONE;
+      }
     } else if (builderClient.isEmpty()) {
       fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
     } else if (!isBuilderAvailable()) {
@@ -589,6 +598,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     NOT_NEEDED("not_needed"),
     VALIDATOR_NOT_REGISTERED("validator_not_registered"),
     TRANSITION_NOT_FINALIZED("transition_not_finalized"),
+    CIRCUIT_BREAKER_ENGAGED("circuit_breaker_engaged"),
     BUILDER_NOT_AVAILABLE("builder_not_available"),
     BUILDER_NOT_CONFIGURED("builder_not_configured"),
     BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),

@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.BuilderForcedFallbackReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -168,7 +169,9 @@ class ExecutionLayerManagerImplTest {
     prepareEngineGetPayloadResponse(executionPayloadContext);
 
     // we expect result from the builder
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -212,7 +215,9 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -256,7 +261,9 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -297,7 +304,9 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
@@ -341,7 +350,9 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect both builder and local engine have been called
@@ -384,7 +395,11 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, true))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                Optional.of(BuilderForcedFallbackReason.TRANSITION_NOT_FINALIZED)))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
@@ -426,7 +441,9 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, Optional.empty()))
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
@@ -460,7 +477,8 @@ class ExecutionLayerManagerImplTest {
               final BeaconState state = dataStructureUtil.randomBeaconState(slot);
               prepareEngineGetPayloadResponse(executionPayloadContext);
               assertThat(
-                      executionLayerManager.builderGetHeader(executionPayloadContext, state, false))
+                      executionLayerManager.builderGetHeader(
+                          executionPayloadContext, state, Optional.empty()))
                   .isCompleted();
             });
 

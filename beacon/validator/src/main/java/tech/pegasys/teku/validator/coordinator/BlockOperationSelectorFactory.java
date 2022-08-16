@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.BuilderForcedFallbackReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -168,14 +169,31 @@ public class BlockOperationSelectorFactory {
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
                 (executionPayloadContext) -> {
+                  Optional<BuilderForcedFallbackReason> fallbackReason = Optional.empty();
+
                   final boolean transitionNotFinalized =
                       executionPayloadContext
                           .getForkChoiceState()
                           .getFinalizedExecutionBlockHash()
                           .isZero();
 
+                  if (transitionNotFinalized) {
+                    fallbackReason =
+                        Optional.of(BuilderForcedFallbackReason.TRANSITION_NOT_FINALIZED);
+                  } else {
+                    final int window = 32;
+                    final int missingBlockThreshold = 10;
+                    if (spec.atSlot(blockSlotState.getSlot())
+                            .beaconStateAccessors()
+                            .getLatestUniqueBlockRootsCount(blockSlotState, window)
+                        < window - missingBlockThreshold) {
+                      fallbackReason =
+                          Optional.of(BuilderForcedFallbackReason.CIRCUIT_BREAKER_ENGAGED);
+                    }
+                  }
+
                   return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState, transitionNotFinalized);
+                      executionPayloadContext, blockSlotState, fallbackReason);
                 }));
         return;
       }
