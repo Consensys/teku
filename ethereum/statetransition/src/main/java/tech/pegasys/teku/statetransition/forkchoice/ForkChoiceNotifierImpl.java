@@ -226,7 +226,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
-            forkChoiceUpdateData.getForkChoiceState(), forkChoiceUpdatedResult));
+            forkChoiceUpdateData.getForkChoiceState(),
+            forkChoiceUpdateData.hasTerminalBlockHash(),
+            forkChoiceUpdatedResult));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

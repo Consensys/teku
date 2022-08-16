@@ -79,6 +79,7 @@ public class PowchainService extends Service {
     this.okHttpClient = createOkHttpClient();
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     final Eth1ProviderSelector eth1ProviderSelector;
+    final Eth1Provider eth1Provider;
     if (!powConfig.isEnabled()) {
       final ExecutionWeb3jClientProvider executionWeb3jClientProvider =
           maybeExecutionWeb3jClientProvider.orElseThrow();
@@ -89,16 +90,24 @@ public class PowchainService extends Service {
       }
       LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
       this.web3js = Collections.singletonList(executionWeb3jClientProvider.getWeb3j());
-      eth1ProviderSelector =
-          new Eth1ProviderSelector(
-              Collections.singletonList(
-                  new Web3jEth1Provider(
-                      powConfig.getSpec().getGenesisSpecConfig(),
-                      serviceConfig.getMetricsSystem(),
-                      executionWeb3jClientProvider.getEndpoint(),
-                      web3js.get(0),
-                      asyncRunner,
-                      serviceConfig.getTimeProvider())));
+
+      final Web3jEth1Provider web3jEth1Provider =
+          new Web3jEth1Provider(
+              powConfig.getSpec().getGenesisSpecConfig(),
+              serviceConfig.getMetricsSystem(),
+              executionWeb3jClientProvider.getEndpoint(),
+              web3js.get(0),
+              asyncRunner,
+              serviceConfig.getTimeProvider());
+
+      eth1ProviderSelector = new Eth1ProviderSelector(Collections.singletonList(web3jEth1Provider));
+
+      eth1Provider =
+          new ThrottlingEth1Provider(
+              new ErrorTrackingEth1Provider(
+                  web3jEth1Provider, asyncRunner, serviceConfig.getTimeProvider()),
+              MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+              serviceConfig.getMetricsSystem());
     } else {
       this.web3js = createWeb3js(powConfig);
       eth1ProviderSelector =
@@ -115,15 +124,16 @@ public class PowchainService extends Service {
                               asyncRunner,
                               serviceConfig.getTimeProvider()))
                   .collect(Collectors.toList()));
+
+      eth1Provider =
+          new ThrottlingEth1Provider(
+              new ErrorTrackingEth1Provider(
+                  new FallbackAwareEth1Provider(eth1ProviderSelector, asyncRunner),
+                  asyncRunner,
+                  serviceConfig.getTimeProvider()),
+              MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+              serviceConfig.getMetricsSystem());
     }
-    final Eth1Provider eth1Provider =
-        new ThrottlingEth1Provider(
-            new ErrorTrackingEth1Provider(
-                new FallbackAwareEth1Provider(eth1ProviderSelector, asyncRunner),
-                asyncRunner,
-                serviceConfig.getTimeProvider()),
-            MAXIMUM_CONCURRENT_ETH1_REQUESTS,
-            serviceConfig.getMetricsSystem());
 
     final String depositContract = powConfig.getDepositContract().toHexString();
     DepositEventsAccessor depositEventsAccessor =
