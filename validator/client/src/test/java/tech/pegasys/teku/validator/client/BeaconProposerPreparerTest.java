@@ -188,7 +188,10 @@ public class BeaconProposerPreparerTest {
   void getFeeRecipient_shouldReturnConfigurationFileValueFirst(@TempDir final Path tempDir)
       throws IOException {
     proposerWithRuntimeConfiguration(
-        tempDir, validator1.getPublicKey(), dataStructureUtil.randomEth1Address());
+        tempDir,
+        validator1.getPublicKey(),
+        dataStructureUtil.randomEth1Address(),
+        dataStructureUtil.randomUInt64());
     beaconProposerPreparer.onSlot(UInt64.ONE);
 
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey()))
@@ -205,7 +208,10 @@ public class BeaconProposerPreparerTest {
   void deleteFeeRecipient_shouldReturnTrueIfConfigHasPublicKey(@TempDir final Path tempDir)
       throws IOException {
     proposerWithRuntimeConfiguration(
-        tempDir, validator2.getPublicKey(), dataStructureUtil.randomEth1Address());
+        tempDir,
+        validator2.getPublicKey(),
+        dataStructureUtil.randomEth1Address(),
+        dataStructureUtil.randomUInt64());
     beaconProposerPreparer.onSlot(UInt64.ONE);
     assertThat(beaconProposerPreparer.deleteFeeRecipient(validator2.getPublicKey())).isTrue();
   }
@@ -222,7 +228,8 @@ public class BeaconProposerPreparerTest {
   void getFeeRecipient_shouldReturnRuntimeConfigIfNotPresentInConfigurationFile(
       @TempDir final Path tempDir) throws IOException {
     final Eth1Address address = dataStructureUtil.randomEth1Address();
-    proposerWithRuntimeConfiguration(tempDir, validator2.getPublicKey(), address);
+    proposerWithRuntimeConfiguration(
+        tempDir, validator2.getPublicKey(), address, dataStructureUtil.randomUInt64());
     beaconProposerPreparer.onSlot(UInt64.ONE);
 
     assertThat(beaconProposerPreparer.getFeeRecipient(validator2.getPublicKey())).contains(address);
@@ -250,7 +257,10 @@ public class BeaconProposerPreparerTest {
       throws IOException, SetFeeRecipientException {
     final Eth1Address address = dataStructureUtil.randomEth1Address();
     proposerWithRuntimeConfiguration(
-        tempDir, validator2.getPublicKey(), dataStructureUtil.randomEth1Address());
+        tempDir,
+        validator2.getPublicKey(),
+        dataStructureUtil.randomEth1Address(),
+        dataStructureUtil.randomUInt64());
     beaconProposerPreparer.onSlot(UInt64.ONE);
 
     beaconProposerPreparer.setFeeRecipient(validator2.getPublicKey(), address);
@@ -272,7 +282,8 @@ public class BeaconProposerPreparerTest {
     final Eth1Address address3 = dataStructureUtil.randomEth1Address();
     when(validatorIndexProvider.containsPublicKey(eq(validator3.getPublicKey()))).thenReturn(true);
     // validator 2 is configured via runtime configuration file
-    proposerWithRuntimeConfiguration(tempDir, validator2.getPublicKey(), address2);
+    proposerWithRuntimeConfiguration(
+        tempDir, validator2.getPublicKey(), address2, dataStructureUtil.randomUInt64());
     // validator 3 is configured from API
     beaconProposerPreparer.setFeeRecipient(validator3.getPublicKey(), address3);
 
@@ -330,10 +341,16 @@ public class BeaconProposerPreparerTest {
   }
 
   private void proposerWithRuntimeConfiguration(
-      final Path tempDir, final BLSPublicKey pubkey, final Eth1Address eth1Address)
+      final Path tempDir,
+      final BLSPublicKey pubkey,
+      final Eth1Address eth1Address,
+      final UInt64 gasLimit)
       throws IOException {
     Path recipients = tempDir.resolve("recipients");
-    final String data = String.format("{\"%s\":{\"fee_recipient\":\"%s\"}}", pubkey, eth1Address);
+    final String data =
+        String.format(
+            "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}",
+            pubkey, eth1Address, gasLimit);
     Files.write(recipients, data.getBytes(StandardCharsets.UTF_8));
     beaconProposerPreparer =
         new BeaconProposerPreparer(
