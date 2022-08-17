@@ -75,9 +75,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-            final ExecutionPayloadContext executionPayloadContext,
-            final BeaconState state,
-            final Optional<BuilderForcedFallbackReason> forcedFallbackReason) {
+            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -111,9 +109,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext,
-      BeaconState state,
-      Optional<BuilderForcedFallbackReason> forcedFallbackReason);
+      ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 

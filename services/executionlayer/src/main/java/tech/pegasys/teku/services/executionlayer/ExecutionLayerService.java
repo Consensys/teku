@@ -31,6 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
+import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
@@ -131,7 +132,8 @@ public class ExecutionLayerService extends Service {
               builderClient,
               config.getSpec(),
               metricsSystem,
-              new BuilderBidValidatorImpl(EVENT_LOG));
+              new BuilderBidValidatorImpl(EVENT_LOG),
+              new BuilderCircuitBreakerImpl(config.getSpec(), 32, 10));
     }
 
     return new ExecutionLayerService(

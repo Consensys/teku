@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.BuilderForcedFallbackReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
@@ -378,7 +377,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, Optional.empty()))
+    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory
@@ -409,32 +408,6 @@ class BlockOperationSelectorFactoryTest {
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
-  }
-
-  @Test
-  void shouldIncludeExecutionPayloadIfBlindedBlockRequestedButPreMerge() {
-    final UInt64 slot = UInt64.ONE;
-    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(Bytes32.ZERO, false);
-    final ExecutionPayloadHeader randomExecutionPayloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeader();
-
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(
-            executionPayloadContext,
-            blockSlotState,
-            Optional.of(BuilderForcedFallbackReason.TRANSITION_NOT_FINALIZED)))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
-
-    factory
-        .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
-        .accept(blindedBodyBuilder);
-
-    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
 
   @Test

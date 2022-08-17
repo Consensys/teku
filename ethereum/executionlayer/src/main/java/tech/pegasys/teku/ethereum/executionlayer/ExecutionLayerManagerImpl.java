@@ -96,6 +96,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final Spec spec;
   private final EventLogger eventLogger;
   private final BuilderBidValidator builderBidValidator;
+  private final BuilderCircuitBreaker builderCircuitBreaker;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
   public static ExecutionLayerManagerImpl create(
@@ -104,7 +105,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Optional<BuilderClient> builderClient,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final BuilderBidValidator builderBidValidator) {
+      final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
 
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
@@ -131,6 +133,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         spec,
         eventLogger,
         builderBidValidator,
+        builderCircuitBreaker,
         executionPayloadSourceCounter);
   }
 
@@ -170,6 +173,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter) {
     this.executionEngineClient = executionEngineClient;
     this.builderClient = builderClient;
@@ -177,6 +181,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.spec = spec;
     this.eventLogger = eventLogger;
     this.builderBidValidator = builderBidValidator;
+    this.builderCircuitBreaker = builderCircuitBreaker;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
   }
 
@@ -335,9 +340,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
-      final Optional<BuilderForcedFallbackReason> forcedFallbackReason) {
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
@@ -350,17 +353,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final FallbackReason fallbackReason;
     if (builderClient.isEmpty() && validatorRegistration.isEmpty()) {
       fallbackReason = FallbackReason.NOT_NEEDED;
-    } else if (forcedFallbackReason.isPresent()) {
-      switch (forcedFallbackReason.get()) {
-        case TRANSITION_NOT_FINALIZED:
-          fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
-          break;
-        case CIRCUIT_BREAKER_ENGAGED:
-          fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
-          break;
-        default:
-          fallbackReason = FallbackReason.NONE;
-      }
+    } else if (isTransitionNotFinalized(executionPayloadContext)) {
+      fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
+    } else if (builderCircuitBreaker.isEngaged(state)) {
+      fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
     } else if (builderClient.isEmpty()) {
       fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
     } else if (!isBuilderAvailable()) {
@@ -526,6 +522,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
               }
             },
             throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
+  }
+
+  private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
+    return executionPayloadContext.getForkChoiceState().getFinalizedExecutionBlockHash().isZero();
   }
 
   private void markBuilderAsNotAvailable(final String errorMessage) {

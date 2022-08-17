@@ -304,7 +304,7 @@ class BlockFactoryTest {
                 Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
     when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionLayer.builderGetHeader(any(), any(), any()))
+    when(executionLayer.builderGetHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();

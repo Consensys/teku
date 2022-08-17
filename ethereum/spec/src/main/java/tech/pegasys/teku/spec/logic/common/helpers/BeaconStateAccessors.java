@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -247,29 +245,6 @@ public abstract class BeaconStateAccessors {
 
   public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
     return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
-  }
-
-  public int getLatestUniqueBlockRootsCount(final BeaconState state, final int maxSlotInThePast)
-      throws IllegalArgumentException {
-    checkArgument(
-        maxSlotInThePast <= config.getSlotsPerHistoricalRoot(),
-        "maxSlotInThePast (%s) cannot exceed slotsPerHistoricalRoot config (%s)",
-        maxSlotInThePast,
-        config.getSlotsPerHistoricalRoot());
-    final HashSet<Bytes32> uniqueBlockRoots = new HashSet<>();
-    final SszBytes32Vector blockRoots = state.getBlockRoots();
-
-    UInt64 currentSlot = state.getSlot().minusMinZero(maxSlotInThePast);
-
-    while (currentSlot.isLessThan(state.getSlot())) {
-      int latestBlockRootIndex = currentSlot.mod(config.getSlotsPerHistoricalRoot()).intValue();
-      uniqueBlockRoots.add(blockRoots.getElement(latestBlockRootIndex));
-      currentSlot = currentSlot.increment();
-    }
-
-    uniqueBlockRoots.add(state.getLatestBlockHeader().getRoot());
-
-    return uniqueBlockRoots.size();
   }
 
   private boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
