@@ -87,8 +87,8 @@ public class ValidatorIndexCache {
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      validatorIndices.invalidateWithNewValue(pubKey, i);
       LOG.info("Invalidate {}: {}", pubKey, i);
+      validatorIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         updateLastIndex(i);
         return Optional.of(i);
@@ -104,8 +104,8 @@ public class ValidatorIndexCache {
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
     LOG.info("Invalidate {}: {}", pubKey, updatedIndex);
+    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
   @VisibleForTesting
