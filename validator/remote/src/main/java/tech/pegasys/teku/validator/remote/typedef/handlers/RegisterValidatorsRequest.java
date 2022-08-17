@@ -23,7 +23,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;

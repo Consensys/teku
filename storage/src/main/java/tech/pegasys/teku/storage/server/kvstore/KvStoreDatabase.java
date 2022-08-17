@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.server.kvstore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -335,6 +337,21 @@ public abstract class KvStoreDatabase<
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
+
+      if (state.getSlot().equals(GENESIS_SLOT)) {
+        updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());
+      } else {
+        final Optional<BeaconState> maybeLastState =
+            getLatestAvailableFinalizedState(state.getSlot().minus(ONE));
+        maybeLastState.ifPresentOrElse(
+            lastState -> {
+              final StateRootRecorder recorder =
+                  new StateRootRecorder(
+                      lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
+              recorder.acceptNextState(state);
+            },
+            () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
+      }
       updater.commit();
     }
   }
@@ -423,6 +440,12 @@ public abstract class KvStoreDatabase<
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return dao.getLatestAvailableFinalizedState(maxSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return dao.getFinalizedStateRoots();
   }
 
   @Override

@@ -24,16 +24,16 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
-public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient {
-  private final ExecutionBuilderClient delegate;
+public class ThrottlingBuilderClient implements BuilderClient {
+  private final BuilderClient delegate;
   private final ThrottlingTaskQueue taskQueue;
 
-  public ThrottlingExecutionBuilderClient(
-      final ExecutionBuilderClient delegate,
+  public ThrottlingBuilderClient(
+      final BuilderClient delegate,
       final int maximumConcurrentRequests,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
@@ -42,7 +42,7 @@ public class ThrottlingExecutionBuilderClient implements ExecutionBuilderClient 
             maximumConcurrentRequests,
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "eb_request_queue_size");
+            "builder_request_queue_size");
   }
 
   @Override

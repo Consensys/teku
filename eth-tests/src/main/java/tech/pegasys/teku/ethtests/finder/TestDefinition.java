@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
+
   private final String fork;
   private final String configName;
   private final String testType;

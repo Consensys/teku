@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -269,5 +270,9 @@ public class ProtoNode {
         .add("bestDescendantIndex", bestDescendantIndex)
         .add("validationStatus", validationStatus)
         .toString();
+  }
+
+  public String toLogString() {
+    return LogFormatter.formatBlock(blockSlot, blockRoot);
   }
 }

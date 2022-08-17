@@ -318,6 +318,32 @@ public class ChainBuilder {
     return appendNewBlockToChain(slot, options);
   }
 
+  public List<SignedBlockAndState> finalizeCurrentChain() {
+    final UInt64 chainHeadSlot = getLatestSlot();
+    final UInt64 finalizeEpoch = spec.computeEpochAtSlot(chainHeadSlot).max(2);
+    final UInt64 finalHeadEpoch = finalizeEpoch.plus(3);
+    final UInt64 finalHeadSlot = spec.computeStartSlotAtEpoch(finalHeadEpoch);
+
+    final List<SignedBlockAndState> addedBlockAndStates = new ArrayList<>();
+    SignedBlockAndState newChainHead = null;
+    for (UInt64 slot = chainHeadSlot.plus(1);
+        slot.isLessThan(finalHeadSlot);
+        slot = slot.increment()) {
+      final BlockOptions blockOptions = BlockOptions.create();
+      streamValidAttestationsForBlockAtSlot(slot).forEach(blockOptions::addAttestation);
+      newChainHead = generateBlockAtSlot(slot, blockOptions);
+      addedBlockAndStates.add(newChainHead);
+    }
+    final Checkpoint finalizedCheckpoint = newChainHead.getState().getFinalizedCheckpoint();
+    assertThat(finalizedCheckpoint.getEpoch())
+        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
+        .isEqualTo(finalizeEpoch);
+    assertThat(finalizedCheckpoint.getRoot())
+        .describedAs("Failed to finalize epoch %s", finalizeEpoch)
+        .isNotEqualTo(Bytes32.ZERO);
+    return addedBlockAndStates;
+  }
+
   /**
    * Utility for streaming valid attestations available for inclusion at the given slot. This
    * utility can be used to assign valid attestations to a generated block.

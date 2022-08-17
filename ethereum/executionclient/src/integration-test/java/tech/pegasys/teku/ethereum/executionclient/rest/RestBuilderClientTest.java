@@ -46,16 +46,16 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 @TestSpecContext(
     milestone = SpecMilestone.BELLATRIX,
     network = {Eth2Network.MAINNET})
-class RestExecutionBuilderClientTest {
+class RestBuilderClientTest {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -91,7 +91,7 @@ class RestExecutionBuilderClientTest {
 
   private SchemaDefinitionsBellatrix schemaDefinitionsBellatrix;
 
-  private RestExecutionBuilderClient restExecutionBuilderClient;
+  private RestBuilderClient restBuilderClient;
 
   @BeforeEach
   void setUp(SpecContext specContext) throws IOException {
@@ -104,7 +104,7 @@ class RestExecutionBuilderClientTest {
             .getSchemaDefinitions()
             .toVersionBellatrix()
             .orElseThrow();
-    this.restExecutionBuilderClient = new RestExecutionBuilderClient(okHttpRestClient, spec);
+    this.restBuilderClient = new RestBuilderClient(okHttpRestClient, spec);
   }
 
   @AfterEach
@@ -116,7 +116,7 @@ class RestExecutionBuilderClientTest {
   void getStatus_success() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    assertThat(restExecutionBuilderClient.status())
+    assertThat(restBuilderClient.status())
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -132,7 +132,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.status())
+    assertThat(restBuilderClient.status())
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -151,7 +151,7 @@ class RestExecutionBuilderClientTest {
     SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
+    assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -168,7 +168,7 @@ class RestExecutionBuilderClientTest {
     SszList<SignedValidatorRegistration> zeroRegistrations =
         SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getDefault();
 
-    assertThat(restExecutionBuilderClient.registerValidators(SLOT, zeroRegistrations))
+    assertThat(restBuilderClient.registerValidators(SLOT, zeroRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -189,7 +189,7 @@ class RestExecutionBuilderClientTest {
     SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
-    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
+    assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -202,7 +202,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
+    assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -219,7 +219,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(200).setBody(EXECUTION_PAYLOAD_HEADER_RESPONSE));
 
-    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -237,7 +237,7 @@ class RestExecutionBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
-    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -255,7 +255,7 @@ class RestExecutionBuilderClientTest {
         "{\"code\":400,\"message\":\"Unknown hash: missing parent hash\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingParentHashError));
 
-    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -268,7 +268,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -287,7 +287,7 @@ class RestExecutionBuilderClientTest {
 
     SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restExecutionBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -308,7 +308,7 @@ class RestExecutionBuilderClientTest {
 
     SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restExecutionBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -321,7 +321,7 @@ class RestExecutionBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restExecutionBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {

@@ -313,6 +313,12 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
+    return finalizedDao.getFinalizedStateRoots();
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
     return finalizedDao.streamUnblindedNonCanonicalBlocks();
   }

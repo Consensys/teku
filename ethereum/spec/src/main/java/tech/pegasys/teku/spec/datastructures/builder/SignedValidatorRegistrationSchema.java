@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.builder;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
@@ -19,22 +19,24 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedBuilderBidSchema
-    extends ContainerSchema2<SignedBuilderBid, BuilderBid, SszSignature> {
+public class SignedValidatorRegistrationSchema
+    extends ContainerSchema2<SignedValidatorRegistration, ValidatorRegistration, SszSignature> {
 
-  public SignedBuilderBidSchema(final BuilderBidSchema builderBidSchema) {
+  public SignedValidatorRegistrationSchema(
+      final ValidatorRegistrationSchema validatorRegistrationSchema) {
     super(
-        "SignedBuilderBid",
-        namedSchema("message", builderBidSchema),
+        "SignedValidatorRegistration",
+        namedSchema("message", validatorRegistrationSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  public SignedBuilderBid create(final BuilderBid message, final BLSSignature signature) {
-    return new SignedBuilderBid(this, message, signature);
+  public SignedValidatorRegistration create(
+      final ValidatorRegistration message, final BLSSignature signature) {
+    return new SignedValidatorRegistration(this, message, signature);
   }
 
   @Override
-  public SignedBuilderBid createFromBackingNode(TreeNode node) {
-    return new SignedBuilderBid(this, node);
+  public SignedValidatorRegistration createFromBackingNode(TreeNode node) {
+    return new SignedValidatorRegistration(this, node);
   }
 }
