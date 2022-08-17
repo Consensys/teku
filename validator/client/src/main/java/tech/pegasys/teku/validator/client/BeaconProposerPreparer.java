@@ -53,12 +53,12 @@ public class BeaconProposerPreparer
   private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
 
   BeaconProposerPreparer(
-      ValidatorApiChannel validatorApiChannel,
-      ValidatorIndexProvider validatorIndexProvider,
-      ProposerConfigProvider proposerConfigProvider,
-      Optional<Eth1Address> defaultFeeRecipient,
-      UInt64 defaultGasLimit,
-      Spec spec) {
+      final ValidatorApiChannel validatorApiChannel,
+      final ValidatorIndexProvider validatorIndexProvider,
+      final ProposerConfigProvider proposerConfigProvider,
+      final Optional<Eth1Address> defaultFeeRecipient,
+      final UInt64 defaultGasLimit,
+      final Spec spec) {
     this(
         validatorApiChannel,
         Optional.of(validatorIndexProvider),
@@ -70,13 +70,13 @@ public class BeaconProposerPreparer
   }
 
   public BeaconProposerPreparer(
-      ValidatorApiChannel validatorApiChannel,
-      Optional<ValidatorIndexProvider> validatorIndexProvider,
-      ProposerConfigProvider proposerConfigProvider,
-      Optional<Eth1Address> defaultFeeRecipient,
-      UInt64 defaultGasLimit,
-      Spec spec,
-      Optional<Path> mutableProposerConfigPath) {
+      final ValidatorApiChannel validatorApiChannel,
+      final Optional<ValidatorIndexProvider> validatorIndexProvider,
+      final ProposerConfigProvider proposerConfigProvider,
+      final Optional<Eth1Address> defaultFeeRecipient,
+      final UInt64 defaultGasLimit,
+      final Spec spec,
+      final Optional<Path> mutableProposerConfigPath) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.proposerConfigProvider = proposerConfigProvider;
@@ -91,7 +91,7 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
@@ -102,10 +102,10 @@ public class BeaconProposerPreparer
 
   @Override
   public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
   @Override
   public void onPossibleMissedEvents() {
@@ -118,13 +118,13 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   // 2 configurations, 2 defaults
   // Priority order
@@ -148,7 +148,7 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public Optional<UInt64> getGasLimit(BLSPublicKey publicKey) {
+  public Optional<UInt64> getGasLimit(final BLSPublicKey publicKey) {
     if (validatorIndexCannotBeResolved(publicKey)) {
       return Optional.empty();
     }
@@ -254,8 +254,8 @@ public class BeaconProposerPreparer
   }
 
   private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
-      Optional<ProposerConfig> maybeProposerConfig,
-      Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
+      final Optional<ProposerConfig> maybeProposerConfig,
+      final Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
