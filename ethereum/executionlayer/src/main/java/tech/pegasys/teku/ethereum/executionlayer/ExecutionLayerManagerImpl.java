@@ -157,8 +157,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
 
-    final RestBuilderClient restBuilderClient =
-        new RestBuilderClient(builderRestClient, spec);
+    final RestBuilderClient restBuilderClient = new RestBuilderClient(builderRestClient, spec);
     final MetricRecordingBuilderClient metricRecordingBuilderClient =
         new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
     return new ThrottlingBuilderClient(

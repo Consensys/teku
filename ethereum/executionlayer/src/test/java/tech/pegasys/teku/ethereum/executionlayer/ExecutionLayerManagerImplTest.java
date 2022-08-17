@@ -52,8 +52,7 @@ class ExecutionLayerManagerImplTest {
   private final ExecutionEngineClient executionEngineClient =
       Mockito.mock(ExecutionEngineClient.class);
 
-  private final BuilderClient builderClient =
-      Mockito.mock(BuilderClient.class);
+  private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
 
