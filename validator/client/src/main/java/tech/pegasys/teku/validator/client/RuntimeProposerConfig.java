@@ -94,14 +94,14 @@ public class RuntimeProposerConfig {
     storagePath.ifPresent(this::save);
   }
 
-  public void deleteFeeRecipient(final BLSPublicKey publicKey) {
+  public synchronized void deleteFeeRecipient(final BLSPublicKey publicKey) {
     if (proposerConfigMap.containsKey(publicKey)) {
       addOrUpdateFeeRecipient(publicKey, null);
       storagePath.ifPresent(this::save);
     }
   }
 
-  public void deleteGasLimit(final BLSPublicKey publicKey) {
+  public synchronized void deleteGasLimit(final BLSPublicKey publicKey) {
     if (proposerConfigMap.containsKey(publicKey)) {
       addOrUpdateGasLimit(publicKey, null);
       storagePath.ifPresent(this::save);
