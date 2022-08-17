@@ -82,6 +82,7 @@ class Store implements UpdatableStore {
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
   final ForkChoiceStrategy forkChoiceStrategy;
+  final boolean asyncStorageEnabled;
 
   private final Optional<Checkpoint> initialCheckpoint;
   UInt64 timeMillis;
@@ -114,12 +115,14 @@ class Store implements UpdatableStore {
       final ForkChoiceStrategy forkChoiceStrategy,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
+      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
+      final boolean asyncStorageEnabled) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
     this.forkChoiceStrategy = forkChoiceStrategy;
     this.stateProvider = stateProvider;
+    this.asyncStorageEnabled = asyncStorageEnabled;
     LOG.trace(
         "Create store with hot state persistence configured to {}",
         hotStatePersistenceFrequencyInEpochs);
@@ -160,6 +163,10 @@ class Store implements UpdatableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
+
+    if (asyncStorageEnabled) {
+      LOG.info("Async storage updates enabled");
+    }
   }
 
   public static UpdatableStore create(
@@ -215,7 +222,8 @@ class Store implements UpdatableStore {
         forkChoiceStrategy,
         votes,
         blocks,
-        checkpointStateTaskQueue);
+        checkpointStateTaskQueue,
+        config.isAsyncStorageEnabled());
   }
 
   private static ProtoArray buildProtoArray(

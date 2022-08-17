@@ -31,6 +31,7 @@ import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
+import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
@@ -80,11 +81,16 @@ public class StorageService extends Service implements StorageServiceFacade {
                   chainStorage,
                   new AsyncRunnerEventThread(
                       "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
+
+          final StorageUpdateChannel storageUpdateChannel =
+              config.isAsyncStorageEnabled()
+                  ? new RetryingStorageUpdateChannel(chainStorage)
+                  : chainStorage;
           serviceConfig
               .getEventChannels()
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
-              .subscribe(StorageUpdateChannel.class, chainStorage)
+              .subscribe(StorageUpdateChannel.class, storageUpdateChannel)
               .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
