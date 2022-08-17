@@ -36,7 +36,7 @@ import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 public class BeaconProposerPreparer
-    implements ValidatorTimingChannel, FeeRecipientProvider, GasLimitProvider {
+    implements ValidatorTimingChannel, ValidatorRegistrationPropertiesProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
@@ -159,9 +159,7 @@ public class BeaconProposerPreparer
             () ->
                 maybeProposerConfig.flatMap(
                     proposerConfigProvider ->
-                        proposerConfigProvider.getDefaultConfig().getBuilder().isPresent()
-                            ? proposerConfigProvider.getDefaultConfig().getGasLimit()
-                            : Optional.empty()))
+                        proposerConfigProvider.getDefaultConfig().getGasLimit()))
         .or(() -> Optional.ofNullable(defaultGasLimit));
   }
 
@@ -278,13 +276,7 @@ public class BeaconProposerPreparer
 
   private Optional<UInt64> getGasLimitFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config
-        .getConfigForPubKey(publicKey)
-        .flatMap(
-            proposerConfig ->
-                proposerConfig.getBuilder().isPresent()
-                    ? proposerConfig.getBuilder().get().getGasLimit()
-                    : Optional.empty());
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
   }
 
   private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
