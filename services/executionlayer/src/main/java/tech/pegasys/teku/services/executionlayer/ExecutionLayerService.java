@@ -31,6 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
+import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
@@ -125,6 +126,14 @@ public class ExecutionLayerService extends Service {
                       timeProvider,
                       metricsSystem));
 
+      final BuilderCircuitBreaker builderCircuitBreaker =
+          config.isBuilderCircuitBreakerEnabled()
+              ? new BuilderCircuitBreakerImpl(
+                  config.getSpec(),
+                  config.getBuilderCircuitBreakerWindow(),
+                  config.getBuilderCircuitBreakerAllowedFaults())
+              : BuilderCircuitBreaker.NOOP;
+
       executionLayerManager =
           ExecutionLayerManagerImpl.create(
               EVENT_LOG,
@@ -133,7 +142,7 @@ public class ExecutionLayerService extends Service {
               config.getSpec(),
               metricsSystem,
               new BuilderBidValidatorImpl(EVENT_LOG),
-              new BuilderCircuitBreakerImpl(config.getSpec(), 32, 10));
+              builderCircuitBreaker);
     }
 
     return new ExecutionLayerService(

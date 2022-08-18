@@ -43,14 +43,19 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
 
   @Override
   public boolean isEngaged(final BeaconState state) {
-    try {
-      if (getLatestUniqueBlockRootsCount(state) <= minimumUniqueBlockRootsInWindow) {
-        return true;
-      }
-    } catch (Exception ex) {
-      LOG.error("Builder circuit breaker check failed. Acting like it has been engaged.", ex);
+
+    final int uniqueBlockRootsCount = getLatestUniqueBlockRootsCount(state);
+    if (uniqueBlockRootsCount < minimumUniqueBlockRootsInWindow) {
+      LOG.debug(
+          "Builder circuit breaker engaged: slot: {}, uniqueBlockRootsCount: {}, window: {},  minimumUniqueBlockRootsInWindow: {}",
+          state.getSlot(),
+          uniqueBlockRootsCount,
+          faultInspectionWindow,
+          minimumUniqueBlockRootsInWindow);
       return true;
     }
+
+    LOG.debug("Builder circuit breaker has not engaged.");
 
     return false;
   }
@@ -68,27 +73,31 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
     final HashSet<Bytes32> uniqueBlockRoots = new HashSet<>();
     final SszBytes32Vector blockRoots = state.getBlockRoots();
 
-    // we subtract 1 because blockRoots refers to previous block
-    // current is getLatestBlockHeader
-    final UInt64 firstSlotOfInspectionWindow =
-        state.getSlot().minusMinZero(faultInspectionWindow - 1);
+    // state slot is the slot we are building for
+    // thus our fault window will be (inclusive)
+    // FROM (state_slot-1)-(faultInspectionWindow-1) TO state_slot-1
+
+    // of which:
+    // state_slot-1 -> will be represented by getLatestBlockHeader
+    // FROM (state_slot-1)-(faultInspectionWindow-1) TO state_slot-2 -> to be found in blockRoots
+
+    // (state_slot-1)-(faultInspectionWindow-1) = state_slot-faultInspectionWindow
+    final UInt64 firstSlotOfInspectionWindow = state.getSlot().minusMinZero(faultInspectionWindow);
+    final UInt64 lastSlotOfInspectionWindow = state.getSlot().minusMinZero(1);
+
+    // if getLatestBlockHeader is outside the fault window,
+    // we have definitely missed all blocks so count will be 0
+    if (state.getLatestBlockHeader().getSlot().isLessThan(firstSlotOfInspectionWindow)) {
+      return 0;
+    }
+
+    uniqueBlockRoots.add(state.getLatestBlockHeader().getRoot());
 
     UInt64 currentSlot = firstSlotOfInspectionWindow;
-    while (currentSlot.isLessThan(state.getSlot())) {
+    while (currentSlot.isLessThan(lastSlotOfInspectionWindow)) {
       final int currentBlockRootIndex = currentSlot.mod(slotsPerHistoricalRoot).intValue();
       uniqueBlockRoots.add(blockRoots.getElement(currentBlockRootIndex));
       currentSlot = currentSlot.increment();
-    }
-
-    // we add getLatestBlockHeader only if it's slot fall into the window
-    // otherwise we remove it from the count
-    if (state
-        .getLatestBlockHeader()
-        .getSlot()
-        .isGreaterThanOrEqualTo(firstSlotOfInspectionWindow)) {
-      uniqueBlockRoots.add(state.getLatestBlockHeader().getRoot());
-    } else {
-      uniqueBlockRoots.remove(state.getLatestBlockHeader().getRoot());
     }
 
     return uniqueBlockRoots.size();

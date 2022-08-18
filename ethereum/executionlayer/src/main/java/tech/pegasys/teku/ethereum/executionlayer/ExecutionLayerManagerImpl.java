@@ -355,7 +355,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       fallbackReason = FallbackReason.NOT_NEEDED;
     } else if (isTransitionNotFinalized(executionPayloadContext)) {
       fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
-    } else if (builderCircuitBreaker.isEngaged(state)) {
+    } else if (isCircuitBreakerEngaged(state)) {
       fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
     } else if (builderClient.isEmpty()) {
       fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
@@ -526,6 +526,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
     return executionPayloadContext.getForkChoiceState().getFinalizedExecutionBlockHash().isZero();
+  }
+
+  private boolean isCircuitBreakerEngaged(final BeaconState state) {
+    try {
+      return builderCircuitBreaker.isEngaged(state);
+    } catch (Exception ex) {
+      LOG.error("Builder circuit breaker engagement failure. Acting like it has been engaged.", ex);
+      return true;
+    }
   }
 
   private void markBuilderAsNotAvailable(final String errorMessage) {

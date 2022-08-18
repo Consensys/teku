@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
@@ -42,9 +43,17 @@ public class BuilderCircuitBreakerImplTest {
   private static final int ALLOWED_FAULTS = 5;
 
   @Test
-  void shouldNotEngage_noMissedSlots() {
-    final UInt64 slot = UInt64.valueOf(spec.getGenesisSpec().getSlotsPerHistoricalRoot() + 5);
+  @BeforeEach
+  void check() {
+    // all tests assume 64 block roots history
+    assertThat(spec.getGenesisSpec().getSlotsPerHistoricalRoot()).isEqualTo(64);
+  }
 
+  @Test
+  void shouldNotEngage_noMissedSlots() {
+    final UInt64 slot = UInt64.valueOf(100);
+
+    // fill blockRoots with random roots and have a different latestBlockHeader root too
     final List<Bytes32> blockRoots =
         Stream.generate(dataStructureUtil::randomBytes32)
             .limit(spec.getGenesisSpec().getSlotsPerHistoricalRoot())
@@ -58,7 +67,122 @@ public class BuilderCircuitBreakerImplTest {
   }
 
   @Test
-  void shouldNotEngage_minimalAllowedFaults() {}
+  void shouldNotEngage_minimalAllowedFaults() {
+    final UInt64 stateSlot = UInt64.valueOf(69);
+
+    final BeaconBlock latestBlock = dataStructureUtil.randomBeaconBlock(68);
+    final BeaconBlockHeader latestBlockHeader = BeaconBlockHeader.fromBlock(latestBlock);
+
+    // fill blockRoots [59-63] with 2 unique roots
+    // fill blockRoots [0-3] (slot 64 to 67) with 2 unique roots
+    // a different latestBlockHeader root too (slot 68)
+    // for a total of 5 unique
+
+    final List<Bytes32> uniqueRoots =
+        Stream.generate(dataStructureUtil::randomBytes32).limit(4).collect(Collectors.toList());
+
+    final List<Bytes32> blockRoots =
+        Stream.concat(
+                // 4 elements - from slot 64 to 67
+                Stream.of(
+                    uniqueRoots.get(0), uniqueRoots.get(1), uniqueRoots.get(0), uniqueRoots.get(1)),
+                Stream.concat(
+                    // 55 elements
+                    Stream.generate(() -> Bytes32.ZERO)
+                        .limit(spec.getGenesisSpec().getSlotsPerHistoricalRoot() - 9),
+                    // 5 elements - from slot 59 to 63
+                    Stream.of(
+                        uniqueRoots.get(2),
+                        uniqueRoots.get(3),
+                        uniqueRoots.get(2),
+                        uniqueRoots.get(3),
+                        uniqueRoots.get(2))))
+            .collect(Collectors.toList());
+    final BeaconState state = prepareState(stateSlot, latestBlockHeader, blockRoots);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
+    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(5);
+  }
+
+  @Test
+  void shouldEngage_belowAllowedFaults() {
+    final UInt64 stateSlot = UInt64.valueOf(69);
+
+    final BeaconBlock latestBlock = dataStructureUtil.randomBeaconBlock(67);
+    final BeaconBlockHeader latestBlockHeader = BeaconBlockHeader.fromBlock(latestBlock);
+
+    // fill blockRoots [59-63] with 2 unique roots
+    // fill blockRoots [0-3] (slot 64 to 67) with 2 unique roots
+    // latestBlockHeader same as slot 67
+    // for a total of 4 unique
+
+    final List<Bytes32> uniqueRoots =
+        Stream.generate(dataStructureUtil::randomBytes32).limit(4).collect(Collectors.toList());
+
+    final List<Bytes32> blockRoots =
+        Stream.concat(
+                // 4 elements - from slot 64 to 67
+                Stream.of(
+                    uniqueRoots.get(0),
+                    uniqueRoots.get(0),
+                    uniqueRoots.get(0),
+                    latestBlockHeader.getRoot()),
+                Stream.concat(
+                    // 55 elements
+                    Stream.generate(() -> Bytes32.ZERO)
+                        .limit(spec.getGenesisSpec().getSlotsPerHistoricalRoot() - 9),
+                    // 5 elements - from slot 59 to 63
+                    Stream.of(
+                        uniqueRoots.get(2),
+                        uniqueRoots.get(3),
+                        uniqueRoots.get(2),
+                        uniqueRoots.get(3),
+                        uniqueRoots.get(2))))
+            .collect(Collectors.toList());
+
+    final BeaconState state = prepareState(stateSlot, latestBlockHeader, blockRoots);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
+    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(4);
+  }
+
+  @Test
+  void shouldEngage_belowAllowedFaults_onlyLastBlockHeaderPresent() {
+    final UInt64 stateSlot = UInt64.valueOf(69);
+
+    final BeaconBlock latestBlock = dataStructureUtil.randomBeaconBlock(59);
+    final BeaconBlockHeader latestBlockHeader = BeaconBlockHeader.fromBlock(latestBlock);
+
+    // fill blockRoots with random roots and have a different latestBlockHeader root too
+    final List<Bytes32> blockRoots =
+        Stream.generate(latestBlockHeader::getRoot)
+            .limit(spec.getGenesisSpec().getSlotsPerHistoricalRoot())
+            .collect(Collectors.toList());
+
+    final BeaconState state = prepareState(stateSlot, latestBlockHeader, blockRoots);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
+    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(1);
+  }
+
+  @Test
+  void shouldEngage_belowAllowedFaults_lastBlockHeaderWellOff() {
+    final UInt64 stateSlot = UInt64.valueOf(69);
+
+    final BeaconBlock latestBlock = dataStructureUtil.randomBeaconBlock(40);
+    final BeaconBlockHeader latestBlockHeader = BeaconBlockHeader.fromBlock(latestBlock);
+
+    // fill blockRoots with random roots and have a different latestBlockHeader root too
+    final List<Bytes32> blockRoots =
+        Stream.generate(latestBlockHeader::getRoot)
+            .limit(spec.getGenesisSpec().getSlotsPerHistoricalRoot())
+            .collect(Collectors.toList());
+
+    final BeaconState state = prepareState(stateSlot, latestBlockHeader, blockRoots);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
+    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(0);
+  }
 
   private BeaconState prepareState(
       final UInt64 slot,

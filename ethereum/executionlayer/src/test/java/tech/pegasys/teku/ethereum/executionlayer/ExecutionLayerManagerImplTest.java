@@ -262,22 +262,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect both builder and local engine have been called
-    verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext);
-
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
-
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
-
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
+    verifyFallbackToLocalEL(slot, payload, executionPayloadContext, FallbackReason.BUILDER_ERROR);
   }
 
   @Test
@@ -303,22 +288,8 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect only local engine have been called
-    verifyNoInteractions(builderClient);
-    verifyEngineCalled(executionPayloadContext);
-
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
-
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
-
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_NOT_AVAILABLE);
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.BUILDER_NOT_AVAILABLE);
   }
 
   @Test
@@ -347,23 +318,8 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect both builder and local engine have been called
-    verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext);
-
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
-
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
-
-    verifySourceCounter(
-        Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
   }
 
   @Test
@@ -390,22 +346,8 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect only local engine have been called
-    verifyNoInteractions(builderClient);
-    verifyEngineCalled(executionPayloadContext);
-
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
-
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
-
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.TRANSITION_NOT_FINALIZED);
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.TRANSITION_NOT_FINALIZED);
   }
 
   @Test
@@ -434,22 +376,38 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect only local engine have been called
-    verifyNoInteractions(builderClient);
-    verifyEngineCalled(executionPayloadContext);
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.CIRCUIT_BREAKER_ENGAGED);
+  }
 
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+  @Test
+  public void
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfCircuitBreakerThrows() {
+    setBuilderOnline();
 
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
 
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.CIRCUIT_BREAKER_ENGAGED);
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    when(builderCircuitBreaker.isEngaged(any())).thenThrow(new RuntimeException("error"));
+
+    // we expect local engine header as result
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(header);
+
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.CIRCUIT_BREAKER_ENGAGED);
   }
 
   @Test
@@ -476,22 +434,8 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(header);
 
-    // we expect only local engine have been called
-    verifyNoInteractions(builderClient);
-    verifyEngineCalled(executionPayloadContext);
-
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-
-    // we expect result from the cached payload
-    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
-        .isCompletedWithValue(payload);
-
-    // we expect no additional calls
-    verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
-
-    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.VALIDATOR_NOT_REGISTERED);
+    verifyFallbackToLocalEL(
+        slot, payload, executionPayloadContext, FallbackReason.VALIDATOR_NOT_REGISTERED);
   }
 
   @Test
@@ -556,6 +500,35 @@ class ExecutionLayerManagerImplTest {
             executionPayloadContext.getParentHash());
 
     return signedBuilderBid.getMessage().getExecutionPayloadHeader();
+  }
+
+  private void verifyFallbackToLocalEL(
+      final UInt64 slot,
+      final ExecutionPayload payload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final FallbackReason fallbackReason) {
+    if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
+        || fallbackReason == FallbackReason.BUILDER_ERROR) {
+      // we expect both builder and local engine have been called
+      verifyBuilderCalled(slot, executionPayloadContext);
+    } else {
+      // we expect only local engine have been called
+      verifyNoInteractions(builderClient);
+    }
+    verifyEngineCalled(executionPayloadContext);
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    // we expect result from the cached payload
+    assertThat(executionLayerManager.builderGetPayload(signedBlindedBeaconBlock))
+        .isCompletedWithValue(payload);
+
+    // we expect no additional calls
+    verifyNoMoreInteractions(builderClient);
+    verifyNoMoreInteractions(executionEngineClient);
+
+    verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, fallbackReason);
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(

@@ -15,6 +15,9 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -83,6 +86,51 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
+  }
+
+  @Test
+  public void shouldBuilderCircuitBreakerEnabledByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isBuilderCircuitBreakerEnabled()).isTrue();
+    assertThat(config.executionLayer().getBuilderCircuitBreakerWindow())
+        .isEqualTo(DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW);
+    assertThat(config.executionLayer().getBuilderCircuitBreakerAllowedFaults())
+        .isEqualTo(DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS);
+  }
+
+  @Test
+  public void shouldAcceptBuilderCircuitBreakerParams() {
+    final String[] args = {
+      "--Xbuilder-circuit-breaker-enabled",
+      "false",
+      "--Xbuilder-circuit-breaker-window",
+      "40",
+      "--Xbuilder-circuit-breaker-allowed-faults",
+      "2"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isBuilderCircuitBreakerEnabled()).isFalse();
+    assertThat(config.executionLayer().getBuilderCircuitBreakerWindow()).isEqualTo(40);
+    assertThat(config.executionLayer().getBuilderCircuitBreakerAllowedFaults()).isEqualTo(2);
+  }
+
+  @Test
+  public void shouldThrowWithBuilderCircuitBreakerWindowTooLarge() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .executionLayer(
+                        b ->
+                            b.builderCircuitBreakerWindow(
+                                    BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP + 1)
+                                .build()))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Builder Circuit Breaker window cannot exceed "
+                + BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP);
   }
 
   @Test
