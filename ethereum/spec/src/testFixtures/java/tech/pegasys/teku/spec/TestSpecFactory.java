@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -96,6 +97,18 @@ public class TestSpecFactory {
   public static Spec createMinimalWithBellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
     final SpecConfigBellatrix config =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, bellatrixForkEpoch);
+    return create(config, SpecMilestone.BELLATRIX);
+  }
+
+  public static Spec createMinimalWithAltairAndBellatrixForkEpoch(
+      final UInt64 altairEpoch, final UInt64 bellatrixForkEpoch) {
+    Preconditions.checkArgument(
+        altairEpoch.isLessThan(bellatrixForkEpoch),
+        String.format(
+            "Altair epoch %s must be less than bellatrix epoch %s",
+            altairEpoch, bellatrixForkEpoch));
+    final SpecConfigBellatrix config =
+        getBellatrixSpecConfig(Eth2Network.MINIMAL, altairEpoch, bellatrixForkEpoch);
     return create(config, SpecMilestone.BELLATRIX);
   }
 
