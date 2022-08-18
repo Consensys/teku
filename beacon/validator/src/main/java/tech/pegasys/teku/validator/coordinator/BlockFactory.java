@@ -47,12 +47,6 @@ public class BlockFactory {
         blockSlotState.getSlot(),
         newSlot);
 
-    System.out.println("****** newSlot " + newSlot);
-    System.out.println("****** blockSlotState slot " + blockSlotState.getSlot());
-    System.out.println(
-        "****** blockSlotState getLatestBlockHeader slot "
-            + blockSlotState.getLatestBlockHeader().getSlot());
-
     // Process empty slots up to the one before the new block slot
     final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
 
