@@ -121,10 +121,6 @@ public class ProposerConfig {
       return Optional.ofNullable(feeRecipient);
     }
 
-    public Optional<UInt64> getGasLimit() {
-      return builder.getGasLimit();
-    }
-
     public Optional<BuilderConfig> getBuilder() {
       return Optional.ofNullable(builder);
     }

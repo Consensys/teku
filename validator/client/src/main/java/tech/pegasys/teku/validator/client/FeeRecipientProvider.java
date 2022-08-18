@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.validator.client;
 
-public class SetGasLimitException extends IllegalArgumentException {
+import java.util.Optional;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-  public SetGasLimitException(String message) {
-    super(message);
-  }
+public interface FeeRecipientProvider {
+
+  Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
+
+  boolean isReadyToProvideFeeRecipient();
 }

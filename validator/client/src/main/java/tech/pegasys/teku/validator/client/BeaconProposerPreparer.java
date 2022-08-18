@@ -35,15 +35,13 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
-public class BeaconProposerPreparer
-    implements ValidatorTimingChannel, ValidatorRegistrationPropertiesProvider {
+public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipientProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
   private Optional<ValidatorIndexProvider> validatorIndexProvider;
   private final ProposerConfigProvider proposerConfigProvider;
   private final Optional<Eth1Address> defaultFeeRecipient;
-  private final UInt64 defaultGasLimit;
   private final Spec spec;
   private final RuntimeProposerConfig runtimeProposerConfig;
 
@@ -53,35 +51,31 @@ public class BeaconProposerPreparer
   private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
 
   BeaconProposerPreparer(
-      final ValidatorApiChannel validatorApiChannel,
-      final ValidatorIndexProvider validatorIndexProvider,
-      final ProposerConfigProvider proposerConfigProvider,
-      final Optional<Eth1Address> defaultFeeRecipient,
-      final UInt64 defaultGasLimit,
-      final Spec spec) {
+      ValidatorApiChannel validatorApiChannel,
+      ValidatorIndexProvider validatorIndexProvider,
+      ProposerConfigProvider proposerConfigProvider,
+      Optional<Eth1Address> defaultFeeRecipient,
+      Spec spec) {
     this(
         validatorApiChannel,
         Optional.of(validatorIndexProvider),
         proposerConfigProvider,
         defaultFeeRecipient,
-        defaultGasLimit,
         spec,
         Optional.empty());
   }
 
   public BeaconProposerPreparer(
-      final ValidatorApiChannel validatorApiChannel,
-      final Optional<ValidatorIndexProvider> validatorIndexProvider,
-      final ProposerConfigProvider proposerConfigProvider,
-      final Optional<Eth1Address> defaultFeeRecipient,
-      final UInt64 defaultGasLimit,
-      final Spec spec,
-      final Optional<Path> mutableProposerConfigPath) {
+      ValidatorApiChannel validatorApiChannel,
+      Optional<ValidatorIndexProvider> validatorIndexProvider,
+      ProposerConfigProvider proposerConfigProvider,
+      Optional<Eth1Address> defaultFeeRecipient,
+      Spec spec,
+      Optional<Path> mutableProposerConfigPath) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.proposerConfigProvider = proposerConfigProvider;
     this.defaultFeeRecipient = defaultFeeRecipient;
-    this.defaultGasLimit = defaultGasLimit;
     this.spec = spec;
     runtimeProposerConfig = new RuntimeProposerConfig(mutableProposerConfigPath);
   }
@@ -91,7 +85,7 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {
+  public void onSlot(UInt64 slot) {
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
@@ -102,10 +96,10 @@ public class BeaconProposerPreparer
 
   @Override
   public void onHeadUpdate(
-      final UInt64 slot,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Bytes32 headBlockRoot) {}
+      UInt64 slot,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      Bytes32 headBlockRoot) {}
 
   @Override
   public void onPossibleMissedEvents() {
@@ -118,13 +112,13 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public void onBlockProductionDue(final UInt64 slot) {}
+  public void onBlockProductionDue(UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {}
+  public void onAttestationCreationDue(UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {}
+  public void onAttestationAggregationDue(UInt64 slot) {}
 
   // 2 configurations, 2 defaults
   // Priority order
@@ -148,22 +142,6 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public Optional<UInt64> getGasLimit(final BLSPublicKey publicKey) {
-    if (validatorIndexCannotBeResolved(publicKey)) {
-      return Optional.empty();
-    }
-    return maybeProposerConfig
-        .flatMap(config -> getGasLimitFromProposerConfig(config, publicKey))
-        .or(() -> runtimeProposerConfig.getGasLimitForPubKey(publicKey))
-        .or(
-            () ->
-                maybeProposerConfig.flatMap(
-                    proposerConfigProvider ->
-                        proposerConfigProvider.getDefaultConfig().getGasLimit()))
-        .or(() -> Optional.ofNullable(defaultGasLimit));
-  }
-
-  @Override
   public boolean isReadyToProvideFeeRecipient() {
     return sentProposersAtLeastOnce.get();
   }
@@ -182,23 +160,10 @@ public class BeaconProposerPreparer
     Optional<Eth1Address> maybeEth1Address =
         maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
     if (maybeEth1Address.isPresent()) {
-      throw new SetFeeRecipientException("Cannot update fee recipient via api.");
+      throw new SetFeeRecipientException(
+          "Validator public key has been configured in validators-proposer-config file - cannot update via api.");
     }
     runtimeProposerConfig.addOrUpdateFeeRecipient(publicKey, eth1Address);
-  }
-
-  public void setGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit)
-      throws SetFeeRecipientException {
-    if (validatorIndexCannotBeResolved(publicKey)) {
-      throw new SetGasLimitException(
-          "Validator public key not found when attempting to set gas limit.");
-    }
-    Optional<UInt64> maybeGasLimit =
-        maybeProposerConfig.flatMap(config -> getGasLimitFromProposerConfig(config, publicKey));
-    if (maybeGasLimit.isPresent()) {
-      throw new SetGasLimitException("Cannot update gas limit via api.");
-    }
-    runtimeProposerConfig.addOrUpdateGasLimit(publicKey, gasLimit);
   }
 
   public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {
@@ -208,16 +173,6 @@ public class BeaconProposerPreparer
       return false;
     }
     runtimeProposerConfig.deleteFeeRecipient(publicKey);
-    return true;
-  }
-
-  public boolean deleteGasLimit(final BLSPublicKey publicKey) {
-    Optional<UInt64> maybeGasLimit =
-        maybeProposerConfig.flatMap(config -> getGasLimitFromProposerConfig(config, publicKey));
-    if (maybeGasLimit.isPresent()) {
-      return false;
-    }
-    runtimeProposerConfig.deleteGasLimit(publicKey);
     return true;
   }
 
@@ -254,8 +209,8 @@ public class BeaconProposerPreparer
   }
 
   private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
-      final Optional<ProposerConfig> maybeProposerConfig,
-      final Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
+      Optional<ProposerConfig> maybeProposerConfig,
+      Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
@@ -272,11 +227,6 @@ public class BeaconProposerPreparer
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
     return config.getConfigForPubKey(publicKey).flatMap(Config::getFeeRecipient);
-  }
-
-  private Optional<UInt64> getGasLimitFromProposerConfig(
-      final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
   }
 
   private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
