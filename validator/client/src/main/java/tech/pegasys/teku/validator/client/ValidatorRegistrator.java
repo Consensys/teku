@@ -34,9 +34,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -60,7 +60,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final OwnedValidators ownedValidators;
   private final ProposerConfigProvider proposerConfigProvider;
   private final ValidatorConfig validatorConfig;
-  private final FeeRecipientProvider feeRecipientProvider;
+  private final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider;
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender;
 
   public ValidatorRegistrator(
@@ -69,13 +69,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final OwnedValidators ownedValidators,
       final ProposerConfigProvider proposerConfigProvider,
       final ValidatorConfig validatorConfig,
-      final FeeRecipientProvider feeRecipientProvider,
+      final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider,
       final ValidatorRegistrationBatchSender validatorRegistrationBatchSender) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
     this.proposerConfigProvider = proposerConfigProvider;
-    this.feeRecipientProvider = feeRecipientProvider;
+    this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
     this.validatorRegistrationBatchSender = validatorRegistrationBatchSender;
     this.validatorConfig = validatorConfig;
   }
@@ -143,7 +143,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private boolean isNotReadyToRegister() {
-    if (!feeRecipientProvider.isReadyToProvideFeeRecipient()) {
+    if (!validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()) {
       LOG.debug("Not ready to register validator(s).");
       return true;
     }
@@ -201,7 +201,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return Optional.empty();
     }
 
-    final Optional<Eth1Address> maybeFeeRecipient = feeRecipientProvider.getFeeRecipient(publicKey);
+    final Optional<Eth1Address> maybeFeeRecipient =
+        validatorRegistrationPropertiesProvider.getFeeRecipient(publicKey);
 
     if (maybeFeeRecipient.isEmpty()) {
       LOG.debug(

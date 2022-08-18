@@ -28,8 +28,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class RuntimeProposerConfig {
@@ -47,11 +49,13 @@ public class RuntimeProposerConfig {
           .initializer(ConfigBuilder::new)
           .finisher(ConfigBuilder::build)
           .name("RuntimeProposerConfig")
-          .withField(
+          .withOptionalField(
               "fee_recipient",
               ETH1ADDRESS_TYPE,
               Config::getFeeRecipient,
               ConfigBuilder::feeRecipient)
+          .withOptionalField(
+              "gas_limit", CoreTypes.UINT64_TYPE, Config::getGasLimit, ConfigBuilder::gasLimit)
           .build();
   private static final DeserializableTypeDefinition<Map<BLSPublicKey, Config>> CONFIG_MAP_TYPE =
       DeserializableTypeDefinition.mapOf(PUBKEY_TYPE, CONFIG_TYPE, ConcurrentHashMap::new);
@@ -68,18 +72,40 @@ public class RuntimeProposerConfig {
     if (config == null) {
       return Optional.empty();
     }
-    return Optional.of(config.getFeeRecipient());
+    return config.getFeeRecipient();
   }
 
-  public synchronized void addOrUpdate(
+  public Optional<UInt64> getGasLimitForPubKey(final BLSPublicKey publicKey) {
+    final Optional<Config> maybeConfig = Optional.ofNullable(proposerConfigMap.get(publicKey));
+    return maybeConfig.flatMap(Config::getGasLimit);
+  }
+
+  public synchronized void addOrUpdateFeeRecipient(
       final BLSPublicKey publicKey, final Eth1Address eth1Address) {
-    proposerConfigMap.put(publicKey, new Config(eth1Address));
+    proposerConfigMap.put(
+        publicKey, new Config(Optional.ofNullable(eth1Address), getGasLimitForPubKey(publicKey)));
     storagePath.ifPresent(this::save);
   }
 
-  public void delete(final BLSPublicKey publicKey) {
-    proposerConfigMap.remove(publicKey);
+  public synchronized void addOrUpdateGasLimit(
+      final BLSPublicKey publicKey, final UInt64 gasLimit) {
+    proposerConfigMap.put(
+        publicKey, new Config(getEth1AddressForPubKey(publicKey), Optional.ofNullable(gasLimit)));
     storagePath.ifPresent(this::save);
+  }
+
+  public synchronized void deleteFeeRecipient(final BLSPublicKey publicKey) {
+    if (proposerConfigMap.containsKey(publicKey)) {
+      addOrUpdateFeeRecipient(publicKey, null);
+      storagePath.ifPresent(this::save);
+    }
+  }
+
+  public synchronized void deleteGasLimit(final BLSPublicKey publicKey) {
+    if (proposerConfigMap.containsKey(publicKey)) {
+      addOrUpdateGasLimit(publicKey, null);
+      storagePath.ifPresent(this::save);
+    }
   }
 
   private void save(final Path path) {
@@ -105,29 +131,41 @@ public class RuntimeProposerConfig {
   }
 
   static class Config {
-    private final Eth1Address feeRecipient;
+    private final Optional<Eth1Address> feeRecipient;
+    private final Optional<UInt64> gasLimit;
 
-    public Config(final Eth1Address feeRecipient) {
+    public Config(final Optional<Eth1Address> feeRecipient, final Optional<UInt64> gasLimit) {
       this.feeRecipient = feeRecipient;
+      this.gasLimit = gasLimit;
     }
 
-    public Eth1Address getFeeRecipient() {
+    public Optional<Eth1Address> getFeeRecipient() {
       return feeRecipient;
+    }
+
+    public Optional<UInt64> getGasLimit() {
+      return gasLimit;
     }
   }
 
   static class ConfigBuilder {
-    private Eth1Address feeRecipient;
+    private Optional<Eth1Address> feeRecipient;
+    private Optional<UInt64> gasLimit;
 
     public ConfigBuilder() {}
 
-    public ConfigBuilder feeRecipient(final Eth1Address feeRecipient) {
+    public ConfigBuilder feeRecipient(final Optional<Eth1Address> feeRecipient) {
       this.feeRecipient = feeRecipient;
       return this;
     }
 
+    public ConfigBuilder gasLimit(final Optional<UInt64> gasLimit) {
+      this.gasLimit = gasLimit;
+      return this;
+    }
+
     public Config build() {
-      return new Config(feeRecipient);
+      return new Config(feeRecipient, gasLimit);
     }
   }
 }

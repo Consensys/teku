@@ -130,4 +130,6 @@ public class RestApiConstants {
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
 
   public static final String CACHE_NONE = "max-age=0";
+
+  public static final String PUBKEY = "pubkey";
 }

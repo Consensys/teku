@@ -32,14 +32,14 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.ThrottlingBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
-import tech.pegasys.teku.ethereum.executionclient.rest.RestExecutionBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -59,13 +59,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -91,7 +91,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       new ConcurrentSkipListMap<>();
 
   private final ExecutionEngineClient executionEngineClient;
-  private final Optional<ExecutionBuilderClient> executionBuilderClient;
+  private final Optional<BuilderClient> builderClient;
   private final AtomicBoolean latestBuilderAvailability;
   private final Spec spec;
   private final EventLogger eventLogger;
@@ -101,7 +101,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
       final ExecutionEngineClient executionEngineClient,
-      final Optional<ExecutionBuilderClient> builderRestClient,
+      final Optional<BuilderClient> builderClient,
       final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator) {
@@ -127,7 +127,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return new ExecutionLayerManagerImpl(
         executionEngineClient,
-        builderRestClient,
+        builderClient,
         spec,
         eventLogger,
         builderBidValidator,
@@ -151,30 +151,29 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         metricEngineClient, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
   }
 
-  public static ExecutionBuilderClient createBuilderClient(
+  public static BuilderClient createBuilderClient(
       final RestClient builderRestClient,
       final Spec spec,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
 
-    final RestExecutionBuilderClient restBuilderClient =
-        new RestExecutionBuilderClient(builderRestClient, spec);
-    final MetricRecordingExecutionBuilderClient metricRecordingBuilderClient =
-        new MetricRecordingExecutionBuilderClient(restBuilderClient, timeProvider, metricsSystem);
-    return new ThrottlingExecutionBuilderClient(
+    final RestBuilderClient restBuilderClient = new RestBuilderClient(builderRestClient, spec);
+    final MetricRecordingBuilderClient metricRecordingBuilderClient =
+        new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
+    return new ThrottlingBuilderClient(
         metricRecordingBuilderClient, MAXIMUM_CONCURRENT_EB_REQUESTS, metricsSystem);
   }
 
   private ExecutionLayerManagerImpl(
       final ExecutionEngineClient executionEngineClient,
-      final Optional<ExecutionBuilderClient> executionBuilderClient,
+      final Optional<BuilderClient> builderClient,
       final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final LabelledMetric<Counter> executionPayloadSourceCounter) {
     this.executionEngineClient = executionEngineClient;
-    this.executionBuilderClient = executionBuilderClient;
-    this.latestBuilderAvailability = new AtomicBoolean(executionBuilderClient.isPresent());
+    this.builderClient = builderClient;
+    this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.spec = spec;
     this.eventLogger = eventLogger;
     this.builderBidValidator = builderBidValidator;
@@ -322,7 +321,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
           new RuntimeException("Unable to register validators: builder not available"));
     }
 
-    return executionBuilderClient
+    return builderClient
         .orElseThrow()
         .registerValidators(slot, signedValidatorRegistrations)
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
@@ -349,11 +348,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     // fallback conditions
     final FallbackReason fallbackReason;
-    if (executionBuilderClient.isEmpty() && validatorRegistration.isEmpty()) {
+    if (builderClient.isEmpty() && validatorRegistration.isEmpty()) {
       fallbackReason = FallbackReason.NOT_NEEDED;
     } else if (transitionNotFinalized) {
       fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
-    } else if (executionBuilderClient.isEmpty()) {
+    } else if (builderClient.isEmpty()) {
       fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
     } else if (!isBuilderAvailable()) {
       fallbackReason = FallbackReason.BUILDER_NOT_AVAILABLE;
@@ -375,7 +374,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
-    return executionBuilderClient
+    return builderClient
         .orElseThrow()
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
@@ -463,7 +462,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
-    return executionBuilderClient
+    return builderClient
         .orElseThrow(
             () ->
                 new RuntimeException(
@@ -501,10 +500,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private void updateBuilderAvailability() {
-    if (executionBuilderClient.isEmpty()) {
+    if (builderClient.isEmpty()) {
       return;
     }
-    executionBuilderClient
+    builderClient
         .get()
         .status()
         .finish(
@@ -513,7 +512,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 markBuilderAsNotAvailable(statusResponse.getErrorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
-                  eventLogger.executionBuilderIsBackOnline();
+                  eventLogger.builderIsBackOnline();
                 }
               }
             },
@@ -522,7 +521,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private void markBuilderAsNotAvailable(final String errorMessage) {
     latestBuilderAvailability.set(false);
-    eventLogger.executionBuilderIsOffline(errorMessage);
+    eventLogger.builderIsOffline(errorMessage);
   }
 
   private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {

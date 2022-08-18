@@ -11,21 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.validator.client;
 
+import java.util.Optional;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-public class RegisteredValidatorInfo extends ExpiringInfo {
-  private final SignedValidatorRegistration signedValidatorRegistration;
+public interface ValidatorRegistrationPropertiesProvider {
 
-  public RegisteredValidatorInfo(
-      final UInt64 expirySlot, final SignedValidatorRegistration signedValidatorRegistration) {
-    super(expirySlot);
-    this.signedValidatorRegistration = signedValidatorRegistration;
-  }
+  Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
 
-  public SignedValidatorRegistration getSignedValidatorRegistration() {
-    return signedValidatorRegistration;
-  }
+  Optional<UInt64> getGasLimit(BLSPublicKey publicKey);
+
+  boolean isReadyToProvideFeeRecipient();
 }
