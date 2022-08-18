@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
-import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GAS_LIMIT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,7 +39,7 @@ public class DeleteGasLimit extends RestApiEndpoint {
             .operationId("DeleteGasLimit")
             .summary("Delete configured gas limit")
             .withBearerAuthSecurity()
-            .tags(TAG_FEE_RECIPIENT)
+            .tags(TAG_GAS_LIMIT)
             .pathParam(PARAM_PUBKEY_TYPE)
             .description("Delete a configured gas limit for the specified public key.")
             .response(SC_NO_CONTENT, "Success")
