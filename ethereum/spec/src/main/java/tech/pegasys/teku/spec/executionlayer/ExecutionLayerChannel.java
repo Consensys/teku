@@ -118,9 +118,4 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
     public static final Version DEFAULT_VERSION = KILNV2;
   }
-
-  enum BuilderForcedFallbackReason {
-    TRANSITION_NOT_FINALIZED,
-    CIRCUIT_BREAKER_ENGAGED
-  }
 }
