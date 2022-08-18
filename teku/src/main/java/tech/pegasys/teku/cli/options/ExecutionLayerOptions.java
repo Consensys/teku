@@ -65,6 +65,7 @@ public class ExecutionLayerOptions {
       description = "Enables Circuit Breaker logic for builder usage.",
       arity = "1",
       showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       hidden = true)
   private boolean builderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 
