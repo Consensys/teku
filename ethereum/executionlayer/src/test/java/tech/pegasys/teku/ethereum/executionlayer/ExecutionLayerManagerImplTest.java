@@ -391,7 +391,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
     verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -402,7 +402,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.TRANSITION_NOT_FINALIZED);
