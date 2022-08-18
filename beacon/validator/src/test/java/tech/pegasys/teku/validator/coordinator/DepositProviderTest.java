@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -172,9 +173,10 @@ public class DepositProviderTest {
   void shouldDelegateOnEth1BlockToEth1DataCache() {
     setup(16);
     final Bytes32 blockHash = dataStructureUtil.randomBytes32();
+    final UInt64 blockNumber = dataStructureUtil.randomUInt64();
     final UInt64 blockTimestamp = dataStructureUtil.randomUInt64();
-    depositProvider.onEth1Block(blockHash, blockTimestamp);
-    verify(eth1DataCache).onEth1Block(blockHash, blockTimestamp);
+    depositProvider.onEth1Block(blockNumber, blockHash, blockTimestamp);
+    verify(eth1DataCache).onEth1Block(blockNumber, blockHash, blockTimestamp);
   }
 
   @Test
@@ -194,8 +196,9 @@ public class DepositProviderTest {
         depositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
     verify(eth1DataCache)
         .onBlockWithDeposit(
-            event.getBlockTimestamp(),
-            new Eth1Data(depositMerkleTree.getRoot(), UInt64.ONE, event.getBlockHash()));
+            event.getBlockNumber(),
+            new Eth1Data(depositMerkleTree.getRoot(), UInt64.ONE, event.getBlockHash()),
+            event.getBlockTimestamp());
   }
 
   @Test
@@ -353,13 +356,16 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
+    final Eth1Data eth1Data = state.getEth1Data();
+    when(eth1DataCache.findEth1DataWithHeight(eq(eth1Data)))
+        .thenReturn(Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data, UInt64.valueOf(20))));
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
     Optional<DepositTreeSnapshot> finalizedDepositTreeSnapshot =
         depositProvider.getFinalizedDepositTreeSnapshot();
     assertThat(finalizedDepositTreeSnapshot).isNotEmpty();
-    assertThat(finalizedDepositTreeSnapshot.get().getDeposits()).isEqualTo(10);
+    assertThat(finalizedDepositTreeSnapshot.get().getDepositCount()).isEqualTo(10);
     assertThat(finalizedDepositTreeSnapshot.get().getExecutionBlockHash())
         .isEqualTo(
             recentChainData

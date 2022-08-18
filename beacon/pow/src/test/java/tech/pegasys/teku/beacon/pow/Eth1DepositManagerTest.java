@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
 import java.math.BigInteger;
@@ -383,12 +384,14 @@ class Eth1DepositManagerTest {
   void shouldStartFromSnapshotWhenLoaded() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
-
     final DepositTreeSnapshot depositTreeSnapshot =
         new DepositTreeSnapshot(
+            DEPOSIT_TREE_SNAPSHOT_SCHEMA,
             List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
+            dataStructureUtil.randomBytes32(),
             deposits.longValue(),
-            dataStructureUtil.randomBytes32());
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
     final ReplayDepositsResult replayDepositsResult =
         ReplayDepositsResult.create(lastBlockNumber, Optional.of(BigInteger.valueOf(99)), true);
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -41,12 +42,16 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
+/**
+ * Get Deposit Snapshot Tree, see <a
+ * href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4881.md">EIP-4881</a>
+ */
 public class GetDepositSnapshot extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/teku/v1/beacon/deposit_snapshot";
 
   private static final SerializableTypeDefinition<DepositTreeSnapshot> DEPOSIT_SNAPSHOT_TYPE =
-      DepositTreeSnapshot.getJsonTypeDefinition();
+      DepositTreeSnapshot.getJsonTypeDefinition(DEPOSIT_TREE_SNAPSHOT_SCHEMA);
 
   public static final SerializableTypeDefinition<DepositTreeSnapshot>
       DEPOSIT_SNAPSHOT_RESPONSE_TYPE =

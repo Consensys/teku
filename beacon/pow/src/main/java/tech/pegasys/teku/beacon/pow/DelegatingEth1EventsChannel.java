@@ -37,7 +37,8 @@ public class DelegatingEth1EventsChannel implements Eth1EventsChannel {
   }
 
   @Override
-  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
-    delegate.onEth1Block(blockHash, blockTimestamp);
+  public void onEth1Block(
+      final UInt64 blockHeight, final Bytes32 blockHash, final UInt64 blockTimestamp) {
+    delegate.onEth1Block(blockHeight, blockHash, blockTimestamp);
   }
 }

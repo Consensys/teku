@@ -24,10 +24,11 @@ public class Eth1DataCachePeriodCalculator {
     long cacheDurationSeconds = config.getSecondsPerSlot();
 
     // Worst case this slot is at the very end of the current voting period
-    cacheDurationSeconds +=
+    final long secondsPerEth1VotingPeriod =
         ((long) config.getEpochsPerEth1VotingPeriod())
             * config.getSlotsPerEpoch()
             * config.getSecondsPerSlot();
+    cacheDurationSeconds += secondsPerEth1VotingPeriod;
 
     // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but this assumes our current time is from a
     // block already ETH1_FOLLOW_DISTANCE behind head.
@@ -36,7 +37,9 @@ public class Eth1DataCachePeriodCalculator {
 
     // And we want to be able to create blocks for at least the past epoch
     cacheDurationSeconds += ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot();
-    return UInt64.valueOf(cacheDurationSeconds);
+    // Some networks have very small ETH1_FOLLOW_DISTANCE but we may need to lookup Eth1Data block
+    // height from the current state
+    return UInt64.valueOf(cacheDurationSeconds).max(secondsPerEth1VotingPeriod * 2);
   }
 
   public static UInt64 calculateEth1DataCacheDurationPriorToCurrentTime(final SpecConfig config) {

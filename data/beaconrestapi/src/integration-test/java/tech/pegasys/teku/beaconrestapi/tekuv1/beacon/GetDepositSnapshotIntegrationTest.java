@@ -18,6 +18,7 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,12 +38,25 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private DataStructureUtil dataStructureUtil;
+  DepositTreeSnapshot depositTreeSnapshot;
 
   @BeforeEach
   public void setup() {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    dataStructureUtil = new DataStructureUtil(spec);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<Bytes32> finalized = new ArrayList<>();
+    finalized.add(dataStructureUtil.randomBytes32());
+    finalized.add(dataStructureUtil.randomBytes32());
+    depositTreeSnapshot =
+        new DepositTreeSnapshot(
+            DEPOSIT_TREE_SNAPSHOT_SCHEMA,
+            finalized,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomLong(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
+    when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
+        .thenReturn(Optional.of(depositTreeSnapshot));
   }
 
   @Test
@@ -54,33 +68,17 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
 
   @Test
   public void shouldReturnDepositTreeSnapshotJson() throws IOException {
-    final List<Bytes32> finalized = new ArrayList<>();
-    finalized.add(dataStructureUtil.randomBytes32());
-    finalized.add(dataStructureUtil.randomBytes32());
-    final DepositTreeSnapshot depositTreeSnapshotData =
-        new DepositTreeSnapshot(
-            finalized, dataStructureUtil.randomLong(), dataStructureUtil.randomBytes32());
-    when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
-        .thenReturn(Optional.of(depositTreeSnapshotData));
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     final String actualResponse = response.body().string();
     assertThat(actualResponse)
         .isEqualTo(
             JsonUtil.serialize(
-                depositTreeSnapshotData, GetDepositSnapshot.DEPOSIT_SNAPSHOT_RESPONSE_TYPE));
+                depositTreeSnapshot, GetDepositSnapshot.DEPOSIT_SNAPSHOT_RESPONSE_TYPE));
   }
 
   @Test
   public void shouldReturnDepositTreeSnapshotSsz() throws IOException {
-    final List<Bytes32> finalized = new ArrayList<>();
-    finalized.add(dataStructureUtil.randomBytes32());
-    finalized.add(dataStructureUtil.randomBytes32());
-    final DepositTreeSnapshot depositTreeSnapshot =
-        new DepositTreeSnapshot(
-            finalized, dataStructureUtil.randomLong(), dataStructureUtil.randomBytes32());
-    when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
-        .thenReturn(Optional.of(depositTreeSnapshot));
     final Response response = getSsz();
     assertThat(response.code()).isEqualTo(SC_OK);
     final Bytes actualResponse = Bytes.wrap(response.body().bytes());

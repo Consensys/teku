@@ -14,16 +14,15 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.collect.Maps;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -43,7 +42,8 @@ public class Eth1DataCache {
   private final UInt64 cacheDuration;
   private final Eth1VotingPeriod eth1VotingPeriod;
 
-  private final NavigableMap<UInt64, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, Eth1DataAndHeight> eth1ChainCache =
+      new ConcurrentSkipListMap<>();
   private final SettableGauge currentPeriodVotesTotal;
   private final SettableGauge currentPeriodVotesUnknown;
   private final SettableGauge currentPeriodVotesCurrent;
@@ -90,32 +90,40 @@ public class Eth1DataCache {
             "Number of votes for the leading block in the current Eth1 voting period");
   }
 
-  public void onBlockWithDeposit(final UInt64 blockTimestamp, final Eth1Data eth1Data) {
-    eth1ChainCache.put(blockTimestamp, eth1Data);
+  public void onBlockWithDeposit(
+      final UInt64 blockHeight, final Eth1Data eth1Data, final UInt64 blockTimestamp) {
+    eth1ChainCache.put(blockTimestamp, new Eth1DataAndHeight(eth1Data, blockHeight));
     prune(blockTimestamp);
   }
 
-  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
-    final Map.Entry<UInt64, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
+  public void onEth1Block(
+      final UInt64 blockHeight, final Bytes32 blockHash, final UInt64 blockTimestamp) {
+    final Map.Entry<UInt64, Eth1DataAndHeight> previousBlock =
+        eth1ChainCache.floorEntry(blockTimestamp);
     final Eth1Data data;
     if (previousBlock == null) {
       data = new Eth1Data(Eth1Data.EMPTY_DEPOSIT_ROOT, UInt64.ZERO, blockHash);
     } else {
-      data = previousBlock.getValue().withBlockHash(blockHash);
+      data = previousBlock.getValue().getEth1Data().withBlockHash(blockHash);
     }
-    eth1ChainCache.put(blockTimestamp, data);
+    eth1ChainCache.put(blockTimestamp, new Eth1DataAndHeight(data, blockHeight));
     prune(blockTimestamp);
   }
 
   public Eth1Data getEth1Vote(BeaconState state) {
-    NavigableMap<UInt64, Eth1Data> votesToConsider =
+    NavigableMap<UInt64, Eth1DataAndHeight> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
-    final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
+    final Set<Eth1Data> validBlocks =
+        votesToConsider.values().stream()
+            .map(Eth1DataAndHeight::getEth1Data)
+            .collect(Collectors.toSet());
     final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     Eth1Data defaultVote =
-        votesToConsider.isEmpty() ? state.getEth1Data() : votesToConsider.lastEntry().getValue();
+        votesToConsider.isEmpty()
+            ? state.getEth1Data()
+            : votesToConsider.lastEntry().getValue().getEth1Data();
 
     Optional<Eth1Data> vote =
         votes.entrySet().stream()
@@ -127,15 +135,20 @@ public class Eth1DataCache {
   }
 
   public Collection<Eth1Data> getAllEth1Blocks() {
-    return new ArrayList<>(this.eth1ChainCache.values());
+    return this.eth1ChainCache.values().stream()
+        .map(Eth1DataAndHeight::getEth1Data)
+        .collect(Collectors.toList());
   }
 
   public void updateMetrics(final BeaconState state) {
     final Eth1Data currentEth1Data = state.getEth1Data();
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> knownBlocks =
-        new HashSet<>(
-            getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data).values());
+        getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data)
+            .values()
+            .stream()
+            .map(Eth1DataAndHeight::getEth1Data)
+            .collect(Collectors.toSet());
     Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     currentPeriodVotesMax.set(eth1VotingPeriod.getTotalSlotsInVotingPeriod(state.getSlot()));
@@ -163,7 +176,13 @@ public class Eth1DataCache {
     return votes;
   }
 
-  private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
+  protected Optional<Eth1DataAndHeight> findEth1DataWithHeight(final Eth1Data eth1Data) {
+    return eth1ChainCache.values().stream()
+        .filter(eth1DataWithHeight -> eth1DataWithHeight.getEth1Data().equals(eth1Data))
+        .findFirst();
+  }
+
+  private NavigableMap<UInt64, Eth1DataAndHeight> getVotesToConsider(
       final UInt64 slot, final UInt64 genesisTime, final Eth1Data dataFromState) {
     return Maps.filterValues(
         eth1ChainCache.subMap(
@@ -171,8 +190,11 @@ public class Eth1DataCache {
             true,
             eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
             true),
-        eth1Data ->
-            eth1Data.getDepositCount().isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
+        eth1DataAndHeight ->
+            eth1DataAndHeight
+                .getEth1Data()
+                .getDepositCount()
+                .isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
   }
 
   protected Eth1VotingPeriod getEth1VotingPeriod() {
@@ -196,5 +218,23 @@ public class Eth1DataCache {
 
   private int size() {
     return eth1ChainCache.size();
+  }
+
+  protected static class Eth1DataAndHeight {
+    private final Eth1Data eth1Data;
+    private final UInt64 blockHeight;
+
+    public Eth1DataAndHeight(final Eth1Data eth1Data, final UInt64 blockHeight) {
+      this.eth1Data = eth1Data;
+      this.blockHeight = blockHeight;
+    }
+
+    public Eth1Data getEth1Data() {
+      return eth1Data;
+    }
+
+    public UInt64 getBlockHeight() {
+      return blockHeight;
+    }
   }
 }

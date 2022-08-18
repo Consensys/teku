@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class Eth1DataCachePeriodCalculatorTest {
   private final SpecConfig config = SpecConfigLoader.loadConfig("minimal");
+  private final SpecConfig kiln = SpecConfigLoader.loadConfig("kiln");
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {
@@ -36,5 +37,12 @@ class Eth1DataCachePeriodCalculatorTest {
     assertThat(
             Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime(config))
         .isEqualTo(UInt64.valueOf(694));
+  }
+
+  @Test
+  void shouldExtendCachePeriodWhenFollowDistanceIsSmall() {
+    assertThat(
+            Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance(kiln))
+        .isEqualTo(UInt64.valueOf(49152));
   }
 }
