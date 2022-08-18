@@ -90,7 +90,9 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      final UInt64 minimalViableEpoch = spec.computeMinimumViableEpoch(blockSlotState.getSlot());
+      final UInt64 previousForkEpochStart =
+          spec.computePreviousForkEpochStart(blockSlotState.getSlot());
+      final UInt64 firstSlotOfPreviousFork = spec.computeStartSlotAtEpoch(previousForkEpochStart);
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
@@ -105,8 +107,11 @@ public class BlockOperationSelectorFactory {
               blockSlotState,
               slashing ->
                   !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices())
-                      && spec.computeEpochAtSlot(slashing.getAttestation1().getData().getSlot())
-                          .isGreaterThanOrEqualTo(minimalViableEpoch),
+                      && slashing
+                          .getAttestation1()
+                          .getData()
+                          .getSlot()
+                          .isGreaterThanOrEqualTo(firstSlotOfPreviousFork),
               slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
@@ -114,8 +119,11 @@ public class BlockOperationSelectorFactory {
               blockSlotState,
               slashing ->
                   !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex())
-                      && spec.computeEpochAtSlot(slashing.getHeader1().getMessage().getSlot())
-                          .isGreaterThanOrEqualTo(minimalViableEpoch),
+                      && slashing
+                          .getHeader1()
+                          .getMessage()
+                          .getSlot()
+                          .isGreaterThanOrEqualTo(firstSlotOfPreviousFork),
               slashing ->
                   exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
@@ -125,7 +133,9 @@ public class BlockOperationSelectorFactory {
               blockSlotState,
               exit ->
                   !exitedValidators.contains(exit.getMessage().getValidatorIndex())
-                      && exit.getMessage().getEpoch().isGreaterThanOrEqualTo(minimalViableEpoch),
+                      && exit.getMessage()
+                          .getEpoch()
+                          .isGreaterThanOrEqualTo(previousForkEpochStart),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder

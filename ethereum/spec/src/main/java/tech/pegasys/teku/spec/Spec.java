@@ -752,7 +752,7 @@ public class Spec {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  public UInt64 computeMinimumViableEpoch(final UInt64 slot) {
+  public UInt64 computePreviousForkEpochStart(final UInt64 slot) {
     final SpecMilestone milestone = atSlot(slot).getMilestone();
     final Optional<SpecMilestone> previousMilestone = SpecMilestone.getPreviousMilestone(milestone);
     if (previousMilestone.isEmpty()) {

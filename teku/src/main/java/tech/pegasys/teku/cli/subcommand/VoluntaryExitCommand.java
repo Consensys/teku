@@ -288,17 +288,6 @@ public class VoluntaryExitCommand implements Runnable {
               "The specified epoch %s is greater than current epoch %s, cannot continue.",
               epoch, maybeEpoch.get()));
       System.exit(1);
-    } else if (maybeEpoch.isPresent()
-        && spec.computeMinimumViableEpoch(spec.computeStartSlotAtEpoch(maybeEpoch.get()))
-            .isGreaterThan(epoch)) {
-      SUB_COMMAND_LOG.error(
-          String.format(
-              "The specified epoch %s (%s) is on a different milestone to the chains current epoch %s (%s), cannot continue.",
-              epoch,
-              spec.atEpoch(epoch).getMilestone(),
-              maybeEpoch.get(),
-              spec.atEpoch(maybeEpoch.get()).getMilestone()));
-      System.exit(1);
     }
   }
 
