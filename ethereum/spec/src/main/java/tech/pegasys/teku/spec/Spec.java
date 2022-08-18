@@ -754,15 +754,13 @@ public class Spec {
 
   public UInt64 computeMinimumViableEpoch(final UInt64 slot) {
     final SpecMilestone milestone = atSlot(slot).getMilestone();
-    if (milestone == SpecMilestone.PHASE0 || milestone == SpecMilestone.ALTAIR) {
+    final Optional<SpecMilestone> previousMilestone = SpecMilestone.getPreviousMilestone(milestone);
+    if (previousMilestone.isEmpty()) {
       return UInt64.ZERO;
     }
-    // for bellatrix, we would be only allowing back to altair
-    return getForkSchedule().getForks().stream()
-        .map(Fork::getEpoch)
-        .filter(epoch -> atEpoch(epoch).getMilestone() == SpecMilestone.ALTAIR)
-        .min(UInt64::compareTo)
-        .orElse(UInt64.ZERO);
+    final Optional<Fork> fork = forkSchedule.getFork(previousMilestone.get());
+
+    return fork.map(Fork::getEpoch).orElse(UInt64.ZERO);
   }
 
   // Private helpers
