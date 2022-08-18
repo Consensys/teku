@@ -248,7 +248,7 @@ jobs:
 
   unitTests:
     parallelism: 2
-    executor: medium_plus_executor
+    executor: large_executor
     steps:
       - prepare
       - attach_workspace:
@@ -270,6 +270,8 @@ jobs:
               echo "Failed to determine correct distribution of tests across nodes"
               exit 1
             fi
+            export JAVA_TOOL_OPTIONS="-Xmx2500m"
+            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
             ./gradlew --no-daemon --parallel test $GRADLE_ARGS
       - notify
       - capture_test_results

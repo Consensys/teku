@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 
 public class RegisteredValidatorInfo extends ExpiringInfo {
   private final SignedValidatorRegistration signedValidatorRegistration;
