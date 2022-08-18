@@ -90,6 +90,8 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      final UInt64 minimalViableEpoch = spec.computeMinimumViableEpoch(blockSlotState.getSlot());
+
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState,
@@ -101,14 +103,19 @@ public class BlockOperationSelectorFactory {
       final SszList<AttesterSlashing> attesterSlashings =
           attesterSlashingPool.getItemsForBlock(
               blockSlotState,
-              slashing -> !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
+              slashing ->
+                  !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices())
+                      && spec.computeEpochAtSlot(slashing.getAttestation1().getData().getSlot())
+                          .isGreaterThanOrEqualTo(minimalViableEpoch),
               slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
               slashing ->
-                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
+                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex())
+                      && spec.computeEpochAtSlot(slashing.getHeader1().getMessage().getSlot())
+                          .isGreaterThanOrEqualTo(minimalViableEpoch),
               slashing ->
                   exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
@@ -116,7 +123,9 @@ public class BlockOperationSelectorFactory {
       final SszList<SignedVoluntaryExit> voluntaryExits =
           voluntaryExitPool.getItemsForBlock(
               blockSlotState,
-              exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
+              exit ->
+                  !exitedValidators.contains(exit.getMessage().getValidatorIndex())
+                      && exit.getMessage().getEpoch().isGreaterThanOrEqualTo(minimalViableEpoch),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder

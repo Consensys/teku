@@ -232,7 +232,7 @@ public class VoluntaryExitCommand implements Runnable {
     spec = getSpec(apiClient);
 
     validateOrDefaultEpoch();
-    fork = spec.getForkSchedule().getFork(epoch);
+    fork = spec.fork(epoch);
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
@@ -287,6 +287,17 @@ public class VoluntaryExitCommand implements Runnable {
           String.format(
               "The specified epoch %s is greater than current epoch %s, cannot continue.",
               epoch, maybeEpoch.get()));
+      System.exit(1);
+    } else if (maybeEpoch.isPresent()
+        && spec.computeMinimumViableEpoch(spec.computeStartSlotAtEpoch(maybeEpoch.get()))
+            .isGreaterThan(epoch)) {
+      SUB_COMMAND_LOG.error(
+          String.format(
+              "The specified epoch %s (%s) is on a different milestone to the chains current epoch %s (%s), cannot continue.",
+              epoch,
+              spec.atEpoch(epoch).getMilestone(),
+              maybeEpoch.get(),
+              spec.atEpoch(maybeEpoch.get()).getMilestone()));
       System.exit(1);
     }
   }

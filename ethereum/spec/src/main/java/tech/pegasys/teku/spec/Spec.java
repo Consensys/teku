@@ -752,6 +752,19 @@ public class Spec {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
   }
 
+  public UInt64 computeMinimumViableEpoch(final UInt64 slot) {
+    final SpecMilestone milestone = atSlot(slot).getMilestone();
+    if (milestone == SpecMilestone.PHASE0 || milestone == SpecMilestone.ALTAIR) {
+      return UInt64.ZERO;
+    }
+    // for bellatrix, we would be only allowing back to altair
+    return getForkSchedule().getForks().stream()
+        .map(Fork::getEpoch)
+        .filter(epoch -> atEpoch(epoch).getMilestone() == SpecMilestone.ALTAIR)
+        .min(UInt64::compareTo)
+        .orElse(UInt64.ZERO);
+  }
+
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());
