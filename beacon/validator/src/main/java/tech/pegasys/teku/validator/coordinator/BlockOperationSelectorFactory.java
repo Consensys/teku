@@ -90,9 +90,9 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      final UInt64 previousForkEpochStart =
+      final UInt64 firstEpochOfPreviousFork =
           spec.computePreviousForkEpochStart(blockSlotState.getSlot());
-      final UInt64 firstSlotOfPreviousFork = spec.computeStartSlotAtEpoch(previousForkEpochStart);
+      final UInt64 firstSlotOfPreviousFork = spec.computeStartSlotAtEpoch(firstEpochOfPreviousFork);
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
@@ -135,7 +135,7 @@ public class BlockOperationSelectorFactory {
                   !exitedValidators.contains(exit.getMessage().getValidatorIndex())
                       && exit.getMessage()
                           .getEpoch()
-                          .isGreaterThanOrEqualTo(previousForkEpochStart),
+                          .isGreaterThanOrEqualTo(firstEpochOfPreviousFork),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
