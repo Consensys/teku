@@ -99,13 +99,13 @@ public class ValidatorPerformanceMetrics {
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "expected_blocks",
             "Number of expected blocks");
-    numberOfIncludedBlocks =
+    numberOfProducedBlocks =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "produced_blocks",
             "Number of produced blocks");
-    numberOfProducedBlocks =
+    numberOfIncludedBlocks =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
