@@ -58,8 +58,7 @@ class ValidatorRegistratorTest {
   private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
   private final ProposerConfig proposerConfig = mock(ProposerConfig.class);
   private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
-  private final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider =
-      mock(ValidatorRegistrationPropertiesProvider.class);
+  private final FeeRecipientProvider feeRecipientProvider = mock(FeeRecipientProvider.class);
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender =
       mock(ValidatorRegistrationBatchSender.class);
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
@@ -95,7 +94,7 @@ class ValidatorRegistratorTest {
             ownedValidators,
             proposerConfigProvider,
             validatorConfig,
-            validatorRegistrationPropertiesProvider,
+            feeRecipientProvider,
             validatorRegistrationBatchSender);
     when(validatorRegistrationBatchSender.sendInBatches(any())).thenReturn(SafeFuture.COMPLETE);
 
@@ -105,9 +104,8 @@ class ValidatorRegistratorTest {
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
     when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
 
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
-        .thenReturn(Optional.of(eth1Address));
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
+    when(feeRecipientProvider.getFeeRecipient(any())).thenReturn(Optional.of(eth1Address));
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
@@ -117,7 +115,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
 
     runRegistrationFlowForSlot(UInt64.ONE);
 
@@ -305,7 +303,7 @@ class ValidatorRegistratorTest {
     final UInt64 otherTimestamp = dataStructureUtil.randomUInt64();
 
     // fee recipient changed for validator2
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
+    when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.of(otherEth1Address));
 
     // gas limit changed for validator3
@@ -367,7 +365,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterNewlyAddedValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(feeRecipientProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
 
     validatorRegistrator.onValidatorsAdded();
 
@@ -460,7 +458,7 @@ class ValidatorRegistratorTest {
     setActiveValidators(validator1, validator2);
 
     // no fee recipient provided for validator2
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
+    when(feeRecipientProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.empty());
 
     runRegistrationFlowForSlot(UInt64.ZERO);
