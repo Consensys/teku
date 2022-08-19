@@ -42,8 +42,8 @@ public class ValidatorPerformanceMetricsTest {
   private static final int CORRECT_HEAD_BLOCK_COUNT = 14;
 
   private static final int NUMBER_OF_EXPECTED_BLOCKS = 51;
-  private static final int NUMBER_OF_PRODUCED_BLOCKS = 5;
   private static final int NUMBER_OF_INCLUDED_BLOCKS = 3;
+  private static final int NUMBER_OF_PRODUCED_BLOCKS = 5;
 
   private final AttestationPerformance attestationPerformance =
       new AttestationPerformance(
@@ -59,7 +59,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final BlockPerformance blockPerformance =
       new BlockPerformance(
-          EPOCH, NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
+          EPOCH, NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS);
 
   private final SyncCommitteePerformance syncCommitteePerformance =
       new SyncCommitteePerformance(
