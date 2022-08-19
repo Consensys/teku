@@ -175,7 +175,7 @@
     }
   },
   "delete" : {
-    "tags" : [ "Fee Recipient" ],
+    "tags" : [ "Gas Limit" ],
     "operationId" : "DeleteGasLimit",
     "summary" : "Delete configured gas limit",
     "description" : "Delete a configured gas limit for the specified public key.",
