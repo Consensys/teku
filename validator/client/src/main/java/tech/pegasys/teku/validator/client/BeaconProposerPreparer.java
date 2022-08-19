@@ -184,7 +184,7 @@ public class BeaconProposerPreparer
     if (maybeEth1Address.isPresent()) {
       throw new SetFeeRecipientException("Cannot update fee recipient via api.");
     }
-    runtimeProposerConfig.addOrUpdateFeeRecipient(publicKey, eth1Address);
+    runtimeProposerConfig.updateFeeRecipient(publicKey, eth1Address);
   }
 
   public void setGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit)
@@ -198,7 +198,7 @@ public class BeaconProposerPreparer
     if (maybeGasLimit.isPresent()) {
       throw new SetGasLimitException("Cannot update gas limit via api.");
     }
-    runtimeProposerConfig.addOrUpdateGasLimit(publicKey, gasLimit);
+    runtimeProposerConfig.updateGasLimit(publicKey, gasLimit);
   }
 
   public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {

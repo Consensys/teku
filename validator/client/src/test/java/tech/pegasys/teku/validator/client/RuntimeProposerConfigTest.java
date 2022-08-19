@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,42 +44,42 @@ class RuntimeProposerConfigTest {
   @Test
   void shouldAddFeeRecipientEntries() {
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).isEmpty();
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
+    proposerConfig.updateFeeRecipient(pubkey, address);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).contains(address);
   }
 
   @Test
   void shouldAddGasLimitEntries() {
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).isEmpty();
-    proposerConfig.addOrUpdateGasLimit(pubkey, gasLimit);
+    proposerConfig.updateGasLimit(pubkey, gasLimit);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).contains(gasLimit);
   }
 
   @Test
   void shouldUpdateFeeRecipientEntries() {
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
+    proposerConfig.updateFeeRecipient(pubkey, address);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).contains(address);
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address2);
+    proposerConfig.updateFeeRecipient(pubkey, address2);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).contains(address2);
   }
 
   @Test
   void shouldUpdateGasLimitEntries() {
-    proposerConfig.addOrUpdateGasLimit(pubkey, gasLimit);
+    proposerConfig.updateGasLimit(pubkey, gasLimit);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).contains(gasLimit);
-    proposerConfig.addOrUpdateGasLimit(pubkey, gasLimit2);
+    proposerConfig.updateGasLimit(pubkey, gasLimit2);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).contains(gasLimit2);
   }
 
   @Test
   void shouldDeleteFeeRecipientEntries() {
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
+    proposerConfig.updateFeeRecipient(pubkey, address);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).contains(address);
     proposerConfig.deleteFeeRecipient(pubkey);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey)).isEmpty();
     proposerConfig.deleteFeeRecipient(pubkey2);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).isEmpty();
-    proposerConfig.addOrUpdateGasLimit(pubkey2, gasLimit2);
+    proposerConfig.updateGasLimit(pubkey2, gasLimit2);
     proposerConfig.deleteFeeRecipient(pubkey2);
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).isEmpty();
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).contains(gasLimit2);
@@ -86,26 +87,50 @@ class RuntimeProposerConfigTest {
 
   @Test
   void shouldDeleteGasLimitEntries() {
-    proposerConfig.addOrUpdateGasLimit(pubkey, gasLimit);
+    proposerConfig.updateGasLimit(pubkey, gasLimit);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).contains(gasLimit);
     proposerConfig.deleteGasLimit(pubkey);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey)).isEmpty();
     proposerConfig.deleteGasLimit(pubkey2);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).isEmpty();
-    proposerConfig.addOrUpdateFeeRecipient(pubkey2, address2);
+    proposerConfig.updateFeeRecipient(pubkey2, address2);
     proposerConfig.deleteGasLimit(pubkey2);
     assertThat(proposerConfig.getGasLimitForPubKey(pubkey2)).isEmpty();
     assertThat(proposerConfig.getEth1AddressForPubKey(pubkey2)).contains(address2);
   }
 
   @Test
+  void shouldDeleteEntryFromConfigFile(@TempDir final Path tempDir) throws IOException {
+    final Path testData = tempDir.resolve("test");
+    proposerConfig = new RuntimeProposerConfig(Optional.of(testData));
+    proposerConfig.updateFeeRecipient(pubkey, address);
+    proposerConfig.updateGasLimit(pubkey, gasLimit);
+    final String initialData = Files.readString(testData);
+    assertThat(initialData)
+        .isEqualTo(
+            "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}", pubkey, address, gasLimit);
+    proposerConfig.deleteFeeRecipient(pubkey);
+    proposerConfig.deleteGasLimit(pubkey);
+    final String data = Files.readString(testData);
+    assertThat(data).isEqualTo("{}");
+  }
+
+  @Test
+  void shouldFailIfSourceFileIsInvalid(@TempDir final Path tempDir) throws IOException {
+    final Path testData = tempDir.resolve("test");
+    Files.writeString(testData, "thisIsInvalidJson");
+    assertThatThrownBy(() -> new RuntimeProposerConfig(Optional.of(testData)))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   void shouldSave(@TempDir final Path tempDir) throws IOException {
     final Path testData = tempDir.resolve("test");
     proposerConfig = new RuntimeProposerConfig(Optional.of(testData));
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
-    proposerConfig.addOrUpdateGasLimit(pubkey, gasLimit);
-    proposerConfig.addOrUpdateFeeRecipient(pubkey2, address2);
-    proposerConfig.addOrUpdateGasLimit(pubkey2, gasLimit2);
+    proposerConfig.updateFeeRecipient(pubkey, address);
+    proposerConfig.updateGasLimit(pubkey, gasLimit);
+    proposerConfig.updateFeeRecipient(pubkey2, address2);
+    proposerConfig.updateGasLimit(pubkey2, gasLimit2);
     final String data = Files.readString(testData);
     assertThat(data)
         .isEqualTo(
@@ -119,8 +144,8 @@ class RuntimeProposerConfigTest {
       throws IOException {
     final Path testData = tempDir.resolve("test");
     proposerConfig = new RuntimeProposerConfig(Optional.of(testData));
-    proposerConfig.addOrUpdateFeeRecipient(pubkey, address);
-    proposerConfig.addOrUpdateGasLimit(pubkey2, gasLimit2);
+    proposerConfig.updateFeeRecipient(pubkey, address);
+    proposerConfig.updateGasLimit(pubkey2, gasLimit2);
     final String data = Files.readString(testData);
     assertThat(data)
         .isEqualTo(
