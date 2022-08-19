@@ -18,7 +18,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
     finalized.add(dataStructureUtil.randomBytes32());
     depositTreeSnapshot =
         new DepositTreeSnapshot(
-            DEPOSIT_TREE_SNAPSHOT_SCHEMA,
             finalized,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomLong(),

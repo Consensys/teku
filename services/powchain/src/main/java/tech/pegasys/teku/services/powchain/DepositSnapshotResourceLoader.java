@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.io.FileNotFoundException;
@@ -55,7 +54,6 @@ public class DepositSnapshotResourceLoader {
     return DepositTreeSnapshot.fromBytes(
         ResourceLoader.urlOrFile("application/octet-stream")
             .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Not found")),
-        DEPOSIT_TREE_SNAPSHOT_SCHEMA);
+            .orElseThrow(() -> new FileNotFoundException("Not found")));
   }
 }

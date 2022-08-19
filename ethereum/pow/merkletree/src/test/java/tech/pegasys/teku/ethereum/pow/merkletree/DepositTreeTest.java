@@ -16,7 +16,7 @@ package tech.pegasys.teku.ethereum.pow.merkletree;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.ethereum.pow.merkletree.DepositTree.DEPOSIT_TREE_SNAPSHOT_SCHEMA;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.List;
@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -102,7 +101,7 @@ class DepositTreeTest {
                   testCase.depositDataRoot,
                   Deposit.SSZ_SCHEMA.getProofSchema().of(proof),
                   // +1 because the spec doesn't count the root node as part of depth
-                  NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+                  DEPOSIT_CONTRACT_TREE_DEPTH + 1,
                   i,
                   testCase.getEth1Data().getDepositRoot());
       assertThat(isValid)
@@ -145,7 +144,6 @@ class DepositTreeTest {
 
     final DepositTreeSnapshot brokenSnapshot =
         new DepositTreeSnapshot(
-            DEPOSIT_TREE_SNAPSHOT_SCHEMA,
             snapshot.get().getFinalized(),
             dataStructureUtil.randomBytes32(), // change root
             snapshot.get().getDepositCount(),
@@ -163,8 +161,7 @@ class DepositTreeTest {
   }
 
   private static final DeserializableTypeDefinition<DepositTreeSnapshot>
-      DEPOSIT_TREE_SNAPSHOT_TYPE =
-          DepositTreeSnapshot.getJsonTypeDefinition(DEPOSIT_TREE_SNAPSHOT_SCHEMA);
+      DEPOSIT_TREE_SNAPSHOT_TYPE = DepositTreeSnapshot.getJsonTypeDefinition();
 
   private static final DeserializableTypeDefinition<DepositTestCase> TEST_CASE_TYPE =
       DeserializableTypeDefinition.object(DepositTestCase.class)

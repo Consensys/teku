@@ -16,7 +16,7 @@ package tech.pegasys.teku.ethereum.pow.merkletree;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
 
 import java.nio.ByteOrder;
@@ -26,14 +26,11 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshotSchema;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 
 public class DepositTree {
-  public static final DepositTreeSnapshotSchema DEPOSIT_TREE_SNAPSHOT_SCHEMA =
-      new DepositTreeSnapshotSchema(DEPOSIT_CONTRACT_TREE_DEPTH);
   private MerkleTree tree;
   private long totalDepositCount;
   private long finalizedDepositCount;
@@ -71,7 +68,6 @@ public class DepositTree {
     final long depositCount = tree.getFinalized(finalized);
     return Optional.of(
         new DepositTreeSnapshot(
-            DEPOSIT_TREE_SNAPSHOT_SCHEMA,
             finalized,
             calculateDepositRoot(finalized, depositCount),
             depositCount,
