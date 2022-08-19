@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -40,10 +40,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -52,8 +52,7 @@ class ExecutionLayerManagerImplTest {
   private final ExecutionEngineClient executionEngineClient =
       Mockito.mock(ExecutionEngineClient.class);
 
-  private final ExecutionBuilderClient executionBuilderClient =
-      Mockito.mock(ExecutionBuilderClient.class);
+  private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
 
@@ -74,7 +73,7 @@ class ExecutionLayerManagerImplTest {
     executionLayerManager.onSlot(UInt64.ONE);
 
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
     verifyNoInteractions(eventLogger);
   }
 
@@ -97,7 +96,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).executionBuilderIsOffline("oops");
+    verify(eventLogger).builderIsOffline("oops");
   }
 
   @Test
@@ -108,7 +107,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).executionBuilderIsOffline("oops");
+    verify(eventLogger).builderIsOffline("oops");
   }
 
   @Test
@@ -128,14 +127,14 @@ class ExecutionLayerManagerImplTest {
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).executionBuilderIsOffline("oops");
+    verify(eventLogger).builderIsOffline("oops");
 
     // Given builder status is back to being ok
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
-    verify(eventLogger).executionBuilderIsBackOnline();
+    verify(eventLogger).builderIsBackOnline();
   }
 
   @Test
@@ -150,7 +149,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no calls to builder
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
 
     verifySourceCounter(Source.LOCAL_EL, FallbackReason.NONE);
   }
@@ -186,7 +185,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
@@ -228,7 +227,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
@@ -272,7 +271,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
@@ -302,7 +301,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
     verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -313,7 +312,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_NOT_AVAILABLE);
@@ -357,7 +356,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(
@@ -389,7 +388,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
     verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -400,7 +399,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.TRANSITION_NOT_FINALIZED);
@@ -431,7 +430,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(header);
 
     // we expect only local engine have been called
-    verifyNoInteractions(executionBuilderClient);
+    verifyNoInteractions(builderClient);
     verifyEngineCalled(executionPayloadContext);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -442,7 +441,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
-    verifyNoMoreInteractions(executionBuilderClient);
+    verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionEngineClient);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.VALIDATOR_NOT_REGISTERED);
@@ -484,7 +483,7 @@ class ExecutionLayerManagerImplTest {
         .isCompletedWithValue(payload);
 
     // we expect both builder and local engine have been called
-    verify(executionBuilderClient).getPayload(signedBlindedBeaconBlock);
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -501,7 +500,7 @@ class ExecutionLayerManagerImplTest {
               }
               return SafeFuture.completedFuture(new Response<>(Optional.of(signedBuilderBid)));
             })
-        .when(executionBuilderClient)
+        .when(builderClient)
         .getHeader(
             slot,
             executionPayloadContext
@@ -518,7 +517,7 @@ class ExecutionLayerManagerImplTest {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-    when(executionBuilderClient.getPayload(signedBlindedBeaconBlock))
+    when(builderClient.getPayload(signedBlindedBeaconBlock))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
 
     return payload;
@@ -528,7 +527,7 @@ class ExecutionLayerManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    when(executionBuilderClient.getHeader(
+    when(builderClient.getHeader(
             slot,
             executionPayloadContext
                 .getPayloadBuildingAttributes()
@@ -556,7 +555,7 @@ class ExecutionLayerManagerImplTest {
     return ExecutionLayerManagerImpl.create(
         eventLogger,
         executionEngineClient,
-        builderEnabled ? Optional.of(executionBuilderClient) : Optional.empty(),
+        builderEnabled ? Optional.of(builderClient) : Optional.empty(),
         spec,
         stubMetricsSystem,
         builderValidatorEnabled
@@ -569,7 +568,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {
-    when(executionBuilderClient.status()).thenReturn(builderClientResponse);
+    when(builderClient.status()).thenReturn(builderClientResponse);
     // trigger update of the builder status
     executionLayerManager.onSlot(slot);
   }
@@ -580,19 +579,19 @@ class ExecutionLayerManagerImplTest {
 
   private void setBuilderOffline(final UInt64 slot) {
     updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
-    reset(executionBuilderClient);
+    reset(builderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), UInt64.ONE);
-    reset(executionBuilderClient);
+    reset(builderClient);
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
   }
 
   private void verifyBuilderCalled(
       final UInt64 slot, final ExecutionPayloadContext executionPayloadContext) {
-    verify(executionBuilderClient)
+    verify(builderClient)
         .getHeader(
             slot,
             executionPayloadContext

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.enumOf;
@@ -28,6 +29,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
@@ -216,4 +219,15 @@ public class ValidatorTypes {
               .name("DeleteRemoteKeysResponse")
               .withField("data", listOf(DELETE_KEY_RESULT), DeleteRemoteKeysResponse::getData)
               .build();
+
+  public static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
+      new ParameterMetadata<>(
+          PUBKEY,
+          new StringBasedPrimitiveTypeDefinition.StringTypeBuilder<BLSPublicKey>()
+              .formatter(value -> value.toBytesCompressed().toHexString())
+              .parser(value -> BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(value)))
+              .pattern("^0x[a-fA-F0-9]{96}$")
+              .example(
+                  "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
+              .build());
 }

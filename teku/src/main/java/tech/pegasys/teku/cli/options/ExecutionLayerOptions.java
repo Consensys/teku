@@ -52,7 +52,7 @@ public class ExecutionLayerOptions {
       paramLabel = "<NETWORK>",
       description = "URL for an external Builder node (optional).",
       arity = "1")
-  private String executionBuilderEndpoint = null;
+  private String builderEndpoint = null;
 
   public void configure(final Builder builder) {
     builder.executionLayer(
@@ -60,7 +60,7 @@ public class ExecutionLayerOptions {
             b.engineEndpoint(executionEngineEndpoint)
                 .engineVersion(executionEngineVersion)
                 .engineJwtSecretFile(engineJwtSecretFile)
-                .builderEndpoint(executionBuilderEndpoint));
+                .builderEndpoint(builderEndpoint));
     depositOptions.configure(builder);
   }
 }

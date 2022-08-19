@@ -232,7 +232,7 @@ public class VoluntaryExitCommand implements Runnable {
     spec = getSpec(apiClient);
 
     validateOrDefaultEpoch();
-    fork = spec.getForkSchedule().getFork(epoch);
+    fork = spec.fork(epoch);
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();

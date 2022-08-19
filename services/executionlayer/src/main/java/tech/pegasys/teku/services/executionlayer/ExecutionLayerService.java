@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
@@ -115,7 +115,7 @@ public class ExecutionLayerService extends Service {
               engineWeb3jClientProvider.getWeb3JClient(),
               timeProvider,
               metricsSystem);
-      final Optional<ExecutionBuilderClient> executionBuilderClient =
+      final Optional<BuilderClient> builderClient =
           builderRestClientProvider.map(
               restClientProvider ->
                   ExecutionLayerManagerImpl.createBuilderClient(
@@ -128,7 +128,7 @@ public class ExecutionLayerService extends Service {
           ExecutionLayerManagerImpl.create(
               EVENT_LOG,
               executionEngineClient,
-              executionBuilderClient,
+              builderClient,
               config.getSpec(),
               metricsSystem,
               new BuilderBidValidatorImpl(EVENT_LOG));
