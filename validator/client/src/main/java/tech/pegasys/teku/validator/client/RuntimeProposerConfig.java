@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
 
+import com.google.common.base.Preconditions;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -64,48 +65,83 @@ public class RuntimeProposerConfig {
 
   public RuntimeProposerConfig(final Optional<Path> storagePath) {
     this.storagePath = storagePath;
-    storagePath.ifPresent(this::read);
+    storagePath.ifPresent(
+        path -> {
+          if (path.toFile().exists()) {
+            try (InputStream inputStream = new FileInputStream(path.toFile())) {
+              proposerConfigMap.putAll(JsonUtil.parse(inputStream, CONFIG_MAP_TYPE));
+            } catch (IOException e) {
+              throw new IllegalStateException("Failed to parse file: " + path.toAbsolutePath(), e);
+            }
+          }
+        });
   }
 
-  public Optional<Eth1Address> getEth1AddressForPubKey(final BLSPublicKey pubKey) {
-    final Config config = proposerConfigMap.get(pubKey);
-    if (config == null) {
-      return Optional.empty();
-    }
-    return config.getFeeRecipient();
+  public Optional<Eth1Address> getEth1AddressForPubKey(final BLSPublicKey publicKey) {
+    return getProposerConfig(publicKey).flatMap(Config::getFeeRecipient);
   }
 
   public Optional<UInt64> getGasLimitForPubKey(final BLSPublicKey publicKey) {
-    final Optional<Config> maybeConfig = Optional.ofNullable(proposerConfigMap.get(publicKey));
-    return maybeConfig.flatMap(Config::getGasLimit);
+    return getProposerConfig(publicKey).flatMap(Config::getGasLimit);
   }
 
-  public synchronized void addOrUpdateFeeRecipient(
+  synchronized void updateFeeRecipient(
       final BLSPublicKey publicKey, final Eth1Address eth1Address) {
-    proposerConfigMap.put(
-        publicKey, new Config(Optional.ofNullable(eth1Address), getGasLimitForPubKey(publicKey)));
+    Preconditions.checkNotNull(eth1Address, "should delete rather than update to null");
+    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    if (currentConfig.isEmpty()) {
+      proposerConfigMap.put(publicKey, new Config(Optional.of(eth1Address), Optional.empty()));
+    } else {
+      ConfigBuilder configBuilder = new ConfigBuilder(currentConfig.get());
+      configBuilder.feeRecipient(Optional.of(eth1Address));
+      updateEntry(publicKey, configBuilder.build());
+    }
     storagePath.ifPresent(this::save);
   }
 
-  public synchronized void addOrUpdateGasLimit(
-      final BLSPublicKey publicKey, final UInt64 gasLimit) {
-    proposerConfigMap.put(
-        publicKey, new Config(getEth1AddressForPubKey(publicKey), Optional.ofNullable(gasLimit)));
+  synchronized void updateGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit) {
+    Preconditions.checkNotNull(gasLimit, "should delete rather than update to null");
+    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    if (currentConfig.isEmpty()) {
+      proposerConfigMap.put(publicKey, new Config(Optional.empty(), Optional.of(gasLimit)));
+    } else {
+      ConfigBuilder configBuilder = new ConfigBuilder(currentConfig.get());
+      configBuilder.gasLimit(Optional.of(gasLimit));
+      updateEntry(publicKey, configBuilder.build());
+    }
     storagePath.ifPresent(this::save);
   }
 
-  public synchronized void deleteFeeRecipient(final BLSPublicKey publicKey) {
-    if (proposerConfigMap.containsKey(publicKey)) {
-      addOrUpdateFeeRecipient(publicKey, null);
+  private synchronized void updateEntry(final BLSPublicKey publicKey, final Config config) {
+    if (config.isEmpty()) {
+      proposerConfigMap.remove(publicKey);
+    } else {
+      proposerConfigMap.put(publicKey, config);
+    }
+  }
+
+  synchronized void deleteFeeRecipient(final BLSPublicKey publicKey) {
+    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    if (currentConfig.isPresent()) {
+      ConfigBuilder builder = new ConfigBuilder(currentConfig.get());
+      builder.feeRecipient(Optional.empty());
+      updateEntry(publicKey, builder.build());
       storagePath.ifPresent(this::save);
     }
   }
 
-  public synchronized void deleteGasLimit(final BLSPublicKey publicKey) {
-    if (proposerConfigMap.containsKey(publicKey)) {
-      addOrUpdateGasLimit(publicKey, null);
+  synchronized void deleteGasLimit(final BLSPublicKey publicKey) {
+    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    if (currentConfig.isPresent()) {
+      ConfigBuilder builder = new ConfigBuilder(currentConfig.get());
+      builder.gasLimit(Optional.empty());
+      updateEntry(publicKey, builder.build());
       storagePath.ifPresent(this::save);
     }
+  }
+
+  private Optional<Config> getProposerConfig(final BLSPublicKey publicKey) {
+    return Optional.ofNullable(proposerConfigMap.get(publicKey));
   }
 
   private void save(final Path path) {
@@ -113,20 +149,6 @@ public class RuntimeProposerConfig {
       JsonUtil.serializeToBytes(proposerConfigMap, CONFIG_MAP_TYPE, writer);
     } catch (IOException e) {
       LOG.error("Failed to store file: " + path.toAbsolutePath(), e);
-    }
-  }
-
-  private synchronized void read(final Path path) {
-    if (!path.toFile().exists()) {
-      return;
-    }
-    if (!proposerConfigMap.isEmpty()) {
-      proposerConfigMap.clear();
-    }
-    try (InputStream inputStream = new FileInputStream(path.toFile())) {
-      proposerConfigMap.putAll(JsonUtil.parse(inputStream, CONFIG_MAP_TYPE));
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to parse file: " + path.toAbsolutePath(), e);
     }
   }
 
@@ -146,13 +168,22 @@ public class RuntimeProposerConfig {
     public Optional<UInt64> getGasLimit() {
       return gasLimit;
     }
+
+    public boolean isEmpty() {
+      return feeRecipient.isEmpty() && gasLimit.isEmpty();
+    }
   }
 
   static class ConfigBuilder {
-    private Optional<Eth1Address> feeRecipient;
-    private Optional<UInt64> gasLimit;
+    private Optional<Eth1Address> feeRecipient = Optional.empty();
+    private Optional<UInt64> gasLimit = Optional.empty();
 
     public ConfigBuilder() {}
+
+    public ConfigBuilder(final Config currentConfig) {
+      feeRecipient = currentConfig.getFeeRecipient();
+      gasLimit = currentConfig.getGasLimit();
+    }
 
     public ConfigBuilder feeRecipient(final Optional<Eth1Address> feeRecipient) {
       this.feeRecipient = feeRecipient;

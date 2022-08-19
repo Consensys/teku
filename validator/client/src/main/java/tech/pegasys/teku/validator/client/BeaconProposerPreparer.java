@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.validator.SetGasLimitException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
@@ -163,7 +164,21 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
       throw new SetFeeRecipientException(
           "Validator public key has been configured in validators-proposer-config file - cannot update via api.");
     }
-    runtimeProposerConfig.addOrUpdateFeeRecipient(publicKey, eth1Address);
+    runtimeProposerConfig.updateFeeRecipient(publicKey, eth1Address);
+  }
+
+  public void setGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit)
+      throws SetFeeRecipientException {
+    if (validatorIndexCannotBeResolved(publicKey)) {
+      throw new SetGasLimitException(
+          "Validator public key not found when attempting to set gas limit.");
+    }
+    Optional<UInt64> maybeGasLimit =
+        maybeProposerConfig.flatMap(config -> getGasLimitFromProposerConfig(config, publicKey));
+    if (maybeGasLimit.isPresent()) {
+      throw new SetGasLimitException("Cannot update gas limit via api.");
+    }
+    runtimeProposerConfig.updateGasLimit(publicKey, gasLimit);
   }
 
   public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {
@@ -227,6 +242,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
     return config.getConfigForPubKey(publicKey).flatMap(Config::getFeeRecipient);
+  }
+
+  private Optional<UInt64> getGasLimitFromProposerConfig(
+      final ProposerConfig config, final BLSPublicKey publicKey) {
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
   }
 
   private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
