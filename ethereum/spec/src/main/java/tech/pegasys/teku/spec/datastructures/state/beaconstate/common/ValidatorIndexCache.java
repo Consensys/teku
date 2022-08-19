@@ -59,11 +59,11 @@ public class ValidatorIndexCache {
           validatorIndex.filter(index -> index < state.getValidators().size());
       if (integer.isEmpty()) {
         LOG.info(
-            "Empty in if, state {}, publicKey {}, lastIndexSnapshot {}, validatorIndex {}",
-            state,
+            "Empty in if, publicKey {}, lastIndexSnapshot {}, validatorIndex {}, thread {}",
             publicKey,
             lastIndexSnapshot,
-            validatorIndex);
+            validatorIndex,
+            Thread.currentThread().getName());
       }
       return integer;
     }
@@ -72,11 +72,11 @@ public class ValidatorIndexCache {
         findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
     if (indexFromState.isEmpty()) {
       LOG.info(
-          "Empty, state {}, publicKey {}, lastIndexSnapshot {}, validatorIndices {}",
-          state,
+          "Empty, publicKey {}, lastIndexSnapshot {}, validatorIndices {}, thread {}",
           publicKey,
           lastIndexSnapshot,
-          validatorIndices);
+          validatorIndices,
+          Thread.currentThread().getName());
     }
     return indexFromState;
   }
@@ -87,7 +87,7 @@ public class ValidatorIndexCache {
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      LOG.info("Invalidate {}: {}", pubKey, i);
+      LOG.info("Invalidate1 {}: {}, thread {}", pubKey, i, Thread.currentThread().getName());
       validatorIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         updateLastIndex(i);
@@ -104,7 +104,8 @@ public class ValidatorIndexCache {
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    LOG.info("Invalidate {}: {}", pubKey, updatedIndex);
+    LOG.info(
+        "Invalidate2 {}: {}, thread {}", pubKey, updatedIndex, Thread.currentThread().getName());
     validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
