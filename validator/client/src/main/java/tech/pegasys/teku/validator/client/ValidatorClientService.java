@@ -165,7 +165,6 @@ public class ValidatorClientService extends Service {
                   Optional.empty(),
                   proposerConfigProvider.get(),
                   validatorConfig.getProposerDefaultFeeRecipient(),
-                  validatorConfig.getBuilderRegistrationDefaultGasLimit(),
                   config.getSpec(),
                   Optional.of(
                       ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
