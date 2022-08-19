@@ -58,6 +58,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -987,6 +988,21 @@ class ValidatorApiHandlerTest {
         .hasSize(2)
         .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
         .doesNotContain(exitedUnslashedValidatorKey, exitedSlashedValidatorKey);
+  }
+
+  @Test
+  void registerValidators_shouldReportErrorIfCannotRetrieveValidatorStatuses() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(4);
+
+    when(chainDataProvider.getStateValidators(eq("head"), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWithMessage(
+            "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
