@@ -17,6 +17,7 @@ import com.google.common.collect.Maps;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -111,19 +112,14 @@ public class Eth1DataCache {
   }
 
   public Eth1Data getEth1Vote(BeaconState state) {
-    NavigableMap<UInt64, Eth1DataAndHeight> votesToConsider =
+    NavigableMap<UInt64, Eth1Data> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
-    final Set<Eth1Data> validBlocks =
-        votesToConsider.values().stream()
-            .map(Eth1DataAndHeight::getEth1Data)
-            .collect(Collectors.toSet());
+    final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
     final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     Eth1Data defaultVote =
-        votesToConsider.isEmpty()
-            ? state.getEth1Data()
-            : votesToConsider.lastEntry().getValue().getEth1Data();
+        votesToConsider.isEmpty() ? state.getEth1Data() : votesToConsider.lastEntry().getValue();
 
     Optional<Eth1Data> vote =
         votes.entrySet().stream()
@@ -144,11 +140,8 @@ public class Eth1DataCache {
     final Eth1Data currentEth1Data = state.getEth1Data();
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> knownBlocks =
-        getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data)
-            .values()
-            .stream()
-            .map(Eth1DataAndHeight::getEth1Data)
-            .collect(Collectors.toSet());
+        new HashSet<>(
+            getVotesToConsider(state.getSlot(), state.getGenesisTime(), currentEth1Data).values());
     Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     currentPeriodVotesMax.set(eth1VotingPeriod.getTotalSlotsInVotingPeriod(state.getSlot()));
@@ -176,25 +169,26 @@ public class Eth1DataCache {
     return votes;
   }
 
-  protected Optional<Eth1DataAndHeight> findEth1DataWithHeight(final Eth1Data eth1Data) {
+  protected Optional<Eth1DataAndHeight> getEth1DataAndHeight(final Eth1Data eth1Data) {
     return eth1ChainCache.values().stream()
-        .filter(eth1DataWithHeight -> eth1DataWithHeight.getEth1Data().equals(eth1Data))
+        .filter(eth1DataAndHeight -> eth1DataAndHeight.getEth1Data().equals(eth1Data))
         .findFirst();
   }
 
-  private NavigableMap<UInt64, Eth1DataAndHeight> getVotesToConsider(
+  private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
       final UInt64 slot, final UInt64 genesisTime, final Eth1Data dataFromState) {
+    final NavigableMap<UInt64, Eth1Data> unfiltered =
+        Maps.transformValues(
+            eth1ChainCache.subMap(
+                eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
+                true,
+                eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
+                true),
+            Eth1DataAndHeight::getEth1Data);
     return Maps.filterValues(
-        eth1ChainCache.subMap(
-            eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
-            true,
-            eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
-            true),
-        eth1DataAndHeight ->
-            eth1DataAndHeight
-                .getEth1Data()
-                .getDepositCount()
-                .isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
+        unfiltered,
+        eth1Data ->
+            eth1Data.getDepositCount().isGreaterThanOrEqualTo(dataFromState.getDepositCount()));
   }
 
   protected Eth1VotingPeriod getEth1VotingPeriod() {

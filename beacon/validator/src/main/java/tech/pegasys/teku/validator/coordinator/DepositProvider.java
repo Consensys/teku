@@ -125,7 +125,7 @@ public class DepositProvider
               >= finalizedState.getEth1Data().getDepositCount().longValue()) {
         final Optional<UInt64> heightOptional =
             eth1DataCache
-                .findEth1DataWithHeight(finalizedState.getEth1Data())
+                .getEth1DataAndHeight(finalizedState.getEth1Data())
                 .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
         if (heightOptional.isEmpty()) {
           LOG.warn("Eth1Data height not found in cache. Skipping DepositTree finalization");

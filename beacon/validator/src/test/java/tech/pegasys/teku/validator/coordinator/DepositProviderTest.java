@@ -357,7 +357,7 @@ public class DepositProviderTest {
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
     final Eth1Data eth1Data = state.getEth1Data();
-    when(eth1DataCache.findEth1DataWithHeight(eq(eth1Data)))
+    when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data)))
         .thenReturn(Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data, UInt64.valueOf(20))));
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
