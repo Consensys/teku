@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class DepositTreeSnapshotSchema {
+public class DepositTreeSnapshot {
   @JsonProperty("finalized")
   @ArraySchema(
       schema = @Schema(type = "string", example = EXAMPLE_BYTES32, pattern = PATTERN_BYTES32),
@@ -66,7 +66,7 @@ public class DepositTreeSnapshotSchema {
   public UInt64 executionBlockHeight;
 
   @JsonCreator
-  public DepositTreeSnapshotSchema(
+  public DepositTreeSnapshot(
       @JsonProperty("finalized") final List<Bytes32> finalized,
       @JsonProperty("deposit_root") final Bytes32 depositRoot,
       @JsonProperty("deposit_count") final UInt64 depositCount,
