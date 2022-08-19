@@ -1151,8 +1151,12 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator() {
+    return randomValidator(randomPublicKey());
+  }
+
+  public Validator randomValidator(final BLSPublicKey publicKey) {
     return new Validator(
-        randomPublicKeyBytes(),
+        publicKey,
         randomBytes32(),
         getMaxEffectiveBalance(),
         false,
