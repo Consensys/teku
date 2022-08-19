@@ -77,7 +77,7 @@ class Eth1VotingPeriodTest {
     // (SECONDS_PER_ETH1_BLOCK * ETH1_FOLLOW_DISTANCE) +
     // (SLOTS_PER_EPOCH * SECONDS_PER_SLOT) for voting
     // + (EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH * SECONDS_PER_SLOT) + (SLOTS_PER_EPOCH *
-    // SECONDS_PER_SLOT) * 2 for previous voting period extra
+    // SECONDS_PER_SLOT) * 2 for previous voting period plus finalization
     // So 4 + (1 * 6 * 4) + (3 * 5) + (6 * 4)  // voting
     // + (1 * 6 * 4) + (6 * 4) * 2 = 139  // previous voting period lookup
     assertThat(votingPeriod.getCacheDurationInSeconds()).isEqualTo(UInt64.valueOf(139));

@@ -39,8 +39,7 @@ public class Eth1DataCachePeriodCalculator {
     cacheDurationSeconds += ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot();
 
     // It's enough for voting, but we may need to be able to get data about candidate
-    // in the previous period for tree finalization plus 2 epochs for good finalization case. We
-    // ignore bad finalization cases because they could be of any size.
+    // in the previous period for tree finalization plus 2 epochs for finalization
     cacheDurationSeconds +=
         secondsPerEth1VotingPeriod
             + ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot() * 2;
