@@ -68,7 +68,6 @@ public class DepositStorageTest {
     database = storageSystem.database();
     eventsChannel = storageSystem.eth1EventsChannel();
 
-    storageSystem.chainUpdater().initializeGenesis();
     depositStorage = storageSystem.createDepositStorage();
   }
 
@@ -119,6 +118,27 @@ public class DepositStorageTest {
         .isEqualTo(postGenesisDeposits.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
         .hasValue(postGenesisDeposits.getLastDepositIndex().bigIntegerValue());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  void shouldBePastMinGenesisBlockWhenInitialAnchorIsKnown(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
+    // Even though we have no deposits, if we have a genesis state then we can skip finding the
+    // block that satisfies the minimum genesis time because we won't ever have to create genesis
+    storageSystem.chainUpdater().initializeGenesis();
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future).isCompleted();
+
+    assertThat(eventsChannel.getOrderedList()).isEmpty();
+    assertThat(eventsChannel.getGenesis()).isNull();
+    assertThat(future.get().getLastProcessedBlockNumber()).isEqualTo(BigInteger.valueOf(-1));
+    assertThat(future.get().getLastProcessedDepositIndex()).isEmpty();
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
