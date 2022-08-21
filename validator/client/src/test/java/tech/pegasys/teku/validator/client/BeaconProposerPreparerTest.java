@@ -59,8 +59,12 @@ public class BeaconProposerPreparerTest {
   private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
   private BeaconProposerPreparer beaconProposerPreparer;
   private Eth1Address defaultFeeRecipient;
+  private UInt64 defaultGasLimit;
   private Eth1Address defaultFeeRecipientConfig;
+  private UInt64 defaultGasLimitConfig;
   private Eth1Address validator1FeeRecipientConfig;
+
+  private UInt64 validator1GasLimitConfig;
 
   private Spec spec;
 
@@ -98,15 +102,22 @@ public class BeaconProposerPreparerTest {
             validator3.getPublicKey(), validator3Index);
 
     defaultFeeRecipient = specContext.getDataStructureUtil().randomEth1Address();
+    defaultGasLimit = specContext.getDataStructureUtil().randomUInt64();
     defaultFeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
+    defaultGasLimitConfig = specContext.getDataStructureUtil().randomUInt64();
     validator1FeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
+    validator1GasLimitConfig = specContext.getDataStructureUtil().randomUInt64();
 
     ProposerConfig proposerConfig =
         new ProposerConfig(
             Map.of(
                 validator1.getPublicKey().toBytesCompressed(),
-                new ProposerConfig.Config(validator1FeeRecipientConfig, null)),
-            new ProposerConfig.Config(defaultFeeRecipientConfig, null));
+                new ProposerConfig.Config(
+                    validator1FeeRecipientConfig,
+                    new ProposerConfig.BuilderConfig(true, validator1GasLimitConfig, null))),
+            new ProposerConfig.Config(
+                defaultFeeRecipientConfig,
+                new ProposerConfig.BuilderConfig(true, defaultGasLimitConfig, null)));
 
     beaconProposerPreparer =
         new BeaconProposerPreparer(
@@ -114,6 +125,7 @@ public class BeaconProposerPreparerTest {
             validatorIndexProvider,
             proposerConfigProvider,
             Optional.of(defaultFeeRecipient),
+            defaultGasLimit,
             spec);
 
     slotsPerEpoch = spec.getSlotsPerEpoch(UInt64.ZERO);
@@ -166,10 +178,26 @@ public class BeaconProposerPreparerTest {
             Optional.empty(),
             proposerConfigProvider,
             Optional.of(defaultFeeRecipient),
+            defaultGasLimit,
             spec,
             Optional.empty());
 
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey())).isEmpty();
+  }
+
+  @TestTemplate
+  void getGasLimit_shouldReturnEmptyIfValidatorIndexProviderMissing() {
+    beaconProposerPreparer =
+        new BeaconProposerPreparer(
+            validatorApiChannel,
+            Optional.empty(),
+            proposerConfigProvider,
+            Optional.of(defaultFeeRecipient),
+            defaultGasLimit,
+            spec,
+            Optional.empty());
+
+    assertThat(beaconProposerPreparer.getGasLimit(validator1.getPublicKey())).isEmpty();
   }
 
   @TestTemplate
@@ -179,9 +207,20 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void getGasLimit_shouldReturnDefaultFeeRecipientWhenProposerConfigMissing() {
+    assertThat(beaconProposerPreparer.getGasLimit(validator1.getPublicKey()))
+        .contains(defaultGasLimit);
+  }
+
+  @TestTemplate
   void getFeeRecipient_shouldReturnEmptyIfValidatorIndexProviderMissingPubkey() {
     assertThat(beaconProposerPreparer.getFeeRecipient(dataStructureUtil.randomPublicKey()))
         .isEmpty();
+  }
+
+  @TestTemplate
+  void getGasLimit_shouldReturnEmptyIfValidatorIndexProviderMissingPubkey() {
+    assertThat(beaconProposerPreparer.getGasLimit(dataStructureUtil.randomPublicKey())).isEmpty();
   }
 
   @TestTemplate
@@ -196,6 +235,20 @@ public class BeaconProposerPreparerTest {
 
     assertThat(beaconProposerPreparer.getFeeRecipient(validator1.getPublicKey()))
         .contains(validator1FeeRecipientConfig);
+  }
+
+  @TestTemplate
+  void getGasLimit_shouldReturnConfigurationFileValueFirst(@TempDir final Path tempDir)
+      throws IOException {
+    proposerWithRuntimeConfiguration(
+        tempDir,
+        validator1.getPublicKey(),
+        dataStructureUtil.randomEth1Address(),
+        dataStructureUtil.randomUInt64());
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+
+    assertThat(beaconProposerPreparer.getGasLimit(validator1.getPublicKey()))
+        .contains(validator1GasLimitConfig);
   }
 
   @TestTemplate
@@ -236,10 +289,28 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
+  void getGasLimit_shouldReturnRuntimeConfigIfNotPresentInConfigurationFile(
+      @TempDir final Path tempDir) throws IOException {
+    final UInt64 gasLimit = dataStructureUtil.randomUInt64();
+    proposerWithRuntimeConfiguration(
+        tempDir, validator2.getPublicKey(), dataStructureUtil.randomEth1Address(), gasLimit);
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+
+    assertThat(beaconProposerPreparer.getGasLimit(validator2.getPublicKey())).contains(gasLimit);
+  }
+
+  @TestTemplate
   void getFeeRecipient_shouldReturnConfigFileDefaultIfNotPresentInConfigOrRuntime() {
     beaconProposerPreparer.onSlot(UInt64.ONE);
     assertThat(beaconProposerPreparer.getFeeRecipient(validator2.getPublicKey()))
         .contains(defaultFeeRecipientConfig);
+  }
+
+  @TestTemplate
+  void getGasLimit_shouldReturnConfigFileDefaultIfNotPresentInConfigOrRuntime() {
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+    assertThat(beaconProposerPreparer.getGasLimit(validator2.getPublicKey()))
+        .contains(defaultGasLimitConfig);
   }
 
   @TestTemplate
@@ -250,6 +321,14 @@ public class BeaconProposerPreparerTest {
                 beaconProposerPreparer.setFeeRecipient(
                     validator1.getPublicKey(), defaultFeeRecipient))
         .isInstanceOf(SetFeeRecipientException.class);
+  }
+
+  @TestTemplate
+  void setGasLimit_shouldNotAcceptForConfiguredPubkey() {
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+    assertThatThrownBy(
+            () -> beaconProposerPreparer.setGasLimit(validator1.getPublicKey(), defaultGasLimit))
+        .isInstanceOf(SetGasLimitException.class);
   }
 
   @TestTemplate
@@ -265,6 +344,21 @@ public class BeaconProposerPreparerTest {
 
     beaconProposerPreparer.setFeeRecipient(validator2.getPublicKey(), address);
     assertThat(beaconProposerPreparer.getFeeRecipient(validator2.getPublicKey())).contains(address);
+  }
+
+  @TestTemplate
+  void setGasLimit_shouldUpdateRuntimeFeeRecipient(@TempDir final Path tempDir)
+      throws IOException, SetFeeRecipientException {
+    final UInt64 gasLimit = dataStructureUtil.randomUInt64();
+    proposerWithRuntimeConfiguration(
+        tempDir,
+        validator2.getPublicKey(),
+        dataStructureUtil.randomEth1Address(),
+        dataStructureUtil.randomUInt64());
+    beaconProposerPreparer.onSlot(UInt64.ONE);
+
+    beaconProposerPreparer.setGasLimit(validator2.getPublicKey(), gasLimit);
+    assertThat(beaconProposerPreparer.getGasLimit(validator2.getPublicKey())).contains(gasLimit);
   }
 
   @TestTemplate
@@ -350,7 +444,7 @@ public class BeaconProposerPreparerTest {
     final String data =
         String.format(
             "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}",
-            pubkey, eth1Address, gasLimit);
+            pubkey, eth1Address, gasLimit.toString());
     Files.write(recipients, data.getBytes(StandardCharsets.UTF_8));
     beaconProposerPreparer =
         new BeaconProposerPreparer(
@@ -358,6 +452,7 @@ public class BeaconProposerPreparerTest {
             Optional.of(validatorIndexProvider),
             proposerConfigProvider,
             Optional.of(defaultFeeRecipient),
+            defaultGasLimit,
             spec,
             Optional.of(tempDir.resolve("recipients")));
   }

@@ -24,6 +24,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - Ability to configure multiple beacon nodes for a single validator client using `--beacon-node-api-endpoints` CLI option
 - Primed cache for new justified checkpoints to reduce time required to run fork choice immediately after justification
 - Remain in optimistic mode when there are no viable branches in the block tree because blocks from every branch were marked INVALID during optimistic sync (https://github.com/ethereum/consensus-specs/pull/2955)
+- Added Gas Limit APIs (GET/POST/DELETE)
+- Skip finding the PoW block that first satisfies the minimum genesis time condition when the genesis state is already known. Fixes an incompatibility with Nethermind's backwards sync for historic blocks.
 
 ### Bug Fixes
 - Fixed `NullPointerException` when checking for the terminal PoW block while the EL was syncing

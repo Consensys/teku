@@ -31,18 +31,22 @@ import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
+import tech.pegasys.teku.validator.client.restapi.apis.GetGasLimit;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
+import tech.pegasys.teku.validator.client.restapi.apis.SetGasLimit;
 
 public class ValidatorRestApi {
   public static final String TAG_KEY_MANAGEMENT = "Key Management";
   public static final String TAG_FEE_RECIPIENT = "Fee Recipient";
+  public static final String TAG_GAS_LIMIT = "Gas Limit";
 
   public static RestApi create(
       final ValidatorRestApiConfig config,
@@ -87,8 +91,11 @@ public class ValidatorRestApi {
         .endpoint(new PostRemoteKeys(keyManager))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(beaconProposerPreparer))
+        .endpoint(new GetGasLimit(beaconProposerPreparer))
         .endpoint(new SetFeeRecipient(beaconProposerPreparer))
+        .endpoint(new SetGasLimit(beaconProposerPreparer))
         .endpoint(new DeleteFeeRecipient(beaconProposerPreparer))
+        .endpoint(new DeleteGasLimit(beaconProposerPreparer))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))
