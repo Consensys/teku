@@ -55,8 +55,9 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   }
 
   private ReplayDepositsResult replayDeposits() {
+    final boolean genesisKnown = database.getAnchor().isPresent();
     final DepositSequencer depositSequencer =
-        new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
+        new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock(), genesisKnown);
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
       eventStream.forEach(depositSequencer::depositEvent);
     }
@@ -86,14 +87,17 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private static class DepositSequencer {
     private final Eth1EventsChannel eth1EventsChannel;
     private final Optional<MinGenesisTimeBlockEvent> genesis;
-    private boolean isGenesisDone = false;
+    private boolean isGenesisDone;
     private BigInteger lastDepositBlockNumber = NEGATIVE_ONE;
     private Optional<UInt64> lastDepositIndex = Optional.empty();
 
     public DepositSequencer(
-        final Eth1EventsChannel eventChannel, final Optional<MinGenesisTimeBlockEvent> genesis) {
+        final Eth1EventsChannel eventChannel,
+        final Optional<MinGenesisTimeBlockEvent> genesis,
+        final boolean isGenesisDone) {
       this.eth1EventsChannel = eventChannel;
       this.genesis = genesis;
+      this.isGenesisDone = isGenesisDone;
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
