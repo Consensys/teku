@@ -338,7 +338,7 @@ public abstract class KvStoreDatabase<
       updater.addFinalizedState(blockRoot, state);
 
       final Optional<BeaconState> maybeLastState =
-          getLatestAvailableFinalizedState(state.getSlot().minus(ONE));
+          getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
       maybeLastState.ifPresentOrElse(
           lastState -> {
             final StateRootRecorder recorder =
