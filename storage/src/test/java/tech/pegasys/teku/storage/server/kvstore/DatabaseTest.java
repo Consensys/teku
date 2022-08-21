@@ -1670,21 +1670,22 @@ public class DatabaseTest {
   public void shouldStoreFinalizedStateAndRoots(final DatabaseContext context) throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
 
-    final BeaconState state0 = dataStructureUtil.randomBeaconState(ZERO);
     final BeaconState state1 = dataStructureUtil.randomBeaconState(ONE);
+    final BeaconState state2 = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
 
-    final Bytes32 blockRoot0 = dataStructureUtil.randomBytes32();
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRoot2 = dataStructureUtil.randomBytes32();
 
-    assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
-    database.storeFinalizedState(state0, blockRoot0);
+    assertThat(database.getLatestAvailableFinalizedState(UInt64.valueOf(2))).isEmpty();
     database.storeFinalizedState(state1, blockRoot1);
+    database.storeFinalizedState(state2, blockRoot2);
 
-    assertThat(database.getLatestAvailableFinalizedState(ZERO)).contains(state0);
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
+    assertThat(database.getLatestAvailableFinalizedState(UInt64.valueOf(2))).contains(state2);
     assertThat(getFinalizedStateRootsList())
         .containsExactlyInAnyOrder(
-            Map.entry(state0.hashTreeRoot(), ZERO), Map.entry(state1.hashTreeRoot(), ONE));
+            Map.entry(state1.hashTreeRoot(), ONE),
+            Map.entry(state2.hashTreeRoot(), UInt64.valueOf(2)));
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
