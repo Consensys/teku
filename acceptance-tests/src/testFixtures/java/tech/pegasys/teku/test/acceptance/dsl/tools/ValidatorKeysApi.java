@@ -160,30 +160,30 @@ public class ValidatorKeysApi {
     return result;
   }
 
-  public String getFeeRecipient(final BLSPublicKey publicKey, final String expectedEthAddress)
-      throws IOException {
+  public void assertValidatorFeeRecipient(
+      final BLSPublicKey publicKey, final String expectedEthAddress) throws IOException {
 
     final String result =
-        httpClient.get(
-            validatorUri.get(),
-            LOCAL_FEE_RECIPIENT_URL.replace("{pubkey}", publicKey.toHexString()),
-            authHeaders());
-    LOG.debug("GET Fee Recipient: " + result);
-    assertThat(result).contains(expectedEthAddress);
-    return result;
+        jsonProvider
+            .getObjectMapper()
+            .readTree(getLocalFeeRecipient(publicKey))
+            .get("data")
+            .get("ethaddress")
+            .asText();
+    assertThat(result).isEqualTo(expectedEthAddress);
   }
 
-  public String getGasLimit(final BLSPublicKey publicKey, final UInt64 expectedGasLimit)
+  public void assertValidatorGasLimit(final BLSPublicKey publicKey, final UInt64 expectedGasLimit)
       throws IOException {
-
     final String result =
-        httpClient.get(
-            validatorUri.get(),
-            LOCAL_GAS_LIMIT_URL.replace("{pubkey}", publicKey.toHexString()),
-            authHeaders());
-    LOG.debug("GET local gas limit: " + result);
-    assertThat(result).contains("\"" + expectedGasLimit.toString() + "\"");
-    return result;
+        jsonProvider
+            .getObjectMapper()
+            .readTree(getLocalGasLimit(publicKey))
+            .get("data")
+            .get("gas_limit")
+            .asText();
+    final UInt64 gasLimit = UInt64.valueOf(result);
+    assertThat(gasLimit).isEqualTo(expectedGasLimit);
   }
 
   private Map<String, String> authHeaders() {
@@ -192,6 +192,20 @@ public class ValidatorKeysApi {
       return Map.of();
     }
     return Map.of("Authorization", "Bearer " + apiPasswordSupplier.get());
+  }
+
+  private String getLocalFeeRecipient(final BLSPublicKey publicKey) throws IOException {
+    return httpClient.get(
+        validatorUri.get(),
+        LOCAL_FEE_RECIPIENT_URL.replace("{pubkey}", publicKey.toHexString()),
+        authHeaders());
+  }
+
+  private String getLocalGasLimit(final BLSPublicKey publicKey) throws IOException {
+    return httpClient.get(
+        validatorUri.get(),
+        LOCAL_GAS_LIMIT_URL.replace("{pubkey}", publicKey.toHexString()),
+        authHeaders());
   }
 
   private String addLocalValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)

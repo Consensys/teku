@@ -83,16 +83,18 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published block");
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
-    api.getGasLimit(validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
-    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
+    api.assertValidatorGasLimit(
+        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
+    api.assertValidatorFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
 
     final String expectedFeeRecipient = "0xAbcF8e0d4e9587369b2301D0790347320302cc09";
     api.addFeeRecipient(
         validatorKeystores.getPublicKeys().get(0), Eth1Address.fromHexString(expectedFeeRecipient));
-    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(0), expectedFeeRecipient);
+    api.assertValidatorFeeRecipient(
+        validatorKeystores.getPublicKeys().get(0), expectedFeeRecipient);
     final UInt64 expectedGasLimit = UInt64.valueOf(1234567);
     api.addGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
-    api.getGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
+    api.assertValidatorGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
 
     // second add attempt would be duplicates
     api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
