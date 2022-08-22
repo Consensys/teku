@@ -67,6 +67,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork("auto")
                     .withValidatorApiEnabled()
+                    .withProposerDefaultFeeRecipient(defaultFeeRecipient)
                     .withInteropModeDisabled()
                     .withBeaconNode(beaconNode));
     final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
@@ -82,6 +83,9 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published block");
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
+    api.getGasLimit(validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
+    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
+
     final String expectedFeeRecipient = "0xAbcF8e0d4e9587369b2301D0790347320302cc09";
     api.addFeeRecipient(
         validatorKeystores.getPublicKeys().get(0), Eth1Address.fromHexString(expectedFeeRecipient));
@@ -90,7 +94,6 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.addGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
     api.getGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
 
-    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
 
     // second add attempt would be duplicates
     api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
