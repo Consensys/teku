@@ -94,7 +94,6 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.addGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
     api.getGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
 
-
     // second add attempt would be duplicates
     api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");
 
