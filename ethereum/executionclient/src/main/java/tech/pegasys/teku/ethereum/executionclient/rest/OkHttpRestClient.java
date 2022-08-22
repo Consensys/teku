@@ -16,8 +16,8 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Call;
@@ -118,9 +118,11 @@ public class OkHttpRestClient implements RestClient {
     return new RequestBody() {
 
       @Override
-      public void writeTo(@NotNull BufferedSink bufferedSink) throws JsonProcessingException {
-        JsonUtil.serializeToBytes(
-            requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
+      public void writeTo(@NotNull final BufferedSink bufferedSink) throws IOException {
+        try (bufferedSink;
+            final OutputStream outputStream = bufferedSink.outputStream()) {
+          JsonUtil.serializeToBytes(requestBodyObject, requestTypeDefinition, outputStream);
+        }
       }
 
       @Nullable
