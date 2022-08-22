@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import com.google.common.io.Resources;
+import java.net.URL;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -24,11 +28,19 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
+  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "less-swift";
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
+    final BesuNode eth1Node =
+        createBesuNode(
+            config ->
+                config
+                    .withMiningEnabled(true)
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/preMergeGenesis.json")
+                    .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
@@ -36,14 +48,24 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final ValidatorKeystores extraKeys =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
 
+    final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
     final TekuNode beaconNode =
-        createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withDepositsFrom(eth1Node)
+                    .withBellatrixEpoch(UInt64.ONE)
+                    .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
+                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
+                    .withJwtSecretFile(JWT_FILE));
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
             config ->
                 config
-                    .withNetwork(networkName)
+                    .withNetwork("auto")
                     .withValidatorApiEnabled()
                     .withInteropModeDisabled()
                     .withBeaconNode(beaconNode));
@@ -59,6 +81,16 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
+
+    final String expectedFeeRecipient = "0xAbcF8e0d4e9587369b2301D0790347320302cc09";
+    api.addFeeRecipient(
+        validatorKeystores.getPublicKeys().get(0), Eth1Address.fromHexString(expectedFeeRecipient));
+    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(0), expectedFeeRecipient);
+    final UInt64 expectedGasLimit = UInt64.valueOf(1234567);
+    api.addGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
+    api.getGasLimit(validatorKeystores.getPublicKeys().get(0), expectedGasLimit);
+
+    api.getFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
 
     // second add attempt would be duplicates
     api.addLocalValidatorsAndExpect(validatorKeystores, "duplicate");

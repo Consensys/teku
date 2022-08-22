@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 public class BeaconProposerPreparer
@@ -41,6 +42,8 @@ public class BeaconProposerPreparer
 
   private final ValidatorApiChannel validatorApiChannel;
   private Optional<ValidatorIndexProvider> validatorIndexProvider;
+
+  private Optional<OwnedValidators> ownedValidators = Optional.empty();
   private final ProposerConfigProvider proposerConfigProvider;
   private final Optional<Eth1Address> defaultFeeRecipient;
   private final UInt64 defaultGasLimit;
@@ -51,23 +54,6 @@ public class BeaconProposerPreparer
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
-
-  BeaconProposerPreparer(
-      final ValidatorApiChannel validatorApiChannel,
-      final ValidatorIndexProvider validatorIndexProvider,
-      final ProposerConfigProvider proposerConfigProvider,
-      final Optional<Eth1Address> defaultFeeRecipient,
-      final UInt64 defaultGasLimit,
-      final Spec spec) {
-    this(
-        validatorApiChannel,
-        Optional.of(validatorIndexProvider),
-        proposerConfigProvider,
-        defaultFeeRecipient,
-        defaultGasLimit,
-        spec,
-        Optional.empty());
-  }
 
   public BeaconProposerPreparer(
       final ValidatorApiChannel validatorApiChannel,
@@ -86,8 +72,11 @@ public class BeaconProposerPreparer
     runtimeProposerConfig = new RuntimeProposerConfig(mutableProposerConfigPath);
   }
 
-  public void initialize(final Optional<ValidatorIndexProvider> provider) {
+  public void initialize(
+      final Optional<ValidatorIndexProvider> provider,
+      final Optional<OwnedValidators> ownedValidators) {
     this.validatorIndexProvider = provider;
+    this.ownedValidators = ownedValidators;
   }
 
   @Override
@@ -134,7 +123,7 @@ public class BeaconProposerPreparer
   // - default set by --validators-proposer-default-fee-recipient
   @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       return Optional.empty();
     }
     return maybeProposerConfig
@@ -149,7 +138,7 @@ public class BeaconProposerPreparer
 
   @Override
   public Optional<UInt64> getGasLimit(final BLSPublicKey publicKey) {
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       return Optional.empty();
     }
     return maybeProposerConfig
@@ -175,7 +164,7 @@ public class BeaconProposerPreparer
     if (eth1Address.equals(Eth1Address.ZERO)) {
       throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
@@ -189,7 +178,7 @@ public class BeaconProposerPreparer
 
   public void setGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit)
       throws SetFeeRecipientException {
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       throw new SetGasLimitException(
           "Validator public key not found when attempting to set gas limit.");
     }
@@ -279,8 +268,7 @@ public class BeaconProposerPreparer
     return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
   }
 
-  private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
-    return validatorIndexProvider.isEmpty()
-        || !validatorIndexProvider.get().containsPublicKey(publicKey);
+  private boolean isOwnedValidator(final BLSPublicKey publicKey) {
+    return ownedValidators.isPresent() && ownedValidators.get().getValidator(publicKey).isPresent();
   }
 }
