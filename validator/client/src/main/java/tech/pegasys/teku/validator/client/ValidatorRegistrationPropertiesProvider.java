@@ -24,5 +24,5 @@ public interface ValidatorRegistrationPropertiesProvider {
 
   Optional<UInt64> getGasLimit(BLSPublicKey publicKey);
 
-  boolean isReadyToProvideFeeRecipient();
+  boolean isReadyToProvideProperties();
 }

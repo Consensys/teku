@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,26 +37,36 @@ import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockI
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -63,6 +74,9 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -159,6 +173,8 @@ class ValidatorApiHandlerTest {
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
         .unblindSignedBeaconBlockIfBlinded(any());
+    when(proposersDataManager.updateValidatorRegistrations(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -920,6 +936,75 @@ class ValidatorApiHandlerTest {
         .hasMessageContainingAll("Bad", "Worse");
   }
 
+  @Test
+  void registerValidators_shouldUpdateRegistrations() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(4);
+
+    setupValidatorsState(validatorRegistrations);
+
+    when(chainDataClient.getCurrentSlot()).thenReturn(ONE);
+
+    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
+
+    assertThat(result).isCompleted();
+
+    verify(proposersDataManager).updateValidatorRegistrations(validatorRegistrations, ONE);
+  }
+
+  @Test
+  void registerValidators_shouldIgnoreExitedValidators() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(4);
+
+    final BLSPublicKey exitedUnslashedValidatorKey =
+        validatorRegistrations.get(2).getMessage().getPublicKey();
+    final BLSPublicKey exitedSlashedValidatorKey =
+        validatorRegistrations.get(3).getMessage().getPublicKey();
+
+    setupValidatorsState(
+        validatorRegistrations,
+        Map.of(
+            exitedUnslashedValidatorKey,
+            ValidatorStatus.exited_unslashed,
+            exitedSlashedValidatorKey,
+            ValidatorStatus.exited_slashed));
+
+    when(chainDataClient.getCurrentSlot()).thenReturn(ONE);
+
+    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
+
+    assertThat(result).isCompleted();
+
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
+        ArgumentCaptor.forClass(SszList.class);
+
+    verify(proposersDataManager).updateValidatorRegistrations(argumentCaptor.capture(), eq(ONE));
+
+    final SszList<SignedValidatorRegistration> capturedRegistrations = argumentCaptor.getValue();
+
+    assertThat(capturedRegistrations)
+        .hasSize(2)
+        .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
+        .doesNotContain(exitedUnslashedValidatorKey, exitedSlashedValidatorKey);
+  }
+
+  @Test
+  void registerValidators_shouldReportErrorIfCannotRetrieveValidatorStatuses() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(4);
+
+    when(chainDataProvider.getStateValidators(eq("head"), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWithMessage(
+            "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
+  }
+
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
     assertThat(result).isCompleted();
     return result.join();
@@ -947,5 +1032,42 @@ class ValidatorApiHandlerTest {
                             .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
               }
             });
+  }
+
+  private void setupValidatorsState(
+      final SszList<SignedValidatorRegistration> validatorRegistrations) {
+    setupValidatorsState(validatorRegistrations, Collections.emptyMap());
+  }
+
+  private void setupValidatorsState(
+      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final Map<BLSPublicKey, ValidatorStatus> statusOverrides) {
+    final List<StateValidatorData> data =
+        IntStream.range(0, 4)
+            .mapToObj(
+                index -> {
+                  final SignedValidatorRegistration validatorRegistration =
+                      validatorRegistrations.get(index);
+                  final BLSPublicKey publicKey = validatorRegistration.getMessage().getPublicKey();
+                  return new StateValidatorData(
+                      UInt64.valueOf(index),
+                      dataStructureUtil.randomUInt64(),
+                      statusOverrides.getOrDefault(publicKey, ValidatorStatus.active_ongoing),
+                      dataStructureUtil.randomValidator(publicKey));
+                })
+            .collect(Collectors.toList());
+
+    final ObjectAndMetaData<List<StateValidatorData>> stateValidators =
+        new ObjectAndMetaData<>(data, SpecMilestone.BELLATRIX, false, true);
+
+    final List<String> validators =
+        validatorRegistrations.stream()
+            .map(SignedValidatorRegistration::getMessage)
+            .map(ValidatorRegistration::getPublicKey)
+            .map(BLSPublicKey::toString)
+            .collect(toList());
+
+    when(chainDataProvider.getStateValidators("head", validators, new HashSet<>()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(stateValidators)));
   }
 }

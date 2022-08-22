@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -244,10 +246,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             optionalState ->
                 optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
-  }
-
-  public Optional<ProposerDuties> getProposerDuties(final BeaconState state, final UInt64 epoch) {
-    return Optional.of(getProposerDutiesFromIndicesAndState(state, epoch));
   }
 
   @Override
@@ -640,8 +638,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return proposersDataManager.updateValidatorRegistrations(
-        validatorRegistrations, combinedChainDataClient.getCurrentSlot());
+    final List<BLSPublicKey> validatorIdentifiers =
+        validatorRegistrations.stream()
+            .map(SignedValidatorRegistration::getMessage)
+            .map(ValidatorRegistration::getPublicKey)
+            .collect(toList());
+    return getValidatorStatuses(validatorIdentifiers)
+        .thenCompose(
+            maybeValidatorStatuses -> {
+              if (maybeValidatorStatuses.isEmpty()) {
+                final String errorMessage =
+                    "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.";
+                return SafeFuture.failedFuture(new IllegalStateException(errorMessage));
+              }
+              final SszList<SignedValidatorRegistration> applicableValidatorRegistrations =
+                  getApplicableValidatorRegistrations(
+                      validatorRegistrations, maybeValidatorStatuses.get());
+
+              return proposersDataManager.updateValidatorRegistrations(
+                  applicableValidatorRegistrations, combinedChainDataClient.getCurrentSlot());
+            });
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
@@ -783,6 +799,37 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return Optional.of(
         new SyncCommitteeDuty(
             state.getValidators().get(validatorIndex).getPublicKey(), validatorIndex, duties));
+  }
+
+  private SszList<SignedValidatorRegistration> getApplicableValidatorRegistrations(
+      final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    final List<SignedValidatorRegistration> applicableValidatorRegistrations =
+        validatorRegistrations.stream()
+            .filter(
+                signedValidatorRegistration -> {
+                  final BLSPublicKey validatorIdentifier =
+                      signedValidatorRegistration.getMessage().getPublicKey();
+                  final ValidatorStatus validatorStatus =
+                      validatorStatuses.get(validatorIdentifier);
+                  final boolean hasExited = validatorHasExited(validatorStatus);
+                  if (hasExited) {
+                    LOG.debug(
+                        "Validator {} has exited. It will be skipped for registering.",
+                        validatorIdentifier.toAbbreviatedString());
+                  }
+                  return !hasExited;
+                })
+            .collect(toList());
+    if (validatorRegistrations.size() == applicableValidatorRegistrations.size()) {
+      return validatorRegistrations;
+    }
+    return validatorRegistrations.getSchema().createFromElements(applicableValidatorRegistrations);
+  }
+
+  private boolean validatorHasExited(final ValidatorStatus validatorStatus) {
+    return Objects.equals(validatorStatus, ValidatorStatus.exited_slashed)
+        || Objects.equals(validatorStatus, ValidatorStatus.exited_unslashed);
   }
 
   private static <A, B, R> Optional<R> combine(
