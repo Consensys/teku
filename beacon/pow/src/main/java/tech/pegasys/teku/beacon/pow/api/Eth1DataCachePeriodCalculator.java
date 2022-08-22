@@ -24,11 +24,10 @@ public class Eth1DataCachePeriodCalculator {
     long cacheDurationSeconds = config.getSecondsPerSlot();
 
     // Worst case this slot is at the very end of the current voting period
-    final long secondsPerEth1VotingPeriod =
+    cacheDurationSeconds +=
         ((long) config.getEpochsPerEth1VotingPeriod())
             * config.getSlotsPerEpoch()
             * config.getSecondsPerSlot();
-    cacheDurationSeconds += secondsPerEth1VotingPeriod;
 
     // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but this assumes our current time is from a
     // block already ETH1_FOLLOW_DISTANCE behind head.
@@ -37,13 +36,6 @@ public class Eth1DataCachePeriodCalculator {
 
     // And we want to be able to create blocks for at least the past epoch
     cacheDurationSeconds += ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot();
-
-    // It's enough for voting, but we may need to be able to get data about candidate
-    // in the previous period for tree finalization plus 2 epochs for finalization
-    cacheDurationSeconds +=
-        secondsPerEth1VotingPeriod
-            + ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot() * 2;
-
     return UInt64.valueOf(cacheDurationSeconds);
   }
 

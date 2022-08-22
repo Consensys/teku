@@ -28,13 +28,13 @@ class Eth1DataCachePeriodCalculatorTest {
     assertThat(
             Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance(
                 config))
-        .isEqualTo(UInt64.valueOf(758));
+        .isEqualTo(UInt64.valueOf(470));
   }
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromCurrentTime() {
     assertThat(
             Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime(config))
-        .isEqualTo(UInt64.valueOf(982));
+        .isEqualTo(UInt64.valueOf(694));
   }
 }
