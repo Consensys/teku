@@ -128,7 +128,7 @@ public class DepositProvider
                 .getEth1DataAndHeight(finalizedState.getEth1Data())
                 .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
         if (heightOptional.isEmpty()) {
-          LOG.warn("Eth1Data height not found in cache. Skipping DepositTree finalization");
+          LOG.warn("Eth1Data height not found in cache. Skipping DepositTree pruning");
           return;
         }
         depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
