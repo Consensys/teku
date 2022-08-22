@@ -98,13 +98,13 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
       currentSlot = currentSlot.increment();
     }
 
-    int uniqueRoots = uniqueBlockRoots.size();
+    int uniqueBlockRootsCount = uniqueBlockRoots.size();
 
     // let's count the latest block header only if it is from the last slot
     if (state.getLatestBlockHeader().getSlot().equals(lastSlotOfInspectionWindow)) {
-      uniqueRoots++;
+      uniqueBlockRootsCount++;
     }
 
-    return uniqueRoots;
+    return uniqueBlockRootsCount;
   }
 }
