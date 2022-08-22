@@ -91,8 +91,6 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
       return 0;
     }
 
-    uniqueBlockRoots.add(state.getLatestBlockHeader().getRoot());
-
     UInt64 currentSlot = firstSlotOfInspectionWindow;
     while (currentSlot.isLessThan(lastSlotOfInspectionWindow)) {
       final int currentBlockRootIndex = currentSlot.mod(slotsPerHistoricalRoot).intValue();
@@ -100,6 +98,13 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
       currentSlot = currentSlot.increment();
     }
 
-    return uniqueBlockRoots.size();
+    int uniqueRoots = uniqueBlockRoots.size();
+
+    // let's count the latest block header only if it is from the last slot
+    if (state.getLatestBlockHeader().getSlot().equals(lastSlotOfInspectionWindow)) {
+      uniqueRoots++;
+    }
+
+    return uniqueRoots;
   }
 }

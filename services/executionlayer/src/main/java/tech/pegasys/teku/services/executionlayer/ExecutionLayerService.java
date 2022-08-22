@@ -89,6 +89,18 @@ public class ExecutionLayerService extends Service {
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
 
+    final BuilderCircuitBreaker builderCircuitBreaker;
+    if (config.isBuilderCircuitBreakerEnabled()) {
+      LOG.info("Enabling Builder Circuit Breaker");
+      builderCircuitBreaker =
+          new BuilderCircuitBreakerImpl(
+              config.getSpec(),
+              config.getBuilderCircuitBreakerWindow(),
+              config.getBuilderCircuitBreakerAllowedFaults());
+    } else {
+      builderCircuitBreaker = BuilderCircuitBreaker.NOOP;
+    }
+
     final ExecutionLayerManager executionLayerManager;
     if (engineWeb3jClientProvider.isStub()) {
       EVENT_LOG.executionLayerStubEnabled();
@@ -107,7 +119,11 @@ public class ExecutionLayerService extends Service {
       }
       executionLayerManager =
           new ExecutionLayerManagerStub(
-              config.getSpec(), timeProvider, true, terminalBlockHashInTTDMode);
+              config.getSpec(),
+              timeProvider,
+              true,
+              terminalBlockHashInTTDMode,
+              builderCircuitBreaker);
     } else {
       final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
 
@@ -125,14 +141,6 @@ public class ExecutionLayerService extends Service {
                       config.getSpec(),
                       timeProvider,
                       metricsSystem));
-
-      final BuilderCircuitBreaker builderCircuitBreaker =
-          config.isBuilderCircuitBreakerEnabled()
-              ? new BuilderCircuitBreakerImpl(
-                  config.getSpec(),
-                  config.getBuilderCircuitBreakerWindow(),
-                  config.getBuilderCircuitBreakerAllowedFaults())
-              : BuilderCircuitBreaker.NOOP;
 
       executionLayerManager =
           ExecutionLayerManagerImpl.create(
