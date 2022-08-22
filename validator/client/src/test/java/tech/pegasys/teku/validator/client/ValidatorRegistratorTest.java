@@ -103,7 +103,6 @@ class ValidatorRegistratorTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
 
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
-    when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
 
     when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
@@ -425,17 +424,12 @@ class ValidatorRegistratorTest {
     final UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
 
     // validator2 will have custom gas limit
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator2.getPublicKey()))
-        .thenReturn(Optional.of(validator2GasLimit));
-    // validator3 gas limit will fall back to a default
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
-        .thenReturn(Optional.empty());
-    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
-
     when(validatorRegistrationPropertiesProvider.getGasLimit(validator2.getPublicKey()))
         .thenReturn(Optional.of(validator2GasLimit));
+    // validator3 gas limit will fall back to a default
     when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
+    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
