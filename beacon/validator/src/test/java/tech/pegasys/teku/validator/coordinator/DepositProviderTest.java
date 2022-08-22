@@ -15,8 +15,10 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -344,9 +346,14 @@ public class DepositProviderTest {
   @Test
   void whenCallingForFinalizedSnapshotAndSnapshotAvailable_SnapshotReturned() {
     setup(16);
+    final Eth1Data eth1Data1 =
+        new Eth1Data(
+            dataStructureUtil.randomBytes32(),
+            UInt64.valueOf(10),
+            dataStructureUtil.randomBytes32());
+    when(state.getEth1Data()).thenReturn(eth1Data1);
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
     mockStateEth1DepositIndex(10);
-    mockEth1DataDepositCount(10);
     mockDepositsFromEth1Block(0, 20);
     final AnchorPoint anchorPoint = mock(AnchorPoint.class);
     final UpdatableStore store = mock(UpdatableStore.class);
@@ -356,24 +363,52 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
-    final Eth1Data eth1Data = state.getEth1Data();
-    when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data)))
-        .thenReturn(Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data, UInt64.valueOf(20))));
+    when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data1)))
+        .thenReturn(
+            Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data1, UInt64.valueOf(20))));
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
+    verify(eth1DataCache, times(1)).getEth1DataAndHeight(eq(eth1Data1));
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
     Optional<DepositTreeSnapshot> finalizedDepositTreeSnapshot =
         depositProvider.getFinalizedDepositTreeSnapshot();
     assertThat(finalizedDepositTreeSnapshot).isNotEmpty();
     assertThat(finalizedDepositTreeSnapshot.get().getDepositCount()).isEqualTo(10);
     assertThat(finalizedDepositTreeSnapshot.get().getExecutionBlockHash())
-        .isEqualTo(
-            recentChainData
-                .getStore()
-                .getLatestFinalized()
-                .getState()
-                .getEth1Data()
-                .getBlockHash());
+        .isEqualTo(eth1Data1.getBlockHash());
+    assertThat(finalizedDepositTreeSnapshot.get().getExecutionBlockHeight())
+        .isEqualTo(UInt64.valueOf(20));
+
+    // when calling next time with the same Eth1Data, shouldn't finalize again
+    depositProvider.onNewFinalizedCheckpoint(
+        new Checkpoint(UInt64.valueOf(2), dataStructureUtil.randomBytes32()), false);
+    verify(eth1DataCache, times(1)).getEth1DataAndHeight(any());
+    Optional<DepositTreeSnapshot> finalizedDepositTreeSnapshot2 =
+        depositProvider.getFinalizedDepositTreeSnapshot();
+    assertThat(finalizedDepositTreeSnapshot2).isEqualTo(finalizedDepositTreeSnapshot);
+
+    // when we have new Eth1Data and all deposits are added to the blocks, cache is called again
+    final Eth1Data eth1Data2 =
+        new Eth1Data(
+            dataStructureUtil.randomBytes32(),
+            UInt64.valueOf(20),
+            dataStructureUtil.randomBytes32());
+    mockStateEth1DepositIndex(20);
+    when(state.getEth1Data()).thenReturn(eth1Data2);
+    when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data2)))
+        .thenReturn(
+            Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data2, UInt64.valueOf(30))));
+    depositProvider.onNewFinalizedCheckpoint(
+        new Checkpoint(UInt64.valueOf(3), dataStructureUtil.randomBytes32()), false);
+    verify(eth1DataCache).getEth1DataAndHeight(eq(eth1Data2));
+    Optional<DepositTreeSnapshot> finalizedDepositTreeSnapshot3 =
+        depositProvider.getFinalizedDepositTreeSnapshot();
+    assertThat(finalizedDepositTreeSnapshot3).isNotEmpty();
+    assertThat(finalizedDepositTreeSnapshot3.get().getDepositCount()).isEqualTo(20);
+    assertThat(finalizedDepositTreeSnapshot3.get().getExecutionBlockHash())
+        .isEqualTo(eth1Data2.getBlockHash());
+    assertThat(finalizedDepositTreeSnapshot3.get().getExecutionBlockHeight())
+        .isEqualTo(UInt64.valueOf(30));
   }
 
   private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {

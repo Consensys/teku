@@ -142,6 +142,12 @@ public class DepositTree {
     return treeForProof;
   }
 
+  public boolean isFinalizedWithExecutionBlock(final Bytes32 blockHash) {
+    return this.finalizedExecutionBlock
+        .filter(block -> block.blockHash.equals(blockHash))
+        .isPresent();
+  }
+
   private static class BlockHashAndHeight {
     private final Bytes32 blockHash;
     private final UInt64 blockHeight;

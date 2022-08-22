@@ -122,7 +122,9 @@ public class DepositProvider
     synchronized (this) {
       if (depositIndex.isGreaterThanOrEqualTo(finalizedState.getEth1Data().getDepositCount())
           && depositMerkleTree.getDepositCount()
-              >= finalizedState.getEth1Data().getDepositCount().longValue()) {
+              >= finalizedState.getEth1Data().getDepositCount().longValue()
+          && !depositMerkleTree.isFinalizedWithExecutionBlock(
+              finalizedState.getEth1Data().getBlockHash())) {
         final Optional<UInt64> heightOptional =
             eth1DataCache
                 .getEth1DataAndHeight(finalizedState.getEth1Data())
