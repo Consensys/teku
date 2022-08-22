@@ -103,11 +103,12 @@ class ValidatorRegistratorTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
 
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
-    when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
 
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(eth1Address));
+    when(validatorRegistrationPropertiesProvider.getGasLimit(any()))
+        .thenReturn(Optional.of(gasLimit));
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
@@ -117,7 +118,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     runRegistrationFlowForSlot(UInt64.ONE);
 
@@ -309,7 +310,7 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.of(otherEth1Address));
 
     // gas limit changed for validator3
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
         .thenReturn(Optional.of(otherGasLimit));
 
     // public key overwritten for validator4
@@ -367,7 +368,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterNewlyAddedValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     validatorRegistrator.onValidatorsAdded();
 
@@ -423,10 +424,10 @@ class ValidatorRegistratorTest {
     final UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
 
     // validator2 will have custom gas limit
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator2.getPublicKey()))
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator2.getPublicKey()))
         .thenReturn(Optional.of(validator2GasLimit));
     // validator3 gas limit will fall back to a default
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
     when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 

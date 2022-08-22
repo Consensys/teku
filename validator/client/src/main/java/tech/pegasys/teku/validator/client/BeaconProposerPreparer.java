@@ -164,7 +164,7 @@ public class BeaconProposerPreparer
   }
 
   @Override
-  public boolean isReadyToProvideFeeRecipient() {
+  public boolean isReadyToProvideProperties() {
     return sentProposersAtLeastOnce.get();
   }
 
