@@ -195,17 +195,11 @@ public class ValidatorKeysApi {
   }
 
   private String getLocalFeeRecipient(final BLSPublicKey publicKey) throws IOException {
-    return httpClient.get(
-        validatorUri.get(),
-        LOCAL_FEE_RECIPIENT_URL.replace("{pubkey}", publicKey.toHexString()),
-        authHeaders());
+    return httpClient.get(validatorUri.get(), getFeeRecipientUrl(publicKey), authHeaders());
   }
 
   private String getLocalGasLimit(final BLSPublicKey publicKey) throws IOException {
-    return httpClient.get(
-        validatorUri.get(),
-        LOCAL_GAS_LIMIT_URL.replace("{pubkey}", publicKey.toHexString()),
-        authHeaders());
+    return httpClient.get(validatorUri.get(), getGasLimitUrl(publicKey), authHeaders());
   }
 
   private String addLocalValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
@@ -221,34 +215,24 @@ public class ValidatorKeysApi {
     return result;
   }
 
-  private String addFeeRecipientToValidator(
+  private void addFeeRecipientToValidator(
       final BLSPublicKey publicKey, final Eth1Address feeRecipient) throws IOException {
 
     final String body = jsonProvider.objectToJSON(Map.of("ethaddress", feeRecipient.toHexString()));
 
     final String result =
-        httpClient.post(
-            validatorUri.get(),
-            LOCAL_FEE_RECIPIENT_URL.replace("{pubkey}", publicKey.toHexString()),
-            body,
-            authHeaders());
+        httpClient.post(validatorUri.get(), getFeeRecipientUrl(publicKey), body, authHeaders());
     LOG.debug("POST Fee Recipient: " + result);
-    return result;
   }
 
-  private String addGasLimitToValidator(final BLSPublicKey publicKey, final UInt64 gasLimit)
+  private void addGasLimitToValidator(final BLSPublicKey publicKey, final UInt64 gasLimit)
       throws IOException {
 
     final String body = jsonProvider.objectToJSON(Map.of("gas_limit", gasLimit.toString()));
 
     final String result =
-        httpClient.post(
-            validatorUri.get(),
-            LOCAL_GAS_LIMIT_URL.replace("{pubkey}", publicKey.toHexString()),
-            body,
-            authHeaders());
+        httpClient.post(validatorUri.get(), getGasLimitUrl(publicKey), body, authHeaders());
     LOG.debug("POST gas limit: " + result);
-    return result;
   }
 
   private String addRemoteValidators(final List<BLSPublicKey> publicKeys, final String signerUrl)
@@ -300,5 +284,13 @@ public class ValidatorKeysApi {
       final JsonNode node = it.next();
       assertThat(node.get("status").asText()).isEqualTo(status);
     }
+  }
+
+  private String getFeeRecipientUrl(final BLSPublicKey publicKey) {
+    return LOCAL_FEE_RECIPIENT_URL.replace("{pubkey}", publicKey.toHexString());
+  }
+
+  private String getGasLimitUrl(final BLSPublicKey publicKey) {
+    return LOCAL_GAS_LIMIT_URL.replace("{pubkey}", publicKey.toHexString());
   }
 }
