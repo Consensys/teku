@@ -105,7 +105,7 @@ class ValidatorRegistratorTest {
     when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
     when(proposerConfig.getBuilderGasLimitForPubKey(any())).thenReturn(Optional.of(gasLimit));
 
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(true);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(eth1Address));
 
@@ -117,7 +117,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     runRegistrationFlowForSlot(UInt64.ONE);
 
@@ -367,7 +367,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterNewlyAddedValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()).thenReturn(false);
+    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     validatorRegistrator.onValidatorsAdded();
 
