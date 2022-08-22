@@ -108,6 +108,8 @@ class ValidatorRegistratorTest {
     when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(eth1Address));
+    when(validatorRegistrationPropertiesProvider.getGasLimit(any()))
+        .thenReturn(Optional.of(gasLimit));
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
@@ -309,7 +311,7 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.of(otherEth1Address));
 
     // gas limit changed for validator3
-    when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
         .thenReturn(Optional.of(otherGasLimit));
 
     // public key overwritten for validator4
@@ -429,6 +431,11 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getBuilderGasLimitForPubKey(validator3.getPublicKey()))
         .thenReturn(Optional.empty());
     when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
+
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator2.getPublicKey()))
+        .thenReturn(Optional.of(validator2GasLimit));
+    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
+        .thenReturn(Optional.empty());
 
     runRegistrationFlowForSlot(UInt64.ZERO);
 
