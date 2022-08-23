@@ -165,6 +165,7 @@ public class ValidatorClientService extends Service {
                   Optional.empty(),
                   proposerConfigProvider.get(),
                   validatorConfig.getProposerDefaultFeeRecipient(),
+                  validatorConfig.getBuilderRegistrationDefaultGasLimit(),
                   config.getSpec(),
                   Optional.of(
                       ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
@@ -308,7 +309,9 @@ public class ValidatorClientService extends Service {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       beaconProposerPreparer.ifPresent(
           preparer -> {
-            preparer.initialize(Optional.of(validatorIndexProvider));
+            preparer.initialize(
+                Optional.of(validatorIndexProvider),
+                Optional.of(validatorLoader.getOwnedValidators()));
             validatorTimingChannels.add(preparer);
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);

@@ -15,11 +15,14 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
-public interface FeeRecipientProvider {
+public interface ValidatorRegistrationPropertiesProvider {
 
   Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
 
-  boolean isReadyToProvideFeeRecipient();
+  Optional<UInt64> getGasLimit(BLSPublicKey publicKey);
+
+  boolean isReadyToProvideProperties();
 }

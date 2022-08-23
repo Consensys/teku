@@ -105,6 +105,7 @@ public class TekuConfigurationTest {
     TekuConfiguration tekuConfiguration =
         TekuConfiguration.builder()
             .data(b -> b.dataBasePath(tempDir))
+            .executionLayer(b -> b.engineEndpoint("stub"))
             .beaconChainControllerFactory(customControllerFactory)
             .build();
 

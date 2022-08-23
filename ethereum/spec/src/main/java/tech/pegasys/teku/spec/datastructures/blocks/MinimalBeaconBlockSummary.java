@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface MinimalBeaconBlockSummary {
@@ -26,4 +27,8 @@ public interface MinimalBeaconBlockSummary {
 
   /** @return the hash tree root of the block */
   Bytes32 getRoot();
+
+  default String toLogString() {
+    return LogFormatter.formatBlock(getSlot(), getRoot());
+  }
 }

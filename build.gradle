@@ -282,7 +282,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.2.0-rc.1' // Arbitrary change to refresh cache number: 1
+def refTestVersion = 'v1.2.0-rc.3' // Arbitrary change to refresh cache number: 1
 def blsRefTestVersion = 'v0.1.1'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'

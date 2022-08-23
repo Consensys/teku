@@ -40,11 +40,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -72,7 +72,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Optional<TransitionConfiguration> transitionConfiguration = Optional.empty();
 
   // block and payload tracking
-  private Optional<ExecutionPayload> lastMevBoostPayloadToBeUnblinded = Optional.empty();
+  private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
   public ExecutionLayerChannelStub(
@@ -296,7 +296,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   executionPayloadContext,
                   slot,
                   executionPayload.getBlockHash());
-              lastMevBoostPayloadToBeUnblinded = Optional.of(executionPayload);
+              lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
               return spec.atSlot(slot)
                   .getSchemaDefinitions()
                   .toVersionBellatrix()
@@ -321,7 +321,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock requires a signed blinded beacon block");
 
     checkState(
-        lastMevBoostPayloadToBeUnblinded.isPresent(),
+        lastBuilderPayloadToBeUnblinded.isPresent(),
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
@@ -335,16 +335,16 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     checkState(
         executionPayloadHeader
             .hashTreeRoot()
-            .equals(lastMevBoostPayloadToBeUnblinded.get().hashTreeRoot()),
+            .equals(lastBuilderPayloadToBeUnblinded.get().hashTreeRoot()),
         "provided signed blinded block contains an execution payload header not matching the previously retrieved execution payload via getPayloadHeader");
 
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
         signedBlindedBeaconBlock.getSlot(),
         signedBlindedBeaconBlock.getRoot(),
-        lastMevBoostPayloadToBeUnblinded.get().getBlockHash());
+        lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
-    return SafeFuture.completedFuture(lastMevBoostPayloadToBeUnblinded.get());
+    return SafeFuture.completedFuture(lastBuilderPayloadToBeUnblinded.get());
   }
 
   public PayloadStatus getPayloadStatus() {

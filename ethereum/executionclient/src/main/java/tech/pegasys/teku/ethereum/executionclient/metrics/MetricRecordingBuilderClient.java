@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
@@ -28,12 +28,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 
-public class MetricRecordingExecutionBuilderClient extends MetricRecordingAbstractClient
-    implements ExecutionBuilderClient {
+public class MetricRecordingBuilderClient extends MetricRecordingAbstractClient
+    implements BuilderClient {
 
   public static final String BUILDER_REQUESTS_COUNTER_NAME = "builder_requests_total";
 
@@ -42,10 +42,10 @@ public class MetricRecordingExecutionBuilderClient extends MetricRecordingAbstra
   public static final String GET_HEADER_METHOD = "get_header";
   public static final String GET_PAYLOAD_METHOD = "get_payload";
 
-  private final ExecutionBuilderClient delegate;
+  private final BuilderClient delegate;
 
-  public MetricRecordingExecutionBuilderClient(
-      final ExecutionBuilderClient delegate,
+  public MetricRecordingBuilderClient(
+      final BuilderClient delegate,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
     super(

@@ -13,7 +13,7 @@ executors:
     resource_class: small
     working_directory: ~/project
     environment:
-      JAVA_TOOL_OPTIONS: -Xmx2g
+      JAVA_TOOL_OPTIONS: -Xmx1500m
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   trivy_executor:
@@ -33,7 +33,7 @@ executors:
     working_directory: ~/project
     environment:
       DOCKER_CLI_EXPERIMENTAL: enabled
-      JAVA_TOOL_OPTIONS: -Xmx2g
+      JAVA_TOOL_OPTIONS: -Xmx1500m
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   medium_plus_executor:
@@ -44,7 +44,7 @@ executors:
     resource_class: "medium+"
     working_directory: ~/project
     environment:
-      JAVA_TOOL_OPTIONS: -Xmx2g
+      JAVA_TOOL_OPTIONS: -Xmx1500m
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   large_executor:
@@ -248,7 +248,7 @@ jobs:
 
   unitTests:
     parallelism: 2
-    executor: medium_plus_executor
+    executor: large_executor
     steps:
       - prepare
       - attach_workspace:
@@ -270,6 +270,8 @@ jobs:
               echo "Failed to determine correct distribution of tests across nodes"
               exit 1
             fi
+            export JAVA_TOOL_OPTIONS="-Xmx2500m"
+            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
             ./gradlew --no-daemon --parallel test $GRADLE_ARGS
       - notify
       - capture_test_results
@@ -473,7 +475,7 @@ jobs:
           command: |
             mkdir -p .openapidoc/spec
 
-            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+            build/install/teku/bin/teku --network=mainnet --ee-endpoint=stub --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
 
             EXIT_CODE=0

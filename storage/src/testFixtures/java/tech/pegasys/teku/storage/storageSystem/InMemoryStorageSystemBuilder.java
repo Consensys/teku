@@ -101,6 +101,7 @@ public class InMemoryStorageSystemBuilder {
         storageMode,
         storeConfig,
         spec,
+        Optional.empty(),
         ChainBuilder.create(spec, validatorKeys));
   }
 

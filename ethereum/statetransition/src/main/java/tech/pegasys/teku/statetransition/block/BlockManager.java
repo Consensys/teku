@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.FailedBlockImportResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -95,7 +94,7 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
-    LOG.trace("Preparing to import block: {}", () -> formatBlock(block.getSlot(), block.getRoot()));
+    LOG.trace("Preparing to import block: {}", block::toLogString);
     return doImportBlock(block, Optional.empty());
   }
 
@@ -245,7 +244,10 @@ public class BlockManager extends Service
                     futureBlocks.add(block);
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
-                    LOG.warn("Unable to import block: Execution Client is still syncing");
+                    LOG.warn(
+                        "Unable to import block {} with execution payload {}: Execution Client is still syncing",
+                        block.toLogString(),
+                        getExecutionPayloadInfoForLog(block));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
@@ -265,6 +267,15 @@ public class BlockManager extends Service
                 }
               }
             });
+  }
+
+  private String getExecutionPayloadInfoForLog(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalExecutionPayloadSummary()
+        .map(ExecutionPayloadSummary::toLogString)
+        .orElse("<none>");
   }
 
   private void dropInvalidBlock(

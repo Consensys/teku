@@ -33,15 +33,20 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
-public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipientProvider {
+public class BeaconProposerPreparer
+    implements ValidatorTimingChannel, ValidatorRegistrationPropertiesProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
   private Optional<ValidatorIndexProvider> validatorIndexProvider;
+
+  private Optional<OwnedValidators> ownedValidators = Optional.empty();
   private final ProposerConfigProvider proposerConfigProvider;
   private final Optional<Eth1Address> defaultFeeRecipient;
+  private final UInt64 defaultGasLimit;
   private final Spec spec;
   private final RuntimeProposerConfig runtimeProposerConfig;
 
@@ -50,42 +55,32 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
 
-  BeaconProposerPreparer(
-      ValidatorApiChannel validatorApiChannel,
-      ValidatorIndexProvider validatorIndexProvider,
-      ProposerConfigProvider proposerConfigProvider,
-      Optional<Eth1Address> defaultFeeRecipient,
-      Spec spec) {
-    this(
-        validatorApiChannel,
-        Optional.of(validatorIndexProvider),
-        proposerConfigProvider,
-        defaultFeeRecipient,
-        spec,
-        Optional.empty());
-  }
-
   public BeaconProposerPreparer(
-      ValidatorApiChannel validatorApiChannel,
-      Optional<ValidatorIndexProvider> validatorIndexProvider,
-      ProposerConfigProvider proposerConfigProvider,
-      Optional<Eth1Address> defaultFeeRecipient,
-      Spec spec,
-      Optional<Path> mutableProposerConfigPath) {
+      final ValidatorApiChannel validatorApiChannel,
+      final Optional<ValidatorIndexProvider> validatorIndexProvider,
+      final ProposerConfigProvider proposerConfigProvider,
+      final Optional<Eth1Address> defaultFeeRecipient,
+      final UInt64 defaultGasLimit,
+      final Spec spec,
+      final Optional<Path> mutableProposerConfigPath) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.proposerConfigProvider = proposerConfigProvider;
     this.defaultFeeRecipient = defaultFeeRecipient;
+    this.defaultGasLimit = defaultGasLimit;
     this.spec = spec;
     runtimeProposerConfig = new RuntimeProposerConfig(mutableProposerConfigPath);
   }
 
-  public void initialize(final Optional<ValidatorIndexProvider> provider) {
+  public void initialize(
+      final Optional<ValidatorIndexProvider> provider,
+      final Optional<OwnedValidators> ownedValidators) {
     this.validatorIndexProvider = provider;
+    this.ownedValidators = ownedValidators;
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
@@ -96,10 +91,10 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
 
   @Override
   public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
   @Override
   public void onPossibleMissedEvents() {
@@ -112,13 +107,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   }
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   // 2 configurations, 2 defaults
   // Priority order
@@ -128,7 +123,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   // - default set by --validators-proposer-default-fee-recipient
   @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       return Optional.empty();
     }
     return maybeProposerConfig
@@ -142,7 +137,23 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   }
 
   @Override
-  public boolean isReadyToProvideFeeRecipient() {
+  public Optional<UInt64> getGasLimit(final BLSPublicKey publicKey) {
+    if (!isOwnedValidator(publicKey)) {
+      return Optional.empty();
+    }
+    return maybeProposerConfig
+        .flatMap(config -> getGasLimitFromProposerConfig(config, publicKey))
+        .or(() -> runtimeProposerConfig.getGasLimitForPubKey(publicKey))
+        .or(
+            () ->
+                maybeProposerConfig.flatMap(
+                    proposerConfigProvider ->
+                        proposerConfigProvider.getDefaultConfig().getGasLimit()))
+        .or(() -> Optional.ofNullable(defaultGasLimit));
+  }
+
+  @Override
+  public boolean isReadyToProvideProperties() {
     return sentProposersAtLeastOnce.get();
   }
 
@@ -153,17 +164,30 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (eth1Address.equals(Eth1Address.ZERO)) {
       throw new SetFeeRecipientException("Cannot set fee recipient to 0x00 address.");
     }
-    if (validatorIndexCannotBeResolved(publicKey)) {
+    if (!isOwnedValidator(publicKey)) {
       throw new SetFeeRecipientException(
           "Validator public key not found when attempting to set fee recipient.");
     }
     Optional<Eth1Address> maybeEth1Address =
         maybeProposerConfig.flatMap(config -> getFeeRecipientFromProposerConfig(config, publicKey));
     if (maybeEth1Address.isPresent()) {
-      throw new SetFeeRecipientException(
-          "Validator public key has been configured in validators-proposer-config file - cannot update via api.");
+      throw new SetFeeRecipientException("Cannot update fee recipient via api.");
     }
-    runtimeProposerConfig.addOrUpdate(publicKey, eth1Address);
+    runtimeProposerConfig.updateFeeRecipient(publicKey, eth1Address);
+  }
+
+  public void setGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit)
+      throws SetFeeRecipientException {
+    if (!isOwnedValidator(publicKey)) {
+      throw new SetGasLimitException(
+          "Validator public key not found when attempting to set gas limit.");
+    }
+    Optional<UInt64> maybeGasLimit =
+        maybeProposerConfig.flatMap(config -> getGasLimitFromProposerConfig(config, publicKey));
+    if (maybeGasLimit.isPresent()) {
+      throw new SetGasLimitException("Cannot update gas limit via api.");
+    }
+    runtimeProposerConfig.updateGasLimit(publicKey, gasLimit);
   }
 
   public boolean deleteFeeRecipient(final BLSPublicKey publicKey) {
@@ -172,7 +196,17 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     if (maybeEth1Address.isPresent()) {
       return false;
     }
-    runtimeProposerConfig.delete(publicKey);
+    runtimeProposerConfig.deleteFeeRecipient(publicKey);
+    return true;
+  }
+
+  public boolean deleteGasLimit(final BLSPublicKey publicKey) {
+    Optional<UInt64> maybeGasLimit =
+        maybeProposerConfig.flatMap(config -> getGasLimitFromProposerConfig(config, publicKey));
+    if (maybeGasLimit.isPresent()) {
+      return false;
+    }
+    runtimeProposerConfig.deleteGasLimit(publicKey);
     return true;
   }
 
@@ -209,8 +243,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
   }
 
   private Collection<BeaconPreparableProposer> buildBeaconPreparableProposerList(
-      Optional<ProposerConfig> maybeProposerConfig,
-      Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
+      final Optional<ProposerConfig> maybeProposerConfig,
+      final Map<BLSPublicKey, Integer> blsPublicKeyToIndexMap) {
     this.maybeProposerConfig = maybeProposerConfig;
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
@@ -229,8 +263,12 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel, FeeRecipi
     return config.getConfigForPubKey(publicKey).flatMap(Config::getFeeRecipient);
   }
 
-  private boolean validatorIndexCannotBeResolved(final BLSPublicKey publicKey) {
-    return validatorIndexProvider.isEmpty()
-        || !validatorIndexProvider.get().containsPublicKey(publicKey);
+  private Optional<UInt64> getGasLimitFromProposerConfig(
+      final ProposerConfig config, final BLSPublicKey publicKey) {
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
+  }
+
+  private boolean isOwnedValidator(final BLSPublicKey publicKey) {
+    return ownedValidators.isPresent() && ownedValidators.get().getValidator(publicKey).isPresent();
   }
 }

@@ -18,12 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Automatically add `/eth/v2/debug/beacon/states/finalized` to the initial state file url (`--initial-state` CLI option) when the provided url doesn't work and doesn't contain any path.
-  This simplifies using the standard REST API to retrieve the initial state as just the base URL can be specified (e.g. `--initial-state https://<credentials@eth2-beacon-mainnet.infura.io`)
-- Ability to configure multiple beacon nodes for a single validator client using `--beacon-node-api-endpoints` CLI option
-- Primed cache for new justified checkpoints to reduce time required to run fork choice immediately after justification
+- Added Gas Limit APIs (GET/POST/DELETE)
+- Skip finding the PoW block that first satisfies the minimum genesis time condition when the genesis state is already known. Fixes an incompatibility with Nethermind's backwards sync for historic blocks.
 
 ### Bug Fixes
-- Fixed `NullPointerException` when checking for the terminal PoW block while the EL was syncing
-- Changed log level of `Ignoring calculated payload` message to debug level.
-- Fixed repeated timeout exceptions when requesting deposit logs from the `--ee-endpoint`

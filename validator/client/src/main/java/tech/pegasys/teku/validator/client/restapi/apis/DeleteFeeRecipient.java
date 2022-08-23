@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
-import static tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient.PARAM_PUBKEY_TYPE;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;

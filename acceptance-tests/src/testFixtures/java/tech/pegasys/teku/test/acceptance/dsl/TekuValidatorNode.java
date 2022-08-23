@@ -169,6 +169,11 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withProposerDefaultFeeRecipient(final String feeRecipient) {
+      configMap.put("validators-proposer-default-fee-recipient", feeRecipient);
+      return this;
+    }
+
     public TekuValidatorNode.Config withValidatorApiEnabled() {
       configMap.put("validator-api-enabled", true);
       configMap.put("validator-api-port", VALIDATOR_API_PORT);
