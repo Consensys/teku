@@ -42,6 +42,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -134,12 +135,12 @@ public class BlockManagerTest {
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = true;
+    AbstractBlockProcessor.depositSignatureVerifier = AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
   }
 
   @BeforeEach
