@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import org.apache.commons.lang3.StringUtils;
 
 abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
 
@@ -170,15 +169,5 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
   @Override
   public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
     return delegate.merge(key, value, remappingFunction);
-  }
-
-  @Override
-  public String toString() {
-    return "AbstractLimitedMap{"
-        + "delegate="
-        + StringUtils.join(delegate)
-        + ", maxSize="
-        + maxSize
-        + '}';
   }
 }

@@ -287,19 +287,8 @@ public class SignedContributionAndProofValidator {
       final int participantIndex) {
     final int committeeIndex =
         contribution.getSubcommitteeIndex().intValue() * subcommitteeSize + participantIndex;
-    try {
-      return spec.getSyncCommitteeUtilRequired(state.getSlot())
-          .getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
-    } catch (IllegalStateException ex) {
-      LOG.error("Exception", ex);
-      LOG.info(
-          "Exception with state [skip], syncCommittee {}, contribution {}, subcommiteeSize {}, pariticipantIndex {} ",
-          syncCommittee,
-          contribution,
-          subcommitteeSize,
-          participantIndex);
-      throw ex;
-    }
+    return spec.getSyncCommitteeUtilRequired(state.getSlot())
+        .getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
   }
 
   private boolean isInSyncSubcommittee(

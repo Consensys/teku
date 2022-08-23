@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -27,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
-  private static final Logger LOG = LogManager.getLogger();
   private final Cache<BLSPublicKey, Integer> validatorIndices;
   private final AtomicInteger lastIndex;
 
@@ -55,30 +52,10 @@ public class ValidatorIndexCache {
 
     final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
     if (validatorIndex.isPresent()) {
-      Optional<Integer> integer =
-          validatorIndex.filter(index -> index < state.getValidators().size());
-      if (integer.isEmpty()) {
-        LOG.info(
-            "Empty in if, publicKey {}, lastIndexSnapshot {}, validatorIndex {}, thread {}",
-            publicKey,
-            lastIndexSnapshot,
-            validatorIndex,
-            Thread.currentThread().getName());
-      }
-      return integer;
+      return validatorIndex.filter(index -> index < state.getValidators().size());
     }
 
-    Optional<Integer> indexFromState =
-        findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
-    if (indexFromState.isEmpty()) {
-      LOG.info(
-          "Empty, publicKey {}, lastIndexSnapshot {}, validatorIndices {}, thread {}",
-          publicKey,
-          lastIndexSnapshot,
-          validatorIndices,
-          Thread.currentThread().getName());
-    }
-    return indexFromState;
+    return findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
   }
 
   private Optional<Integer> findIndexFromState(
@@ -87,7 +64,6 @@ public class ValidatorIndexCache {
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      LOG.info("Invalidate1 {}: {}, thread {}", pubKey, i, Thread.currentThread().getName());
       validatorIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         updateLastIndex(i);
@@ -104,8 +80,6 @@ public class ValidatorIndexCache {
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    LOG.info(
-        "Invalidate2 {}: {}, thread {}", pubKey, updatedIndex, Thread.currentThread().getName());
     validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
