@@ -41,6 +41,7 @@ public class ValidateableAttestation {
   private final OptionalInt receivedSubnetId;
 
   private volatile boolean isValidIndexedAttestation = false;
+  private volatile boolean acceptedAsGossip = false;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
@@ -70,6 +71,7 @@ public class ValidateableAttestation {
     // An indexed attestation from a reorged block is valid because it already
     // has been validated when the block was part of the canonical chain
     validateableAttestation.setValidIndexedAttestation();
+    validateableAttestation.setAcceptedAsGossip();
     return validateableAttestation;
   }
 
@@ -117,6 +119,14 @@ public class ValidateableAttestation {
 
   public void setValidIndexedAttestation() {
     this.isValidIndexedAttestation = true;
+  }
+
+  public boolean isAcceptedAsGossip() {
+    return acceptedAsGossip;
+  }
+
+  public void setAcceptedAsGossip() {
+    this.acceptedAsGossip = true;
   }
 
   public Optional<IndexedAttestation> getIndexedAttestation() {
