@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;

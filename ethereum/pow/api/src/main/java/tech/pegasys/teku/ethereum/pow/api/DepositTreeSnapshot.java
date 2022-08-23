@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.ethereum.pow.api;
 
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -29,19 +31,24 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DepositTreeSnapshot
-    extends Container3<DepositTreeSnapshot, SszList<SszBytes32>, SszUInt64, SszBytes32> {
+    extends Container5<
+        DepositTreeSnapshot, SszList<SszBytes32>, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
 
   private static class DepositTreeSnapshotSchema
-      extends ContainerSchema3<DepositTreeSnapshot, SszList<SszBytes32>, SszUInt64, SszBytes32> {
+      extends ContainerSchema5<
+          DepositTreeSnapshot, SszList<SszBytes32>, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
 
-    protected DepositTreeSnapshotSchema() {
+    private DepositTreeSnapshotSchema() {
       super(
           "DepositTreeSnapshot",
           namedSchema(
               "finalized",
-              SszListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, Integer.MAX_VALUE)),
-          namedSchema("deposits", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("execution_block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA));
+              SszListSchema.create(
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, DEPOSIT_CONTRACT_TREE_DEPTH)),
+          namedSchema("deposit_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("deposit_count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("execution_block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("execution_block_height", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -66,12 +73,18 @@ public class DepositTreeSnapshot
   }
 
   public DepositTreeSnapshot(
-      final List<Bytes32> finalized, final long deposits, final Bytes32 executionBlockHash) {
+      final List<Bytes32> finalized,
+      final Bytes32 depositRoot,
+      final long depositCount,
+      final Bytes32 executionBlockHash,
+      final UInt64 executionBlockHeight) {
     super(
         SCHEMA,
         finalized.stream().map(SszBytes32::of).collect(SCHEMA.getFinalizedSchema().collector()),
-        SszUInt64.of(UInt64.valueOf(deposits)),
-        SszBytes32.of(executionBlockHash));
+        SszBytes32.of(depositRoot),
+        SszUInt64.of(UInt64.valueOf(depositCount)),
+        SszBytes32.of(executionBlockHash),
+        SszUInt64.of(executionBlockHeight));
   }
 
   private DepositTreeSnapshot(final DepositTreeSnapshotSchema schema, final TreeNode node) {
@@ -83,13 +96,23 @@ public class DepositTreeSnapshot
     return value.asList().stream().map(SszBytes32::get).collect(Collectors.toList());
   }
 
-  public long getDeposits() {
-    final SszUInt64 value = getAny(1);
+  public Bytes32 getDepositRoot() {
+    final SszBytes32 value = getAny(1);
+    return value.get();
+  }
+
+  public long getDepositCount() {
+    final SszUInt64 value = getAny(2);
     return value.longValue();
   }
 
   public Bytes32 getExecutionBlockHash() {
-    final SszBytes32 value = getAny(2);
+    final SszBytes32 value = getAny(3);
+    return value.get();
+  }
+
+  public UInt64 getExecutionBlockHeight() {
+    final SszUInt64 value = getAny(4);
     return value.get();
   }
 }
