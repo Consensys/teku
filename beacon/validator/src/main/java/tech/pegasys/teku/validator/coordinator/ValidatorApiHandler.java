@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -475,39 +474,36 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
-  private SafeFuture<AttestationProcessingResult> processAttestation(
-      final Attestation attestation) {
+  private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .onAttestation(ValidateableAttestation.fromValidator(spec, attestation))
+        .addAttestation(ValidateableAttestation.fromValidator(spec, attestation))
         .thenPeek(
             result -> {
-              if (!result.isInvalid()) {
+              if (!result.isReject()) {
                 dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
                 performanceTracker.saveProducedAttestation(attestation);
               } else {
                 VALIDATOR_LOGGER.producedInvalidAttestation(
-                    attestation.getData().getSlot(), result.getInvalidReason());
+                    attestation.getData().getSlot(),
+                    result.getDescription().orElse("Unknown reason"));
               }
             })
         .exceptionally(
-            error -> {
-              final String errorText =
-                  "Failed to send signed attestation for slot "
-                      + attestation.getData().getSlot()
-                      + ", block "
-                      + attestation.getData().getBeaconBlockRoot();
-              LOG.debug(errorText, error);
-              return AttestationProcessingResult.invalid(errorText);
-            });
+            error ->
+                InternalValidationResult.reject(
+                    "Failed to send signed attestation for slot %s, block %s",
+                    attestation.getData().getSlot(), attestation.getData().getBeaconBlockRoot()));
   }
 
   private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
-      final List<AttestationProcessingResult> results) {
+      final List<InternalValidationResult> results) {
     final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < results.size(); index++) {
-      final AttestationProcessingResult result = results.get(index);
-      if (result.isInvalid()) {
-        errorList.add(new SubmitDataError(UInt64.valueOf(index), result.getInvalidReason()));
+      final InternalValidationResult result = results.get(index);
+      if (result.isReject()) {
+        errorList.add(
+            new SubmitDataError(
+                UInt64.valueOf(index), result.getDescription().orElse("Unknown reason")));
       }
     }
     return errorList;
@@ -520,17 +516,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
-  private SafeFuture<AttestationProcessingResult> processAggregateAndProof(
+  private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
         .thenPeek(
-            result ->
-                result.ifInvalid(
-                    reason ->
-                        VALIDATOR_LOGGER.producedInvalidAggregate(
-                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
-                            reason)));
+            result -> {
+              if (result.isReject()) {
+                VALIDATOR_LOGGER.producedInvalidAggregate(
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                    result.getDescription().orElse("Unknown reason"));
+              }
+            });
   }
 
   @Override
