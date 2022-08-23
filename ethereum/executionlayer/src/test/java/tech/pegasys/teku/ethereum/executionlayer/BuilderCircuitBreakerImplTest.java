@@ -22,21 +22,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.StateTransition;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.storage.client.ChainUpdater;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BuilderCircuitBreakerImplTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
-
-  private final StateTransition stateTransition = new StateTransition(spec::atSlot);
 
   private final BuilderCircuitBreakerImpl builderCircuitBreaker =
       new BuilderCircuitBreakerImpl(spec, INSPECTION_WINDOW, ALLOWED_FAULTS);
@@ -44,9 +37,7 @@ public class BuilderCircuitBreakerImplTest {
   private static final int INSPECTION_WINDOW = 10;
   private static final int ALLOWED_FAULTS = 5;
 
-  private StorageSystem storageSystem;
-  private RecentChainData recentChainData;
-  protected ChainUpdater chainUpdater;
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   @BeforeAll
   public static void disableDepositBlsVerification() {
@@ -64,10 +55,7 @@ public class BuilderCircuitBreakerImplTest {
     // all tests assume 64 block roots history
     assertThat(spec.getGenesisSpec().getSlotsPerHistoricalRoot()).isEqualTo(64);
 
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    chainUpdater = storageSystem.chainUpdater();
-    storageSystem.chainUpdater().initializeGenesis(false);
-    recentChainData = storageSystem.recentChainData();
+    chainBuilder.generateGenesis();
   }
 
   @Test
@@ -99,7 +87,7 @@ public class BuilderCircuitBreakerImplTest {
     final BeaconState preState = advance(68, true);
 
     // generate state for the building slot
-    final BeaconState state = stateTransition.processSlots(preState, blockBuildingSlot);
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
     assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(5);
@@ -119,7 +107,7 @@ public class BuilderCircuitBreakerImplTest {
     final BeaconState preState = advance(68, true);
 
     // generate state for the building slot
-    final BeaconState state = stateTransition.processSlots(preState, blockBuildingSlot);
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
     assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(4);
@@ -140,7 +128,7 @@ public class BuilderCircuitBreakerImplTest {
 
     // generate state for the building slot
     // last block header will be from slot 67
-    final BeaconState state = stateTransition.processSlots(preState, blockBuildingSlot);
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
     assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(4);
@@ -156,7 +144,7 @@ public class BuilderCircuitBreakerImplTest {
     // build up to 58
     final BeaconState preState = advance(58, false);
 
-    final BeaconState state = stateTransition.processSlots(preState, blockBuildingSlot);
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
     assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(0);
@@ -164,12 +152,10 @@ public class BuilderCircuitBreakerImplTest {
 
   private BeaconState advance(final long toSlot, final boolean missing) {
     if (missing) {
-      SignedBlockAndState withBlocks = chainUpdater.advanceChain(toSlot);
-      chainUpdater.updateBestBlock(withBlocks);
+      chainBuilder.generateBlockAtSlot(toSlot);
     } else {
-      SignedBlockAndState withBlocks = chainUpdater.advanceChainUntil(toSlot);
-      chainUpdater.updateBestBlock(withBlocks);
+      chainBuilder.generateBlocksUpToSlot(toSlot);
     }
-    return recentChainData.getBestState().orElseThrow().getImmediately();
+    return chainBuilder.getLatestBlockAndState().getState();
   }
 }
