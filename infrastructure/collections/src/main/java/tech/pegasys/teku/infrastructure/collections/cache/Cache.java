@@ -49,7 +49,7 @@ public interface Cache<K, V> {
   /** Removes cache entry */
   void invalidate(K key);
 
-  /** Replaces key value * */
+  /** Replaces key value */
   void invalidateWithNewValue(K key, V newValue);
 
   /** Clears all cached values */
