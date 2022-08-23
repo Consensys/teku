@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -34,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -199,32 +198,16 @@ class OkHttpRestClientTest {
   @Test
   void postsAsyncDoesNotThrowExceptionsInOtherThreadsWhenRequestCreationFails() {
 
-    final AtomicBoolean testFinished = new AtomicBoolean(false);
-
-    final Thread testThread =
-        new Thread(
-            () -> {
-              final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
-              final SafeFuture<Response<TestObject>> responseFuture =
-                  underTest.postAsync(
-                      TEST_PATH,
-                      requestBodyObject,
-                      failingRequestTypeDefinition,
-                      responseTypeDefinition);
-
-              assertThat(responseFuture)
-                  .failsWithin(Duration.ofSeconds(1))
-                  .withThrowableOfType(ExecutionException.class)
-                  .havingCause()
-                  .withMessageContaining("Broken pipe");
-
-              testFinished.set(true);
-            });
-
-    testThread.start();
+    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+    final SafeFuture<Response<TestObject>> responseFuture =
+        underTest.postAsync(
+            TEST_PATH, requestBodyObject, failingRequestTypeDefinition, responseTypeDefinition);
 
     // this will fail if exceptions are thrown in other threads
-    await().catchUncaughtExceptions().atMost(Duration.ofSeconds(1)).until(testFinished::get);
+    await().catchUncaughtExceptions().atMost(Duration.ofSeconds(1)).until(responseFuture::isDone);
+
+    SafeFutureAssert.assertThatSafeFuture(responseFuture)
+        .isCompletedExceptionallyWithMessage("Broken pipe");
   }
 
   @Test
