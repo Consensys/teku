@@ -14,7 +14,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':storage'))
 }
 
 publishing {
