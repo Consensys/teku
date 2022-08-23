@@ -86,9 +86,20 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                     .withNetwork("swift")
                     .withInteropValidators(0, VALIDATOR_COUNT)
                     .withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(Duration.ofMillis(100))
-                    .withBeaconNodes(beaconNode, failoverBeaconNode));
+                    .withBeaconNodeApiEndpoint(beaconNode, failoverBeaconNode));
 
     validatorClient.start();
+
+    // validator using `--beacon-node-api-endpoints` instead of `--beacon-node-api-endpoint`
+    TekuValidatorNode validatorClient2 = createValidatorNode(
+            config ->
+                    config
+                            .withNetwork("swift")
+                            .withInteropValidators(0, VALIDATOR_COUNT)
+                            .withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(Duration.ofMillis(100))
+                            .withBeaconNodeApiEndpoints(beaconNode, failoverBeaconNode));
+
+    validatorClient2.start();
 
     waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete();
@@ -97,6 +108,8 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
     validatorClient.waitForLogMessageContaining(
         "Switching to failover beacon node for event streaming");
+    validatorClient2.waitForLogMessageContaining(
+            "Switching to failover beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete();
 
@@ -105,6 +118,8 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
     validatorClient.waitForLogMessageContaining(
         "Primary beacon node is back and ready for event streaming. Will attempt connecting.");
+    validatorClient2.waitForLogMessageContaining(
+            "Primary beacon node is back and ready for event streaming. Will attempt connecting.");
     waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete();
   }
