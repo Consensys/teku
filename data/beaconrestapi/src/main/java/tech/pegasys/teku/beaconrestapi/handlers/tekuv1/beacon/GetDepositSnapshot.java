@@ -41,6 +41,10 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
+/**
+ * Get Deposit Snapshot Tree, see <a
+ * href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4881.md">EIP-4881</a>
+ */
 public class GetDepositSnapshot extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/teku/v1/beacon/deposit_snapshot";

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.ethereum.pow.api;
 
-public class NetworkConstants {
+import org.apache.tuweni.bytes.Bytes;
 
-  public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
-  public static final int INTERVALS_PER_SLOT = 3;
-  public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
+public class DepositConstants {
+  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 }

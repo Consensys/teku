@@ -57,7 +57,7 @@ public class DepositSnapshotResourceLoaderTest {
         loader.loadDepositSnapshot(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE))),
         depositTreeSnapshot -> {
           assertThat(depositTreeSnapshot.isPresent()).isTrue();
-          assertThat(depositTreeSnapshot.get().getDeposits()).isEqualTo(16430);
+          assertThat(depositTreeSnapshot.get().getDepositCount()).isEqualTo(16646);
         });
   }
 
