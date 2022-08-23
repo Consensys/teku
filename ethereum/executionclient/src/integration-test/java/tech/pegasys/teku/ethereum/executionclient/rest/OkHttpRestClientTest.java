@@ -223,6 +223,7 @@ class OkHttpRestClientTest {
 
     testThread.start();
 
+    // this will fail if exceptions are thrown in other threads
     await().catchUncaughtExceptions().atMost(Duration.ofSeconds(1)).until(testFinished::get);
   }
 
