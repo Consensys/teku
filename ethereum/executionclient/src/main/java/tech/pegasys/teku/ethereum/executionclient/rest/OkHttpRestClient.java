@@ -17,7 +17,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Call;
@@ -32,7 +31,6 @@ import okio.BufferedSink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -119,13 +117,10 @@ public class OkHttpRestClient implements RestClient {
 
       @Override
       public void writeTo(@NotNull final BufferedSink bufferedSink) throws IOException {
-        try (bufferedSink;
-            final OutputStream outputStream = bufferedSink.outputStream()) {
-          JsonUtil.serializeToBytes(requestBodyObject, requestTypeDefinition, outputStream);
-        }
+        JsonUtil.serializeToBytesUnchecked(
+            requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
       }
 
-      @Nullable
       @Override
       public MediaType contentType() {
         return JSON_MEDIA_TYPE;
@@ -173,7 +168,7 @@ public class OkHttpRestClient implements RestClient {
               final T payload =
                   JsonUtil.parse(responseBody.byteStream(), responseTypeDefinitionMaybe.get());
               futureResponse.complete(new Response<>(payload));
-            } catch (Throwable ex) {
+            } catch (final Throwable ex) {
               futureResponse.completeExceptionally(ex);
             }
           }
@@ -187,7 +182,7 @@ public class OkHttpRestClient implements RestClient {
     try {
       final String errorMessage = getErrorMessageForFailedResponse(response);
       futureResponse.complete(Response.withErrorMessage(errorMessage));
-    } catch (Throwable ex) {
+    } catch (final Throwable ex) {
       futureResponse.completeExceptionally(ex);
     }
   }
