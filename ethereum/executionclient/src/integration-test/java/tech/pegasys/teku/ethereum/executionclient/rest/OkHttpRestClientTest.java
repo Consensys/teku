@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -195,21 +197,33 @@ class OkHttpRestClientTest {
   }
 
   @Test
-  void postsAsyncHandlesRequestBodyCreationFailure() {
-    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+  void postsAsyncDoesNotThrowExceptionsInOtherThreadsWhenRequestCreationFails() {
 
-    final SafeFuture<Response<TestObject>> responseFuture =
-        underTest.postAsync(
-            TEST_PATH, requestBodyObject, failingRequestTypeDefinition, responseTypeDefinition);
+    final AtomicBoolean testFinished = new AtomicBoolean(false);
 
-    assertThat(responseFuture)
-        .failsWithin(Duration.ofSeconds(1))
-        .withThrowableOfType(ExecutionException.class)
-        .havingCause()
-        .withMessage("Broken pipe");
+    final Thread testThread =
+        new Thread(
+            () -> {
+              final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+              final SafeFuture<Response<TestObject>> responseFuture =
+                  underTest.postAsync(
+                      TEST_PATH,
+                      requestBodyObject,
+                      failingRequestTypeDefinition,
+                      responseTypeDefinition);
 
-    // ensure no running calls
-    assertThat(okHttpClient.dispatcher().runningCalls()).isEmpty();
+              assertThat(responseFuture)
+                  .failsWithin(Duration.ofSeconds(1))
+                  .withThrowableOfType(ExecutionException.class)
+                  .havingCause()
+                  .withMessageContaining("Broken pipe");
+
+              testFinished.set(true);
+            });
+
+    testThread.start();
+
+    await().catchUncaughtExceptions().atMost(Duration.ofSeconds(1)).until(testFinished::get);
   }
 
   @Test

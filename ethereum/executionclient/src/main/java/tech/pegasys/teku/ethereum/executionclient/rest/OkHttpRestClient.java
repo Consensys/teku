@@ -117,7 +117,7 @@ public class OkHttpRestClient implements RestClient {
 
       @Override
       public void writeTo(@NotNull final BufferedSink bufferedSink) throws IOException {
-        JsonUtil.serializeToBytesUnchecked(
+        JsonUtil.serializeToBytesChecked(
             requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
       }
 

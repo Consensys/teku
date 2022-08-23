@@ -64,7 +64,7 @@ public class JsonUtil {
       final JsonFactory factory, final JsonWriter serializer, final OutputStream out)
       throws JsonProcessingException {
     try {
-      serializeToBytesUnchecked(factory, serializer, out);
+      serializeToBytesChecked(factory, serializer, out);
     } catch (final JsonProcessingException e) {
       throw e;
     } catch (final IOException e) {
@@ -72,13 +72,13 @@ public class JsonUtil {
     }
   }
 
-  public static <T> void serializeToBytesUnchecked(
+  public static <T> void serializeToBytesChecked(
       final T value, final SerializableTypeDefinition<T> type, final OutputStream out)
       throws IOException {
-    serializeToBytesUnchecked(FACTORY, gen -> type.serialize(value, gen), out);
+    serializeToBytesChecked(FACTORY, gen -> type.serialize(value, gen), out);
   }
 
-  public static void serializeToBytesUnchecked(
+  public static void serializeToBytesChecked(
       final JsonFactory factory, final JsonWriter serializer, final OutputStream out)
       throws IOException {
     try (final JsonGenerator gen = factory.createGenerator(out)) {
