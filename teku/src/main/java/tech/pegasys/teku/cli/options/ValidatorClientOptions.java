@@ -29,7 +29,7 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 public class ValidatorClientOptions {
 
   @Option(
-      names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
+      names = {"--beacon-node-api-endpoints", "--beacon-node-api-endpoint"},
       paramLabel = "<ENDPOINT>",
       description =
           "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
