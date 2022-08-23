@@ -11,18 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.ethereum.pow.api;
 
-import java.util.Optional;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import org.apache.tuweni.bytes.Bytes;
 
-public interface ValidatorRegistrationPropertiesProvider {
-
-  Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
-
-  Optional<UInt64> getGasLimit(BLSPublicKey publicKey);
-
-  boolean isReadyToProvideProperties();
+public class DepositConstants {
+  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 }

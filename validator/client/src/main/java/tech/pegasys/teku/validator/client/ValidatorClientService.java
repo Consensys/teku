@@ -309,7 +309,9 @@ public class ValidatorClientService extends Service {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       beaconProposerPreparer.ifPresent(
           preparer -> {
-            preparer.initialize(Optional.of(validatorIndexProvider));
+            preparer.initialize(
+                Optional.of(validatorIndexProvider),
+                Optional.of(validatorLoader.getOwnedValidators()));
             validatorTimingChannels.add(preparer);
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);

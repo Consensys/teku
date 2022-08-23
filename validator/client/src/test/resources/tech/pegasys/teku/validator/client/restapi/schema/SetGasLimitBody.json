@@ -1,0 +1,13 @@
+{
+  "title" : "SetGasLimitBody",
+  "type" : "object",
+  "required" : [ "gas_limit" ],
+  "properties" : {
+    "gas_limit" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

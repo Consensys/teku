@@ -167,16 +167,9 @@ public class BlockOperationSelectorFactory {
                             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
-                (executionPayloadContext) -> {
-                  final boolean transitionNotFinalized =
-                      executionPayloadContext
-                          .getForkChoiceState()
-                          .getFinalizedExecutionBlockHash()
-                          .isZero();
-
-                  return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState, transitionNotFinalized);
-                }));
+                (executionPayloadContext) ->
+                    executionLayerChannel.builderGetHeader(
+                        executionPayloadContext, blockSlotState)));
         return;
       }
 

@@ -142,8 +142,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return cachedValidatorRegistrations.size();
   }
 
+  private UInt64 getGasLimit(final BLSPublicKey publicKey) {
+    return validatorRegistrationPropertiesProvider
+        .getGasLimit(publicKey)
+        .orElse(validatorConfig.getBuilderRegistrationDefaultGasLimit());
+  }
+
   private boolean isNotReadyToRegister() {
-    if (!validatorRegistrationPropertiesProvider.isReadyToProvideFeeRecipient()) {
+    if (!validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
       LOG.debug("Not ready to register validator(s).");
       return true;
     }
@@ -212,7 +218,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     }
 
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
-    final UInt64 gasLimit = getGasLimit(maybeProposerConfig, publicKey);
+    final UInt64 gasLimit = getGasLimit(publicKey);
 
     final Optional<UInt64> maybeTimestampOverride =
         getTimestampOverride(maybeProposerConfig, publicKey);
@@ -255,13 +261,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return maybeProposerConfig
         .flatMap(proposerConfig -> proposerConfig.isBuilderEnabledForPubKey(publicKey))
         .orElse(validatorConfig.isBuilderRegistrationDefaultEnabled());
-  }
-
-  private UInt64 getGasLimit(
-      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
-    return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.getBuilderGasLimitForPubKey(publicKey))
-        .orElse(validatorConfig.getBuilderRegistrationDefaultGasLimit());
   }
 
   private ValidatorRegistration createValidatorRegistration(

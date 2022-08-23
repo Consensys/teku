@@ -18,10 +18,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class GetDepositSnapshotResponse {
 
-  public DepositTreeSnapshotSchema data;
+  public DepositTreeSnapshot data;
 
   @JsonCreator
-  public GetDepositSnapshotResponse(@JsonProperty("data") final DepositTreeSnapshotSchema data) {
+  public GetDepositSnapshotResponse(@JsonProperty("data") final DepositTreeSnapshot data) {
     this.data = data;
   }
 }

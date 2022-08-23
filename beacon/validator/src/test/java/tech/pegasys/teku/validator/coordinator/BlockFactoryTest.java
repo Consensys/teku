@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -307,7 +306,7 @@ class BlockFactoryTest {
                 Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
     when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionLayer.builderGetHeader(any(), any(), anyBoolean()))
+    when(executionLayer.builderGetHeader(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();

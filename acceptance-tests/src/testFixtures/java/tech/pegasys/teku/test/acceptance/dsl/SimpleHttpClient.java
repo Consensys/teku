@@ -87,8 +87,11 @@ public class SimpleHttpClient {
     LOG.debug("POST {}{}, body {}", baseUrl, path, jsonBody);
 
     final Response response = httpClient.newCall(builder.build()).execute();
-    assertThat(response.isSuccessful()).isTrue();
     final ResponseBody responseBody = response.body();
+    if (!response.isSuccessful()) {
+      LOG.debug("POST RESPONSE CODE: {}, BODY: {}", response.code(), responseBody.string());
+    }
+    assertThat(response.isSuccessful()).isTrue();
     assertThat(responseBody).isNotNull();
     return responseBody.string();
   }
