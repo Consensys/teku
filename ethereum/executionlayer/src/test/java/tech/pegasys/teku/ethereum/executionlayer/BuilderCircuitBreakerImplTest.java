@@ -49,7 +49,6 @@ public class BuilderCircuitBreakerImplTest {
     AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
-  @Test
   @BeforeEach
   void setUp() {
     // all tests assume 64 block roots history
