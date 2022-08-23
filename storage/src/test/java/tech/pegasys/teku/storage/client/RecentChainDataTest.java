@@ -103,7 +103,7 @@ class RecentChainDataTest {
 
   @AfterAll
   public static void enableDepositBlsVerification() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @Test

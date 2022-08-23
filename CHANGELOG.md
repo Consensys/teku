@@ -20,5 +20,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Added Gas Limit APIs (GET/POST/DELETE)
 - Skip finding the PoW block that first satisfies the minimum genesis time condition when the genesis state is already known. Fixes an incompatibility with Nethermind's backwards sync for historic blocks.
+- Circuit breaker logic added when interacting with Builder endpoint
 
 ### Bug Fixes
