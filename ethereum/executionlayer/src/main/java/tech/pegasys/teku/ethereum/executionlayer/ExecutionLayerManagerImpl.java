@@ -50,6 +50,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfiguration
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -531,8 +532,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private boolean isCircuitBreakerEngaged(final BeaconState state) {
     try {
       return builderCircuitBreaker.isEngaged(state);
-    } catch (Exception ex) {
-      LOG.error("Builder circuit breaker engagement failure. Acting like it has been engaged.", ex);
+    } catch (Exception e) {
+      if (ExceptionUtil.hasCause(e, InterruptedException.class)) {
+        LOG.debug("Shutting down");
+      } else {
+        LOG.error(
+            "Builder circuit breaker engagement failure at slot {}. Acting like it has been engaged.",
+            state.getSlot(),
+            e);
+      }
       return true;
     }
   }
