@@ -23,4 +23,5 @@ dependencies {
   integrationTestImplementation testFixtures(project(':infrastructure:json'))
   integrationTestImplementation testFixtures(project(':infrastructure:time'))
   integrationTestImplementation 'com.squareup.okhttp3:mockwebserver'
+  integrationTestImplementation 'org.awaitility:awaitility'
 }
