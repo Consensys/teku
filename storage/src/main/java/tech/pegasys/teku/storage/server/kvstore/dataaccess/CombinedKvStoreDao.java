@@ -766,7 +766,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void deleteFinalizedStateAndRoot(Bytes32 stateRoot, UInt64 slot) {
-      stateStorageUpdater.deleteFinalizedState(db, transaction, schema, slot);
+      stateStorageUpdater.deleteFinalizedState(transaction, schema, slot);
       transaction.delete(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
     }
 

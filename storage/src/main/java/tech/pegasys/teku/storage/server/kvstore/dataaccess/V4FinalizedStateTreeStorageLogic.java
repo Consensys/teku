@@ -142,10 +142,7 @@ public class V4FinalizedStateTreeStorageLogic
 
     @Override
     public void deleteFinalizedState(
-        KvStoreAccessor db,
-        KvStoreTransaction transaction,
-        SchemaCombinedTreeState schema,
-        UInt64 slot) {
+        KvStoreTransaction transaction, SchemaCombinedTreeState schema, UInt64 slot) {
       transaction.delete(schema.getColumnFinalizedStateRootsBySlot(), slot);
     }
 
