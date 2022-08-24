@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static tech.pegasys.teku.spec.constants.NetworkConstants.BLS_WITHDRAWAL_PREFIX;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.BLS_WITHDRAWAL_PREFIX;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;

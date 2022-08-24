@@ -16,18 +16,12 @@ package tech.pegasys.teku.services.powchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertWith;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.beacon.pow.Eth1Provider;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -40,7 +34,6 @@ public class DepositSnapshotLoaderTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
 
   private String notFoundResource;
   private DepositSnapshotLoader depositSnapshotLoader;
@@ -49,43 +42,36 @@ public class DepositSnapshotLoaderTest {
   public void setup() {
     this.notFoundResource = dataStructureUtil.randomBytes32().toHexString();
     this.depositSnapshotLoader =
-        new DepositSnapshotLoader(
-            Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)), eth1Provider);
+        new DepositSnapshotLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)));
   }
 
   @Test
   public void shouldReturnEmpty_whenNoDepositSnapshot() throws Exception {
-    this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.empty(), eth1Provider);
+    this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.empty());
     final SafeFuture<LoadDepositSnapshotResult> result =
         depositSnapshotLoader.loadDepositSnapshot();
     assertThat(result.get().getDepositTreeSnapshot()).isEmpty();
-    verifyNoInteractions(eth1Provider);
   }
 
   @Test
   public void shouldThrowInvalidConfigurationException_whenIncorrectResourcePath() {
-    this.depositSnapshotLoader =
-        new DepositSnapshotLoader(Optional.of(notFoundResource), eth1Provider);
+    this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.of(notFoundResource));
     final SafeFuture<LoadDepositSnapshotResult> result =
         depositSnapshotLoader.loadDepositSnapshot();
     assertThatThrownBy(result::get).cause().isInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  public void shouldHaveCorrectDepositsData_whenAllServicesAvailable() throws Exception {
-    final int deposits = 16430;
-    final int blockNumber = 100;
-    final EthBlock.Block block = mock(EthBlock.Block.class);
-    when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
-    when(eth1Provider.getGuaranteedEth1Block(any(String.class)))
-        .thenReturn(SafeFuture.completedFuture(block));
+  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded() throws Exception {
+    final int deposits = 16646;
+    final int blockNumber = 1033803;
     final SafeFuture<LoadDepositSnapshotResult> result =
         depositSnapshotLoader.loadDepositSnapshot();
     assertWith(
         result.get(),
         snapshotResult -> {
           assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
-          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDeposits())
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
               .isEqualTo(deposits);
           assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
               .contains(BigInteger.valueOf(deposits - 1));
