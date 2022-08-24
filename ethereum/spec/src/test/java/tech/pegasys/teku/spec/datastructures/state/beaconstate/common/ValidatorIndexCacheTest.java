@@ -22,10 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
@@ -98,46 +94,5 @@ public class ValidatorIndexCacheTest {
     // state didn't get scanned, because we had the index but it was out of bounds
     assertThat(validatorIndexCache.getLastIndex()).isEqualTo(-1);
     assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(1);
-  }
-
-  @Test
-  public void shouldNotFailOnMultithreading() throws InterruptedException {
-    final int validatorIndex = 30;
-    final int timeLimitMillis = 10_000;
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    final Optional<Integer> lastValidatorIndex =
-        validatorIndexCache.getValidatorIndex(
-            state, state.getValidators().get(state.getValidators().size() - 1).getPublicKey());
-    assertThat(lastValidatorIndex).isNotEmpty();
-    // point lastIndex to the end of validators list, so everything should be in cache since now
-    assertThat(validatorIndexCache.getLastIndex()).isEqualTo(state.getValidators().size() - 1);
-
-    final BLSPublicKey publicKey = state.getValidators().get(validatorIndex).getPublicKey();
-    final ExecutorService executor = Executors.newFixedThreadPool(4);
-    final long startTime = System.currentTimeMillis();
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicBoolean passed = new AtomicBoolean(true);
-    executor.execute(
-        () -> {
-          while (System.currentTimeMillis() < startTime + timeLimitMillis) {
-            validatorIndexCache.invalidateWithNewValue(publicKey, validatorIndex);
-          }
-          latch.countDown();
-        });
-    for (int i = 0; i < 3; ++i) {
-      executor.execute(
-          () -> {
-            while (System.currentTimeMillis() < startTime + timeLimitMillis) {
-              final Optional<Integer> failingIndex =
-                  validatorIndexCache.getValidatorIndex(state, publicKey);
-              if (failingIndex.isEmpty()) {
-                passed.set(false);
-                latch.countDown();
-              }
-            }
-          });
-    }
-    latch.await();
-    assertThat(passed).isTrue();
   }
 }
