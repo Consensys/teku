@@ -41,17 +41,22 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
+import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz_snappy";
 
-  private enum Operation {
+  enum Operation {
     ATTESTER_SLASHING,
     PROPOSER_SLASHING,
     PROCESS_BLOCK_HEADER,
@@ -118,11 +123,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition,
       final BeaconState preState)
       throws Exception {
-    if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
+    final boolean isOperationValid =
+        testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists();
+    if (isOperationValid) {
       assertOperationSuccessful(processor, testDefinition, preState);
     } else {
       assertOperationInvalid(testDefinition, processor, preState);
     }
+
+    checkBlockInclusionValidation(testDefinition, preState, isOperationValid);
   }
 
   private void assertOperationSuccessful(
@@ -208,16 +217,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       throws Exception {
     switch (operation) {
       case ATTESTER_SLASHING:
-        final AttesterSlashing attesterSlashing =
-            loadSsz(
-                testDefinition,
-                dataFileName,
-                testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
+        final AttesterSlashing attesterSlashing = loadAttesterSlashing(testDefinition);
         processor.processAttesterSlashing(state, attesterSlashing);
         break;
       case PROPOSER_SLASHING:
-        final ProposerSlashing proposerSlashing =
-            loadSsz(testDefinition, dataFileName, ProposerSlashing.SSZ_SCHEMA);
+        final ProposerSlashing proposerSlashing = loadProposerSlashing(testDefinition);
         processor.processProposerSlashing(state, proposerSlashing);
         break;
       case PROCESS_BLOCK_HEADER:
@@ -233,8 +237,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         processor.processDeposit(state, deposit);
         break;
       case VOLUNTARY_EXIT:
-        final SignedVoluntaryExit voluntaryExit =
-            loadSsz(testDefinition, dataFileName, SignedVoluntaryExit.SSZ_SCHEMA);
+        final SignedVoluntaryExit voluntaryExit = loadVoluntaryExit(testDefinition);
         processor.processVoluntaryExit(state, voluntaryExit);
         break;
       case ATTESTATION:
@@ -286,6 +289,69 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             Optional.of(
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
+    }
+  }
+
+  private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
+    return loadSsz(testDefinition, dataFileName, SignedVoluntaryExit.SSZ_SCHEMA);
+  }
+
+  private ProposerSlashing loadProposerSlashing(final TestDefinition testDefinition) {
+    return loadSsz(testDefinition, dataFileName, ProposerSlashing.SSZ_SCHEMA);
+  }
+
+  private AttesterSlashing loadAttesterSlashing(final TestDefinition testDefinition) {
+    return loadSsz(
+        testDefinition,
+        dataFileName,
+        testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
+  }
+
+  public void checkBlockInclusionValidation(
+      final TestDefinition testDefinition, final BeaconState state, final boolean expectInclusion) {
+    final Spec spec = testDefinition.getSpec();
+    switch (operation) {
+      case ATTESTER_SLASHING:
+        final AttesterSlashing attesterSlashing = loadAttesterSlashing(testDefinition);
+        final AttesterSlashingValidator validator = new AttesterSlashingValidator(null, spec);
+        checkValidationForBlockInclusion(validator, state, attesterSlashing, expectInclusion);
+        break;
+      case PROPOSER_SLASHING:
+        final ProposerSlashing proposerSlashing = loadProposerSlashing(testDefinition);
+        final ProposerSlashingValidator proposerValidator =
+            new ProposerSlashingValidator(spec, null);
+        checkValidationForBlockInclusion(
+            proposerValidator, state, proposerSlashing, expectInclusion);
+        break;
+      case VOLUNTARY_EXIT:
+        final SignedVoluntaryExit voluntaryExit = loadVoluntaryExit(testDefinition);
+        final VoluntaryExitValidator voluntaryExitValidator =
+            new VoluntaryExitValidator(spec, null);
+        checkValidationForBlockInclusion(
+            voluntaryExitValidator, state, voluntaryExit, expectInclusion);
+        break;
+
+      case PROCESS_BLOCK_HEADER:
+      case DEPOSIT:
+      case ATTESTATION:
+      case SYNC_AGGREGATE:
+      case EXECUTION_PAYLOAD:
+        // Not yet testing inclusion rules
+        break;
+    }
+  }
+
+  private <O> void checkValidationForBlockInclusion(
+      final OperationValidator<O> validator,
+      final BeaconState state,
+      final O operation,
+      final boolean expectInclusion) {
+    final Optional<String> invalidReason =
+        validator.validateForBlockInclusion(state, operation).map(OperationInvalidReason::describe);
+    if (expectInclusion) {
+      assertThat(invalidReason).isEmpty();
+    } else {
+      assertThat(invalidReason).isPresent();
     }
   }
 
