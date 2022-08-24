@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int DEFAULT_REST_API_PORT = 5051;
@@ -39,6 +40,7 @@ public class ValidatorConfig {
       List.of("http://127.0.0.1:" + DEFAULT_REST_API_PORT);
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
+  public static final String DEFAULT_VALIDATOR_SENTRY_CONFIG_FILENAME = "sentry-config.json";
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -82,6 +84,7 @@ public class ValidatorConfig {
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
   private final int executorMaxQueueSize;
   private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
+  private final Optional<Path> sentryNodeConfigurationFile;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -111,7 +114,8 @@ public class ValidatorConfig {
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
+      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod,
+      final Optional<Path> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -144,6 +148,7 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         primaryBeaconNodeEventStreamReconnectAttemptPeriod;
+    this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
   }
 
   public static Builder builder() {
@@ -261,6 +266,10 @@ public class ValidatorConfig {
     return primaryBeaconNodeEventStreamReconnectAttemptPeriod;
   }
 
+  public Optional<Path> getSentryNodeConfigurationFile() {
+    return sentryNodeConfigurationFile;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -308,6 +317,7 @@ public class ValidatorConfig {
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD;
+    private Optional<Path> sentryNodeConfigurationFile = Optional.empty();
 
     private Builder() {}
 
@@ -490,6 +500,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder sentryNodeConfigurationFile(final String configFile) {
+      if (configFile != null) {
+        this.sentryNodeConfigurationFile = Optional.ofNullable(Path.of(configFile));
+      }
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -524,7 +541,8 @@ public class ValidatorConfig {
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          primaryBeaconNodeEventStreamReconnectAttemptPeriod);
+          primaryBeaconNodeEventStreamReconnectAttemptPeriod,
+          sentryNodeConfigurationFile);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
