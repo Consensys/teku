@@ -366,6 +366,13 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void deleteFinalizedStateAndRoot(Bytes32 stateRoot, UInt64 slot) {
+      // todo check deletes if not there (doesn't break)
+      transaction.delete(schema.getColumnFinalizedStatesBySlot(), slot);
+      transaction.delete(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
+    }
+
+    @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       if (transitionBlockSlot.isPresent()) {
         transaction.put(schema.getOptimisticTransitionBlockSlot(), transitionBlockSlot.get());

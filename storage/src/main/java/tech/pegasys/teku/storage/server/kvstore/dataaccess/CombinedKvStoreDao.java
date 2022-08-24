@@ -765,6 +765,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void deleteFinalizedStateAndRoot(Bytes32 stateRoot, UInt64 slot) {
+      stateStorageUpdater.deleteFinalizedState(db, transaction, schema, slot);
+      transaction.delete(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
+    }
+
+    @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       if (transitionBlockSlot.isPresent()) {
         transaction.put(schema.getOptimisticTransitionBlockSlot(), transitionBlockSlot.get());

@@ -617,6 +617,11 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void deleteFinalizedStateAndRoot(Bytes32 stateRoot, UInt64 slot) {
+      finalizedUpdater.deleteFinalizedStateAndRoot(stateRoot, slot);
+    }
+
+    @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       finalizedUpdater.setOptimisticTransitionBlockSlot(transitionBlockSlot);
     }

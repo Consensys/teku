@@ -87,6 +87,13 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     }
 
     @Override
+    public void deleteFinalizedState(
+        KvStoreAccessor db, KvStoreTransaction transaction, S schema, UInt64 slot) {
+      // todo fix
+      deleteFinalizedState(db, transaction, schema, slot);
+    }
+
+    @Override
     public void commit() {}
 
     private void addFinalizedState(
