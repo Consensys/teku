@@ -88,7 +88,7 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
-    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
+    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
@@ -108,7 +108,7 @@ public class OperationPoolTest {
             validator);
     when(filter.test(any())).thenReturn(false);
     when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
-    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
+    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 10; i++) {
       pool.addLocal(dataStructureUtil.randomSignedVoluntaryExit());
@@ -129,7 +129,7 @@ public class OperationPoolTest {
         new OperationPool<>(
             "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
     when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
-    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
+    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
         Stream.generate(() -> dataStructureUtil.randomAttesterSlashing())
             .limit(attesterSlashingsSchema.getMaxLength())
@@ -156,9 +156,9 @@ public class OperationPoolTest {
     pool.addLocal(slashing1);
     pool.addLocal(slashing2);
 
-    when(validator.validateForStateTransition(any(), eq(slashing1)))
+    when(validator.validateForBlockInclusion(any(), eq(slashing1)))
         .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
-    when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(Optional.empty());
+    when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
   }

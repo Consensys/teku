@@ -122,7 +122,7 @@ public class OperationPool<T extends SszData> {
     return operationsStream
         .filter(filter)
         .filter(
-            item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item).isEmpty())
+            item -> operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty())
         .limit(schema.getMaxLength())
         .peek(includedItemConsumer)
         .collect(schema.collector());

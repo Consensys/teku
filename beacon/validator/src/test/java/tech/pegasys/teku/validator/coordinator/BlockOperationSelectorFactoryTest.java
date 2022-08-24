@@ -255,11 +255,11 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing3);
     assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
 
-    when(proposerSlashingValidator.validateForStateTransition(blockSlotState, proposerSlashing2))
+    when(proposerSlashingValidator.validateForBlockInclusion(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));
-    when(voluntaryExitValidator.validateForStateTransition(blockSlotState, voluntaryExit2))
+    when(voluntaryExitValidator.validateForBlockInclusion(blockSlotState, voluntaryExit2))
         .thenReturn(Optional.of(ExitInvalidReason.invalidSignature()));
-    when(attesterSlashingValidator.validateForStateTransition(blockSlotState, attesterSlashing2))
+    when(attesterSlashingValidator.validateForBlockInclusion(blockSlotState, attesterSlashing2))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
 
     factory
