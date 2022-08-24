@@ -27,13 +27,13 @@ import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingRe
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -41,12 +41,15 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -56,6 +59,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 
@@ -64,6 +68,8 @@ class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  private final SignedAggregateAndProofSchema aggregateSchema =
+      spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
@@ -79,14 +85,17 @@ class AttestationManagerTest {
       mock(SignatureVerificationService.class);
   private final ActiveValidatorCache activeValidatorCache = mock(ActiveValidatorCache.class);
 
+  private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
+  private final AggregateAttestationValidator aggregateValidator =
+      mock(AggregateAttestationValidator.class);
   private final AttestationManager attestationManager =
       new AttestationManager(
           forkChoice,
           pendingAttestations,
           futureAttestations,
           attestationPool,
-          mock(AttestationValidator.class),
-          mock(AggregateAttestationValidator.class),
+          attestationValidator,
+          aggregateValidator,
           signatureVerificationService,
           activeValidatorCache);
 
@@ -107,9 +116,9 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
 
-    verifyAttestationProcessed(attestation);
+    verify(forkChoice).onAttestation(attestation);
     verify(attestationPool).add(attestation);
     assertThat(futureAttestations.size()).isEqualTo(0);
     assertThat(pendingAttestations.size()).isEqualTo(0);
@@ -117,16 +126,20 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
+    final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
+    attestationManager.subscribeToAttestationsToSend(subscriber);
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(aggregate).ifExceptionGetsHereRaiseABug();
+    when(aggregateValidator.validate(aggregate)).thenReturn(completedFuture(ACCEPT));
+    assertThat(attestationManager.onAttestation(aggregate)).isCompleted();
 
-    verifyAttestationProcessed(aggregate);
+    verify(forkChoice).onAttestation(aggregate);
     verify(attestationPool).add(aggregate);
     assertThat(futureAttestations.size()).isEqualTo(0);
     assertThat(pendingAttestations.size()).isEqualTo(0);
+    verify(subscriber).accept(aggregate);
   }
 
   @Test
@@ -139,15 +152,12 @@ class AttestationManagerTest {
         ValidateableAttestation.from(spec, attestationFromSlot(futureSlot));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
-    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
 
-    ArgumentCaptor<ValidateableAttestation> captor =
-        ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(forkChoice).onAttestation(captor.capture());
-    final ValidateableAttestation validateableAttestation = captor.getValue();
+    verify(forkChoice).onAttestation(attestation);
     attestation.setIndexedAttestation(randomIndexedAttestation);
     verify(attestationPool).add(attestation);
-    assertThat(futureAttestations.contains(captor.getValue())).isTrue();
+    assertThat(futureAttestations.contains(attestation)).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(0);
 
     // Shouldn't try to process the attestation until after it's slot.
@@ -156,9 +166,40 @@ class AttestationManagerTest {
     verify(forkChoice, never()).applyIndexedAttestations(any());
 
     attestationManager.onSlot(UInt64.valueOf(101));
-    verify(forkChoice).applyIndexedAttestations(List.of(validateableAttestation));
+    verify(forkChoice).applyIndexedAttestations(List.of(attestation));
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
+  }
+
+  @Test
+  public void shouldPerformGossipValidationWhenProcessingFutureAggregates() {
+    final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
+    attestationManager.subscribeToAttestationsToSend(subscriber);
+    final int futureSlot = 100;
+    final UInt64 currentSlot = UInt64.valueOf(futureSlot).minus(1);
+    attestationManager.onSlot(currentSlot);
+
+    ValidateableAttestation attestation =
+        ValidateableAttestation.aggregateFromValidator(
+            spec, aggregateFromSlot(futureSlot, dataStructureUtil.randomBytes32()));
+    IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
+    when(aggregateValidator.validate(attestation))
+        .thenReturn(completedFuture(InternalValidationResult.IGNORE));
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
+
+    verify(forkChoice).onAttestation(attestation);
+    attestation.setIndexedAttestation(randomIndexedAttestation);
+    assertThat(futureAttestations.contains(attestation)).isTrue();
+
+    attestationManager.onSlot(UInt64.valueOf(101));
+    verify(aggregateValidator).validate(attestation);
+    // Should apply because the attestation is valid
+    verify(forkChoice).applyIndexedAttestations(List.of(attestation));
+    assertThat(futureAttestations.size()).isZero();
+
+    // But should not send to gossip because it was ignored
+    verify(subscriber, never()).accept(attestation);
   }
 
   @Test
@@ -182,20 +223,21 @@ class AttestationManagerTest {
 
   @Test
   public void shouldDeferProcessingForAttestationsThatAreMissingBlockDependencies() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    final int slot = 1024;
+    attestationManager.onSlot(UInt64.valueOf(slot));
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
     final Bytes32 requiredBlockRoot = block.getMessage().hashTreeRoot();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.from(spec, attestationFromSlot(1, requiredBlockRoot));
+        ValidateableAttestation.from(spec, attestationFromSlot(slot, requiredBlockRoot));
+    attestation.setAcceptedAsGossip();
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(UNKNOWN_BLOCK))
         .thenReturn(completedFuture(SUCCESSFUL));
-    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
 
-    ArgumentCaptor<ValidateableAttestation> captor =
-        ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(forkChoice).onAttestation(captor.capture());
+    verify(forkChoice).onAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
-    assertThat(pendingAttestations.contains(captor.getValue())).isTrue();
+    assertThat(pendingAttestations.contains(attestation)).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(1);
 
     // Slots progressing shouldn't cause the attestation to be processed
@@ -207,10 +249,35 @@ class AttestationManagerTest {
     verifyNoMoreInteractions(forkChoice);
 
     attestationManager.onBlockImported(block);
-    verify(forkChoice, times(2)).onAttestation(captor.getValue());
+    verify(forkChoice, times(2)).onAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
     verify(attestationPool).add(attestation);
+  }
+
+  @Test
+  public void shouldValidateAggregatesBeforeGossipingAfterBlockIsReceived() {
+    final ProcessedAttestationListener subscriber = mock(ProcessedAttestationListener.class);
+    attestationManager.subscribeToAttestationsToSend(subscriber);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    final Bytes32 requiredBlockRoot = block.getMessage().hashTreeRoot();
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.aggregateFromValidator(
+            spec, aggregateFromSlot(1, requiredBlockRoot));
+    when(aggregateValidator.validate(attestation))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+    when(forkChoice.onAttestation(any()))
+        .thenReturn(completedFuture(UNKNOWN_BLOCK))
+        .thenReturn(completedFuture(SUCCESSFUL));
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
+
+    assertThat(pendingAttestations.contains(attestation)).isTrue();
+
+    attestationManager.onBlockImported(block);
+    verify(forkChoice, times(2)).onAttestation(attestation);
+    // Validate for gossip, but it is ignored so shouldn't send to gossip
+    verify(aggregateValidator).validate(attestation);
+    verify(subscriber, never()).accept(attestation);
   }
 
   @Test
@@ -219,9 +286,9 @@ class AttestationManagerTest {
         ValidateableAttestation.from(spec, dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
-    attestationManager.onAttestation(attestation).ifExceptionGetsHereRaiseABug();
+    assertThat(attestationManager.onAttestation(attestation)).isCompleted();
 
-    verifyAttestationProcessed(attestation);
+    verify(forkChoice).onAttestation(attestation);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
@@ -234,9 +301,9 @@ class AttestationManagerTest {
             spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));
-    attestationManager.onAttestation(aggregateAndProof).ifExceptionGetsHereRaiseABug();
+    assertThat(attestationManager.onAttestation(aggregateAndProof)).isCompleted();
 
-    verifyAttestationProcessed(aggregateAndProof);
+    verify(forkChoice).onAttestation(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
@@ -258,10 +325,12 @@ class AttestationManagerTest {
         BLSSignature.empty());
   }
 
-  private void verifyAttestationProcessed(final ValidateableAttestation attestation) {
-    ArgumentCaptor<ValidateableAttestation> captor =
-        ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(forkChoice).onAttestation(captor.capture());
-    assertThat(captor.getValue().getAttestation()).isSameAs(attestation.getAttestation());
+  private SignedAggregateAndProof aggregateFromSlot(final long slot, final Bytes32 targetRoot) {
+    final Attestation attestation = attestationFromSlot(slot, targetRoot);
+    return aggregateSchema.create(
+        aggregateSchema
+            .getAggregateAndProofSchema()
+            .create(UInt64.valueOf(123), attestation, BLSSignature.empty()),
+        BLSSignature.empty());
   }
 }
