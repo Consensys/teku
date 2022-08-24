@@ -30,7 +30,6 @@ import okhttp3.ResponseBody;
 import okio.BufferedSink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -116,7 +115,7 @@ public class OkHttpRestClient implements RestClient {
     return new RequestBody() {
 
       @Override
-      public void writeTo(@NotNull final BufferedSink bufferedSink) throws IOException {
+      public void writeTo(final BufferedSink bufferedSink) throws IOException {
         JsonUtil.serializeToBytesChecked(
             requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
       }
@@ -148,13 +147,12 @@ public class OkHttpRestClient implements RestClient {
     final Callback responseCallback =
         new Callback() {
           @Override
-          public void onFailure(@NotNull final Call call, @NotNull final IOException ex) {
+          public void onFailure(final Call call, final IOException ex) {
             futureResponse.completeExceptionally(ex);
           }
 
           @Override
-          public void onResponse(
-              @NotNull final Call call, @NotNull final okhttp3.Response response) {
+          public void onResponse(final Call call, final okhttp3.Response response) {
             LOG.trace("{} {} {}", request.method(), request.url(), response.code());
             if (!response.isSuccessful()) {
               handleFailure(response, futureResponse);
