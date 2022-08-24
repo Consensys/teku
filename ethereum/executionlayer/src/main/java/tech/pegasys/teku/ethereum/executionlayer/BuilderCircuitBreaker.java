@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-public class NetworkConstants {
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-  public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
-  public static final int INTERVALS_PER_SLOT = 3;
-  public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
+public interface BuilderCircuitBreaker {
+  BuilderCircuitBreaker NOOP = (state) -> false;
+
+  boolean isEngaged(final BeaconState state);
 }

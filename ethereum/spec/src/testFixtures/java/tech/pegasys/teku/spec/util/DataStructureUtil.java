@@ -1186,11 +1186,13 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(
-      final Bytes32 finalizedBlockHash, final boolean optimisticHead) {
+      final Bytes32 finalizedBlockHash,
+      final boolean optimisticHead,
+      final boolean withValidatorRegistration) {
     return new ExecutionPayloadContext(
         randomBytes8(),
         randomForkChoiceState(randomUInt64(), finalizedBlockHash, optimisticHead),
-        randomPayloadBuildingAttributes(false));
+        randomPayloadBuildingAttributes(withValidatorRegistration));
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(

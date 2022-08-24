@@ -50,6 +50,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfiguration
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -96,6 +97,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final Spec spec;
   private final EventLogger eventLogger;
   private final BuilderBidValidator builderBidValidator;
+  private final BuilderCircuitBreaker builderCircuitBreaker;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
   public static ExecutionLayerManagerImpl create(
@@ -104,7 +106,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Optional<BuilderClient> builderClient,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final BuilderBidValidator builderBidValidator) {
+      final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
 
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
@@ -131,6 +134,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         spec,
         eventLogger,
         builderBidValidator,
+        builderCircuitBreaker,
         executionPayloadSourceCounter);
   }
 
@@ -170,6 +174,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter) {
     this.executionEngineClient = executionEngineClient;
     this.builderClient = builderClient;
@@ -177,6 +182,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.spec = spec;
     this.eventLogger = eventLogger;
     this.builderBidValidator = builderBidValidator;
+    this.builderCircuitBreaker = builderCircuitBreaker;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
   }
 
@@ -335,9 +341,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
-      final boolean transitionNotFinalized) {
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
@@ -350,8 +354,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final FallbackReason fallbackReason;
     if (builderClient.isEmpty() && validatorRegistration.isEmpty()) {
       fallbackReason = FallbackReason.NOT_NEEDED;
-    } else if (transitionNotFinalized) {
+    } else if (isTransitionNotFinalized(executionPayloadContext)) {
       fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
+    } else if (isCircuitBreakerEngaged(state)) {
+      fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
     } else if (builderClient.isEmpty()) {
       fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
     } else if (!isBuilderAvailable()) {
@@ -519,6 +525,26 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
   }
 
+  private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
+    return executionPayloadContext.getForkChoiceState().getFinalizedExecutionBlockHash().isZero();
+  }
+
+  private boolean isCircuitBreakerEngaged(final BeaconState state) {
+    try {
+      return builderCircuitBreaker.isEngaged(state);
+    } catch (Exception e) {
+      if (ExceptionUtil.hasCause(e, InterruptedException.class)) {
+        LOG.debug("Shutting down");
+      } else {
+        LOG.error(
+            "Builder circuit breaker engagement failure at slot {}. Acting like it has been engaged.",
+            state.getSlot(),
+            e);
+      }
+      return true;
+    }
+  }
+
   private void markBuilderAsNotAvailable(final String errorMessage) {
     latestBuilderAvailability.set(false);
     eventLogger.builderIsOffline(errorMessage);
@@ -589,6 +615,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     NOT_NEEDED("not_needed"),
     VALIDATOR_NOT_REGISTERED("validator_not_registered"),
     TRANSITION_NOT_FINALIZED("transition_not_finalized"),
+    CIRCUIT_BREAKER_ENGAGED("circuit_breaker_engaged"),
     BUILDER_NOT_AVAILABLE("builder_not_available"),
     BUILDER_NOT_CONFIGURED("builder_not_configured"),
     BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),

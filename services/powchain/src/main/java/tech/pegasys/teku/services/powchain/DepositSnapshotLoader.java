@@ -17,10 +17,6 @@ import com.google.common.base.Suppliers;
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.pow.Eth1Provider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
@@ -28,19 +24,14 @@ import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final DepositSnapshotResourceLoader depositSnapshotResourceLoader =
       new DepositSnapshotResourceLoader();
 
   private final Optional<String> depositSnapshotResource;
-  private final Eth1Provider eth1Provider;
   private final Supplier<SafeFuture<LoadDepositSnapshotResult>> replayResult;
 
-  public DepositSnapshotLoader(
-      final Optional<String> depositSnapshotResource, final Eth1Provider eth1Provider) {
+  public DepositSnapshotLoader(final Optional<String> depositSnapshotResource) {
     this.depositSnapshotResource = depositSnapshotResource;
-    this.eth1Provider = eth1Provider;
     this.replayResult = Suppliers.memoize(() -> SafeFuture.of(this::loadSnapshot));
   }
 
@@ -49,28 +40,18 @@ public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
     return replayResult.get();
   }
 
-  private SafeFuture<LoadDepositSnapshotResult> loadSnapshot() {
+  private LoadDepositSnapshotResult loadSnapshot() {
     final Optional<DepositTreeSnapshot> depositTreeSnapshot =
         depositSnapshotResourceLoader.loadDepositSnapshot(depositSnapshotResource);
-    if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDeposits() == 0) {
-      return SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY);
+    if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDepositCount() == 0) {
+      return LoadDepositSnapshotResult.EMPTY;
     } else {
-      final Bytes32 executionBlockHash = depositTreeSnapshot.get().getExecutionBlockHash();
-      return eth1Provider
-          .getGuaranteedEth1Block(executionBlockHash.toHexString())
-          .thenApply(
-              block ->
-                  new LoadDepositSnapshotResult(
-                      depositTreeSnapshot,
-                      ReplayDepositsResult.create(
-                          block.getNumber(),
-                          BigInteger.valueOf(depositTreeSnapshot.get().getDeposits() - 1),
-                          true)))
-          .exceptionally(
-              ex -> {
-                LOG.error("Failed to load DepositTreeSnapshot info", ex);
-                return LoadDepositSnapshotResult.EMPTY;
-              });
+      return new LoadDepositSnapshotResult(
+          depositTreeSnapshot,
+          ReplayDepositsResult.create(
+              depositTreeSnapshot.get().getExecutionBlockHeight().bigIntegerValue(),
+              BigInteger.valueOf(depositTreeSnapshot.get().getDepositCount() - 1),
+              true));
     }
   }
 }

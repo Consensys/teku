@@ -15,6 +15,8 @@ package tech.pegasys.teku.ethereum.pow.merkletree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.List;
@@ -30,10 +32,10 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class DepositTreeTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -52,7 +54,7 @@ class DepositTreeTest {
 
       if (i >= nonFinalizedDepositCount) {
         final DepositTestCase finalisingTestCase = testCases.get(i - nonFinalizedDepositCount);
-        depositTree.finalize(finalisingTestCase.getEth1Data());
+        depositTree.finalize(finalisingTestCase.getEth1Data(), finalisingTestCase.getBlockHeight());
         final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
         assertThat(snapshotOptional).contains(finalisingTestCase.getSnapshot());
       }
@@ -71,10 +73,17 @@ class DepositTreeTest {
   @Test
   void shouldFinalizeWithZeroDeposits() {
     final DepositTree tree = new DepositTree();
+    // Empty tree root
+    assertThat(tree.getRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "d70a234731285c6804c2a4f56711ddb8c82c99740f207854891028af34e27e5e"));
+    // Not finalized
+    assertThat(tree.getSnapshot()).isEmpty();
     final Eth1Data eth1Data =
         new Eth1Data(Bytes32.fromHexString("0x1234"), UInt64.ZERO, Bytes32.fromHexString("0x5678"));
 
-    assertThatNoException().isThrownBy(() -> tree.finalize(eth1Data));
+    assertThatNoException().isThrownBy(() -> tree.finalize(eth1Data, UInt64.ONE));
   }
 
   @Test
@@ -92,7 +101,7 @@ class DepositTreeTest {
                   testCase.depositDataRoot,
                   Deposit.SSZ_SCHEMA.getProofSchema().of(proof),
                   // +1 because the spec doesn't count the root node as part of depth
-                  NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+                  DEPOSIT_CONTRACT_TREE_DEPTH + 1,
                   i,
                   testCase.getEth1Data().getDepositRoot());
       assertThat(isValid)
@@ -118,6 +127,30 @@ class DepositTreeTest {
           .describedAs("Tree root after deposit %s", i)
           .isEqualTo(testCase.getEth1Data().getDepositRoot());
     }
+  }
+
+  @Test
+  void shouldFailOnWrongRoot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    depositTree.pushLeaf(dataStructureUtil.randomBytes32());
+    depositTree.finalize(
+        new Eth1Data(
+            dataStructureUtil.randomBytes32(), UInt64.ONE, dataStructureUtil.randomBytes32()),
+        UInt64.ONE);
+    final Optional<DepositTreeSnapshot> snapshot = depositTree.getSnapshot();
+    assertThat(snapshot).isNotEmpty();
+    final DepositTree restoredTree = DepositTree.fromSnapshot(snapshot.get());
+    assertThat(restoredTree.getDepositCount()).isEqualTo(depositTree.getDepositCount());
+
+    final DepositTreeSnapshot brokenSnapshot =
+        new DepositTreeSnapshot(
+            snapshot.get().getFinalized(),
+            dataStructureUtil.randomBytes32(), // change root
+            snapshot.get().getDepositCount(),
+            snapshot.get().getExecutionBlockHash(),
+            snapshot.get().getExecutionBlockHeight());
+    assertThatThrownBy(() -> DepositTree.fromSnapshot(brokenSnapshot))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   private List<DepositTestCase> loadEipTestCases() throws Exception {
@@ -149,6 +182,11 @@ class DepositTreeTest {
               DepositTestCase::getEth1Data,
               DepositTestCase::setEth1Data)
           .withField(
+              "block_height",
+              CoreTypes.UINT64_TYPE,
+              DepositTestCase::getBlockHeight,
+              DepositTestCase::setBlockHeight)
+          .withField(
               "snapshot",
               DEPOSIT_TREE_SNAPSHOT_TYPE,
               DepositTestCase::getSnapshot,
@@ -159,6 +197,7 @@ class DepositTreeTest {
     private DepositData depositData;
     private Bytes32 depositDataRoot;
     private Eth1Data eth1Data;
+    private UInt64 blockHeight;
     private DepositTreeSnapshot snapshot;
 
     public DepositData getDepositData() {
@@ -191,6 +230,14 @@ class DepositTreeTest {
 
     public void setSnapshot(final DepositTreeSnapshot snapshot) {
       this.snapshot = snapshot;
+    }
+
+    public UInt64 getBlockHeight() {
+      return blockHeight;
+    }
+
+    public void setBlockHeight(final UInt64 blockHeight) {
+      this.blockHeight = blockHeight;
     }
   }
 }

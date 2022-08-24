@@ -383,12 +383,13 @@ class Eth1DepositManagerTest {
   void shouldStartFromSnapshotWhenLoaded() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
-
     final DepositTreeSnapshot depositTreeSnapshot =
         new DepositTreeSnapshot(
             List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
+            dataStructureUtil.randomBytes32(),
             deposits.longValue(),
-            dataStructureUtil.randomBytes32());
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
     final ReplayDepositsResult replayDepositsResult =
         ReplayDepositsResult.create(lastBlockNumber, Optional.of(BigInteger.valueOf(99)), true);
 

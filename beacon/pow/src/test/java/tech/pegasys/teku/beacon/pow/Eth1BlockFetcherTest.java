@@ -223,7 +223,10 @@ class Eth1BlockFetcherTest {
 
   private void verifyBlockSent(final Block block) {
     verify(eth1EventsChannel)
-        .onEth1Block(Bytes32.fromHexString(block.getHash()), UInt64.valueOf(block.getTimestamp()));
+        .onEth1Block(
+            UInt64.valueOf(block.getNumber()),
+            Bytes32.fromHexString(block.getHash()),
+            UInt64.valueOf(block.getTimestamp()));
   }
 
   private Int2ObjectMap<Block> withBlocks(final Block... blocks) {

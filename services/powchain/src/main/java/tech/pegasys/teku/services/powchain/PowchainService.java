@@ -176,7 +176,7 @@ public class PowchainService extends Service {
     final Optional<UInt64> eth1DepositContractDeployBlock =
         powConfig.getDepositContractDeployBlock();
     final DepositSnapshotLoader eth1DepositSnapshotLoader =
-        new DepositSnapshotLoader(powConfig.getDepositSnapshot(), eth1Provider);
+        new DepositSnapshotLoader(powConfig.getDepositSnapshot());
     eth1DepositManager =
         new Eth1DepositManager(
             config,
