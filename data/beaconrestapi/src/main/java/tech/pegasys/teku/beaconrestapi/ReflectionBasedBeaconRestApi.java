@@ -110,6 +110,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeac
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetFinalizedCheckpointState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
@@ -460,6 +461,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider, schemaCache));
+    addMigratedEndpoint(new GetFinalizedCheckpointState(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetBlockRoot(dataProvider));
     addMigratedEndpoint(new GetFinalizedBlockRoot(dataProvider));
