@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class BlockProcessorTest {
-  private final Spec spec = createSpec();
+  protected final Spec spec = createSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
@@ -160,7 +160,7 @@ public abstract class BlockProcessorTest {
         "The balances list has changed.");
   }
 
-  private BeaconState createBeaconState() {
+  protected BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
 
