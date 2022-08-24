@@ -752,17 +752,6 @@ public class Spec {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  public UInt64 computePreviousForkEpochStart(final UInt64 slot) {
-    final SpecMilestone milestone = atSlot(slot).getMilestone();
-    final Optional<SpecMilestone> previousMilestone = SpecMilestone.getPreviousMilestone(milestone);
-    if (previousMilestone.isEmpty()) {
-      return UInt64.ZERO;
-    }
-    final Optional<Fork> fork = forkSchedule.getFork(previousMilestone.get());
-
-    return fork.map(Fork::getEpoch).orElse(UInt64.ZERO);
-  }
-
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());

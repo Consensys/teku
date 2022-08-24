@@ -25,13 +25,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -39,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -56,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -191,43 +185,6 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.syncAggregate.getSyncCommitteeBits().getBitCount()).isZero();
     assertThat(bodyBuilder.syncAggregate.getSyncCommitteeSignature().getSignature().isInfinity())
         .isTrue();
-  }
-
-  @ParameterizedTest(name = "{0}_{1}")
-  @MethodSource("getIncludeFromSourcesUseCases")
-  public void shouldNotIncludeExitsFromIncorrectFork(
-      final SpecMilestone specMilestone, final int exitSlot, final boolean isIncluded) {
-    final Spec localSpec =
-        TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(
-            UInt64.valueOf(50), UInt64.valueOf(100));
-    final DataStructureUtil data = new DataStructureUtil(localSpec);
-    final UInt64 slot = UInt64.valueOf(101 * 8);
-    final BeaconState blockSlotState = data.randomBeaconState(slot);
-    final SignedVoluntaryExit voluntaryExit =
-        new SignedVoluntaryExit(
-            new VoluntaryExit(UInt64.valueOf(exitSlot), UInt64.ONE), data.randomSignature());
-    final BlockOperationSelectorFactory myFactory =
-        new BlockOperationSelectorFactory(
-            localSpec,
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            contributionPool,
-            depositProvider,
-            eth1DataCache,
-            defaultGraffiti,
-            forkChoiceNotifier,
-            executionLayer);
-    addToPool(voluntaryExitPool, voluntaryExit);
-    myFactory
-        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
-        .accept(bodyBuilder);
-    if (isIncluded) {
-      assertThat(bodyBuilder.voluntaryExits).containsExactly(voluntaryExit);
-    } else {
-      assertThat(bodyBuilder.voluntaryExits).isEmpty();
-    }
   }
 
   @Test
@@ -423,17 +380,6 @@ class BlockOperationSelectorFactoryTest {
     factory.createUnblinderSelector().accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
-  }
-
-  private static Stream<Arguments> getIncludeFromSourcesUseCases() {
-    // 0 == phase0, 50 == altair, 100 = bellatrix
-    // at slot 101 to compute inclusion
-    return Stream.of(
-        Arguments.of(SpecMilestone.PHASE0, 0, false),
-        Arguments.of(SpecMilestone.PHASE0, 49, false),
-        Arguments.of(SpecMilestone.ALTAIR, 50, true),
-        Arguments.of(SpecMilestone.BELLATRIX, 100, true),
-        Arguments.of(SpecMilestone.BELLATRIX, 101, true));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
