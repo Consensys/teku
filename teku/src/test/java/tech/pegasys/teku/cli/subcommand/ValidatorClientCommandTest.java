@@ -24,11 +24,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
-  private final String[] argsNetworkOptOnParent =
-      new String[] {
-        "--network", "auto", "vc",
-      };
-
   @BeforeEach
   void setUp() {
     expectValidatorClient = true;
@@ -36,6 +31,10 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void networkOption_ShouldFail_IfSpecifiedOnParentCommand() {
+    final String[] argsNetworkOptOnParent =
+        new String[] {
+          "--network", "auto", "vc",
+        };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(1);
     String cmdOutput = getCommandLineOutput();
@@ -66,5 +65,45 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
             "beaconAndValidatorOptions_config.yaml", Optional.of("validator-client"));
     assertThat(configuration.validatorClient().getValidatorConfig().getValidatorKeys())
         .containsExactly("a.key:a.password", "b.json:b.txt");
+  }
+
+  @Test
+  public void sentryConfigOption_shouldBuildExpectedConfigWhenOptionHasFileNameParam() {
+    final String[] argsWithSentryConfig =
+        new String[] {
+          "vc", "--network", "minimal", "--Xsentry-config-file", "someconfig.json",
+        };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getSentryNodeConfigurationFile())
+        .contains("someconfig.json");
+  }
+
+  @Test
+  public void sentryConfigOption_emptyConfigWhenMissingSentryConfigFileParam() {
+    final String[] argsWithoutSentryConfig =
+        new String[] {
+          "vc", "--network", "minimal",
+        };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithoutSentryConfig);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getSentryNodeConfigurationFile())
+        .isEmpty();
+  }
+
+  @Test
+  public void sentryConfigOption_shouldFailWhenOptionIsMissingRequiredFileNameParam() {
+    final String[] argsWithSentryConfigMissingParam =
+        new String[] {
+          "vc", "--network", "minimal", "--Xsentry-config-file",
+        };
+
+    int parseResult = beaconNodeCommand.parse(argsWithSentryConfigMissingParam);
+    assertThat(parseResult).isNotZero();
+
+    String cmdOutput = getCommandLineOutput();
+    assertThat(cmdOutput).contains("Missing required parameter for option '--Xsentry-config-file'");
   }
 }
