@@ -500,9 +500,7 @@ public class ValidatorConfig {
     }
 
     public Builder sentryNodeConfigurationFile(final String configFile) {
-      if (configFile != null) {
-        this.sentryNodeConfigurationFile = Optional.ofNullable(configFile);
-      }
+      this.sentryNodeConfigurationFile = Optional.ofNullable(configFile);
       return this;
     }
 
