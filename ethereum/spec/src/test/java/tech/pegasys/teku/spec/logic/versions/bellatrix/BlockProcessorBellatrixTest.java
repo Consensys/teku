@@ -13,13 +13,32 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
   @Override
   protected Spec createSpec() {
     return TestSpecFactory.createMainnetBellatrix();
+  }
+
+  @Test
+  void shouldIgnoreAltairBlock() {
+    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+    BeaconState preState = createBeaconState();
+    final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());
+    assertThatThrownBy(
+            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
+        .isInstanceOf(StateTransitionException.class);
   }
 }
