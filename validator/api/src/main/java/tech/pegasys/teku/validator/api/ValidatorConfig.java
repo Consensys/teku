@@ -84,7 +84,7 @@ public class ValidatorConfig {
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
   private final int executorMaxQueueSize;
   private final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod;
-  private final Optional<Path> sentryNodeConfigurationFile;
+  private final Optional<String> sentryNodeConfigurationFile;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -115,7 +115,7 @@ public class ValidatorConfig {
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod,
-      final Optional<Path> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -266,7 +266,7 @@ public class ValidatorConfig {
     return primaryBeaconNodeEventStreamReconnectAttemptPeriod;
   }
 
-  public Optional<Path> getSentryNodeConfigurationFile() {
+  public Optional<String> getSentryNodeConfigurationFile() {
     return sentryNodeConfigurationFile;
   }
 
@@ -317,7 +317,7 @@ public class ValidatorConfig {
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
         DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD;
-    private Optional<Path> sentryNodeConfigurationFile = Optional.empty();
+    private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private Builder() {}
 
@@ -502,7 +502,7 @@ public class ValidatorConfig {
 
     public Builder sentryNodeConfigurationFile(final String configFile) {
       if (configFile != null) {
-        this.sentryNodeConfigurationFile = Optional.ofNullable(Path.of(configFile));
+        this.sentryNodeConfigurationFile = Optional.ofNullable(configFile);
       }
       return this;
     }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,7 +77,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().getSentryNodeConfigurationFile())
-        .contains(Path.of("someconfig.json"));
+        .contains("someconfig.json");
   }
 
   @Test
