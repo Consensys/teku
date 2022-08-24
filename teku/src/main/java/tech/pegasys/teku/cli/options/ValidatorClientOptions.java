@@ -73,6 +73,7 @@ public class ValidatorClientOptions {
       names = {"--Xsentry-config-file"},
       paramLabel = "<FILE>",
       description = "Config file with sentry node configuration",
+      hidden = true,
       arity = "1")
   private String sentryConfigFile = null;
 
