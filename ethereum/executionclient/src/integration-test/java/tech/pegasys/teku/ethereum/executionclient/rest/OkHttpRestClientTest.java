@@ -14,13 +14,13 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -203,8 +204,8 @@ class OkHttpRestClientTest {
         underTest.postAsync(
             TEST_PATH, requestBodyObject, failingRequestTypeDefinition, responseTypeDefinition);
 
-    // this will fail if exceptions are thrown in other threads
-    await().catchUncaughtExceptions().atMost(Duration.ofSeconds(1)).until(responseFuture::isDone);
+    // this will fail if there are uncaught exceptions in other threads
+    Waiter.waitFor(() -> assertThat(responseFuture).isDone(), 30, TimeUnit.SECONDS, false);
 
     SafeFutureAssert.assertThatSafeFuture(responseFuture)
         .isCompletedExceptionallyWithMessage("Broken pipe");
