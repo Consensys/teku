@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_TOO_MANY_REQUESTS;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -34,9 +33,9 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.validator.remote.apiclient.BeaconNodeApiErrorUtils;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 
 public class ResponseHandler<TObject> {
@@ -78,8 +77,8 @@ public class ResponseHandler<TObject> {
     if (maybeTypeDefinition.isPresent()) {
       try {
         return Optional.of(JsonUtil.parse(response.body().string(), maybeTypeDefinition.get()));
-      } catch (JsonProcessingException e) {
-        LOG.debug("Failed to decode response body", e);
+      } catch (JsonProcessingException ex) {
+        LOG.debug("Failed to decode response body", ex);
       }
     }
     return Optional.empty();
@@ -94,15 +93,12 @@ public class ResponseHandler<TObject> {
 
   private Optional<TObject> unknownResponseCodeHandler(
       final Request request, final Response response) {
-    LOG.debug(
-        "Unexpected response from Beacon Node API (url = {}, status = {}, response = {})",
-        request.url(),
-        response.code(),
-        response.body());
-    throw new RuntimeException(
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
+    final String exceptionMessage =
         String.format(
-            "Unexpected response from Beacon Node API (url = %s, status = %s)",
-            request.url(), response.code()));
+            "Unexpected response from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage);
+    throw new RuntimeException(exceptionMessage);
   }
 
   public interface Handler<TObject> {
@@ -114,23 +110,21 @@ public class ResponseHandler<TObject> {
   }
 
   private Optional<TObject> serviceErrorHandler(final Request request, final Response response) {
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
     throw new RemoteServiceNotAvailableException(
         String.format(
-            "Server error from Beacon Node API (url = %s, status = %s)",
-            request.url(), response.code()));
+            "Server error from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage));
   }
 
-  private Optional<TObject> defaultBadRequestHandler(final Request request, final Response response)
-      throws IOException {
-    final HttpErrorResponse error =
-        JsonUtil.parse(response.body().string(), HTTP_ERROR_RESPONSE_TYPE);
-    LOG.debug(
+  private Optional<TObject> defaultBadRequestHandler(
+      final Request request, final Response response) {
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
+    final String exceptionMessage =
         String.format(
-            "Server error from Beacon Node API (url = %s, status = %s, message = %s)",
-            request.url(), response.code(), error.getMessage()));
-
-    throw new IllegalArgumentException(
-        "Invalid params response from Beacon Node API (url = " + request.url() + ")");
+            "Invalid params response from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage);
+    throw new IllegalArgumentException(exceptionMessage);
   }
 
   private Optional<TObject> defaultTooManyRequestsHandler(

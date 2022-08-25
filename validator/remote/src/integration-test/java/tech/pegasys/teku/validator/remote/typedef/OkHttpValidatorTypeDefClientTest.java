@@ -240,7 +240,8 @@ class OkHttpValidatorTypeDefClientTest {
             () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
 
     assertThat(badRequestException.getMessage())
-        .contains("Invalid params response from Beacon Node API");
+        .matches(
+            "Invalid params response from Beacon Node API \\(url = (.*), status = 400, message = oopsy\\)");
 
     mockWebServer.enqueue(
         new MockResponse()
@@ -252,7 +253,9 @@ class OkHttpValidatorTypeDefClientTest {
             RemoteServiceNotAvailableException.class,
             () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
 
-    assertThat(serverException.getMessage()).contains("Server error from Beacon Node API");
+    assertThat(serverException.getMessage())
+        .matches(
+            "Server error from Beacon Node API \\(url = (.*), status = 500, message = Internal server error\\)");
   }
 
   @TestTemplate
