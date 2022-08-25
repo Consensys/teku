@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
 
-  public static final String ROUTE = "/eth/v2/checkpoint/finalized_state";
+  public static final String ROUTE = "/eth/v1/checkpoint/finalized_state";
   private final ChainDataProvider chainDataProvider;
 
   public GetFinalizedCheckpointState(
