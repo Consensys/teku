@@ -29,13 +29,11 @@ import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class ResponseHandler<T> {
-  private static final Logger LOG = LogManager.getLogger();
+
   private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
