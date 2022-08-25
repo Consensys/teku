@@ -610,7 +610,7 @@ class FailoverValidatorApiHandlerTest {
               assertThat(message)
                   .contains(
                       String.format(
-                          "Remote request (%s) failed on all configured Beacon Node endpoints.",
+                          "Remote request (%s) failed on all configured Beacon Node endpoints",
                           methodLabel));
               assertThat(message)
                   .contains(
