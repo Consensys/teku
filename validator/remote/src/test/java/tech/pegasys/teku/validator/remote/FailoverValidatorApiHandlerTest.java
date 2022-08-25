@@ -43,7 +43,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
-import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -85,8 +84,6 @@ class FailoverValidatorApiHandlerTest {
   private RemoteValidatorApiChannel failoverApiChannel1;
   private RemoteValidatorApiChannel failoverApiChannel2;
 
-  private ValidatorLogger validatorLogger;
-
   private FailoverValidatorApiHandler failoverApiHandler;
 
   @BeforeEach
@@ -94,8 +91,6 @@ class FailoverValidatorApiHandlerTest {
     primaryApiChannel = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel1 = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel2 = mock(RemoteValidatorApiChannel.class);
-
-    validatorLogger = mock(ValidatorLogger.class);
 
     final Supplier<HttpUrl> randomHttpUrlGenerator =
         () -> HttpUrl.get("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
@@ -109,8 +104,7 @@ class FailoverValidatorApiHandlerTest {
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
             true,
-            stubMetricsSystem,
-            validatorLogger);
+            stubMetricsSystem);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -124,7 +118,7 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(response);
 
-    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
 
     verifyFailoverCounters(
         failoverApiChannel1,
@@ -148,8 +142,6 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(response);
 
-    verifyNoInteractions(validatorLogger);
-
     verifyFailoverCounters(
         failoverApiChannel1,
         methodLabel,
@@ -171,8 +163,6 @@ class FailoverValidatorApiHandlerTest {
 
     verifyFailoverRequestExceptionIsThrown(result, methodLabel);
 
-    verify(validatorLogger).remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(methodLabel);
-
     verifyFailoverCounters(
         failoverApiChannel1,
         methodLabel,
@@ -188,8 +178,7 @@ class FailoverValidatorApiHandlerTest {
   <T> void requestFailsAndNoFailoversConfigured(final ValidatorApiChannelRequest<T> request) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(
-            primaryApiChannel, List.of(), true, stubMetricsSystem, validatorLogger);
+        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
 
     setupFailures(request, primaryApiChannel);
 
@@ -197,7 +186,7 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedExceptionally();
 
-    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -213,8 +202,7 @@ class FailoverValidatorApiHandlerTest {
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
             false,
-            stubMetricsSystem,
-            validatorLogger);
+            stubMetricsSystem);
 
     setupSuccesses(request, response, primaryApiChannel);
 
@@ -223,7 +211,7 @@ class FailoverValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(response);
     verifyCallIsMade.accept(primaryApiChannel);
 
-    verifyNoInteractions(validatorLogger, failoverApiChannel1, failoverApiChannel2);
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
 
     verifyFailoverCounters(
         failoverApiChannel1,
@@ -253,8 +241,6 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyNoInteractions(validatorLogger);
-
     verifyFailoverCounters(
         failoverApiChannel1,
         methodLabel,
@@ -274,8 +260,7 @@ class FailoverValidatorApiHandlerTest {
       final T response) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(
-            primaryApiChannel, List.of(), true, stubMetricsSystem, validatorLogger);
+        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
 
     setupSuccesses(request, response, primaryApiChannel);
 
@@ -284,7 +269,7 @@ class FailoverValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(response);
     verifyCallIsMade.accept(primaryApiChannel);
 
-    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2, validatorLogger);
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -305,8 +290,6 @@ class FailoverValidatorApiHandlerTest {
 
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
-
-    verifyNoInteractions(validatorLogger);
 
     verifyFailoverCounters(
         failoverApiChannel1,
@@ -336,8 +319,6 @@ class FailoverValidatorApiHandlerTest {
 
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
-
-    verifyNoInteractions(validatorLogger);
 
     verifyFailoverCounters(
         failoverApiChannel1,
@@ -370,8 +351,6 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyNoInteractions(validatorLogger);
-
     verifyFailoverCounters(
         failoverApiChannel1,
         methodLabel,
@@ -399,8 +378,6 @@ class FailoverValidatorApiHandlerTest {
 
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
-
-    verify(validatorLogger).remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(methodLabel);
 
     verifyFailoverCounters(
         failoverApiChannel1,
