@@ -1,6 +1,7 @@
 jar { enabled = false }
 
 dependencies {
+  referenceTestImplementation project(':beacon:validator')
   referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
   referenceTestImplementation testFixtures(project(':ethereum:spec'))
@@ -14,8 +15,10 @@ dependencies {
   referenceTestImplementation testFixtures(project(':storage'))
   referenceTestImplementation project(':infrastructure:async')
   referenceTestImplementation testFixtures(project(':infrastructure:async'))
+  referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
   referenceTestImplementation project(':infrastructure:time')
 
+  referenceTestImplementation 'org.hyperledger.besu:plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'

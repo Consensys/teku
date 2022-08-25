@@ -44,12 +44,8 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  void getPreviousMilestone() {
-    assertThat(SpecMilestone.getPreviousMilestone(SpecMilestone.PHASE0)).isEmpty();
-    assertThat(SpecMilestone.getPreviousMilestone(SpecMilestone.ALTAIR))
-        .contains(SpecMilestone.PHASE0);
-    assertThat(SpecMilestone.getPreviousMilestone(SpecMilestone.BELLATRIX))
-        .contains(SpecMilestone.ALTAIR);
+  public void getAllPriorMilestones_phase0() {
+    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.PHASE0)).isEmpty();
   }
 
   @Test
