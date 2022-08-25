@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
@@ -74,9 +75,10 @@ public class ResponseHandler<TObject> {
 
   private Optional<TObject> defaultOkHandler(final Request request, final Response response)
       throws IOException {
-    if (maybeTypeDefinition.isPresent()) {
+    final ResponseBody responseBody = response.body();
+    if (responseBody != null && maybeTypeDefinition.isPresent()) {
       try {
-        return Optional.of(JsonUtil.parse(response.body().string(), maybeTypeDefinition.get()));
+        return Optional.of(JsonUtil.parse(responseBody.string(), maybeTypeDefinition.get()));
       } catch (JsonProcessingException ex) {
         LOG.debug("Failed to decode response body", ex);
       }
