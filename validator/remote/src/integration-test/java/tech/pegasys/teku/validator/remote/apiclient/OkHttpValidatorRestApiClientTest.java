@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
@@ -628,12 +627,9 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot2 = UInt64.valueOf(16);
     final boolean aggregator2 = false;
 
-    final BeaconCommitteeSubscriptionRequest[] expectedRequest = {
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
-    };
+    final String expectedRequest =
+        "[{\"validator_index\":\"6\",\"committee_index\":\"1\",\"committees_at_slot\":\"10\",\"slot\":\"15\",\"is_aggregator\":true},"
+            + "{\"validator_index\":\"7\",\"committee_index\":\"2\",\"committees_at_slot\":\"11\",\"slot\":\"16\",\"is_aggregator\":false}]";
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
@@ -649,8 +645,7 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(expectedRequest));
+    assertThat(request.getBody().readUtf8()).isEqualTo(expectedRequest);
   }
 
   @Test
