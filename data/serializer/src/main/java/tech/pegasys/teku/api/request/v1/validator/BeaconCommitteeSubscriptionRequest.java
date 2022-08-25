@@ -15,16 +15,15 @@ package tech.pegasys.teku.api.request.v1.validator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class BeaconCommitteeSubscriptionRequest {
 
-  @Schema(type = "string")
   public final String validator_index;
 
-  @Schema(type = "string")
   public final String committee_index;
 
   @Schema(type = "string", format = "uint64")
@@ -42,8 +41,10 @@ public class BeaconCommitteeSubscriptionRequest {
       @JsonProperty("committees_at_slot") final UInt64 committees_at_slot,
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("is_aggregator") final boolean is_aggregator) {
-    this.committee_index = committee_index;
+    Preconditions.checkNotNull(validator_index, "validator_index should be specified");
     this.validator_index = validator_index;
+    Preconditions.checkNotNull(committee_index, "committee_index should be specified");
+    this.committee_index = committee_index;
     this.committees_at_slot = committees_at_slot;
     this.slot = slot;
     this.is_aggregator = is_aggregator;
