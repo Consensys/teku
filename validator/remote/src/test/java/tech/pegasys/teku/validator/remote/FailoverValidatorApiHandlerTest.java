@@ -169,14 +169,7 @@ class FailoverValidatorApiHandlerTest {
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
-    SafeFutureAssert.assertThatSafeFuture(result)
-        .isCompletedExceptionallyWith(IllegalStateException.class)
-        .satisfies(
-            throwable -> {
-              assertThat(throwable)
-                  .hasMessage("Request failed for " + failoverApiChannel2.getEndpoint());
-              assertThat(throwable.getSuppressed()).hasSize(2);
-            });
+    verifyFailoverRequestExceptionIsThrown(result, methodLabel);
 
     verify(validatorLogger).remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(methodLabel);
 
@@ -400,14 +393,7 @@ class FailoverValidatorApiHandlerTest {
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
-    SafeFutureAssert.assertThatSafeFuture(result)
-        .isCompletedExceptionallyWith(IllegalStateException.class)
-        .satisfies(
-            throwable -> {
-              assertThat(throwable)
-                  .hasMessage("Request failed for " + primaryApiChannel.getEndpoint());
-              assertThat(throwable.getSuppressed()).hasSize(2);
-            });
+    verifyFailoverRequestExceptionIsThrown(result, methodLabel);
 
     verifyCallIsMade.accept(primaryApiChannel);
 
@@ -635,6 +621,31 @@ class FailoverValidatorApiHandlerTest {
         (key, value) ->
             assertThat(getFailoverCounterValue(failoverApiChannel, methodLabel, key))
                 .isEqualTo(value));
+  }
+
+  private <T> void verifyFailoverRequestExceptionIsThrown(
+      final SafeFuture<T> result, final String methodLabel) {
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(FailoverRequestException.class)
+        .message()
+        .satisfies(
+            message -> {
+              assertThat(message)
+                  .contains(
+                      String.format(
+                          "Remote request (%s) failed on all configured Beacon Node endpoints.",
+                          methodLabel));
+              assertThat(message)
+                  .contains(
+                      getExceptionMessageForEndpoint(primaryApiChannel.getEndpoint()),
+                      getExceptionMessageForEndpoint(failoverApiChannel1.getEndpoint()),
+                      getExceptionMessageForEndpoint(failoverApiChannel2.getEndpoint()));
+            });
+  }
+
+  private String getExceptionMessageForEndpoint(final HttpUrl endpoint) {
+    return String.format(
+        "%s: java.lang.IllegalStateException: Request failed for %s", endpoint, endpoint);
   }
 
   private long getFailoverCounterValue(

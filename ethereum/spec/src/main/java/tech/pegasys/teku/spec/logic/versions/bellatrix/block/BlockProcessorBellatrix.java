@@ -19,6 +19,8 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -40,7 +42,6 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellat
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlockProcessorBellatrix extends BlockProcessorAltair {
-
   private final MiscHelpersBellatrix miscHelpersBellatrix;
   private final SchemaDefinitionsBellatrix schemaDefinitions;
 
@@ -85,6 +86,11 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     final BeaconBlockBody blockBody = block.getBody();
     final ExecutionPayloadHeader executionPayloadHeader;
 
+    if (!(blockBody instanceof BeaconBlockBodyBellatrix
+        || blockBody instanceof BlindedBeaconBlockBodyBellatrix)) {
+      throw new BlockProcessingException(
+          "The received block has no execution payload, and cannot be processed.");
+    }
     if (blockBody.isBlinded()) {
       executionPayloadHeader = blockBody.getOptionalExecutionPayloadHeader().orElseThrow();
     } else {

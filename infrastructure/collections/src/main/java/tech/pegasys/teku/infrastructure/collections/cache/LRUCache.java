@@ -74,6 +74,12 @@ public class LRUCache<K, V> implements Cache<K, V> {
   }
 
   @Override
+  public synchronized void invalidateWithNewValue(K key, V newValue) {
+    invalidate(key);
+    get(key, k -> newValue);
+  }
+
+  @Override
   public synchronized void clear() {
     cacheData.clear();
   }
