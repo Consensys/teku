@@ -28,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,7 +74,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
             .description(
                 "Returns full BeaconState object for a finalized checkpoint state from the WS period. \n"
                     + "Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.")
-            .tags(TAG_BEACON)
+            .tags(TAG_EXPERIMENTAL)
             .response(
                 SC_OK,
                 "Request successful",
