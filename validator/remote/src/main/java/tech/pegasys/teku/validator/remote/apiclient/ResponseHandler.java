@@ -28,13 +28,12 @@ import java.io.IOException;
 import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import okhttp3.ResponseBody;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class ResponseHandler<T> {
-  private static final Logger LOG = LogManager.getLogger();
+
   private final Int2ObjectMap<Handler<T>> handlers = new Int2ObjectOpenHashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
@@ -73,15 +72,12 @@ public class ResponseHandler<T> {
   }
 
   private Optional<T> unknownResponseCodeHandler(final Request request, final Response response) {
-    LOG.debug(
-        "Unexpected response from Beacon Node API (url = {}, status = {}, response = {})",
-        request.url(),
-        response.code(),
-        response.body());
-    throw new RuntimeException(
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
+    final String exceptionMessage =
         String.format(
-            "Unexpected response from Beacon Node API (url = %s, status = %s)",
-            request.url(), response.code()));
+            "Unexpected response from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage);
+    throw new RuntimeException(exceptionMessage);
   }
 
   private Optional<T> noValueHandler(final Request request, final Response response) {
@@ -89,10 +85,11 @@ public class ResponseHandler<T> {
   }
 
   private Optional<T> serviceErrorHandler(final Request request, final Response response) {
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
     throw new RemoteServiceNotAvailableException(
         String.format(
-            "Server error from Beacon Node API (url = %s, status = %s)",
-            request.url(), response.code()));
+            "Server error from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage));
   }
 
   private Optional<T> defaultTooManyRequestsHandler(
@@ -105,12 +102,12 @@ public class ResponseHandler<T> {
     if (badRequestResponseClass != null) {
       return parseResponse(response, badRequestResponseClass);
     }
-    LOG.debug(
-        "Invalid params response from Beacon Node API (url = {}, response = {})",
-        request.url(),
-        response.body().string());
-    throw new IllegalArgumentException(
-        "Invalid params response from Beacon Node API (url = " + request.url() + ")");
+    final String errorMessage = BeaconNodeApiErrorUtils.getErrorMessage(response);
+    final String exceptionMessage =
+        String.format(
+            "Invalid params response from Beacon Node API (url = %s, status = %s, message = %s)",
+            request.url(), response.code(), errorMessage);
+    throw new IllegalArgumentException(exceptionMessage);
   }
 
   private Optional<T> defaultOkHandler(final Request request, final Response response)
@@ -120,8 +117,9 @@ public class ResponseHandler<T> {
 
   private Optional<T> parseResponse(final Response response, final Class<T> responseClass)
       throws IOException {
-    if (responseClass != null) {
-      final T responseObj = jsonProvider.jsonToObject(response.body().string(), responseClass);
+    final ResponseBody responseBody = response.body();
+    if (responseClass != null && responseBody != null) {
+      final T responseObj = jsonProvider.jsonToObject(responseBody.string(), responseClass);
       return Optional.of(responseObj);
     } else {
       return Optional.empty();

@@ -330,10 +330,15 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_BAD_REQUEST)
+            .setBody("{\"code\":400,\"message\":\"Invalid block: missing signature\"}"));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageMatching(
+            "Invalid params response from Beacon Node API \\(url = .*, status = 400, message = Invalid block: missing signature\\)");
   }
 
   @Test
@@ -341,11 +346,16 @@ class OkHttpValidatorRestApiClientTest {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // node is syncing
-    mockWebServer.enqueue(new MockResponse().setResponseCode(503));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(503)
+            .setBody(
+                "{\"code\":503,\"message\":\"Beacon node is currently syncing and not serving request on that endpoint\"}"));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RemoteServiceNotAvailableException.class)
-        .hasMessageContaining("Server error from Beacon Node API");
+        .hasMessageMatching(
+            "Server error from Beacon Node API \\(url = .*, status = 503, message = Beacon node is currently syncing and not serving request on that endpoint\\)");
   }
 
   @Test
@@ -356,7 +366,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
+        .hasMessageMatching(
+            "Unexpected response from Beacon Node API \\(url = .*, status = 500, message = Server Error\\)");
   }
 
   @Test

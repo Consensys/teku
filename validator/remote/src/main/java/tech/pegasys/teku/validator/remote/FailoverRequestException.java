@@ -28,7 +28,7 @@ public class FailoverRequestException extends RuntimeException {
       final String method, final Map<HttpUrl, Throwable> capturedExceptions) {
     final String prefix =
         String.format(
-            "Remote request (%s) failed on all configured Beacon Node endpoints.%n", method);
+            "Remote request (%s) failed on all configured Beacon Node endpoints%n", method);
     final String errorSummary =
         capturedExceptions.entrySet().stream()
             .map(entry -> entry.getKey() + ": " + entry.getValue())
