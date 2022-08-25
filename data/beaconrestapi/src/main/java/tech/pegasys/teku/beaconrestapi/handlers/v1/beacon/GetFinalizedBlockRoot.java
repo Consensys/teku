@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ROOT_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -42,10 +41,6 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_blocks/{slot}/root";
   private final ChainDataProvider chainDataProvider;
-  private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
-      SerializableTypeDefinition.object(Bytes32.class)
-          .withField("root", BYTES32_TYPE, Function.identity())
-          .build();
 
   private static final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> RESPONSE_TYPE =
       SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()

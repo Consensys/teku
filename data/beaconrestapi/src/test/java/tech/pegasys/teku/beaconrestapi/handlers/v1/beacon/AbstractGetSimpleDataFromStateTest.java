@@ -18,15 +18,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ROOT_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -44,11 +42,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
       SerializableTypeDefinition.object(StateAndMetaData.class)
           .name("ResponseObject")
           .withField(
-              "data",
-              SerializableTypeDefinition.object(Bytes32.class)
-                  .withField("root", BYTES32_TYPE, Function.identity())
-                  .build(),
-              stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
+              "data", ROOT_TYPE, stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
           .build();
 
   @BeforeEach
