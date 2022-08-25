@@ -44,11 +44,12 @@ public class SentryNodesConfigLoader {
   }
 
   public SentryNodesConfig load(final String resourceLocation) {
+    LOG.info("Loading sentry nodes configuration from {}", resourceLocation);
+
     final Bytes fileAsBytes = loadResourceFromFileOrUrl(resourceLocation);
     final SentryNodesConfig sentryNodesConfig = parseResourceAsConfig(fileAsBytes);
 
-    // TODO-lucas Pretty log of loaded config to help troubleshoot config issues
-    LOG.debug("TODO pretty print of sentry nodes config");
+    logConfig(sentryNodesConfig);
 
     return sentryNodesConfig;
   }
@@ -82,5 +83,25 @@ public class SentryNodesConfigLoader {
       throw new RuntimeException("Unexpected error parsing sentry nodes configuration file", e);
     }
     return sentryNodesConfig;
+  }
+
+  private void logConfig(final SentryNodesConfig sentryNodesConfig) {
+    LOG.info(
+        "Duty provider beacon nodes: {}",
+        String.join(",", sentryNodesConfig.getDutiesProviderNodeConfig().getEndpoints()));
+
+    LOG.info(
+        "Block handler beacon nodes: {}",
+        sentryNodesConfig
+            .getBlockHandlerNodeConfig()
+            .map(c -> String.join(",", c.getEndpoints()))
+            .orElse("<empty>"));
+
+    LOG.info(
+        "Attestation publisher beacon nodes: {}",
+        sentryNodesConfig
+            .getAttestationPublisherConfig()
+            .map(c -> String.join(",", c.getEndpoints()))
+            .orElse("<empty>"));
   }
 }
