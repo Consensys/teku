@@ -1,0 +1,19 @@
+{
+  "get" : {
+    "summary" : "Get eth v1 checkpoint finalized_blocks with slot root",
+    "operationId" : "getEthV1CheckpointFinalized_blocksWithSlotRoot",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "path",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Default response"
+      }
+    }
+  }
+}
