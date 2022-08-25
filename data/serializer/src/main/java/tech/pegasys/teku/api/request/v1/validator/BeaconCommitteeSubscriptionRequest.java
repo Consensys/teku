@@ -21,11 +21,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @SuppressWarnings("JavaCase")
 public class BeaconCommitteeSubscriptionRequest {
 
-  @Schema(type = "string", format = "uint64")
-  public final int validator_index;
+  @Schema(type = "string")
+  public final String validator_index;
 
-  @Schema(type = "string", format = "uint64")
-  public final int committee_index;
+  @Schema(type = "string")
+  public final String committee_index;
 
   @Schema(type = "string", format = "uint64")
   public final UInt64 committees_at_slot;
@@ -37,8 +37,8 @@ public class BeaconCommitteeSubscriptionRequest {
 
   @JsonCreator
   public BeaconCommitteeSubscriptionRequest(
-      @JsonProperty("validator_index") final int validator_index,
-      @JsonProperty("committee_index") final int committee_index,
+      @JsonProperty("validator_index") final String validator_index,
+      @JsonProperty("committee_index") final String committee_index,
       @JsonProperty("committees_at_slot") final UInt64 committees_at_slot,
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("is_aggregator") final boolean is_aggregator) {
