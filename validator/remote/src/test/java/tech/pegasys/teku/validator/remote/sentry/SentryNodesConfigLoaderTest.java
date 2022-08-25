@@ -72,6 +72,27 @@ class SentryNodesConfigLoaderTest {
   }
 
   @Test
+  public void shouldLoadConfigOnlyWithDutiesProvider() throws Exception {
+    mockResourceLoaderWithJsonConfig("minimumConfig", SENTRY_NODE_MINIMUM_JSON_CONFIG);
+
+    final SentryNodesConfig config = configLoader.load("minimumConfig");
+
+    assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
+    assertThat(config.getBlockHandlerNodeConfig()).isEmpty();
+    assertThat(config.getAttestationPublisherConfig()).isEmpty();
+  }
+
+  @Test
+  public void shouldFailLoadingConfigMissingNestedEndpoints() throws Exception {
+    mockResourceLoaderWithJsonConfig("missingEndpoints", SENTRY_NODE_MISSING_ENDPOINTS_JSON_CONFIG);
+
+    assertThatThrownBy(() -> configLoader.load("missingEndpoints"))
+        .isInstanceOf(RuntimeException.class)
+        .hasCauseInstanceOf(JsonProcessingException.class)
+        .hasMessage("Invalid sentry nodes configuration file");
+  }
+
+  @Test
   public void shouldFailLoadingConfigWhenMissingRequiredDutiesProvider() throws Exception {
     mockResourceLoaderWithJsonConfig(
         "configWithoutDutiesProvider", SENTRY_NODE_MISSING_DUTIES_PROVIDER_JSON_CONFIG);
@@ -204,6 +225,20 @@ class SentryNodesConfigLoaderTest {
           + "    }\n"
           + "  }\n"
           + "}";
+
+  private static final String SENTRY_NODE_MINIMUM_JSON_CONFIG =
+      "{\n"
+          + "  \"beacon_nodes\": {\n"
+          + "    \"duties_provider\": {\n"
+          + "      \"endpoints\": [\n"
+          + "        \"http://duties:5051\"\n"
+          + "      ]\n"
+          + "    }"
+          + "  }\n"
+          + "}";
+
+  private static final String SENTRY_NODE_MISSING_ENDPOINTS_JSON_CONFIG =
+      "{\"beacon_nodes\": {\"duties_provider\": {}}}";
   // endregion
 
 }

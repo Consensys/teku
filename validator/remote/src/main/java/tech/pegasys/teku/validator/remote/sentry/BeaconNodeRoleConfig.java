@@ -22,7 +22,8 @@ public class BeaconNodeRoleConfig {
   private final List<String> endpoints;
 
   @JsonCreator
-  public BeaconNodeRoleConfig(@JsonProperty("endpoints") final List<String> endpoints) {
+  public BeaconNodeRoleConfig(
+      @JsonProperty(value = "endpoints", required = true) final List<String> endpoints) {
     this.endpoints = endpoints;
   }
 
