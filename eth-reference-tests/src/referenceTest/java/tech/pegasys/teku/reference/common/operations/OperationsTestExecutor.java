@@ -56,7 +56,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz_snappy";
 
-  enum Operation {
+  private enum Operation {
     ATTESTER_SLASHING,
     PROPOSER_SLASHING,
     PROCESS_BLOCK_HEADER,
