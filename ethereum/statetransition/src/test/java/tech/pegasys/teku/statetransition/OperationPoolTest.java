@@ -26,8 +26,10 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -119,6 +121,38 @@ public class OperationPoolTest {
   }
 
   @Test
+  void shouldAllowFilterConditionToChangeAfterEachSelection() {
+    final OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
+
+    OperationPool<SignedVoluntaryExit> pool =
+        new OperationPool<>(
+            "SignedVoluntaryExitPool",
+            metricsSystem,
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
+            validator);
+
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
+
+    final SignedVoluntaryExit exit1 = dataStructureUtil.randomSignedVoluntaryExit();
+    final SignedVoluntaryExit exit2 = dataStructureUtil.randomSignedVoluntaryExit();
+
+    pool.addLocal(exit1);
+    pool.addLocal(exit2);
+
+    final Set<SignedVoluntaryExit> exitsToAccept = new HashSet<>(Set.of(exit1, exit2));
+    final SszList<SignedVoluntaryExit> selectedItems =
+        pool.getItemsForBlock(
+            state,
+            exitsToAccept::contains,
+            exit -> {
+              // Only allow the first exit to be added
+              exitsToAccept.clear();
+            });
+    assertThat(selectedItems).hasSize(1);
+  }
+
+  @Test
   void shouldRemoveAllItemsFromPool() {
     OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
     SszListSchema<AttesterSlashing, ?> attesterSlashingsSchema =
@@ -140,16 +174,16 @@ public class OperationPoolTest {
 
   @Test
   void shouldNotIncludeInvalidatedItemsFromPool() {
-    OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
-    OperationPool<ProposerSlashing> pool =
+    final OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
+    final OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
             "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
 
-    ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
-    ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
+    final ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
+    final ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
     when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
 
@@ -161,6 +195,34 @@ public class OperationPoolTest {
     when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+  }
+
+  @Test
+  void shouldRemoveInvalidOptionsFromThePool() {
+    // When we attempt to build a block, if we find operations that are now invalid, remove them
+
+    final OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
+    final OperationPool<ProposerSlashing> pool =
+        new OperationPool<>(
+            "ProposerSlashingPool",
+            metricsSystem,
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
+            validator);
+
+    final ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
+    final ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
+
+    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+
+    pool.addLocal(slashing1);
+    pool.addLocal(slashing2);
+
+    when(validator.validateForBlockInclusion(any(), eq(slashing1)))
+        .thenReturn(Optional.of(ExitInvalidReason.submittedTooEarly()));
+    when(validator.validateForBlockInclusion(any(), eq(slashing2))).thenReturn(Optional.empty());
+
+    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+    assertThat(pool.getAll()).containsOnly(slashing2);
   }
 
   @Test

@@ -35,7 +35,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
 
   private Optional<TopicChannel> channel = Optional.empty();
 
-  protected   AbstractGossipManager(
+  protected AbstractGossipManager(
       final RecentChainData recentChainData,
       final GossipTopicName topicName,
       final AsyncRunner asyncRunner,
