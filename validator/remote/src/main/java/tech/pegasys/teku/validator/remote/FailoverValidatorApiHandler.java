@@ -287,7 +287,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
           final HttpUrl primaryEndpoint = primaryDelegate.getEndpoint();
           capturedExceptions.put(primaryEndpoint, primaryThrowable);
           LOG.debug(
-              "Request which is sent to all configured Beacon Node endpoints failed on the primary Beacon Node {}. Will try to use a response from a failover.",
+              "Remote request ({}) which is sent to all configured Beacon Node endpoints failed on the primary Beacon Node {}. Will try to use a response from a failover.",
+              method,
               primaryEndpoint);
           return SafeFuture.firstSuccess(failoversResponses)
               .exceptionallyCompose(
