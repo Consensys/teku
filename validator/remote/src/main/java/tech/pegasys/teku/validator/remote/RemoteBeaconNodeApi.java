@@ -103,8 +103,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 primaryValidatorApi,
                 failoverValidatorApis,
                 failoversSendSubnetSubscriptions,
-                metricsSystem,
-                ValidatorLogger.VALIDATOR_LOGGER));
+                metricsSystem));
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
