@@ -1,10 +1,13 @@
 {
   "get" : {
-    "summary" : "Get eth v1 checkpoint finalized_blocks with slot root",
+    "tags" : [ "Experimental" ],
+    "summary" : "Get finalized block root",
+    "description" : "Retrieves hashTreeRoot of the finalized block root",
     "operationId" : "getEthV1CheckpointFinalized_blocksWithSlotRoot",
     "parameters" : [ {
       "name" : "slot",
       "in" : "path",
+      "description" : "The slot for which the block should be proposed.",
       "required" : true,
       "schema" : {
         "type" : "string"
@@ -12,7 +15,23 @@
     } ],
     "responses" : {
       "200" : {
-        "description" : "Default response"
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlockRootResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
       }
     }
   }
