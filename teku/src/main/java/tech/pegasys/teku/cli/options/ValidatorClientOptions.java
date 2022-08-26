@@ -69,6 +69,14 @@ public class ValidatorClientOptions {
       fallbackValue = "true")
   private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
+  @Option(
+      names = {"--Xsentry-config-file"},
+      paramLabel = "<FILE>",
+      description = "Config file with sentry node configuration",
+      hidden = true,
+      arity = "1")
+  private String sentryConfigFile = null;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -77,7 +85,8 @@ public class ValidatorClientOptions {
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .primaryBeaconNodeEventStreamReconnectAttemptPeriod(
-                    Duration.ofMillis(primaryBeaconNodeEventStreamReconnectAttemptPeriod)));
+                    Duration.ofMillis(primaryBeaconNodeEventStreamReconnectAttemptPeriod))
+                .sentryNodeConfigurationFile(sentryConfigFile));
   }
 
   public URI getPrimaryBeaconNodeApiEndpoint() {

@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
@@ -331,10 +330,15 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_BAD_REQUEST)
+            .setBody("{\"code\":400,\"message\":\"Invalid block: missing signature\"}"));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageMatching(
+            "Invalid params response from Beacon Node API \\(url = .*, status = 400, message = Invalid block: missing signature\\)");
   }
 
   @Test
@@ -342,11 +346,16 @@ class OkHttpValidatorRestApiClientTest {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // node is syncing
-    mockWebServer.enqueue(new MockResponse().setResponseCode(503));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(503)
+            .setBody(
+                "{\"code\":503,\"message\":\"Beacon node is currently syncing and not serving request on that endpoint\"}"));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RemoteServiceNotAvailableException.class)
-        .hasMessageContaining("Server error from Beacon Node API");
+        .hasMessageMatching(
+            "Server error from Beacon Node API \\(url = .*, status = 503, message = Beacon node is currently syncing and not serving request on that endpoint\\)");
   }
 
   @Test
@@ -357,7 +366,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
+        .hasMessageMatching(
+            "Unexpected response from Beacon Node API \\(url = .*, status = 500, message = Server Error\\)");
   }
 
   @Test
@@ -628,12 +638,9 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot2 = UInt64.valueOf(16);
     final boolean aggregator2 = false;
 
-    final BeaconCommitteeSubscriptionRequest[] expectedRequest = {
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
-    };
+    final String expectedRequest =
+        "[{\"validator_index\":\"6\",\"committee_index\":\"1\",\"committees_at_slot\":\"10\",\"slot\":\"15\",\"is_aggregator\":true},"
+            + "{\"validator_index\":\"7\",\"committee_index\":\"2\",\"committees_at_slot\":\"11\",\"slot\":\"16\",\"is_aggregator\":false}]";
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
@@ -649,8 +656,7 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(expectedRequest));
+    assertThat(request.getBody().readUtf8()).isEqualTo(expectedRequest);
   }
 
   @Test

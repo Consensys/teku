@@ -55,6 +55,9 @@ public class AttestationValidator {
 
   public SafeFuture<InternalValidationResult> validate(
       final ValidateableAttestation validateableAttestation) {
+    if (validateableAttestation.isAcceptedAsGossip()) {
+      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+    }
     Attestation attestation = validateableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult.code() != ACCEPT) {
@@ -65,7 +68,13 @@ public class AttestationValidator {
             signatureVerifier,
             validateableAttestation,
             validateableAttestation.getReceivedSubnetId())
-        .thenApply(InternalValidationResultWithState::getResult);
+        .thenApply(InternalValidationResultWithState::getResult)
+        .thenPeek(
+            result -> {
+              if (result.isAccept()) {
+                validateableAttestation.setAcceptedAsGossip();
+              }
+            });
   }
 
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {

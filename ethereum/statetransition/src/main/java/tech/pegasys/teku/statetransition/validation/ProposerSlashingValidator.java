@@ -76,6 +76,18 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     return spec.validateProposerSlashing(state, slashing);
   }
 
+  @Override
+  public Optional<OperationInvalidReason> validateForBlockInclusion(
+      final BeaconState stateAtBlockSlot, final ProposerSlashing slashing) {
+    final Optional<OperationInvalidReason> invalidReason =
+        validateForStateTransition(stateAtBlockSlot, slashing);
+    if (invalidReason.isPresent()) {
+      return invalidReason;
+    }
+
+    return verifySignature(stateAtBlockSlot, slashing);
+  }
+
   private SafeFuture<Optional<OperationInvalidReason>> passesProcessProposerSlashingConditions(
       ProposerSlashing slashing) {
     return getState()
@@ -87,12 +99,16 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
                 return invalidReason;
               }
 
-              if (!spec.verifyProposerSlashingSignature(
-                  state, slashing, BLSSignatureVerifier.SIMPLE)) {
-                return Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE);
-              }
-              return Optional.empty();
+              return verifySignature(state, slashing);
             });
+  }
+
+  private Optional<OperationInvalidReason> verifySignature(
+      final BeaconState state, final ProposerSlashing slashing) {
+    if (!spec.verifyProposerSlashingSignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
+      return Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE);
+    }
+    return Optional.empty();
   }
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {

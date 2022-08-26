@@ -16,22 +16,25 @@ package tech.pegasys.teku.ethereum.pow.merkletree;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
 
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 
 public class DepositTree {
   private MerkleTree tree;
   private long totalDepositCount;
   private long finalizedDepositCount;
-  private Optional<Bytes32> finalizedExecutionBlock;
+  private Optional<BlockHashAndHeight> finalizedExecutionBlock;
 
   public DepositTree() {
     tree = MerkleTree.create(emptyList(), DEPOSIT_CONTRACT_TREE_DEPTH);
@@ -43,10 +46,18 @@ public class DepositTree {
   public DepositTree(final DepositTreeSnapshot snapshot) {
     this.tree =
         MerkleTree.fromSnapshotParts(
-            snapshot.getFinalized(), snapshot.getDeposits(), DEPOSIT_CONTRACT_TREE_DEPTH);
-    this.totalDepositCount = snapshot.getDeposits();
-    this.finalizedDepositCount = snapshot.getDeposits();
-    this.finalizedExecutionBlock = Optional.of(snapshot.getExecutionBlockHash());
+            snapshot.getFinalized(), snapshot.getDepositCount(), DEPOSIT_CONTRACT_TREE_DEPTH);
+    checkArgument(
+        calculateDepositRoot(tree.getRoot(), snapshot.getDepositCount())
+            .equals(snapshot.getDepositRoot()),
+        "Incorrect Deposit Tree snapshot {}, deposit root doesn't match",
+        snapshot);
+    this.totalDepositCount = snapshot.getDepositCount();
+    this.finalizedDepositCount = snapshot.getDepositCount();
+    this.finalizedExecutionBlock =
+        Optional.of(
+            new BlockHashAndHeight(
+                snapshot.getExecutionBlockHash(), snapshot.getExecutionBlockHeight()));
   }
 
   public Optional<DepositTreeSnapshot> getSnapshot() {
@@ -54,19 +65,38 @@ public class DepositTree {
       return Optional.empty();
     }
     final List<Bytes32> finalized = new ArrayList<>();
-    final long deposits = tree.getFinalized(finalized);
-    return Optional.of(new DepositTreeSnapshot(finalized, deposits, finalizedExecutionBlock.get()));
+    final long depositCount = tree.getFinalized(finalized);
+    return Optional.of(
+        new DepositTreeSnapshot(
+            finalized,
+            calculateDepositRoot(finalized, depositCount),
+            depositCount,
+            finalizedExecutionBlock.get().getBlockHash(),
+            finalizedExecutionBlock.get().getBlockHeight()));
+  }
+
+  private Bytes32 calculateDepositRoot(final List<Bytes32> finalized, final long depositCount) {
+    final Bytes32 treeRoot =
+        MerkleTree.fromSnapshotParts(finalized, depositCount, DEPOSIT_CONTRACT_TREE_DEPTH)
+            .getRoot();
+    return calculateDepositRoot(treeRoot, depositCount);
+  }
+
+  private Bytes32 calculateDepositRoot(final Bytes32 treeRoot, final long depositCount) {
+    return Hash.sha256(
+        treeRoot, Bytes32.rightPad(Bytes.ofUnsignedLong(depositCount, ByteOrder.LITTLE_ENDIAN)));
   }
 
   public static DepositTree fromSnapshot(final DepositTreeSnapshot snapshot) {
     return new DepositTree(snapshot);
   }
 
-  public void finalize(final Eth1Data eth1Data) {
+  public void finalize(final Eth1Data eth1Data, final UInt64 blockHeight) {
     checkArgument(
         totalDepositCount >= eth1Data.getDepositCount().longValue(),
         "Merkle tree does not contain all deposits to be finalized");
-    finalizedExecutionBlock = Optional.of(eth1Data.getBlockHash());
+    finalizedExecutionBlock =
+        Optional.of(new BlockHashAndHeight(eth1Data.getBlockHash(), blockHeight));
     finalizedDepositCount = eth1Data.getDepositCount().longValue();
     tree = tree.finalize(finalizedDepositCount, DEPOSIT_CONTRACT_TREE_DEPTH);
   }
@@ -110,5 +140,29 @@ public class DepositTree {
         lastDepositIndex,
         treeForProof.getDepositCount());
     return treeForProof;
+  }
+
+  public boolean isFinalizedWithExecutionBlock(final Bytes32 blockHash) {
+    return this.finalizedExecutionBlock
+        .filter(block -> block.blockHash.equals(blockHash))
+        .isPresent();
+  }
+
+  private static class BlockHashAndHeight {
+    private final Bytes32 blockHash;
+    private final UInt64 blockHeight;
+
+    public BlockHashAndHeight(final Bytes32 blockHash, final UInt64 blockHeight) {
+      this.blockHash = blockHash;
+      this.blockHeight = blockHeight;
+    }
+
+    public Bytes32 getBlockHash() {
+      return blockHash;
+    }
+
+    public UInt64 getBlockHeight() {
+      return blockHeight;
+    }
   }
 }

@@ -57,8 +57,9 @@ public abstract class BlockProcessorTest {
   protected abstract Spec createSpec();
 
   @Test
-  void ensureVerifyDepositDefaultsToTrue() {
-    assertThat(AbstractBlockProcessor.blsVerifyDeposit).isTrue();
+  void ensureDepositSignatureVerifierHasDefaultValue() {
+    assertThat(AbstractBlockProcessor.depositSignatureVerifier)
+        .isSameAs(AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER);
   }
 
   @Test

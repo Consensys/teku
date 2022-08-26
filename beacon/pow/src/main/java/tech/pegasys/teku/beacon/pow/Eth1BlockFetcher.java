@@ -124,7 +124,9 @@ public class Eth1BlockFetcher {
 
   private void postBlock(final Block block) {
     eth1EventsChannel.onEth1Block(
-        Bytes32.fromHexString(block.getHash()), UInt64.valueOf(block.getTimestamp()));
+        UInt64.valueOf(block.getNumber()),
+        Bytes32.fromHexString(block.getHash()),
+        UInt64.valueOf(block.getTimestamp()));
   }
 
   private void backfillEth1Blocks(final UInt64 nextBlockToRequest) {

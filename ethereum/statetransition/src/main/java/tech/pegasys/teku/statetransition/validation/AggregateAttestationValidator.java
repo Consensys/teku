@@ -91,6 +91,36 @@ public class AggregateAttestationValidator {
       return completedFuture(ignore("Ignoring duplicate aggregate based on aggregation bits"));
     }
 
+    if (attestation.isAcceptedAsGossip()) {
+      return SafeFuture.completedFuture(
+          checkAndAddToSeenAggregates(
+              attestation, aggregatorIndexAndEpoch, InternalValidationResult.ACCEPT));
+    }
+
+    return verifyAggregate(
+            attestation,
+            signedAggregate,
+            aggregateAndProof,
+            aggregate,
+            aggregateSlot,
+            specVersion,
+            aggregatorIndexAndEpoch)
+        .thenPeek(
+            result -> {
+              if (result.isAccept()) {
+                attestation.setAcceptedAsGossip();
+              }
+            });
+  }
+
+  private SafeFuture<InternalValidationResult> verifyAggregate(
+      final ValidateableAttestation attestation,
+      final SignedAggregateAndProof signedAggregate,
+      final AggregateAndProof aggregateAndProof,
+      final Attestation aggregate,
+      final UInt64 aggregateSlot,
+      final SpecVersion specVersion,
+      final AggregatorIndexAndEpoch aggregatorIndexAndEpoch) {
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
         new AsyncBatchBLSSignatureVerifier(this.signatureVerifier);
     return singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
@@ -160,17 +190,24 @@ public class AggregateAttestationValidator {
                           return reject("Rejecting aggregate with invalid batch signature");
                         }
 
-                        if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
-                          return ignore("Ignoring duplicate aggregate");
-                        }
-                        if (!seenAggregationBits.add(
-                            attestation.getData().hashTreeRoot(),
-                            attestation.getAttestation().getAggregationBits())) {
-                          return ignore("Ignoring duplicate aggregate based on aggregation bits");
-                        }
-                        return resultWithState.getResult();
+                        return checkAndAddToSeenAggregates(
+                            attestation, aggregatorIndexAndEpoch, resultWithState.getResult());
                       });
             });
+  }
+
+  private InternalValidationResult checkAndAddToSeenAggregates(
+      final ValidateableAttestation attestation,
+      final AggregatorIndexAndEpoch aggregatorIndexAndEpoch,
+      final InternalValidationResult result) {
+    if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
+      return ignore("Ignoring duplicate aggregate");
+    }
+    if (!seenAggregationBits.add(
+        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits())) {
+      return ignore("Ignoring duplicate aggregate based on aggregation bits");
+    }
+    return result;
   }
 
   private boolean validateSignature(

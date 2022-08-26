@@ -61,6 +61,9 @@ public class NoOpCache<K, V> implements Cache<K, V> {
   public void invalidate(K key) {}
 
   @Override
+  public void invalidateWithNewValue(K key, V newValue) {}
+
+  @Override
   public void clear() {}
 
   @Override

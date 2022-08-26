@@ -11,18 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 
-public interface OperationValidator<T> {
-  SafeFuture<InternalValidationResult> validateFully(T operation);
+public interface BuilderCircuitBreaker {
+  BuilderCircuitBreaker NOOP = (state) -> false;
 
-  Optional<OperationInvalidReason> validateForStateTransition(BeaconState state, T operation);
-
-  Optional<OperationInvalidReason> validateForBlockInclusion(
-      BeaconState stateAtBlockSlot, T operation);
+  boolean isEngaged(final BeaconState state);
 }

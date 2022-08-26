@@ -90,10 +90,6 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      final UInt64 firstEpochOfPreviousFork =
-          spec.computePreviousForkEpochStart(blockSlotState.getSlot());
-      final UInt64 firstSlotOfPreviousFork = spec.computeStartSlotAtEpoch(firstEpochOfPreviousFork);
-
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState,
@@ -105,25 +101,14 @@ public class BlockOperationSelectorFactory {
       final SszList<AttesterSlashing> attesterSlashings =
           attesterSlashingPool.getItemsForBlock(
               blockSlotState,
-              slashing ->
-                  !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices())
-                      && slashing
-                          .getAttestation1()
-                          .getData()
-                          .getSlot()
-                          .isGreaterThanOrEqualTo(firstSlotOfPreviousFork),
+              slashing -> !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
               slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
               slashing ->
-                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex())
-                      && slashing
-                          .getHeader1()
-                          .getMessage()
-                          .getSlot()
-                          .isGreaterThanOrEqualTo(firstSlotOfPreviousFork),
+                  !exitedValidators.contains(slashing.getHeader1().getMessage().getProposerIndex()),
               slashing ->
                   exitedValidators.add(slashing.getHeader1().getMessage().getProposerIndex()));
 
@@ -131,11 +116,7 @@ public class BlockOperationSelectorFactory {
       final SszList<SignedVoluntaryExit> voluntaryExits =
           voluntaryExitPool.getItemsForBlock(
               blockSlotState,
-              exit ->
-                  !exitedValidators.contains(exit.getMessage().getValidatorIndex())
-                      && exit.getMessage()
-                          .getEpoch()
-                          .isGreaterThanOrEqualTo(firstEpochOfPreviousFork),
+              exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
@@ -167,16 +148,9 @@ public class BlockOperationSelectorFactory {
                             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
-                (executionPayloadContext) -> {
-                  final boolean transitionNotFinalized =
-                      executionPayloadContext
-                          .getForkChoiceState()
-                          .getFinalizedExecutionBlockHash()
-                          .isZero();
-
-                  return executionLayerChannel.builderGetHeader(
-                      executionPayloadContext, blockSlotState, transitionNotFinalized);
-                }));
+                (executionPayloadContext) ->
+                    executionLayerChannel.builderGetHeader(
+                        executionPayloadContext, blockSlotState)));
         return;
       }
 

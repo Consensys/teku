@@ -37,12 +37,6 @@ public enum SpecMilestone {
     return compareTo(other) >= 0;
   }
 
-  static Optional<SpecMilestone> getPreviousMilestone(final SpecMilestone milestone) {
-    if (milestone.ordinal() == 0) {
-      return Optional.empty();
-    }
-    return Optional.of(SpecMilestone.values()[milestone.ordinal() - 1]);
-  }
   /**
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone
