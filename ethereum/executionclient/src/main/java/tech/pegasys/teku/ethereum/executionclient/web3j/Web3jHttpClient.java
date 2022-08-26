@@ -23,17 +23,19 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 class Web3jHttpClient extends Web3JClient {
   private static final Logger LOG = LogManager.getLogger();
 
   Web3jHttpClient(
+      final EventLogger eventLog,
       final URI endpoint,
       final TimeProvider timeProvider,
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig) {
-    super(timeProvider);
+    super(eventLog, timeProvider);
     final OkHttpClient okHttpClient =
         OkHttpClientCreator.create(timeout, LOG, jwtConfig, timeProvider);
     final Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);

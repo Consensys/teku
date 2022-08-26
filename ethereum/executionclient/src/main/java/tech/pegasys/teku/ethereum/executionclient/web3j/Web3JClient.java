@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -25,18 +24,24 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.exceptions.ClientConnectionException;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public abstract class Web3JClient {
   private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private static final int NO_ERROR_TIME = -1;
+  private final EventLogger eventLog;
   private final TimeProvider timeProvider;
   private Web3jService web3jService;
   private Web3j eth1Web3j;
-  private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
+
+  // Default to the provider being offline at startup so we log when it is first available
+  // but uses a very old value to make sure we log if the first request fails
+  private final AtomicLong lastError = new AtomicLong(0);
   private boolean initialized = false;
 
-  protected Web3JClient(TimeProvider timeProvider) {
+  protected Web3JClient(final EventLogger eventLog, final TimeProvider timeProvider) {
+    this.eventLog = eventLog;
     this.timeProvider = timeProvider;
   }
 
@@ -92,14 +97,14 @@ public abstract class Web3JClient {
     if (errorTime == NO_ERROR_TIME
         || timeProvider.getTimeInMillis().longValue() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
       if (lastError.compareAndSet(errorTime, timeProvider.getTimeInMillis().longValue())) {
-        EVENT_LOG.executionClientIsOffline(error, couldBeAuthError);
+        eventLog.executionClientIsOffline(error, couldBeAuthError);
       }
     }
   }
 
   protected void handleSuccess() {
     if (lastError.getAndUpdate(x -> NO_ERROR_TIME) != NO_ERROR_TIME) {
-      EVENT_LOG.executionClientIsOnline();
+      eventLog.executionClientIsOnline();
     }
   }
 
