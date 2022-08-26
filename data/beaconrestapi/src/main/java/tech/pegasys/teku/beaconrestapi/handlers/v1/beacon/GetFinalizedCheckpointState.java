@@ -70,7 +70,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
             .operationId("getFinalizedCheckpointState")
             .summary("Get full BeaconState object for finalized checkpoint state")
             .description(
-                "Returns full BeaconState object for a finalized checkpoint state from the WS period. \n"
+                "Returns full BeaconState object for a finalized checkpoint state from the Weak Subjectivity period. \n"
                     + "Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.")
             .tags(TAG_EXPERIMENTAL)
             .response(
@@ -88,9 +88,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
       method = HttpMethod.GET,
       summary = "Get finalized checkpoint state",
       tags = {TAG_BEACON},
-      description =
-          "Returns full BeaconState object for a finalized checkpoint state from the WS period. \n"
-              + "Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.",
+      description = "Returns the latest finalized BeaconState.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
