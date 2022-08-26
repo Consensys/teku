@@ -25,4 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed `io.libp2p.core.InternalErrorException: [peerHandler] not initialized yet` error from jvm-libp2p
-- Fixed VC incompatibility with Nimbus BN for `/eth/v1/validator/beacon_committee_subscriptions` endpoint
+- Fixed VC incompatibility with Nimbus BN for the `/eth/v1/validator/beacon_committee_subscriptions` endpoint
