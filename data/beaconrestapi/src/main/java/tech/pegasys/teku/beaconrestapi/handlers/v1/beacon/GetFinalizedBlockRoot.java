@@ -55,7 +55,7 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
 
   private static final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> RESPONSE_TYPE =
       SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
-          .name("GetFinalizedBlockRootResponse")
+          .name("GetBlockRootResponse")
           .withField("data", ROOT_TYPE, ObjectAndMetaData::getData)
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
           .build();

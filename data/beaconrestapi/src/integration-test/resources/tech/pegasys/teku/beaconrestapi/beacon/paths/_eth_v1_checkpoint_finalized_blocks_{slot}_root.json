@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Experimental" ],
     "summary" : "Get finalized block root",
-    "description" : "Retrieves hashTreeRoot of the finalized block root",
+    "description" : "Retrieves hashTreeRoot of the finalized beacon block",
     "operationId" : "getEthV1CheckpointFinalized_blocksWithSlotRoot",
     "parameters" : [ {
       "name" : "slot",
