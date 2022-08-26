@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -49,6 +51,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final int maxMessageSize;
+  private final Optional<OperationMilestoneValidator<MessageT>> validator;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -57,6 +60,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
+      final Optional<OperationMilestoneValidator<MessageT>> validator,
       final SszSchema<MessageT> messageType,
       final int maxMessageSize) {
     this.asyncRunner = asyncRunner;
@@ -66,6 +70,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.topicName = topicName;
     this.messageType = messageType;
     this.maxMessageSize = maxMessageSize;
+    this.validator = validator;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
@@ -78,6 +83,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final GossipTopicName topicName,
+      final Optional<OperationMilestoneValidator<MessageT>> validator,
       final SszSchema<MessageT> messageType,
       final int maxMessageSize) {
     this(
@@ -87,6 +93,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding,
         forkDigest,
         topicName.toString(),
+        validator,
         messageType,
         maxMessageSize);
   }
@@ -95,17 +102,23 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   public SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message) {
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
-            deserialized ->
-                asyncRunner.runAsync(
-                    () ->
-                        processor
-                            .process(deserialized)
-                            .thenApply(
-                                internalValidation -> {
-                                  processMessage(internalValidation, message);
-                                  return GossipSubValidationUtil.fromInternalValidationResult(
-                                      internalValidation);
-                                })))
+            deserialized -> {
+              if (validator.isPresent() && !validator.get().isValid(deserialized, forkDigest)) {
+                return SafeFuture.completedFuture(
+                    GossipSubValidationUtil.fromInternalValidationResult(
+                        InternalValidationResult.reject("Incorrect spec milestone")));
+              }
+              return asyncRunner.runAsync(
+                  () ->
+                      processor
+                          .process(deserialized)
+                          .thenApply(
+                              internalValidation -> {
+                                processMessage(internalValidation, message);
+                                return GossipSubValidationUtil.fromInternalValidationResult(
+                                    internalValidation);
+                              }));
+            })
         .exceptionally(error -> handleMessageProcessingError(message, error));
   }
 

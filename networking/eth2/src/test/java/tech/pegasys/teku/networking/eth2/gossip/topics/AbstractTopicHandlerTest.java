@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.Spec;
@@ -31,7 +32,8 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractTopicHandlerTest<T> {
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected final Spec spec =
+      TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ONE, UInt64.valueOf(2));
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   protected final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
