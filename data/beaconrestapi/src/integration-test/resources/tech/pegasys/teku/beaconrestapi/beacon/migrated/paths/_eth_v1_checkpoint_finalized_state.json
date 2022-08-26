@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon" ],
+    "tags" : [ "Experimental" ],
     "operationId" : "getFinalizedCheckpointState",
     "summary" : "Get full BeaconState object for finalized checkpoint state",
     "description" : "Returns full BeaconState object for a finalized checkpoint state from the WS period. \nDepending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.",
