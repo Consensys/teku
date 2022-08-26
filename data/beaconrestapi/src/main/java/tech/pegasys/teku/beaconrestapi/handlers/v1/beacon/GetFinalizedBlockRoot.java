@@ -71,7 +71,7 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
             .operationId("getFinalizedBlockRoot")
             .summary("Get finalized block root")
             .description(
-                "Retrieves hashTreeRoot of finalized BeaconBlock/BeaconBlockHeader.\n"
+                "Retrieves hashTreeRoot of finalized Beacon Block.\n"
                     + "Responds with 404 if block at a slot is either unavailable or not yet finalized.")
             .tags(TAG_EXPERIMENTAL)
             .pathParam(SLOT_PARAMETER)
@@ -86,7 +86,7 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
       method = HttpMethod.GET,
       summary = "Get finalized block root",
       tags = {TAG_EXPERIMENTAL},
-      description = "Retrieves hashTreeRoot of the finalized block root",
+      description = "Retrieves hashTreeRoot of the finalized beacon block",
       pathParams = {@OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
