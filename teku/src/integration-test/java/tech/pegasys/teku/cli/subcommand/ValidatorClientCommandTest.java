@@ -151,15 +151,15 @@ public class ValidatorClientCommandTest {
     fetchAndVerifySpec(argsNetworkOptDefault);
   }
 
-  private void fetchAndVerifySpec(String[] args) {
-    int parseResult = beaconNodeCommand.parse(args);
+  private void fetchAndVerifySpec(final String[] args) {
+    final int parseResult = beaconNodeCommand.parse(args);
     assertThat(parseResult).isEqualTo(0);
 
-    TekuConfiguration config = getResultingTekuConfiguration();
+    final TekuConfiguration config = getResultingTekuConfiguration();
     assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
   }
 
-  private void configureMockServer(int fails) {
+  private void configureMockServer(final int fails) {
     configureFailedResponse(mockBeaconServer, fails);
     configureSuccessfulResponse(mockBeaconServer);
   }
