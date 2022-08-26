@@ -54,11 +54,11 @@ public class ValidatorClientCommandTest {
 
   private String[] argsNetworkOptDefault;
   private String[] argsNetworkOptAuto;
-  private String[] argsNetworkOptAutoWithFallback;
+  private String[] argsNetworkOptAutoWithFailover;
   private String[] argsNetworkOptAutoInConfig;
 
   private ClientAndServer mockBeaconServer;
-  private ClientAndServer fallbackMockBeaconServer;
+  private ClientAndServer failoverMockBeaconServer;
 
   private final Spec testSpec =
       SpecFactory.create(
@@ -75,11 +75,11 @@ public class ValidatorClientCommandTest {
   @BeforeEach
   public void setup(ClientAndServer server) {
     this.mockBeaconServer = server;
-    this.fallbackMockBeaconServer =
+    this.failoverMockBeaconServer =
         ClientAndServer.startClientAndServer(PortFactory.findFreePort());
     final String mockBeaconServerEndpoint = getMockBeaconServerEndpoint(mockBeaconServer);
-    final String fallbackMockBeaconServerEndpoint =
-        getMockBeaconServerEndpoint(fallbackMockBeaconServer);
+    final String failoverMockBeaconServerEndpoint =
+        getMockBeaconServerEndpoint(failoverMockBeaconServer);
 
     argsNetworkOptDefault =
         new String[] {"vc", "--beacon-node-api-endpoint", mockBeaconServerEndpoint};
@@ -87,13 +87,13 @@ public class ValidatorClientCommandTest {
         new String[] {
           "vc", "--network", "auto", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
         };
-    argsNetworkOptAutoWithFallback =
+    argsNetworkOptAutoWithFailover =
         new String[] {
           "vc",
           "--network",
           "auto",
           "--beacon-node-api-endpoints",
-          mockBeaconServerEndpoint + "," + fallbackMockBeaconServerEndpoint
+          mockBeaconServerEndpoint + "," + failoverMockBeaconServerEndpoint
         };
     argsNetworkOptAutoInConfig =
         new String[] {
@@ -108,7 +108,7 @@ public class ValidatorClientCommandTest {
   @AfterEach
   public void tearDown() {
     mockBeaconServer.reset();
-    fallbackMockBeaconServer.stop();
+    failoverMockBeaconServer.stop();
   }
 
   @Test
@@ -124,19 +124,19 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
-  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromFallbackNode() {
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromFailoverNode() {
     // primary node always fails
     configureMockServer(-1);
-    configureSuccessfulResponse(fallbackMockBeaconServer);
-    fetchAndVerifySpec(argsNetworkOptAutoWithFallback);
+    configureSuccessfulResponse(failoverMockBeaconServer);
+    fetchAndVerifySpec(argsNetworkOptAutoWithFailover);
   }
 
   @Test
   public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromAllConfiguredBeaconNodes() {
     configureMockServer(1);
-    // fallback node always fails
-    configureFailedResponse(fallbackMockBeaconServer, -1);
-    fetchAndVerifySpec(argsNetworkOptAutoWithFallback);
+    // failover node always fails
+    configureFailedResponse(failoverMockBeaconServer, -1);
+    fetchAndVerifySpec(argsNetworkOptAutoWithFailover);
   }
 
   @Test
