@@ -218,16 +218,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void publishBlock(final SignedBeaconBlock block) {
-    if (spec.fork(spec.computeEpochAtSlot(block.getSlot())).equals(fork)) {
-      blockGossipManager.publishBlock(block);
-    } else {
-      LOG.debug(
-          "Not publishing block {} ({}) due to it being on a different fork {}, expected {}",
-          block.hashTreeRoot(),
-          block.getSlot(),
-          spec.fork(spec.computeEpochAtSlot(block.getSlot())).getCurrentVersion(),
-          fork.getCurrentVersion());
-    }
+    blockGossipManager.publishBlock(block);
   }
 
   @Override
