@@ -89,11 +89,7 @@ public class ValidatorClientOptions {
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 
-  public URI getPrimaryBeaconNodeApiEndpoint() {
-    return getBeaconNodeApiEndpoints().get(0);
-  }
-
-  private List<URI> getBeaconNodeApiEndpoints() {
+  public List<URI> getBeaconNodeApiEndpoints() {
     return beaconNodeApiEndpoints.stream()
         .map(this::parseBeaconNodeApiEndpoint)
         .collect(Collectors.toList());

@@ -21,6 +21,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added Gas Limit APIs (GET/POST/DELETE)
 - Skip finding the PoW block that first satisfies the minimum genesis time condition when the genesis state is already known. Fixes an incompatibility with Nethermind's backwards sync for historic blocks.
 - Circuit breaker logic added when interacting with Builder endpoint
+- VC using failover nodes for retrieving the network spec when `--network=auto` and multiple beacon nodes are configured
 
 ### Bug Fixes
 - Fixed `io.libp2p.core.InternalErrorException: [peerHandler] not initialized yet` error from jvm-libp2p
+- Fixed VC incompatibility with Nimbus BN for `/eth/v1/validator/beacon_committee_subscriptions` endpoint
