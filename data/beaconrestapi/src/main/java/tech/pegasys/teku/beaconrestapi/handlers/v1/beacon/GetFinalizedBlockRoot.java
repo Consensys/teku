@@ -46,7 +46,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
@@ -104,25 +103,13 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);
-    final SafeFuture<Optional<SignedBeaconBlock>> eventuallyFinalizedBlock =
-        chainDataProvider.getFinalizedBlockInEffectAtSlot(slot);
+    final SafeFuture<Optional<Bytes32>> futureFinalizedBlockRoot =
+        chainDataProvider.getFinalizedBlockRoot(slot);
     request.respondAsync(
-        eventuallyFinalizedBlock.thenApply(
-            maybeFinalizedBlock ->
-                maybeFinalizedBlock
-                    .map(
-                        finalizedBlock -> {
-                          if (finalizedBlock.getSlot().equals(slot)) {
-                            chainDataProvider
-                                .getBlockRoot(slot.toString())
-                                .thenApply(
-                                    maybeFinalizedBlockRoot ->
-                                        maybeFinalizedBlockRoot
-                                            .map(AsyncApiResponse::respondOk)
-                                            .orElse(AsyncApiResponse.respondNotFound()));
-                          }
-                          return AsyncApiResponse.respondNotFound();
-                        })
+        futureFinalizedBlockRoot.thenApply(
+            maybeFinalizedBlockRoot ->
+                maybeFinalizedBlockRoot
+                    .map(AsyncApiResponse::respondOk)
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 }
