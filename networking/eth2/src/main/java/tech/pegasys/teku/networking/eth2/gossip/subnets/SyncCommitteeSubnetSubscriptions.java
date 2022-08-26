@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -77,6 +78,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
+        Optional.empty(),
         schemaDefinitions.getSyncCommitteeMessageSchema(),
         maxMessageSize);
   }

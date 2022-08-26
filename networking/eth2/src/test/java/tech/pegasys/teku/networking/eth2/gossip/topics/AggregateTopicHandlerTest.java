@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -39,6 +40,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
         gossipEncoding,
         forkDigest,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
+        Optional.empty(),
         spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema(),
         GOSSIP_MAX_SIZE);
   }
