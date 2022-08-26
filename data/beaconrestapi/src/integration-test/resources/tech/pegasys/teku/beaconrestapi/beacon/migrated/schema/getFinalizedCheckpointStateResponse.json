@@ -1,14 +1,11 @@
 {
   "title" : "getFinalizedCheckpointStateResponse",
   "type" : "object",
-  "required" : [ "version", "execution_optimistic", "data" ],
+  "required" : [ "version", "data" ],
   "properties" : {
     "version" : {
       "type" : "string",
       "enum" : [ "phase0", "altair", "bellatrix" ]
-    },
-    "execution_optimistic" : {
-      "type" : "boolean"
     },
     "data" : {
       "title" : "BeaconState",

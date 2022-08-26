@@ -23,13 +23,9 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
-@SuppressWarnings("JavaCase")
 public class GetFinalizedCheckpointStateResponse {
 
   public final Version version;
-
-  @JsonProperty("execution_optimistic")
-  public final boolean execution_optimistic;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME,
@@ -44,11 +40,8 @@ public class GetFinalizedCheckpointStateResponse {
 
   @JsonCreator
   public GetFinalizedCheckpointStateResponse(
-      @JsonProperty("version") final Version version,
-      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
-      @JsonProperty("data") final State data) {
+      @JsonProperty("version") final Version version, @JsonProperty("data") final State data) {
     this.version = version;
-    this.execution_optimistic = executionOptimistic;
     this.data = data;
   }
 }
