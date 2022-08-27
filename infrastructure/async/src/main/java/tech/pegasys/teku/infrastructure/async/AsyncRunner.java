@@ -32,6 +32,22 @@ public interface AsyncRunner {
     return runAfterDelay(() -> SafeFuture.fromRunnable(action), delay);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
+  default Cancellable runCancellableAfterDelay(
+      final ExceptionThrowingRunnable action, final Duration delay) {
+    Cancellable cancellable = FutureUtil.createCancellable();
+    runAfterDelay(
+        () ->
+            SafeFuture.fromRunnable(
+                () -> {
+                  if (!cancellable.isCancelled()) {
+                    action.run();
+                  }
+                }),
+        delay);
+    return cancellable;
+  }
+
   void shutdown();
 
   default <U> SafeFuture<U> runAsync(final ExceptionThrowingSupplier<U> action) {

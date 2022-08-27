@@ -21,7 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,9 +59,11 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
+  private final AtomicInteger countdownStage = new AtomicInteger(5);
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
+  private volatile CountDownLatch activeSearch = new CountDownLatch(1);
 
   public ConnectionManager(
       final MetricsSystem metricsSystem,
@@ -91,19 +95,46 @@ public class ConnectionManager extends Service {
     synchronized (this) {
       staticPeers.forEach(this::createPersistentConnection);
     }
-    periodicPeerSearch =
-        asyncRunner.runWithFixedDelay(
-            this::searchForPeers,
-            DISCOVERY_INTERVAL,
-            error -> LOG.error("Error while searching for peers", error));
-    connectToBestPeers(emptyList());
-    searchForPeers();
+    startSearchPeerTask();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
+  private void startSearchPeerTask() {
+    this.periodicPeerSearch =
+        asyncRunner.runCancellableAfterDelay(
+            () -> {
+              searchForPeers();
+              activeSearch.await();
+              createFollowupSearchPeerTask();
+            },
+            Duration.ofNanos(0));
+  }
+
+  private void createFollowupSearchPeerTask() {
+    final int currentStage = countdownStage.getAndDecrement();
+    if (currentStage < 0) {
+      return;
+    }
+    if (currentStage > 0) {
+      this.periodicPeerSearch =
+          asyncRunner.runCancellableAfterDelay(
+              () -> {
+                searchForPeers();
+                activeSearch.await();
+                createFollowupSearchPeerTask();
+              },
+              Duration.ofSeconds(1));
+    } else {
+      this.periodicPeerSearch =
+          asyncRunner.runWithFixedDelay(
+              this::searchForPeers,
+              DISCOVERY_INTERVAL,
+              error -> LOG.error("Error while searching for peers", error));
+    }
+  }
+
   private void connectToBestPeers(final Collection<DiscoveryPeer> additionalPeersToConsider) {
-    LOG.info("connectToBestPeers: {}", additionalPeersToConsider.size());
     peerSelectionStrategy
         .selectPeersToConnect(
             network,
@@ -114,7 +145,7 @@ public class ConnectionManager extends Service {
                     .filter(this::isPeerValid)
                     .collect(Collectors.toSet()))
         .forEach(this::attemptConnection);
-    LOG.info("connectToBestPeers: finished");
+    activeSearch.countDown();
   }
 
   private void searchForPeers() {
@@ -122,6 +153,7 @@ public class ConnectionManager extends Service {
       LOG.trace("Not running so not searching for peers");
       return;
     }
+    this.activeSearch = new CountDownLatch(1);
     LOG.trace("Searching for peers");
     discoveryService
         .searchForPeers()
@@ -135,19 +167,19 @@ public class ConnectionManager extends Service {
   }
 
   private void attemptConnection(final PeerAddress peerAddress) {
-    LOG.info("Attempting to connect to {}", peerAddress.getId());
+    LOG.trace("Attempting to connect to {}", peerAddress.getId());
     attemptedConnectionCounter.inc();
     network
         .connect(peerAddress)
         .finish(
             peer -> {
-              LOG.info("Successfully connected to peer {}", peer.getId());
+              LOG.trace("Successfully connected to peer {}", peer.getId());
               successfulConnectionCounter.inc();
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> peerPools.forgetPeer(peer.getId()));
             },
             error -> {
-              LOG.info(() -> "Failed to connect to peer: " + peerAddress.getId(), error);
+              LOG.trace(() -> "Failed to connect to peer: " + peerAddress.getId(), error);
               failedConnectionCounter.inc();
               peerPools.forgetPeer(peerAddress.getId());
             });

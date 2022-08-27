@@ -84,7 +84,6 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     }
 
     final List<DiscoveryPeer> allCandidatePeers = new ArrayList<>(candidates.get());
-    LOG.info("selectPeersToConnect:{}, {}", network, allCandidatePeers.size());
     final List<PeerAddress> selectedPeers = new ArrayList<>();
 
     if (randomlySelectedPeersToAdd > 0) {
