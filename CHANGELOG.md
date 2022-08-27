@@ -23,3 +23,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Circuit breaker logic added when interacting with Builder endpoint
 
 ### Bug Fixes
+- Fixed `io.libp2p.core.InternalErrorException: [peerHandler] not initialized yet` error from jvm-libp2p

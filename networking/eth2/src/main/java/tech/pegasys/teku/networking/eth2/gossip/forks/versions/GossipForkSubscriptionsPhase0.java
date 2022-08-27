@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
-
   private final List<GossipManager> gossipManagers = new ArrayList<>();
   private final Fork fork;
   protected final Spec spec;

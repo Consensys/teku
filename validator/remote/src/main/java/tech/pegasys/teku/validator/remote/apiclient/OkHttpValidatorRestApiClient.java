@@ -266,8 +266,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             .map(
                 request ->
                     new BeaconCommitteeSubscriptionRequest(
-                        request.getValidatorIndex(),
-                        request.getCommitteeIndex(),
+                        String.valueOf(request.getValidatorIndex()),
+                        String.valueOf(request.getCommitteeIndex()),
                         request.getCommitteesAtSlot(),
                         request.getSlot(),
                         request.isAggregator()))

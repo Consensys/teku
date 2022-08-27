@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.statetransition;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -115,17 +117,28 @@ public class OperationPool<T extends SszData> {
         slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
-    final Stream<T> operationsStream =
+    final List<T> sortedViableOperations =
         priorityOrderComparator
             .map(comparator -> operations.stream().sorted(comparator))
-            .orElseGet(operations::stream);
-    return operationsStream
-        .filter(filter)
-        .filter(
-            item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item).isEmpty())
-        .limit(schema.getMaxLength())
-        .peek(includedItemConsumer)
-        .collect(schema.collector());
+            .orElseGet(operations::stream)
+            .collect(Collectors.toList());
+    final List<T> selected = new ArrayList<>();
+    for (final T item : sortedViableOperations) {
+      if (!filter.test(item)) {
+        continue;
+      }
+      if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty()) {
+        selected.add(item);
+        includedItemConsumer.accept(item);
+        if (selected.size() == schema.getMaxLength()) {
+          break;
+        }
+      } else {
+        // The item is no longer valid to be included in a block so remove it from the pool.
+        operations.remove(item);
+      }
+    }
+    return schema.createFromElements(selected);
   }
 
   public SafeFuture<InternalValidationResult> addLocal(final T item) {

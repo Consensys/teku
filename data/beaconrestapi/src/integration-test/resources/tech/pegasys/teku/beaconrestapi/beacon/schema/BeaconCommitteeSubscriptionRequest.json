@@ -2,12 +2,10 @@
   "type" : "object",
   "properties" : {
     "validator_index" : {
-      "type" : "integer",
-      "format" : "int32"
+      "type" : "string"
     },
     "committee_index" : {
-      "type" : "integer",
-      "format" : "int32"
+      "type" : "string"
     },
     "committees_at_slot" : {
       "type" : "string",
