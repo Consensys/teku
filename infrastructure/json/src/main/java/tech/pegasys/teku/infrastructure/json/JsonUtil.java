@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class JsonUtil {
-  public static final String JSON_CONTENT_TYPE = "application/json";
 
   public static final JsonFactory FACTORY = new JsonFactory();
 
