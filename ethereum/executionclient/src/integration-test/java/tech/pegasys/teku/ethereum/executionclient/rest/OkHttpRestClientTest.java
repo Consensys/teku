@@ -15,9 +15,12 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -29,6 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -44,23 +49,25 @@ class OkHttpRestClientTest {
 
   private DeserializableTypeDefinition<TestObject> responseTypeDefinition;
   private SerializableTypeDefinition<TestObject2> requestTypeDefinition;
+  private SerializableTypeDefinition<TestObject2> failingRequestTypeDefinition;
 
   private OkHttpRestClient underTest;
 
   @BeforeEach
   void setUp() throws IOException {
     mockWebServer.start();
-    String endpoint = "http://localhost:" + mockWebServer.getPort();
-    this.responseTypeDefinition =
+    final String endpoint = "http://localhost:" + mockWebServer.getPort();
+    responseTypeDefinition =
         DeserializableTypeDefinition.object(TestObject.class)
             .initializer(TestObject::new)
             .withField("foo", CoreTypes.STRING_TYPE, TestObject::getFoo, TestObject::setFoo)
             .build();
-    this.requestTypeDefinition =
+    requestTypeDefinition =
         SerializableTypeDefinition.object(TestObject2.class)
             .withField("block_hash", CoreTypes.BYTES32_TYPE, TestObject2::getBlockHash)
             .build();
-    this.underTest = new OkHttpRestClient(okHttpClient, endpoint);
+    failingRequestTypeDefinition = new FailingSerializableTypeDefinition();
+    underTest = new OkHttpRestClient(okHttpClient, endpoint);
   }
 
   @AfterEach
@@ -76,11 +83,11 @@ class OkHttpRestClientTest {
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    SafeFuture<Response<TestObject>> responseFuture =
+    final SafeFuture<Response<TestObject>> responseFuture =
         underTest.getAsync(TEST_PATH, responseTypeDefinition);
 
     assertThat(responseFuture)
-        .succeedsWithin(Duration.ofSeconds(10))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isNull();
@@ -88,7 +95,7 @@ class OkHttpRestClientTest {
                   .satisfies(testObject -> assertThat(testObject.getFoo()).isEqualTo("bar"));
             });
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -98,17 +105,17 @@ class OkHttpRestClientTest {
   void getsResponseAsyncIgnoringResponseBody() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SafeFuture<Response<Void>> responseFuture = underTest.getAsync(TEST_PATH);
+    final SafeFuture<Response<Void>> responseFuture = underTest.getAsync(TEST_PATH);
 
     assertThat(responseFuture)
-        .succeedsWithin(Duration.ofSeconds(5))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isNull();
               assertThat(response.getPayload()).isNull();
             });
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -116,14 +123,14 @@ class OkHttpRestClientTest {
 
   @Test
   void getAsyncHandlesFailures() throws InterruptedException {
-    String errorBody = "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
+    final String errorBody = "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(errorBody));
 
-    SafeFuture<Response<TestObject>> responseFuture =
+    final SafeFuture<Response<TestObject>> responseFuture =
         underTest.getAsync(TEST_PATH, responseTypeDefinition);
 
     assertThat(responseFuture)
-        .succeedsWithin(Duration.ofSeconds(5))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isEqualTo(errorBody);
@@ -133,11 +140,11 @@ class OkHttpRestClientTest {
     // error without a body
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
-    SafeFuture<Response<TestObject>> secondResponseFuture =
+    final SafeFuture<Response<TestObject>> secondResponseFuture =
         underTest.getAsync(TEST_PATH, responseTypeDefinition);
 
     assertThat(secondResponseFuture)
-        .succeedsWithin(Duration.ofSeconds(5))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isEqualTo("500: Server Error");
@@ -146,8 +153,8 @@ class OkHttpRestClientTest {
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
-    RecordedRequest request = mockWebServer.takeRequest();
-    RecordedRequest secondRequest = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest secondRequest = mockWebServer.takeRequest();
 
     Consumer<RecordedRequest> requestsAssertions =
         (req) -> {
@@ -166,13 +173,13 @@ class OkHttpRestClientTest {
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
-    SafeFuture<Response<TestObject>> responseFuture =
+    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+    final SafeFuture<Response<TestObject>> responseFuture =
         underTest.postAsync(
             TEST_PATH, requestBodyObject, requestTypeDefinition, responseTypeDefinition);
 
     assertThat(responseFuture)
-        .succeedsWithin(Duration.ofSeconds(10))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isNull();
@@ -180,13 +187,28 @@ class OkHttpRestClientTest {
                   .satisfies(testObject -> assertThat(testObject.getFoo()).isEqualTo("bar"));
             });
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
     assertThat(request.getBody().readUtf8())
         .isEqualTo(
             "{\"block_hash\":\"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"}");
     assertThat(request.getMethod()).isEqualTo("POST");
+  }
+
+  @Test
+  void postsAsyncDoesNotThrowExceptionsInOtherThreadsWhenRequestCreationFails() {
+
+    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+    final SafeFuture<Response<TestObject>> responseFuture =
+        underTest.postAsync(
+            TEST_PATH, requestBodyObject, failingRequestTypeDefinition, responseTypeDefinition);
+
+    // this will fail if there are uncaught exceptions in other threads
+    Waiter.waitFor(() -> assertThat(responseFuture).isDone(), 30, TimeUnit.SECONDS, false);
+
+    SafeFutureAssert.assertThatSafeFuture(responseFuture)
+        .isCompletedExceptionallyWithMessage("Broken pipe");
   }
 
   @Test
@@ -197,25 +219,42 @@ class OkHttpRestClientTest {
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
-    SafeFuture<Response<Void>> responseFuture =
+    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+    final SafeFuture<Response<Void>> responseFuture =
         underTest.postAsync(TEST_PATH, requestBodyObject, requestTypeDefinition);
 
     assertThat(responseFuture)
-        .succeedsWithin(Duration.ofSeconds(10))
+        .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
               assertThat(response.getErrorMessage()).isNull();
               assertThat(response.getPayload()).isNull();
             });
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
     assertThat(request.getBody().readUtf8())
         .isEqualTo(
             "{\"block_hash\":\"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"}");
     assertThat(request.getMethod()).isEqualTo("POST");
+  }
+
+  private static class FailingSerializableTypeDefinition
+      implements SerializableTypeDefinition<TestObject2> {
+
+    @Override
+    public void serializeOpenApiType(final JsonGenerator gen) {}
+
+    @Override
+    public void serialize(final TestObject2 value, final JsonGenerator gen) throws IOException {
+      throw new SocketException("Broken pipe");
+    }
+
+    @Override
+    public SerializableTypeDefinition<TestObject2> withDescription(final String description) {
+      return this;
+    }
   }
 
   private static class TestObject {
@@ -225,7 +264,7 @@ class OkHttpRestClientTest {
       return foo;
     }
 
-    public void setFoo(String foo) {
+    public void setFoo(final String foo) {
       this.foo = foo;
     }
   }
@@ -233,7 +272,7 @@ class OkHttpRestClientTest {
   private static class TestObject2 {
     private final Bytes32 blockHash;
 
-    public TestObject2(Bytes32 blockHash) {
+    public TestObject2(final Bytes32 blockHash) {
       this.blockHash = blockHash;
     }
 

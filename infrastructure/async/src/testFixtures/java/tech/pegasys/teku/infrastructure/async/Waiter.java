@@ -19,6 +19,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionFactory;
 import org.awaitility.pollinterval.IterativePollInterval;
 
 /**
@@ -34,8 +35,19 @@ public class Waiter {
 
   public static void waitFor(
       final Condition assertion, final int timeoutValue, final TimeUnit timeUnit) {
-    Awaitility.waitAtMost(timeoutValue, timeUnit)
-        .ignoreExceptions()
+    waitFor(assertion, timeoutValue, timeUnit, true);
+  }
+
+  public static void waitFor(
+      final Condition assertion,
+      final int timeoutValue,
+      final TimeUnit timeUnit,
+      final boolean ignoreExceptions) {
+    ConditionFactory conditionFactory = Awaitility.waitAtMost(timeoutValue, timeUnit);
+    if (ignoreExceptions) {
+      conditionFactory = conditionFactory.ignoreExceptions();
+    }
+    conditionFactory
         .pollInterval(
             IterativePollInterval.iterative(Waiter::nextPollInterval, INITIAL_POLL_INTERVAL))
         .untilAsserted(assertion::run);
