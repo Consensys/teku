@@ -140,7 +140,7 @@ public class EventLogger {
   }
 
   public void executionClientIsOnline() {
-    info("Execution Client is back online", Color.GREEN);
+    info("Execution Client is online", Color.GREEN);
   }
 
   public void builderIsOffline(final String errorMessage) {

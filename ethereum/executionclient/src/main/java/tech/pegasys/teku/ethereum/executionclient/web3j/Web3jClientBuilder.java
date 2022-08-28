@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Objects.requireNonNull;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -69,12 +70,12 @@ public class Web3jClientBuilder {
     switch (endpoint.getScheme()) {
       case "http":
       case "https":
-        return new Web3jHttpClient(endpoint, timeProvider, timeout, jwtConfigOpt);
+        return new Web3jHttpClient(EVENT_LOG, endpoint, timeProvider, timeout, jwtConfigOpt);
       case "ws":
       case "wss":
-        return new Web3jWebsocketClient(endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jWebsocketClient(EVENT_LOG, endpoint, timeProvider, jwtConfigOpt);
       case "file":
-        return new Web3jIpcClient(endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jIpcClient(EVENT_LOG, endpoint, timeProvider, jwtConfigOpt);
       default:
         throw new InvalidConfigurationException(prepareInvalidSchemeMessage(endpoint));
     }
