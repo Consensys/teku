@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -116,7 +115,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
 
-    if (specConfig.getProgressiveBalancesMode() == ProgressiveBalancesMode.USED) {
+    if (specConfig.getProgressiveBalancesMode().isUsed()) {
       progressiveTotalBalances
           .getTotalBalances(specConfig)
           .ifPresent(
@@ -147,7 +146,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final Checkpoint currentJustifiedCheckpoint = preState.getCurrentJustifiedCheckpoint();
     final Checkpoint currentFinalizedCheckpoint = preState.getFinalizedCheckpoint();
     if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))
-        || specConfig.getProgressiveBalancesMode() != ProgressiveBalancesMode.USED) {
+        || !specConfig.getProgressiveBalancesMode().isUsed()) {
       return new BlockCheckpoints(
           currentJustifiedCheckpoint,
           currentFinalizedCheckpoint,

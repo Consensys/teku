@@ -19,6 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -26,15 +27,25 @@ public class ProtoArrayBuilder {
 
   private StatusLogger statusLog = StatusLogger.STATUS_LOG;
   private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
+  private UInt64 currentEpoch;
   private Checkpoint justifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
   private UInt64 initialEpoch = SpecConfig.GENESIS_EPOCH;
+  private ProgressiveBalancesMode progressiveBalancesMode;
 
   public ProtoArray build() {
+    checkNotNull(progressiveBalancesMode, "Progressive balances mode must be supplied");
+    checkNotNull(currentEpoch, "Current epoch must be supplied");
     checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
     checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
     return new ProtoArray(
-        pruneThreshold, justifiedCheckpoint, finalizedCheckpoint, initialEpoch, statusLog);
+        pruneThreshold,
+        currentEpoch,
+        justifiedCheckpoint,
+        finalizedCheckpoint,
+        initialEpoch,
+        progressiveBalancesMode,
+        statusLog);
   }
 
   public ProtoArrayBuilder statusLog(final StatusLogger statusLog) {
@@ -49,6 +60,11 @@ public class ProtoArrayBuilder {
 
   public ProtoArrayBuilder initialEpoch(final UInt64 initialEpoch) {
     this.initialEpoch = initialEpoch;
+    return this;
+  }
+
+  public ProtoArrayBuilder currentEpoch(final UInt64 currentEpoch) {
+    this.currentEpoch = currentEpoch;
     return this;
   }
 
@@ -68,6 +84,12 @@ public class ProtoArrayBuilder {
     initialCheckpoint.ifPresentOrElse(
         checkpoint -> initialEpoch(checkpoint.getEpoch()),
         () -> initialEpoch(SpecConfig.GENESIS_EPOCH));
+    return this;
+  }
+
+  public ProtoArrayBuilder progressiveBalancesMode(
+      final ProgressiveBalancesMode progressiveBalancesMode) {
+    this.progressiveBalancesMode = progressiveBalancesMode;
     return this;
   }
 }

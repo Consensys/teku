@@ -71,7 +71,8 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.computeEpochAtSlot(any()))
         .thenAnswer(i -> spec.computeEpochAtSlot(i.getArgument(0)));
     when(mockSpec.getSlotsPerEpoch(any())).thenAnswer(i -> spec.getSlotsPerEpoch(i.getArgument(0)));
-    when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
+    when(mockSpec.getCurrentEpoch(any(BeaconState.class)))
+        .thenAnswer(i -> spec.getCurrentEpoch(i.<BeaconState>getArgument(0)));
     when(mockSpec.createAttestationWorthinessChecker(any()))
         .thenAnswer(i -> spec.createAttestationWorthinessChecker(i.getArgument(0)));
     when(mockSpec.atSlot(any())).thenAnswer(invocation -> spec.atSlot(invocation.getArgument(0)));
