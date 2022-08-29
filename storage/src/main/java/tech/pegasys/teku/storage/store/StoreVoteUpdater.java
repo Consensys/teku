@@ -65,6 +65,7 @@ public class StoreVoteUpdater implements VoteUpdater {
 
   @Override
   public Bytes32 applyForkChoiceScoreChanges(
+      final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedCheckpointEffectiveBalances,
@@ -81,6 +82,7 @@ public class StoreVoteUpdater implements VoteUpdater {
           .applyPendingVotes(
               this,
               proposerBoostRoot,
+              currentEpoch,
               finalizedCheckpoint,
               justifiedCheckpoint,
               justifiedCheckpointEffectiveBalances,

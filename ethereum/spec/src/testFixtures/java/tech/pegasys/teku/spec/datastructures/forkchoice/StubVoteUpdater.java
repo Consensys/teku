@@ -44,6 +44,7 @@ public class StubVoteUpdater implements VoteUpdater {
 
   @Override
   public Bytes32 applyForkChoiceScoreChanges(
+      final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedCheckpointEffectiveBalances,
