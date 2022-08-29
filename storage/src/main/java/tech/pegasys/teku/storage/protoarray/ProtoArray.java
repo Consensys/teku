@@ -624,19 +624,14 @@ public class ProtoArray {
       final boolean correctFinalized;
       final boolean isPreviousEpochJustified =
           justifiedCheckpoint.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
-      if (isPreviousEpochJustified) {
-        correctJustified =
-            node.getJustifiedCheckpoint()
-                .getEpoch()
-                .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
-        correctFinalized = correctJustified;
-      } else {
-        correctJustified =
-            node.getJustifiedCheckpoint()
-                .getEpoch()
-                .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
-        correctFinalized = doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
-      }
+      correctJustified =
+          node.getJustifiedCheckpoint()
+              .getEpoch()
+              .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
+      correctFinalized =
+          isPreviousEpochJustified
+              ? correctJustified
+              : doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
       return correctJustified && correctFinalized;
     } else {
       return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
