@@ -620,15 +620,13 @@ public class ProtoArray {
     }
 
     if (progressiveBalancesMode.isFull()) {
-      final boolean correctJustified;
-      final boolean correctFinalized;
       final boolean isPreviousEpochJustified =
           justifiedCheckpoint.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
-      correctJustified =
+      final boolean correctJustified =
           node.getJustifiedCheckpoint()
               .getEpoch()
               .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
-      correctFinalized =
+      final boolean correctFinalized =
           isPreviousEpochJustified
               ? correctJustified
               : doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
