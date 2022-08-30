@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ROOT_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
@@ -24,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -34,11 +32,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetHashTreeRootResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -46,18 +45,16 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_blocks/{slot}/root";
   private final ChainDataProvider chainDataProvider;
 
-  private static final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> RESPONSE_TYPE =
-      SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
-          .name("GetBlockRootResponse")
-          .withField("data", ROOT_TYPE, ObjectAndMetaData::getData)
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+  private static final SerializableTypeDefinition<Bytes32> RESPONSE_TYPE =
+      SerializableTypeDefinition.<Bytes32>object()
+          .name("GetHashTreeRootResponse")
+          .withField("data", ROOT_TYPE, Function.identity())
           .build();
 
   public GetFinalizedBlockRoot(DataProvider dataProvider) {
@@ -70,7 +67,7 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
             .operationId("getFinalizedBlockRoot")
             .summary("Get finalized block root")
             .description(
-                "Retrieves hashTreeRoot of finalized Beacon Block.\n"
+                "Retrieves hashTreeRoot of finalized Beacon Block.\n\n"
                     + "Responds with 404 if block at a slot is either unavailable or not yet finalized.")
             .tags(TAG_EXPERIMENTAL)
             .pathParam(SLOT_PARAMETER)
@@ -90,7 +87,7 @@ public class GetFinalizedBlockRoot extends MigratingEndpointAdapter {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetBlockRootResponse.class)),
+            content = @OpenApiContent(from = GetHashTreeRootResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)

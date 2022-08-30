@@ -3,7 +3,7 @@
     "tags" : [ "Experimental" ],
     "operationId" : "getFinalizedBlockRoot",
     "summary" : "Get finalized block root",
-    "description" : "Retrieves hashTreeRoot of finalized Beacon Block.\nResponds with 404 if block at a slot is either unavailable or not yet finalized.",
+    "description" : "Retrieves hashTreeRoot of finalized Beacon Block.\n\nResponds with 404 if block at a slot is either unavailable or not yet finalized.",
     "parameters" : [ {
       "name" : "slot",
       "required" : true,
@@ -21,7 +21,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetBlockRootResponse"
+              "$ref" : "#/components/schemas/GetHashTreeRootResponse"
             }
           }
         }

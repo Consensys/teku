@@ -19,7 +19,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetBlockRootResponse"
+              "$ref" : "#/components/schemas/GetHashTreeRootResponse"
             }
           }
         }
