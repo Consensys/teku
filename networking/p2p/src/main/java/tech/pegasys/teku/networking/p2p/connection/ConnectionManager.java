@@ -48,8 +48,8 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
-  protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   protected static final Duration STARTUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
+  protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
@@ -60,7 +60,7 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
-  private final AtomicInteger countdownStage = new AtomicInteger(5);
+  private final AtomicInteger startupCountdownStage = new AtomicInteger(5);
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
@@ -113,11 +113,12 @@ public class ConnectionManager extends Service {
   }
 
   private void createFollowupSearchPeerTask() {
-    final int currentStage = countdownStage.getAndDecrement();
+    final int currentStage = startupCountdownStage.getAndDecrement();
     if (currentStage < 0) {
       return;
     }
     if (currentStage > 0) {
+      // Startup task, run for [startupCountdownStage] times
       this.periodicPeerSearch =
           asyncRunner.runCancellableAfterDelay(
               () -> {
@@ -127,6 +128,7 @@ public class ConnectionManager extends Service {
               },
               STARTUP_DISCOVERY_INTERVAL);
     } else {
+      // Long term task, run after startup countdown is over
       this.periodicPeerSearch =
           asyncRunner.runWithFixedDelay(
               this::searchForPeers,
