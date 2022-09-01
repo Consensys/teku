@@ -398,14 +398,35 @@ public class ForkChoiceUtil {
       blockCheckpoints = blockCheckpoints.realizeNextEpoch();
     }
 
-    // Add new block to store
-    store.putBlockAndState(signedBlock, postState, blockCheckpoints);
+    final UInt64 previousJustifiedEpoch = store.getJustifiedCheckpoint().getEpoch();
 
     updateCheckpoints(
         store,
         blockCheckpoints.getJustifiedCheckpoint(),
         blockCheckpoints.getFinalizedCheckpoint(),
         isBlockOptimistic);
+
+    if (specConfig.getProgressiveBalancesMode().isFull()) {
+      // If previous epoch is justified, pull up all current tips to previous epoch
+      if (isPreviousEpochJustified(store)) {
+        blockCheckpoints = blockCheckpoints.realizeNextEpoch();
+        // Only need to pull up all existing blocks if this block updated justification
+        if (!previousJustifiedEpoch.equals(store.getJustifiedCheckpoint().getEpoch())) {
+          for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads(true)) {
+            store.pullUpBlockCheckpoints(nodeData.getRoot());
+          }
+        }
+      }
+    }
+
+    // Add new block to store
+    store.putBlockAndState(signedBlock, postState, blockCheckpoints);
+  }
+
+  private boolean isPreviousEpochJustified(final ReadOnlyStore store) {
+    final UInt64 currentSlot = getCurrentSlot(store);
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
+    return store.getJustifiedCheckpoint().getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

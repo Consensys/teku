@@ -102,7 +102,7 @@ public class SpecConfigBuilder {
   private Integer depositNetworkId;
   private Eth1Address depositContractAddress;
 
-  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.DISABLED;
+  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.USED;
 
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();

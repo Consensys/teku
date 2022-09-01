@@ -465,6 +465,10 @@ public class Spec {
         .getCurrentSlot(store);
   }
 
+  public UInt64 getCurrentEpoch(final ReadOnlyStore store) {
+    return computeEpochAtSlot(getCurrentSlot(store));
+  }
+
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
     return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
   }

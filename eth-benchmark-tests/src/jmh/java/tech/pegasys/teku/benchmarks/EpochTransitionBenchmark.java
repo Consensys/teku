@@ -34,7 +34,6 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -88,7 +87,7 @@ public class EpochTransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     spec = TestSpecFactory.createMainnetAltair();
     String blocksFile =
