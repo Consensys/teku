@@ -48,7 +48,8 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
-  private static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
+  protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
+  protected static final Duration STARTUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
@@ -108,7 +109,7 @@ public class ConnectionManager extends Service {
               activeSearch.await();
               createFollowupSearchPeerTask();
             },
-            Duration.ofNanos(0));
+            Duration.ZERO);
   }
 
   private void createFollowupSearchPeerTask() {
@@ -124,7 +125,7 @@ public class ConnectionManager extends Service {
                 activeSearch.await();
                 createFollowupSearchPeerTask();
               },
-              Duration.ofSeconds(1));
+              STARTUP_DISCOVERY_INTERVAL);
     } else {
       this.periodicPeerSearch =
           asyncRunner.runWithFixedDelay(
