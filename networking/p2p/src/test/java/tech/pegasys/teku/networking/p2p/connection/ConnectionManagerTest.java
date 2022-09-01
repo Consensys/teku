@@ -443,6 +443,7 @@ class ConnectionManagerTest {
         .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
 
     manager.start().join();
+    advanceTimeABit();
 
     verify(network, never()).connect(PEER1);
     verify(network, never()).connect(PEER2);
