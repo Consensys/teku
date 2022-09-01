@@ -19,7 +19,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,13 +41,12 @@ public class BuilderCircuitBreakerImplTest {
 
   @BeforeAll
   public static void disableDepositBlsVerification() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void enableDepositBlsVerification() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach

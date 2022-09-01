@@ -33,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -108,13 +107,12 @@ public class BlockImporterTest {
 
   @BeforeAll
   public static void init() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
   }
 
   @AfterAll
   public static void dispose() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+    AbstractBlockProcessor.blsVerifyDeposit = true;
   }
 
   @BeforeEach
