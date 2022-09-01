@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Speeds up gossip peer discovery on startup
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
