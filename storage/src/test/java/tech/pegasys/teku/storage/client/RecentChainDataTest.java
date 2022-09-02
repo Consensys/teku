@@ -348,7 +348,7 @@ class RecentChainDataTest {
     final List<HeadEvent> headEvents = storageSystem.chainHeadChannel().getHeadEvents();
     assertThat(headEvents).isNotEmpty();
     headEvents.forEach(this::verifyDependentRoots);
-    headEvents.clear();
+    storageSystem.chainHeadChannel().clearHeadEvents();
     assertProtoArrayHasNoFinalizedBlocks();
 
     final SignedBlockAndState latestBlockAndState = storageSystem.chainUpdater().advanceChain();
@@ -440,7 +440,7 @@ class RecentChainDataTest {
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot());
     // Clear head updates from setup
-    storageSystem.chainHeadChannel().getHeadEvents().clear();
+    storageSystem.chainHeadChannel().clearHeadEvents();
 
     recentChainData.updateHead(slot1Block.getRoot(), slot1Block.getSlot().plus(1));
     assertThat(storageSystem.chainHeadChannel().getHeadEvents()).isEmpty();

@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Eth2EventHandler implements EventHandler {
@@ -33,7 +34,7 @@ public class Eth2EventHandler implements EventHandler {
   }
 
   public List<PackedMessage> getMessages() {
-    return eventList;
+    return Collections.unmodifiableList(eventList);
   }
 
   @Override

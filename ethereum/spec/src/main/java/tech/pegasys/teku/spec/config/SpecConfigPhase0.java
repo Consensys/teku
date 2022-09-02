@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -210,7 +211,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   @Override
   public Map<String, Object> getRawConfig() {
-    return rawConfig;
+    return Collections.unmodifiableMap(rawConfig);
   }
 
   @Override

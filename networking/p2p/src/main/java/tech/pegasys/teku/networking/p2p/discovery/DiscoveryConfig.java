@@ -73,11 +73,11 @@ public class DiscoveryConfig {
   }
 
   public List<String> getStaticPeers() {
-    return staticPeers;
+    return Collections.unmodifiableList(staticPeers);
   }
 
   public List<String> getBootnodes() {
-    return bootnodes;
+    return Collections.unmodifiableList(bootnodes);
   }
 
   public int getMinPeers() {

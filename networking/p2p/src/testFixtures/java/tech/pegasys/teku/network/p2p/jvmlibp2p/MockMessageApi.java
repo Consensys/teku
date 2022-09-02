@@ -19,6 +19,7 @@ import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
@@ -60,7 +61,7 @@ public class MockMessageApi implements MessageApi {
 
   @Override
   public List<Topic> getTopics() {
-    return topics;
+    return Collections.unmodifiableList(topics);
   }
 
   @NotNull

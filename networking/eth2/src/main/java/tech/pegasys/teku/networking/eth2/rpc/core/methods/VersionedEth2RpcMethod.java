@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.methods;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +95,7 @@ public class VersionedEth2RpcMethod<
 
   @Override
   public List<String> getIds() {
-    return protocolIds;
+    return Collections.unmodifiableList(protocolIds);
   }
 
   @Override

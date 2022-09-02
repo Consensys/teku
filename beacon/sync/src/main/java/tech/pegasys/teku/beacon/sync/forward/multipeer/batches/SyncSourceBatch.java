@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -97,7 +98,7 @@ public class SyncSourceBatch implements Batch {
 
   @Override
   public List<SignedBeaconBlock> getBlocks() {
-    return blocks;
+    return Collections.unmodifiableList(blocks);
   }
 
   @Override
@@ -309,7 +310,7 @@ public class SyncSourceBatch implements Batch {
     }
 
     public List<SignedBeaconBlock> complete() {
-      return blocks;
+      return Collections.unmodifiableList(blocks);
     }
   }
 }

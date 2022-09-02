@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.metrics;
 import com.google.common.collect.ImmutableSet;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -92,11 +93,11 @@ public class MetricsConfig {
   }
 
   public Set<MetricCategory> getMetricsCategories() {
-    return metricsCategories;
+    return Collections.unmodifiableSet(metricsCategories);
   }
 
   public List<String> getMetricsHostAllowlist() {
-    return metricsHostAllowlist;
+    return Collections.unmodifiableList(metricsHostAllowlist);
   }
 
   public Optional<URL> getMetricsEndpoint() {

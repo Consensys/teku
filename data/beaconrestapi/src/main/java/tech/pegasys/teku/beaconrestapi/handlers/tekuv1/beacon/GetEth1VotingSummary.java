@@ -30,6 +30,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -168,7 +169,7 @@ public class GetEth1VotingSummary extends MigratingEndpointAdapter {
     }
 
     public List<Pair<Eth1Data, UInt64>> getEth1DataVotes() {
-      return eth1DataVotes;
+      return Collections.unmodifiableList(eth1DataVotes);
     }
 
     public UInt64 getVotingPeriodSlots() {

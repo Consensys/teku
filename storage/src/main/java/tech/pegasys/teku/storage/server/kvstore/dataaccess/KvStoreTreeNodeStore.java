@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -82,7 +83,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   @Override
   public Collection<Bytes32> getStoredBranchRoots() {
-    return newlyStoredBranches;
+    return Collections.unmodifiableCollection(newlyStoredBranches);
   }
 
   @Override

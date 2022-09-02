@@ -22,6 +22,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -246,7 +247,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public List<SszSchema<?>> getFieldSchemas() {
-    return childrenSchemas;
+    return Collections.unmodifiableList(childrenSchemas);
   }
 
   @Override
@@ -358,7 +359,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public List<String> getFieldNames() {
-    return childrenNames;
+    return Collections.unmodifiableList(childrenNames);
   }
 
   @Override

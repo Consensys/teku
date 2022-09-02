@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.response.v1.teku;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
 import java.util.Map;
 
 @SuppressWarnings("JavaCase")
@@ -29,6 +30,6 @@ public class GetProposersDataResponse {
   }
 
   public Map<String, Object> getData() {
-    return data;
+    return Collections.unmodifiableMap(data);
   }
 }

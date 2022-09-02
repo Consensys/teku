@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
 import java.nio.ByteOrder;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -132,7 +133,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
 
   @Override
   public List<SszSchema<?>> getChildrenSchemas() {
-    return childrenSchemas;
+    return Collections.unmodifiableList(childrenSchemas);
   }
 
   @Override

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.gossip.config;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -35,7 +36,7 @@ public class GossipTopicsScoringConfig {
   }
 
   public Map<String, GossipTopicScoringConfig> getTopicConfigs() {
-    return topicConfigs;
+    return Collections.unmodifiableMap(topicConfigs);
   }
 
   public static class Builder {

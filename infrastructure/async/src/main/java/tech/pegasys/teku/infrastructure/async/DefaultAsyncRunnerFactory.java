@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DefaultAsyncRunnerFactory implements AsyncRunnerFactory {
@@ -35,6 +36,6 @@ public class DefaultAsyncRunnerFactory implements AsyncRunnerFactory {
 
   @Override
   public Collection<AsyncRunner> getAsyncRunners() {
-    return asyncRunners;
+    return Collections.unmodifiableCollection(asyncRunners);
   }
 }

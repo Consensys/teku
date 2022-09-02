@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TrackingUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
@@ -25,6 +26,6 @@ public class TrackingUncaughtExceptionHandler implements Thread.UncaughtExceptio
   }
 
   public List<Throwable> getUncaughtExceptions() {
-    return uncaughtExceptions;
+    return Collections.unmodifiableList(uncaughtExceptions);
   }
 }

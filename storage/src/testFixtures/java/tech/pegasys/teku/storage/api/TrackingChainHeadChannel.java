@@ -15,10 +15,12 @@ package tech.pegasys.teku.storage.api;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.util.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TrackingChainHeadChannel implements ChainHeadChannel {
@@ -57,11 +59,16 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
   }
 
   public List<HeadEvent> getHeadEvents() {
-    return headEvents;
+    return Collections.unmodifiableList(headEvents);
+  }
+
+  @VisibleForTesting
+  public void clearHeadEvents() {
+    headEvents.clear();
   }
 
   public List<ReorgEvent> getReorgEvents() {
-    return reorgEvents;
+    return Collections.unmodifiableList(reorgEvents);
   }
 
   public static class HeadEvent {

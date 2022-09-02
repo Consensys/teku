@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,7 +44,7 @@ public class DepositGenerator implements AutoCloseable {
   }
 
   public List<ValidatorKeys> getKeys() {
-    return keys;
+    return Collections.unmodifiableList(keys);
   }
 
   public SafeFuture<Void> generate() {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class PostKeysRequest {
   }
 
   public List<String> getKeystores() {
-    return keystores;
+    return Collections.unmodifiableList(keystores);
   }
 
   public void setKeystores(final List<String> keystores) {
@@ -44,7 +45,7 @@ public class PostKeysRequest {
   }
 
   public List<String> getPasswords() {
-    return passwords;
+    return Collections.unmodifiableList(passwords);
   }
 
   public void setPasswords(final List<String> passwords) {

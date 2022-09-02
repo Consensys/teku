@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.pow.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
@@ -39,6 +40,6 @@ public class TrackingEth1EventsChannel implements Eth1EventsChannel {
   }
 
   public List<Object> getOrderedList() {
-    return orderedList;
+    return Collections.unmodifiableList(orderedList);
   }
 }

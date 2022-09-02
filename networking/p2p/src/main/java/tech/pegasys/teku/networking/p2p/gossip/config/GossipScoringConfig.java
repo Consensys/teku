@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.gossip.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -57,7 +58,7 @@ public class GossipScoringConfig {
   }
 
   public Map<String, GossipTopicScoringConfig> getTopicScoringConfig() {
-    return topicScoringConfig;
+    return Collections.unmodifiableMap(topicScoringConfig);
   }
 
   public double getGossipThreshold() {

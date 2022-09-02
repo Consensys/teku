@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -82,11 +83,11 @@ public class OnDiskStoreData {
   }
 
   public Map<Bytes32, StoredBlockMetadata> getBlockInformation() {
-    return blockInformation;
+    return Collections.unmodifiableMap(blockInformation);
   }
 
   public Map<UInt64, VoteTracker> getVotes() {
-    return votes;
+    return Collections.unmodifiableMap(votes);
   }
 
   public Optional<SlotAndExecutionPayloadSummary> getFinalizedOptimisticTransitionPayload() {

@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.powchain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,7 +68,7 @@ public class PowchainConfiguration {
   }
 
   public List<String> getEth1Endpoints() {
-    return eth1Endpoints;
+    return Collections.unmodifiableList(eth1Endpoints);
   }
 
   public Eth1Address getDepositContract() {

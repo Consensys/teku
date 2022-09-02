@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,7 +31,7 @@ public class ResponseMetadata {
   }
 
   public Map<String, String> getAdditionalHeaders() {
-    return additionalHeaders;
+    return Collections.unmodifiableMap(additionalHeaders);
   }
 
   @Override

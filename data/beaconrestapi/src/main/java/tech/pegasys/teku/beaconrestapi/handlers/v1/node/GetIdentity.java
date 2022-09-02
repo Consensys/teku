@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -190,11 +191,11 @@ public class GetIdentity extends MigratingEndpointAdapter {
     }
 
     public List<String> getListeningAddresses() {
-      return listeningAddresses;
+      return Collections.unmodifiableList(listeningAddresses);
     }
 
     public List<String> getDiscoveryAddresses() {
-      return discoveryAddresses;
+      return Collections.unmodifiableList(discoveryAddresses);
     }
 
     public MetadataMessage getMetadata() {

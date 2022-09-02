@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -135,7 +136,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
     }
 
     public List<PackedNodeUpdate<ElementT, SszElementT>> getUpdates() {
-      return updates;
+      return Collections.unmodifiableList(updates);
     }
   }
 }

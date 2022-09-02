@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,7 +33,7 @@ public class SyncCommitteeDuties {
   }
 
   public List<SyncCommitteeDuty> getDuties() {
-    return duties;
+    return Collections.unmodifiableList(duties);
   }
 
   @Override

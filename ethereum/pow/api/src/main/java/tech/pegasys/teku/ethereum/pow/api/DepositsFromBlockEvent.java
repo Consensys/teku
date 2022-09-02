@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.MoreObjects;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -93,7 +94,7 @@ public class DepositsFromBlockEvent {
   }
 
   public List<Deposit> getDeposits() {
-    return deposits;
+    return Collections.unmodifiableList(deposits);
   }
 
   @Override

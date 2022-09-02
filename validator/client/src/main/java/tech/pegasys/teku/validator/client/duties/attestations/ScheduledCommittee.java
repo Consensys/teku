@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,7 +48,7 @@ class ScheduledCommittee {
   }
 
   public List<ValidatorWithCommitteePositionAndIndex> getValidators() {
-    return validators;
+    return Collections.unmodifiableList(validators);
   }
 
   public Set<BLSPublicKey> getValidatorPublicKeys() {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api.migrated;
 
 import com.google.common.base.Preconditions;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class AllBlocksAtSlotData {
   }
 
   public List<SignedBeaconBlock> getBlocks() {
-    return blocks;
+    return Collections.unmodifiableList(blocks);
   }
 
   @Override

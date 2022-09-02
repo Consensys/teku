@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -352,7 +353,7 @@ public class BeaconChainMethods {
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {
-    return allMethods;
+    return Collections.unmodifiableCollection(allMethods);
   }
 
   public Eth2RpcMethod<StatusMessage, StatusMessage> status() {

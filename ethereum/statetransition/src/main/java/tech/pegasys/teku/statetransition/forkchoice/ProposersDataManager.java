@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -243,11 +244,11 @@ public class ProposersDataManager implements SlotEventsChannel {
   }
 
   public Map<UInt64, PreparedProposerInfo> getPreparedProposerInfo() {
-    return preparedProposerInfoByValidatorIndex;
+    return Collections.unmodifiableMap(preparedProposerInfoByValidatorIndex);
   }
 
   public Map<UInt64, RegisteredValidatorInfo> getValidatorRegistrationInfo() {
-    return validatorRegistrationInfoByValidatorIndex;
+    return Collections.unmodifiableMap(validatorRegistrationInfoByValidatorIndex);
   }
 
   public boolean isProposerDefaultFeeRecipientDefined() {

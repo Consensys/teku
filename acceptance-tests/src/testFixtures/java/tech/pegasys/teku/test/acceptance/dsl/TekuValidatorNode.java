@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -277,7 +278,7 @@ public class TekuValidatorNode extends Node {
     }
 
     public Map<File, String> getConfigFileMap() {
-      return configFileMap;
+      return Collections.unmodifiableMap(configFileMap);
     }
   }
 }

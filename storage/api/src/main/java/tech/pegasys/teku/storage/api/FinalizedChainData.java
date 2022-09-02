@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
@@ -55,15 +56,15 @@ public class FinalizedChainData {
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
-    return finalizedChildToParentMap;
+    return Collections.unmodifiableMap(finalizedChildToParentMap);
   }
 
   public Map<Bytes32, SignedBeaconBlock> getBlocks() {
-    return finalizedBlocks;
+    return Collections.unmodifiableMap(finalizedBlocks);
   }
 
   public Map<Bytes32, BeaconState> getStates() {
-    return finalizedStates;
+    return Collections.unmodifiableMap(finalizedStates);
   }
 
   public AnchorPoint getLatestFinalized() {

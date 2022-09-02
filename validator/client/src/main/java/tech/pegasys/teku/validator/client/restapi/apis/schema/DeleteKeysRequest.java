@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -23,7 +24,7 @@ public class DeleteKeysRequest {
   private List<BLSPublicKey> publicKeys = new ArrayList<>();
 
   public List<BLSPublicKey> getPublicKeys() {
-    return publicKeys;
+    return Collections.unmodifiableList(publicKeys);
   }
 
   public void setPublicKeys(final List<BLSPublicKey> publicKeys) {

@@ -167,7 +167,7 @@ class StateGenerationTaskTest {
     }
 
     public Set<Bytes32> getRequestedBlocks() {
-      return requestedBlocks;
+      return Collections.unmodifiableSet(requestedBlocks);
     }
   }
 

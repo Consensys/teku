@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.signer;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,7 +43,7 @@ public class SigningRequestBody {
 
   @JsonAnyGetter
   public Map<String, Object> getMetadata() {
-    return metadata;
+    return Collections.unmodifiableMap(metadata);
   }
 
   public void setSigningRoot(final Bytes signingRoot) {

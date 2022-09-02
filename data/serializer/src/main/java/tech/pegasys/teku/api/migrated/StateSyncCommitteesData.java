@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,11 +30,15 @@ public class StateSyncCommitteesData {
   }
 
   public List<UInt64> getValidators() {
-    return validators;
+    return Collections.unmodifiableList(validators);
   }
 
   public List<List<UInt64>> getValidatorAggregates() {
-    return validatorAggregates;
+    final List<List<UInt64>> copy = new ArrayList<>();
+    for (List<UInt64> validatorAggregate : validatorAggregates) {
+      copy.add(Collections.unmodifiableList(validatorAggregate));
+    }
+    return Collections.unmodifiableList(copy);
   }
 
   @Override

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PostRemoteKeysRequest {
@@ -26,7 +27,7 @@ public class PostRemoteKeysRequest {
   }
 
   public List<ExternalValidator> getExternalValidators() {
-    return externalValidators;
+    return Collections.unmodifiableList(externalValidators);
   }
 
   public void setExternalValidators(List<ExternalValidator> externalValidators) {

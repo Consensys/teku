@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.response.v1.teku;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Collections;
 import java.util.Set;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
@@ -25,7 +26,7 @@ public class GetAllBlocksAtSlotResponse {
   private final Set<SignedBeaconBlockWithRoot> data;
 
   public Set<SignedBeaconBlockWithRoot> getData() {
-    return data;
+    return Collections.unmodifiableSet(data);
   }
 
   public Version getVersion() {

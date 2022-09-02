@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.async;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
@@ -33,6 +34,6 @@ public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
   }
 
   public List<StubAsyncRunner> getStubAsyncRunners() {
-    return runners;
+    return Collections.unmodifiableList(runners);
   }
 }

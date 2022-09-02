@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.migrated;
 
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -40,7 +41,7 @@ public class ValidatorLivenessRequest {
   }
 
   public List<UInt64> getIndices() {
-    return indices;
+    return Collections.unmodifiableList(indices);
   }
 
   private void setIndices(List<UInt64> indices) {

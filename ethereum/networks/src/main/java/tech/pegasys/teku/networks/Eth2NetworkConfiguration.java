@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -159,7 +160,7 @@ public class Eth2NetworkConfiguration {
   }
 
   public List<String> getDiscoveryBootnodes() {
-    return discoveryBootnodes;
+    return Collections.unmodifiableList(discoveryBootnodes);
   }
 
   public Eth1Address getEth1DepositContractAddress() {

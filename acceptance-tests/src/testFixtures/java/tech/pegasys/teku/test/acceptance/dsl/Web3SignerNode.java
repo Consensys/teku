@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.net.URI;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -152,7 +153,7 @@ public class Web3SignerNode extends Node {
     }
 
     public Map<File, String> getConfigFileMap() {
-      return configFileMap;
+      return Collections.unmodifiableMap(configFileMap);
     }
   }
 }

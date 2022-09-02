@@ -114,7 +114,7 @@ public class ProtoArray {
   }
 
   public List<ProtoNode> getNodes() {
-    return nodes;
+    return Collections.unmodifiableList(nodes);
   }
 
   public void setPruneThreshold(int pruneThreshold) {

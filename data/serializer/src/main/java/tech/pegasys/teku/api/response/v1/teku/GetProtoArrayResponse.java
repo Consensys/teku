@@ -15,6 +15,8 @@ package tech.pegasys.teku.api.response.v1.teku;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +29,10 @@ public class GetProtoArrayResponse {
   }
 
   public List<Map<String, Object>> getData() {
-    return data;
+    final List<Map<String, Object>> copy = new ArrayList<>();
+    for (Map<String, Object> d : data) {
+      copy.add(Collections.unmodifiableMap(d));
+    }
+    return Collections.unmodifiableList(copy);
   }
 }

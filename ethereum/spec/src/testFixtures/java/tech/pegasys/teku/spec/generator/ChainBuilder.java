@@ -122,7 +122,7 @@ public class ChainBuilder {
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
-    return validatorKeys;
+    return Collections.unmodifiableList(validatorKeys);
   }
 
   public UInt64 getLatestSlot() {
@@ -652,7 +652,7 @@ public class ChainBuilder {
     }
 
     public List<AttesterSlashing> getAttesterSlashings() {
-      return attesterSlashings;
+      return Collections.unmodifiableList(attesterSlashings);
     }
   }
 }

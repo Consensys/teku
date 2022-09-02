@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
@@ -99,11 +100,11 @@ public class BeaconRestApiConfig {
   }
 
   public List<String> getRestApiHostAllowlist() {
-    return restApiHostAllowlist;
+    return Collections.unmodifiableList(restApiHostAllowlist);
   }
 
   public List<String> getRestApiCorsAllowedOrigins() {
-    return restApiCorsAllowedOrigins;
+    return Collections.unmodifiableList(restApiCorsAllowedOrigins);
   }
 
   public Eth1Address getEth1DepositContractAddress() {

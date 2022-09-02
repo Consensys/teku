@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,6 +80,6 @@ class AggregateAttestationBuilder {
   }
 
   public Collection<ValidateableAttestation> getIncludedAttestations() {
-    return includedAttestations;
+    return Collections.unmodifiableCollection(includedAttestations);
   }
 }

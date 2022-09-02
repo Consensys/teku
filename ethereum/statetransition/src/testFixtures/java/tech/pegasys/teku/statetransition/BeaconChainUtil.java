@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -365,7 +366,7 @@ public class BeaconChainUtil {
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
-    return validatorKeys;
+    return Collections.unmodifiableList(validatorKeys);
   }
 
   public int getWrongProposerIndex(final int actualProposerIndex) {

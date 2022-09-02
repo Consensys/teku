@@ -88,15 +88,15 @@ public class StorageUpdate {
   }
 
   public Map<Bytes32, BlockAndCheckpoints> getHotBlocks() {
-    return hotBlocks;
+    return Collections.unmodifiableMap(hotBlocks);
   }
 
   public Map<Bytes32, BeaconState> getHotStates() {
-    return hotStates;
+    return Collections.unmodifiableMap(hotStates);
   }
 
   public Set<Bytes32> getDeletedHotBlocks() {
-    return deletedHotBlocks;
+    return Collections.unmodifiableSet(deletedHotBlocks);
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
@@ -126,6 +126,6 @@ public class StorageUpdate {
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
-    return stateRoots;
+    return Collections.unmodifiableMap(stateRoots);
   }
 }

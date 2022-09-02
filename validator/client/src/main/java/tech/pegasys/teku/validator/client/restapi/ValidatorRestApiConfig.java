@@ -83,11 +83,11 @@ public class ValidatorRestApiConfig {
   }
 
   public List<String> getRestApiHostAllowlist() {
-    return restApiHostAllowlist;
+    return Collections.unmodifiableList(restApiHostAllowlist);
   }
 
   public List<String> getRestApiCorsAllowedOrigins() {
-    return restApiCorsAllowedOrigins;
+    return Collections.unmodifiableList(restApiCorsAllowedOrigins);
   }
 
   public int getMaxUrlLength() {

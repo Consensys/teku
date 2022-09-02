@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
@@ -163,7 +164,7 @@ public class ValidatorConfig {
   }
 
   public List<String> getValidatorExternalSignerPublicKeySources() {
-    return validatorExternalSignerPublicKeySources;
+    return Collections.unmodifiableList(validatorExternalSignerPublicKeySources);
   }
 
   public boolean isValidatorExternalSignerSlashingProtectionEnabled() {
@@ -204,7 +205,7 @@ public class ValidatorConfig {
   }
 
   public List<String> getValidatorKeys() {
-    return validatorKeys;
+    return Collections.unmodifiableList(validatorKeys);
   }
 
   public boolean generateEarlyAttestations() {

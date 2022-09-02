@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -155,7 +156,7 @@ public class GetPeers extends MigratingEndpointAdapter {
     }
 
     public List<Eth2Peer> getPeers() {
-      return peers;
+      return Collections.unmodifiableList(peers);
     }
 
     public Integer getCount() {

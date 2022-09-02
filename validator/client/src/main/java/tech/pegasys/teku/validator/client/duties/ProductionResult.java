@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static java.util.stream.Collectors.toList;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -122,7 +123,7 @@ public class ProductionResult<T> {
   }
 
   public Set<BLSPublicKey> getValidatorPublicKeys() {
-    return validatorPublicKeys;
+    return Collections.unmodifiableSet(validatorPublicKeys);
   }
 
   public DutyResult getResult() {

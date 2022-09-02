@@ -173,7 +173,7 @@ public class EndpointMetadata {
   }
 
   public List<String> getTags() {
-    return tags;
+    return Collections.unmodifiableList(tags);
   }
 
   public StringValueTypeDefinition<?> getPathParameterDefinition(final String parameterName) {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,7 +42,7 @@ public class AttesterDuties {
   }
 
   public List<AttesterDuty> getDuties() {
-    return duties;
+    return Collections.unmodifiableList(duties);
   }
 
   @Override

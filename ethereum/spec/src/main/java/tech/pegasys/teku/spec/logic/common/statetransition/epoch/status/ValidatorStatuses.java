@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ValidatorStatuses {
@@ -30,7 +31,7 @@ public class ValidatorStatuses {
   }
 
   public List<ValidatorStatus> getStatuses() {
-    return statuses;
+    return Collections.unmodifiableList(statuses);
   }
 
   public int getValidatorCount() {

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -42,7 +43,7 @@ public class ErrorListBadRequest {
   }
 
   public List<SubmitDataError> getErrors() {
-    return errors;
+    return Collections.unmodifiableList(errors);
   }
 
   public static ErrorListBadRequest convert(

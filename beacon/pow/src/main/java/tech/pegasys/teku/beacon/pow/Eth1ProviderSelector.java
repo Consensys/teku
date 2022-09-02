@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.pow;
 
 import com.google.common.base.Preconditions;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,7 +38,7 @@ public class Eth1ProviderSelector {
   }
 
   public List<MonitorableEth1Provider> getProviders() {
-    return candidates;
+    return Collections.unmodifiableList(candidates);
   }
 
   public ValidEth1ProviderIterator getValidProviderIterator() {
