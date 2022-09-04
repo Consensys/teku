@@ -13,39 +13,31 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.Optional;
+import static tech.pegasys.teku.validator.remote.sentry.BeaconNodesSentryConfig.BEACON_NODES_SENTRY_CONFIG;
 
-@JsonRootName(value = "beacon_nodes")
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+
 public class SentryNodesConfig {
 
-  private final BeaconNodeRoleConfig dutiesProviderNodeConfig;
-  private final BeaconNodeRoleConfig blockHandlerNodeConfig;
-  private final BeaconNodeRoleConfig attestationPublisherConfig;
+  static final DeserializableTypeDefinition<SentryNodesConfig> SENTRY_NODES_CONFIG =
+      DeserializableTypeDefinition.object(SentryNodesConfig.class)
+          .initializer(SentryNodesConfig::new)
+          .withField(
+              "beacon_nodes",
+              BEACON_NODES_SENTRY_CONFIG,
+              SentryNodesConfig::getBeaconNodesSentryConfig,
+              SentryNodesConfig::setBeaconNodesSentryConfig)
+          .build();
 
-  @JsonCreator
-  public SentryNodesConfig(
-      @JsonProperty(value = "duties_provider", required = true)
-          final BeaconNodeRoleConfig dutiesProviderNodeConfig,
-      @JsonProperty("block_handler") final BeaconNodeRoleConfig blockHandlerNodeConfig,
-      @JsonProperty("attestation_publisher")
-          final BeaconNodeRoleConfig attestationPublisherConfig) {
-    this.dutiesProviderNodeConfig = dutiesProviderNodeConfig;
-    this.blockHandlerNodeConfig = blockHandlerNodeConfig;
-    this.attestationPublisherConfig = attestationPublisherConfig;
+  private BeaconNodesSentryConfig beaconNodesSentryConfig;
+
+  public SentryNodesConfig() {}
+
+  public BeaconNodesSentryConfig getBeaconNodesSentryConfig() {
+    return beaconNodesSentryConfig;
   }
 
-  public BeaconNodeRoleConfig getDutiesProviderNodeConfig() {
-    return dutiesProviderNodeConfig;
-  }
-
-  public Optional<BeaconNodeRoleConfig> getBlockHandlerNodeConfig() {
-    return Optional.ofNullable(blockHandlerNodeConfig);
-  }
-
-  public Optional<BeaconNodeRoleConfig> getAttestationPublisherConfig() {
-    return Optional.ofNullable(attestationPublisherConfig);
+  public void setBeaconNodesSentryConfig(final BeaconNodesSentryConfig beaconNodesSentryConfig) {
+    this.beaconNodesSentryConfig = beaconNodesSentryConfig;
   }
 }

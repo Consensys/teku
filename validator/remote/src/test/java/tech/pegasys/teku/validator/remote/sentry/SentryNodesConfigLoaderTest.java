@@ -15,54 +15,39 @@ package tech.pegasys.teku.validator.remote.sentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.provider.JsonProvider;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 class SentryNodesConfigLoaderTest {
 
-  private JsonProvider jsonProvider;
-  private ResourceLoader resourceLoader;
+  public static final String SENTRY_NODE_FULL_CONFIG_JSON =
+      "src/test/resources" + "/sentry_node_full_config.json";
+  public static final String SENTRY_NODE_MINIMUM_CONFIG_JSON =
+      "src/test/resources" + "/sentry_node_minimum_config.json";
+  public static final String SENTRY_NODE_MISSING_ENDPOINTS_CONFIG_JSON =
+      "src/test/resources" + "/sentry_node_missing_endpoints_config.json";
+  public static final String SENTRY_NODE_MISSING_DUTIES_PROVIDER_CONFIG_JSON =
+      "src/test" + "/resources/sentry_node_missing_duties_provider_config.json";
+  public static final String SENTRY_NODE_MISSING_BLOCK_HANDLER_CONFIG_JSON =
+      "src/test/resources" + "/sentry_node_missing_block_handler_config.json";
+  public static final String SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_CONFIG_JSON =
+      "src/test" + "/resources/sentry_node_missing_attestation_publisher_config.json";
 
   private SentryNodesConfigLoader configLoader;
 
   @BeforeEach
   public void before() {
-    jsonProvider = spy(new JsonProvider());
-    jsonProvider.getObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
-    resourceLoader = mock(ResourceLoader.class);
-
-    configLoader = new SentryNodesConfigLoader(jsonProvider, resourceLoader);
-  }
-
-  @AfterEach
-  public void teardown() {
-    Mockito.reset(jsonProvider, resourceLoader);
+    configLoader = new SentryNodesConfigLoader();
   }
 
   @Test
-  public void shouldLoadConfigWithCorrectValues() throws Exception {
-    mockResourceLoaderWithJsonConfig("fullConfig", SENTRY_NODE_FULL_JSON_CONFIG);
-
-    final SentryNodesConfig config = configLoader.load("fullConfig");
+  public void shouldLoadConfigWithCorrectValues() {
+    final BeaconNodesSentryConfig config =
+        configLoader.load(SENTRY_NODE_FULL_CONFIG_JSON).getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getBlockHandlerNodeConfig().get().getEndpoints())
@@ -72,10 +57,9 @@ class SentryNodesConfigLoaderTest {
   }
 
   @Test
-  public void shouldLoadConfigOnlyWithDutiesProvider() throws Exception {
-    mockResourceLoaderWithJsonConfig("minimumConfig", SENTRY_NODE_MINIMUM_JSON_CONFIG);
-
-    final SentryNodesConfig config = configLoader.load("minimumConfig");
+  public void shouldLoadConfigOnlyWithDutiesProvider() {
+    final BeaconNodesSentryConfig config =
+        configLoader.load(SENTRY_NODE_MINIMUM_CONFIG_JSON).getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getBlockHandlerNodeConfig()).isEmpty();
@@ -83,32 +67,28 @@ class SentryNodesConfigLoaderTest {
   }
 
   @Test
-  public void shouldFailLoadingConfigMissingNestedEndpoints() throws Exception {
-    mockResourceLoaderWithJsonConfig("missingEndpoints", SENTRY_NODE_MISSING_ENDPOINTS_JSON_CONFIG);
-
-    assertThatThrownBy(() -> configLoader.load("missingEndpoints"))
+  public void shouldFailLoadingConfigMissingNestedEndpoints() {
+    assertThatThrownBy(() -> configLoader.load(SENTRY_NODE_MISSING_ENDPOINTS_CONFIG_JSON))
         .isInstanceOf(RuntimeException.class)
         .hasCauseInstanceOf(JsonProcessingException.class)
         .hasMessage("Invalid sentry nodes configuration file");
   }
 
   @Test
-  public void shouldFailLoadingConfigWhenMissingRequiredDutiesProvider() throws Exception {
-    mockResourceLoaderWithJsonConfig(
-        "configWithoutDutiesProvider", SENTRY_NODE_MISSING_DUTIES_PROVIDER_JSON_CONFIG);
-
-    assertThatThrownBy(() -> configLoader.load("configWithoutDutiesProvider"))
+  public void shouldFailLoadingConfigWhenMissingRequiredDutiesProvider() {
+    assertThatThrownBy(() -> configLoader.load(SENTRY_NODE_MISSING_DUTIES_PROVIDER_CONFIG_JSON))
         .isInstanceOf(RuntimeException.class)
+        .hasMessage("Invalid sentry nodes configuration file")
         .hasCauseInstanceOf(JsonProcessingException.class)
-        .hasMessage("Invalid sentry nodes configuration file");
+        .hasRootCauseMessage("required fields: (duties_provider) were not set");
   }
 
   @Test
-  public void shouldLoadConfigSuccessfullyWhenMissingOptionalBlockHandler() throws Exception {
-    mockResourceLoaderWithJsonConfig(
-        "configWithoutBlockHandler", SENTRY_NODE_MISSING_BLOCK_HANDLER_JSON_CONFIG);
-
-    final SentryNodesConfig config = configLoader.load("configWithoutBlockHandler");
+  public void shouldLoadConfigSuccessfullyWhenMissingOptionalBlockHandler() {
+    final BeaconNodesSentryConfig config =
+        configLoader
+            .load(SENTRY_NODE_MISSING_BLOCK_HANDLER_CONFIG_JSON)
+            .getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getAttestationPublisherConfig().get().getEndpoints())
@@ -117,11 +97,11 @@ class SentryNodesConfigLoaderTest {
   }
 
   @Test
-  public void shouldLoadConfigSuccessfullyWhenMissingOptionalAttestationPublisher()
-      throws Exception {
-    mockResourceLoaderWithJsonConfig(
-        "configWithoutAttestationPublisher", SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_JSON_CONFIG);
-    final SentryNodesConfig config = configLoader.load("configWithoutAttestationPublisher");
+  public void shouldLoadConfigSuccessfullyWhenMissingOptionalAttestationPublisher() {
+    final BeaconNodesSentryConfig config =
+        configLoader
+            .load(SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_CONFIG_JSON)
+            .getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getBlockHandlerNodeConfig().get().getEndpoints())
@@ -130,115 +110,11 @@ class SentryNodesConfigLoaderTest {
   }
 
   @Test
-  public void shouldRethrowExceptionWhenUnexpectedErrorParsingFile() throws Exception {
-    when(resourceLoader.loadBytes(anyString())).thenReturn(Optional.of(Bytes.EMPTY));
-    doThrow(new RuntimeException("an error")).when(jsonProvider).jsonToObject(anyString(), any());
-
-    assertThatThrownBy(() -> configLoader.load("config"))
+  public void shouldRethrowExceptionWhenResourceLoaderFails() {
+    assertThatThrownBy(() -> configLoader.load("foo"))
         .isInstanceOf(RuntimeException.class)
-        .hasCauseInstanceOf(RuntimeException.class)
-        .hasMessage("Unexpected error parsing sentry nodes configuration file");
-  }
-
-  @Test
-  public void shouldRethrowExceptionWhenResourceLoaderFails() throws Exception {
-    when(resourceLoader.loadBytes(anyString())).thenThrow(new IOException("an error"));
-
-    assertThatThrownBy(() -> configLoader.load("config"))
-        .isInstanceOf(RuntimeException.class)
+        .hasMessage("Error loading sentry nodes configuration file from foo")
         .hasCauseInstanceOf(IOException.class)
-        .hasMessage("Error loading sentry nodes configuration file from config");
+        .hasRootCauseMessage("Not found");
   }
-
-  private void mockResourceLoaderWithJsonConfig(final String resourceName, final String json)
-      throws IOException {
-    when(resourceLoader.loadBytes(eq(resourceName)))
-        .thenReturn(Optional.of(Bytes.wrap(json.getBytes(StandardCharsets.UTF_8))));
-  }
-
-  // region Json Configs
-  private static final String SENTRY_NODE_FULL_JSON_CONFIG =
-      "{\n"
-          + "  \"beacon_nodes\": {\n"
-          + "    \"duties_provider\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://duties:5051\"\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    \"block_handler\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://block:5051\"\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    \"attestation_publisher\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://attestation:5051\"\n"
-          + "      ]\n"
-          + "    }\n"
-          + "  }\n"
-          + "}";
-
-  private static final String SENTRY_NODE_MISSING_BLOCK_HANDLER_JSON_CONFIG =
-      "{\n"
-          + "  \"beacon_nodes\": {\n"
-          + "    \"duties_provider\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://duties:5051\"\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    \"attestation_publisher\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://attestation:5051\"\n"
-          + "      ]\n"
-          + "    }\n"
-          + "  }\n"
-          + "}";
-
-  private static final String SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_JSON_CONFIG =
-      "{\n"
-          + "  \"beacon_nodes\": {\n"
-          + "    \"duties_provider\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://duties:5051\"\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    \"block_handler\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://block:5051\"\n"
-          + "      ]\n"
-          + "    }\n"
-          + "  }\n"
-          + "}";
-
-  private static final String SENTRY_NODE_MISSING_DUTIES_PROVIDER_JSON_CONFIG =
-      "{\n"
-          + "  \"beacon_nodes\": {\n"
-          + "    \"block_handler\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://block:5051\"\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    \"attestation_publisher\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://attestation:5051\"\n"
-          + "      ]\n"
-          + "    }\n"
-          + "  }\n"
-          + "}";
-
-  private static final String SENTRY_NODE_MINIMUM_JSON_CONFIG =
-      "{\n"
-          + "  \"beacon_nodes\": {\n"
-          + "    \"duties_provider\": {\n"
-          + "      \"endpoints\": [\n"
-          + "        \"http://duties:5051\"\n"
-          + "      ]\n"
-          + "    }"
-          + "  }\n"
-          + "}";
-
-  private static final String SENTRY_NODE_MISSING_ENDPOINTS_JSON_CONFIG =
-      "{\"beacon_nodes\": {\"duties_provider\": {}}}";
-  // endregion
-
 }

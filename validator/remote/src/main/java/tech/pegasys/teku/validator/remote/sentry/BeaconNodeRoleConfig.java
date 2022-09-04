@@ -13,21 +13,36 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+
+import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BeaconNodeRoleConfig {
 
-  private final List<String> endpoints;
+  static final DeserializableTypeDefinition<List<String>> ENDPOINT_LIST =
+      DeserializableTypeDefinition.listOf(STRING_TYPE);
 
-  @JsonCreator
-  public BeaconNodeRoleConfig(
-      @JsonProperty(value = "endpoints", required = true) final List<String> endpoints) {
-    this.endpoints = endpoints;
-  }
+  static final DeserializableTypeDefinition<BeaconNodeRoleConfig> BEACON_NODE_ROLE_CONFIG =
+      DeserializableTypeDefinition.object(BeaconNodeRoleConfig.class)
+          .initializer(BeaconNodeRoleConfig::new)
+          .withField(
+              "endpoints",
+              ENDPOINT_LIST,
+              BeaconNodeRoleConfig::getEndpoints,
+              BeaconNodeRoleConfig::setEndpoints)
+          .build();
+
+  private final List<String> endpoints = new ArrayList<>();
+
+  public BeaconNodeRoleConfig() {}
 
   public List<String> getEndpoints() {
     return endpoints;
+  }
+
+  public void setEndpoints(final List<String> endpoints) {
+    this.endpoints.addAll(endpoints);
   }
 }

@@ -1,0 +1,9 @@
+{
+  "beacon_nodes": {
+    "duties_provider": {
+      "endpoints": [
+        "http://duties:5051"
+      ]
+    }
+  }
+}
