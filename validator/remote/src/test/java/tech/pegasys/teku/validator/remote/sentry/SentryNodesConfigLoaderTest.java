@@ -17,25 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 class SentryNodesConfigLoaderTest {
-
-  public static final String SENTRY_NODE_FULL_CONFIG_JSON =
-      "src/test/resources" + "/sentry_node_full_config.json";
-  public static final String SENTRY_NODE_MINIMUM_CONFIG_JSON =
-      "src/test/resources" + "/sentry_node_minimum_config.json";
-  public static final String SENTRY_NODE_MISSING_ENDPOINTS_CONFIG_JSON =
-      "src/test/resources" + "/sentry_node_missing_endpoints_config.json";
-  public static final String SENTRY_NODE_MISSING_DUTIES_PROVIDER_CONFIG_JSON =
-      "src/test" + "/resources/sentry_node_missing_duties_provider_config.json";
-  public static final String SENTRY_NODE_MISSING_BLOCK_HANDLER_CONFIG_JSON =
-      "src/test/resources" + "/sentry_node_missing_block_handler_config.json";
-  public static final String SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_CONFIG_JSON =
-      "src/test" + "/resources/sentry_node_missing_attestation_publisher_config.json";
 
   private SentryNodesConfigLoader configLoader;
 
@@ -47,7 +35,7 @@ class SentryNodesConfigLoaderTest {
   @Test
   public void shouldLoadConfigWithCorrectValues() {
     final BeaconNodesSentryConfig config =
-        configLoader.load(SENTRY_NODE_FULL_CONFIG_JSON).getBeaconNodesSentryConfig();
+        configLoader.load(pathFor("sentry_node_full_config.json")).getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getBlockHandlerNodeConfig().get().getEndpoints())
@@ -59,7 +47,7 @@ class SentryNodesConfigLoaderTest {
   @Test
   public void shouldLoadConfigOnlyWithDutiesProvider() {
     final BeaconNodesSentryConfig config =
-        configLoader.load(SENTRY_NODE_MINIMUM_CONFIG_JSON).getBeaconNodesSentryConfig();
+        configLoader.load(pathFor("sentry_node_minimum_config.json")).getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
     assertThat(config.getBlockHandlerNodeConfig()).isEmpty();
@@ -68,7 +56,8 @@ class SentryNodesConfigLoaderTest {
 
   @Test
   public void shouldFailLoadingConfigMissingNestedEndpoints() {
-    assertThatThrownBy(() -> configLoader.load(SENTRY_NODE_MISSING_ENDPOINTS_CONFIG_JSON))
+    assertThatThrownBy(
+            () -> configLoader.load(pathFor("sentry_node_missing_endpoints_config.json")))
         .isInstanceOf(RuntimeException.class)
         .hasCauseInstanceOf(JsonProcessingException.class)
         .hasMessage("Invalid sentry nodes configuration file");
@@ -76,7 +65,8 @@ class SentryNodesConfigLoaderTest {
 
   @Test
   public void shouldFailLoadingConfigWhenMissingRequiredDutiesProvider() {
-    assertThatThrownBy(() -> configLoader.load(SENTRY_NODE_MISSING_DUTIES_PROVIDER_CONFIG_JSON))
+    assertThatThrownBy(
+            () -> configLoader.load(pathFor("sentry_node_missing_duties_provider_config.json")))
         .isInstanceOf(RuntimeException.class)
         .hasMessage("Invalid sentry nodes configuration file")
         .hasCauseInstanceOf(JsonProcessingException.class)
@@ -87,7 +77,7 @@ class SentryNodesConfigLoaderTest {
   public void shouldLoadConfigSuccessfullyWhenMissingOptionalBlockHandler() {
     final BeaconNodesSentryConfig config =
         configLoader
-            .load(SENTRY_NODE_MISSING_BLOCK_HANDLER_CONFIG_JSON)
+            .load(pathFor("sentry_node_missing_block_handler_config.json"))
             .getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
@@ -100,7 +90,7 @@ class SentryNodesConfigLoaderTest {
   public void shouldLoadConfigSuccessfullyWhenMissingOptionalAttestationPublisher() {
     final BeaconNodesSentryConfig config =
         configLoader
-            .load(SENTRY_NODE_MISSING_ATTESTATION_PUBLISHER_CONFIG_JSON)
+            .load(pathFor("sentry_node_missing_attestation_publisher_config.json"))
             .getBeaconNodesSentryConfig();
 
     assertThat(config.getDutiesProviderNodeConfig().getEndpoints()).contains("http://duties:5051");
@@ -116,5 +106,9 @@ class SentryNodesConfigLoaderTest {
         .hasMessage("Error loading sentry nodes configuration file from foo")
         .hasCauseInstanceOf(IOException.class)
         .hasRootCauseMessage("Not found");
+  }
+
+  private String pathFor(final String filename) {
+    return Resources.getResource(SentryNodesConfigLoaderTest.class, filename).toString();
   }
 }
