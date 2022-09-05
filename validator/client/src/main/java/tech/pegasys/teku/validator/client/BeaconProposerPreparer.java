@@ -251,12 +251,9 @@ public class BeaconProposerPreparer
             entry ->
                 getFeeRecipient(entry.getKey())
                     .map(
-                        eth1Address -> {
-                          System.out.println("HERE FUCKAS");
-                          System.out.println(entry.getValue() + " -> " + eth1Address);
-                          return new BeaconPreparableProposer(
-                              UInt64.valueOf(entry.getValue()), eth1Address);
-                        }))
+                        eth1Address ->
+                            new BeaconPreparableProposer(
+                                UInt64.valueOf(entry.getValue()), eth1Address)))
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
