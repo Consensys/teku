@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,7 +38,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v2.beacon.GetFinalizedCheckpointStateResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetFinalizedCheckpointStateResponse;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -87,7 +86,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get finalized checkpoint state",
-      tags = {TAG_BEACON},
+      tags = {TAG_EXPERIMENTAL},
       description = "Returns the latest finalized BeaconState.",
       responses = {
         @OpenApiResponse(
