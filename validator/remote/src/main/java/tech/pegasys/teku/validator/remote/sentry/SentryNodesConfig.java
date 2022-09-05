@@ -20,24 +20,43 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 public class SentryNodesConfig {
 
   static final DeserializableTypeDefinition<SentryNodesConfig> SENTRY_NODES_CONFIG =
-      DeserializableTypeDefinition.object(SentryNodesConfig.class)
-          .initializer(SentryNodesConfig::new)
+      DeserializableTypeDefinition.object(SentryNodesConfig.class, SentryNodesConfig.Builder.class)
+          .initializer(SentryNodesConfig.Builder::builder)
+          .finisher(SentryNodesConfig.Builder::build)
           .withField(
               "beacon_nodes",
               BEACON_NODES_SENTRY_CONFIG,
               SentryNodesConfig::getBeaconNodesSentryConfig,
-              SentryNodesConfig::setBeaconNodesSentryConfig)
+              SentryNodesConfig.Builder::sentryNodesConfig)
           .build();
 
-  private BeaconNodesSentryConfig beaconNodesSentryConfig;
+  private final BeaconNodesSentryConfig beaconNodesSentryConfig;
 
-  public SentryNodesConfig() {}
+  private SentryNodesConfig(final BeaconNodesSentryConfig beaconNodesSentryConfig) {
+    this.beaconNodesSentryConfig = beaconNodesSentryConfig;
+  }
 
   public BeaconNodesSentryConfig getBeaconNodesSentryConfig() {
     return beaconNodesSentryConfig;
   }
 
-  public void setBeaconNodesSentryConfig(final BeaconNodesSentryConfig beaconNodesSentryConfig) {
-    this.beaconNodesSentryConfig = beaconNodesSentryConfig;
+  public static class Builder {
+
+    private BeaconNodesSentryConfig beaconNodesSentryConfig;
+
+    private Builder() {}
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    public Builder sentryNodesConfig(final BeaconNodesSentryConfig config) {
+      this.beaconNodesSentryConfig = config;
+      return this;
+    }
+
+    public SentryNodesConfig build() {
+      return new SentryNodesConfig(beaconNodesSentryConfig);
+    }
   }
 }
