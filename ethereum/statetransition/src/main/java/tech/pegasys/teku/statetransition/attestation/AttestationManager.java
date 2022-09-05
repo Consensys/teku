@@ -114,8 +114,27 @@ public class AttestationManager extends Service
     attestationsToSendSubscribers.subscribe(attestationsToSendListener);
   }
 
-  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
-    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
+  private void validateForGossipAndNotifySendSubscribers(ValidateableAttestation attestation) {
+    if (attestation.isAggregate()) {
+      // We know the Attestation is valid, but need to validate the SignedAggregateAndProof wrapper
+      aggregateValidator
+          .validate(attestation)
+          .finish(
+              result -> {
+                if (result.isAccept()) {
+                  attestationsToSendSubscribers.deliver(
+                      ProcessedAttestationListener::accept, attestation);
+                }
+              },
+              error ->
+                  LOG.error(
+                      "Not gossiping aggregate from slot {} because an error occurred during validation",
+                      attestation.getData().getSlot(),
+                      error));
+    } else {
+      // Any attestation that passes the fork choice rules is valid to send as gossip
+      attestationsToSendSubscribers.deliver(ProcessedAttestationListener::accept, attestation);
+    }
   }
 
   public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
@@ -152,6 +171,7 @@ public class AttestationManager extends Service
 
   @Override
   public void onSlot(final UInt64 slot) {
+    pendingAttestations.onSlot(slot);
     applyFutureAttestations(slot);
   }
 
@@ -167,7 +187,7 @@ public class AttestationManager extends Service
         .filter(a -> !a.isGossiped())
         .forEach(
             a -> {
-              notifyAttestationsToSendSubscribers(a);
+              validateForGossipAndNotifySendSubscribers(a);
               notifyAllValidAttestationsSubscribers(a);
             });
   }
@@ -244,7 +264,7 @@ public class AttestationManager extends Service
       aggregateValidator.addSeenAggregate(attestation);
     }
 
-    notifyAttestationsToSendSubscribers(attestation);
+    validateForGossipAndNotifySendSubscribers(attestation);
     notifyAllValidAttestationsSubscribers(attestation);
     attestation.markGossiped();
   }

@@ -20,11 +20,11 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
@@ -75,9 +75,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-            final ExecutionPayloadContext executionPayloadContext,
-            final BeaconState state,
-            final boolean transitionNotFinalized) {
+            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -111,9 +109,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext,
-      BeaconState state,
-      boolean transitionNotFinalized);
+      ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 

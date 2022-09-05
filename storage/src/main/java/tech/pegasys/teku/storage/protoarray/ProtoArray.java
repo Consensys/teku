@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -44,11 +45,13 @@ public class ProtoArray {
 
   private int pruneThreshold;
 
+  private UInt64 currentEpoch;
   private Checkpoint justifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
   // The epoch of our initial startup state
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
+  private final ProgressiveBalancesMode progressiveBalancesMode;
   private final StatusLogger statusLog;
 
   /**
@@ -71,14 +74,18 @@ public class ProtoArray {
 
   ProtoArray(
       final int pruneThreshold,
+      final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final UInt64 initialEpoch,
+      final ProgressiveBalancesMode progressiveBalancesMode,
       final StatusLogger statusLog) {
     this.pruneThreshold = pruneThreshold;
+    this.currentEpoch = currentEpoch;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
     this.initialEpoch = initialEpoch;
+    this.progressiveBalancesMode = progressiveBalancesMode;
     this.statusLog = statusLog;
   }
 
@@ -156,13 +163,16 @@ public class ProtoArray {
    * Follows the best-descendant links to find the best-block (i.e. head-block), including any
    * optimistic nodes which have not yet been fully validated.
    *
+   * @param currentEpoch the current epoch according to the Store current time
    * @param justifiedCheckpoint the justified checkpoint
    * @param finalizedCheckpoint the finalized checkpoint
    * @return the best node according to fork choice
    */
   public ProtoNode findOptimisticHead(
-      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
-    return findHead(justifiedCheckpoint, finalizedCheckpoint)
+      final UInt64 currentEpoch,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
+    return findHead(currentEpoch, justifiedCheckpoint, finalizedCheckpoint)
         .orElseThrow(fatalException("Finalized block was found to be invalid."));
   }
 
@@ -195,9 +205,13 @@ public class ProtoArray {
   }
 
   private Optional<ProtoNode> findHead(
-      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
-    if (!this.justifiedCheckpoint.equals(justifiedCheckpoint)
+      final UInt64 currentEpoch,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
+    if ((progressiveBalancesMode.isFull() && !this.currentEpoch.equals(currentEpoch))
+        || !this.justifiedCheckpoint.equals(justifiedCheckpoint)
         || !this.finalizedCheckpoint.equals(finalizedCheckpoint)) {
+      this.currentEpoch = currentEpoch;
       this.justifiedCheckpoint = justifiedCheckpoint;
       this.finalizedCheckpoint = finalizedCheckpoint;
       // Justified or finalized epoch changed so we have to re-evaluate all best descendants.
@@ -397,6 +411,7 @@ public class ProtoArray {
    */
   public void applyScoreChanges(
       final LongList deltas,
+      final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint) {
     checkArgument(
@@ -405,11 +420,9 @@ public class ProtoArray {
         getTotalTrackedNodeCount(),
         deltas.size());
 
-    if (!justifiedCheckpoint.equals(this.justifiedCheckpoint)
-        || !finalizedCheckpoint.equals(this.finalizedCheckpoint)) {
-      this.justifiedCheckpoint = justifiedCheckpoint;
-      this.finalizedCheckpoint = finalizedCheckpoint;
-    }
+    this.currentEpoch = currentEpoch;
+    this.justifiedCheckpoint = justifiedCheckpoint;
+    this.finalizedCheckpoint = finalizedCheckpoint;
 
     applyDeltas(deltas);
   }
@@ -605,8 +618,25 @@ public class ProtoArray {
     if (node.isInvalid()) {
       return false;
     }
-    return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
-        && doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
+
+    if (progressiveBalancesMode.isFull()) {
+      final boolean correctJustified =
+          node.getJustifiedCheckpoint()
+              .getEpoch()
+              .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
+      final boolean correctFinalized =
+          isPreviousEpochJustified()
+              ? correctJustified
+              : doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
+      return correctJustified && correctFinalized;
+    } else {
+      return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
+          && doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
+    }
+  }
+
+  private boolean isPreviousEpochJustified() {
+    return justifiedCheckpoint.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   private boolean doesCheckpointMatch(final Checkpoint actual, final Checkpoint required) {

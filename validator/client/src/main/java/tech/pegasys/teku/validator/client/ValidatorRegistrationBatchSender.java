@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -82,7 +82,7 @@ public class ValidatorRegistrationBatchSender {
         .alwaysRun(
             () ->
                 LOG.info(
-                    "{} out of {} validator(s) registrations were successfully sent to the Beacon Node.",
+                    "{} out of {} validator(s) registrations were successfully sent to the builder network by the Beacon Node.",
                     successfullySentRegistrations.get(),
                     validatorRegistrations.size()));
   }

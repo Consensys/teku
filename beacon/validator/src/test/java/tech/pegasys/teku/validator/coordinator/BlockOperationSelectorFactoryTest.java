@@ -255,11 +255,11 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing3);
     assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
 
-    when(proposerSlashingValidator.validateForStateTransition(blockSlotState, proposerSlashing2))
+    when(proposerSlashingValidator.validateForBlockInclusion(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));
-    when(voluntaryExitValidator.validateForStateTransition(blockSlotState, voluntaryExit2))
+    when(voluntaryExitValidator.validateForBlockInclusion(blockSlotState, voluntaryExit2))
         .thenReturn(Optional.of(ExitInvalidReason.invalidSignature()));
-    when(attesterSlashingValidator.validateForStateTransition(blockSlotState, attesterSlashing2))
+    when(attesterSlashingValidator.validateForBlockInclusion(blockSlotState, attesterSlashing2))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
 
     factory
@@ -334,7 +334,7 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, false))
+    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
 
     factory
@@ -365,29 +365,6 @@ class BlockOperationSelectorFactoryTest {
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
-  }
-
-  @Test
-  void shouldIncludeExecutionPayloadIfBlindedBlockRequestedButPreMerge() {
-    final UInt64 slot = UInt64.ONE;
-    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(Bytes32.ZERO, false);
-    final ExecutionPayloadHeader randomExecutionPayloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeader();
-
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState, true))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
-
-    factory
-        .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
-        .accept(blindedBodyBuilder);
-
-    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
 
   @Test

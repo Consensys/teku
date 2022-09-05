@@ -18,11 +18,13 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.BlockOperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -38,6 +40,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
         gossipEncoding,
         forkDigest,
         GossipTopicName.BEACON_BLOCK,
+        Optional.empty(),
         spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
         GOSSIP_MAX_SIZE);
   }
@@ -87,6 +90,30 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   }
 
   @Test
+  public void handleMessage_invalidBlock_wrongFork() {
+    final Eth2TopicHandler<SignedBeaconBlock> blockHandler =
+        new Eth2TopicHandler<>(
+            recentChainData,
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            GossipTopicName.BEACON_BLOCK,
+            Optional.of(
+                new BlockOperationMilestoneValidator(
+                    spec, recentChainData.getForkInfo(UInt64.ONE).orElseThrow())),
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+            GOSSIP_MAX_SIZE);
+    SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    Bytes serialized = gossipEncoding.encode(block);
+    final SafeFuture<ValidationResult> result =
+        blockHandler.handleMessage(topicHandler.prepareMessage(serialized));
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+  }
+
+  @Test
   public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
@@ -120,6 +147,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
             gossipEncoding,
             forkDigest,
             GossipTopicName.BEACON_BLOCK,
+            Optional.empty(),
             spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");

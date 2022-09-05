@@ -14,8 +14,12 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
@@ -51,8 +55,37 @@ public class ExecutionLayerOptions {
       names = {"--builder-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for an external Builder node (optional).",
+      showDefaultValue = Visibility.ALWAYS,
       arity = "1")
-  private String executionBuilderEndpoint = null;
+  private String builderEndpoint = null;
+
+  @Option(
+      names = {"--Xbuilder-circuit-breaker-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables Circuit Breaker logic for builder usage.",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean builderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
+
+  @Option(
+      names = {"--Xbuilder-circuit-breaker-window"},
+      paramLabel = "<INTEGER>",
+      description = "Circuit Breaker fault inspection window.",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private int builderCircuitBreakerWindow = DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
+
+  @Option(
+      names = {"--Xbuilder-circuit-breaker-allowed-faults"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Circuit Breaker maximum allowed faults (missing block) within the specified inspection window.",
+      arity = "1",
+      hidden = true)
+  private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 
   public void configure(final Builder builder) {
     builder.executionLayer(
@@ -60,7 +93,10 @@ public class ExecutionLayerOptions {
             b.engineEndpoint(executionEngineEndpoint)
                 .engineVersion(executionEngineVersion)
                 .engineJwtSecretFile(engineJwtSecretFile)
-                .builderEndpoint(executionBuilderEndpoint));
+                .builderEndpoint(builderEndpoint)
+                .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
+                .builderCircuitBreakerWindow(builderCircuitBreakerWindow)
+                .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults));
     depositOptions.configure(builder);
   }
 }

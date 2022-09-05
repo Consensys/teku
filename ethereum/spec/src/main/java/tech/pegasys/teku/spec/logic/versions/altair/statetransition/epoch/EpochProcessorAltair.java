@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -130,7 +129,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   @Override
   public void initProgressiveTotalBalancesIfRequired(
       final BeaconState state, final TotalBalances totalBalances) {
-    if (specConfigAltair.getProgressiveBalancesMode() == ProgressiveBalancesMode.DISABLED) {
+    if (specConfigAltair.getProgressiveBalancesMode().isDisabled()) {
       return;
     }
     final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);

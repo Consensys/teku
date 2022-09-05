@@ -16,12 +16,13 @@ package tech.pegasys.teku.validator.remote;
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import org.apache.logging.log4j.LogManager;
@@ -34,13 +35,12 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -71,14 +71,12 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   private final List<RemoteValidatorApiChannel> failoverDelegates;
   private final boolean failoversSendSubnetSubscriptions;
   private final LabelledMetric<Counter> failoverBeaconNodesRequestsCounter;
-  private final ValidatorLogger validatorLogger;
 
   public FailoverValidatorApiHandler(
       final RemoteValidatorApiChannel primaryDelegate,
       final List<RemoteValidatorApiChannel> failoverDelegates,
       final boolean failoversSendSubnetSubscriptions,
-      final MetricsSystem metricsSystem,
-      final ValidatorLogger validatorLogger) {
+      final MetricsSystem metricsSystem) {
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
@@ -90,7 +88,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
             "failover_endpoint",
             "method",
             "outcome");
-    this.validatorLogger = validatorLogger;
   }
 
   @Override
@@ -265,8 +262,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
    * complete with the response from the primary Beacon Node or in case in failure, it will complete
    * with the first successful response from a failover node. The returned {@link SafeFuture} will
    * only complete exceptionally when the request to the primary Beacon Node and all the requests to
-   * the failover nodes fail. In this case, the returned error will be the primary Beacon Node error
-   * and all the failovers errors will be part of it as suppressed.
+   * the failover nodes fail. In this case, the returned {@link SafeFuture} will complete
+   * exceptionally with a {@link FailoverRequestException}.
    */
   private <T> SafeFuture<T> relayRequest(
       final ValidatorApiChannelRequest<T> request,
@@ -276,23 +273,29 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     if (failoverDelegates.isEmpty() || !relayRequestToFailovers) {
       return primaryResponse;
     }
+    final Map<HttpUrl, Throwable> capturedExceptions = new ConcurrentHashMap<>();
     final List<SafeFuture<T>> failoversResponses =
         failoverDelegates.stream()
-            .map(failover -> runFailoverRequest(failover, request, method))
+            .map(
+                failover ->
+                    runFailoverRequest(failover, request, method)
+                        .catchAndRethrow(
+                            throwable -> capturedExceptions.put(failover.getEndpoint(), throwable)))
             .collect(Collectors.toList());
     return primaryResponse.exceptionallyCompose(
         primaryThrowable -> {
+          final HttpUrl primaryEndpoint = primaryDelegate.getEndpoint();
+          capturedExceptions.put(primaryEndpoint, primaryThrowable);
           LOG.debug(
-              "Request which is sent to all configured Beacon Node endpoints failed on the primary Beacon Node {} Will try to use a response from a failover.",
-              primaryDelegate.getEndpoint());
+              "Remote request ({}) which is sent to all configured Beacon Node endpoints failed on the primary Beacon Node {}. Will try to use a response from a failover.",
+              method,
+              primaryEndpoint);
           return SafeFuture.firstSuccess(failoversResponses)
               .exceptionallyCompose(
                   __ -> {
-                    validatorLogger.remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(
-                        method);
-                    SafeFuture.addSuppressedErrors(
-                        primaryThrowable, failoversResponses.toArray(new SafeFuture<?>[0]));
-                    return SafeFuture.failedFuture(primaryThrowable);
+                    final FailoverRequestException failoverRequestException =
+                        new FailoverRequestException(method, capturedExceptions);
+                    return SafeFuture.failedFuture(failoverRequestException);
                   });
         });
   }
@@ -300,8 +303,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   /**
    * Tries the given request first with the primary Beacon Node. If it fails, it will retry the
    * request against each failover Beacon Node in order until there is a successful response. In
-   * case all the requests fail, the returned {@link SafeFuture} will complete exceptionally with
-   * the last error and all previous errors will be part of it as suppressed.
+   * case all the requests fail, the returned {@link SafeFuture} will complete exceptionally with a
+   * {@link FailoverRequestException}.
    */
   private <T> SafeFuture<T> tryRequestUntilSuccess(
       final ValidatorApiChannelRequest<T> request, final String method) {
@@ -309,7 +312,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       return request.run(primaryDelegate);
     }
     return makeFailoverRequest(
-        primaryDelegate, failoverDelegates.iterator(), request, false, method, new HashSet<>());
+        primaryDelegate, failoverDelegates.iterator(), request, false, method, new HashMap<>());
   }
 
   private <T> SafeFuture<T> makeFailoverRequest(
@@ -318,20 +321,21 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final ValidatorApiChannelRequest<T> request,
       final boolean isFailoverRequest,
       final String method,
-      final Set<Throwable> capturedExceptions) {
+      final Map<HttpUrl, Throwable> capturedExceptions) {
     return runRequest(currentDelegate, request, method, isFailoverRequest)
         .exceptionallyCompose(
             throwable -> {
-              if (!failoverDelegates.hasNext()) {
-                validatorLogger.remoteBeaconNodeRequestFailedOnPrimaryAndFailoverEndpoints(method);
-                capturedExceptions.forEach(throwable::addSuppressed);
-                return SafeFuture.failedFuture(throwable);
-              }
-              capturedExceptions.add(throwable);
               final HttpUrl failedEndpoint = currentDelegate.getEndpoint();
+              capturedExceptions.put(failedEndpoint, throwable);
+              if (!failoverDelegates.hasNext()) {
+                final FailoverRequestException failoverRequestException =
+                    new FailoverRequestException(method, capturedExceptions);
+                return SafeFuture.failedFuture(failoverRequestException);
+              }
               final RemoteValidatorApiChannel nextDelegate = failoverDelegates.next();
               LOG.debug(
-                  "Request to Beacon Node {} failed. Will try sending request to failover {}",
+                  "Remote request ({}) to Beacon Node {} failed. Will try sending request to failover {}",
+                  method,
                   failedEndpoint,
                   nextDelegate.getEndpoint());
               return makeFailoverRequest(

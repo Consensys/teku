@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -44,6 +45,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final SszSchema<T> gossipType,
+      final Optional<OperationMilestoneValidator<T>> validator,
       final int maxMessageSize) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
@@ -54,6 +56,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             gossipEncoding,
             forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
+            validator,
             gossipType,
             maxMessageSize);
     this.gossipEncoding = gossipEncoding;

@@ -16,5 +16,22 @@ package tech.pegasys.teku.spec.config;
 public enum ProgressiveBalancesMode {
   DISABLED,
   CHECKED,
-  USED
+  USED,
+  FULL;
+
+  public boolean isDisabled() {
+    return this == DISABLED;
+  }
+
+  public boolean isChecked() {
+    return ordinal() >= CHECKED.ordinal();
+  }
+
+  public boolean isUsed() {
+    return ordinal() >= USED.ordinal();
+  }
+
+  public boolean isFull() {
+    return ordinal() >= FULL.ordinal();
+  }
 }

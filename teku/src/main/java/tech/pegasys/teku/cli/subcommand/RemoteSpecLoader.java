@@ -14,8 +14,10 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -31,39 +33,55 @@ class RemoteSpecLoader {
 
   private static final long RETRY_DELAY = 5000;
 
-  static Spec getSpec(OkHttpValidatorRestApiClient apiClient) {
+  static Spec getSpecWithRetry(final List<URI> beaconEndpoints) {
+    return retry(() -> getSpec(beaconEndpoints));
+  }
+
+  static Spec getSpec(final List<URI> beaconEndpoints) {
+    if (beaconEndpoints.size() > 1) {
+      return getSpecWithFailovers(createApiClients(beaconEndpoints));
+    }
+    return getSpec(createApiClient(beaconEndpoints.get(0)));
+  }
+
+  static Spec getSpec(final OkHttpValidatorRestApiClient apiClient) {
     try {
       return apiClient
           .getConfigSpec()
           .map(response -> SpecConfigLoader.loadRemoteConfig(response.data))
           .map(SpecFactory::create)
           .orElseThrow();
-    } catch (Exception e) {
-      String errMsg =
+    } catch (final Throwable ex) {
+      final String errMsg =
           String.format(
               "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s",
-              apiClient.getBaseEndpoint(), e.getMessage());
-      throw new InvalidConfigurationException(errMsg, e);
+              apiClient.getBaseEndpoint(), ex.getMessage());
+      throw new InvalidConfigurationException(errMsg, ex);
     }
   }
 
-  static Spec getSpec(URI beaconEndpoint) {
-    return getSpec(createApiClient(beaconEndpoint));
+  static OkHttpValidatorRestApiClient createApiClient(final URI endpoint) {
+    return createApiClients(List.of(endpoint)).get(0);
   }
 
-  static Spec getSpecWithRetry(URI beaconEndpoint) {
-    return retry(() -> getSpec(beaconEndpoint));
+  private static Spec getSpecWithFailovers(final List<OkHttpValidatorRestApiClient> apiClients) {
+    for (final OkHttpValidatorRestApiClient apiClient : apiClients) {
+      try {
+        return getSpec(apiClient);
+      } catch (final Throwable ex) {
+        logError(ex);
+      }
+    }
+    final String errMsg =
+        "Failed to retrieve network spec from all configured beacon node endpoints.";
+    throw new InvalidConfigurationException(errMsg);
   }
 
-  static Spec getSpecWithRetry(OkHttpValidatorRestApiClient apiClient) {
-    return retry(() -> getSpec(apiClient));
-  }
-
-  private static <T> T retry(Callable<T> f) {
+  private static <T> T retry(final Callable<T> f) {
     try {
       return f.call();
-    } catch (Throwable e) {
-      logError(e);
+    } catch (Throwable ex) {
+      logError(ex);
       sleep();
       return retry(f);
     }
@@ -72,23 +90,37 @@ class RemoteSpecLoader {
   private static void sleep() {
     try {
       Thread.sleep(RETRY_DELAY);
-    } catch (InterruptedException e) {
+    } catch (final InterruptedException ex) {
       throw new ShuttingDownException();
     }
   }
 
-  private static void logError(Throwable e) {
-    SubCommandLogger.SUB_COMMAND_LOG.error(e.getMessage());
+  private static void logError(final Throwable ex) {
+    SubCommandLogger.SUB_COMMAND_LOG.error(ex.getMessage());
   }
 
-  static OkHttpValidatorRestApiClient createApiClient(final URI baseEndpoint) {
-    HttpUrl apiEndpoint = HttpUrl.get(baseEndpoint);
+  private static List<OkHttpValidatorRestApiClient> createApiClients(
+      final List<URI> baseEndpoints) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
-    OkHttpClientAuth.addAuthInterceptor(apiEndpoint, httpClientBuilder);
-    // Strip any authentication info from the URL to ensure it doesn't get logged.
-    apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
+    List<HttpUrl> apiEndpoints =
+        baseEndpoints.stream().map(HttpUrl::get).collect(Collectors.toList());
+    if (apiEndpoints.size() > 1) {
+      OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(apiEndpoints, httpClientBuilder);
+    } else {
+      OkHttpClientAuth.addAuthInterceptor(apiEndpoints.get(0), httpClientBuilder);
+    }
+    // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
+    apiEndpoints = stripAuthentication(apiEndpoints);
     final OkHttpClient okHttpClient = httpClientBuilder.build();
-    return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
+    return apiEndpoints.stream()
+        .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
+        .collect(Collectors.toList());
+  }
+
+  private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
+    return endpoints.stream()
+        .map(endpoint -> endpoint.newBuilder().username("").password("").build())
+        .collect(Collectors.toList());
   }
 }

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -174,6 +175,7 @@ class AbstractGossipManagerTest {
           forkInfo,
           processor,
           gossipType,
+          Optional.empty(),
           maxMessageSize);
     }
   }

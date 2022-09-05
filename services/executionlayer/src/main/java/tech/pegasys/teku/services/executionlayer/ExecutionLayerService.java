@@ -26,11 +26,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
+import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
+import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
@@ -87,6 +89,18 @@ public class ExecutionLayerService extends Service {
     final String endpoint = engineWeb3jClientProvider.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
 
+    final BuilderCircuitBreaker builderCircuitBreaker;
+    if (config.isBuilderCircuitBreakerEnabled()) {
+      LOG.info("Enabling Builder Circuit Breaker");
+      builderCircuitBreaker =
+          new BuilderCircuitBreakerImpl(
+              config.getSpec(),
+              config.getBuilderCircuitBreakerWindow(),
+              config.getBuilderCircuitBreakerAllowedFaults());
+    } else {
+      builderCircuitBreaker = BuilderCircuitBreaker.NOOP;
+    }
+
     final ExecutionLayerManager executionLayerManager;
     if (engineWeb3jClientProvider.isStub()) {
       EVENT_LOG.executionLayerStubEnabled();
@@ -105,7 +119,11 @@ public class ExecutionLayerService extends Service {
       }
       executionLayerManager =
           new ExecutionLayerManagerStub(
-              config.getSpec(), timeProvider, true, terminalBlockHashInTTDMode);
+              config.getSpec(),
+              timeProvider,
+              true,
+              terminalBlockHashInTTDMode,
+              builderCircuitBreaker);
     } else {
       final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
 
@@ -115,7 +133,7 @@ public class ExecutionLayerService extends Service {
               engineWeb3jClientProvider.getWeb3JClient(),
               timeProvider,
               metricsSystem);
-      final Optional<ExecutionBuilderClient> executionBuilderClient =
+      final Optional<BuilderClient> builderClient =
           builderRestClientProvider.map(
               restClientProvider ->
                   ExecutionLayerManagerImpl.createBuilderClient(
@@ -128,10 +146,11 @@ public class ExecutionLayerService extends Service {
           ExecutionLayerManagerImpl.create(
               EVENT_LOG,
               executionEngineClient,
-              executionBuilderClient,
+              builderClient,
               config.getSpec(),
               metricsSystem,
-              new BuilderBidValidatorImpl(EVENT_LOG));
+              new BuilderBidValidatorImpl(EVENT_LOG),
+              builderCircuitBreaker);
     }
 
     return new ExecutionLayerService(

@@ -85,16 +85,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -480,15 +480,16 @@ public final class DataStructureUtil {
         .create(randomBuilderBid(), randomSignature());
   }
 
-  public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(
-      BeaconBlockBodySchema<?> schema) {
-    return schema.toVersionBellatrix().map(__ -> randomExecutionPayload()).orElse(null);
+  public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(SpecVersion specVersion) {
+    final BeaconBlockBodySchema<?> schema =
+        specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema.toVersionBellatrix().map(__ -> randomExecutionPayload(specVersion)).orElse(null);
   }
 
-  public ExecutionPayload randomExecutionPayload() {
+  public ExecutionPayload randomExecutionPayload(SpecVersion specVersion) {
     final SpecConfigBellatrix specConfigBellatrix =
-        SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        SpecConfigBellatrix.required(specVersion.getConfig());
+    return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
         .getExecutionPayloadSchema()
         .create(
             randomBytes32(),
@@ -505,6 +506,10 @@ public final class DataStructureUtil {
             randomUInt256(),
             randomBytes32(),
             randomExecutionPayloadTransactions());
+  }
+
+  public ExecutionPayload randomExecutionPayload() {
+    return randomExecutionPayload(spec.getGenesisSpec());
   }
 
   public ExecutionPayload emptyExecutionPayload() {
@@ -752,7 +757,7 @@ public final class DataStructureUtil {
     final UInt64 proposerIndex = randomUInt64();
     Bytes32 previousRoot = randomBytes32();
     Bytes32 stateRoot = randomBytes32();
-    BeaconBlockBody body = randomBeaconBlockBody();
+    BeaconBlockBody body = randomBeaconBlockBody(slotNum);
 
     return new BeaconBlock(
         spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema(),
@@ -919,6 +924,39 @@ public final class DataStructureUtil {
         .join();
   }
 
+  public BeaconBlockBody randomBeaconBlockBody(final UInt64 slotNum) {
+    BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockBodySchema();
+
+    return schema
+        .createBlockBody(
+            builder ->
+                builder
+                    .randaoReveal(randomSignature())
+                    .eth1Data(randomEth1Data())
+                    .graffiti(Bytes32.ZERO)
+                    .proposerSlashings(
+                        randomSszList(
+                            schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                    .attesterSlashings(
+                        randomSszList(
+                            schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                    .attestations(
+                        randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                    .deposits(
+                        randomSszList(
+                            schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                    .voluntaryExits(
+                        randomSszList(
+                            schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .executionPayload(
+                        () ->
+                            SafeFuture.completedFuture(
+                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum)))))
+        .join();
+  }
+
   public BeaconBlockBody randomBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
@@ -947,7 +985,7 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(schema))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec()))))
         .join();
   }
 
@@ -979,7 +1017,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                this.randomExecutionPayloadIfRequiredBySchema(schema))))
+                                this.randomExecutionPayloadIfRequiredBySchema(
+                                    spec.getGenesisSpec()))))
         .join();
   }
 
@@ -1151,8 +1190,12 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator() {
+    return randomValidator(randomPublicKey());
+  }
+
+  public Validator randomValidator(final BLSPublicKey publicKey) {
     return new Validator(
-        randomPublicKeyBytes(),
+        publicKey,
         randomBytes32(),
         getMaxEffectiveBalance(),
         false,
@@ -1182,11 +1225,13 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(
-      final Bytes32 finalizedBlockHash, final boolean optimisticHead) {
+      final Bytes32 finalizedBlockHash,
+      final boolean optimisticHead,
+      final boolean withValidatorRegistration) {
     return new ExecutionPayloadContext(
         randomBytes8(),
         randomForkChoiceState(randomUInt64(), finalizedBlockHash, optimisticHead),
-        randomPayloadBuildingAttributes(false));
+        randomPayloadBuildingAttributes(withValidatorRegistration));
   }
 
   public ExecutionPayloadContext randomPayloadExecutionContext(

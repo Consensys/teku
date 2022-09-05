@@ -140,21 +140,21 @@ public class EventLogger {
   }
 
   public void executionClientIsOnline() {
-    info("Execution Client is back online", Color.GREEN);
+    info("Execution Client is online", Color.GREEN);
   }
 
-  public void executionBuilderIsOffline(String errorMessage) {
-    String executionBuilderOfflineEventLog =
+  public void builderIsOffline(final String errorMessage) {
+    String builderOfflineEventLog =
         String.format(
-            "The execution builder is offline: %s. Block production will fallback to the execution engine.",
+            "The builder is offline: %s. Block production will fallback to the execution engine.",
             errorMessage);
-    warn(executionBuilderOfflineEventLog, Color.YELLOW);
+    warn(builderOfflineEventLog, Color.YELLOW);
   }
 
-  public void executionBuilderIsBackOnline() {
-    String executionBuilderOnlineEventLog =
-        "The execution builder is back online. It will be used for block production.";
-    info(executionBuilderOnlineEventLog, Color.GREEN);
+  public void builderIsBackOnline() {
+    String builderOnlineEventLog =
+        "The builder is back online. It will be used for block production.";
+    info(builderOnlineEventLog, Color.GREEN);
   }
 
   public void syncStart() {

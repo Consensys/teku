@@ -23,7 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
-import static tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient.PARAM_PUBKEY_TYPE;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;

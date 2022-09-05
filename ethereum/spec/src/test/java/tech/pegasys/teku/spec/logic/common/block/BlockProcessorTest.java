@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class BlockProcessorTest {
-  private final Spec spec = createSpec();
+  protected final Spec spec = createSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
@@ -160,7 +160,45 @@ public abstract class BlockProcessorTest {
         "The balances list has changed.");
   }
 
-  private BeaconState createBeaconState() {
+  @Test
+  void processDepositIgnoresDepositWithZeroPublicKey() throws BlockProcessingException {
+    // The following deposit uses a "rogue" public key that is not in the G1 group
+    BLSPublicKey pubkey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
+    Bytes32 withdrawalCredentials =
+        Bytes32.fromHexString("0x79e43d39ee55749c55994a7ab2a3cb91460cec544fdbf27eb5717c43f970c1b6");
+    UInt64 amount = UInt64.valueOf(1000000000L);
+    BLSSignature signature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0xddc1ca509e29c6452441069f26da6e073589b3bd1cace50e3427426af5bfdd566d077d4bdf618e249061b9770471e3d515779aa758b8ccb4b06226a8d5ebc99e19d4c3278e5006b837985bec4e0ce39df92c1f88d1afd0f98dbae360024a390d"));
+    DepositData depositInput =
+        new DepositData(new DepositMessage(pubkey, withdrawalCredentials, amount), signature);
+
+    BeaconState preState = createBeaconState();
+
+    int originalValidatorRegistrySize = preState.getValidators().size();
+    int originalValidatorBalancesSize = preState.getBalances().size();
+
+    BeaconState postState = processDepositHelper(preState, depositInput);
+
+    assertEquals(
+        postState.getValidators().size(),
+        originalValidatorRegistrySize,
+        "The validator was added to the validator registry.");
+    assertEquals(
+        postState.getBalances().size(),
+        originalValidatorBalancesSize,
+        "The balance was added to the validator balances.");
+    assertEquals(
+        preState.getBalances().hashTreeRoot(),
+        postState.getBalances().hashTreeRoot(),
+        "The balances list has changed.");
+  }
+
+  protected BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
 

@@ -14,17 +14,16 @@
 package tech.pegasys.teku.ethereum.pow.merkletree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 class ZeroMerkleTree extends MerkleTree {
 
-  private static final Bytes32[] ZERO_HASHES =
-      new Bytes32[NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH + 1];
+  private static final Bytes32[] ZERO_HASHES = new Bytes32[DEPOSIT_CONTRACT_TREE_DEPTH + 1];
 
   static {
     ZERO_HASHES[0] = Bytes32.ZERO;

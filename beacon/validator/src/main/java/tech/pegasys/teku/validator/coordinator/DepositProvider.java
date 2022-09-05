@@ -105,11 +105,12 @@ public class DepositProvider
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
-        event.getBlockTimestamp(),
+        event.getBlockNumber(),
         new Eth1Data(
             depositMerkleTree.getRoot(),
             UInt64.valueOf(depositMerkleTree.getDepositCount()),
-            event.getBlockHash()));
+            event.getBlockHash()),
+        event.getBlockTimestamp());
   }
 
   @Override
@@ -121,8 +122,18 @@ public class DepositProvider
     synchronized (this) {
       if (depositIndex.isGreaterThanOrEqualTo(finalizedState.getEth1Data().getDepositCount())
           && depositMerkleTree.getDepositCount()
-              >= finalizedState.getEth1Data().getDepositCount().longValue()) {
-        depositMerkleTree.finalize(finalizedState.getEth1Data());
+              >= finalizedState.getEth1Data().getDepositCount().longValue()
+          && !depositMerkleTree.isFinalizedWithExecutionBlock(
+              finalizedState.getEth1Data().getBlockHash())) {
+        final Optional<UInt64> heightOptional =
+            eth1DataCache
+                .getEth1DataAndHeight(finalizedState.getEth1Data())
+                .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
+        if (heightOptional.isEmpty()) {
+          LOG.warn("Eth1Data height not found in cache. Skipping DepositTree pruning");
+          return;
+        }
+        depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
       }
     }
   }
@@ -132,8 +143,9 @@ public class DepositProvider
   }
 
   @Override
-  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
-    eth1DataCache.onEth1Block(blockHash, blockTimestamp);
+  public void onEth1Block(
+      final UInt64 blockHeight, final Bytes32 blockHash, final UInt64 blockTimestamp) {
+    eth1DataCache.onEth1Block(blockHeight, blockHash, blockTimestamp);
   }
 
   @Override

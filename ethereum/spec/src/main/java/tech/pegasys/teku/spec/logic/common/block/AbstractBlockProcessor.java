@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -614,17 +615,21 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   private boolean batchVerifyDepositSignatures(SszList<? extends Deposit> deposits) {
-    final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
-    final List<Bytes> messages = new ArrayList<>();
-    final List<BLSSignature> signatures = new ArrayList<>();
-    for (Deposit deposit : deposits) {
-      final BLSPublicKey pubkey = deposit.getData().getPubkey();
-      publicKeys.add(List.of(pubkey));
-      messages.add(computeDepositSigningRoot(deposit, pubkey));
-      signatures.add(deposit.getData().getSignature());
+    try {
+      final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
+      final List<Bytes> messages = new ArrayList<>();
+      final List<BLSSignature> signatures = new ArrayList<>();
+      for (Deposit deposit : deposits) {
+        final BLSPublicKey pubkey = deposit.getData().getPubkey();
+        publicKeys.add(List.of(pubkey));
+        messages.add(computeDepositSigningRoot(deposit, pubkey));
+        signatures.add(deposit.getData().getSignature());
+      }
+      // Overwhelmingly often we expect all the deposit signatures to be good
+      return BLS.batchVerify(publicKeys, messages, signatures);
+    } catch (final BlsException e) {
+      return false;
     }
-    // Overwhelmingly often we expect all the deposit signatures to be good
-    return BLS.batchVerify(publicKeys, messages, signatures);
   }
 
   public void processDeposit(
@@ -700,9 +705,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
-    return !blsVerifyDeposit
-        || BLS.verify(
-            pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+    try {
+      return !blsVerifyDeposit
+          || BLS.verify(
+              pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+    } catch (final BlsException e) {
+      return false;
+    }
   }
 
   private Bytes computeDepositSigningRoot(final Deposit deposit, BLSPublicKey pubkey) {

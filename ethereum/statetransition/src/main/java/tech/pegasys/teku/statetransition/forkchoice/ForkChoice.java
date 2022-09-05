@@ -205,6 +205,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
+                              recentChainData.getCurrentEpoch().orElseThrow(),
                               finalizedCheckpoint,
                               justifiedCheckpoint,
                               justifiedEffectiveBalances,
@@ -490,7 +491,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
     final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    return forkChoiceStrategy.findHead(justifiedCheckpoint, finalizedCheckpoint);
+    return forkChoiceStrategy.findHead(
+        recentChainData.getCurrentEpoch().orElseThrow(), justifiedCheckpoint, finalizedCheckpoint);
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {
@@ -509,6 +511,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
+                recentChainData.getCurrentEpoch().orElseThrow(),
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
 

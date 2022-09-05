@@ -88,6 +88,12 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return getFailureReason(state, exit, false);
   }
 
+  @Override
+  public Optional<OperationInvalidReason> validateForBlockInclusion(
+      final BeaconState stateAtBlockSlot, final SignedVoluntaryExit exit) {
+    return getFailureReason(stateAtBlockSlot, exit, true);
+  }
+
   private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(SignedVoluntaryExit exit) {
     return getState().thenApply(state -> getFailureReason(state, exit, true));
   }

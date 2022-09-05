@@ -15,17 +15,16 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
+import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -35,17 +34,6 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 public class GetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
-  private static final String PARAM_PUBKEY = "pubkey";
-  public static final ParameterMetadata<BLSPublicKey> PARAM_PUBKEY_TYPE =
-      new ParameterMetadata<>(
-          PARAM_PUBKEY,
-          new StringBasedPrimitiveTypeDefinition.StringTypeBuilder<BLSPublicKey>()
-              .formatter(value -> value.toBytesCompressed().toHexString())
-              .parser(value -> BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(value)))
-              .pattern("^0x[a-fA-F0-9]{96}$")
-              .example(
-                  "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
-              .build());
 
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> FEE_RECIPIENT_DATA =
       SerializableTypeDefinition.object(GetFeeRecipientResponse.class)
@@ -53,7 +41,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
           .withField(
               "ethaddress", Eth1Address.ETH1ADDRESS_TYPE, GetFeeRecipientResponse::getEthAddress)
           .withOptionalField(
-              "pubkey", ValidatorTypes.PUBKEY_TYPE, GetFeeRecipientResponse::getPublicKey)
+              PUBKEY, ValidatorTypes.PUBKEY_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =

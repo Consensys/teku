@@ -227,6 +227,7 @@ public class NoVotesTest {
     return forkChoice.applyPendingVotes(
         store,
         Optional.empty(),
+        spec.getCurrentSlot(store),
         finalizedCheckpoint,
         justifiedCheckpoint,
         justifiedStateEffectiveBalances,

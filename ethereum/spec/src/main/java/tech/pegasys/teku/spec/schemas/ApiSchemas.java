@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationSchema;
-import tech.pegasys.teku.spec.datastructures.execution.SignedValidatorRegistrationsSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistrationsSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistrationSchema;
 
 public class ApiSchemas {
 
