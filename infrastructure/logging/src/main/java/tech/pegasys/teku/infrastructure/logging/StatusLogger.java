@@ -75,7 +75,7 @@ public class StatusLogger {
     log.warn(
         print(
             "Rest API is enabled but no fee recipient has been specified via the validators-proposer-default-fee-recipient option! "
-                + "It is strongly recommended to configure it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
+                + "It is strongly recommended to specify it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
             Color.RED));
   }
 
@@ -83,7 +83,7 @@ public class StatusLogger {
     log.warn(
         print(
             "Remote Validator Client detected and no default fee recipient has been specified via the validators-proposer-default-fee-recipient option! "
-                + "It is strongly recommended to configure it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
+                + "It is strongly recommended to specify it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
             Color.RED));
   }
 
