@@ -82,7 +82,7 @@ public class ValidatorRegistrationBatchSender {
         .alwaysRun(
             () ->
                 LOG.info(
-                    "{} out of {} validator(s) registrations were successfully sent to the Beacon Node.",
+                    "{} out of {} validator(s) registrations were successfully sent to the builder network by the Beacon Node.",
                     successfullySentRegistrations.get(),
                     validatorRegistrations.size()));
   }

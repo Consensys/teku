@@ -148,7 +148,7 @@ public class BeaconProposerPreparer
             () ->
                 maybeProposerConfig.flatMap(
                     proposerConfigProvider ->
-                        proposerConfigProvider.getDefaultConfig().getGasLimit()))
+                        proposerConfigProvider.getDefaultConfig().getBuilderGasLimit()))
         .or(() -> Optional.ofNullable(defaultGasLimit));
   }
 
@@ -251,9 +251,12 @@ public class BeaconProposerPreparer
             entry ->
                 getFeeRecipient(entry.getKey())
                     .map(
-                        eth1Address ->
-                            new BeaconPreparableProposer(
-                                UInt64.valueOf(entry.getValue()), eth1Address)))
+                        eth1Address -> {
+                          System.out.println("HERE FUCKAS");
+                          System.out.println(entry.getValue() + " -> " + eth1Address);
+                          return new BeaconPreparableProposer(
+                              UInt64.valueOf(entry.getValue()), eth1Address);
+                        }))
         .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
@@ -265,7 +268,7 @@ public class BeaconProposerPreparer
 
   private Optional<UInt64> getGasLimitFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getBuilderGasLimit);
   }
 
   private boolean isOwnedValidator(final BLSPublicKey publicKey) {
