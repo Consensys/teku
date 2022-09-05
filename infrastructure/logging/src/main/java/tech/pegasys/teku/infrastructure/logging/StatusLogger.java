@@ -74,17 +74,16 @@ public class StatusLogger {
   public void warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled() {
     log.warn(
         print(
-            "No default proposer fee recipient has been specified and rest API is enabled. "
-                + "If a Validator Client is going to use this node it is strongly recommended to "
-                + "configure it to avoid possible block production failures",
+            "Rest API is enabled but no fee recipient has been specified via the validators-proposer-default-fee-recipient option! "
+                + "It is strongly recommended to configure it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
             Color.RED));
   }
 
   public void warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled() {
     log.warn(
         print(
-            "Remote Validator Client detected and no default proposer fee recipient configured! "
-                + "It is strongly recommended to configure fee recipient to avoid possible block production failures.",
+            "Remote Validator Client detected and no default fee recipient has been specified via the validators-proposer-default-fee-recipient option! "
+                + "It is strongly recommended to configure it to avoid possible block production failures in case the node has not been prepared for potential proposers by the Validator Client.",
             Color.RED));
   }
 
