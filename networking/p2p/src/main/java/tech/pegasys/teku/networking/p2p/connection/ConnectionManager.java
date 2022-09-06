@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -64,7 +63,6 @@ public class ConnectionManager extends Service {
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
-  private volatile CountDownLatch activeSearch = new CountDownLatch(1);
 
   public ConnectionManager(
       final MetricsSystem metricsSystem,
@@ -101,17 +99,14 @@ public class ConnectionManager extends Service {
     return SafeFuture.COMPLETE;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void startSearchPeerTask() {
     this.periodicPeerSearch =
         asyncRunner.runCancellableAfterDelay(
-            () -> {
-              searchForPeers();
-              activeSearch.await();
-              createFollowupSearchPeerTask();
-            },
-            Duration.ZERO);
+            () -> searchForPeers().thenPeek(__ -> createFollowupSearchPeerTask()), Duration.ZERO);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void createFollowupSearchPeerTask() {
     final int currentStage = startupCountdownStage.getAndDecrement();
     if (currentStage < 0) {
@@ -121,11 +116,7 @@ public class ConnectionManager extends Service {
       // Startup task, run for [startupCountdownStage] times
       this.periodicPeerSearch =
           asyncRunner.runCancellableAfterDelay(
-              () -> {
-                searchForPeers();
-                activeSearch.await();
-                createFollowupSearchPeerTask();
-              },
+              () -> searchForPeers().thenPeek(__ -> createFollowupSearchPeerTask()),
               STARTUP_DISCOVERY_INTERVAL);
     } else {
       // Long term task, run after startup countdown is over
@@ -148,24 +139,26 @@ public class ConnectionManager extends Service {
                     .filter(this::isPeerValid)
                     .collect(Collectors.toSet()))
         .forEach(this::attemptConnection);
-    activeSearch.countDown();
   }
 
-  private void searchForPeers() {
+  private SafeFuture<Void> searchForPeers() {
     if (!isRunning()) {
       LOG.trace("Not running so not searching for peers");
-      return;
+      return SafeFuture.COMPLETE;
     }
-    this.activeSearch = new CountDownLatch(1);
     LOG.trace("Searching for peers");
-    discoveryService
+    return discoveryService
         .searchForPeers()
         .orTimeout(30, TimeUnit.SECONDS)
-        .finish(
-            this::connectToBestPeers,
-            error -> {
-              LOG.debug("Discovery failed", error);
-              connectToBestPeers(emptyList());
+        .handle(
+            (peers, error) -> {
+              if (error == null) {
+                connectToBestPeers(peers);
+              } else {
+                LOG.debug("Discovery failed", error);
+                connectToBestPeers(emptyList());
+              }
+              return null;
             });
   }
 
