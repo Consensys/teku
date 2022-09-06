@@ -41,7 +41,7 @@ public class GetFinalizedCheckpointStateTest
     initialise(SpecMilestone.PHASE0);
     genesis();
 
-    setHandler(new GetFinalizedCheckpointState(chainDataProvider, schemaDefinitionCache));
+    setHandler(new GetFinalizedCheckpointState(chainDataProvider));
   }
 
   @Test

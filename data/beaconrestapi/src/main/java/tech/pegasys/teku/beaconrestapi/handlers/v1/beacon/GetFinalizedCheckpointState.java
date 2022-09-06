@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.beaconrestapi.EthereumTypes.sszResponseType;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
@@ -38,45 +35,32 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetFinalizedCheckpointStateResponse;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_state";
   private final ChainDataProvider chainDataProvider;
 
-  public GetFinalizedCheckpointState(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
+  public GetFinalizedCheckpointState(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
   }
 
-  public GetFinalizedCheckpointState(
-      final ChainDataProvider chainDataProvider,
-      final SchemaDefinitionCache schemaDefinitionCache) {
+  public GetFinalizedCheckpointState(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getFinalizedCheckpointState")
             .summary("Get full BeaconState object for finalized checkpoint state")
             .description(
-                "Returns full BeaconState object for a finalized checkpoint state from the Weak Subjectivity period. \n"
-                    + "Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.")
+                "Returns full BeaconState object for a finalized checkpoint state from the Weak Subjectivity period.")
             .tags(TAG_EXPERIMENTAL)
-            .response(
-                SC_OK,
-                "Request successful",
-                getResponseType(schemaDefinitionCache),
-                sszResponseType())
+            .response(SC_OK, "Request successful", sszResponseType())
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -91,10 +75,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = {
-              @OpenApiContent(type = JSON, from = GetFinalizedCheckpointStateResponse.class),
-              @OpenApiContent(type = OCTET_STREAM)
-            }),
+            content = {@OpenApiContent(type = OCTET_STREAM)}),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
@@ -122,22 +103,5 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
                           return AsyncApiResponse.respondOk(stateAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
-  }
-
-  private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
-      SchemaDefinitionCache schemaDefinitionCache) {
-    return SerializableTypeDefinition.<StateAndMetaData>object()
-        .name("GetFinalizedCheckpointStateResponse")
-        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
-        .withField(
-            "data",
-            getSchemaDefinitionForAllMilestones(
-                schemaDefinitionCache,
-                "BeaconState",
-                SchemaDefinitions::getBeaconStateSchema,
-                (beaconState, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(beaconState.getSlot()).equals(milestone)),
-            ObjectAndMetaData::getData)
-        .build();
   }
 }

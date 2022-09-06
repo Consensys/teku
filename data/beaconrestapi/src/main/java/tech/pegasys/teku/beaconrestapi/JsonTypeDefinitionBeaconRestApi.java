@@ -204,7 +204,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(
             new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
                 dataProvider, schemaCache))
-        .endpoint(new GetFinalizedCheckpointState(dataProvider, schemaCache))
+        .endpoint(new GetFinalizedCheckpointState(dataProvider))
         .endpoint(new GetBlockRoot(dataProvider))
         .endpoint(new GetFinalizedBlockRoot(dataProvider))
         .endpoint(new GetBlockAttestations(dataProvider, spec))

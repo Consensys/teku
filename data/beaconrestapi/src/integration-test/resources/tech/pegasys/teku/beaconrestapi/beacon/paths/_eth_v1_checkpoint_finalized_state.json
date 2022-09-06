@@ -8,11 +8,6 @@
       "200" : {
         "description" : "OK",
         "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GetFinalizedCheckpointStateResponse"
-            }
-          },
           "application/octet-stream" : {
             "schema" : {
               "$ref" : "#/components/schemas/Unit"
