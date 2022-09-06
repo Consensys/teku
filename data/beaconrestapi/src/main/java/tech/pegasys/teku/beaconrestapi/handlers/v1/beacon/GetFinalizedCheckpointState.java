@@ -127,7 +127,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
   private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
-        .name("getFinalizedCheckpointStateResponse")
+        .name("GetFinalizedCheckpointStateResponse")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(
             "data",

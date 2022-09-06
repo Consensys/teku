@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon" ],
+    "tags" : [ "Experimental" ],
     "summary" : "Get finalized checkpoint state",
     "description" : "Returns the latest finalized BeaconState.",
     "operationId" : "getEthV1CheckpointFinalized_state",

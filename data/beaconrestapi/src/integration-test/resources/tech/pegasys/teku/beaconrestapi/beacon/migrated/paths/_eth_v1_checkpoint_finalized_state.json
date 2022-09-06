@@ -10,7 +10,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/getFinalizedCheckpointStateResponse"
+              "$ref" : "#/components/schemas/GetFinalizedCheckpointStateResponse"
             }
           },
           "application/octet-stream" : {
