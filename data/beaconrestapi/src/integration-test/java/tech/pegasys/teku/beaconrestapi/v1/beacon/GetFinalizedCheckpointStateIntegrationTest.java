@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -31,10 +32,14 @@ import tech.pegasys.teku.spec.SpecMilestone;
 public class GetFinalizedCheckpointStateIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
+  @BeforeEach
+  public void setup() {
+    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
+  }
+
   @Test
   public void shouldGetBellatrixStateAsSsz()
       throws IOException, ExecutionException, InterruptedException {
-    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
     final Response response =
         getResponse(GetFinalizedCheckpointState.ROUTE, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);

@@ -13,45 +13,27 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetFinalizedCheckpointStateTest
-    extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+public class GetFinalizedCheckpointStateTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.PHASE0);
-    genesis();
-
     setHandler(new GetFinalizedCheckpointState(chainDataProvider));
-  }
-
-  @Test
-  void shouldReturnStateInformation()
-      throws JsonProcessingException, ExecutionException, InterruptedException {
-    final StateAndMetaData stateAndMetaData =
-        chainDataProvider.getBeaconStateAndMetadata("finalized").get().orElseThrow();
-    handler.handleRequest(request);
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(stateAndMetaData);
   }
 
   @Test
@@ -71,16 +53,9 @@ public class GetFinalizedCheckpointStateTest
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    StateAndMetaData responseData =
-        new StateAndMetaData(beaconState, SpecMilestone.BELLATRIX, false, true);
-
-    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
-    final String expected =
-        Resources.toString(
-            Resources.getResource(
-                GetFinalizedCheckpointStateTest.class, "getFinalizedCheckpointState.json"),
-            UTF_8);
-    assertThat(data).isEqualTo(String.format(expected, responseData.getData().getGenesisTime()));
+    final BeaconState data = dataStructureUtil.randomBeaconState();
+    final byte[] response = getResponseSszFromMetadata(handler, SC_OK, data);
+    final BeaconState expected = spec.deserializeBeaconState(Bytes.wrap(response));
+    assertThat(data).isEqualTo(expected);
   }
 }

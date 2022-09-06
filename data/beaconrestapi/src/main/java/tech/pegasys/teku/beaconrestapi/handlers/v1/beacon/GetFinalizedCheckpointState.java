@@ -60,6 +60,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
             .description(
                 "Returns full BeaconState object for a finalized checkpoint state from the Weak Subjectivity period.")
             .tags(TAG_EXPERIMENTAL)
+            .defaultResponseType(OCTET_STREAM)
             .response(SC_OK, "Request successful", sszResponseType())
             .withNotFoundResponse()
             .build());
