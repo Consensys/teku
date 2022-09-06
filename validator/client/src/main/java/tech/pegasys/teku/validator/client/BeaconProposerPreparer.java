@@ -148,7 +148,7 @@ public class BeaconProposerPreparer
             () ->
                 maybeProposerConfig.flatMap(
                     proposerConfigProvider ->
-                        proposerConfigProvider.getDefaultConfig().getGasLimit()))
+                        proposerConfigProvider.getDefaultConfig().getBuilderGasLimit()))
         .or(() -> Optional.ofNullable(defaultGasLimit));
   }
 
@@ -265,7 +265,7 @@ public class BeaconProposerPreparer
 
   private Optional<UInt64> getGasLimitFromProposerConfig(
       final ProposerConfig config, final BLSPublicKey publicKey) {
-    return config.getConfigForPubKey(publicKey).flatMap(Config::getGasLimit);
+    return config.getConfigForPubKey(publicKey).flatMap(Config::getBuilderGasLimit);
   }
 
   private boolean isOwnedValidator(final BLSPublicKey publicKey) {

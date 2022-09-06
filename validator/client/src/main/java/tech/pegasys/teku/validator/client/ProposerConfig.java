@@ -57,7 +57,7 @@ public class ProposerConfig {
   }
 
   public Optional<UInt64> getBuilderGasLimitForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilder().flatMap(BuilderConfig::getGasLimit);
+    return getConfigForPubKeyOrDefault(pubKey).getBuilderGasLimit();
   }
 
   public Optional<RegistrationOverrides> getBuilderRegistrationOverrides(
@@ -121,8 +121,8 @@ public class ProposerConfig {
       return Optional.ofNullable(feeRecipient);
     }
 
-    public Optional<UInt64> getGasLimit() {
-      return builder.getGasLimit();
+    public Optional<UInt64> getBuilderGasLimit() {
+      return getBuilder().flatMap(BuilderConfig::getGasLimit);
     }
 
     public Optional<BuilderConfig> getBuilder() {

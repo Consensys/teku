@@ -5,6 +5,7 @@ dependencies {
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:http')
+  implementation project(':infrastructure:io')
   implementation project(':infrastructure:json')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
@@ -22,6 +23,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:ssz'))
   testImplementation 'com.squareup.okhttp3:mockwebserver'
+  testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
 
   integrationTestImplementation testFixtures(project(':ethereum:spec'))
