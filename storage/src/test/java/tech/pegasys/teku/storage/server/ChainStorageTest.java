@@ -35,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
@@ -42,13 +44,15 @@ public class ChainStorageTest {
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
-  private ChainStorage chainStorage;
-  private Spec spec = TestSpecFactory.createMinimalPhase0();
+  private StorageUpdateChannel updateChannel;
+  private StorageQueryChannel queryChannel;
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     storageSystem = storageSystemSupplier.get(dataDirectory, spec);
-    chainStorage = storageSystem.chainStorage();
+    updateChannel = storageSystem.getStorageUpdateChannel();
+    queryChannel = storageSystem.getStorageQueryChannel();
     chainBuilder = storageSystem.chainBuilder();
 
     chainBuilder.generateGenesis();
@@ -94,7 +98,7 @@ public class ChainStorageTest {
     setup(storageSystemSupplier);
 
     // Build small chain
-    chainBuilder.generateBlocksUpToSlot(spec.slotsPerEpoch(ZERO) * 3);
+    chainBuilder.generateBlocksUpToSlot(spec.slotsPerEpoch(ZERO) * 3L);
     // Retrieve anchor data
     final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
     final SignedBlockAndState anchorBlockAndState =
@@ -125,7 +129,7 @@ public class ChainStorageTest {
     // Sanity check - blocks should be unavailable initially
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
       final SafeFuture<Optional<SignedBeaconBlock>> result =
-          chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
+          queryChannel.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
       assertThatSafeFuture(result).isCompletedWithEmptyOptional();
     }
 
@@ -135,16 +139,16 @@ public class ChainStorageTest {
           Lists.partition(missingHistoricalBlocks, batchSize);
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
-        chainStorage.onFinalizedBlocks(batch).ifExceptionGetsHereRaiseABug();
+        updateChannel.onFinalizedBlocks(batch).ifExceptionGetsHereRaiseABug();
       }
     } else {
-      chainStorage.onFinalizedBlocks(missingHistoricalBlocks).ifExceptionGetsHereRaiseABug();
+      updateChannel.onFinalizedBlocks(missingHistoricalBlocks).ifExceptionGetsHereRaiseABug();
     }
 
     // Verify blocks are now available
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
       final SafeFuture<Optional<SignedBeaconBlock>> result =
-          chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
+          queryChannel.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
       assertThatSafeFuture(result).isCompletedWithOptionalContaining(missingHistoricalBlock);
     }
   }
@@ -184,7 +188,7 @@ public class ChainStorageTest {
             .streamBlocksAndStates(0, firstMissingBlockSlot)
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(invalidBlocks);
+    final SafeFuture<Void> result = updateChannel.onFinalizedBlocks(invalidBlocks);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -223,7 +227,7 @@ public class ChainStorageTest {
     // Remove a block from the middle
     blocks.remove(blocks.size() / 2);
 
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(blocks);
+    final SafeFuture<Void> result = updateChannel.onFinalizedBlocks(blocks);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -262,7 +266,7 @@ public class ChainStorageTest {
     // Remove a block from the end
     blocks.remove(blocks.size() - 1);
 
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(blocks);
+    final SafeFuture<Void> result = updateChannel.onFinalizedBlocks(blocks);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)

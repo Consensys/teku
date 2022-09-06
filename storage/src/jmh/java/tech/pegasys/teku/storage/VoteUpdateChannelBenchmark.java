@@ -80,7 +80,7 @@ public class VoteUpdateChannelBenchmark {
             .dataDir(tempDirectory)
             .version(DatabaseVersion.DEFAULT_VERSION)
             .build();
-    realChannel = storageSystem.chainStorage();
+    realChannel = storageSystem.getVoteUpdateChannel();
     eventThread = new AsyncRunnerEventThread("batch", asyncRunnerFactory);
     eventThread.start();
     batchingChannel = new BatchingVoteUpdateChannel(realChannel, eventThread);

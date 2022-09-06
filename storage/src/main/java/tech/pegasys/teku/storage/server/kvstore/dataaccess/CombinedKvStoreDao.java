@@ -141,7 +141,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     try (Stream<ColumnEntry<Bytes32, SlotAndBlockRoot>> stream =
         db.stream(schema.getColumnStateRootToSlotAndBlockRoot())) {
       return stream
-          .filter((column) -> column.getValue().getSlot().compareTo(slot) < 0)
+          .filter((column) -> column.getValue().getSlot().isLessThan(slot))
           .map(ColumnEntry::getKey)
           .collect(Collectors.toList());
     }

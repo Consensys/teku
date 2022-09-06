@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -66,13 +67,20 @@ public class FileBackedStorageSystemBuilder {
     final Database database = buildDatabaseOnly();
 
     validate();
+    final ChainStorage chainStorageServer =
+        ChainStorage.create(database, executionLayerChannel, spec);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     return StorageSystem.create(
+        metricsSystem,
         database,
         createRestartSupplier(),
         storageMode,
         storeConfig,
         spec,
-        executionLayerChannel,
+        chainStorageServer,
+        chainStorageServer,
+        chainStorageServer,
+        Optional.empty(),
         ChainBuilder.create(spec));
   }
 

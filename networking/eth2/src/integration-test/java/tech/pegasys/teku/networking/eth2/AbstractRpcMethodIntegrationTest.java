@@ -96,7 +96,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
               .builder()
               .rpcEncoding(rpcEncoding)
               .recentChainData(peerStorage.recentChainData())
-              .historicalChainData(peerStorage.chainStorage())
+              .historicalChainData(peerStorage.getStorageQueryChannel())
               .spec(remoteSpec)
               .startNetwork();
 
@@ -106,7 +106,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
               .rpcEncoding(rpcEncoding)
               .peer(remotePeerNetwork)
               .recentChainData(localStorage.recentChainData())
-              .historicalChainData(localStorage.chainStorage())
+              .historicalChainData(localStorage.getStorageQueryChannel())
               .spec(localSpec)
               .startNetwork();
 

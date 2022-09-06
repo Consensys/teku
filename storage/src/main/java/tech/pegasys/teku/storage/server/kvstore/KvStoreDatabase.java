@@ -258,6 +258,7 @@ public abstract class KvStoreDatabase<
           });
 
       putFinalizedState(updater, anchorRoot, anchorState);
+      updater.addFinalizedStateRoot(anchorState.hashTreeRoot(), anchorState.getSlot());
 
       updater.commit();
     }

@@ -21,16 +21,17 @@ import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -43,10 +44,13 @@ public class StorageSystem implements AutoCloseable {
 
   private final TrackingChainHeadChannel chainHeadChannel;
   private final StubMetricsSystem metricsSystem;
+  private final Optional<DelayedStorageUpdateChannel> delayedStorageUpdateChannel;
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final ChainStorage chainStorage;
+  private final StorageUpdateChannel storageUpdateChannel;
+  private final StorageQueryChannel storageQueryChannel;
+  private final VoteUpdateChannel voteUpdateChannel;
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
@@ -54,7 +58,10 @@ public class StorageSystem implements AutoCloseable {
       final StubMetricsSystem metricsSystem,
       final TrackingChainHeadChannel chainHeadChannel,
       final StateStorageMode storageMode,
-      final ChainStorage chainStorage,
+      final StorageUpdateChannel storageUpdateChannel,
+      final StorageQueryChannel storageQueryChannel,
+      final VoteUpdateChannel voteUpdateChannel,
+      final Optional<DelayedStorageUpdateChannel> delayedStorageUpdateChannel,
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
@@ -62,7 +69,10 @@ public class StorageSystem implements AutoCloseable {
       final ChainBuilder chainBuilder,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
-    this.chainStorage = chainStorage;
+    this.storageUpdateChannel = storageUpdateChannel;
+    this.storageQueryChannel = storageQueryChannel;
+    this.voteUpdateChannel = voteUpdateChannel;
+    this.delayedStorageUpdateChannel = delayedStorageUpdateChannel;
     this.recentChainData = recentChainData;
     this.chainHeadChannel = chainHeadChannel;
     this.storageMode = storageMode;
@@ -75,18 +85,17 @@ public class StorageSystem implements AutoCloseable {
   }
 
   static StorageSystem create(
+      final StubMetricsSystem metricsSystem,
       final Database database,
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final Spec spec,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
+      final StorageUpdateChannel storageUpdateChannel,
+      final StorageQueryChannel storageQueryChannel,
+      final VoteUpdateChannel voteUpdateChannel,
+      final Optional<DelayedStorageUpdateChannel> delayedStorageUpdateChannel,
       final ChainBuilder chainBuilder) {
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-
-    // Create and start storage server
-    final ChainStorage chainStorageServer =
-        ChainStorage.create(database, executionLayerChannel, spec);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =
@@ -97,23 +106,26 @@ public class StorageSystem implements AutoCloseable {
             SYNC_RUNNER,
             metricsSystem,
             storeConfig,
-            chainStorageServer,
-            chainStorageServer,
-            chainStorageServer,
+            storageQueryChannel,
+            storageUpdateChannel,
+            voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
 
     // Return storage system
     return new StorageSystem(
         metricsSystem,
         chainHeadChannel,
         storageMode,
-        chainStorageServer,
+        storageUpdateChannel,
+        storageQueryChannel,
+        voteUpdateChannel,
+        delayedStorageUpdateChannel,
         database,
         recentChainData,
         combinedChainDataClient,
@@ -150,8 +162,20 @@ public class StorageSystem implements AutoCloseable {
     return database;
   }
 
-  public ChainStorage chainStorage() {
-    return chainStorage;
+  public StorageUpdateChannel getStorageUpdateChannel() {
+    return storageUpdateChannel;
+  }
+
+  public StorageQueryChannel getStorageQueryChannel() {
+    return storageQueryChannel;
+  }
+
+  public VoteUpdateChannel getVoteUpdateChannel() {
+    return voteUpdateChannel;
+  }
+
+  public DelayedStorageUpdateChannel getDelayedStorageUpdateChannel() {
+    return delayedStorageUpdateChannel.orElseThrow();
   }
 
   public StorageSystem restarted() {

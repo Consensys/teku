@@ -135,6 +135,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.client.BufferingStorageChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
@@ -226,6 +227,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected PendingPoolFactory pendingPoolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
+  private StorageQueryChannel storageQueryChannel;
+  private StorageUpdateChannel storageUpdateChannel;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -326,10 +329,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
     timerService = new TimerService(this::onTick);
 
-    StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
-    StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+    if (storeConfig.isAsyncStorageEnabled()) {
+      final StorageQueryChannel storageQueryChannel =
+          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
+      final StorageUpdateChannel storageUpdateChannel =
+          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+      final BufferingStorageChannel bufferingChannel =
+          new BufferingStorageChannel(metricsSystem, storageUpdateChannel, storageQueryChannel);
+      this.storageUpdateChannel = bufferingChannel;
+      this.storageQueryChannel = bufferingChannel;
+    } else {
+      storageQueryChannel =
+          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
+      storageUpdateChannel =
+          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+    }
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -495,10 +509,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
-            spec);
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -769,8 +780,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
-            .historicalChainData(
-                eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
+            .historicalChainData(storageQueryChannel)
             .metricsSystem(metricsSystem)
             .timeProvider(timeProvider)
             .asyncRunner(networkAsyncRunner)
@@ -929,7 +939,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         timeProvider,
         recentChainData,
         combinedChainDataClient,
-        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
+        storageUpdateChannel,
         p2pNetwork,
         blockImporter,
         pendingBlocks,

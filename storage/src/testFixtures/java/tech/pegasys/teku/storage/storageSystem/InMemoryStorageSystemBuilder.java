@@ -19,10 +19,16 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.client.BufferingStorageChannel;
+import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -43,6 +49,7 @@ public class InMemoryStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
   private boolean storeVotesEquivocation = false;
+  private boolean delayedStorage = false;
 
   private Optional<AsyncRunner> asyncRunner = Optional.empty();
 
@@ -93,15 +100,42 @@ public class InMemoryStorageSystemBuilder {
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
 
+    final StorageUpdateChannel storageUpdateChannel;
+    final StorageQueryChannel storageQueryChannel;
+    final VoteUpdateChannel voteUpdateChannel;
+    final Optional<DelayedStorageUpdateChannel> delayedStorageUpdateChannel;
+
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+    final ChainStorage chainStorageServer = ChainStorage.create(database, Optional.empty(), spec);
+    if (delayedStorage) {
+      delayedStorageUpdateChannel =
+          Optional.of(new DelayedStorageUpdateChannel(chainStorageServer));
+      final BufferingStorageChannel bufferingStorageChannel =
+          new BufferingStorageChannel(
+              metricsSystem, delayedStorageUpdateChannel.get(), chainStorageServer);
+      storageUpdateChannel = bufferingStorageChannel;
+      storageQueryChannel = bufferingStorageChannel;
+      voteUpdateChannel = chainStorageServer;
+    } else {
+      storageUpdateChannel = chainStorageServer;
+      storageQueryChannel = chainStorageServer;
+      voteUpdateChannel = chainStorageServer;
+      delayedStorageUpdateChannel = Optional.empty();
+    }
+
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numberOfValidators);
     return StorageSystem.create(
+        metricsSystem,
         database,
         createRestartSupplier(),
         storageMode,
         storeConfig,
         spec,
-        Optional.empty(),
+        storageUpdateChannel,
+        storageQueryChannel,
+        voteUpdateChannel,
+        delayedStorageUpdateChannel,
         ChainBuilder.create(spec, validatorKeys));
   }
 
@@ -136,6 +170,11 @@ public class InMemoryStorageSystemBuilder {
   public InMemoryStorageSystemBuilder version(final DatabaseVersion version) {
     checkNotNull(version);
     this.version = version;
+    return this;
+  }
+
+  public InMemoryStorageSystemBuilder delayedStorage(final boolean delayedStorage) {
+    this.delayedStorage = delayedStorage;
     return this;
   }
 
