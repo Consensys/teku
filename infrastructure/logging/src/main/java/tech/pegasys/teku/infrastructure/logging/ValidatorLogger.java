@@ -188,7 +188,9 @@ public class ValidatorLogger {
 
   public void registeringValidatorsFailed(final Throwable error) {
     final String errorString =
-        String.format("%sFailed to send validator registrations to Beacon Node", PREFIX);
+        String.format(
+            "%sFailed to send validator registrations to the builder network via the Beacon Node",
+            PREFIX);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 
