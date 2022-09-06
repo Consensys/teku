@@ -18,21 +18,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetFinalizedCheckpointStateIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
-  public void shouldGetBellatrixStateAsSsz() throws IOException {
+  public void shouldGetBellatrixStateAsSsz()
+      throws IOException, ExecutionException, InterruptedException {
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
-    final Response response = getResponse(GetFinalizedCheckpointState.ROUTE);
+    final Response response =
+        getResponse(GetFinalizedCheckpointState.ROUTE, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.bellatrix.name());
+    final Bytes actualResponse = Bytes.wrap(response.body().bytes());
+    assertThat(actualResponse)
+        .isEqualTo(combinedChainDataClient.getBestState().get().get().sszSerialize());
   }
 }
