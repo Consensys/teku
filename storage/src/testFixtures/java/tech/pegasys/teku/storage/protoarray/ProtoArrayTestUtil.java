@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,8 +41,10 @@ public class ProtoArrayTestUtil {
 
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .currentEpoch(ZERO)
             .justifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO))
             .finalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO))
+            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
 
     ForkChoiceStrategy forkChoice = ForkChoiceStrategy.initialize(spec, protoArray);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -48,6 +49,7 @@ public class SingleAttestationTopicHandler {
         gossipEncoding,
         forkDigest,
         topicName,
+        Optional.empty(),
         attestationSchema,
         maxMessageSize);
   }

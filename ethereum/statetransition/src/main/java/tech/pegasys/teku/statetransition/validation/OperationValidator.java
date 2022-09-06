@@ -22,4 +22,7 @@ public interface OperationValidator<T> {
   SafeFuture<InternalValidationResult> validateFully(T operation);
 
   Optional<OperationInvalidReason> validateForStateTransition(BeaconState state, T operation);
+
+  Optional<OperationInvalidReason> validateForBlockInclusion(
+      BeaconState stateAtBlockSlot, T operation);
 }

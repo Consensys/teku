@@ -33,8 +33,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.matchers.Times;
-import org.mockserver.model.HttpError;
 import org.mockserver.model.JsonBody;
+import org.mockserver.socket.PortFactory;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -54,9 +54,11 @@ public class ValidatorClientCommandTest {
 
   private String[] argsNetworkOptDefault;
   private String[] argsNetworkOptAuto;
+  private String[] argsNetworkOptAutoWithFailover;
   private String[] argsNetworkOptAutoInConfig;
 
   private ClientAndServer mockBeaconServer;
+  private ClientAndServer failoverMockBeaconServer;
 
   private final Spec testSpec =
       SpecFactory.create(
@@ -73,13 +75,25 @@ public class ValidatorClientCommandTest {
   @BeforeEach
   public void setup(ClientAndServer server) {
     this.mockBeaconServer = server;
-    String mockBeaconServerEndpoint =
-        String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
+    this.failoverMockBeaconServer =
+        ClientAndServer.startClientAndServer(PortFactory.findFreePort());
+    final String mockBeaconServerEndpoint = getMockBeaconServerEndpoint(mockBeaconServer);
+    final String failoverMockBeaconServerEndpoint =
+        getMockBeaconServerEndpoint(failoverMockBeaconServer);
+
     argsNetworkOptDefault =
         new String[] {"vc", "--beacon-node-api-endpoint", mockBeaconServerEndpoint};
     argsNetworkOptAuto =
         new String[] {
           "vc", "--network", "auto", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
+        };
+    argsNetworkOptAutoWithFailover =
+        new String[] {
+          "vc",
+          "--network",
+          "auto",
+          "--beacon-node-api-endpoints",
+          mockBeaconServerEndpoint + "," + failoverMockBeaconServerEndpoint
         };
     argsNetworkOptAutoInConfig =
         new String[] {
@@ -94,6 +108,7 @@ public class ValidatorClientCommandTest {
   @AfterEach
   public void tearDown() {
     mockBeaconServer.reset();
+    failoverMockBeaconServer.stop();
   }
 
   @Test
@@ -109,6 +124,22 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromFailoverNode() {
+    // primary node always fails
+    configureMockServer(-1);
+    configureSuccessfulResponse(failoverMockBeaconServer);
+    fetchAndVerifySpec(argsNetworkOptAutoWithFailover);
+  }
+
+  @Test
+  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromAllConfiguredBeaconNodes() {
+    configureMockServer(1);
+    // failover node always fails
+    configureFailedResponse(failoverMockBeaconServer, -1);
+    fetchAndVerifySpec(argsNetworkOptAutoWithFailover);
+  }
+
+  @Test
   public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabledInConfigFile() {
     configureMockServer(0);
     fetchAndVerifySpec(argsNetworkOptAutoInConfig);
@@ -120,22 +151,35 @@ public class ValidatorClientCommandTest {
     fetchAndVerifySpec(argsNetworkOptDefault);
   }
 
-  private void fetchAndVerifySpec(String[] args) {
-    int parseResult = beaconNodeCommand.parse(args);
+  private void fetchAndVerifySpec(final String[] args) {
+    final int parseResult = beaconNodeCommand.parse(args);
     assertThat(parseResult).isEqualTo(0);
 
-    TekuConfiguration config = getResultingTekuConfiguration();
+    final TekuConfiguration config = getResultingTekuConfiguration();
     assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
   }
 
-  private void configureMockServer(int fails) {
-    this.mockBeaconServer
-        .when(request().withPath("/eth/v1/config/spec"), Times.exactly(fails))
-        .error(HttpError.error());
+  private void configureMockServer(final int fails) {
+    configureFailedResponse(mockBeaconServer, fails);
+    configureSuccessfulResponse(mockBeaconServer);
+  }
 
-    this.mockBeaconServer
+  private void configureSuccessfulResponse(final ClientAndServer mockBeaconServer) {
+    mockBeaconServer
         .when(request().withPath("/eth/v1/config/spec"))
         .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
+  }
+
+  private void configureFailedResponse(final ClientAndServer mockBeaconServer, final int fails) {
+    mockBeaconServer
+        .when(
+            request().withPath("/eth/v1/config/spec"),
+            fails == -1 ? Times.unlimited() : Times.exactly(fails))
+        .respond(response().withStatusCode(500));
+  }
+
+  private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
+    return String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
   }
 
   private String getTestSpecResponse() {

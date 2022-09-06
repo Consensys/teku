@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -31,8 +30,6 @@ import okhttp3.ResponseBody;
 import okio.BufferedSink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -118,12 +115,11 @@ public class OkHttpRestClient implements RestClient {
     return new RequestBody() {
 
       @Override
-      public void writeTo(@NotNull BufferedSink bufferedSink) throws JsonProcessingException {
-        JsonUtil.serializeToBytes(
+      public void writeTo(final BufferedSink bufferedSink) throws IOException {
+        JsonUtil.serializeToBytesChecked(
             requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
       }
 
-      @Nullable
       @Override
       public MediaType contentType() {
         return JSON_MEDIA_TYPE;
@@ -151,13 +147,12 @@ public class OkHttpRestClient implements RestClient {
     final Callback responseCallback =
         new Callback() {
           @Override
-          public void onFailure(@NotNull final Call call, @NotNull final IOException ex) {
+          public void onFailure(final Call call, final IOException ex) {
             futureResponse.completeExceptionally(ex);
           }
 
           @Override
-          public void onResponse(
-              @NotNull final Call call, @NotNull final okhttp3.Response response) {
+          public void onResponse(final Call call, final okhttp3.Response response) {
             LOG.trace("{} {} {}", request.method(), request.url(), response.code());
             if (!response.isSuccessful()) {
               handleFailure(response, futureResponse);
@@ -171,7 +166,7 @@ public class OkHttpRestClient implements RestClient {
               final T payload =
                   JsonUtil.parse(responseBody.byteStream(), responseTypeDefinitionMaybe.get());
               futureResponse.complete(new Response<>(payload));
-            } catch (Throwable ex) {
+            } catch (final Throwable ex) {
               futureResponse.completeExceptionally(ex);
             }
           }
@@ -185,7 +180,7 @@ public class OkHttpRestClient implements RestClient {
     try {
       final String errorMessage = getErrorMessageForFailedResponse(response);
       futureResponse.complete(Response.withErrorMessage(errorMessage));
-    } catch (Throwable ex) {
+    } catch (final Throwable ex) {
       futureResponse.completeExceptionally(ex);
     }
   }

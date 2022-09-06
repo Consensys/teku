@@ -191,12 +191,17 @@ class Store implements UpdatableStore {
     final CachingTaskQueue<Bytes32, StateAndBlockSummary> stateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
-
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =
         ForkChoiceStrategy.initialize(
             spec,
             buildProtoArray(
-                spec, blockInfoByRoot, initialCheckpoint, justifiedCheckpoint, finalizedAnchor));
+                spec,
+                blockInfoByRoot,
+                initialCheckpoint,
+                currentEpoch,
+                justifiedCheckpoint,
+                finalizedAnchor));
 
     return new Store(
         metricsSystem,
@@ -222,15 +227,18 @@ class Store implements UpdatableStore {
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Checkpoint> initialCheckpoint,
+      final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final AnchorPoint finalizedAnchor) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .currentEpoch(currentEpoch)
             .initialCheckpoint(initialCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedAnchor.getCheckpoint())
+            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
     for (StoredBlockMetadata block : blocks) {
       if (block.getCheckpointEpochs().isEmpty()) {

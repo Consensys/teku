@@ -88,10 +88,6 @@ public class ForkSchedule {
     return milestoneToFork.get(getSpecMilestoneAtEpoch(epoch));
   }
 
-  public Optional<Fork> getFork(final SpecMilestone milestone) {
-    return Optional.ofNullable(milestoneToFork.get(milestone));
-  }
-
   public Optional<Fork> getNextFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToMilestone.ceilingEntry(epoch.plus(1)))
         .map(Map.Entry::getValue)

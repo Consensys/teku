@@ -67,19 +67,23 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public SlotAndBlockRoot findHead(
-      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+      final UInt64 currentEpoch,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
-      return findHeadImpl(justifiedCheckpoint, finalizedCheckpoint);
+      return findHeadImpl(currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
     } finally {
       protoArrayLock.readLock().unlock();
     }
   }
 
   private SlotAndBlockRoot findHeadImpl(
-      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+      final UInt64 currentEpoch,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
     final ProtoNode bestNode =
-        protoArray.findOptimisticHead(justifiedCheckpoint, finalizedCheckpoint);
+        protoArray.findOptimisticHead(currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
     return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
   }
 
@@ -89,6 +93,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    *
    * @param voteUpdater the vote updater to access and update pending votes from
    * @param proposerBoostRoot the block root to apply proposer boost to
+   * @param currentEpoch the current epoch based on Store time.
    * @param finalizedCheckpoint the current finalized checkpoint
    * @param justifiedCheckpoint the current justified checkpoint
    * @param justifiedStateEffectiveBalances the effective validator balances at the justified
@@ -98,6 +103,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public Bytes32 applyPendingVotes(
       final VoteUpdater voteUpdater,
       final Optional<Bytes32> proposerBoostRoot,
+      final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances,
@@ -118,12 +124,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               this.proposerBoostAmount,
               proposerBoostAmount);
 
-      protoArray.applyScoreChanges(deltas, justifiedCheckpoint, finalizedCheckpoint);
+      protoArray.applyScoreChanges(deltas, currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
       balances = justifiedStateEffectiveBalances;
       this.proposerBoostRoot = proposerBoostRoot;
       this.proposerBoostAmount = proposerBoostAmount;
 
-      return findHeadImpl(justifiedCheckpoint, finalizedCheckpoint).getBlockRoot();
+      return findHeadImpl(currentEpoch, justifiedCheckpoint, finalizedCheckpoint).getBlockRoot();
     } finally {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();
@@ -178,11 +184,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public ForkChoiceState getForkChoiceState(
-      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+      final UInt64 currentEpoch,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
-          protoArray.findOptimisticHead(justifiedCheckpoint, finalizedCheckpoint);
+          protoArray.findOptimisticHead(currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
       final Bytes32 justifiedExecutionHash =
           protoArray

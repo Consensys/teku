@@ -67,8 +67,10 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .currentEpoch(ZERO)
             .finalizedCheckpoint(latestState.getFinalizedCheckpoint())
             .justifiedCheckpoint(latestState.getCurrentJustifiedCheckpoint())
+            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
     addBlocksFromBuilder(chainBuilder, protoArray);
 
@@ -132,8 +134,10 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ProtoArray protoArray =
         ProtoArray.builder()
             .initialCheckpoint(Optional.of(anchor.getCheckpoint()))
+            .currentEpoch(anchor.getEpoch())
             .justifiedCheckpoint(anchorState.getCurrentJustifiedCheckpoint())
             .finalizedCheckpoint(anchorState.getFinalizedCheckpoint())
+            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
     protoArray.onBlock(
         anchor.getBlockSlot(),
@@ -160,6 +164,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         forkChoiceStrategy.applyPendingVotes(
             store,
             Optional.empty(),
+            spec.getCurrentSlot(store),
             anchor.getCheckpoint(),
             anchor.getCheckpoint(),
             effectiveBalances,
@@ -372,6 +377,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         strategy.applyPendingVotes(
             transaction,
             Optional.empty(),
+            storageSystem.recentChainData().getCurrentEpoch().orElseThrow(),
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             effectiveBalances,
@@ -445,6 +451,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         strategy.applyPendingVotes(
             transaction3,
             Optional.empty(),
+            storageSystem.recentChainData().getCurrentEpoch().orElseThrow(),
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             effectiveBalances,
@@ -498,12 +505,14 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     // Find new chain head
     final SlotAndBlockRoot revertHead =
         protoArray.findHead(
+            recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());
     recentChainData.updateHead(revertHead.getBlockRoot(), optimisticHead.getSlot());
 
     final ForkChoiceState forkChoiceState =
         protoArray.getForkChoiceState(
+            recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());
 

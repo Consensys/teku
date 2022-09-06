@@ -63,8 +63,8 @@ class EpochCachePrimerTest {
         .thenAnswer(invocation -> realSpec.getMaxLookaheadEpoch(invocation.getArgument(0)));
     when(mockSpec.computeEpochAtSlot(any()))
         .thenAnswer(invocation -> realSpec.computeEpochAtSlot(invocation.getArgument(0)));
-    when(mockSpec.getCurrentEpoch(any()))
-        .thenAnswer(invocation -> realSpec.getCurrentEpoch(invocation.getArgument(0)));
+    when(mockSpec.getCurrentEpoch(any(BeaconState.class)))
+        .thenAnswer(invocation -> realSpec.getCurrentEpoch(invocation.<BeaconState>getArgument(0)));
     when(mockSpec.getSpecConfig(any()))
         .thenAnswer(invocation -> realSpec.getSpecConfig(invocation.getArgument(0)));
 

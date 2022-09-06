@@ -331,6 +331,7 @@ public class FFGUpdatesTest {
     return forkChoice.applyPendingVotes(
         store,
         Optional.empty(),
+        UInt64.valueOf(1000),
         finalizedCheckpoint,
         justifiedCheckpoint,
         justifiedStateEffectiveBalances,

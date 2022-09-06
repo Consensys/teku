@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.net.ConnectException;
 import java.net.URI;
@@ -48,7 +49,8 @@ public class Web3jWebsocketClientTest {
 
   @BeforeEach
   public void setup() {
-    this.web3jWebsocketClient = new Web3jWebsocketClient(endpoint, timeProvider, Optional.empty());
+    this.web3jWebsocketClient =
+        new Web3jWebsocketClient(EVENT_LOG, endpoint, timeProvider, Optional.empty());
     web3jWebsocketClient.initWeb3jService(webSocketService);
   }
 

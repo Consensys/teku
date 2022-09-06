@@ -1005,8 +1005,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return Optional.of(Eth1Address.ZERO);
     }
 
-    Optional<Eth1Address> defaultFeeRecipient =
+    final Optional<Eth1Address> defaultFeeRecipient =
         beaconConfig.validatorConfig().getProposerDefaultFeeRecipient();
+
     if (defaultFeeRecipient.isEmpty() && beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
       STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled();
     }

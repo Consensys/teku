@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -50,7 +49,7 @@ public class Generator {
   public void generateBlocks() throws Exception {
     final Spec spec = TestSpecFactory.createMainnetAltair();
 
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    AbstractBlockProcessor.blsVerifyDeposit = false;
 
     System.out.println("Generating keypairs...");
     int validatorsCount = 400000;

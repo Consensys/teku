@@ -73,6 +73,13 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
     return spec.validateAttesterSlashing(state, slashing);
   }
 
+  @Override
+  public Optional<OperationInvalidReason> validateForBlockInclusion(
+      final BeaconState stateAtBlockSlot, final AttesterSlashing slashing) {
+    // The signature *is* verified during the state checks as part of isValidIndexedAttestation
+    return validateForStateTransition(stateAtBlockSlot, slashing);
+  }
+
   private boolean includesUnseenIndexToSlash(Set<UInt64> intersectingIndices) {
     return !seenIndices.containsAll(intersectingIndices);
   }

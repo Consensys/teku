@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -23,8 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,48 +37,63 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
-  private static final TimeProvider TIME_PROVIDER = StubTimeProvider.withTimeInSeconds(1000);
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
-  private static final Web3jService WEB3J_SERVICE = mock(Web3jService.class);
-  private static final Web3JClient WEB3J_CLIENT = new Web3JClientImpl(TIME_PROVIDER);
   private static final URI ENDPOINT = URI.create("");
-  private static final Web3jHttpClient WEB3J_HTTP_CLIENT =
-      new Web3jHttpClient(ENDPOINT, TIME_PROVIDER, DEFAULT_TIMEOUT, Optional.empty());
-  private static final WebSocketService WEB_SOCKET_SERVICE = mock(WebSocketService.class);
-  private static final Web3jWebsocketClient WEB3J_WEBSOCKET_CLIENT =
-      new Web3jWebsocketClient(ENDPOINT, TIME_PROVIDER, Optional.empty());
-  private static final Web3jIpcClient WEB3J_IPC_CLIENT =
-      new Web3jIpcClient(URI.create("file:/a"), TIME_PROVIDER, Optional.empty());
-
-  static class Web3JClientImpl extends Web3JClient {
-    protected Web3JClientImpl(TimeProvider timeProvider) {
-      super(timeProvider);
-      initWeb3jService(WEB3J_SERVICE);
-    }
-  }
-
-  @BeforeAll
-  static void setup() {
-    WEB3J_HTTP_CLIENT.initWeb3jService(WEB3J_SERVICE);
-    WEB3J_WEBSOCKET_CLIENT.initWeb3jService(WEB_SOCKET_SERVICE);
-  }
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
-    return Stream.of(WEB3J_CLIENT, WEB3J_HTTP_CLIENT, WEB3J_WEBSOCKET_CLIENT, WEB3J_IPC_CLIENT)
+    final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
+    final Web3jService web3jService = mock(Web3jService.class);
+    final WebSocketService webSocketService = mock(WebSocketService.class);
+    return Stream.<Named<ClientFactory>>of(
+            Named.of(
+                "Web3JClient",
+                eventLog -> {
+                  final Web3JClient web3jClient = new Web3JClient(eventLog, timeProvider) {};
+                  web3jClient.initWeb3jService(web3jService);
+                  return web3jClient;
+                }),
+            Named.of(
+                "Web3jHttpClient",
+                eventLog -> {
+                  final Web3jHttpClient client =
+                      new Web3jHttpClient(
+                          eventLog, ENDPOINT, timeProvider, DEFAULT_TIMEOUT, Optional.empty()) {};
+                  client.initWeb3jService(web3jService);
+                  return client;
+                }),
+            Named.of(
+                "Web3jWebsocketClient",
+                eventLog -> {
+                  final Web3jWebsocketClient client =
+                      new Web3jWebsocketClient(eventLog, ENDPOINT, timeProvider, Optional.empty());
+                  client.initWeb3jService(webSocketService);
+                  return client;
+                }),
+            Named.of(
+                "Web3jIpcClient",
+                eventLog -> {
+                  final Web3jIpcClient client =
+                      new Web3jIpcClient(
+                          eventLog, URI.create("file:/a"), timeProvider, Optional.empty());
+                  client.initWeb3jService(web3jService);
+                  return client;
+                }))
         .map(Arguments::of);
   }
 
   @ParameterizedTest
   @MethodSource("getClientInstances")
-  void shouldTimeoutIfResponseNotReceived(final Web3JClient client) throws Exception {
+  void shouldTimeoutIfResponseNotReceived(final ClientFactory clientFactory) throws Exception {
+    final Web3JClient client = clientFactory.create();
     Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), WEB3J_SERVICE, VoidResponse.class);
-    when(WEB3J_SERVICE.sendAsync(request, VoidResponse.class))
+        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(new CompletableFuture<>());
 
     final Duration crazyShortTimeout = Duration.ofMillis(0);
@@ -85,7 +101,51 @@ public class Web3JClientTest {
     Waiter.waitFor(result);
     SafeFutureAssert.assertThatSafeFuture(result).isCompleted();
     final Response<Void> response = SafeFutureAssert.safeJoin(result);
-    Assertions.assertThat(response.getErrorMessage())
-        .isEqualTo(TimeoutException.class.getSimpleName());
+    assertThat(response.getErrorMessage()).isEqualTo(TimeoutException.class.getSimpleName());
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldLogOnFirstSuccess(final ClientFactory clientFactory) throws Exception {
+    final EventLogger eventLog = mock(EventLogger.class);
+    final Web3JClient client = clientFactory.create(eventLog);
+    Request<Void, VoidResponse> request =
+        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
+
+    final SafeFuture<Response<Void>> result = client.doRequest(request, DEFAULT_TIMEOUT);
+    Waiter.waitFor(result);
+
+    verify(eventLog).executionClientIsOnline();
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldReportFailureAndRecovery(final ClientFactory clientFactory) throws Exception {
+    final EventLogger eventLog = mock(EventLogger.class);
+    final Web3JClient client = clientFactory.create(eventLog);
+    Request<Void, VoidResponse> request =
+        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    final Throwable error = new TimeoutException();
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.failedFuture(error))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+
+    verify(eventLog).executionClientIsOffline(error, false);
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(eventLog).executionClientIsOnline();
+  }
+
+  private interface ClientFactory {
+
+    default Web3JClient create() {
+      return create(mock(EventLogger.class));
+    }
+
+    Web3JClient create(EventLogger eventLog);
   }
 }

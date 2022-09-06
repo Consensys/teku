@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,6 +38,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
         gossipEncoding,
         forkDigest,
         GossipTopicName.PROPOSER_SLASHING,
+        Optional.empty(),
         ProposerSlashing.SSZ_SCHEMA,
         GOSSIP_MAX_SIZE);
   }
@@ -98,6 +100,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
             gossipEncoding,
             forkDigest,
             GossipTopicName.PROPOSER_SLASHING,
+            Optional.empty(),
             ProposerSlashing.SSZ_SCHEMA,
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");

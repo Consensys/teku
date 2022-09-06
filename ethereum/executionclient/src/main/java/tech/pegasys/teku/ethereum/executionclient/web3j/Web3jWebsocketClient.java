@@ -25,6 +25,7 @@ import tech.pegasys.teku.ethereum.executionclient.auth.JwtAuthWebsocketHelper;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 class Web3jWebsocketClient extends Web3JClient {
@@ -33,8 +34,11 @@ class Web3jWebsocketClient extends Web3JClient {
   private Optional<JwtAuthWebsocketHelper> jwtAuth = Optional.empty();
 
   Web3jWebsocketClient(
-      final URI endpoint, final TimeProvider timeProvider, final Optional<JwtConfig> jwtConfig) {
-    super(timeProvider);
+      final EventLogger eventLog,
+      final URI endpoint,
+      final TimeProvider timeProvider,
+      final Optional<JwtConfig> jwtConfig) {
+    super(eventLog, timeProvider);
     this.webSocketClient = new WebSocketClient(endpoint);
     final WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
     initWeb3jService(webSocketService);

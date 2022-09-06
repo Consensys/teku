@@ -405,7 +405,8 @@ public class Spec {
     final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
     return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyProposerSlashingSignature(fork(epoch), state, proposerSlashing, signatureVerifier);
+        .verifyProposerSlashingSignature(
+            state.getFork(), state, proposerSlashing, signatureVerifier);
   }
 
   public boolean verifyVoluntaryExitSignature(
@@ -413,7 +414,7 @@ public class Spec {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
     return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(fork(epoch), state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(state.getFork(), state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -462,6 +463,10 @@ public class Spec {
     return atTime(store.getGenesisTime(), store.getTimeSeconds())
         .getForkChoiceUtil()
         .getCurrentSlot(store);
+  }
+
+  public UInt64 getCurrentEpoch(final ReadOnlyStore store) {
+    return computeEpochAtSlot(getCurrentSlot(store));
   }
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
@@ -529,7 +534,7 @@ public class Spec {
     final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
     return atEpoch(epoch)
         .getOperationValidator()
-        .validateAttesterSlashing(fork(epoch), state, attesterSlashing);
+        .validateAttesterSlashing(state.getFork(), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
@@ -537,7 +542,7 @@ public class Spec {
     final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
     return atEpoch(epoch)
         .getOperationValidator()
-        .validateProposerSlashing(fork(epoch), state, proposerSlashing);
+        .validateProposerSlashing(state.getFork(), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
@@ -545,7 +550,7 @@ public class Spec {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
     return atEpoch(epoch)
         .getOperationValidator()
-        .validateVoluntaryExit(fork(epoch), state, signedExit);
+        .validateVoluntaryExit(state.getFork(), state, signedExit);
   }
 
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {
@@ -750,17 +755,6 @@ public class Spec {
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
-  }
-
-  public UInt64 computePreviousForkEpochStart(final UInt64 slot) {
-    final SpecMilestone milestone = atSlot(slot).getMilestone();
-    final Optional<SpecMilestone> previousMilestone = SpecMilestone.getPreviousMilestone(milestone);
-    if (previousMilestone.isEmpty()) {
-      return UInt64.ZERO;
-    }
-    final Optional<Fork> fork = forkSchedule.getFork(previousMilestone.get());
-
-    return fork.map(Fork::getEpoch).orElse(UInt64.ZERO);
   }
 
   // Private helpers

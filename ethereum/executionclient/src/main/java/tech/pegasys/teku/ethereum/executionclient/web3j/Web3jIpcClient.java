@@ -24,14 +24,18 @@ import org.web3j.protocol.ipc.UnixIpcService;
 import org.web3j.protocol.ipc.WindowsIpcService;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 class Web3jIpcClient extends Web3JClient {
   private static final Logger LOG = LogManager.getLogger();
 
   Web3jIpcClient(
-      final URI endpoint, final TimeProvider timeProvider, final Optional<JwtConfig> jwtConfig) {
-    super(timeProvider);
+      final EventLogger eventLog,
+      final URI endpoint,
+      final TimeProvider timeProvider,
+      final Optional<JwtConfig> jwtConfig) {
+    super(eventLog, timeProvider);
     if (jwtConfig.isPresent()) {
       LOG.warn("JWT configuration is ignored with IPC endpoint URI");
     }

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -44,6 +45,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
         gossipEncoding,
         forkDigest,
         GossipTopicName.VOLUNTARY_EXIT,
+        Optional.empty(),
         SignedVoluntaryExit.SSZ_SCHEMA,
         GOSSIP_MAX_SIZE);
   }
@@ -97,6 +99,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             gossipEncoding,
             forkDigest,
             GossipTopicName.VOLUNTARY_EXIT,
+            Optional.empty(),
             SignedVoluntaryExit.SSZ_SCHEMA,
             GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
