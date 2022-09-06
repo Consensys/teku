@@ -213,9 +213,7 @@ class ConnectionManagerTest {
   @Disabled("Shouldn't work, disabled until clarifying")
   public void shouldNotRetryConnectionsToDiscoveredPeersOnFailure() {
     final ConnectionManager manager = createManager();
-    when(discoveryService.streamKnownPeers())
-        .thenReturn(Stream.of(DISCOVERY_PEER1))
-        .thenReturn(Stream.of(DISCOVERY_PEER1));
+    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> Stream.of(DISCOVERY_PEER1));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
     when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
 
@@ -233,9 +231,7 @@ class ConnectionManagerTest {
   @Disabled("Shouldn't work, disabled until clarifying")
   public void shouldNotRetryConnectionsToDiscoveredPeersOnDisconnect() {
     final ConnectionManager manager = createManager();
-    when(discoveryService.streamKnownPeers())
-        .thenReturn(Stream.of(DISCOVERY_PEER1))
-        .thenReturn(Stream.of(DISCOVERY_PEER1));
+    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> Stream.of(DISCOVERY_PEER1));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
     when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
 
