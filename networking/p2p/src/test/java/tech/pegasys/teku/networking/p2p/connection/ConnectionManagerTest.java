@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -207,44 +206,6 @@ class ConnectionManagerTest {
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER2);
-  }
-
-  @Test
-  @Disabled("Shouldn't work, disabled until clarifying")
-  public void shouldNotRetryConnectionsToDiscoveredPeersOnFailure() {
-    final ConnectionManager manager = createManager();
-    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> Stream.of(DISCOVERY_PEER1));
-    final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
-    when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
-
-    manager.start().join();
-    advanceTimeABit();
-    verify(network).connect(PEER1);
-
-    connectionFuture.completeExceptionally(new RuntimeException("Failed"));
-
-    advanceTimeByInitialInterval();
-    verify(network, times(1)).connect(PEER1); // No further attempts to connect
-  }
-
-  @Test
-  @Disabled("Shouldn't work, disabled until clarifying")
-  public void shouldNotRetryConnectionsToDiscoveredPeersOnDisconnect() {
-    final ConnectionManager manager = createManager();
-    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> Stream.of(DISCOVERY_PEER1));
-    final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
-    when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
-
-    manager.start().join();
-    advanceTimeABit();
-    verify(network).connect(PEER1);
-
-    final StubPeer peer = new StubPeer(new MockNodeId(DISCOVERY_PEER1.getPublicKey()));
-    connectionFuture.complete(peer);
-
-    peer.disconnectImmediately(Optional.empty(), true);
-    advanceTimeByInitialInterval();
-    verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
   @Test
