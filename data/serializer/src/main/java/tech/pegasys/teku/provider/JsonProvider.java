@@ -31,6 +31,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.ByteArrayDeserializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.ByteArraySerializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes20Deserializer;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.BytesDeseria
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.BytesSerializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.DoubleDeserializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.DoubleSerializer;
+import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Eth1AddressDeserializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.uints.UInt256Deserializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.uints.UInt256Serializer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.uints.UInt64Deserializer;
@@ -69,6 +71,8 @@ public class JsonProvider {
     module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
     module.addSerializer(Bytes4.class, new Bytes4Serializer());
     module.addDeserializer(Bytes20.class, new Bytes20Deserializer());
+    module.addDeserializer(Eth1Address.class, new Eth1AddressDeserializer());
+
     module.addSerializer(Bytes20.class, new Bytes20Serializer());
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());

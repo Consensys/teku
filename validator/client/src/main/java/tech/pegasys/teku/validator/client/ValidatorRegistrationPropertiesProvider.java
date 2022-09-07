@@ -15,8 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public interface ValidatorRegistrationPropertiesProvider {
 

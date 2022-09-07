@@ -14,9 +14,9 @@
 package tech.pegasys.teku.beaconrestapi.schema;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PUBKEY_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
-import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
 
 import java.util.ArrayList;
 import java.util.List;

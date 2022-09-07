@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
   public static final int DEFAULT_REST_API_PORT = 5051;

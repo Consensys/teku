@@ -15,7 +15,7 @@ package tech.pegasys.teku.cli.converter;
 
 import picocli.CommandLine;
 import picocli.CommandLine.TypeConversionException;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 
 public class Eth1AddressConverter implements CommandLine.ITypeConverter<Eth1Address> {
   @Override

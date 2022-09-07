@@ -1,3 +1,4 @@
 dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation project(':infrastructure:crypto')
 }

@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -104,6 +105,15 @@ public class CoreTypes {
               STRING_TYPE,
               HttpErrorResponse::getMessage,
               HttpErrorResponse.Builder::message)
+          .build();
+
+  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+      DeserializableTypeDefinition.string(Eth1Address.class)
+          .formatter(Eth1Address::toHexString)
+          .parser(Eth1Address::fromHexString)
+          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
+          .description("Hex encoded deposit contract address with 0x prefix")
+          .format("byte")
           .build();
 
   public static DeserializableTypeDefinition<String> string(final String description) {

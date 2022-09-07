@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.storage.server;
 
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class StorageConfiguration {
 

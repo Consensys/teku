@@ -13,18 +13,23 @@
 
 package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.KeyDeserializer;
-import org.apache.tuweni.bytes.Bytes48;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import java.io.IOException;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 
-public class Bytes48KeyDeserializer extends KeyDeserializer {
+public class Eth1AddressDeserializer extends JsonDeserializer<Eth1Address> {
 
   @Override
-  public Object deserializeKey(String key, DeserializationContext ctxt) {
+  public Eth1Address deserialize(JsonParser p, DeserializationContext ctxt)
+      throws JacksonException {
     try {
-      return Bytes48.fromHexStringStrict(key);
-    } catch (RuntimeException ex) {
-      throw new RuntimeException("Public key '" + key + "' is invalid", ex);
+      return Eth1Address.fromHexString(p.getValueAsString());
+    } catch (RuntimeException | IOException ex) {
+      throw new JsonMappingException(p, "Deserialization error: " + ex.getMessage(), ex);
     }
   }
 }

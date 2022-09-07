@@ -16,17 +16,18 @@ package tech.pegasys.teku.spec.datastructures.eth1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 
 class Eth1AddressTest {
 
   @Test
   void eth1Address_shouldRoundTrip() throws Exception {
     assertRoundTrip(
-        Eth1Address.fromHexString("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6"),
-        Eth1Address.getJsonTypeDefinition());
+        Eth1Address.fromHexString("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6"), ETH1ADDRESS_TYPE);
   }
 
   @Test

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
@@ -23,11 +24,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
@@ -38,8 +39,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> FEE_RECIPIENT_DATA =
       SerializableTypeDefinition.object(GetFeeRecipientResponse.class)
           .name("GetFeeRecipientData")
-          .withField(
-              "ethaddress", Eth1Address.ETH1ADDRESS_TYPE, GetFeeRecipientResponse::getEthAddress)
+          .withField("ethaddress", ETH1ADDRESS_TYPE, GetFeeRecipientResponse::getEthAddress)
           .withOptionalField(
               PUBKEY, ValidatorTypes.PUBKEY_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();

@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();

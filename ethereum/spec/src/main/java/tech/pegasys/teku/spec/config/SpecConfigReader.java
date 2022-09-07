@@ -42,9 +42,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();

@@ -24,8 +24,8 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_PUBKEY;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 @SuppressWarnings("JavaCase")
 public class PostRegisterValidatorRequest {

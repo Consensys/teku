@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,11 +31,11 @@ import java.util.function.Function;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class GetDepositContract extends MigratingEndpointAdapter {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
@@ -47,8 +48,7 @@ public class GetDepositContract extends MigratingEndpointAdapter {
               "chain_id",
               UINT64_TYPE.withDescription("Id of Eth1 chain on which contract is deployed."),
               DepositContractData::getChainId)
-          .withField(
-              "address", Eth1Address.getJsonTypeDefinition(), DepositContractData::getAddress)
+          .withField("address", ETH1ADDRESS_TYPE, DepositContractData::getAddress)
           .build();
 
   static final SerializableTypeDefinition<DepositContractData> DEPOSIT_CONTRACT_RESPONSE_TYPE =
