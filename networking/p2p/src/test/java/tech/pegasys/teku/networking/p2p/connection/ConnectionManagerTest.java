@@ -226,7 +226,7 @@ class ConnectionManagerTest {
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't immediately search again
 
     search2.complete(emptyList());
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers(); // But should after a delay
   }
 
@@ -248,7 +248,7 @@ class ConnectionManagerTest {
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't immediately search again
 
     search2.complete(emptyList());
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers(); // But should after a delay
   }
 
@@ -269,7 +269,7 @@ class ConnectionManagerTest {
     startFuture.join();
     stopFuture.join();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't search again
   }
 
@@ -288,7 +288,7 @@ class ConnectionManagerTest {
     startFuture.join();
     // First search is empty, second is successful, so we need to capture 2 searches
     advanceTimeABit();
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers();
 
     verify(network).connect(PEER1);
@@ -312,7 +312,7 @@ class ConnectionManagerTest {
     verify(discoveryService).searchForPeers();
     verify(network).connect(PEER1);
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(network).connect(PEER2);
   }
 
@@ -415,23 +415,23 @@ class ConnectionManagerTest {
     // Start search
     verify(discoveryService, times(1)).searchForPeers();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(3)).searchForPeers();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(4)).searchForPeers();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(5)).searchForPeers();
 
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(6)).searchForPeers();
 
     // Should switch to long delay after initial 1 + 5 rush searches
-    advanceTimeByInitialInterval();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(6)).searchForPeers();
 
     timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.getSeconds());
@@ -448,8 +448,8 @@ class ConnectionManagerTest {
     asyncRunner.executeDueActionsRepeatedly();
   }
 
-  private void advanceTimeByInitialInterval() {
-    timeProvider.advanceTimeBySeconds(ConnectionManager.STARTUP_DISCOVERY_INTERVAL.getSeconds());
+  private void advanceTimeByWarmupSearchInterval() {
+    timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_DISCOVERY_INTERVAL.getSeconds());
     asyncRunner.executeDueActionsRepeatedly();
   }
 

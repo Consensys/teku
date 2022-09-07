@@ -47,7 +47,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
-  protected static final Duration STARTUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
+  protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
@@ -59,7 +59,7 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
-  private final AtomicInteger startupCountdownStage = new AtomicInteger(5);
+  private final AtomicInteger warmupCountdownStage = new AtomicInteger(5);
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
@@ -94,21 +94,21 @@ public class ConnectionManager extends Service {
     synchronized (this) {
       staticPeers.forEach(this::createPersistentConnection);
     }
-    startSearchPeerTask();
+    asyncRunner.runAsync(this::createRecurrentSearchTask).ifExceptionGetsHereRaiseABug();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void startSearchPeerTask() {
-    this.periodicPeerSearch =
-        asyncRunner.runCancellableAfterDelay(
-            () -> searchForPeers().thenPeek(__ -> createFollowupSearchPeerTask()), Duration.ZERO);
+  private void createRecurrentSearchTask() {
+    searchForPeers().alwaysRun(this::createNextSearchPeerTask).finish(this::logSearchError);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void createFollowupSearchPeerTask() {
-    final int currentStage = startupCountdownStage.getAndDecrement();
+  private void logSearchError(final Throwable throwable) {
+    LOG.error("Error while searching for peers", throwable);
+  }
+
+  private void createNextSearchPeerTask() {
+    final int currentStage = warmupCountdownStage.getAndDecrement();
     if (currentStage < 0) {
       return;
     }
@@ -116,15 +116,14 @@ public class ConnectionManager extends Service {
       // Startup task, run for [startupCountdownStage] times
       this.periodicPeerSearch =
           asyncRunner.runCancellableAfterDelay(
-              () -> searchForPeers().thenPeek(__ -> createFollowupSearchPeerTask()),
-              STARTUP_DISCOVERY_INTERVAL);
+              this::createRecurrentSearchTask, WARMUP_DISCOVERY_INTERVAL, this::logSearchError);
     } else {
       // Long term task, run after startup countdown is over
       this.periodicPeerSearch =
           asyncRunner.runWithFixedDelay(
-              this::searchForPeers,
+              () -> searchForPeers().finish(this::logSearchError),
               DISCOVERY_INTERVAL,
-              error -> LOG.error("Error while searching for peers", error));
+              this::logSearchError);
     }
   }
 
