@@ -461,7 +461,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
     addMigratedEndpoint(
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider, schemaCache));
-    addMigratedEndpoint(new GetFinalizedCheckpointState(dataProvider));
+    addMigratedEndpoint(new GetFinalizedCheckpointState(dataProvider, spec));
 
     addMigratedEndpoint(new GetBlockRoot(dataProvider));
     addMigratedEndpoint(new GetFinalizedBlockRoot(dataProvider));

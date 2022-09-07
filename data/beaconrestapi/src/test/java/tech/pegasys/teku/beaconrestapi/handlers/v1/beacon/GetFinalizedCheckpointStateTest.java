@@ -33,7 +33,7 @@ public class GetFinalizedCheckpointStateTest extends AbstractMigratedBeaconHandl
 
   @BeforeEach
   void setup() {
-    setHandler(new GetFinalizedCheckpointState(chainDataProvider));
+    setHandler(new GetFinalizedCheckpointState(chainDataProvider, spec));
   }
 
   @Test

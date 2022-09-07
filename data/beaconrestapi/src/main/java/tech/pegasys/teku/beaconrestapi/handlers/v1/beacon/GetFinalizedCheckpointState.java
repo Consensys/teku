@@ -41,18 +41,20 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
 
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_state";
   private final ChainDataProvider chainDataProvider;
 
-  public GetFinalizedCheckpointState(final DataProvider dataProvider) {
-    this(dataProvider.getChainDataProvider());
+  public GetFinalizedCheckpointState(final DataProvider dataProvider, Spec spec) {
+    this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetFinalizedCheckpointState(final ChainDataProvider chainDataProvider) {
+  public GetFinalizedCheckpointState(final ChainDataProvider chainDataProvider, Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getFinalizedCheckpointState")
@@ -61,7 +63,13 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
                 "Returns full BeaconState object for a finalized checkpoint state from the Weak Subjectivity period.")
             .tags(TAG_EXPERIMENTAL)
             .defaultResponseType(OCTET_STREAM)
-            .response(SC_OK, "Request successful", sszResponseType())
+            .response(
+                SC_OK,
+                "Request successful",
+                sszResponseType(
+                    beaconState ->
+                        spec.getForkSchedule()
+                            .getSpecMilestoneAtSlot(((BeaconState) beaconState).getSlot())))
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -101,7 +109,7 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
                               Version.fromMilestone(stateAndMetaData.getMilestone()).name());
-                          return AsyncApiResponse.respondOk(stateAndMetaData);
+                          return AsyncApiResponse.respondOk(stateAndMetaData.getData());
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
