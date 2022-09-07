@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,8 +48,10 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
+  protected static final int WARMUP_PEER_REQUIRED = 50;
   protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
+  protected static final Duration WARMUP_TIME = Duration.ofMinutes(3);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
@@ -59,7 +62,8 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
-  private final AtomicInteger warmupCountdownStage = new AtomicInteger(5);
+  private final AtomicInteger warmupPeerCountdown = new AtomicInteger(WARMUP_PEER_REQUIRED);
+  private final AtomicBoolean warmup = new AtomicBoolean(true);
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
@@ -95,6 +99,7 @@ public class ConnectionManager extends Service {
       staticPeers.forEach(this::createPersistentConnection);
     }
     asyncRunner.runAsync(this::createRecurrentSearchTask).ifExceptionGetsHereRaiseABug();
+    asyncRunner.runAfterDelay(() -> warmup.set(false), WARMUP_TIME).ifExceptionGetsHereRaiseABug();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
@@ -108,12 +113,8 @@ public class ConnectionManager extends Service {
   }
 
   private void createNextSearchPeerTask() {
-    final int currentStage = warmupCountdownStage.getAndDecrement();
-    if (currentStage < 0) {
-      return;
-    }
-    if (currentStage > 0) {
-      // Startup task, run for [startupCountdownStage] times
+    if (warmupPeerCountdown.get() > 0 && warmup.get()) {
+      // Retry for warmup time or until required number of peers is reached, whatever comes first
       this.periodicPeerSearch =
           asyncRunner.runCancellableAfterDelay(
               this::createRecurrentSearchTask, WARMUP_DISCOVERY_INTERVAL, this::logSearchError);
@@ -170,6 +171,7 @@ public class ConnectionManager extends Service {
             peer -> {
               LOG.trace("Successfully connected to peer {}", peer.getId());
               successfulConnectionCounter.inc();
+              warmupPeerCountdown.decrementAndGet();
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> peerPools.forgetPeer(peer.getId()));
             },
@@ -197,6 +199,8 @@ public class ConnectionManager extends Service {
     if (peerSearchTask != null) {
       peerSearchTask.cancel();
     }
+    warmupPeerCountdown.set(WARMUP_PEER_REQUIRED);
+    warmup.set(true);
     return SafeFuture.COMPLETE;
   }
 
@@ -225,6 +229,7 @@ public class ConnectionManager extends Service {
             peer -> {
               LOG.debug("Connection to peer {} was successful", peer.getId());
               successfulConnectionCounter.inc();
+              warmupPeerCountdown.decrementAndGet();
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> {
                     LOG.debug(
