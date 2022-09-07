@@ -22,7 +22,9 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
-  static final int VALIDATOR_COUNT = 8;
+  private static final String NETWORK_NAME = "swift";
+
+  private static final int VALIDATOR_COUNT = 8;
 
   private TekuNode beaconNode;
   private TekuValidatorNode validatorClient;
@@ -33,14 +35,14 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 config
-                    .withNetwork("swift")
+                    .withNetwork(NETWORK_NAME)
                     .withInteropNumberOfValidators(VALIDATOR_COUNT)
                     .withInteropValidators(0, 0));
     validatorClient =
         createValidatorNode(
             config ->
                 config
-                    .withNetwork("swift")
+                    .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
                     .withBeaconNode(beaconNode));
   }
@@ -71,7 +73,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 config
-                    .withNetwork("swift")
+                    .withNetwork(NETWORK_NAME)
                     .withInteropNumberOfValidators(VALIDATOR_COUNT)
                     .withInteropValidators(0, 0)
                     .withPeers(beaconNode));
@@ -83,7 +85,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
         createValidatorNode(
             config ->
                 config
-                    .withNetwork("swift")
+                    .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
                     .withBeaconNodeEventStreamSyncingStatusQueryPeriod(Duration.ofMillis(100))
                     .withBeaconNodes(beaconNode, failoverBeaconNode));
