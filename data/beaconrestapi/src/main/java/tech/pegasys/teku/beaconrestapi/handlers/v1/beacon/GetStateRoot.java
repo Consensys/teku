@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ROOT_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
@@ -24,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -32,8 +32,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
@@ -44,11 +42,6 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public class GetStateRoot extends AbstractGetSimpleDataFromState {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/root";
-
-  private static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
-      SerializableTypeDefinition.object(Bytes32.class)
-          .withField("root", BYTES32_TYPE, Function.identity())
-          .build();
 
   private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(StateAndMetaData.class)
