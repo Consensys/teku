@@ -43,6 +43,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
@@ -203,6 +204,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
                 dataProvider, schemaCache))
         .endpoint(new GetBlockRoot(dataProvider))
+        .endpoint(new GetFinalizedBlockRoot(dataProvider))
         .endpoint(new GetBlockAttestations(dataProvider, spec))
         .endpoint(new GetAttestations(dataProvider, spec))
         .endpoint(new PostAttestation(dataProvider, schemaCache))

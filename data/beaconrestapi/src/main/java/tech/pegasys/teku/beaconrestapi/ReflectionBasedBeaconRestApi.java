@@ -65,6 +65,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
@@ -461,6 +462,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
         new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider, schemaCache));
 
     addMigratedEndpoint(new GetBlockRoot(dataProvider));
+    addMigratedEndpoint(new GetFinalizedBlockRoot(dataProvider));
     addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
     addMigratedEndpoint(new GetAttestations(dataProvider, spec));

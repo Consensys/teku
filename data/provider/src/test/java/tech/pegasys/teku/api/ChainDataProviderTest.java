@@ -96,6 +96,7 @@ public class ChainDataProviderTest {
     storageSystem.chainUpdater().initializeGenesis(true, actualBalance, Optional.empty());
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
+    storageSystem.chainUpdater().finalizeEpoch(slot);
 
     recentChainData = storageSystem.recentChainData();
     beaconStateInternal = bestBlock.getState();
@@ -482,6 +483,24 @@ public class ChainDataProviderTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     provider.getValidatorInclusionAtEpoch(UInt64.valueOf(2)).get();
     verify(mockCombinedChainDataClient).getStateAtSlotExact(eq(UInt64.valueOf(23)), any());
+  }
+
+  @Test
+  void getFinalizedBlockRoot_shouldReturnBlockRootWhenFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(24)).get();
+    assertThat(finalizedBlockRoot).isPresent();
+  }
+
+  @Test
+  void getFinalizedBlockRoot_shouldReturnEmptyWhenBlockNotFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(1)).get();
+    assertThat(finalizedBlockRoot).isEmpty();
   }
 
   private ChainDataProvider setupAltairState() {
