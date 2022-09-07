@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,7 +62,7 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
-  private final AtomicInteger warmupPeerCountdown = new AtomicInteger(WARMUP_PEER_REQUIRED);
+  private final AtomicLong warmupPeerCountdown = new AtomicLong(WARMUP_PEER_REQUIRED);
   private final AtomicBoolean warmup = new AtomicBoolean(true);
 
   private volatile long peerConnectedSubscriptionId;
@@ -120,6 +120,7 @@ public class ConnectionManager extends Service {
               this::createRecurrentSearchTask, WARMUP_DISCOVERY_INTERVAL, this::logSearchError);
     } else {
       // Long term task, run after startup countdown is over
+      LOG.trace("Warmup peer search is over, establishing task with long delay");
       this.periodicPeerSearch =
           asyncRunner.runWithFixedDelay(
               () -> searchForPeers().finish(this::logSearchError),
