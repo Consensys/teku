@@ -61,7 +61,7 @@ public class Eth1Address extends Bytes20 {
     try {
       return new Eth1Address(value);
     } catch (RuntimeException ex) {
-      throw new RuntimeException("Invalid Ethereum Address: " + ex.getMessage(), ex);
+      throw new IllegalArgumentException("Invalid Ethereum Address: " + ex.getMessage(), ex);
     }
   }
 
