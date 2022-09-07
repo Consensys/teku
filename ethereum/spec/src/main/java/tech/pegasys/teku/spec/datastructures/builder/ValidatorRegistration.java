@@ -53,4 +53,9 @@ public class ValidatorRegistration
   public BLSPublicKey getPublicKey() {
     return getField3().getBLSPublicKey();
   }
+
+  @Override
+  public ValidatorRegistrationSchema getSchema() {
+    return (ValidatorRegistrationSchema) super.getSchema();
+  }
 }
