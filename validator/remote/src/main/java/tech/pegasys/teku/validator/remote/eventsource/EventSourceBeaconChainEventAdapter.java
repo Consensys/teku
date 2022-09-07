@@ -223,7 +223,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             beaconNodeEventStreamSyncingStatusQueryPeriod,
             beaconNodeEventStreamSyncingStatusQueryPeriod,
             throwable ->
-                LOG.trace(
+                LOG.warn(
                     "Exception while running beacon node event stream syncing query task",
                     throwable));
     beaconNodeSyncingStatusQueryTask.set(task);
@@ -237,11 +237,13 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
             syncingStatus -> {
               final HttpUrl beaconNodeApiEndpoint = beaconNodeApi.getEndpoint();
               if (!syncingStatus.isSyncing() || syncingStatus.getIsOptimistic().orElse(false)) {
-                LOG.debug("{} is ready for event streaming", beaconNodeApiEndpoint);
+                LOG.debug("{} is synced and ready for event streaming", beaconNodeApiEndpoint);
                 return SafeFuture.completedFuture(beaconNodeApi);
               }
               final String errorMessage =
-                  String.format("%s is not ready for event streaming", beaconNodeApiEndpoint);
+                  String.format(
+                      "%s is not ready for event streaming because it is not synced",
+                      beaconNodeApiEndpoint);
               LOG.debug(errorMessage);
               return SafeFuture.failedFuture(new RemoteServiceNotAvailableException(errorMessage));
             });
