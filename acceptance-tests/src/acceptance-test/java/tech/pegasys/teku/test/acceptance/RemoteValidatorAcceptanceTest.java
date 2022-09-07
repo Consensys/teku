@@ -85,7 +85,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork("swift")
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(Duration.ofMillis(100))
+                    .withBeaconNodeEventStreamSyncingStatusQueryPeriod(Duration.ofMillis(100))
                     .withBeaconNodes(beaconNode, failoverBeaconNode));
 
     validatorClient.start();
