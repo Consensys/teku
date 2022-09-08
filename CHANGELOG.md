@@ -18,7 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Make Validator Client connect to a failover event stream if configured when the current Beacon Node is not synced
+- Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
