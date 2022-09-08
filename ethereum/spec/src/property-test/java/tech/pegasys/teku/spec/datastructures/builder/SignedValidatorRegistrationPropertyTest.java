@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,12 +26,10 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistrationSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ValidatorRegistrationPropertyTest {
+public class SignedValidatorRegistrationPropertyTest {
   @Property
   void roundTrip(
       @ForAll final int seed,
@@ -40,13 +38,12 @@ public class ValidatorRegistrationPropertyTest {
       throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final ValidatorRegistration registration = dataStructureUtil.randomValidatorRegistration();
-
-    final ValidatorRegistrationSchema schema = new ValidatorRegistrationSchema();
-    final DeserializableTypeDefinition<ValidatorRegistration> typeDefinition =
-        schema.getJsonTypeDefinition();
+    final SignedValidatorRegistration registration =
+        dataStructureUtil.randomSignedValidatorRegistration();
+    final DeserializableTypeDefinition<SignedValidatorRegistration> typeDefinition =
+        registration.getSchema().getJsonTypeDefinition();
     final String json = JsonUtil.serialize(registration, typeDefinition);
-    final ValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
+    final SignedValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(registration);
   }
 

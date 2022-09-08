@@ -487,6 +487,16 @@ public class ChainDataProvider {
     return Version.fromMilestone(spec.atSlot(slot).getMilestone());
   }
 
+  public SafeFuture<Optional<Bytes32>> getFinalizedBlockRoot(final UInt64 slot) {
+    final SafeFuture<Optional<SignedBeaconBlock>> futureFinalizedBlock =
+        combinedChainDataClient.getFinalizedBlockInEffectAtSlot(slot);
+    return futureFinalizedBlock.thenApply(
+        maybeFinalizedBlock ->
+            maybeFinalizedBlock
+                .filter(block -> block.getSlot().equals(slot))
+                .map(SignedBeaconBlock::getRoot));
+  }
+
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
       final String slotParameter, final Function<SignedBeaconBlock, T> mapper) {
     return defaultBlockSelectorFactory

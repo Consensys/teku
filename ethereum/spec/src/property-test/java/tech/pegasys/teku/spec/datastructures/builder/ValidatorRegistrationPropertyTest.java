@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,12 +26,10 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BuilderBidPropertyTest {
+public class ValidatorRegistrationPropertyTest {
   @Property
   void roundTrip(
       @ForAll final int seed,
@@ -40,14 +38,12 @@ public class BuilderBidPropertyTest {
       throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BuilderBid bid = dataStructureUtil.randomBuilderBid();
-
-    final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeader();
-    final BuilderBidSchema schema = new BuilderBidSchema(header.getSchema());
-    final DeserializableTypeDefinition<BuilderBid> typeDefinition = schema.getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(bid, typeDefinition);
-    final BuilderBid result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(bid);
+    final ValidatorRegistration registration = dataStructureUtil.randomValidatorRegistration();
+    final DeserializableTypeDefinition<ValidatorRegistration> typeDefinition =
+        registration.getSchema().getJsonTypeDefinition();
+    final String json = JsonUtil.serialize(registration, typeDefinition);
+    final ValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
+    assertThat(result).isEqualTo(registration);
   }
 
   @Provide
