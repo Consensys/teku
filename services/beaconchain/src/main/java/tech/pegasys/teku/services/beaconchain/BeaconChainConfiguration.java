@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -35,6 +36,7 @@ public class BeaconChainConfiguration {
   private final BeaconRestApiConfig beaconRestApiConfig;
   private final StoreConfig storeConfig;
   private final PowchainConfiguration powchainConfiguration;
+  private final StorageConfiguration storageConfiguration;
   private final Spec spec;
 
   private final BeaconChainControllerFactory beaconChainControllerFactory;
@@ -50,6 +52,7 @@ public class BeaconChainConfiguration {
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
       final StoreConfig storeConfig,
+      final StorageConfiguration storageConfiguration,
       final Spec spec,
       final BeaconChainControllerFactory beaconChainControllerFactory,
       final MetricsConfig metricsConfig) {
@@ -62,6 +65,7 @@ public class BeaconChainConfiguration {
     this.beaconRestApiConfig = beaconRestApiConfig;
     this.powchainConfiguration = powchainConfiguration;
     this.storeConfig = storeConfig;
+    this.storageConfiguration = storageConfiguration;
     this.spec = spec;
     this.beaconChainControllerFactory = beaconChainControllerFactory;
     this.metricsConfig = metricsConfig;
@@ -105,6 +109,10 @@ public class BeaconChainConfiguration {
 
   public StoreConfig storeConfig() {
     return storeConfig;
+  }
+
+  public StorageConfiguration storageConfiguration() {
+    return storageConfiguration;
   }
 
   public MetricsConfig getMetricsConfig() {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -34,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.storageSystem.DelayedStorageUpdateChannel;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -47,6 +50,7 @@ class BufferingStorageChannelTest {
       InMemoryStorageSystemBuilder.create()
           .specProvider(spec)
           .delayedStorage(true)
+          .storeNonCanonicalBlocks(true)
           .storeConfig(
               StoreConfig.builder()
                   .asyncStorageEnabled(true)
@@ -211,7 +215,6 @@ class BufferingStorageChannelTest {
 
   @Test
   void getSlotAndBlockRootByStateRoot_shouldIncludePreviousFinalizedCheckpoint() {
-
     final UInt64 lastFinalizedSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(lastFinalizedSlot));
 
@@ -239,20 +242,103 @@ class BufferingStorageChannelTest {
   }
 
   @Test
-  void getLatestFinalizedBlockAtSlot_shouldHandleSkipSlotsCorrectly() {}
+  void getLatestFinalizedBlockAtSlot_shouldHandleSkipSlotsCorrectly() {
+    final UInt64 lastFinalizedSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
+    chainUpdater.advanceChainUntil(5);
+    // Skip slots 6, 7 and 8
+    chainUpdater.advanceChain(9);
+    final SignedBlockAndState newHead = chainUpdater.advanceChainUntil(lastFinalizedSlot);
+    chainUpdater.updateBestBlock(newHead);
+
+    chainUpdater.finalizeCurrentChain();
+
+    assertBeforeAndAfter(
+        () -> {
+          final SignedBeaconBlock block4 = storage.chainBuilder().getBlockAtSlot(4);
+          final SignedBeaconBlock block5 = storage.chainBuilder().getBlockAtSlot(5);
+          final SignedBeaconBlock block9 = storage.chainBuilder().getBlockAtSlot(9);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(4)))
+              .isCompletedWithOptionalContaining(block4);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(5)))
+              .isCompletedWithOptionalContaining(block5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(6)))
+              .isCompletedWithOptionalContaining(block5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(7)))
+              .isCompletedWithOptionalContaining(block5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(8)))
+              .isCompletedWithOptionalContaining(block5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedBlockAtSlot(UInt64.valueOf(9)))
+              .isCompletedWithOptionalContaining(block9);
+        });
+  }
+
+  @Test
+  void getLatestFinalizedStateAtSlot_shouldHandleSkipSlotsCorrectly() {
+    final UInt64 lastFinalizedSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
+    chainUpdater.advanceChainUntil(5);
+    // Skip slots 6, 7 and 8
+    chainUpdater.advanceChain(9);
+    final SignedBlockAndState newHead = chainUpdater.advanceChainUntil(lastFinalizedSlot);
+    chainUpdater.updateBestBlock(newHead);
+
+    chainUpdater.finalizeCurrentChain();
+
+    assertBeforeAndAfter(
+        () -> {
+          final BeaconState state4 = storage.chainBuilder().getStateAtSlot(4);
+          final BeaconState state5 = storage.chainBuilder().getStateAtSlot(5);
+          final BeaconState state9 = storage.chainBuilder().getStateAtSlot(9);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(4)))
+              .isCompletedWithOptionalContaining(state4);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(5)))
+              .isCompletedWithOptionalContaining(state5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(6)))
+              .isCompletedWithOptionalContaining(state5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(7)))
+              .isCompletedWithOptionalContaining(state5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(8)))
+              .isCompletedWithOptionalContaining(state5);
+          assertThatSafeFuture(storageQueryChannel.getLatestFinalizedStateAtSlot(UInt64.valueOf(9)))
+              .isCompletedWithOptionalContaining(state9);
+        });
+  }
 
   @Test
   void shouldRemoveNonCanonicalBlocks() {}
 
   @Test
-  void shouldRemoveEverythingFromBuffersWhenUpdateApplied() {}
+  void shouldBufferFinalizedNonCanonicalBlocks() {
+    final UInt64 lastFinalizedSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
+    chainUpdater.advanceChainUntil(4);
+    final ChainBuilder forkBuilder = storage.chainBuilder().fork();
+    // Fork skips block 5 which makes it different to the canonical fork.
+    final SignedBlockAndState forkBlock = forkBuilder.generateBlockAtSlot(6);
+    chainUpdater.saveBlock(forkBlock);
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(lastFinalizedSlot));
+
+    chainUpdater.finalizeCurrentChain();
+
+    // Non-canonical blocks won't be available by slot while buffered
+    // It would be nice if they are but we don't necessarily have the block data required to buffer
+    // them. Given there's no guarantee they were seen that's reasonable.
+    // They will still be available by block root
+    assertThatSafeFuture(storageQueryChannel.getNonCanonicalBlocksBySlot(UInt64.valueOf(6)))
+        .isCompletedWithValue(emptyList());
+    assertBeforeAndAfter(
+        () ->
+            assertThatSafeFuture(storageQueryChannel.getBlockByBlockRoot(forkBlock.getRoot()))
+                .isCompletedWithOptionalContaining(forkBlock.getBlock()));
+    // Non-canonical blocks should be available when the database write completes
+    assertThatSafeFuture(storageQueryChannel.getNonCanonicalBlocksBySlot(UInt64.valueOf(6)))
+        .isCompletedWithValue(List.of(forkBlock.getBlock()));
+  }
 
   private void assertBeforeAndAfter(final Runnable assertions) {
     assertThatNoException().describedAs("Before database complete").isThrownBy(assertions::run);
     assertions.run();
     delayChannel.completeAllActions();
     assertThat(((BufferingStorageChannel) storageQueryChannel).getBufferedItemCount())
-        .overridingErrorMessage("Bufferred items should have been cleaned up, but weren't")
+        .overridingErrorMessage("Buffered items should have been cleaned up, but weren't")
         .isZero();
     assertThatNoException().describedAs("After database complete").isThrownBy(assertions::run);
   }

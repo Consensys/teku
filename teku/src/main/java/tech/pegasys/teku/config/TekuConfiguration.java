@@ -94,6 +94,7 @@ public class TekuConfiguration {
             beaconRestApiConfig,
             powchainConfiguration,
             storeConfig,
+            storageConfiguration,
             spec,
             beaconChainControllerFactory,
             metricsConfig);

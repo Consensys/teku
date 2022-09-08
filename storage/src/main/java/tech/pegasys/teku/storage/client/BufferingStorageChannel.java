@@ -49,6 +49,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 /**
  * Buffers updates sent to the storage service so that queries that are performed after the update
@@ -61,6 +62,8 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
  */
 public class BufferingStorageChannel implements StorageQueryChannel, StorageUpdateChannel {
   private final AtomicInteger inflightUpdateCount = new AtomicInteger();
+  private final StateStorageMode storageMode;
+  private final boolean storeNonCanonicalBlocks;
   private final StorageUpdateChannel updateChannel;
   private final StorageQueryChannel queryChannel;
 
@@ -77,10 +80,24 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
   private final ConcurrentNavigableMap<UInt64, BeaconState> finalizedStatesBySlot =
       new ConcurrentSkipListMap<>();
 
+  /**
+   * Stores non-canonical blocks that were pruned from memory while the update that added them is
+   * still in flight. This ensures they can still be found by block root.
+   *
+   * <p>Once the initial add has completed, the block will always be available by root in the
+   * database so no need to buffer it (just gets moved from hot to finalized as a single update).
+   */
+  private final ConcurrentHashMap<Bytes32, SignedBeaconBlock> nonCanonicalBlocks =
+      new ConcurrentHashMap<>();
+
   public BufferingStorageChannel(
       final MetricsSystem metricsSystem,
+      final StateStorageMode storageMode,
+      final boolean storeNonCanonicalBlocks,
       final StorageUpdateChannel updateChannel,
       final StorageQueryChannel queryChannel) {
+    this.storageMode = storageMode;
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.updateChannel = updateChannel;
     this.queryChannel = queryChannel;
     metricsSystem.createIntegerGauge(
@@ -115,7 +132,10 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
         .getDeletedHotBlocks()
         .forEach(
             key -> {
-              hotBlocks.remove(key);
+              final BlockAndCheckpoints blockAndCheckpoints = hotBlocks.remove(key);
+              if (storeNonCanonicalBlocks && blockAndCheckpoints != null) {
+                nonCanonicalBlocks.put(key, blockAndCheckpoints.getBlock());
+              }
               hotStates.remove(key);
             });
     event
@@ -125,13 +145,16 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
               finalizedBlocksByRoot.put(root, block);
               finalizedBlocksBySlot.put(block.getSlot(), block);
             });
-    event
-        .getFinalizedStates()
-        .forEach(
-            (blockRoot, state) -> {
-              finalizedStatesByBlockRoot.put(blockRoot, state);
-              finalizedStatesBySlot.put(state.getSlot(), state);
-            });
+
+    if (storageMode == StateStorageMode.ARCHIVE) {
+      event
+          .getFinalizedStates()
+          .forEach(
+              (blockRoot, state) -> {
+                finalizedStatesByBlockRoot.put(blockRoot, state);
+                finalizedStatesBySlot.put(state.getSlot(), state);
+              });
+    }
     return updateChannel
         .onStorageUpdate(event)
         .thenPeek(__ -> removeBufferedData(event))
@@ -156,6 +179,7 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
               finalizedStatesByBlockRoot.remove(blockRoot, state);
               finalizedStatesBySlot.remove(state.getSlot(), state);
             });
+    event.getDeletedHotBlocks().forEach(nonCanonicalBlocks::remove);
     inflightUpdateCount.decrementAndGet();
   }
 
@@ -242,6 +266,10 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
     final SignedBeaconBlock bufferedFinalized = finalizedBlocksByRoot.get(blockRoot);
     if (bufferedFinalized != null) {
       return SafeFuture.completedFuture(Optional.of(bufferedFinalized));
+    }
+    final SignedBeaconBlock bufferedNonCanonical = nonCanonicalBlocks.get(blockRoot);
+    if (bufferedNonCanonical != null) {
+      return SafeFuture.completedFuture(Optional.of(bufferedNonCanonical));
     }
     return queryChannel.getBlockByBlockRoot(blockRoot);
   }
@@ -346,7 +374,9 @@ public class BufferingStorageChannel implements StorageQueryChannel, StorageUpda
 
   @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
-    // TODO: Needs buffering (and possibly rename to include finalized)
+    // Ideally this would be buffered, but we don't always have the block data available.
+    // So non-canonical blocks will be available by block root but may not be found by slot
+    // for the short period while the database update is in flight
     return queryChannel.getNonCanonicalBlocksBySlot(slot);
   }
 

@@ -112,7 +112,11 @@ public class InMemoryStorageSystemBuilder {
           Optional.of(new DelayedStorageUpdateChannel(chainStorageServer));
       final BufferingStorageChannel bufferingStorageChannel =
           new BufferingStorageChannel(
-              metricsSystem, delayedStorageUpdateChannel.get(), chainStorageServer);
+              metricsSystem,
+              storageMode,
+              storeNonCanonicalBlocks,
+              delayedStorageUpdateChannel.get(),
+              chainStorageServer);
       storageUpdateChannel = bufferingStorageChannel;
       storageQueryChannel = bufferingStorageChannel;
       voteUpdateChannel = chainStorageServer;

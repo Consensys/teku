@@ -334,8 +334,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
       final StorageUpdateChannel storageUpdateChannel =
           eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+
       final BufferingStorageChannel bufferingChannel =
-          new BufferingStorageChannel(metricsSystem, storageUpdateChannel, storageQueryChannel);
+          new BufferingStorageChannel(
+              metricsSystem,
+              beaconConfig.storageConfiguration().getDataStorageMode(),
+              beaconConfig.storageConfiguration().isStoreNonCanonicalBlocksEnabled(),
+              storageUpdateChannel,
+              storageQueryChannel);
       this.storageUpdateChannel = bufferingChannel;
       this.storageQueryChannel = bufferingChannel;
     } else {
