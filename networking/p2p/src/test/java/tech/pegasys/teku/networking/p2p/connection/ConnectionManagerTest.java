@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -203,7 +202,7 @@ class ConnectionManagerTest {
     when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
 
     manager.start().join();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER2);
@@ -218,12 +217,12 @@ class ConnectionManagerTest {
     final ConnectionManager manager = createManager();
     SafeFuture<?> startFuture = manager.start();
     search1.complete(emptyList());
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     startFuture.join();
 
     verify(discoveryService, times(1)).searchForPeers();
 
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't immediately search again
 
     search2.complete(emptyList());
@@ -240,12 +239,12 @@ class ConnectionManagerTest {
     final ConnectionManager manager = createManager();
     SafeFuture<?> startFuture = manager.start();
     search1.completeExceptionally(new RuntimeException("Nope"));
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     startFuture.join();
 
     verify(discoveryService, times(1)).searchForPeers();
 
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't immediately search again
 
     search2.complete(emptyList());
@@ -262,7 +261,7 @@ class ConnectionManagerTest {
 
     SafeFuture<?> startFuture = manager.start();
     search1.complete(emptyList());
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService).searchForPeers();
 
     SafeFuture<?> stopFuture = manager.stop();
@@ -288,7 +287,7 @@ class ConnectionManagerTest {
     search1.complete(emptyList());
     startFuture.join();
     // First search is empty, second is successful, so we need to capture 2 searches
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers();
 
@@ -308,7 +307,7 @@ class ConnectionManagerTest {
 
     SafeFuture<?> startFuture = manager.start();
     search1.complete(List.of(DISCOVERY_PEER1));
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     startFuture.join();
     verify(discoveryService).searchForPeers();
     verify(network).connect(PEER1);
@@ -326,7 +325,7 @@ class ConnectionManagerTest {
 
     final ConnectionManager manager = createManager();
     manager.start().join();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER3);
@@ -364,7 +363,7 @@ class ConnectionManagerTest {
         .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
 
     manager.start().join();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER2);
@@ -382,7 +381,7 @@ class ConnectionManagerTest {
         .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
 
     manager.start().join();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
 
     verify(network).connect(PEER1);
     verify(network, never()).connect(PEER2);
@@ -401,31 +400,32 @@ class ConnectionManagerTest {
         .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
 
     manager.start().join();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
 
     verify(network, never()).connect(PEER1);
     verify(network, never()).connect(PEER2);
   }
 
   @Test
-  public void shouldSwitchToLongDelayAfterWarmupTime() {
+  public void shouldSwitchToLongDelayAfterFirstPeerIsFound() {
     final ConnectionManager manager = createManager();
     SafeFuture<?> startFuture = manager.start();
-    advanceTimeABit();
+    asyncRunner.executeDueActionsRepeatedly();
     startFuture.join();
     // Start search
     verify(discoveryService, times(1)).searchForPeers();
 
-    // Warmup flag is set afterwards, so nothing happen here
-    timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_TIME.getSeconds());
-    asyncRunner.executeDueActionsRepeatedly();
+    advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers();
 
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
+    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(DISCOVERY_PEER1));
     // Should switch to long delay here
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(3)).searchForPeers();
 
-    // Long delay already
+    // Long delay on search retries starts here
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(3)).searchForPeers();
 
@@ -436,50 +436,6 @@ class ConnectionManagerTest {
     timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.getSeconds());
     asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService, times(5)).searchForPeers();
-  }
-
-  @Test
-  public void shouldSwitchToLongDelayWhenWarmupPeersConnected() {
-    final ConnectionManager manager = createManager();
-    SafeFuture<?> startFuture = manager.start();
-    advanceTimeABit();
-    startFuture.join();
-    when(discoveryService.streamKnownPeers()).thenReturn(Stream.empty());
-    // Start search
-    verify(discoveryService, times(1)).searchForPeers();
-
-    advanceTimeByWarmupSearchInterval();
-    verify(discoveryService, times(2)).searchForPeers();
-
-    List<DiscoveryPeer> discoveryPeers =
-        IntStream.range(0, ConnectionManager.WARMUP_PEER_REQUIRED)
-            .mapToObj(i -> new PeerAddress(new MockNodeId(i)))
-            .map(
-                peer -> {
-                  when(network.connect(peer))
-                      .thenReturn(SafeFuture.completedFuture(new StubPeer(peer.getId())));
-                  return createDiscoveryPeer(peer);
-                })
-            .collect(toList());
-    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> discoveryPeers.stream());
-    advanceTimeByWarmupSearchInterval();
-    verify(discoveryService, times(3)).searchForPeers();
-
-    // Warmup stopped as number of peer reached
-    advanceTimeByWarmupSearchInterval();
-    verify(discoveryService, times(3)).searchForPeers();
-    // definitely warmup is over
-    advanceTimeByWarmupSearchInterval();
-    verify(discoveryService, times(3)).searchForPeers();
-
-    timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.getSeconds());
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(discoveryService, times(4)).searchForPeers();
-  }
-
-  private void advanceTimeABit() {
-    timeProvider.advanceTimeByMillis(1);
-    asyncRunner.executeDueActionsRepeatedly();
   }
 
   private void advanceTimeByWarmupSearchInterval() {
