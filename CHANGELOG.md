@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
+- Fix `/eth/v1/validator/register_validator` responding with a 400 status code and not a helpful error message in case of exceptions

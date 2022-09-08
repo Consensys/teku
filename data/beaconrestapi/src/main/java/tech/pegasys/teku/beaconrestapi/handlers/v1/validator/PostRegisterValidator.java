@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_GATEWAY;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -103,7 +103,8 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
             .handle(
                 (__, error) -> {
                   if (error != null) {
-                    return AsyncApiResponse.respondWithError(SC_BAD_GATEWAY, error.getMessage());
+                    return AsyncApiResponse.respondWithError(
+                        SC_INTERNAL_SERVER_ERROR, error.getMessage());
                   }
                   return AsyncApiResponse.respondOk(null);
                 }));
