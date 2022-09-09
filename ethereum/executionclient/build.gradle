@@ -6,6 +6,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
+  implementation project(':ethereum:execution-types')
   implementation project(':ethereum:spec')
 
   api 'org.web3j:core'

@@ -11,16 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.eth1;
+package tech.pegasys.teku.ethereum.execution.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.json.DeserializableTypeUtil.assertRoundTrip;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 
 class Eth1AddressTest {
 

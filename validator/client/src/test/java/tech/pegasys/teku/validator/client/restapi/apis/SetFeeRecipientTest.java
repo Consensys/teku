@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;

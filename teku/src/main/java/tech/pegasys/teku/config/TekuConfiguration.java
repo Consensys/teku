@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuilder;

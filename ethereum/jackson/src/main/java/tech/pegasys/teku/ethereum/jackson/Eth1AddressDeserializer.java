@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
+package tech.pegasys.teku.ethereum.jackson;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 
 public class Eth1AddressDeserializer extends JsonDeserializer<Eth1Address> {
 

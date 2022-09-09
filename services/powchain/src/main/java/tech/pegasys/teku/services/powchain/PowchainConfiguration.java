@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;

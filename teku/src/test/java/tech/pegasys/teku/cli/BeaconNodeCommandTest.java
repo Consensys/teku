@@ -52,7 +52,7 @@ import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;

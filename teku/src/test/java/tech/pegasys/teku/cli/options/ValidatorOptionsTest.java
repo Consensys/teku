@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_FEE_RECIPIENT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
@@ -24,7 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;

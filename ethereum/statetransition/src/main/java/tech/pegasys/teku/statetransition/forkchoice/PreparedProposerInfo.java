@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PreparedProposerInfo extends ExpiringInfo {

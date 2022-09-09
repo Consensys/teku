@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.bytes;
+package tech.pegasys.teku.ethereum.execution.types;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isMixedCase;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class Eth1Address extends Bytes20 {

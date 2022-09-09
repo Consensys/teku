@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.builder;
 
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;

@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,7 +31,7 @@ import java.util.function.Function;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;

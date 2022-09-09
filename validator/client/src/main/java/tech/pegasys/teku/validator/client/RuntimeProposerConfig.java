@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.ETH1ADDRESS_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 
 import com.google.common.base.Preconditions;
 import java.io.FileInputStream;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;

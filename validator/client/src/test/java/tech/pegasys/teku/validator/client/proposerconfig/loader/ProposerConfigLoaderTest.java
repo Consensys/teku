@@ -21,7 +21,7 @@ import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;

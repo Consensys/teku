@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 

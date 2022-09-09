@@ -31,7 +31,7 @@ import tech.pegasys.teku.cli.converter.Eth1AddressConverter;
 import tech.pegasys.teku.cli.converter.UInt64Converter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
-import tech.pegasys.teku.infrastructure.bytes.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.config.SpecConfig;
