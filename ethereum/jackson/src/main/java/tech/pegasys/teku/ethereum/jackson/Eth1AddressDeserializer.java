@@ -29,7 +29,7 @@ public class Eth1AddressDeserializer extends JsonDeserializer<Eth1Address> {
     try {
       return Eth1Address.fromHexString(p.getValueAsString());
     } catch (RuntimeException | IOException ex) {
-      throw new JsonMappingException(p, "Deserialization error: " + ex.getMessage(), ex);
+      throw new JsonMappingException(p, ex.getMessage(), ex);
     }
   }
 }

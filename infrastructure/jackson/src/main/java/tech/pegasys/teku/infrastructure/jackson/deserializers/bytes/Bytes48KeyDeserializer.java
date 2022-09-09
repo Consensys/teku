@@ -26,8 +26,7 @@ public class Bytes48KeyDeserializer extends KeyDeserializer {
     try {
       return Bytes48.fromHexStringStrict(key);
     } catch (RuntimeException ex) {
-      throw new JsonMappingException(
-          ctxt.getParser(), "Deserialization error: Invalid Public Key", ex);
+      throw new JsonMappingException(ctxt.getParser(), "Invalid Public Key", ex);
     }
   }
 }
