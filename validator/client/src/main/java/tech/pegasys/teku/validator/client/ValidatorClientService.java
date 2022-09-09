@@ -115,8 +115,8 @@ public class ValidatorClientService extends Service {
     final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
     final boolean failoversSendSubnetSubscriptions =
         validatorConfig.isFailoversSendSubnetSubscriptionsEnabled();
-    final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod =
-        validatorConfig.getPrimaryBeaconNodeEventStreamReconnectAttemptPeriod();
+    final Duration beaconNodeEventStreamSyncingStatusQueryPeriod =
+        validatorConfig.getBeaconNodeEventStreamSyncingStatusQueryPeriod();
 
     final BeaconNodeApi beaconNodeApi =
         validatorConfig
@@ -131,7 +131,7 @@ public class ValidatorClientService extends Service {
                         generateEarlyAttestations,
                         preferSszBlockEncoding,
                         failoversSendSubnetSubscriptions,
-                        primaryBeaconNodeEventStreamReconnectAttemptPeriod))
+                        beaconNodeEventStreamSyncingStatusQueryPeriod))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(
