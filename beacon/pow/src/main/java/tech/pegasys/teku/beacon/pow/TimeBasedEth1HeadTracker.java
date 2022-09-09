@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
+import java.net.ConnectException;
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.runloop.AsyncRunLoop;
 import tech.pegasys.teku.infrastructure.async.runloop.RunLoopLogic;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -175,6 +177,8 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
           ((BlockUnavailableException) rootCause).getBlockNumber());
     } else if (rootCause instanceof Eth1RequestException && rootCause.getSuppressed().length == 0) {
       LOG.debug("Failed to update eth1 chain head - no endpoints available");
+    } else if (ExceptionUtil.hasCause(t, ConnectException.class)) {
+      LOG.error("Failed to update eth1 chain head - {}", t.getMessage());
     } else {
       LOG.error("Failed to update eth1 chain head", t);
     }
