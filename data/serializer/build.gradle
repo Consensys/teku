@@ -3,7 +3,7 @@ dependencies {
   api 'io.swagger.core.v3:swagger-annotations'
 
   implementation project(':ethereum:execution-types')
-  implementation project(':ethereum:jackson')
+  implementation project(':ethereum:jackson-deserializers')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
