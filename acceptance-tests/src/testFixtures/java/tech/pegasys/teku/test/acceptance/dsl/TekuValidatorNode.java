@@ -205,11 +205,11 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withPrimaryBeaconNodeEventStreamReconnectAttemptPeriod(
-        final Duration reconnectAttemptPeriod) {
+    public TekuValidatorNode.Config withBeaconNodeEventStreamSyncingStatusQueryPeriod(
+        final Duration syncingStatusQueryPeriod) {
       configMap.put(
-          "Xprimary-beacon-node-event-stream-reconnect-attempt-period",
-          reconnectAttemptPeriod.toMillis());
+          "Xbeacon-node-event-stream-syncing-status-query-period",
+          syncingStatusQueryPeriod.toMillis());
       return this;
     }
 
