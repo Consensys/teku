@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
+import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.PREVIOUS_STUB_ENDPOINT_PREFIX;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.nio.file.Path;
@@ -54,7 +55,10 @@ public interface ExecutionWeb3jClientProvider {
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory,
       final TimeProvider timeProvider) {
-    if (endpoint.startsWith(STUB_ENDPOINT_PREFIX)) {
+    if (endpoint.startsWith(PREVIOUS_STUB_ENDPOINT_PREFIX)) {
+      throw new InvalidConfigurationException(
+          "Using the stub execution engine is unsafe. This is only designed for testing. Please use a real execution client.");
+    } else if (endpoint.startsWith(STUB_ENDPOINT_PREFIX)) {
       return STUB;
     } else {
       final Optional<JwtConfig> jwtConfig =
