@@ -24,3 +24,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Resolves an issue with public key validation.
 - Fix `/eth/v1/validator/register_validator` responding with a 400 status code and a misleading error message in case of exceptions
+- Update snakeyaml dependency to resolve cve-2022-25857 which could result in excessive memory usage when parsing YAML content.
