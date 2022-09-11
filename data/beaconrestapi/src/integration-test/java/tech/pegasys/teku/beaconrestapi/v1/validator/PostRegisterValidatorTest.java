@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
@@ -58,6 +59,24 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
                 request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()))) {
 
       assertThat(response.code()).isEqualTo(SC_OK);
+    }
+  }
+
+  @Test
+  void shouldReturnServerErrorWhenThereIsAnExceptionWhileRegistering() throws IOException {
+    final SszList<SignedValidatorRegistration> request =
+        dataStructureUtil.randomSignedValidatorRegistrations(10);
+    when(validatorApiChannel.registerValidators(request))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    try (Response response =
+        post(
+            PostRegisterValidator.ROUTE,
+            JsonUtil.serialize(
+                request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()))) {
+
+      assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+      assertThat(response.body().string()).isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
     }
   }
 

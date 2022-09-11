@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCIPTIONS_PER_MESSAGE;
+import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCRIPTIONS_PER_MESSAGE;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
 
@@ -86,7 +86,7 @@ public class LibP2PGossipNetworkBuilder {
 
     final TopicSubscriptionFilter subscriptionFilter =
         new MaxCountTopicSubscriptionFilter(
-            MAX_SUBSCIPTIONS_PER_MESSAGE,
+            MAX_SUBSCRIPTIONS_PER_MESSAGE,
             MAX_SUBSCRIBED_TOPICS,
             gossipTopicFilter::isRelevantTopic);
 
