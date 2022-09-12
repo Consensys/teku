@@ -15,7 +15,6 @@ package tech.pegasys.teku.beacon.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,7 +38,6 @@ import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.beacon.pow.exception.Eth1RequestException;
-import tech.pegasys.teku.beacon.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -93,61 +91,6 @@ public class FallbackAwareEth1ProviderSelectorTest {
   }
 
   @Test
-  void shouldFallbackOnGetLogs_smallerRangeException_timeout() {
-    // all nodes failing, one with socket timeout error
-    when(node1.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-    when(node2.ethGetLogs(ethLogFilter))
-        .thenReturn(
-            failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
-    when(node3.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-
-    assertThat(
-            fallbackAwareEth1Provider
-                .ethGetLogs(ethLogFilter)
-                .thenRun(() -> fail("should fail!"))
-                .exceptionallyCompose(
-                    err -> {
-                      final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                      assertThat(
-                              ((Eth1RequestException) errCause)
-                                  .containsExceptionSolvableWithSmallerRange())
-                          .isTrue();
-                      return SafeFuture.COMPLETE;
-                    }))
-        .isCompleted();
-  }
-
-  @Test
-  void shouldFallbackOnGetLogs_smallerRangeException_interruptedIOException() {
-    // all nodes failing, one with socket timeout error
-    when(node1.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-    when(node2.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new InterruptedIOException("timeout")));
-    when(node3.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-
-    assertThat(
-            fallbackAwareEth1Provider
-                .ethGetLogs(ethLogFilter)
-                .thenRun(() -> fail("should fail!"))
-                .exceptionallyCompose(
-                    err -> {
-                      final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                      assertThat(
-                              ((Eth1RequestException) errCause)
-                                  .containsExceptionSolvableWithSmallerRange())
-                          .isTrue();
-                      return SafeFuture.COMPLETE;
-                    }))
-        .isCompleted();
-  }
-
-  @Test
   void shouldNotIncludeTimeoutExceptionStacktraceInLogs() {
     // One node failing with socket timeout error
     when(node2.isValid()).thenReturn(false);
@@ -155,15 +98,16 @@ public class FallbackAwareEth1ProviderSelectorTest {
     when(node1.ethGetLogs(ethLogFilter))
         .thenReturn(
             failingProviderGetLogsWithError(new SocketTimeoutException("socket timeout error")));
-    LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class);
-    SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
-    assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
-    final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
-    assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
-    assertThat(logCaptor.getLogEvents()).isNotEmpty();
-    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
-    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+    try (LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class)) {
+      SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
+      assertThat(future).isCompletedExceptionally();
+      assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
+      final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
+      assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
+      assertThat(logCaptor.getLogEvents()).isNotEmpty();
+      assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
+      assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+    }
   }
 
   @Test
@@ -174,70 +118,16 @@ public class FallbackAwareEth1ProviderSelectorTest {
     when(node1.ethGetLogs(ethLogFilter))
         .thenReturn(
             failingProviderGetLogsWithError(new InterruptedIOException("socket timeout error")));
-    LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class);
-    SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
-    assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
-    final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
-    assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
-    assertThat(logCaptor.getLogEvents()).isNotEmpty();
-    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
-    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
-  }
-
-  @Test
-  void shouldFallbackOnGetLogs_smallerRangeException_rejected() {
-    // all nodes failing, one with rejected request error
-    when(node1.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-    when(node2.ethGetLogs(ethLogFilter))
-        .thenReturn(
-            failingProviderGetLogsWithError(new RejectedRequestException(-32005, "too many")));
-    when(node3.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-
-    assertThat(
-            fallbackAwareEth1Provider
-                .ethGetLogs(ethLogFilter)
-                .thenRun(() -> fail("should fail!"))
-                .exceptionallyCompose(
-                    err -> {
-                      final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                      assertThat(
-                              ((Eth1RequestException) errCause)
-                                  .containsExceptionSolvableWithSmallerRange())
-                          .isTrue();
-                      return SafeFuture.COMPLETE;
-                    }))
-        .isCompleted();
-  }
-
-  @Test
-  void shouldFallbackOnGetLogs_NoSmallerRangeException() {
-    // all nodes failing
-    when(node1.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-    when(node2.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-    when(node3.ethGetLogs(ethLogFilter))
-        .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
-
-    assertThat(
-            fallbackAwareEth1Provider
-                .ethGetLogs(ethLogFilter)
-                .thenRun(() -> fail("should fail!"))
-                .exceptionallyCompose(
-                    err -> {
-                      final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
-                      assertThat(
-                              ((Eth1RequestException) errCause)
-                                  .containsExceptionSolvableWithSmallerRange())
-                          .isFalse();
-                      return SafeFuture.COMPLETE;
-                    }))
-        .isCompleted();
+    try (LogCaptor logCaptor = LogCaptor.forClass(FallbackAwareEth1Provider.class)) {
+      SafeFuture<?> future = fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
+      assertThat(future).isCompletedExceptionally();
+      assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
+      final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
+      assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
+      assertThat(logCaptor.getLogEvents()).isNotEmpty();
+      assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
+      assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+    }
   }
 
   @Test

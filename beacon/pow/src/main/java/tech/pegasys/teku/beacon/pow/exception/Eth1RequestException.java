@@ -35,7 +35,7 @@ public class Eth1RequestException extends RuntimeException {
             .orElse(false);
   }
 
-  public boolean containsExceptionSolvableWithSmallerRange() {
+  private boolean containsExceptionSolvableWithSmallerRange() {
     return Stream.of(getSuppressed()).anyMatch(Eth1RequestException::shouldTryWithSmallerRange);
   }
 }

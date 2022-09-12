@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -112,6 +113,20 @@ public class DepositRangeReductionTest {
 
     asyncRunner.executeQueuedActions();
     assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(REDUCED_BLOCK_RANGE));
+  }
+
+  @Test
+  void singleProvider_shouldNotReduceBatchSize() {
+    final DepositFetcher depositFetcher = createWithProviders(underlyingEth1Provider1);
+    final SafeFuture<Void> result =
+        depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
+
+    assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(MAX_BLOCK_RANGE));
+    provider1LastResponse.completeExceptionally(new IllegalArgumentException("Whoops"));
+    assertThat(result).isNotCompleted();
+
+    asyncRunner.executeQueuedActions();
+    assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(MAX_BLOCK_RANGE));
   }
 
   @ParameterizedTest
@@ -206,6 +221,24 @@ public class DepositRangeReductionTest {
 
     asyncRunner.executeQueuedActions();
     assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(REDUCED_BLOCK_RANGE));
+  }
+
+  @Test
+  void multipleProviders_shouldNotReduceBatchSize() {
+    final DepositFetcher depositFetcher =
+        createWithProviders(underlyingEth1Provider1, underlyingEth1Provider2);
+    final SafeFuture<Void> result =
+        depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
+
+    assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(MAX_BLOCK_RANGE));
+    provider1LastResponse.completeExceptionally(new IllegalArgumentException("Whoops"));
+
+    assertThat(provider2LastRequestSize).contains(BigInteger.valueOf(MAX_BLOCK_RANGE));
+    provider2LastResponse.completeExceptionally(new IllegalArgumentException("Whoops"));
+    assertThat(result).isNotCompleted();
+
+    asyncRunner.executeQueuedActions();
+    assertThat(provider1LastRequestSize).contains(BigInteger.valueOf(MAX_BLOCK_RANGE));
   }
 
   static Stream<Arguments> exceptionsToReduceRange() {
