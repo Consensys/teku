@@ -16,13 +16,15 @@ package tech.pegasys.teku.cli.subcommand;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Resources;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 
 public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  public void shouldProcessBlocksInSlotNumberOrder() {
+  public void shouldProcessBlocksInSlotNumberOrder() throws IOException {
     final String[] argsNetworkOptOnParent =
         new String[] {
           "transition",
@@ -32,14 +34,16 @@ public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
               "-i=%s",
               Resources.getResource(TransitionCommandTest.class, "state-from-slot-7.ssz")
                   .getPath()),
-          "-o=/dev/null",
           Resources.getResource(TransitionCommandTest.class, "block-10.ssz").getPath(),
           Resources.getResource(TransitionCommandTest.class, "block-8.ssz").getPath(),
           Resources.getResource(TransitionCommandTest.class, "block-9.ssz").getPath(),
         };
+    ByteArrayOutputStream resultOutput = getStdOut();
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
-    String cmdOutput = getCommandLineOutput();
-    assertThat(cmdOutput).isEmpty();
+    assertThat(resultOutput.toByteArray())
+        .isEqualTo(
+            Resources.toByteArray(
+                Resources.getResource(TransitionCommandTest.class, "state-from-slot-10.ssz")));
   }
 }

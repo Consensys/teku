@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -82,7 +83,7 @@ public class TransitionCommand implements Runnable {
             for (String blockPath : blockPaths) {
               blocks.add(readBlock(spec, blockPath));
             }
-            sortBlocksBySlotNumber(blocks);
+            blocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
             for (SignedBeaconBlock block : blocks) {
               state =
                   spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
@@ -183,19 +184,6 @@ public class TransitionCommand implements Runnable {
     } catch (final IllegalArgumentException e) {
       throw new SSZException("Failed to parse SSZ (" + path + "): " + e.getMessage(), e);
     }
-  }
-
-  private void sortBlocksBySlotNumber(final List<SignedBeaconBlock> blocks) {
-    blocks.sort(
-        (o1, o2) -> {
-          if (o1.getSlot().equals(o2.getSlot())) {
-            return 0;
-          } else if (o1.getSlot().isGreaterThan(o2.getSlot())) {
-            return 1;
-          } else {
-            return -1;
-          }
-        });
   }
 
   @Override
