@@ -20,6 +20,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
@@ -121,6 +123,12 @@ public abstract class AbstractBeaconNodeCommandTest {
   public String getCommandLineOutput() {
     verifyNoInteractions(startAction);
     return new String(stringWriter.getBuffer());
+  }
+
+  public ByteArrayOutputStream getStdOut() {
+    ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(stdOut));
+    return stdOut;
   }
 
   protected TekuConfiguration.Builder createConfigBuilder() {
