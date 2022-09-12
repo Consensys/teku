@@ -1,7 +1,8 @@
 dependencies {
   implementation project(':ethereum:events')
-  implementation project(':ethereum:spec')
   implementation project(':ethereum:executionclient')
+  implementation project(':ethereum:execution-types')
+  implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:events')

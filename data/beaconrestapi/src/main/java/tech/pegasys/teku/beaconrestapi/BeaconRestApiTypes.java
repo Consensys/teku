@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;

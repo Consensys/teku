@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public interface SpecConfig {
   // Non-configurable constants

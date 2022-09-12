@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ProposerConfig {
   @JsonProperty(value = "proposer_config")
@@ -38,8 +38,8 @@ public class ProposerConfig {
   public ProposerConfig(
       @JsonProperty(value = "proposer_config") final Map<Bytes48, Config> proposerConfig,
       @JsonProperty(value = "default_config") final Config defaultConfig) {
-    checkNotNull(defaultConfig, "default_config is required");
-    checkNotNull(defaultConfig.feeRecipient, "fee_recipient is required in default_config");
+    checkNotNull(defaultConfig, "\"default_config\" is required");
+    checkNotNull(defaultConfig.feeRecipient, "\"fee_recipient\" is required in \"default_config\"");
     this.proposerConfig = proposerConfig == null ? ImmutableMap.of() : proposerConfig;
     this.defaultConfig = defaultConfig;
   }
@@ -165,7 +165,7 @@ public class ProposerConfig {
         @JsonProperty(value = "gas_limit") final UInt64 gasLimit,
         @JsonProperty(value = "registration_overrides")
             final RegistrationOverrides registrationOverrides) {
-      checkNotNull(enabled, "enabled is required");
+      checkNotNull(enabled, "\"enabled\" is required in \"builder\"");
       this.enabled = enabled;
       this.gasLimit = gasLimit;
       this.registrationOverrides = registrationOverrides;

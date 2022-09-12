@@ -2,12 +2,14 @@ dependencies {
   api 'com.fasterxml.jackson.core:jackson-databind'
   api 'io.swagger.core.v3:swagger-annotations'
 
+  implementation project(':ethereum:execution-types')
+  implementation project(':ethereum:jackson-deserializers')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:jackson')
   implementation project(':infrastructure:async')
-  implementation 'org.apache.tuweni:tuweni-bytes'
+
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation project(':data:provider')
