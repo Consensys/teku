@@ -142,7 +142,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   private <T> SafeFuture<T> run(
       final Function<MonitorableEth1Provider, SafeFuture<T>> task,
       final Eth1ProviderSelector.ValidEth1ProviderIterator providers,
-      Eth1RequestException exceptionsContainer) {
+      final Eth1RequestException exceptionsContainer) {
 
     Throwable[] previousExceptions = exceptionsContainer.getSuppressed();
     return providers
