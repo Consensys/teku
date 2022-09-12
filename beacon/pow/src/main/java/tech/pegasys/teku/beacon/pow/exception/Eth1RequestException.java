@@ -26,10 +26,13 @@ public class Eth1RequestException extends RuntimeException {
 
   public static boolean shouldTryWithSmallerRange(Throwable err) {
     return ExceptionUtil.hasCause(
-        err,
-        SocketTimeoutException.class,
-        RejectedRequestException.class,
-        InterruptedIOException.class);
+            err,
+            SocketTimeoutException.class,
+            RejectedRequestException.class,
+            InterruptedIOException.class)
+        || ExceptionUtil.getCause(err, Eth1RequestException.class)
+            .map(Eth1RequestException::containsExceptionSolvableWithSmallerRange)
+            .orElse(false);
   }
 
   public boolean containsExceptionSolvableWithSmallerRange() {

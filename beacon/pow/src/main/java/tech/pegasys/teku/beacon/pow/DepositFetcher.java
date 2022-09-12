@@ -106,13 +106,6 @@ public class DepositFetcher {
               final Throwable rootCause = Throwables.getRootCause(err);
               if (rootCause instanceof InvalidDepositEventsException) {
                 STATUS_LOG.eth1DepositEventsFailure(rootCause);
-              } else if (rootCause instanceof Eth1RequestException
-                  && ((Eth1RequestException) rootCause)
-                      .containsExceptionSolvableWithSmallerRange()) {
-                // This block is no longer entered as FallbackAwareEth1Provider isn't used anymore
-                // (right?), which is the only impl throwing a Eth1RequestException
-                STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
-                fetchState.reduceBatchSize();
               } else if (Eth1RequestException.shouldTryWithSmallerRange(err)) {
                 STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
                 fetchState.reduceBatchSize();
