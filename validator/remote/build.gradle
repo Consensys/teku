@@ -1,4 +1,6 @@
 dependencies {
+  api project(':ethereum:execution-types')
+
   implementation project(':data:serializer')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')

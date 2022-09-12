@@ -1,11 +1,12 @@
 dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
+  implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
+  implementation project(':ethereum:execution-types')
   implementation project(':ethereum:spec')
   implementation project(':data:serializer')
-  implementation 'org.apache.tuweni:tuweni-bytes'
 
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':ethereum:spec'))
