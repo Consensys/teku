@@ -302,6 +302,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public boolean isFirstDescendentAsChainHeadEnabled() {
+    return specConfig.isFirstDescendentAsChainHeadEnabled();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

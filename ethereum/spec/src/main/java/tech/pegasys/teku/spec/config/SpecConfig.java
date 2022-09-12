@@ -143,6 +143,8 @@ public interface SpecConfig {
 
   ProgressiveBalancesMode getProgressiveBalancesMode();
 
+  boolean isFirstDescendentAsChainHeadEnabled();
+
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }

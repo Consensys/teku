@@ -45,6 +45,8 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
+
+  public static final boolean DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED = true;
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
@@ -228,6 +230,8 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private Spec spec;
+    private boolean firstDescendentAsChainHeadEnabled =
+        DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -243,6 +247,7 @@ public class Eth2NetworkConfiguration {
                 constants,
                 builder -> {
                   builder.progressiveBalancesMode(progressiveBalancesMode);
+                  builder.firstDescendentAsChainHeadEnabled(firstDescendentAsChainHeadEnabled);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -367,6 +372,12 @@ public class Eth2NetworkConfiguration {
     public Builder progressiveBalancesEnabled(
         final ProgressiveBalancesMode progressiveBalancesMode) {
       this.progressiveBalancesMode = progressiveBalancesMode;
+      return this;
+    }
+
+    public Builder firstDescendentAsChainHeadEnabled(
+        final boolean firstDescendentAsChainHeadEnabled) {
+      this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
       return this;
     }
 

@@ -101,6 +101,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Eth1Address depositContractAddress;
 
   private final ProgressiveBalancesMode progressiveBalancesMode;
+  private final boolean firstDescendentAsChainHeadEnabled;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -153,7 +154,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int depositChainId,
       final int depositNetworkId,
       final Eth1Address depositContractAddress,
-      final ProgressiveBalancesMode progressiveBalancesMode) {
+      final ProgressiveBalancesMode progressiveBalancesMode,
+      final boolean firstDescendentAsChainHeadEnabled) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -206,6 +208,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.progressiveBalancesMode = progressiveBalancesMode;
+    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
   }
 
   @Override
@@ -489,6 +492,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public boolean isFirstDescendentAsChainHeadEnabled() {
+    return firstDescendentAsChainHeadEnabled;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -547,7 +555,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
-        && progressiveBalancesMode == that.progressiveBalancesMode;
+        && progressiveBalancesMode == that.progressiveBalancesMode
+        && firstDescendentAsChainHeadEnabled == that.firstDescendentAsChainHeadEnabled;
   }
 
   @Override
@@ -603,6 +612,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        progressiveBalancesMode);
+        progressiveBalancesMode,
+        firstDescendentAsChainHeadEnabled);
   }
 }

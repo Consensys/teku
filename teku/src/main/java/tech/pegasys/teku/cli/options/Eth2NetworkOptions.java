@@ -169,6 +169,17 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Boolean forkChoiceBeforeProposingEnabled = null;
 
+  @Option(
+      names = {"--Xfork-choice-first-descendent-as-head-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Make the first descendent of head the new chain head.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean firstDescendentAsChainHeadEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
   }
@@ -224,7 +235,8 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .proposerBoostEnabled(proposerBoostEnabled);
+        .proposerBoostEnabled(proposerBoostEnabled)
+        .firstDescendentAsChainHeadEnabled(firstDescendentAsChainHeadEnabled);
   }
 
   public String getNetwork() {

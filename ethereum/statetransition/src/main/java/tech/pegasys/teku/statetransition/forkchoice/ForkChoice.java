@@ -400,7 +400,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
+    if (spec.getGenesisSpecConfig().isFirstDescendentAsChainHeadEnabled()) {
+      updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
+    }
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
   }
