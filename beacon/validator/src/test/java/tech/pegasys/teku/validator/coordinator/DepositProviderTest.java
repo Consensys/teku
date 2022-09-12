@@ -366,6 +366,10 @@ public class DepositProviderTest {
     when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data1)))
         .thenReturn(
             Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data1, UInt64.valueOf(20))));
+    final UpdatableStore.StoreTransaction storeTransaction =
+        mock(UpdatableStore.StoreTransaction.class);
+    when(recentChainData.startStoreTransaction()).thenReturn(storeTransaction);
+    when(storeTransaction.commit()).thenReturn(SafeFuture.COMPLETE);
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     verify(eth1DataCache, times(1)).getEth1DataAndHeight(eq(eth1Data1));

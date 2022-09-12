@@ -17,6 +17,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_EPOCHS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DEPOSIT_SNAPSHOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
@@ -24,6 +25,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -75,6 +77,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
       KvStoreVariable.create(8, CHECKPOINT_SERIALIZER);
   private static final KvStoreVariable<Checkpoint> ANCHOR_CHECKPOINT =
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
+  private static final KvStoreVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
+      KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
 
@@ -178,6 +182,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
+    return FINALIZED_DEPOSIT_SNAPSHOT;
+  }
+
+  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -210,6 +219,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint())
         .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
         .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
+        .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .build();
   }
 }

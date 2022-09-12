@@ -14,13 +14,11 @@
 package tech.pegasys.teku.services.powchain;
 
 import com.google.common.base.Suppliers;
-import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
-import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
@@ -43,15 +41,6 @@ public class DepositSnapshotLoader implements Eth1SnapshotLoaderChannel {
   private LoadDepositSnapshotResult loadSnapshot() {
     final Optional<DepositTreeSnapshot> depositTreeSnapshot =
         depositSnapshotResourceLoader.loadDepositSnapshot(depositSnapshotResource);
-    if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDepositCount() == 0) {
-      return LoadDepositSnapshotResult.EMPTY;
-    } else {
-      return new LoadDepositSnapshotResult(
-          depositTreeSnapshot,
-          ReplayDepositsResult.create(
-              depositTreeSnapshot.get().getExecutionBlockHeight().bigIntegerValue(),
-              BigInteger.valueOf(depositTreeSnapshot.get().getDepositCount() - 1),
-              true));
-    }
+    return LoadDepositSnapshotResult.create(depositTreeSnapshot);
   }
 }

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -163,6 +164,10 @@ public class V4HotKvStoreDao {
   public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
     return db.streamRaw(kvStoreColumn);
+  }
+
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return db.get(schema.getVariableFinalizedDepositSnapshot());
   }
 
   public void close() throws Exception {
@@ -308,6 +313,11 @@ public class V4HotKvStoreDao {
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
+    }
+
+    @Override
+    public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
+      transaction.put(schema.getVariableFinalizedDepositSnapshot(), finalizedDepositSnapshot);
     }
 
     @Override

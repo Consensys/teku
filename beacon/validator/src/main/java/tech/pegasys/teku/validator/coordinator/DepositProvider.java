@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DepositProvider
     implements SlotEventsChannel, Eth1EventsChannel, FinalizedCheckpointChannel {
@@ -134,6 +135,16 @@ public class DepositProvider
           return;
         }
         depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
+        depositMerkleTree
+            .getSnapshot()
+            .ifPresent(
+                snapshot -> {
+                  LOG.trace("Storing DepositTreeSnapshot: {}", snapshot);
+                  final UpdatableStore.StoreTransaction storeTransaction =
+                      recentChainData.startStoreTransaction();
+                  storeTransaction.setFinalizedDepositSnapshot(snapshot);
+                  storeTransaction.commit().ifExceptionGetsHereRaiseABug();
+                });
       }
     }
   }

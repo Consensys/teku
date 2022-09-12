@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -206,6 +207,14 @@ public class NoOpDatabase implements Database {
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
+
+  @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}

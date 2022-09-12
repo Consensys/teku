@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -72,16 +73,16 @@ public class Eth1DepositManager {
   }
 
   public void start() {
-    eth1SnapshotLoaderChannel
-        .loadDepositSnapshot()
+    loadDepositSnapshot()
         .thenCompose(
-            loadSnapshotResult -> {
-              if (loadSnapshotResult.getDepositTreeSnapshot().isEmpty()) {
+            depositSnapshotLoadingResult -> {
+              if (depositSnapshotLoadingResult.getDepositTreeSnapshot().isEmpty()) {
                 return eth1DepositStorageChannel.replayDepositEvents();
               } else {
                 eth1EventsPublisher.onInitialDepositTreeSnapshot(
-                    loadSnapshotResult.getDepositTreeSnapshot().get());
-                return SafeFuture.completedFuture(loadSnapshotResult.getReplayDepositsResult());
+                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
+                return SafeFuture.completedFuture(
+                    depositSnapshotLoadingResult.getReplayDepositsResult());
               }
             })
         .thenCompose(
@@ -101,6 +102,21 @@ public class Eth1DepositManager {
               throw new FatalServiceFailureException(getClass(), err);
             })
         .ifExceptionGetsHereRaiseABug();
+  }
+
+  private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
+    return eth1SnapshotLoaderChannel
+        // If DepositSnapshotTree is loaded from file, we prefer it
+        .loadDepositSnapshot()
+        .thenCompose(
+            fileDepositSnapshotLoadingResult -> {
+              if (fileDepositSnapshotLoadingResult.getDepositTreeSnapshot().isEmpty()) {
+                // Otherwise try to load it from the storage
+                return eth1DepositStorageChannel.loadFinalizedDepositSnapshot();
+              } else {
+                return SafeFuture.completedFuture(fileDepositSnapshotLoadingResult);
+              }
+            });
   }
 
   public void stop() {

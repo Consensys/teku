@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -41,6 +42,7 @@ class StoreTransactionUpdates {
   private final Set<Bytes32> prunedHotBlockRoots;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final Optional<DepositTreeSnapshot> finalizedDepositSnapshot;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -51,7 +53,8 @@ class StoreTransactionUpdates {
       final Set<Bytes32> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -69,6 +72,7 @@ class StoreTransactionUpdates {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.finalizedDepositSnapshot = finalizedDepositSnapshot;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -82,7 +86,8 @@ class StoreTransactionUpdates {
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot);
+        optimisticTransitionBlockRoot,
+        finalizedDepositSnapshot);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
@@ -99,6 +104,8 @@ class StoreTransactionUpdates {
       store.finalizedOptimisticTransitionPayload =
           updateResult.getFinalizedOptimisticTransitionPayload();
     }
+    finalizedDepositSnapshot.ifPresent(
+        __ -> store.finalizedDepositSnapshot = finalizedDepositSnapshot);
 
     // Update finalized data
     finalizedChainData.ifPresent(

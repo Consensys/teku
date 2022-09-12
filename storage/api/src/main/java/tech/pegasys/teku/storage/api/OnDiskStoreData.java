@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -34,6 +35,7 @@ public class OnDiskStoreData {
   private final Map<Bytes32, StoredBlockMetadata> blockInformation;
   private final Map<UInt64, VoteTracker> votes;
   private final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
+  private final Optional<DepositTreeSnapshot> finalizedDepositSnapshot;
 
   public OnDiskStoreData(
       final UInt64 time,
@@ -41,6 +43,7 @@ public class OnDiskStoreData {
       final UInt64 genesisTime,
       final AnchorPoint latestFinalized,
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInformation,
@@ -51,6 +54,7 @@ public class OnDiskStoreData {
     this.genesisTime = genesisTime;
     this.latestFinalized = latestFinalized;
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
+    this.finalizedDepositSnapshot = finalizedDepositSnapshot;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blockInformation = blockInformation;
@@ -93,6 +97,10 @@ public class OnDiskStoreData {
     return finalizedOptimisticTransitionPayload;
   }
 
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return finalizedDepositSnapshot;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -111,7 +119,8 @@ public class OnDiskStoreData {
         && Objects.equals(blockInformation, that.blockInformation)
         && Objects.equals(votes, that.votes)
         && Objects.equals(
-            finalizedOptimisticTransitionPayload, that.finalizedOptimisticTransitionPayload);
+            finalizedOptimisticTransitionPayload, that.finalizedOptimisticTransitionPayload)
+        && Objects.equals(finalizedDepositSnapshot, that.finalizedDepositSnapshot);
   }
 
   @Override
@@ -125,6 +134,7 @@ public class OnDiskStoreData {
         bestJustifiedCheckpoint,
         blockInformation,
         votes,
-        finalizedOptimisticTransitionPayload);
+        finalizedOptimisticTransitionPayload,
+        finalizedDepositSnapshot);
   }
 }

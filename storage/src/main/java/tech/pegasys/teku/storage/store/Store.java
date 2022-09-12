@@ -40,6 +40,7 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -90,6 +91,7 @@ class Store implements UpdatableStore {
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
+  Optional<DepositTreeSnapshot> finalizedDepositSnapshot;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
@@ -109,6 +111,7 @@ class Store implements UpdatableStore {
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final ForkChoiceStrategy forkChoiceStrategy,
@@ -148,6 +151,7 @@ class Store implements UpdatableStore {
     this.finalizedAnchor = finalizedAnchor;
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
+    this.finalizedDepositSnapshot = finalizedDepositSnapshot;
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
@@ -173,6 +177,7 @@ class Store implements UpdatableStore {
       final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -215,6 +220,7 @@ class Store implements UpdatableStore {
         genesisTime,
         finalizedAnchor,
         finalizedOptimisticTransitionPayload,
+        finalizedDepositSnapshot,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
         forkChoiceStrategy,
@@ -430,6 +436,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return Optional.ofNullable(blocks.get(blockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    readLock.lock();
+    try {
+      return finalizedDepositSnapshot;
     } finally {
       readLock.unlock();
     }

@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -64,6 +65,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
   boolean clearFinalizedOptimisticTransitionPayload = false;
+  Optional<DepositTreeSnapshot> finalizedDepositSnapshot = Optional.empty();
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
@@ -148,6 +150,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void removeFinalizedOptimisticTransitionPayload() {
     this.clearFinalizedOptimisticTransitionPayload = true;
+  }
+
+  @Override
+  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot depositTreeSnapshot) {
+    this.finalizedDepositSnapshot = Optional.of(depositTreeSnapshot);
   }
 
   @CheckReturnValue
@@ -304,6 +311,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getState)
         .or(() -> store.getBlockStateIfAvailable(blockRoot));
+  }
+
+  @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return finalizedDepositSnapshot.or(store::getFinalizedDepositSnapshot);
   }
 
   @Override

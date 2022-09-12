@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -399,6 +400,8 @@ public abstract class KvStoreDatabase<
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(this::getFinalizedBlockAtSlot)
             .flatMap(SlotAndExecutionPayloadSummary::fromBlock);
+    final Optional<DepositTreeSnapshot> finalizedDepositSnapshot =
+        dao.getFinalizedDepositSnapshot();
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -413,6 +416,7 @@ public abstract class KvStoreDatabase<
             genesisTime,
             latestFinalized,
             finalizedOptimisticTransitionPayload,
+            finalizedDepositSnapshot,
             justifiedCheckpoint,
             bestJustifiedCheckpoint,
             blockInformation,
@@ -529,6 +533,19 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return dao.getFinalizedDepositSnapshot();
+  }
+
+  @Override
+  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {
+    try (final HotUpdaterT updater = hotUpdater()) {
+      updater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }
@@ -536,6 +553,7 @@ public abstract class KvStoreDatabase<
   private UpdateResult doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
+    // TODO: decide finally if it goes to finalized or hot
     final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticExecutionPayload =
         updateFinalizedData(
             update.getFinalizedChildToParentMap(),
@@ -576,6 +594,7 @@ public abstract class KvStoreDatabase<
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
+      update.getFinalizedDepositSnapshot().ifPresent(updater::setFinalizedDepositSnapshot);
 
       // Delete finalized data from hot db
 

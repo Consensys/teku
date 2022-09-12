@@ -40,11 +40,15 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final ServiceConfig serviceConfig;
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
+  private final boolean depositSnapshotStorageEnabled;
 
   public StorageService(
-      final ServiceConfig serviceConfig, final StorageConfiguration storageConfiguration) {
+      final ServiceConfig serviceConfig,
+      final StorageConfiguration storageConfiguration,
+      final boolean depositSnapshotStorageEnabled) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
+    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
   }
 
   @Override
@@ -73,7 +77,9 @@ public class StorageService extends Service implements StorageServiceFacade {
                   config.getSpec());
           final DepositStorage depositStorage =
               DepositStorage.create(
-                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
+                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
+                  database,
+                  depositSnapshotStorageEnabled);
 
           batchingVoteUpdateChannel =
               new BatchingVoteUpdateChannel(

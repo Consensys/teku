@@ -20,10 +20,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,22 +38,32 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
   private volatile Optional<BigInteger> lastReplayedBlock = Optional.empty();
-  private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
+  private final Supplier<SafeFuture<ReplayDepositsResult>> replayDepositsResult;
+  private final Supplier<SafeFuture<LoadDepositSnapshotResult>> loadDepositSnapshotResult;
+  private final boolean depositSnapshotStorageEnabled;
 
-  private DepositStorage(final Eth1EventsChannel eth1EventsChannel, final Database database) {
+  private DepositStorage(
+      final Eth1EventsChannel eth1EventsChannel,
+      final Database database,
+      final boolean depositSnapshotStorageEnabled) {
     this.eth1EventsChannel = eth1EventsChannel;
     this.database = database;
-    this.replayResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
+    this.replayDepositsResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
+    this.loadDepositSnapshotResult =
+        Suppliers.memoize(() -> SafeFuture.of(this::getFinalizedDepositSnapshot));
+    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
   }
 
   public static DepositStorage create(
-      final Eth1EventsChannel eth1EventsChannel, final Database database) {
-    return new DepositStorage(eth1EventsChannel, database);
+      final Eth1EventsChannel eth1EventsChannel,
+      final Database database,
+      final boolean depositSnapshotStorageEnabled) {
+    return new DepositStorage(eth1EventsChannel, database, depositSnapshotStorageEnabled);
   }
 
   @Override
   public SafeFuture<ReplayDepositsResult> replayDepositEvents() {
-    return replayResult.get();
+    return replayDepositsResult.get();
   }
 
   private ReplayDepositsResult replayDeposits() {
@@ -68,6 +80,21 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
 
   private boolean shouldProcessEvent(final BigInteger blockNumber) {
     return lastReplayedBlock.map(startBlock -> startBlock.compareTo(blockNumber) < 0).orElse(false);
+  }
+
+  @Override
+  public SafeFuture<LoadDepositSnapshotResult> loadFinalizedDepositSnapshot() {
+    return loadDepositSnapshotResult.get();
+  }
+
+  private LoadDepositSnapshotResult getFinalizedDepositSnapshot() {
+    if (depositSnapshotStorageEnabled) {
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot =
+          database.getFinalizedDepositSnapshot();
+      return LoadDepositSnapshotResult.create(finalizedDepositSnapshot);
+    } else {
+      return LoadDepositSnapshotResult.EMPTY;
+    }
   }
 
   @Override

@@ -151,7 +151,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
         "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
         "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint(),
-        "OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
+        "OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot(),
+        "FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot());
   }
 
   @Override

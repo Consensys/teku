@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -37,6 +38,7 @@ public class StorageUpdate {
   private final Set<Bytes32> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final Optional<DepositTreeSnapshot> finalizedDepositSnapshot;
 
   public StorageUpdate(
       final Optional<UInt64> genesisTime,
@@ -48,7 +50,8 @@ public class StorageUpdate {
       final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -59,6 +62,7 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.finalizedDepositSnapshot = finalizedDepositSnapshot;
   }
 
   public boolean isEmpty() {
@@ -69,6 +73,7 @@ public class StorageUpdate {
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
         && stateRoots.isEmpty();
+    // FIXME: should we check optimisticTransitionBlockRootSet and finalizedDepositSnapshot here?
   }
 
   public Optional<UInt64> getGenesisTime() {
@@ -123,6 +128,10 @@ public class StorageUpdate {
 
   public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
     return optimisticTransitionBlockRoot;
+  }
+
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return finalizedDepositSnapshot;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

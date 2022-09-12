@@ -59,12 +59,24 @@ public class DepositOptions {
       arity = "1")
   private String depositSnapshot;
 
+  @Option(
+      names = {"--Xdeposit-snapshot-storage-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable loading of finalized deposit tree snapshot from storage",
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean depositSnapshotStorageEnabled =
+      PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b ->
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
                 .useMissingDepositEventLogging(useMissingDepositEventLogging)
-                .depositSnapshot(depositSnapshot));
+                .depositSnapshot(depositSnapshot)
+                .depositSnapshotStorageEnabled(depositSnapshotStorageEnabled));
   }
 }
