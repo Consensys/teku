@@ -418,10 +418,8 @@ class ConnectionManagerTest {
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(2)).searchForPeers();
 
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
-    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(DISCOVERY_PEER1));
     // Should switch to long delay here
+    when(network.getPeerCount()).thenReturn(1);
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(3)).searchForPeers();
 

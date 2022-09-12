@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,7 +58,6 @@ public class ConnectionManager extends Service {
   private final Counter failedConnectionCounter;
   private final PeerPools peerPools = new PeerPools();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
-  private final AtomicBoolean warmupDiscovery = new AtomicBoolean(true);
 
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
@@ -108,14 +106,17 @@ public class ConnectionManager extends Service {
   }
 
   private void createNextSearchPeerTask() {
-    if (warmupDiscovery.get()) {
-      // Retry fast until first peer connection is initiated, which means Discovery is warmed up
+    if (network.getPeerCount() == 0) {
+      // Retry fast until we have at least one connection with peers
+      LOG.trace("Retrying peer search, no connected peers yet");
+      cancelPeerSearchTask();
       this.periodicPeerSearch =
           asyncRunner.runCancellableAfterDelay(
               this::createRecurrentSearchTask, WARMUP_DISCOVERY_INTERVAL, this::logSearchError);
     } else {
-      // Long term task, run after warmup is over
-      LOG.trace("Warmup peer search is over, establishing peer search task with long delay");
+      // Long term task, run when we have peers connected
+      LOG.trace("Establishing peer search task with long delay");
+      cancelPeerSearchTask();
       this.periodicPeerSearch =
           asyncRunner.runWithFixedDelay(
               () -> searchForPeers().finish(this::logSearchError),
@@ -167,7 +168,6 @@ public class ConnectionManager extends Service {
             peer -> {
               LOG.trace("Successfully connected to peer {}", peer.getId());
               successfulConnectionCounter.inc();
-              warmupDiscovery.set(false);
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> peerPools.forgetPeer(peer.getId()));
             },
@@ -191,12 +191,15 @@ public class ConnectionManager extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectedSubscriptionId);
+    cancelPeerSearchTask();
+    return SafeFuture.COMPLETE;
+  }
+
+  private void cancelPeerSearchTask() {
     final Cancellable peerSearchTask = this.periodicPeerSearch;
     if (peerSearchTask != null) {
       peerSearchTask.cancel();
     }
-    warmupDiscovery.set(true);
-    return SafeFuture.COMPLETE;
   }
 
   public synchronized void addStaticPeer(final PeerAddress peerAddress) {
@@ -224,7 +227,6 @@ public class ConnectionManager extends Service {
             peer -> {
               LOG.debug("Connection to peer {} was successful", peer.getId());
               successfulConnectionCounter.inc();
-              warmupDiscovery.set(false);
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> {
                     LOG.debug(
