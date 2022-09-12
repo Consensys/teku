@@ -78,6 +78,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean proposerBoostEnabled;
+  private final boolean firstDescendentAsChainHeadEnabled;
   private final boolean equivocatingIndicesEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
@@ -97,7 +98,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MergeTransitionBlockValidator transitionBlockValidator,
       final PandaPrinter pandaPrinter,
       final boolean proposerBoostEnabled,
-      final boolean equivocatingIndicesEnabled) {
+      final boolean equivocatingIndicesEnabled,
+      final boolean firstDescendentAsChainHeadEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
@@ -108,6 +110,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     this.tickProcessor = tickProcessor;
+    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -132,7 +135,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transitionBlockValidator,
         PandaPrinter.NOOP,
         false,
-        false);
+        false,
+        true);
   }
 
   @Override
@@ -400,7 +404,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    if (spec.getGenesisSpecConfig().isFirstDescendentAsChainHeadEnabled()) {
+    if (firstDescendentAsChainHeadEnabled) {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     }
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged();

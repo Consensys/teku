@@ -67,6 +67,8 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean proposerBoostEnabled;
+
+  private boolean firstDescendentAsChainHeadEnabled;
   private final boolean equivocatingIndicesEnabled;
   private final boolean forkChoiceBeforeProposingEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
@@ -87,6 +89,7 @@ public class Eth2NetworkConfiguration {
       final boolean proposerBoostEnabled,
       final boolean equivocatingIndicesEnabled,
       final boolean forkChoiceBeforeProposingEnabled,
+      final boolean firstDescendentAsChainHeadEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
@@ -110,6 +113,7 @@ public class Eth2NetworkConfiguration {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
+    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -174,6 +178,10 @@ public class Eth2NetworkConfiguration {
 
   public boolean isProposerBoostEnabled() {
     return proposerBoostEnabled;
+  }
+
+  public boolean isDefaultFirstDescendentAsChainHeadEnabled() {
+    return firstDescendentAsChainHeadEnabled;
   }
 
   public boolean isEquivocatingIndicesEnabled() {
@@ -247,7 +255,6 @@ public class Eth2NetworkConfiguration {
                 constants,
                 builder -> {
                   builder.progressiveBalancesMode(progressiveBalancesMode);
-                  builder.firstDescendentAsChainHeadEnabled(firstDescendentAsChainHeadEnabled);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -283,6 +290,7 @@ public class Eth2NetworkConfiguration {
           proposerBoostEnabled,
           equivocatingIndicesEnabled,
           forkChoiceBeforeProposingEnabled,
+          firstDescendentAsChainHeadEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           terminalBlockHashOverride,

@@ -110,8 +110,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldSetFirstDescendent(final String value) {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xfork-choice-first-descendent-as-head-enabled", value);
-    final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    assertThat(spec.getGenesisSpecConfig().isFirstDescendentAsChainHeadEnabled())
+    assertThat(config.eth2NetworkConfiguration().isDefaultFirstDescendentAsChainHeadEnabled())
         .isEqualTo(Boolean.valueOf(value));
   }
 

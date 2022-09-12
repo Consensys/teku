@@ -525,7 +525,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             proposerBoostEnabled,
-            equivocatingIndicesEnabled);
+            equivocatingIndicesEnabled,
+            beaconConfig.eth2NetworkConfig().isDefaultFirstDescendentAsChainHeadEnabled());
     forkChoiceTrigger =
         beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
             ? new PreProposalForkChoiceTrigger(forkChoice)

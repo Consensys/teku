@@ -109,7 +109,6 @@ public class SpecConfigBuilder {
 
   // Bellatrix
   private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
-  private boolean firstDescendentAsChainHeadEnabled = true;
 
   public SpecConfig build() {
     validate();
@@ -165,8 +164,7 @@ public class SpecConfigBuilder {
             depositChainId,
             depositNetworkId,
             depositContractAddress,
-            progressiveBalancesMode,
-            firstDescendentAsChainHeadEnabled);
+            progressiveBalancesMode);
 
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
@@ -569,12 +567,6 @@ public class SpecConfigBuilder {
       altairBuilder = Optional.of(new AltairBuilder());
     }
     consumer.accept(altairBuilder.get());
-    return this;
-  }
-
-  public SpecConfigBuilder firstDescendentAsChainHeadEnabled(
-      final boolean firstDescendentAsChainHeadEnabled) {
-    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
     return this;
   }
 
