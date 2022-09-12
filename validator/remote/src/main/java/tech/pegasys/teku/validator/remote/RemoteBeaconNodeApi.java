@@ -49,13 +49,16 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   /** Time until we timeout the event stream if no events are received. */
   public static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
 
+  private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
 
   private RemoteBeaconNodeApi(
+      final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final BeaconChainEventAdapter beaconChainEventAdapter,
       final ValidatorApiChannel validatorApiChannel) {
     this.beaconChainEventAdapter = beaconChainEventAdapter;
+    this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.validatorApiChannel = validatorApiChannel;
   }
 
@@ -67,7 +70,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final boolean generateEarlyAttestations,
       final boolean preferSszBlockEncoding,
       final boolean failoversSendSubnetSubscriptions,
-      final Duration beaconNodeEventStreamSyncingStatusQueryPeriod) {
+      final Duration beaconNodesSyncingStatusQueryPeriod,
+      final Duration beaconNodeEventStreamReadinessCheckPeriod) {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
         "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
@@ -76,30 +80,29 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
     endpoints = stripAuthentication(endpoints);
 
-    final HttpUrl primaryEndpoint = endpoints.get(0);
-    final List<HttpUrl> failoverEndpoints = endpoints.subList(1, endpoints.size());
-
-    final RemoteValidatorApiChannel primaryValidatorApi =
-        createRemoteValidatorApi(
-            primaryEndpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner);
-    final List<RemoteValidatorApiChannel> failoverValidatorApis =
-        failoverEndpoints.stream()
+    final List<RemoteValidatorApiChannel> validatorApis =
+        endpoints.stream()
             .map(
                 endpoint ->
                     createRemoteValidatorApi(
                         endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
             .collect(Collectors.toList());
 
-    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+    final RemoteValidatorApiChannel primaryValidatorApi = validatorApis.get(0);
+    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+        validatorApis.subList(1, endpoints.size());
 
-    if (!failoverEndpoints.isEmpty()) {
-      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
-    }
+    final BeaconNodeReadinessManager beaconNodeReadinessManager =
+        new BeaconNodeReadinessManager(
+            validatorApis, asyncRunner, beaconNodesSyncingStatusQueryPeriod);
+
+    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
 
     final ValidatorApiChannel validatorApi =
         new MetricRecordingValidatorApiChannel(
             metricsSystem,
             new FailoverValidatorApiHandler(
+                beaconNodeReadinessManager,
                 primaryValidatorApi,
                 failoverValidatorApis,
                 failoversSendSubnetSubscriptions,
@@ -110,6 +113,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
+            beaconNodeReadinessManager,
             primaryValidatorApi,
             failoverValidatorApis,
             okHttpClient,
@@ -124,19 +128,20 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             asyncRunner,
             metricsSystem,
             generateEarlyAttestations,
-            beaconNodeEventStreamSyncingStatusQueryPeriod);
+            beaconNodeEventStreamReadinessCheckPeriod);
 
-    return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
+    return new RemoteBeaconNodeApi(
+        beaconNodeReadinessManager, beaconChainEventAdapter, validatorApi);
   }
 
   @Override
   public SafeFuture<Void> subscribeToEvents() {
-    return beaconChainEventAdapter.start();
+    return SafeFuture.allOf(beaconChainEventAdapter.start(), beaconNodeReadinessManager.start());
   }
 
   @Override
   public SafeFuture<Void> unsubscribeFromEvents() {
-    return beaconChainEventAdapter.stop();
+    return SafeFuture.allOf(beaconChainEventAdapter.stop(), beaconNodeReadinessManager.stop());
   }
 
   @Override

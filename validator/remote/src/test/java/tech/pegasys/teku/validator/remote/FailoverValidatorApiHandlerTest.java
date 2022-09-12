@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -80,6 +81,8 @@ class FailoverValidatorApiHandlerTest {
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
+  private BeaconNodeReadinessManager beaconNodeReadinessManager;
+
   private RemoteValidatorApiChannel primaryApiChannel;
   private RemoteValidatorApiChannel failoverApiChannel1;
   private RemoteValidatorApiChannel failoverApiChannel2;
@@ -88,6 +91,8 @@ class FailoverValidatorApiHandlerTest {
 
   @BeforeEach
   void setUp() {
+    beaconNodeReadinessManager = mock(BeaconNodeReadinessManager.class);
+
     primaryApiChannel = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel1 = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel2 = mock(RemoteValidatorApiChannel.class);
@@ -95,12 +100,15 @@ class FailoverValidatorApiHandlerTest {
     final Supplier<HttpUrl> randomHttpUrlGenerator =
         () -> HttpUrl.get("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
+    when(beaconNodeReadinessManager.isReady(any())).thenReturn(true);
+
     when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel2.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager,
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
             true,
@@ -178,7 +186,8 @@ class FailoverValidatorApiHandlerTest {
   <T> void requestFailsAndNoFailoversConfigured(final ValidatorApiChannelRequest<T> request) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
+        new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
 
     setupFailures(request, primaryApiChannel);
 
@@ -199,6 +208,7 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager,
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
             false,
@@ -260,7 +270,8 @@ class FailoverValidatorApiHandlerTest {
       final T response) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
+        new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
 
     setupSuccesses(request, response, primaryApiChannel);
 

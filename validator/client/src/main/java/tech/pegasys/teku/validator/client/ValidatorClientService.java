@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -111,12 +110,8 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner =
         services.createAsyncRunnerWithMaxQueueSize(
             "validator", validatorConfig.getExecutorMaxQueueSize());
+
     final boolean generateEarlyAttestations = validatorConfig.generateEarlyAttestations();
-    final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
-    final boolean failoversSendSubnetSubscriptions =
-        validatorConfig.isFailoversSendSubnetSubscriptionsEnabled();
-    final Duration beaconNodeEventStreamSyncingStatusQueryPeriod =
-        validatorConfig.getBeaconNodeEventStreamSyncingStatusQueryPeriod();
 
     final BeaconNodeApi beaconNodeApi =
         validatorConfig
@@ -128,10 +123,11 @@ public class ValidatorClientService extends Service {
                         asyncRunner,
                         beaconNodeApiEndpoints,
                         config.getSpec(),
-                        generateEarlyAttestations,
-                        preferSszBlockEncoding,
-                        failoversSendSubnetSubscriptions,
-                        beaconNodeEventStreamSyncingStatusQueryPeriod))
+                        validatorConfig.generateEarlyAttestations(),
+                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
+                        validatorConfig.getBeaconNodesSyncingStatusQueryPeriod(),
+                        validatorConfig.getBeaconNodeEventStreamReadinessCheckPeriod()))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(

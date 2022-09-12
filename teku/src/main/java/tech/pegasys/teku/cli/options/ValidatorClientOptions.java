@@ -49,16 +49,29 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
   @CommandLine.Option(
-      names = {"--Xbeacon-node-event-stream-syncing-status-query-period"},
+      names = {"--Xbeacon-nodes-syncing-status-query-period"},
       paramLabel = "<INTEGER>",
       description =
-          "How often (in milliseconds) will the syncing status of the Beacon Node used for event streaming be queried. If the node is not synced or the query fails, the Validator Client will try to connect to an event stream of one of the failover Beacon Nodes if such are configured. "
-              + "If the primary Beacon Node has synced successfully after a failover, a reconnection to the primary Beacon Node event stream will be attempted.",
+          "How often (in milliseconds) will the syncing status of the configured Beacon Nodes be queried. "
+              + "The result of the query would be used to determine if a Validator Client should send requests to a Beacon Node or failover immediately. "
+              + "This option is only applicable if there are multiple Beacon Nodes configured.",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "1")
-  private long beaconNodeEventStreamSyncingStatusQueryPeriod =
-      ValidatorConfig.DEFAULT_BEACON_NODE_EVENT_STREAM_SYNCING_STATUS_QUERY_PERIOD.toMillis();
+  private long beaconNodesSyncingStatusQueryPeriod =
+      ValidatorConfig.DEFAULT_BEACON_NODES_SYNCING_STATUS_QUERY_PERIOD.toMillis();
+
+  @CommandLine.Option(
+      names = {"--Xbeacon-node-event-stream-readiness-check-period"},
+      paramLabel = "<INTEGER>",
+      description =
+          "How often (in milliseconds) will the readiness of the Beacon Node used for event streaming be checked. If the node is not ready, the Validator Client will try to connect to an event stream of one of the failover Beacon Nodes if such are configured. "
+              + "If the primary Beacon Node becomes ready again after a failover, a reconnection to the primary Beacon Node event stream will be attempted.",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "1")
+  private long beaconNodeEventStreamReadinessCheckPeriod =
+      ValidatorConfig.DEFAULT_BEACON_NODE_EVENT_STREAM_READINESS_CHECK_PERIOD.toMillis();
 
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
@@ -85,8 +98,10 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
-                .beaconNodeEventStreamSyncingStatusQueryPeriod(
-                    Duration.ofMillis(beaconNodeEventStreamSyncingStatusQueryPeriod))
+                .beaconNodesSyncingStatusQueryPeriod(
+                    Duration.ofMillis(beaconNodesSyncingStatusQueryPeriod))
+                .beaconNodeEventStreamReadinessCheckPeriod(
+                    Duration.ofMillis(beaconNodeEventStreamReadinessCheckPeriod))
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 
