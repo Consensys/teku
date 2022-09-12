@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("FutureReturnValueIgnored")
-public class FallbackAwareEth1ProviderSelectorTest {
+public class FallbackAwareEth1ProviderTest {
 
   public static final String EXPECTED_TIMEOUT_MESSAGE =
       "Request to eth1 endpoint timed out. Retrying with next eth1 endpoint";
