@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -116,7 +117,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             transitionBlockValidator,
             PandaPrinter.NOOP,
             true,
-            true);
+            true,
+            DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED);
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
 
