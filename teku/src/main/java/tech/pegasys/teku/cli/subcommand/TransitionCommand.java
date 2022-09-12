@@ -59,6 +59,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
     footer = "Teku is licensed under the Apache License 2.0")
 public class TransitionCommand implements Runnable {
 
+  private static final Comparator<SignedBeaconBlock> SLOT_COMPARATOR =
+      Comparator.comparing(SignedBeaconBlock::getSlot);
+
   @Command(
       name = "blocks",
       description = "Process blocks on the pre-state to get a post-state",
@@ -83,7 +86,7 @@ public class TransitionCommand implements Runnable {
             for (String blockPath : blockPaths) {
               blocks.add(readBlock(spec, blockPath));
             }
-            blocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
+            blocks.sort(SLOT_COMPARATOR);
             for (SignedBeaconBlock block : blocks) {
               state =
                   spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
