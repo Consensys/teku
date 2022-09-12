@@ -18,25 +18,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 
 public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  public void shouldProcessBlocksInSlotNumberOrder() throws IOException {
+  public void shouldProcessBlocksInSlotNumberOrder() throws IOException, URISyntaxException {
     final String[] argsNetworkOptOnParent =
         new String[] {
           "transition",
           "blocks",
           "--network=mainnet",
-          String.format(
-              "-i=%s",
-              Resources.getResource(TransitionCommandTest.class, "state-from-slot-7.ssz")
-                  .getPath()),
-          Resources.getResource(TransitionCommandTest.class, "block-10.ssz").getPath(),
-          Resources.getResource(TransitionCommandTest.class, "block-8.ssz").getPath(),
-          Resources.getResource(TransitionCommandTest.class, "block-9.ssz").getPath(),
+          String.format("-i=%s", getPath("state-from-slot-7.ssz")),
+          getPath("block-10.ssz"),
+          getPath("block-8.ssz"),
+          getPath("block-9.ssz"),
         };
     ByteArrayOutputStream resultOutput = getStdOut();
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
@@ -45,5 +44,12 @@ public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(
             Resources.toByteArray(
                 Resources.getResource(TransitionCommandTest.class, "state-from-slot-10.ssz")));
+  }
+
+  /** Safe cross-platform implementation */
+  private String getPath(final String filename) throws URISyntaxException {
+    return Paths.get(Resources.getResource(TransitionCommandTest.class, filename).toURI())
+        .toFile()
+        .getPath();
   }
 }
