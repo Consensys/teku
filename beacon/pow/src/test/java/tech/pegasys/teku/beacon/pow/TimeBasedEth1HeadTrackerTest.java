@@ -22,11 +22,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.net.ConnectException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
@@ -273,6 +275,18 @@ class TimeBasedEth1HeadTrackerTest {
     final ValueObserver<UInt64> subscriber2 = mock(ValueObserver.class);
     headTracker.subscribe(subscriber2);
     verify(subscriber2).onValueChanged(UInt64.valueOf(2));
+  }
+
+  @Test
+  void shouldNotLogStacktraceWhenExecutionClientGoesOffline() {
+    LogCaptor logCaptor = LogCaptor.forClass(TimeBasedEth1HeadTracker.class);
+    final String exceptionMessage = "Failed to connect to eth1 client";
+    final String errorLogMessage = "Failed to update eth1 chain head - " + exceptionMessage;
+    headTracker.onError(new ConnectException(exceptionMessage));
+    assertThat(logCaptor.getLogEvents()).isNotEmpty();
+    assertThat(logCaptor.getErrorLogs()).containsExactly(errorLogMessage);
+    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(errorLogMessage);
+    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
   }
 
   private void verifyBlockRequested(final long blockNumber) {

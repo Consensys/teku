@@ -49,15 +49,16 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
   @CommandLine.Option(
-      names = {"--Xprimary-beacon-node-event-stream-reconnect-attempt-period"},
+      names = {"--Xbeacon-node-event-stream-syncing-status-query-period"},
       paramLabel = "<INTEGER>",
       description =
-          "How often (in milliseconds) will a reconnection to the primary Beacon Node event stream be attempted during a failover.",
+          "How often (in milliseconds) will the syncing status of the Beacon Node used for event streaming be queried. If the node is not synced or the query fails, the Validator Client will try to connect to an event stream of one of the failover Beacon Nodes if such are configured. "
+              + "If the primary Beacon Node has synced successfully after a failover, a reconnection to the primary Beacon Node event stream will be attempted.",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "1")
-  private long primaryBeaconNodeEventStreamReconnectAttemptPeriod =
-      ValidatorConfig.DEFAULT_PRIMARY_BEACON_NODE_EVENT_STREAM_RECONNECT_ATTEMPT_PERIOD.toMillis();
+  private long beaconNodeEventStreamSyncingStatusQueryPeriod =
+      ValidatorConfig.DEFAULT_BEACON_NODE_EVENT_STREAM_SYNCING_STATUS_QUERY_PERIOD.toMillis();
 
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
@@ -84,8 +85,8 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
-                .primaryBeaconNodeEventStreamReconnectAttemptPeriod(
-                    Duration.ofMillis(primaryBeaconNodeEventStreamReconnectAttemptPeriod))
+                .beaconNodeEventStreamSyncingStatusQueryPeriod(
+                    Duration.ofMillis(beaconNodeEventStreamSyncingStatusQueryPeriod))
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 

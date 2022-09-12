@@ -28,7 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
-  String STUB_ENDPOINT_PREFIX = "stub";
+  String PREVIOUS_STUB_ENDPOINT_PREFIX = "stub";
+  String STUB_ENDPOINT_PREFIX = "unsafe-test-stub";
   ExecutionLayerChannel NOOP =
       new ExecutionLayerChannel() {
         @Override
