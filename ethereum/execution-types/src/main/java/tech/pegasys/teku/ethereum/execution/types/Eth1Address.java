@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.eth1;
+package tech.pegasys.teku.ethereum.execution.types;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isMixedCase;
@@ -20,17 +20,8 @@ import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Eth1Address extends Bytes20 {
-  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
-      DeserializableTypeDefinition.string(Eth1Address.class)
-          .formatter(Eth1Address::toHexString)
-          .parser(Eth1Address::fromHexString)
-          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
-          .description("Hex encoded deposit contract address with 0x prefix")
-          .format("byte")
-          .build();
 
   public static final Eth1Address ZERO =
       new Eth1Address("0x0000000000000000000000000000000000000000");
@@ -68,7 +59,11 @@ public class Eth1Address extends Bytes20 {
   }
 
   public static Eth1Address fromHexString(String value) {
-    return new Eth1Address(value);
+    try {
+      return new Eth1Address(value);
+    } catch (RuntimeException ex) {
+      throw new IllegalArgumentException("Invalid Ethereum Address: " + ex.getMessage(), ex);
+    }
   }
 
   /**
@@ -94,10 +89,6 @@ public class Eth1Address extends Bytes20 {
       }
     }
     return ret;
-  }
-
-  public static DeserializableTypeDefinition<Eth1Address> getJsonTypeDefinition() {
-    return ETH1ADDRESS_TYPE;
   }
 
   @Override

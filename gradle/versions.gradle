@@ -1,13 +1,9 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.3'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3'
-
-    // Temporary version overrides to fix issues with 2.13.2.1 release not including
-    // a 2.13.2.1 version for jackson-bom
-    dependency 'com.fasterxml.jackson:jackson-bom:2.13.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4'
 
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'

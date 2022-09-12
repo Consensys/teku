@@ -6,6 +6,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:events')
+  implementation project(':ethereum:execution-types')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')

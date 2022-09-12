@@ -31,6 +31,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -264,6 +265,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
               transitionConfiguration.getTerminalBlockHash(),
               UInt64.ONE);
     }
+    EventLogger.EVENT_LOG.executionLayerStubEnabled();
     LOG.info(
         "exchangeTransitionConfiguration: {} -> {}",
         transitionConfiguration,

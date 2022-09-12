@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':beacon:pow')
+  implementation project(':ethereum:execution-types')
   implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
@@ -20,7 +21,6 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'io.prometheus:simpleclient'
-  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'

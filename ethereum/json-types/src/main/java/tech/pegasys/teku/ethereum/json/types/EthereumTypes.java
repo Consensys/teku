@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.ethereum.json.types;
 
 import java.util.Locale;
 import java.util.Map;
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
@@ -31,6 +32,15 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class EthereumTypes {
+
+  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+      DeserializableTypeDefinition.string(Eth1Address.class)
+          .formatter(Eth1Address::toHexString)
+          .parser(Eth1Address::fromHexString)
+          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
+          .description("Hex encoded deposit contract address with 0x prefix")
+          .format("byte")
+          .build();
 
   public static final StringValueTypeDefinition<BLSSignature> SIGNATURE_TYPE =
       DeserializableTypeDefinition.string(BLSSignature.class)

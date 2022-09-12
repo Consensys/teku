@@ -13,6 +13,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-units'
+    implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:signingrecord')
     implementation project(':infrastructure:async')
@@ -36,6 +37,7 @@ dependencies {
     testFixturesImplementation 'org.apache.tuweni:tuweni-units'
     testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testFixturesImplementation project(':ethereum:execution-types')
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
     testFixturesImplementation project(':infrastructure:bytes')

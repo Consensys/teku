@@ -19,7 +19,6 @@ dependencies {
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'
-  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'tech.pegasys.discovery:discovery'
 

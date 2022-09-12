@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
@@ -21,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.spec.datastructures.eth1.Eth1Address.ETH1ADDRESS_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;

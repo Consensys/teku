@@ -24,14 +24,18 @@ public class Eth1RequestException extends RuntimeException {
     super("Some eth1 endpoints threw an Exception or no eth1 endpoints available");
   }
 
-  public boolean containsExceptionSolvableWithSmallerRange() {
-    return Stream.of(getSuppressed())
-        .anyMatch(
-            err ->
-                ExceptionUtil.hasCause(
-                    err,
-                    SocketTimeoutException.class,
-                    RejectedRequestException.class,
-                    InterruptedIOException.class));
+  public static boolean shouldTryWithSmallerRange(Throwable err) {
+    return ExceptionUtil.hasCause(
+            err,
+            SocketTimeoutException.class,
+            RejectedRequestException.class,
+            InterruptedIOException.class)
+        || ExceptionUtil.getCause(err, Eth1RequestException.class)
+            .map(Eth1RequestException::containsExceptionSolvableWithSmallerRange)
+            .orElse(false);
+  }
+
+  private boolean containsExceptionSolvableWithSmallerRange() {
+    return Stream.of(getSuppressed()).anyMatch(Eth1RequestException::shouldTryWithSmallerRange);
   }
 }

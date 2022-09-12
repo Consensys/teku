@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 public enum PeerClientType {
   UNKNOWN("Unknown"),
   LIGHTHOUSE("Lighthouse"),
+  LODESTAR("Lodestar"),
   NIMBUS("Nimbus"),
   PRYSM("Prysm"),
   TEKU("Teku");
