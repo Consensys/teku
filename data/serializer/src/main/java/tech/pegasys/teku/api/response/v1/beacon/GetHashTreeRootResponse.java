@@ -11,23 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.libp2p;
+package tech.pegasys.teku.api.response.v1.beacon;
 
-public enum PeerClientType {
-  UNKNOWN("Unknown"),
-  LIGHTHOUSE("Lighthouse"),
-  LODESTAR("Lodestar"),
-  NIMBUS("Nimbus"),
-  PRYSM("Prysm"),
-  TEKU("Teku");
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.Root;
 
-  private final String displayName;
+public class GetHashTreeRootResponse {
 
-  PeerClientType(final String displayName) {
-    this.displayName = displayName;
-  }
+  @JsonProperty("data")
+  public final Root data;
 
-  public String getDisplayName() {
-    return displayName;
+  @JsonCreator
+  public GetHashTreeRootResponse(@JsonProperty("data") final Root data) {
+    this.data = data;
   }
 }

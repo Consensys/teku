@@ -25,24 +25,44 @@ public class BeaconNodeRoleConfig {
       DeserializableTypeDefinition.listOf(STRING_TYPE);
 
   static final DeserializableTypeDefinition<BeaconNodeRoleConfig> BEACON_NODE_ROLE_CONFIG =
-      DeserializableTypeDefinition.object(BeaconNodeRoleConfig.class)
-          .initializer(BeaconNodeRoleConfig::new)
+      DeserializableTypeDefinition.object(
+              BeaconNodeRoleConfig.class, BeaconNodeRoleConfig.Builder.class)
+          .initializer(BeaconNodeRoleConfig.Builder::builder)
+          .finisher(BeaconNodeRoleConfig.Builder::build)
           .withField(
               "endpoints",
               ENDPOINT_LIST,
               BeaconNodeRoleConfig::getEndpoints,
-              BeaconNodeRoleConfig::setEndpoints)
+              BeaconNodeRoleConfig.Builder::endpoints)
           .build();
 
   private final List<String> endpoints = new ArrayList<>();
 
-  public BeaconNodeRoleConfig() {}
+  private BeaconNodeRoleConfig(final List<String> endpoints) {
+    this.endpoints.addAll(endpoints);
+  }
 
   public List<String> getEndpoints() {
     return endpoints;
   }
 
-  public void setEndpoints(final List<String> endpoints) {
-    this.endpoints.addAll(endpoints);
+  public static class Builder {
+
+    final List<String> endpoints = new ArrayList<>();
+
+    private Builder() {}
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    public Builder endpoints(final List<String> endpoints) {
+      this.endpoints.addAll(endpoints);
+      return this;
+    }
+
+    public BeaconNodeRoleConfig build() {
+      return new BeaconNodeRoleConfig(endpoints);
+    }
   }
 }

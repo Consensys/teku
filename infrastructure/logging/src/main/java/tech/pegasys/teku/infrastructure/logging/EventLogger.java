@@ -278,9 +278,9 @@ public class EventLogger {
   }
 
   public void executionLayerStubEnabled() {
-    info(
-        "Execution Layer Stub has been enabled. Please make sure this is intentional.",
-        Color.YELLOW);
+    error(
+        "Execution Layer Stub has been enabled! This is UNSAFE! You WILL fail to produce blocks and may follow an invalid chain.",
+        Color.RED);
   }
 
   public void builderBidNotHonouringGasLimit(

@@ -19,6 +19,7 @@ import io.libp2p.pubsub.gossip.GossipPeerScoreParams;
 import io.libp2p.pubsub.gossip.GossipScoreParams;
 import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
 import io.libp2p.pubsub.gossip.GossipTopicsScoreParams;
+import io.libp2p.pubsub.gossip.builders.GossipParamsBuilder;
 import io.libp2p.pubsub.gossip.builders.GossipPeerScoreParamsBuilder;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,32 +32,51 @@ import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 
 public class LibP2PParamsFactory {
 
-  public static final int MAX_SUBSCIPTIONS_PER_MESSAGE = 200;
+  public static final int MAX_SUBSCRIPTIONS_PER_MESSAGE = 200;
+  public static final int MAX_COMPRESSED_GOSSIP_SIZE = 10 * (1 << 20);
 
   public static GossipParams createGossipParams(final GossipConfig gossipConfig) {
-    return GossipParams.builder()
+    final GossipParamsBuilder builder = GossipParams.builder();
+    addGossipParamsDValues(gossipConfig, builder);
+    addGossipParamsMiscValues(gossipConfig, builder);
+    addGossipParamsMaxValues(builder);
+    return builder.build();
+  }
+
+  private static void addGossipParamsMiscValues(
+      final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
+    builder
+        .fanoutTTL(gossipConfig.getFanoutTTL())
+        .gossipSize(gossipConfig.getAdvertise())
+        .gossipHistoryLength(gossipConfig.getHistory())
+        .heartbeatInterval(gossipConfig.getHeartbeatInterval())
+        .floodPublish(true)
+        .seenTTL(gossipConfig.getSeenTTL());
+  }
+
+  private static void addGossipParamsDValues(
+      final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
+    builder
         .D(gossipConfig.getD())
         .DLow(gossipConfig.getDLow())
         .DHigh(gossipConfig.getDHigh())
         .DLazy(gossipConfig.getDLazy())
         // Calculate dScore and dOut based on other params
         .DScore(gossipConfig.getD() * 2 / 3)
-        .DOut(Math.min(gossipConfig.getD() / 2, Math.max(0, gossipConfig.getDLow() - 1)))
-        .fanoutTTL(gossipConfig.getFanoutTTL())
-        .gossipSize(gossipConfig.getAdvertise())
-        .gossipHistoryLength(gossipConfig.getHistory())
-        .heartbeatInterval(gossipConfig.getHeartbeatInterval())
-        .floodPublish(true)
-        .seenTTL(gossipConfig.getSeenTTL())
+        .DOut(Math.min(gossipConfig.getD() / 2, Math.max(0, gossipConfig.getDLow() - 1)));
+  }
+
+  private static void addGossipParamsMaxValues(final GossipParamsBuilder builder) {
+    builder
+        .maxGossipMessageSize(MAX_COMPRESSED_GOSSIP_SIZE)
         .maxPublishedMessages(1000)
         .maxTopicsPerPublishedMessage(1)
-        .maxSubscriptions(MAX_SUBSCIPTIONS_PER_MESSAGE)
+        .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)
         .maxGraftMessages(200)
         .maxPruneMessages(200)
         .maxPeersPerPruneMessage(1000)
         .maxIHaveLength(5000)
-        .maxIWantMessageIds(5000)
-        .build();
+        .maxIWantMessageIds(5000);
   }
 
   public static GossipScoreParams createGossipScoreParams(final GossipScoringConfig config) {

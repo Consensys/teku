@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,13 +26,10 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedBuilderBidPropertyTest {
+public class BuilderBidPropertyTest {
   @Property
   void roundTrip(
       @ForAll final int seed,
@@ -41,15 +38,16 @@ public class SignedBuilderBidPropertyTest {
       throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedBuilderBid bid = dataStructureUtil.randomSignedBuilderBid();
-
-    final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeader();
-    final BuilderBidSchema schema = new BuilderBidSchema(header.getSchema());
-    final SignedBuilderBidSchema signedSchema = new SignedBuilderBidSchema(schema);
-    final DeserializableTypeDefinition<SignedBuilderBid> typeDefinition =
-        signedSchema.getJsonTypeDefinition();
+    final BuilderBid bid = dataStructureUtil.randomBuilderBid();
+    final DeserializableTypeDefinition<BuilderBid> typeDefinition =
+        spec.forMilestone(specMilestone)
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getBuilderBidSchema()
+            .getJsonTypeDefinition();
     final String json = JsonUtil.serialize(bid, typeDefinition);
-    final SignedBuilderBid result = JsonUtil.parse(json, typeDefinition);
+    final BuilderBid result = JsonUtil.parse(json, typeDefinition);
     assertThat(result).isEqualTo(bid);
   }
 

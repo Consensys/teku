@@ -67,7 +67,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final boolean generateEarlyAttestations,
       final boolean preferSszBlockEncoding,
       final boolean failoversSendSubnetSubscriptions,
-      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
+      final Duration beaconNodeEventStreamSyncingStatusQueryPeriod) {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
         "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
@@ -124,7 +124,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             asyncRunner,
             metricsSystem,
             generateEarlyAttestations,
-            primaryBeaconNodeEventStreamReconnectAttemptPeriod);
+            beaconNodeEventStreamSyncingStatusQueryPeriod);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
   }
