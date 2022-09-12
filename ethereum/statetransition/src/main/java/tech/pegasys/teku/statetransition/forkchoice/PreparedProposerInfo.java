@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PreparedProposerInfo extends ExpiringInfo {
   private final Eth1Address feeRecipient;

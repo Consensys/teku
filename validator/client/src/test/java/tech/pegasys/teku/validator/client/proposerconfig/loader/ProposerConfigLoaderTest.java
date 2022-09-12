@@ -21,8 +21,8 @@ import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
@@ -88,7 +88,7 @@ public class ProposerConfigLoaderTest {
   }
 
   @Test
-  void shouldNodLoadNullFeeRecipientInDefaultConfig() {
+  void shouldNotLoadNullFeeRecipientInDefaultConfig() {
     final URL resource = Resources.getResource("proposerConfigInvalid2.json");
 
     assertThatThrownBy(() -> loader.getProposerConfig(resource));
@@ -96,7 +96,7 @@ public class ProposerConfigLoaderTest {
 
   @Test
   void shouldNotLoadInvalidFeeRecipient() {
-    final URL resource = Resources.getResource("proposerConfigInvalid2.json");
+    final URL resource = Resources.getResource("proposerConfigInvalid3.json");
 
     assertThatThrownBy(() -> loader.getProposerConfig(resource));
   }
@@ -118,6 +118,13 @@ public class ProposerConfigLoaderTest {
   @Test
   void shouldNotLoadMissingDefault() {
     final URL resource = Resources.getResource("proposerConfigInvalid5.json");
+
+    assertThatThrownBy(() -> loader.getProposerConfig(resource));
+  }
+
+  @Test
+  void shouldNotLoadInvalidJson() {
+    final URL resource = Resources.getResource("proposerConfigInvalid6.json");
 
     assertThatThrownBy(() -> loader.getProposerConfig(resource));
   }

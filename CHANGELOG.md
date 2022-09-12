@@ -18,6 +18,11 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
+- Detect Lodestar clients in `libp2p_connected_peers_current` metrics
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
+- Fix `/eth/v1/validator/register_validator` responding with a 400 status code and a misleading error message in case of exceptions
+- Update snakeyaml dependency to resolve cve-2022-25857 which could result in excessive memory usage when parsing YAML content
+- Fixed an issue where the range requested for deposit logs was not reduced when using only `--ee-endpoint` leading to persistent timeouts with execution clients

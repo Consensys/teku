@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 
 class GetDepositContractTest extends AbstractMigratedBeaconHandlerTest {
   final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();

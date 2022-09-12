@@ -3,6 +3,6 @@ dependencies {
     api 'io.swagger.core.v3:swagger-annotations'
 
     implementation project(':infrastructure:bytes')
-    implementation 'org.apache.tuweni:tuweni-bytes'
+
     implementation 'org.apache.tuweni:tuweni-units'
 }

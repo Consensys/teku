@@ -8,7 +8,6 @@ dependencies {
 
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static tech.pegasys.teku.beaconrestapi.EthereumTypes.SIGNATURE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
@@ -46,6 +46,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -167,4 +169,9 @@ public class BeaconRestApiTypes {
                   + " Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, "
                   + "`attestation`, `voluntary_exit`, `contribution_and_proof`]\n\n",
               "head"));
+
+  public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
+      SerializableTypeDefinition.object(Bytes32.class)
+          .withField("root", BYTES32_TYPE, Function.identity())
+          .build();
 }

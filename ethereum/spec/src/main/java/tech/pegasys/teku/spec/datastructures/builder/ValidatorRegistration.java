@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.builder;
 
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class ValidatorRegistration
@@ -52,5 +52,10 @@ public class ValidatorRegistration
 
   public BLSPublicKey getPublicKey() {
     return getField3().getBLSPublicKey();
+  }
+
+  @Override
+  public ValidatorRegistrationSchema getSchema() {
+    return (ValidatorRegistrationSchema) super.getSchema();
   }
 }
