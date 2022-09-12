@@ -475,7 +475,7 @@ jobs:
           command: |
             mkdir -p .openapidoc/spec
 
-            build/install/teku/bin/teku --network=mainnet --ee-endpoint=stub --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+            build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
 
             EXIT_CODE=0
