@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -72,13 +73,17 @@ public class TransitionCommand implements Runnable {
   public int blocks(
       @Mixin InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from")
-          List<String> blocks) {
+          List<String> blockPaths) {
     return processStateTransition(
         params,
         (spec, state) -> {
-          if (blocks != null) {
-            for (String blockPath : blocks) {
-              SignedBeaconBlock block = readBlock(spec, blockPath);
+          if (blockPaths != null) {
+            List<SignedBeaconBlock> blocks = new ArrayList<>();
+            for (String blockPath : blockPaths) {
+              blocks.add(readBlock(spec, blockPath));
+            }
+            sortBlocksBySlotNumber(blocks);
+            for (SignedBeaconBlock block : blocks) {
               state =
                   spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
             }
@@ -178,6 +183,19 @@ public class TransitionCommand implements Runnable {
     } catch (final IllegalArgumentException e) {
       throw new SSZException("Failed to parse SSZ (" + path + "): " + e.getMessage(), e);
     }
+  }
+
+  private void sortBlocksBySlotNumber(final List<SignedBeaconBlock> blocks) {
+    blocks.sort(
+        (o1, o2) -> {
+          if (o1.getSlot().equals(o2.getSlot())) {
+            return 0;
+          } else if (o1.getSlot().isGreaterThan(o2.getSlot())) {
+            return 1;
+          } else {
+            return -1;
+          }
+        });
   }
 
   @Override
