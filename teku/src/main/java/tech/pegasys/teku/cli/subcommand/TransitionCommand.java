@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -72,13 +74,17 @@ public class TransitionCommand implements Runnable {
   public int blocks(
       @Mixin InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from")
-          List<String> blocks) {
+          List<String> blockPaths) {
     return processStateTransition(
         params,
         (spec, state) -> {
-          if (blocks != null) {
-            for (String blockPath : blocks) {
-              SignedBeaconBlock block = readBlock(spec, blockPath);
+          if (blockPaths != null) {
+            List<SignedBeaconBlock> blocks = new ArrayList<>();
+            for (String blockPath : blockPaths) {
+              blocks.add(readBlock(spec, blockPath));
+            }
+            blocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
+            for (SignedBeaconBlock block : blocks) {
               state =
                   spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
             }
