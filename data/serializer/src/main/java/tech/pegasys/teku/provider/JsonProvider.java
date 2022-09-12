@@ -29,6 +29,8 @@ import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.jackson.Eth1AddressDeserializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.ByteArrayDeserializer;
@@ -69,6 +71,8 @@ public class JsonProvider {
     module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
     module.addSerializer(Bytes4.class, new Bytes4Serializer());
     module.addDeserializer(Bytes20.class, new Bytes20Deserializer());
+    module.addDeserializer(Eth1Address.class, new Eth1AddressDeserializer());
+
     module.addSerializer(Bytes20.class, new Bytes20Serializer());
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());

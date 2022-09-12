@@ -1,0 +1,9 @@
+dependencies {
+    implementation project(':ethereum:execution-types')
+    implementation project(':ethereum:spec')
+    implementation project(':data:serializer')
+    implementation project(':infrastructure:restapi')
+    implementation project(':infrastructure:http')
+
+    testImplementation testFixtures(project(':ethereum:spec'))
+}

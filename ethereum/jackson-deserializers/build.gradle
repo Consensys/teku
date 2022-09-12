@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':infrastructure:bytes')
+    implementation project(':infrastructure:jackson')
+    implementation project(':ethereum:execution-types')
+}

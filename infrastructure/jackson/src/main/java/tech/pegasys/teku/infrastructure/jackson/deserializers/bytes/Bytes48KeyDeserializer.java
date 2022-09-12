@@ -13,14 +13,20 @@
 
 package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
 
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.KeyDeserializer;
 import org.apache.tuweni.bytes.Bytes48;
 
 public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
-  public Object deserializeKey(String key, DeserializationContext ctxt) {
-    return Bytes48.fromHexStringStrict(key);
+  public Object deserializeKey(String key, DeserializationContext ctxt) throws JacksonException {
+    try {
+      return Bytes48.fromHexStringStrict(key);
+    } catch (RuntimeException ex) {
+      throw new JsonMappingException(ctxt.getParser(), "Invalid Public Key", ex);
+    }
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.ethereum.json.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

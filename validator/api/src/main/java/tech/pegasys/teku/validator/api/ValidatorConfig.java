@@ -27,9 +27,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
 
@@ -421,8 +422,13 @@ public class ValidatorConfig {
       if (proposerDefaultFeeRecipient == null) {
         this.proposerDefaultFeeRecipient = Optional.empty();
       } else {
-        this.proposerDefaultFeeRecipient =
-            Optional.of(Eth1Address.fromHexString(proposerDefaultFeeRecipient));
+        try {
+          this.proposerDefaultFeeRecipient =
+              Optional.of(Eth1Address.fromHexString(proposerDefaultFeeRecipient));
+        } catch (RuntimeException ex) {
+          throw new RuntimeException(
+              "Invalid Default Fee Recipient: " + ExceptionUtil.getRootCauseMessage(ex), ex);
+        }
       }
       return this;
     }
