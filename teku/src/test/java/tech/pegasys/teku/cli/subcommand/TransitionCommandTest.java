@@ -32,10 +32,10 @@ public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
           "transition",
           "blocks",
           "--network=mainnet",
-          String.format("-i=%s", getPath("state-from-slot-7.ssz")),
-          getPath("block-10.ssz"),
-          getPath("block-8.ssz"),
-          getPath("block-9.ssz"),
+          String.format("-i=%s", getPath("transition/state-from-slot-7.ssz")),
+          getPath("transition/block-10.ssz"),
+          getPath("transition/block-8.ssz"),
+          getPath("transition/block-9.ssz"),
         };
     ByteArrayOutputStream resultOutput = getStdOut();
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
@@ -43,7 +43,8 @@ public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(resultOutput.toByteArray())
         .isEqualTo(
             Resources.toByteArray(
-                Resources.getResource(TransitionCommandTest.class, "state-from-slot-10.ssz")));
+                Resources.getResource(
+                    TransitionCommandTest.class, "transition/state-from-slot-10.ssz")));
   }
 
   /** Safe cross-platform implementation */
