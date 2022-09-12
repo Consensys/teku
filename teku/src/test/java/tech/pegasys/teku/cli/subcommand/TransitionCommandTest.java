@@ -47,6 +47,28 @@ public class TransitionCommandTest extends AbstractBeaconNodeCommandTest {
                     TransitionCommandTest.class, "transition/state-from-slot-10.ssz")));
   }
 
+  @Test
+  public void shouldDeserializeAsHexWhenSszFails() throws IOException, URISyntaxException {
+    final String[] argsNetworkOptOnParent =
+        new String[] {
+          "transition",
+          "blocks",
+          "--network=mainnet",
+          String.format("-i=%s", getPath("transition/state-from-slot-7.ssz")),
+          getPath("transition/block-10.ssz"),
+          getPath("transition/block-8.hex"),
+          getPath("transition/block-9.ssz")
+        };
+    ByteArrayOutputStream resultOutput = getStdOut();
+    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(resultOutput.toByteArray())
+        .isEqualTo(
+            Resources.toByteArray(
+                Resources.getResource(
+                    TransitionCommandTest.class, "transition/state-from-slot-10.ssz")));
+  }
+
   /** Safe cross-platform implementation */
   private String getPath(final String filename) throws URISyntaxException {
     return Paths.get(Resources.getResource(TransitionCommandTest.class, filename).toURI())

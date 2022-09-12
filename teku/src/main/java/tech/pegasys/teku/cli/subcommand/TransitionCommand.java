@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
+import org.bouncycastle.util.encoders.Hex;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Visibility;
@@ -76,7 +77,7 @@ public class TransitionCommand implements Runnable {
       footer = "Teku is licensed under the Apache License 2.0")
   public int blocks(
       @Mixin InAndOutParams params,
-      @Parameters(paramLabel = "block", description = "Files to read blocks from")
+      @Parameters(paramLabel = "block", description = "Files to read blocks from (ssz or hex)")
           List<String> blockPaths) {
     return processStateTransition(
         params,
@@ -181,11 +182,22 @@ public class TransitionCommand implements Runnable {
   }
 
   private SignedBeaconBlock readBlock(final Spec spec, final String path) throws IOException {
-    final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
+    final byte[] blockDataBytesArray = Files.readAllBytes(Path.of(path));
     try {
+      return spec.deserializeSignedBeaconBlock(Bytes.wrap(blockDataBytesArray));
+    } catch (final RuntimeException e) {
+      return deserializeSignedBeaconBlockFromHex(spec, path, blockDataBytesArray);
+    }
+  }
+
+  private SignedBeaconBlock deserializeSignedBeaconBlockFromHex(
+      final Spec spec, final String path, final byte[] hexBlockData) {
+    try {
+      final Bytes blockData = Bytes.wrap(Hex.decode(hexBlockData));
       return spec.deserializeSignedBeaconBlock(blockData);
-    } catch (final IllegalArgumentException e) {
-      throw new SSZException("Failed to parse SSZ (" + path + "): " + e.getMessage(), e);
+    } catch (final RuntimeException e) {
+      throw new RuntimeException(
+          String.format("Failed to parse SSZ/HEX (%s): %s", path, e.getMessage()), e);
     }
   }
 
