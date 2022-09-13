@@ -1,6 +1,7 @@
 dependencies {
   implementation project(':beacon:pow')
   implementation project(':infrastructure:events')
+  implementation project(':ethereum:execution-types')
   implementation project(':ethereum:executionclient')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:networks')
@@ -21,4 +22,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
+  testImplementation testFixtures(project(':infrastructure:time'))
 }

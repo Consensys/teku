@@ -2,6 +2,7 @@ dependencies {
   acceptanceTestImplementation project(":infrastructure:bls")
   acceptanceTestImplementation project(':infrastructure:time')
   acceptanceTestImplementation project(':data:serializer')
+  acceptanceTestImplementation project(':ethereum:execution-types')
   acceptanceTestImplementation project(':ethereum:spec')
 
   testFixturesImplementation project(':beacon:pow')
@@ -9,6 +10,7 @@ dependencies {
   testFixturesImplementation project(':data:serializer')
   testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testFixturesImplementation project(':ethereum:execution-types')
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation project(':data:publisher')
   testFixturesImplementation testFixtures(project(':data:publisher'))

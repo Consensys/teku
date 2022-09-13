@@ -18,7 +18,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.xerial.snappy:snappy-java'
 

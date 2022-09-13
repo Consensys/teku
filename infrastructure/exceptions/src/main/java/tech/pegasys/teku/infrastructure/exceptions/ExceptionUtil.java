@@ -32,6 +32,12 @@ public class ExceptionUtil {
     return getCause(err, targetType).isPresent();
   }
 
+  public static String getRootCauseMessage(final Throwable err) {
+    return Optional.ofNullable(ExceptionUtils.getRootCause(err))
+        .map(ExceptionUtil::getMessageOrSimpleName)
+        .orElse("");
+  }
+
   @SafeVarargs
   public static boolean hasCause(
       final Throwable err, final Class<? extends Throwable>... targetTypes) {

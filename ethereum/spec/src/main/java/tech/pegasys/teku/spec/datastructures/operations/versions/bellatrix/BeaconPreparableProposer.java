@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconPreparableProposer {
   private final UInt64 validatorIndex;
