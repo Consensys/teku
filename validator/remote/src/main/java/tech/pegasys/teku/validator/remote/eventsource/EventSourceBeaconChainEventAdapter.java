@@ -139,9 +139,9 @@ public class EventSourceBeaconChainEventAdapter
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // connect to a failover event stream only if there are failovers configured
-  // and there is a ready failover
-  private void switchToFailoverEventStreamIfAvailable() {
+  // synchronized because of the ConnectionErrorHandler and the RemoteBeaconNodeSyncingChannel
+  // callbacks
+  private synchronized void switchToFailoverEventStreamIfAvailable() {
     if (failoverBeaconNodeApis.isEmpty()) {
       return;
     }
@@ -159,11 +159,7 @@ public class EventSourceBeaconChainEventAdapter
                     "There are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover"));
   }
 
-  // switchToFailoverEventStreamIfAvailable is async, so there could be multiple quick calls to
-  // this method because of the ConnectionErrorHandler and
-  // RemoteBeaconNodeSyncingChannel callbacks
-  private synchronized void switchToFailoverEventStream(
-      final RemoteValidatorApiChannel beaconNodeApi) {
+  private void switchToFailoverEventStream(final RemoteValidatorApiChannel beaconNodeApi) {
     if (alreadyFailedOver(beaconNodeApi)) {
       return;
     }
