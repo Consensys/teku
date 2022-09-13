@@ -78,7 +78,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean proposerBoostEnabled;
-  private final boolean firstDescendentAsChainHeadEnabled;
+  private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final boolean equivocatingIndicesEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
@@ -99,7 +99,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final PandaPrinter pandaPrinter,
       final boolean proposerBoostEnabled,
       final boolean equivocatingIndicesEnabled,
-      final boolean firstDescendentAsChainHeadEnabled) {
+      final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
@@ -110,7 +110,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     this.tickProcessor = tickProcessor;
-    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
+    this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -404,7 +404,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    if (firstDescendentAsChainHeadEnabled) {
+    if (forkChoiceUpdateHeadOnBlockImportEnabled) {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     }
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged();

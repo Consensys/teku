@@ -107,10 +107,11 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"true", "false"})
-  void shouldSetFirstDescendent(final String value) {
+  void shouldSetFirstDescendentAsHead(final String value) {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xfork-choice-first-descendent-as-head-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isDefaultFirstDescendentAsChainHeadEnabled())
+        getTekuConfigurationFromArguments(
+            "--Xfork-choice-update-head-on-block-import-enabled", value);
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdateHeadOnBlockImportEnabled())
         .isEqualTo(Boolean.valueOf(value));
   }
 

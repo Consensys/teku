@@ -526,7 +526,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             proposerBoostEnabled,
             equivocatingIndicesEnabled,
-            beaconConfig.eth2NetworkConfig().isDefaultFirstDescendentAsChainHeadEnabled());
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
     forkChoiceTrigger =
         beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
             ? new PreProposalForkChoiceTrigger(forkChoice)

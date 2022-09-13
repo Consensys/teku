@@ -46,7 +46,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final boolean DEFAULT_PROPOSER_BOOST_ENABLED = true;
 
-  public static final boolean DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED = true;
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
   public static final boolean DEFAULT_EQUIVOCATING_INDICES_ENABLED = true;
   public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
@@ -68,7 +68,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean proposerBoostEnabled;
 
-  private boolean firstDescendentAsChainHeadEnabled;
+  private boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final boolean equivocatingIndicesEnabled;
   private final boolean forkChoiceBeforeProposingEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
@@ -89,7 +89,7 @@ public class Eth2NetworkConfiguration {
       final boolean proposerBoostEnabled,
       final boolean equivocatingIndicesEnabled,
       final boolean forkChoiceBeforeProposingEnabled,
-      final boolean firstDescendentAsChainHeadEnabled,
+      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
@@ -113,7 +113,7 @@ public class Eth2NetworkConfiguration {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.proposerBoostEnabled = proposerBoostEnabled;
     this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
-    this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
+    this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -180,8 +180,8 @@ public class Eth2NetworkConfiguration {
     return proposerBoostEnabled;
   }
 
-  public boolean isDefaultFirstDescendentAsChainHeadEnabled() {
-    return firstDescendentAsChainHeadEnabled;
+  public boolean isForkChoiceUpdateHeadOnBlockImportEnabled() {
+    return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
   public boolean isEquivocatingIndicesEnabled() {
@@ -238,8 +238,8 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private Spec spec;
-    private boolean firstDescendentAsChainHeadEnabled =
-        DEFAULT_FIRST_DESCENDENT_AS_CHAIN_HEAD_ENABLED;
+    private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
+        DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -290,7 +290,7 @@ public class Eth2NetworkConfiguration {
           proposerBoostEnabled,
           equivocatingIndicesEnabled,
           forkChoiceBeforeProposingEnabled,
-          firstDescendentAsChainHeadEnabled,
+          forkChoiceUpdateHeadOnBlockImportEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           terminalBlockHashOverride,
@@ -383,9 +383,9 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder firstDescendentAsChainHeadEnabled(
-        final boolean firstDescendentAsChainHeadEnabled) {
-      this.firstDescendentAsChainHeadEnabled = firstDescendentAsChainHeadEnabled;
+    public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
+        final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
+      this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
       return this;
     }
 
