@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel.MAX_RETRY_TIME;
 
 import java.util.Collections;
 import java.util.List;
@@ -124,18 +125,20 @@ class RetryingStorageUpdateChannelTest {
 
   @Test
   void shouldThrowFatalExceptionWhenUpdateFailsForTooLong() {
+    final int timeAdvanceSecondsPerRetry = 10;
     final StorageUpdate event = mock(StorageUpdate.class);
     when(delegate.onStorageUpdate(event))
         .thenAnswer(
             invocation -> {
               // Increase time a bit on each call
-              timeProvider.advanceTimeBySeconds(10);
+              timeProvider.advanceTimeBySeconds(timeAdvanceSecondsPerRetry);
               return SafeFuture.failedFuture(new RuntimeException("Failed"));
             });
 
     assertThatThrownBy(() -> retryingChannel.onStorageUpdate(event))
         .isInstanceOf(FatalServiceFailureException.class);
-    verify(delegate, times(7)).onStorageUpdate(event);
+    final int expectedRetries = (int) (MAX_RETRY_TIME.toSeconds() / timeAdvanceSecondsPerRetry + 1);
+    verify(delegate, times(expectedRetries)).onStorageUpdate(event);
   }
 
   @Test
