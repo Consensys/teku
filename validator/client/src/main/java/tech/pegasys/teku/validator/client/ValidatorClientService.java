@@ -58,8 +58,12 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
+import tech.pegasys.teku.validator.remote.sentry.SentryBeaconNodeApi;
+import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfig;
+import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 
 public class ValidatorClientService extends Service {
+
   private static final Logger LOG = LogManager.getLogger();
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
@@ -111,33 +115,14 @@ public class ValidatorClientService extends Service {
         services.createAsyncRunnerWithMaxQueueSize(
             "validator", validatorConfig.getExecutorMaxQueueSize());
 
-    final boolean generateEarlyAttestations = validatorConfig.generateEarlyAttestations();
-
-    final BeaconNodeApi beaconNodeApi =
-        validatorConfig
-            .getBeaconNodeApiEndpoints()
-            .map(
-                beaconNodeApiEndpoints ->
-                    RemoteBeaconNodeApi.create(
-                        services,
-                        asyncRunner,
-                        beaconNodeApiEndpoints,
-                        config.getSpec(),
-                        validatorConfig.generateEarlyAttestations(),
-                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                        validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
-                        validatorConfig.getBeaconNodesSyncingQueryPeriod()))
-            .orElseGet(
-                () ->
-                    InProcessBeaconNodeApi.create(
-                        services, asyncRunner, generateEarlyAttestations, config.getSpec()));
+    final BeaconNodeApi beaconNodeApi = createBeaconNodeApi(services, config, asyncRunner);
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
+    final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
     Optional<ProposerConfigProvider> proposerConfigProvider = Optional.empty();
@@ -214,10 +199,53 @@ public class ValidatorClientService extends Service {
     return validatorClientService;
   }
 
+  private static BeaconNodeApi createBeaconNodeApi(
+      final ServiceConfig services,
+      final ValidatorClientConfiguration validatorClientConfiguration,
+      final AsyncRunner asyncRunner) {
+    final ValidatorConfig validatorConfig = validatorClientConfiguration.getValidatorConfig();
+
+    final BeaconNodeApi beaconNodeApi;
+    if (validatorConfig.getSentryNodeConfigurationFile().isEmpty()) {
+      beaconNodeApi =
+          validatorConfig
+              .getBeaconNodeApiEndpoints()
+              .map(
+                  beaconNodeApiEndpoints ->
+                      RemoteBeaconNodeApi.create(
+                          services,
+                          validatorConfig,
+                          asyncRunner,
+                          validatorClientConfiguration.getSpec(),
+                          beaconNodeApiEndpoints))
+              .orElseGet(
+                  () ->
+                      InProcessBeaconNodeApi.create(
+                          services,
+                          validatorConfig,
+                          asyncRunner,
+                          validatorClientConfiguration.getSpec()));
+    } else {
+      final SentryNodesConfig sentryNodesConfig =
+          new SentryNodesConfigLoader()
+              .load(validatorConfig.getSentryNodeConfigurationFile().get());
+
+      beaconNodeApi =
+          SentryBeaconNodeApi.create(
+              services,
+              validatorConfig,
+              asyncRunner,
+              validatorClientConfiguration.getSpec(),
+              sentryNodesConfig);
+    }
+
+    return beaconNodeApi;
+  }
+
   private static ValidatorLoader createValidatorLoader(
+      final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final AsyncRunner asyncRunner,
-      final ServiceConfig services) {
+      final AsyncRunner asyncRunner) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(

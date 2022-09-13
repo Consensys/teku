@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
 import java.util.List;
 import java.util.Optional;
@@ -121,7 +122,8 @@ class ForkChoiceTest {
           transitionBlockValidator,
           PandaPrinter.NOOP,
           false,
-          true);
+          true,
+          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
   @BeforeEach
   public void setup() {
@@ -211,7 +213,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             PandaPrinter.NOOP,
             true,
-            false);
+            false,
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

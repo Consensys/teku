@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.convertToOkHttpUrls;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createOkHttpClient;
 import static tech.pegasys.teku.validator.remote.sentry.BeaconNodeRoleConfig.BEACON_NODE_ROLE_CONFIG;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BeaconNodesSentryConfig {
@@ -65,6 +71,17 @@ public class BeaconNodesSentryConfig {
 
   public Optional<BeaconNodeRoleConfig> getAttestationPublisherConfig() {
     return attestationPublisherConfig;
+  }
+
+  public OkHttpClient createOkHttpClientForSentryNodes() {
+    final List<HttpUrl> allBeaconNodeEndpoints =
+        new ArrayList<>(convertToOkHttpUrls(getDutiesProviderNodeConfig().getEndpointsAsURIs()));
+    getBlockHandlerNodeConfig()
+        .ifPresent(c -> allBeaconNodeEndpoints.addAll(convertToOkHttpUrls(c.getEndpointsAsURIs())));
+    getAttestationPublisherConfig()
+        .ifPresent(c -> allBeaconNodeEndpoints.addAll(convertToOkHttpUrls(c.getEndpointsAsURIs())));
+
+    return createOkHttpClient(allBeaconNodeEndpoints);
   }
 
   public static class Builder {
