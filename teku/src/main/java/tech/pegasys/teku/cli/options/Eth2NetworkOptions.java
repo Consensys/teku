@@ -169,6 +169,17 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Boolean forkChoiceBeforeProposingEnabled = null;
 
+  @Option(
+      names = {"--Xfork-choice-update-head-on-block-import-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Make the first descendent of head the new chain head.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
   }
@@ -224,7 +235,8 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .proposerBoostEnabled(proposerBoostEnabled);
+        .proposerBoostEnabled(proposerBoostEnabled)
+        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled);
   }
 
   public String getNetwork() {
