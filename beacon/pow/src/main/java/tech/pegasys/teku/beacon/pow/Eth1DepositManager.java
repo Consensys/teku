@@ -106,7 +106,7 @@ public class Eth1DepositManager {
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
     return eth1SnapshotLoaderChannel
-        // If DepositSnapshotTree is loaded from file, we prefer it
+        // If DepositTreeSnapshot is loaded from file, we prefer it
         .loadDepositSnapshot()
         .thenCompose(
             fileDepositSnapshotLoadingResult -> {

@@ -385,7 +385,7 @@ class Eth1DepositManagerTest {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
 
-    // DepositSnapshotTree from file will be used to start from
+    // DepositTreeSnapshot from file will be used to start from
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         generateDepositSnapshot(deposits.longValue(), UInt64.valueOf(lastBlockNumber));
     when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
@@ -419,7 +419,7 @@ class Eth1DepositManagerTest {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
 
-    // DepositSnapshotTree from file will be used to start from
+    // DepositTreeSnapshot from file will be used to start from
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     // This one will be ignored
