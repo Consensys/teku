@@ -72,8 +72,9 @@ public class StorageUpdate {
         && bestJustifiedCheckpoint.isEmpty()
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
-        && stateRoots.isEmpty();
-    // FIXME: should we check optimisticTransitionBlockRootSet and finalizedDepositSnapshot here?
+        && stateRoots.isEmpty()
+        && !optimisticTransitionBlockRootSet
+        && finalizedDepositSnapshot.isEmpty();
   }
 
   public Optional<UInt64> getGenesisTime() {

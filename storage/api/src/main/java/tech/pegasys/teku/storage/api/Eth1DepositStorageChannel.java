@@ -21,6 +21,5 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 public interface Eth1DepositStorageChannel extends ChannelInterface {
   SafeFuture<ReplayDepositsResult> replayDepositEvents();
 
-  // FIXME: if we are going to remove deposit events replay, is it a right place for it?
   SafeFuture<LoadDepositSnapshotResult> loadFinalizedDepositSnapshot();
 }
