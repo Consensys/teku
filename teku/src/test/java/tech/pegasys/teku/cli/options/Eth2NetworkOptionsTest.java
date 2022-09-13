@@ -23,6 +23,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -102,6 +103,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xprogressive-balances-mode", mode.name());
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getGenesisSpecConfig().getProgressiveBalancesMode()).isEqualTo(mode);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"true", "false"})
+  void shouldSetFirstDescendentAsHead(final String value) {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xfork-choice-update-head-on-block-import-enabled", value);
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdateHeadOnBlockImportEnabled())
+        .isEqualTo(Boolean.valueOf(value));
   }
 
   @Test
