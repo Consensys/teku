@@ -40,7 +40,7 @@ public class ValidatorClientOptions {
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Send subnet subscriptions to Beacon Nodes which are used as failovers",
+      description = "Send subnet subscriptions to beacon nodes which are used as failovers",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
@@ -52,8 +52,9 @@ public class ValidatorClientOptions {
       names = {"--Xbeacon-nodes-syncing-query-period"},
       paramLabel = "<INTEGER>",
       description =
-          "How often (in seconds) will the syncing status of the configured Beacon Nodes be queried. "
-              + "The result of the query would be used to determine if a validator client should send requests to a beacon node or failover immediately.",
+          "Period in seconds when the syncing status of the configured beacon nodes will be queried. "
+              + "The result of the query would be used to determine if a validator client should send requests to a beacon node or failover immediately. "
+              + "It would also be used to determine if the beacon node event stream should failover.",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "1")

@@ -15,9 +15,11 @@ package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Streams;
@@ -158,6 +160,32 @@ class FailoverValidatorApiHandlerTest {
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRequestsUsingFailover")
+  <T> void requestFailoversImmediatelyIfBeaconNodeMarkedAsNotReady(
+      final ValidatorApiChannelRequest<T> request, final String methodLabel, final T response) {
+
+    setupSuccesses(request, response, failoverApiChannel1);
+
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verify(primaryApiChannel, atLeastOnce()).getEndpoint();
+    verifyNoMoreInteractions(primaryApiChannel);
+
+    verifyFailoverCounters(
+        failoverApiChannel1,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyFailoverCounters(
+        failoverApiChannel2,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -327,6 +355,38 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(response);
     verifyCallIsMade.accept(primaryApiChannel);
+
+    verifyCallIsMade.accept(failoverApiChannel1);
+    verifyCallIsMade.accept(failoverApiChannel2);
+
+    verifyFailoverCounters(
+        failoverApiChannel1,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyFailoverCounters(
+        failoverApiChannel2,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void relayedResponseReceivedFromFailoverIfBeaconNodeMarkedAsNotReady(
+      final ValidatorApiChannelRequest<T> request,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade,
+      final String methodLabel,
+      final T response) {
+
+    setupSuccesses(request, response, failoverApiChannel1, failoverApiChannel2);
+
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verify(primaryApiChannel, atLeastOnce()).getEndpoint();
+    verifyNoMoreInteractions(primaryApiChannel);
 
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
