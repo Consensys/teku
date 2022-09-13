@@ -123,18 +123,11 @@ public class BeaconNodeReadinessManager extends Service {
             })
         .thenAccept(
             isReady -> {
-              final Optional<Boolean> maybePreviousReadiness =
+              final Optional<Boolean> maybeCachedReadiness =
                   Optional.ofNullable(readinessStatusCache.get(beaconNodeApi));
-              final boolean statusHasChanged =
-                  maybePreviousReadiness
-                      .map(previousReadiness -> previousReadiness != isReady)
-                      .orElse(true);
-              if (!statusHasChanged) {
-                return;
-              }
               readinessStatusCache.put(beaconNodeApi, isReady);
               if (isReady) {
-                processReadyResult(isPrimaryNode, maybePreviousReadiness);
+                processReadyResult(isPrimaryNode, maybeCachedReadiness);
               } else {
                 processNotReadyResult(beaconNodeApi, isPrimaryNode);
               }
@@ -142,13 +135,13 @@ public class BeaconNodeReadinessManager extends Service {
   }
 
   void processReadyResult(
-      final boolean isPrimaryNode, final Optional<Boolean> maybePreviousReadiness) {
+      final boolean isPrimaryNode, final Optional<Boolean> maybeCachedReadiness) {
     if (!isPrimaryNode) {
       return;
     }
-    maybePreviousReadiness.ifPresent(
-        previousReadiness -> {
-          if (!previousReadiness) {
+    maybeCachedReadiness.ifPresent(
+        cachedReadiness -> {
+          if (!cachedReadiness) {
             remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
           }
         });

@@ -160,7 +160,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   // switchToFailoverEventStreamIfAvailable is async, so there could be multiple quick calls to
-  // this method for different failover endpoints because of the ConnectionErrorHandler and
+  // this method because of the ConnectionErrorHandler and
   // RemoteBeaconNodeSyncingChannel callbacks
   private synchronized void switchToFailoverEventStream(
       final RemoteValidatorApiChannel beaconNodeApi) {

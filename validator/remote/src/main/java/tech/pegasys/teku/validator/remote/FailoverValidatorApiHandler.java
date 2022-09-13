@@ -369,7 +369,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final RemoteServiceNotAvailableException exception =
           new RemoteServiceNotAvailableException(
               String.format(
-                  "Beacon Node %s is not ready to accept requests.", delegate.getEndpoint()));
+                  "Beacon Node %s is not ready to accept requests",
+                  delegate.getEndpoint()));
       futureResponse = SafeFuture.failedFuture(exception);
     } else {
       futureResponse = request.run(delegate);
