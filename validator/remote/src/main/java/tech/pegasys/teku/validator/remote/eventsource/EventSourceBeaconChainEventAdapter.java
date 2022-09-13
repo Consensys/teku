@@ -100,6 +100,25 @@ public class EventSourceBeaconChainEventAdapter
         .thenRun(runningLatch::countDown);
   }
 
+  @Override
+  public void onPrimaryNodeNotInSync() {
+    switchToFailoverEventStreamIfAvailable();
+  }
+
+  @Override
+  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failover) {
+    if (currentEventStreamHasSameEndpoint(failover)) {
+      switchToFailoverEventStreamIfAvailable();
+    }
+  }
+
+  @Override
+  public void onPrimaryNodeBackInSync() {
+    if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
+      switchBackToPrimaryEventStream();
+    }
+  }
+
   private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
     return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
@@ -171,25 +190,6 @@ public class EventSourceBeaconChainEventAdapter
   private boolean currentEventStreamHasSameEndpoint(final RemoteValidatorApiChannel beaconNodeApi) {
     return Objects.equals(
         currentBeaconNodeUsedForEventStreaming.getEndpoint(), beaconNodeApi.getEndpoint());
-  }
-
-  @Override
-  public void onPrimaryNodeNotInSync() {
-    switchToFailoverEventStreamIfAvailable();
-  }
-
-  @Override
-  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failover) {
-    if (currentEventStreamHasSameEndpoint(failover)) {
-      switchToFailoverEventStreamIfAvailable();
-    }
-  }
-
-  @Override
-  public void onPrimaryNodeBackInSync() {
-    if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
-      switchBackToPrimaryEventStream();
-    }
   }
 
   private void waitForExit() {
