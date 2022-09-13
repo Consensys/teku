@@ -106,8 +106,8 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failover) {
-    if (currentEventStreamHasSameEndpoint(failover)) {
+  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failoverNotInSync) {
+    if (currentEventStreamHasSameEndpoint(failoverNotInSync)) {
       switchToFailoverEventStreamIfAvailable();
     }
   }

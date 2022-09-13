@@ -19,7 +19,7 @@ public interface RemoteBeaconNodeSyncingChannel extends VoidReturningChannelInte
 
   void onPrimaryNodeNotInSync();
 
-  void onFailoverNodeNotInSync(RemoteValidatorApiChannel failover);
+  void onFailoverNodeNotInSync(RemoteValidatorApiChannel failoverNotInSync);
 
   void onPrimaryNodeBackInSync();
 }
