@@ -35,6 +35,7 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
   public void isCompletedExceptionallyWith(final Throwable t) {
     isCompletedExceptionally();
     Assertions.assertThatThrownBy(actual::join)
+        .describedAs(info.description())
         .isInstanceOf(CompletionException.class)
         .extracting(Throwable::getCause)
         .isSameAs(t);
@@ -44,6 +45,7 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
       final Class<X> exceptionType) {
     isCompletedExceptionally();
     return Assertions.assertThatThrownBy(actual::join)
+        .describedAs(info.description())
         .isInstanceOf(CompletionException.class)
         .extracting(Throwable::getCause)
         .isInstanceOf(exceptionType)
@@ -55,28 +57,29 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
   public void isCompletedExceptionallyWithMessage(final String expectedMessage) {
     isCompletedExceptionally();
     Assertions.assertThatThrownBy(actual::join)
+        .describedAs(info.description())
         .extracting(Throwable::getMessage)
         .matches(m -> m.contains(expectedMessage));
   }
 
   public void isCompletedWithEmptyOptional() {
     isCompleted();
-    assertThat(actual.join()).isEqualTo(Optional.empty());
+    assertThat(actual.join()).describedAs(info.description()).isEqualTo(Optional.empty());
   }
 
   public void isCompletedWithNonEmptyOptional() {
     isCompleted();
     T result = actual.join();
-    assertThat(result).isInstanceOf(Optional.class);
-    assertThat((Optional<?>) result).isNotEmpty();
+    assertThat(result).describedAs(info.description()).isInstanceOf(Optional.class);
+    assertThat((Optional<?>) result).describedAs(info.description()).isNotEmpty();
   }
 
   @SuppressWarnings("unchecked")
   public <X> void isCompletedWithOptionalContaining(final X value) {
     isCompleted();
     T result = actual.join();
-    assertThat(result).isInstanceOf(Optional.class);
-    assertThat(((Optional<T>) result)).contains((T) value);
+    assertThat(result).describedAs(info.description()).isInstanceOf(Optional.class);
+    assertThat(((Optional<T>) result)).describedAs(info.description()).contains((T) value);
   }
 
   public T joinsImmediately() {
