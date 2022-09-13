@@ -186,18 +186,24 @@ public class TransitionCommand implements Runnable {
     try {
       return spec.deserializeSignedBeaconBlock(Bytes.wrap(blockDataBytesArray));
     } catch (final RuntimeException e) {
-      return deserializeSignedBeaconBlockFromHex(spec, path, blockDataBytesArray);
+      return deserializeSignedBeaconBlockFromHex(spec, path, blockDataBytesArray, e);
     }
   }
 
   private SignedBeaconBlock deserializeSignedBeaconBlockFromHex(
-      final Spec spec, final String path, final byte[] hexBlockData) {
+      final Spec spec,
+      final String path,
+      final byte[] hexBlockData,
+      RuntimeException sszSerializationException) {
     try {
       final Bytes blockData = Bytes.wrap(Hex.decode(hexBlockData));
       return spec.deserializeSignedBeaconBlock(blockData);
     } catch (final RuntimeException e) {
       throw new RuntimeException(
-          String.format("Failed to parse SSZ/HEX (%s): %s", path, e.getMessage()), e);
+          String.format(
+              "Failed to parse (%s). SSZ deserialization error: %s. HEX deserialization error: %s",
+              path, sszSerializationException.getMessage(), e.getMessage()),
+          e);
     }
   }
 
