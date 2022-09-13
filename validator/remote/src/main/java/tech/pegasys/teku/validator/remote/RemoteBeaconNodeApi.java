@@ -38,9 +38,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
-import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
@@ -70,23 +68,24 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final Duration beaconNodeEventStreamSyncingStatusQueryPeriod) {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
-        "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
-    List<HttpUrl> endpoints = convertToOkHttpUrls(beaconNodeApiEndpoints);
-    final OkHttpClient okHttpClient = createOkHttpClient(endpoints);
-    // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
-    endpoints = stripAuthentication(endpoints);
+        "One or more Beacon Node endpoints should be defined for enabling remote connectivity "
+            + "from VC to BN.");
 
-    final HttpUrl primaryEndpoint = endpoints.get(0);
-    final List<HttpUrl> failoverEndpoints = endpoints.subList(1, endpoints.size());
+    final OkHttpClient okHttpClient =
+        createOkHttpClient(convertToOkHttpUrls(beaconNodeApiEndpoints));
+    final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints =
+        new RemoteBeaconNodeEndpoints(beaconNodeApiEndpoints);
+    final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
+    final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
     final RemoteValidatorApiChannel primaryValidatorApi =
-        createRemoteValidatorApi(
+        RemoteValidatorApiHandler.create(
             primaryEndpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner);
     final List<RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
             .map(
                 endpoint ->
-                    createRemoteValidatorApi(
+                    RemoteValidatorApiHandler.create(
                         endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
             .collect(Collectors.toList());
 
@@ -144,7 +143,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     return validatorApiChannel;
   }
 
-  private static List<HttpUrl> convertToOkHttpUrls(final List<URI> beaconNodeApiEndpoints) {
+  public static List<HttpUrl> convertToOkHttpUrls(final List<URI> beaconNodeApiEndpoints) {
     return beaconNodeApiEndpoints.stream()
         .map(
             endpoint ->
@@ -156,7 +155,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         .collect(Collectors.toList());
   }
 
-  private static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {
+  public static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
     if (endpoints.size() > 1) {
@@ -165,24 +164,5 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       OkHttpClientAuth.addAuthInterceptor(endpoints.get(0), httpClientBuilder);
     }
     return httpClientBuilder.build();
-  }
-
-  private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
-    return endpoints.stream()
-        .map(endpoint -> endpoint.newBuilder().username("").password("").build())
-        .collect(Collectors.toList());
-  }
-
-  private static RemoteValidatorApiChannel createRemoteValidatorApi(
-      final HttpUrl endpoint,
-      final OkHttpClient okHttpClient,
-      final Spec spec,
-      final boolean preferSszBlockEncoding,
-      final AsyncRunner asyncRunner) {
-    final OkHttpValidatorRestApiClient apiClient =
-        new OkHttpValidatorRestApiClient(endpoint, okHttpClient);
-    final OkHttpValidatorTypeDefClient typeDefClient =
-        new OkHttpValidatorTypeDefClient(okHttpClient, endpoint, spec, preferSszBlockEncoding);
-    return new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
   }
 }
