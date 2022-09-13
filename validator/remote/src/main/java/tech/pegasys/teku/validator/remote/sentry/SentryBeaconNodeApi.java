@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote.sentry;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
@@ -57,13 +57,10 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
   public static BeaconNodeApi create(
       final ServiceConfig serviceConfig,
+      final ValidatorConfig validatorConfig,
       final AsyncRunner asyncRunner,
-      final SentryNodesConfig sentryNodesConfig,
       final Spec spec,
-      final boolean generateEarlyAttestations,
-      final boolean preferSszBlockEncoding,
-      final boolean failoverSendSubnetSubscriptions,
-      final Duration primaryBeaconNodeEventStreamReconnectAttemptPeriod) {
+      final SentryNodesConfig sentryNodesConfig) {
     final BeaconNodesSentryConfig beaconNodesSentryConfig =
         sentryNodesConfig.getBeaconNodesSentryConfig();
     final OkHttpClient sentryNodesHttpClient =
@@ -76,18 +73,10 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApiChannel =
         createPrimaryValidatorApiChannel(
-            dutiesProviderHttpClient,
-            sentryNodesHttpClient,
-            spec,
-            preferSszBlockEncoding,
-            asyncRunner);
+            validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
     final List<RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApiChannel =
         createFailoverValidatorApiChannel(
-            dutiesProviderHttpClient,
-            sentryNodesHttpClient,
-            spec,
-            preferSszBlockEncoding,
-            asyncRunner);
+            validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
 
     final ValidatorApiChannel dutiesProviderValidatorApi =
         new MetricRecordingValidatorApiChannel(
@@ -95,7 +84,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             new FailoverValidatorApiHandler(
                 dutiesProviderPrimaryValidatorApiChannel,
                 dutiesProviderFailoverValidatorApiChannel,
-                failoverSendSubnetSubscriptions,
+                validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
                 serviceConfig.getMetricsSystem()));
 
     final Optional<ValidatorApiChannel> blockHandlerValidatorApi =
@@ -104,13 +93,12 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             .map(
                 c ->
                     createRemoteValidatorApiForRole(
+                        validatorConfig,
                         c.getEndpointsAsURIs(),
                         sentryNodesHttpClient,
                         spec,
-                        preferSszBlockEncoding,
                         asyncRunner,
-                        serviceConfig.getMetricsSystem(),
-                        failoverSendSubnetSubscriptions));
+                        serviceConfig.getMetricsSystem()));
 
     final Optional<ValidatorApiChannel> attestationPublisherValidatorApi =
         beaconNodesSentryConfig
@@ -118,13 +106,12 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             .map(
                 c ->
                     createRemoteValidatorApiForRole(
+                        validatorConfig,
                         c.getEndpointsAsURIs(),
                         sentryNodesHttpClient,
                         spec,
-                        preferSszBlockEncoding,
                         asyncRunner,
-                        serviceConfig.getMetricsSystem(),
-                        failoverSendSubnetSubscriptions));
+                        serviceConfig.getMetricsSystem()));
 
     final ValidatorApiChannel sentryValidatorApi =
         new SentryValidatorApiChannel(
@@ -149,38 +136,42 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel,
             asyncRunner,
             serviceConfig.getMetricsSystem(),
-            generateEarlyAttestations,
-            primaryBeaconNodeEventStreamReconnectAttemptPeriod);
+            validatorConfig.generateEarlyAttestations(),
+            validatorConfig.getBeaconNodeEventStreamSyncingStatusQueryPeriod());
 
     return new SentryBeaconNodeApi(beaconChainEventAdapter, sentryValidatorApi);
   }
 
   private static RemoteValidatorApiChannel createPrimaryValidatorApiChannel(
+      final ValidatorConfig validatorConfig,
       final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
       final OkHttpClient httpClient,
       final Spec spec,
-      final boolean preferSszBlockEncoding,
       final AsyncRunner asyncRunner) {
     return RemoteValidatorApiHandler.create(
         remoteBeaconNodeEndpoints.getPrimaryEndpoint(),
         httpClient,
         spec,
-        preferSszBlockEncoding,
+        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
         asyncRunner);
   }
 
   private static List<RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
+      final ValidatorConfig validatorConfig,
       final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
       final OkHttpClient httpClient,
       final Spec spec,
-      final boolean preferSszBlockEncoding,
       final AsyncRunner asyncRunner) {
     final List<RemoteValidatorApiChannel> failoverValidatorApis =
         remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
             .map(
                 endpoint ->
                     RemoteValidatorApiHandler.create(
-                        endpoint, httpClient, spec, preferSszBlockEncoding, asyncRunner))
+                        endpoint,
+                        httpClient,
+                        spec,
+                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        asyncRunner))
             .collect(Collectors.toList());
 
     if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
@@ -193,28 +184,27 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
   }
 
   private static ValidatorApiChannel createRemoteValidatorApiForRole(
+      final ValidatorConfig validatorConfig,
       final List<URI> endpoints,
       final OkHttpClient httpClient,
       final Spec spec,
-      final boolean preferSszBlockEncoding,
       final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
-      final boolean failoverSendSubnetSubscriptions) {
+      final MetricsSystem metricsSystem) {
     final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints =
         new RemoteBeaconNodeEndpoints(endpoints);
     final RemoteValidatorApiChannel primaryValidatorApi =
         createPrimaryValidatorApiChannel(
-            remoteBeaconNodeEndpoints, httpClient, spec, preferSszBlockEncoding, asyncRunner);
+            validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
     final List<RemoteValidatorApiChannel> failoverValidatorApis =
         createFailoverValidatorApiChannel(
-            remoteBeaconNodeEndpoints, httpClient, spec, preferSszBlockEncoding, asyncRunner);
+            validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
 
     return new MetricRecordingValidatorApiChannel(
         metricsSystem,
         new FailoverValidatorApiHandler(
             primaryValidatorApi,
             failoverValidatorApis,
-            failoverSendSubnetSubscriptions,
+            validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
             metricsSystem));
   }
 

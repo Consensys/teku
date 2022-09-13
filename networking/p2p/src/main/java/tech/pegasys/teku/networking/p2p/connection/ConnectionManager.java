@@ -46,7 +46,8 @@ import tech.pegasys.teku.service.serviceutils.Service;
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
-  private static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
+  protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
+  protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
@@ -91,15 +92,37 @@ public class ConnectionManager extends Service {
     synchronized (this) {
       staticPeers.forEach(this::createPersistentConnection);
     }
-    periodicPeerSearch =
-        asyncRunner.runWithFixedDelay(
-            this::searchForPeers,
-            DISCOVERY_INTERVAL,
-            error -> LOG.error("Error while searching for peers", error));
-    connectToBestPeers(emptyList());
-    searchForPeers();
+    createRecurrentSearchTask();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
+  }
+
+  private void createRecurrentSearchTask() {
+    searchForPeers().alwaysRun(this::createNextSearchPeerTask).finish(this::logSearchError);
+  }
+
+  private void logSearchError(final Throwable throwable) {
+    LOG.error("Error while searching for peers", throwable);
+  }
+
+  private void createNextSearchPeerTask() {
+    if (network.getPeerCount() == 0) {
+      // Retry fast until we have at least one connection with peers
+      LOG.trace("Retrying peer search, no connected peers yet");
+      cancelPeerSearchTask();
+      this.periodicPeerSearch =
+          asyncRunner.runCancellableAfterDelay(
+              this::createRecurrentSearchTask, WARMUP_DISCOVERY_INTERVAL, this::logSearchError);
+    } else {
+      // Long term task, run when we have peers connected
+      LOG.trace("Establishing peer search task with long delay");
+      cancelPeerSearchTask();
+      this.periodicPeerSearch =
+          asyncRunner.runWithFixedDelay(
+              () -> searchForPeers().finish(this::logSearchError),
+              DISCOVERY_INTERVAL,
+              this::logSearchError);
+    }
   }
 
   private void connectToBestPeers(final Collection<DiscoveryPeer> additionalPeersToConsider) {
@@ -115,20 +138,24 @@ public class ConnectionManager extends Service {
         .forEach(this::attemptConnection);
   }
 
-  private void searchForPeers() {
+  private SafeFuture<Void> searchForPeers() {
     if (!isRunning()) {
       LOG.trace("Not running so not searching for peers");
-      return;
+      return SafeFuture.COMPLETE;
     }
     LOG.trace("Searching for peers");
-    discoveryService
+    return discoveryService
         .searchForPeers()
         .orTimeout(30, TimeUnit.SECONDS)
-        .finish(
-            this::connectToBestPeers,
-            error -> {
-              LOG.debug("Discovery failed", error);
-              connectToBestPeers(emptyList());
+        .handle(
+            (peers, error) -> {
+              if (error == null) {
+                connectToBestPeers(peers);
+              } else {
+                LOG.debug("Discovery failed", error);
+                connectToBestPeers(emptyList());
+              }
+              return null;
             });
   }
 
@@ -164,11 +191,15 @@ public class ConnectionManager extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectedSubscriptionId);
+    cancelPeerSearchTask();
+    return SafeFuture.COMPLETE;
+  }
+
+  private void cancelPeerSearchTask() {
     final Cancellable peerSearchTask = this.periodicPeerSearch;
     if (peerSearchTask != null) {
       peerSearchTask.cancel();
     }
-    return SafeFuture.COMPLETE;
   }
 
   public synchronized void addStaticPeer(final PeerAddress peerAddress) {

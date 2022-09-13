@@ -83,6 +83,31 @@ public class FutureUtil {
         .finish(exceptionHandler);
   }
 
+  static void runAfterDelay(
+      AsyncRunner runner,
+      ExceptionThrowingRunnable runnable,
+      Cancellable task,
+      final Duration delay,
+      Consumer<Throwable> exceptionHandler) {
+    runner
+        .runAfterDelay(
+            () -> {
+              if (!task.isCancelled()) {
+                try {
+                  runnable.run();
+                } catch (final Throwable throwable) {
+                  try {
+                    exceptionHandler.accept(throwable);
+                  } catch (Exception e) {
+                    LOG.warn("Exception in exception handler", e);
+                  }
+                }
+              }
+            },
+            delay)
+        .finish(exceptionHandler);
+  }
+
   static Cancellable createCancellable() {
     return new Cancellable() {
       private volatile boolean cancelled;
