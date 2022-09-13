@@ -64,12 +64,12 @@ class BeaconNodeReadinessManagerTest {
 
   @BeforeEach
   public void setUp() {
-    beaconNodeReadinessManager.doStart();
+    beaconNodeReadinessManager.start().join();
   }
 
   @AfterEach
   public void cleanUp() {
-    beaconNodeReadinessManager.doStop();
+    beaconNodeReadinessManager.stop().join();
   }
 
   @Test
