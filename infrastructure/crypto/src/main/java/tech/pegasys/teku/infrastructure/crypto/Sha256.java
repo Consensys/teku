@@ -41,7 +41,7 @@ public class Sha256 {
     return messageDigest.digest();
   }
 
-  public Bytes wrappedDigest(final Bytes a, final Bytes b) {
+  public Bytes32 wrappedDigest(final Bytes a, final Bytes b) {
     return Bytes32.wrap(digest(a, b));
   }
 }
