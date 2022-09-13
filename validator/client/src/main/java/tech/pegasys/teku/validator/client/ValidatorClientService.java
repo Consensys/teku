@@ -60,9 +60,11 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.sentry.SentryBeaconNodeApi;
+import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfig;
 import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 
 public class ValidatorClientService extends Service {
+
   private static final Logger LOG = LogManager.getLogger();
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
@@ -243,22 +245,20 @@ public class ValidatorClientService extends Service {
                       InProcessBeaconNodeApi.create(
                           services, asyncRunner, generateEarlyAttestations, config.getSpec()));
     } else {
+      final SentryNodesConfig sentryNodesConfig =
+          new SentryNodesConfigLoader()
+              .load(validatorConfig.getSentryNodeConfigurationFile().get());
+
       beaconNodeApi =
-          validatorConfig
-              .getSentryNodeConfigurationFile()
-              .map((sentryConfigPath) -> new SentryNodesConfigLoader().load(sentryConfigPath))
-              .map(
-                  (sentryNodesConfig) ->
-                      SentryBeaconNodeApi.create(
-                          services,
-                          asyncRunner,
-                          sentryNodesConfig,
-                          config.getSpec(),
-                          generateEarlyAttestations,
-                          preferSszBlockEncoding,
-                          failoversSendSubnetSubscriptions,
-                          beaconNodeEventStreamSyncingStatusQueryPeriod))
-              .orElseThrow(RuntimeException::new);
+          SentryBeaconNodeApi.create(
+              services,
+              asyncRunner,
+              sentryNodesConfig,
+              config.getSpec(),
+              generateEarlyAttestations,
+              preferSszBlockEncoding,
+              failoversSendSubnetSubscriptions,
+              beaconNodeEventStreamSyncingStatusQueryPeriod);
     }
 
     return beaconNodeApi;

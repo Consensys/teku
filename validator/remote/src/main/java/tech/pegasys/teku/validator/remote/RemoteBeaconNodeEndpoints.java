@@ -23,10 +23,10 @@ import okhttp3.HttpUrl;
 
 public class RemoteBeaconNodeEndpoints {
 
-  private final List<HttpUrl> endpoints = new ArrayList<>();
+  private final List<HttpUrl> endpoints;
 
   public RemoteBeaconNodeEndpoints(final List<URI> endpoints) {
-    this.endpoints.addAll(stripAuthentication(convertToOkHttpUrls(endpoints)));
+    this.endpoints = new ArrayList<>(stripAuthentication(convertToOkHttpUrls(endpoints)));
   }
 
   public HttpUrl getPrimaryEndpoint() {

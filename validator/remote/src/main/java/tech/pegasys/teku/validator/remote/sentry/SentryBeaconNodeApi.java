@@ -13,16 +13,11 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
-import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.convertToOkHttpUrls;
-import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createOkHttpClient;
-
 import java.net.URI;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +67,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final BeaconNodesSentryConfig beaconNodesSentryConfig =
         sentryNodesConfig.getBeaconNodesSentryConfig();
     final OkHttpClient sentryNodesHttpClient =
-        createOkHttpClientForSentryNodes(beaconNodesSentryConfig);
+        beaconNodesSentryConfig.createOkHttpClientForSentryNodes();
 
     final BeaconNodeRoleConfig dutiesProviderNodeConfig =
         beaconNodesSentryConfig.getDutiesProviderNodeConfig();
@@ -158,22 +153,6 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             primaryBeaconNodeEventStreamReconnectAttemptPeriod);
 
     return new SentryBeaconNodeApi(beaconChainEventAdapter, sentryValidatorApi);
-  }
-
-  private static OkHttpClient createOkHttpClientForSentryNodes(
-      final BeaconNodesSentryConfig beaconNodesSentryConfig) {
-    final List<HttpUrl> allBeaconNodeEndpoints =
-        new ArrayList<>(
-            convertToOkHttpUrls(
-                beaconNodesSentryConfig.getDutiesProviderNodeConfig().getEndpointsAsURIs()));
-    beaconNodesSentryConfig
-        .getBlockHandlerNodeConfig()
-        .ifPresent(c -> allBeaconNodeEndpoints.addAll(convertToOkHttpUrls(c.getEndpointsAsURIs())));
-    beaconNodesSentryConfig
-        .getAttestationPublisherConfig()
-        .ifPresent(c -> allBeaconNodeEndpoints.addAll(convertToOkHttpUrls(c.getEndpointsAsURIs())));
-
-    return createOkHttpClient(allBeaconNodeEndpoints);
   }
 
   private static RemoteValidatorApiChannel createPrimaryValidatorApiChannel(
