@@ -126,8 +126,7 @@ public class ValidatorClientService extends Service {
                         validatorConfig.generateEarlyAttestations(),
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
-                        validatorConfig.getBeaconNodesSyncingStatusQueryPeriod(),
-                        validatorConfig.getBeaconNodeEventStreamReadinessCheckPeriod()))
+                        validatorConfig.getBeaconNodesSyncingQueryPeriod()))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(

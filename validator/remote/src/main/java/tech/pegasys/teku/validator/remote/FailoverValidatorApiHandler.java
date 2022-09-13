@@ -84,13 +84,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
-    if (!failoverDelegates.isEmpty()) {
-      final List<HttpUrl> failoverEndpoints =
-          failoverDelegates.stream()
-              .map(RemoteValidatorApiChannel::getEndpoint)
-              .collect(Collectors.toList());
-      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
-    }
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,

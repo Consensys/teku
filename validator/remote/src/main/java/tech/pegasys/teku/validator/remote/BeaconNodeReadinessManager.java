@@ -31,45 +31,50 @@ public class BeaconNodeReadinessManager extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RemoteValidatorApiChannel, Boolean> readinessCache = Maps.newConcurrentMap();
+  private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
+      Maps.newConcurrentMap();
 
-  private final List<RemoteValidatorApiChannel> beaconNodeApis;
+  private final RemoteValidatorApiChannel primaryBeaconNodeApi;
+  private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
   private final AsyncRunner asyncRunner;
-  private final Duration beaconNodeSyncingStatusQueryPeriod;
+  private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel;
+  private final Duration beaconNodeSyncingQueryPeriod;
 
-  private volatile Cancellable readinessTask;
+  private volatile Cancellable syncingQueryTask;
 
   public BeaconNodeReadinessManager(
-      final List<RemoteValidatorApiChannel> beaconNodeApis,
+      final RemoteValidatorApiChannel primaryBeaconNodeApi,
+      final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
       final AsyncRunner asyncRunner,
-      final Duration beaconNodeSyncingStatusQueryPeriod) {
-    this.beaconNodeApis = beaconNodeApis;
+      final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel,
+      final Duration beaconNodeSyncingQueryPeriod) {
+    this.primaryBeaconNodeApi = primaryBeaconNodeApi;
+    this.failoverBeaconNodeApis = failoverBeaconNodeApis;
     this.asyncRunner = asyncRunner;
-    this.beaconNodeSyncingStatusQueryPeriod = beaconNodeSyncingStatusQueryPeriod;
+    this.remoteBeaconNodeSyncingChannel = remoteBeaconNodeSyncingChannel;
+    this.beaconNodeSyncingQueryPeriod = beaconNodeSyncingQueryPeriod;
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessCache.getOrDefault(beaconNodeApi, true);
+    return readinessStatusCache.getOrDefault(beaconNodeApi, true);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    if (beaconNodeApis.size() == 1) {
-      LOG.debug("Not required to query the syncing status when only one Beacon Node is defined");
-      return SafeFuture.COMPLETE;
-    }
-    readinessTask =
+    syncingQueryTask =
         asyncRunner.runWithFixedDelay(
             () -> {
-              final Stream<SafeFuture<?>> readinessChecks =
-                  beaconNodeApis.stream().map(this::performReadinessCheck);
-              return SafeFuture.allOf(readinessChecks);
+              final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
+              final Stream<SafeFuture<?>> failoverReadinessChecks =
+                  failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
+              return SafeFuture.allOf(
+                  primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
             },
-            beaconNodeSyncingStatusQueryPeriod,
-            beaconNodeSyncingStatusQueryPeriod,
+            beaconNodeSyncingQueryPeriod,
+            beaconNodeSyncingQueryPeriod,
             throwable ->
                 LOG.error(
-                    "Error while checking the readiness of the configured Beacon Nodes",
+                    "Error while querying the syncing status of the configured Beacon Nodes",
                     throwable));
     return SafeFuture.COMPLETE;
   }
@@ -78,12 +83,21 @@ public class BeaconNodeReadinessManager extends Service {
   protected SafeFuture<?> doStop() {
     return SafeFuture.fromRunnable(
         () -> {
-          Optional.ofNullable(readinessTask).ifPresent(Cancellable::cancel);
-          readinessCache.clear();
+          Optional.ofNullable(syncingQueryTask).ifPresent(Cancellable::cancel);
+          readinessStatusCache.clear();
         });
   }
 
-  private SafeFuture<Void> performReadinessCheck(final RemoteValidatorApiChannel beaconNodeApi) {
+  private SafeFuture<Void> performPrimaryReadinessCheck() {
+    return performReadinessCheck(primaryBeaconNodeApi, true);
+  }
+
+  private SafeFuture<Void> performFailoverReadinessCheck(final RemoteValidatorApiChannel failover) {
+    return performReadinessCheck(failover, false);
+  }
+
+  private SafeFuture<Void> performReadinessCheck(
+      final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     final HttpUrl beaconNodeApiEndpoint = beaconNodeApi.getEndpoint();
     return beaconNodeApi
         .getSyncingStatus()
@@ -107,6 +121,45 @@ public class BeaconNodeReadinessManager extends Service {
                   throwable);
               return false;
             })
-        .thenAccept(isReady -> readinessCache.put(beaconNodeApi, isReady));
+        .thenAccept(
+            isReady -> {
+              final Optional<Boolean> maybePreviousReadiness =
+                  Optional.ofNullable(readinessStatusCache.get(beaconNodeApi));
+              final boolean statusHasChanged =
+                  maybePreviousReadiness
+                      .map(previousReadiness -> previousReadiness != isReady)
+                      .orElse(true);
+              if (!statusHasChanged) {
+                return;
+              }
+              readinessStatusCache.put(beaconNodeApi, isReady);
+              if (isReady) {
+                processReadyResult(isPrimaryNode, maybePreviousReadiness);
+              } else {
+                processNotReadyResult(beaconNodeApi, isPrimaryNode);
+              }
+            });
+  }
+
+  void processReadyResult(
+      final boolean isPrimaryNode, final Optional<Boolean> maybePreviousReadiness) {
+    if (!isPrimaryNode) {
+      return;
+    }
+    maybePreviousReadiness.ifPresent(
+        previousReadiness -> {
+          if (!previousReadiness) {
+            remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
+          }
+        });
+  }
+
+  void processNotReadyResult(
+      final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
+    if (isPrimaryNode) {
+      remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
+    } else {
+      remoteBeaconNodeSyncingChannel.onFailoverNodeNotInSync(beaconNodeApi);
+    }
   }
 }

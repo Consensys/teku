@@ -87,7 +87,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodeEventStreamSyncingStatusQueryPeriod(Duration.ofMillis(100))
+                    .withBeaconNodesSyncingQueryPeriod(Duration.ofSeconds(1))
                     .withBeaconNodes(beaconNode, failoverBeaconNode));
 
     validatorClient.start();

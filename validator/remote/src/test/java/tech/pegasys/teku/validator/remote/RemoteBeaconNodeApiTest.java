@@ -43,7 +43,6 @@ class RemoteBeaconNodeApiTest {
                     false,
                     false,
                     true,
-                    Duration.ofMillis(1),
                     Duration.ofMillis(1)))
         .hasMessageContaining("Failed to convert remote api endpoint");
   }

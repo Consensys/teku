@@ -26,6 +26,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -70,8 +71,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final boolean generateEarlyAttestations,
       final boolean preferSszBlockEncoding,
       final boolean failoversSendSubnetSubscriptions,
-      final Duration beaconNodesSyncingStatusQueryPeriod,
-      final Duration beaconNodeEventStreamReadinessCheckPeriod) {
+      final Duration beaconNodesSyncingStatusQueryPeriod) {
     Preconditions.checkArgument(
         !beaconNodeApiEndpoints.isEmpty(),
         "One or more Beacon Node endpoints should be defined for enabling remote connectivity from VC to BN.");
@@ -80,23 +80,40 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
     endpoints = stripAuthentication(endpoints);
 
-    final List<RemoteValidatorApiChannel> validatorApis =
-        endpoints.stream()
+    final HttpUrl primaryEndpoint = endpoints.get(0);
+    final List<HttpUrl> failoverEndpoints = endpoints.subList(1, endpoints.size());
+
+    if (!failoverEndpoints.isEmpty()) {
+      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
+    }
+
+    final RemoteValidatorApiChannel primaryValidatorApi =
+        createRemoteValidatorApi(
+            primaryEndpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner);
+    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+        failoverEndpoints.stream()
             .map(
                 endpoint ->
                     createRemoteValidatorApi(
                         endpoint, okHttpClient, spec, preferSszBlockEncoding, asyncRunner))
             .collect(Collectors.toList());
 
-    final RemoteValidatorApiChannel primaryValidatorApi = validatorApis.get(0);
-    final List<RemoteValidatorApiChannel> failoverValidatorApis =
-        validatorApis.subList(1, endpoints.size());
+    final EventChannels eventChannels = serviceConfig.getEventChannels();
+    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+
+    final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
+        eventChannels.getPublisher(RemoteBeaconNodeSyncingChannel.class);
+
+    final ValidatorTimingChannel validatorTimingChannel =
+        eventChannels.getPublisher(ValidatorTimingChannel.class);
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
-            validatorApis, asyncRunner, beaconNodesSyncingStatusQueryPeriod);
-
-    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+            primaryValidatorApi,
+            failoverValidatorApis,
+            asyncRunner,
+            remoteBeaconNodeSyncingChannel,
+            beaconNodesSyncingStatusQueryPeriod);
 
     final ValidatorApiChannel validatorApi =
         new MetricRecordingValidatorApiChannel(
@@ -108,10 +125,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 failoversSendSubnetSubscriptions,
                 metricsSystem));
 
-    final ValidatorTimingChannel validatorTimingChannel =
-        serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
-
-    final BeaconChainEventAdapter beaconChainEventAdapter =
+    final EventSourceBeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
             beaconNodeReadinessManager,
             primaryValidatorApi,
@@ -125,10 +139,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 validatorTimingChannel,
                 spec),
             validatorTimingChannel,
-            asyncRunner,
             metricsSystem,
-            generateEarlyAttestations,
-            beaconNodeEventStreamReadinessCheckPeriod);
+            generateEarlyAttestations);
+
+    eventChannels.subscribe(RemoteBeaconNodeSyncingChannel.class, beaconChainEventAdapter);
 
     return new RemoteBeaconNodeApi(
         beaconNodeReadinessManager, beaconChainEventAdapter, validatorApi);
