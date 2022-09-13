@@ -15,8 +15,11 @@ package tech.pegasys.teku.validator.remote.sentry;
 
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
+import com.google.common.base.Preconditions;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BeaconNodeRoleConfig {
@@ -46,6 +49,10 @@ public class BeaconNodeRoleConfig {
     return endpoints;
   }
 
+  public List<URI> getEndpointsAsURIs() {
+    return endpoints.stream().map(URI::create).collect(Collectors.toList());
+  }
+
   public static class Builder {
 
     final List<String> endpoints = new ArrayList<>();
@@ -62,6 +69,10 @@ public class BeaconNodeRoleConfig {
     }
 
     public BeaconNodeRoleConfig build() {
+      Preconditions.checkArgument(
+          !endpoints.isEmpty(),
+          "Sentry node role configuration does not support an empty list of endpoints");
+
       return new BeaconNodeRoleConfig(endpoints);
     }
   }

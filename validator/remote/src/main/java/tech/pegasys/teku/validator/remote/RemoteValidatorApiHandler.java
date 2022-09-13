@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -72,6 +73,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -469,5 +471,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 return SafeFuture.failedFuture(error);
               }
             });
+  }
+
+  public static RemoteValidatorApiHandler create(
+      final HttpUrl endpoint,
+      final OkHttpClient httpClient,
+      final Spec spec,
+      final boolean preferSszBlockEncoding,
+      final AsyncRunner asyncRunner) {
+    final OkHttpValidatorRestApiClient apiClient =
+        new OkHttpValidatorRestApiClient(endpoint, httpClient);
+    final OkHttpValidatorTypeDefClient typeDefClient =
+        new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
+    return new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
   }
 }
