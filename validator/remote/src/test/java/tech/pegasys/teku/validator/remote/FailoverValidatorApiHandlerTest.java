@@ -164,7 +164,7 @@ class FailoverValidatorApiHandlerTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestsUsingFailover")
-  <T> void requestFailoversImmediatelyIfBeaconNodeMarkedAsNotReady(
+  <T> void requestFailoversImmediatelyIfPrimaryBeaconNodeMarkedAsNotReady(
       final ValidatorApiChannelRequest<T> request, final String methodLabel, final T response) {
 
     setupSuccesses(request, response, failoverApiChannel1);
@@ -217,9 +217,16 @@ class FailoverValidatorApiHandlerTest {
         new FailoverValidatorApiHandler(
             beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
 
+    // readiness is ignored
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
     setupFailures(request, primaryApiChannel);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWithMessage(
+            "Request failed for " + primaryApiChannel.getEndpoint());
 
     assertThat(result).isCompletedExceptionally();
 
@@ -301,6 +308,9 @@ class FailoverValidatorApiHandlerTest {
         new FailoverValidatorApiHandler(
             beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
 
+    // readiness is ignored
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
     setupSuccesses(request, response, primaryApiChannel);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
@@ -371,7 +381,7 @@ class FailoverValidatorApiHandlerTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRelayRequests")
-  <T> void relayedResponseReceivedFromFailoverIfBeaconNodeMarkedAsNotReady(
+  <T> void relayedResponseReceivedFromFailoverIfPrimaryBeaconNodeMarkedAsNotReady(
       final ValidatorApiChannelRequest<T> request,
       final Consumer<ValidatorApiChannel> verifyCallIsMade,
       final String methodLabel,
