@@ -221,8 +221,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   }
 
   private void closeCurrentEventStream() {
-    primaryEventSource.close();
-    maybeFailoverEventSource.ifPresent(EventSource::close);
+    maybeFailoverEventSource.ifPresentOrElse(EventSource::close, () -> primaryEventSource.close());
   }
 
   private void waitForExit() {
