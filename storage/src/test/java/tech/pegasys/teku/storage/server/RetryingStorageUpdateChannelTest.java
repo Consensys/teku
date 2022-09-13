@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.Collections;
 import java.util.List;
@@ -151,7 +152,8 @@ class RetryingStorageUpdateChannelTest {
     assertThatThrownBy(() -> retryingChannel.onStorageUpdate(event))
         .isInstanceOf(FatalServiceFailureException.class);
 
-    retryingChannel.onFinalizedBlocks(Collections.emptyList());
+    assertThatSafeFuture(retryingChannel.onFinalizedBlocks(Collections.emptyList()))
+        .isCompletedExceptionallyWith(ShuttingDownException.class);
     verify(delegate, never()).onFinalizedBlocks(any());
   }
 }
