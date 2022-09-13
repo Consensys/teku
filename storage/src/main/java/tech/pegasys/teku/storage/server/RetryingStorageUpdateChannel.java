@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.storage.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,16 +50,29 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
  * this revert.
  */
 public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
+
   private static final Logger LOG = LogManager.getLogger();
   static final Duration MAX_RETRY_TIME = Duration.ofMinutes(1);
+  public static final int RETRY_DELAY_MS = 500;
 
   private final StorageUpdateChannel delegate;
   private final TimeProvider timeProvider;
+  private final long retryDelayMs;
+  private final AtomicBoolean aborting = new AtomicBoolean(false);
 
   public RetryingStorageUpdateChannel(
       final StorageUpdateChannel delegate, final TimeProvider timeProvider) {
+    this(delegate, timeProvider, RETRY_DELAY_MS);
+  }
+
+  @VisibleForTesting
+  RetryingStorageUpdateChannel(
+      final StorageUpdateChannel delegate,
+      final TimeProvider timeProvider,
+      final long retryDelayMs) {
     this.delegate = delegate;
     this.timeProvider = timeProvider;
+    this.retryDelayMs = retryDelayMs;
   }
 
   @Override
@@ -95,7 +110,7 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
 
   private <I, O> SafeFuture<O> retry(final Function<I, SafeFuture<O>> method, final I arg) {
     final UInt64 startTime = timeProvider.getTimeInMillis();
-    while (true) {
+    while (!aborting.get()) {
       try {
         final SafeFuture<O> result = method.apply(arg);
         result.join();
@@ -103,10 +118,24 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
       } catch (final Throwable t) {
         final UInt64 failureTime = timeProvider.getTimeInMillis();
         if (failureTime.minusMinZero(startTime).isGreaterThan(MAX_RETRY_TIME.toMillis())) {
+          // Don't try to process any further events as they may corrupt the database
+          // or may delay shutdown while they retry until they time out.
+          aborting.set(true);
           throw new FatalServiceFailureException(RetryingStorageUpdateChannel.class, t);
         }
         LOG.error("Storage update failed, retrying.", t);
+        // Avoid being in a tight loop where we're going to spam logs with errors.
+        pauseALittle();
       }
+    }
+    return SafeFuture.failedFuture(new ShuttingDownException());
+  }
+
+  private void pauseALittle() {
+    try {
+      Thread.sleep(retryDelayMs);
+    } catch (final InterruptedException e) {
+      LOG.trace("Interrupted while delaying between storage update retries", e);
     }
   }
 }

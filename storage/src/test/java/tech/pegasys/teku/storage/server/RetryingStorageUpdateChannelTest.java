@@ -15,8 +15,10 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,7 +43,7 @@ class RetryingStorageUpdateChannelTest {
   private final StorageUpdateChannel delegate = mock(StorageUpdateChannel.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final RetryingStorageUpdateChannel retryingChannel =
-      new RetryingStorageUpdateChannel(delegate, timeProvider);
+      new RetryingStorageUpdateChannel(delegate, timeProvider, 1);
 
   @Test
   void onStorageUpdate_shouldRetryUntilSuccess() {
@@ -133,5 +135,23 @@ class RetryingStorageUpdateChannelTest {
     assertThatThrownBy(() -> retryingChannel.onStorageUpdate(event))
         .isInstanceOf(FatalServiceFailureException.class);
     verify(delegate, times(7)).onStorageUpdate(event);
+  }
+
+  @Test
+  void shouldNotProcessEventsAfterRetryTimesOut() {
+    final StorageUpdate event = mock(StorageUpdate.class);
+    when(delegate.onStorageUpdate(event))
+        .thenAnswer(
+            invocation -> {
+              // Increase time so the retry times out.
+              timeProvider.advanceTimeBySeconds(1000);
+              return SafeFuture.failedFuture(new RuntimeException("Failed"));
+            });
+
+    assertThatThrownBy(() -> retryingChannel.onStorageUpdate(event))
+        .isInstanceOf(FatalServiceFailureException.class);
+
+    retryingChannel.onFinalizedBlocks(Collections.emptyList());
+    verify(delegate, never()).onFinalizedBlocks(any());
   }
 }
