@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
 - Detect Lodestar clients in `libp2p_connected_peers_current` metrics
+- Reduce CPU and Memory consumption in shuffling, which will improve epoch transition performance
 - Faster peer discovery on startup
 
 ### Bug Fixes
