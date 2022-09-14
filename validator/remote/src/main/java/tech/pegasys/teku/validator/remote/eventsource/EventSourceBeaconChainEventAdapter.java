@@ -84,8 +84,8 @@ public class EventSourceBeaconChainEventAdapter
     // daemons, but while we're subscribed to events we should just wait for the next event, not
     // exit.  So create a non-daemon thread that lives until the adapter is stopped.
     eventSource = createEventSource(primaryBeaconNodeApi);
-    eventSource.start();
     currentBeaconNodeUsedForEventStreaming = primaryBeaconNodeApi;
+    eventSource.start();
     new Thread(this::waitForExit).start();
     return timeBasedEventAdapter.start();
   }
@@ -163,17 +163,17 @@ public class EventSourceBeaconChainEventAdapter
     }
     eventSource.close();
     eventSource = createEventSource(beaconNodeApi);
+    currentBeaconNodeUsedForEventStreaming = beaconNodeApi;
     validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(eventSource.getUri());
     eventSource.start();
-    currentBeaconNodeUsedForEventStreaming = beaconNodeApi;
   }
 
   private void switchBackToPrimaryEventStream() {
     eventSource.close();
     eventSource = createEventSource(primaryBeaconNodeApi);
+    currentBeaconNodeUsedForEventStreaming = primaryBeaconNodeApi;
     validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming();
     eventSource.start();
-    currentBeaconNodeUsedForEventStreaming = primaryBeaconNodeApi;
   }
 
   private boolean alreadyFailedOver(final RemoteValidatorApiChannel beaconNodeApi) {
