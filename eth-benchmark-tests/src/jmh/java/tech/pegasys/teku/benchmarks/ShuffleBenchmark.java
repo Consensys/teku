@@ -25,6 +25,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -59,5 +60,14 @@ public class ShuffleBenchmark {
     int[] indices = IntStream.range(0, indexCount).toArray();
     miscHelpers.shuffleList(indices, seed);
     bh.consume(indices);
+  }
+
+  public static void main(String[] args) {
+    ShuffleBenchmark benchmark = new ShuffleBenchmark();
+
+    benchmark.indexCount = 32768;
+
+    new CustomRunner(2, 2).withBench(benchmark::shuffledIndexBench).run();
+    new CustomRunner(2, 2).withBench(benchmark::shuffledListBench).run();
   }
 }
