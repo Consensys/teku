@@ -45,7 +45,9 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.UpdateResult;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
@@ -166,26 +168,37 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 writeLock.unlock();
               }
 
-              return storageUpdateChannel
-                  .onStorageUpdate(updates.createStorageUpdate())
-                  .thenAccept(
-                      updateResult -> {
-                        // Propagate changes to Store
-                        writeLock.lock();
-                        try {
-                          // Add new data
-                          updates.applyToStore(store, updateResult);
-                        } finally {
-                          writeLock.unlock();
-                        }
-
-                        // Signal back changes to the handler
-                        finalizedCheckpoint.ifPresent(
-                            checkpoint ->
-                                updateHandler.onNewFinalizedCheckpoint(
-                                    checkpoint, finalizedCheckpointOptimistic));
-                      });
+              final StorageUpdate storageUpdate = updates.createStorageUpdate();
+              final SafeFuture<UpdateResult> storageResult =
+                  storageUpdateChannel.onStorageUpdate(storageUpdate);
+              if (!storageUpdate.isFinalizedOptimisticTransitionBlockRootSet()
+                  && store.asyncStorageEnabled) {
+                storageResult.ifExceptionGetsHereRaiseABug();
+                applyToStore(updates, UpdateResult.EMPTY);
+                return SafeFuture.COMPLETE;
+              } else {
+                return storageResult.thenAccept(
+                    updateResult -> applyToStore(updates, updateResult));
+              }
             });
+  }
+
+  private void applyToStore(
+      final StoreTransactionUpdates updates, final UpdateResult updateResult) {
+    final Lock writeLock = lock.writeLock();
+    // Propagate changes to Store
+    writeLock.lock();
+    try {
+      // Add new data
+      updates.applyToStore(store, updateResult);
+    } finally {
+      writeLock.unlock();
+    }
+
+    // Signal back changes to the handler
+    finalizedCheckpoint.ifPresent(
+        checkpoint ->
+            updateHandler.onNewFinalizedCheckpoint(checkpoint, finalizedCheckpointOptimistic));
   }
 
   @Override
