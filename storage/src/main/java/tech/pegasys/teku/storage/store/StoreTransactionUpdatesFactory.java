@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -92,7 +91,6 @@ class StoreTransactionUpdatesFactory {
                 createStoreTransactionUpdates(
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
-                    Optional.empty(),
                     Optional.empty()));
   }
 
@@ -135,10 +133,7 @@ class StoreTransactionUpdatesFactory {
                 .build());
 
     return createStoreTransactionUpdates(
-        finalizedChainData,
-        optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot,
-        tx.finalizedDepositSnapshot);
+        finalizedChainData, optimisticTransitionBlockRootSet, optimisticTransitionBlockRoot);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -235,8 +230,7 @@ class StoreTransactionUpdatesFactory {
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot,
-      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -246,7 +240,6 @@ class StoreTransactionUpdatesFactory {
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot,
-        finalizedDepositSnapshot);
+        optimisticTransitionBlockRoot);
   }
 }

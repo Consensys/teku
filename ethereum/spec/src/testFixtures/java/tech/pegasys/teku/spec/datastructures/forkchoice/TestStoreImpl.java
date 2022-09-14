@@ -55,7 +55,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
-  protected Optional<DepositTreeSnapshot> finalizedDepositSnapshot = Optional.empty();
 
   TestStoreImpl(
       final Spec spec,
@@ -193,11 +192,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
-    return finalizedDepositSnapshot;
-  }
-
-  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }
@@ -301,9 +295,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
-    this.finalizedDepositSnapshot = Optional.of(finalizedDepositSnapshot);
-  }
+  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
   public void removeFinalizedOptimisticTransitionPayload() {}

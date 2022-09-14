@@ -314,11 +314,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
-    return finalizedDepositSnapshot.or(store::getFinalizedDepositSnapshot);
-  }
-
-  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(

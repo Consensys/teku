@@ -23,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -52,7 +51,6 @@ public class StoreBuilder {
   private Map<UInt64, VoteTracker> votes;
   private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
       Optional.empty();
-  private Optional<DepositTreeSnapshot> finalizedDepositSnapshot = Optional.empty();
 
   private StoreBuilder() {}
 
@@ -83,7 +81,6 @@ public class StoreBuilder {
         genesisTime,
         anchor,
         Optional.empty(),
-        Optional.empty(),
         anchor.getCheckpoint(),
         anchor.getCheckpoint(),
         blockInfo,
@@ -96,7 +93,6 @@ public class StoreBuilder {
         .genesisTime(data.getGenesisTime())
         .latestFinalized(data.getLatestFinalized())
         .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
-        .finalizedDepositSnapshot(data.getFinalizedDepositSnapshot())
         .justifiedCheckpoint(data.getJustifiedCheckpoint())
         .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
         .blockInformation(data.getBlockInformation())
@@ -117,7 +113,6 @@ public class StoreBuilder {
         genesisTime,
         latestFinalized,
         finalizedOptimisticTransitionPayload,
-        finalizedDepositSnapshot,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
         blockInfoByRoot,
@@ -214,13 +209,6 @@ public class StoreBuilder {
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload) {
     checkNotNull(finalizedOptimisticTransitionPayload);
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
-    return this;
-  }
-
-  public StoreBuilder finalizedDepositSnapshot(
-      final Optional<DepositTreeSnapshot> finalizedDepositSnapshot) {
-    checkNotNull(finalizedDepositSnapshot);
-    this.finalizedDepositSnapshot = finalizedDepositSnapshot;
     return this;
   }
 

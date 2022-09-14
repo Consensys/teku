@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -106,8 +105,6 @@ public interface ReadOnlyStore {
    * @return The block if available.
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
-
-  Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
