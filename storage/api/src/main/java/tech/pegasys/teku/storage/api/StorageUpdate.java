@@ -73,7 +73,6 @@ public class StorageUpdate {
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
         && stateRoots.isEmpty()
-        && !optimisticTransitionBlockRootSet
         && finalizedDepositSnapshot.isEmpty();
   }
 
