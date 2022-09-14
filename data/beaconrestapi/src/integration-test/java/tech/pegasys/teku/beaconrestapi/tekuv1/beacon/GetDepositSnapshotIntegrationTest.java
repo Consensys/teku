@@ -20,12 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -43,16 +40,7 @@ public class GetDepositSnapshotIntegrationTest extends AbstractDataBackedRestAPI
   public void setup() {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final List<Bytes32> finalized = new ArrayList<>();
-    finalized.add(dataStructureUtil.randomBytes32());
-    finalized.add(dataStructureUtil.randomBytes32());
-    depositTreeSnapshot =
-        new DepositTreeSnapshot(
-            finalized,
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomLong(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
+    this.depositTreeSnapshot = dataStructureUtil.randomDepositTreeSnapshot();
     when(eth1DataProvider.getFinalizedDepositTreeSnapshot())
         .thenReturn(Optional.of(depositTreeSnapshot));
   }

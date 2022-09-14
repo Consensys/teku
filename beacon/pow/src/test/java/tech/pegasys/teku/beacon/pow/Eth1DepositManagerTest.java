@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -387,7 +386,8 @@ class Eth1DepositManagerTest {
 
     // DepositTreeSnapshot from file will be used to start from
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
-        generateDepositSnapshot(deposits.longValue(), UInt64.valueOf(lastBlockNumber));
+        dataStructureUtil.randomDepositTreeSnapshot(
+            deposits.longValue(), UInt64.valueOf(lastBlockNumber));
     when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
@@ -396,7 +396,7 @@ class Eth1DepositManagerTest {
 
     // This one will be ignored
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
-        generateDepositSnapshot(
+        dataStructureUtil.randomDepositTreeSnapshot(
             deposits.plus(50).longValue(), UInt64.valueOf(lastBlockNumber).plus(500));
     when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
         .thenReturn(
@@ -424,7 +424,8 @@ class Eth1DepositManagerTest {
 
     // This one will be ignored
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
-        generateDepositSnapshot(deposits.longValue(), UInt64.valueOf(lastBlockNumber));
+        dataStructureUtil.randomDepositTreeSnapshot(
+            deposits.longValue(), UInt64.valueOf(lastBlockNumber));
     when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
@@ -447,16 +448,6 @@ class Eth1DepositManagerTest {
     when(minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(
             headBlockNumber, asyncRunner))
         .thenReturn(SafeFuture.completedFuture(minGenesisBlock));
-  }
-
-  private DepositTreeSnapshot generateDepositSnapshot(
-      final long depositsCount, final UInt64 blockHeight) {
-    return new DepositTreeSnapshot(
-        List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
-        dataStructureUtil.randomBytes32(),
-        depositsCount,
-        dataStructureUtil.randomBytes32(),
-        blockHeight);
   }
 
   private Block block(final BigInteger number, final long timestamp) {

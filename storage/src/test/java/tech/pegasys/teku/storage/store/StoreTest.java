@@ -62,7 +62,6 @@ class StoreTest extends AbstractStoreTest {
                     genesisTime,
                     AnchorPoint.create(spec, genesisCheckpoint, genesis),
                     Optional.empty(),
-                    Optional.empty(),
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Collections.emptyMap(),

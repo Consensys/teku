@@ -400,8 +400,6 @@ public abstract class KvStoreDatabase<
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(this::getFinalizedBlockAtSlot)
             .flatMap(SlotAndExecutionPayloadSummary::fromBlock);
-    final Optional<DepositTreeSnapshot> finalizedDepositSnapshot =
-        dao.getFinalizedDepositSnapshot();
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -416,7 +414,6 @@ public abstract class KvStoreDatabase<
             genesisTime,
             latestFinalized,
             finalizedOptimisticTransitionPayload,
-            finalizedDepositSnapshot,
             justifiedCheckpoint,
             bestJustifiedCheckpoint,
             blockInformation,
