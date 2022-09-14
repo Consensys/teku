@@ -26,21 +26,25 @@ public class StoreConfig {
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
+  public static final boolean DEFAULT_ASYNC_STORAGE_ENABLED = false;
 
   private final int stateCacheSize;
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
+  private final boolean asyncStorageEnabled;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
-      final int hotStatePersistenceFrequencyInEpochs) {
+      final int hotStatePersistenceFrequencyInEpochs,
+      final boolean asyncStorageEnabled) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+    this.asyncStorageEnabled = asyncStorageEnabled;
   }
 
   public static Builder builder() {
@@ -67,6 +71,10 @@ public class StoreConfig {
     return hotStatePersistenceFrequencyInEpochs;
   }
 
+  public boolean isAsyncStorageEnabled() {
+    return asyncStorageEnabled;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -79,7 +87,8 @@ public class StoreConfig {
     return stateCacheSize == that.stateCacheSize
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
-        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs;
+        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
+        && asyncStorageEnabled == that.asyncStorageEnabled;
   }
 
   @Override
@@ -88,7 +97,8 @@ public class StoreConfig {
         stateCacheSize,
         blockCacheSize,
         checkpointStateCacheSize,
-        hotStatePersistenceFrequencyInEpochs);
+        hotStatePersistenceFrequencyInEpochs,
+        asyncStorageEnabled);
   }
 
   public static class Builder {
@@ -97,6 +107,7 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
+    private boolean asyncStorageEnabled = DEFAULT_ASYNC_STORAGE_ENABLED;
 
     private Builder() {}
 
@@ -105,7 +116,8 @@ public class StoreConfig {
           stateCacheSize,
           blockCacheSize,
           checkpointStateCacheSize,
-          hotStatePersistenceFrequencyInEpochs);
+          hotStatePersistenceFrequencyInEpochs,
+          asyncStorageEnabled);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -135,6 +147,11 @@ public class StoreConfig {
                 hotStatePersistenceFrequencyInEpochs));
       }
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+      return this;
+    }
+
+    public Builder asyncStorageEnabled(final boolean asyncStorageEnabled) {
+      this.asyncStorageEnabled = asyncStorageEnabled;
       return this;
     }
 
