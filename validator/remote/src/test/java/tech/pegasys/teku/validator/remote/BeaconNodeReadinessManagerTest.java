@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
-class BeaconNodeReadinessManagerTest {
+public class BeaconNodeReadinessManagerTest {
 
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
