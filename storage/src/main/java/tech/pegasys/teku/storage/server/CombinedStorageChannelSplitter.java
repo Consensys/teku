@@ -41,7 +41,7 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 /**
  * Splits calls to {@link CombinedStorageChannelSplitter} into the separate {@link
  * StorageUpdateChannel} and {@link StorageQueryChannel} components with updates being handled
- * syncrhonously and queries being run asyncrhonously.
+ * synchronously and queries being run asynchronously.
  *
  * <p>This guarantees that queries are only ever processed after the updates that were sent before
  * them but without allowing queries to delay updates.
