@@ -154,9 +154,7 @@ public class EventSourceBeaconChainEventAdapter
         .findFirst()
         .ifPresentOrElse(
             this::switchToFailoverEventStream,
-            () ->
-                LOG.warn(
-                    "There are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover"));
+            validatorLogger::noFailoverBeaconNodesAvailableForEventStreaming);
   }
 
   private void switchToFailoverEventStream(final RemoteValidatorApiChannel beaconNodeApi) {

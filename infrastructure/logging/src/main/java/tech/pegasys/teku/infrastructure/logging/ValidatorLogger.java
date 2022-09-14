@@ -73,6 +73,15 @@ public class ValidatorLogger {
             Color.GREEN));
   }
 
+  public void noFailoverBeaconNodesAvailableForEventStreaming() {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sThere are no Beacon Nodes from the configured ones that are ready to be used as an event stream failover",
+                PREFIX),
+            Color.YELLOW));
+  }
+
   public void dutyCompleted(
       final String producedType,
       final UInt64 slot,
