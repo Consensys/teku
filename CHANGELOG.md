@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- The `--initial-state` and `--eth1-deposit-contract-address` options has been removed from the `validator-client` subcommand. They have been ignored for some time but are now completely removed.
 
 ### Additions and Improvements
 - Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
