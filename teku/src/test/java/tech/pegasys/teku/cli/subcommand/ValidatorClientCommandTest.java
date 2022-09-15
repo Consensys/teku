@@ -73,15 +73,16 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void sentryConfigOption_shouldBuildExpectedConfigWhenOptionHasFileNameParam() {
+    final String sentryConfigPath = pathFor("sentry_node_config.json");
     final String[] argsWithSentryConfig =
         new String[] {
-          "vc", "--network", "minimal", "--Xsentry-config-file", "someconfig.json",
+          "vc", "--network", "minimal", "--Xsentry-config-file", sentryConfigPath,
         };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().getSentryNodeConfigurationFile())
-        .contains("someconfig.json");
+        .contains(sentryConfigPath);
   }
 
   @Test
