@@ -42,6 +42,8 @@ import org.rocksdb.CompressionType;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KvStoreConfiguration {
   public static final int DEFAULT_MAX_OPEN_FILES = 128;
+
+  public static final int DEFAULT_LEVELDB_BLOCK_SIZE = 4096;
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
   public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
@@ -52,6 +54,9 @@ public class KvStoreConfiguration {
 
   @JsonProperty(value = "maxOpenFiles", access = Access.WRITE_ONLY)
   private int maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
+
+  @JsonProperty(value = "leveldbBlockSize", access = Access.WRITE_ONLY)
+  private int leveldbBlockSize = DEFAULT_LEVELDB_BLOCK_SIZE;
 
   @JsonProperty(value = "maxBackgroundJobs", access = Access.WRITE_ONLY)
   private int maxBackgroundJobs = DEFAULT_MAX_BACKGROUND_JOBS;
@@ -108,6 +113,10 @@ public class KvStoreConfiguration {
 
   public int getMaxOpenFiles() {
     return maxOpenFiles;
+  }
+
+  public int getLeveldbBlockSize() {
+    return leveldbBlockSize;
   }
 
   public int getMaxBackgroundJobs() {
