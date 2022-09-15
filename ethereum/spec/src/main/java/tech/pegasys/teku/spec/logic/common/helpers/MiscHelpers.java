@@ -23,7 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -41,12 +41,15 @@ public class MiscHelpers {
 
   protected final SpecConfig specConfig;
 
+  private static final byte[] EMPTY_HASH = Bytes.EMPTY.toArrayUnsafe();
+
   public MiscHelpers(final SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 
   public int computeShuffledIndex(int index, int indexCount, Bytes32 seed) {
     checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
+    final Sha256 sha256 = new Sha256();
 
     int indexRet = index;
     final int shuffleRoundCount = specConfig.getShuffleRoundCount();
@@ -57,17 +60,17 @@ public class MiscHelpers {
 
       // This needs to be unsigned modulo.
       int pivot =
-          bytesToUInt64(Hash.sha256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+          bytesToUInt64(sha256.wrappedDigest(seed, roundAsByte).slice(0, 8))
               .mod(indexCount)
               .intValue();
       int flip = Math.floorMod(pivot + indexCount - indexRet, indexCount);
       int position = Math.max(indexRet, flip);
 
       Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256L), 4);
-      Bytes hashBytes = Hash.sha256(seed, roundAsByte, positionDiv256);
+      byte[] hashBytes = sha256.digest(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
-      int theByte = hashBytes.get(bitIndex / 8);
+      int theByte = hashBytes[bitIndex / 8];
       int theBit = (theByte >> (bitIndex & 0x07)) & 1;
       if (theBit != 0) {
         indexRet = flip;
@@ -79,15 +82,16 @@ public class MiscHelpers {
 
   public int computeProposerIndex(BeaconState state, IntList indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+    final Sha256 sha256 = new Sha256();
     int i = 0;
     final int total = indices.size();
-    Bytes32 hash = null;
+    byte[] hash = null;
     while (true) {
       int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
+        hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int randomByte = UnsignedBytes.toInt(hash.get(i % 32));
+      int randomByte = UnsignedBytes.toInt(hash[i % 32]);
       UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
@@ -160,6 +164,7 @@ public class MiscHelpers {
   }
 
   public void shuffleList(int[] input, Bytes32 seed) {
+    final Sha256 sha256 = new Sha256();
 
     int listSize = input.length;
     if (listSize == 0) {
@@ -168,15 +173,13 @@ public class MiscHelpers {
 
     for (int round = specConfig.getShuffleRoundCount() - 1; round >= 0; round--) {
 
-      Bytes roundAsByte = Bytes.of((byte) round);
+      final Bytes roundAsByte = Bytes.of((byte) round);
 
       // This needs to be unsigned modulo.
-      int pivot =
-          bytesToUInt64(Hash.sha256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
-              .mod(listSize)
-              .intValue();
+      final Bytes hash = sha256.wrappedDigest(seed, roundAsByte);
+      int pivot = bytesToUInt64(hash.slice(0, 8)).mod(listSize).intValue();
 
-      Bytes hashBytes = Bytes.EMPTY;
+      byte[] hashBytes = EMPTY_HASH;
       int mirror1 = (pivot + 2) / 2;
       int mirror2 = (pivot + listSize) / 2;
       for (int i = mirror1; i <= mirror2; i++) {
@@ -186,17 +189,17 @@ public class MiscHelpers {
           flip = pivot - i;
           bitIndex = i & 0xff;
           if (bitIndex == 0 || i == mirror1) {
-            hashBytes = Hash.sha256(seed, roundAsByte, uintToBytes(i / 256, 4));
+            hashBytes = sha256.digest(seed, roundAsByte, uintToBytes(i / 256, 4));
           }
         } else {
           flip = pivot + listSize - i;
           bitIndex = flip & 0xff;
           if (bitIndex == 0xff || i == pivot + 1) {
-            hashBytes = Hash.sha256(seed, roundAsByte, uintToBytes(flip / 256, 4));
+            hashBytes = sha256.digest(seed, roundAsByte, uintToBytes(flip / 256, 4));
           }
         }
 
-        int theByte = hashBytes.get(bitIndex / 8);
+        int theByte = hashBytes[bitIndex / 8];
         int theBit = (theByte >> (bitIndex & 0x07)) & 1;
         if (theBit != 0) {
           int tmp = input[i];

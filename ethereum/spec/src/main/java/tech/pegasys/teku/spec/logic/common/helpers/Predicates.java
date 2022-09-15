@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -40,12 +40,13 @@ public class Predicates {
 
   public boolean isValidMerkleBranch(
       Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
+    final Sha256 sha256 = new Sha256();
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if ((index & 1) == 1) {
-        value = Hash.sha256(branch.getElement(i), value);
+        value = sha256.wrappedDigest(branch.getElement(i), value);
       } else {
-        value = Hash.sha256(value, branch.getElement(i));
+        value = sha256.wrappedDigest(value, branch.getElement(i));
       }
       index >>>= 1;
     }

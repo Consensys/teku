@@ -23,6 +23,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
@@ -123,6 +124,17 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private Boolean reconstructHistoricStates =
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-async-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Allow database updates to be handled asynchronously without blocking processing",
+      arity = "0..1",
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true")
+  private boolean asyncStorageEnabled = StoreConfig.DEFAULT_ASYNC_STORAGE_ENABLED;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -140,7 +152,9 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
                 .blockMigrationBatchSize(blockMigrationBatchSize)
                 .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
-                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
+                .asyncStorageEnabled(asyncStorageEnabled));
+    builder.store(b -> b.asyncStorageEnabled(asyncStorageEnabled));
     builder.sync(b -> b.isReconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 

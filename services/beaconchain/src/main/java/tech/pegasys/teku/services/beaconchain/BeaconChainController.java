@@ -131,6 +131,7 @@ import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerifica
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -219,6 +220,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
+  protected volatile StorageQueryChannel storageQueryChannel;
+  protected volatile StorageUpdateChannel storageUpdateChannel;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -326,10 +329,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
     timerService = new TimerService(this::onTick);
 
-    StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
-    StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+    if (storeConfig.isAsyncStorageEnabled()) {
+      final CombinedStorageChannel combinedStorageChannel =
+          eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
+      storageQueryChannel = combinedStorageChannel;
+      storageUpdateChannel = combinedStorageChannel;
+    } else {
+      storageQueryChannel =
+          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
+      storageUpdateChannel =
+          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+    }
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -495,10 +505,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
-            spec);
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -525,7 +532,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             proposerBoostEnabled,
-            equivocatingIndicesEnabled);
+            equivocatingIndicesEnabled,
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
     forkChoiceTrigger =
         beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
             ? new PreProposalForkChoiceTrigger(forkChoice)
@@ -769,8 +777,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
-            .historicalChainData(
-                eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
+            .historicalChainData(storageQueryChannel)
             .metricsSystem(metricsSystem)
             .timeProvider(timeProvider)
             .asyncRunner(networkAsyncRunner)
@@ -929,7 +936,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         timeProvider,
         recentChainData,
         combinedChainDataClient,
-        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
+        storageUpdateChannel,
         p2pNetwork,
         blockImporter,
         pendingBlocks,

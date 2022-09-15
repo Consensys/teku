@@ -9,6 +9,8 @@
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
+- The commandline option `--network` of the `validator-client` subcommand has been undeprecated and can be used to select a network for standalone validator clients. When set to `auto`, it automatically
+  fetches network configuration information from the configured beacon node endpoint.  
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -16,10 +18,13 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- The `--initial-state` and `--eth1-deposit-contract-address` options has been removed from the `validator-client` subcommand. They have been ignored for some time but are now completely removed.
 
 ### Additions and Improvements
 - Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
 - Detect Lodestar clients in `libp2p_connected_peers_current` metrics
+- Reduce CPU and Memory consumption in shuffling, which will improve epoch transition performance
+- Faster peer discovery on startup
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
