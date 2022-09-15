@@ -1,0 +1,19 @@
+{
+  "beacon_nodes": {
+    "duties_provider": {
+      "endpoints": [
+        "http://duties:5051"
+      ]
+    },
+    "block_handler": {
+      "endpoints": [
+        "http://block:5051"
+      ]
+    },
+    "attestation_publisher": {
+      "endpoints": [
+        "http://attestation:5051"
+      ]
+    }
+  }
+}
