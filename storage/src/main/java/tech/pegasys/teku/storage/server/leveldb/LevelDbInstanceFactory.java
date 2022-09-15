@@ -41,7 +41,8 @@ public class LevelDbInstanceFactory {
         new Options()
             .createIfMissing(true)
             .maxOpenFiles(configuration.getMaxOpenFiles())
-            .blockSize(configuration.getLeveldbBlockSize());
+            .blockSize(configuration.getLeveldbBlockSize())
+            .writeBufferSize(configuration.getLeveldbWriteBufferSize());
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
