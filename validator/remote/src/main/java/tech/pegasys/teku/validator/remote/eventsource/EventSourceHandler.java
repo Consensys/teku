@@ -78,7 +78,7 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onClosed() {
     disconnectCounter.inc();
-    LOG.info("beacon node event stream closed");
+    LOG.info("Beacon node event stream closed");
   }
 
   @Override
