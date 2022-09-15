@@ -94,7 +94,12 @@ public class ReconstructHistoricalStatesService extends Service {
               if (checkpoint.isEmpty()) {
                 return;
               }
-              applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
+              final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
+              chainDataClient
+                  .getLatestStateAtSlot(anchorSlot)
+                  .thenAccept(
+                      latestState -> applyBlocks(latestState.orElse(genesisState), anchorSlot))
+                  .ifExceptionGetsHereRaiseABug(); // todo fix
             });
   }
 
