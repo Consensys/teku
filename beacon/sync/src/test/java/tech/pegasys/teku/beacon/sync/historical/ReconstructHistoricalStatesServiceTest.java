@@ -140,8 +140,7 @@ public class ReconstructHistoricalStatesServiceTest {
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException()));
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
@@ -156,8 +155,7 @@ public class ReconstructHistoricalStatesServiceTest {
         .thenThrow(new RejectedExecutionException());
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
@@ -175,9 +173,7 @@ public class ReconstructHistoricalStatesServiceTest {
 
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenReturn(storageSystem.recentChainData().retrieveStateInEffectAtSlot(UInt64.valueOf(5)));
-
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
