@@ -38,7 +38,11 @@ public class LevelDbInstanceFactory {
         columns.stream().map(KvStoreColumn::getId).distinct().count() == columns.size(),
         "Column IDs are not distinct");
     final Options options =
-        new Options().createIfMissing(true).maxOpenFiles(configuration.getMaxOpenFiles());
+        new Options()
+            .createIfMissing(true)
+            .maxOpenFiles(configuration.getMaxOpenFiles())
+            .blockSize(configuration.getLeveldbBlockSize())
+            .writeBufferSize(configuration.getLeveldbWriteBufferSize());
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
