@@ -25,7 +25,7 @@ public class StoreConfig {
   public static final int DEFAULT_BLOCK_CACHE_SIZE = 32;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
-  public static final boolean DEFAULT_ASYNC_STORAGE_ENABLED = false;
+  public static final boolean DEFAULT_ASYNC_STORAGE_ENABLED = true;
 
   private final int stateCacheSize;
   private final int blockCacheSize;

@@ -251,7 +251,10 @@ class StoreTest extends AbstractStoreTest {
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
-    final UpdatableStore store = createGenesisStore();
+    final UpdatableStore store =
+        withInterleavedTransaction
+            ? createGenesisStore(StoreConfig.builder().asyncStorageEnabled(false).build())
+            : createGenesisStore();
     final UInt64 epoch3 = UInt64.valueOf(4);
     final UInt64 epoch3Slot = spec.computeStartSlotAtEpoch(epoch3);
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
