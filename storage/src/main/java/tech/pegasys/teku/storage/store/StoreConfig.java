@@ -22,8 +22,7 @@ public class StoreConfig {
   public static final int MAX_CACHE_SIZE = 10_000;
 
   public static final int DEFAULT_STATE_CACHE_SIZE = 32 * 5;
-  // Max block size is about 20x smaller than the minimum state size
-  public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
+  public static final int DEFAULT_BLOCK_CACHE_SIZE = 32;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
   public static final boolean DEFAULT_ASYNC_STORAGE_ENABLED = false;
