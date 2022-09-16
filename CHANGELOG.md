@@ -25,6 +25,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Detect Lodestar clients in `libp2p_connected_peers_current` metrics
 - Reduce CPU and Memory consumption in shuffling, which will improve epoch transition performance
 - Faster peer discovery on startup
+- Increased leveldb open files to 1000 files by default. If teku fails to start, update maximum open files to 2048 or unlimited.
 
 ### Bug Fixes
 - Resolves an issue with public key validation.
