@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - The `--initial-state` and `--eth1-deposit-contract-address` options has been removed from the `validator-client` subcommand. They have been ignored for some time but are now completely removed.
 
 ### Additions and Improvements
+- Enables asynchronous database updates by default. This ensures slow disk access or LevelDB compactions don't cause delays in the beacon node.
 - Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
 - Detect Lodestar clients in `libp2p_connected_peers_current` metrics
 - Reduce CPU and Memory consumption in shuffling, which will improve epoch transition performance
