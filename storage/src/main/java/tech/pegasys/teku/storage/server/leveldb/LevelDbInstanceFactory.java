@@ -40,7 +40,7 @@ public class LevelDbInstanceFactory {
     final Options options =
         new Options()
             .createIfMissing(true)
-            .maxOpenFiles(configuration.getMaxOpenFiles())
+            .maxOpenFiles(configuration.getLeveldbMaxOpenFiles())
             .blockSize(configuration.getLeveldbBlockSize())
             .writeBufferSize(configuration.getLeveldbWriteBufferSize());
 

@@ -47,6 +47,8 @@ public class KvStoreConfiguration {
 
   public static final int DEFAULT_LEVELDB_WRITE_BUFFER_SIZE = 4194304;
 
+  public static final int DEFAULT_LEVELDB_MAX_OPEN_FILES = 1000;
+
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
   public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
@@ -60,6 +62,9 @@ public class KvStoreConfiguration {
 
   @JsonProperty(value = "leveldbBlockSize", access = Access.WRITE_ONLY)
   private int leveldbBlockSize = DEFAULT_LEVELDB_BLOCK_SIZE;
+
+  @JsonProperty(value = "leveldbMaxOpenFiles", access = Access.WRITE_ONLY)
+  private int leveldbMaxOpenFiles = DEFAULT_LEVELDB_MAX_OPEN_FILES;
 
   @JsonProperty(value = "leveldbWriteBuffer", access = Access.WRITE_ONLY)
   private int leveldbWriteBufferSize = DEFAULT_LEVELDB_WRITE_BUFFER_SIZE;
@@ -119,6 +124,10 @@ public class KvStoreConfiguration {
 
   public int getMaxOpenFiles() {
     return maxOpenFiles;
+  }
+
+  public int getLeveldbMaxOpenFiles() {
+    return leveldbMaxOpenFiles;
   }
 
   public int getLeveldbBlockSize() {
