@@ -50,7 +50,9 @@ public class EpochCachePrimer {
                     && isAfterHeadBlockEpoch(epoch, headBlock))
         .ifPresent(
             headBlock ->
-                asyncRunner.runAsync(() -> primeCacheForBlockAtSlot(headBlock, firstSlot)));
+                asyncRunner
+                    .runAsync(() -> primeCacheForBlockAtSlot(headBlock, firstSlot))
+                    .ifExceptionGetsHereRaiseABug());
   }
 
   private void primeCacheForBlockAtSlot(
