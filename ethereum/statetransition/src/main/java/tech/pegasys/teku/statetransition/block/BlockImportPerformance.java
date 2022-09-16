@@ -36,9 +36,10 @@ public class BlockImportPerformance {
 
   public static final String SUCCESS_RESULT_METRIC_LABEL_VALUE = "success";
 
-  public static final String EXECUTION_PAYLOAD_RESULT_RECEIVED = "execution_payload_received";
+  public static final String EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL =
+      "execution_payload_result_received";
 
-  public static final String BEGIN_IMPORTING = "begin_importing";
+  public static final String BEGIN_IMPORTING_LABEL = "begin_importing";
 
   private final BlockImportMetrics blockImportMetrics;
   private final PerformanceTracker performanceTracker;
@@ -77,11 +78,11 @@ public class BlockImportPerformance {
   }
 
   public void executionResultReceived() {
-    performanceTracker.addEvent(EXECUTION_PAYLOAD_RESULT_RECEIVED);
+    performanceTracker.addEvent(EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL);
   }
 
   public void beginImporting() {
-    performanceTracker.addEvent(BEGIN_IMPORTING);
+    performanceTracker.addEvent(BEGIN_IMPORTING_LABEL);
   }
 
   public void processingComplete(
