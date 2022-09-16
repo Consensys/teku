@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -29,10 +30,13 @@ public class EpochCachePrimer {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final AsyncRunner asyncRunner;
 
-  public EpochCachePrimer(final Spec spec, final RecentChainData recentChainData) {
+  public EpochCachePrimer(
+      final Spec spec, final RecentChainData recentChainData, final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.asyncRunner = asyncRunner;
   }
 
   public void primeCacheForEpoch(final UInt64 epoch) {
@@ -46,11 +50,16 @@ public class EpochCachePrimer {
                     && isAfterHeadBlockEpoch(epoch, headBlock))
         .ifPresent(
             headBlock ->
-                recentChainData
-                    .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlot, headBlock.getRoot()))
-                    .finish(
-                        maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
-                        error -> LOG.warn("Failed to precompute epoch transition", error)));
+                asyncRunner.runAsync(() -> primeCacheForBlockAtSlot(headBlock, firstSlot)));
+  }
+
+  private void primeCacheForBlockAtSlot(
+      final MinimalBeaconBlockSummary headBlock, final UInt64 firstSlotOfEpoch) {
+    recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlotOfEpoch, headBlock.getRoot()))
+        .finish(
+            maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
+            error -> LOG.warn("Failed to precompute epoch transition", error));
   }
 
   private boolean isWithinOneEpochOfHeadBlock(

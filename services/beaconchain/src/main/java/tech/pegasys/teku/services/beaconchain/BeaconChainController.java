@@ -812,7 +812,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannelPublisher,
-            new EpochCachePrimer(spec, recentChainData));
+            new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner));
   }
 
   public void initAttestationPool() {
