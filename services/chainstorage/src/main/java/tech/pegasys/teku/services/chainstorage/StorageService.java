@@ -79,8 +79,10 @@ public class StorageService extends Service implements StorageServiceFacade {
                       eventChannels.getPublisher(ExecutionLayerChannel.class, storageAsyncRunner)),
                   config.getSpec());
           final DepositStorage depositStorage =
-              DepositStorage.create(eventChannels.getPublisher(Eth1EventsChannel.class), database,
-                depositSnapshotStorageEnabled);
+              DepositStorage.create(
+                  eventChannels.getPublisher(Eth1EventsChannel.class),
+                  database,
+                  depositSnapshotStorageEnabled);
 
           batchingVoteUpdateChannel =
               new BatchingVoteUpdateChannel(
