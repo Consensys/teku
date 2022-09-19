@@ -32,6 +32,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
 import tech.pegasys.teku.beacon.pow.DepositFetcher;
 import tech.pegasys.teku.beacon.pow.DepositProcessingController;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotLoader;
 import tech.pegasys.teku.beacon.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
 import tech.pegasys.teku.beacon.pow.Eth1HeadTracker;

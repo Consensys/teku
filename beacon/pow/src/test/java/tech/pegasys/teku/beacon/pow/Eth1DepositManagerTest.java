@@ -33,7 +33,6 @@ import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
-import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
@@ -67,8 +66,7 @@ class Eth1DepositManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
       mock(ValidatingEth1EventsPublisher.class);
-  private final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel =
-      mock(Eth1SnapshotLoaderChannel.class);
+  private final DepositSnapshotLoader depositSnapshotLoader = mock(DepositSnapshotLoader.class);
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
   private final DepositProcessingController depositProcessingController =
@@ -93,7 +91,7 @@ class Eth1DepositManagerTest {
           asyncRunner,
           eth1EventsChannel,
           eth1DepositStorageChannel,
-          eth1SnapshotLoaderChannel,
+          depositSnapshotLoader,
           depositProcessingController,
           minimumGenesisTimeBlockFinder,
           Optional.empty(),
@@ -101,8 +99,7 @@ class Eth1DepositManagerTest {
 
   @BeforeEach
   public void setup() {
-    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
-        .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
+    when(depositSnapshotLoader.loadDepositSnapshot()).thenReturn(LoadDepositSnapshotResult.EMPTY);
     when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
         .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
     Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
@@ -388,10 +385,8 @@ class Eth1DepositManagerTest {
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.longValue(), UInt64.valueOf(lastBlockNumber));
-    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile))));
+    when(depositSnapshotLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     // This one will be ignored

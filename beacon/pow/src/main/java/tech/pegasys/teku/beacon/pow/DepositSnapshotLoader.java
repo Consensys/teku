@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.powchain;
+package tech.pegasys.teku.beacon.pow;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
@@ -21,14 +21,27 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
-public class DepositSnapshotResourceLoader {
+public class DepositSnapshotLoader {
   private static final Logger LOG = LogManager.getLogger();
 
-  public Optional<DepositTreeSnapshot> loadDepositSnapshot(
+  private final Optional<String> depositSnapshotResource;
+
+  public DepositSnapshotLoader(final Optional<String> depositSnapshotResource) {
+    this.depositSnapshotResource = depositSnapshotResource;
+  }
+
+  public LoadDepositSnapshotResult loadDepositSnapshot() {
+    final Optional<DepositTreeSnapshot> depositTreeSnapshot =
+        loadDepositSnapshot(depositSnapshotResource);
+    return LoadDepositSnapshotResult.create(depositTreeSnapshot);
+  }
+
+  private Optional<DepositTreeSnapshot> loadDepositSnapshot(
       final Optional<String> depositSnapshotResource) {
     return depositSnapshotResource.map(
         snapshotResource -> {

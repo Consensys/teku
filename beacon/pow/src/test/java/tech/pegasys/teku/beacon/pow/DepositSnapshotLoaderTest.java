@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.powchain;
+package tech.pegasys.teku.beacon.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -46,29 +45,26 @@ public class DepositSnapshotLoaderTest {
   }
 
   @Test
-  public void shouldReturnEmpty_whenNoDepositSnapshot() throws Exception {
+  public void shouldReturnEmpty_whenNoDepositSnapshot() {
     this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.empty());
-    final SafeFuture<LoadDepositSnapshotResult> result =
-        depositSnapshotLoader.loadDepositSnapshot();
-    assertThat(result.get().getDepositTreeSnapshot()).isEmpty();
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+    assertThat(result.getDepositTreeSnapshot()).isEmpty();
   }
 
   @Test
   public void shouldThrowInvalidConfigurationException_whenIncorrectResourcePath() {
     this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.of(notFoundResource));
-    final SafeFuture<LoadDepositSnapshotResult> result =
-        depositSnapshotLoader.loadDepositSnapshot();
-    assertThatThrownBy(result::get).cause().isInstanceOf(InvalidConfigurationException.class);
+    assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
+        .isInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded() throws Exception {
+  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded() {
     final int deposits = 16646;
     final int blockNumber = 1033803;
-    final SafeFuture<LoadDepositSnapshotResult> result =
-        depositSnapshotLoader.loadDepositSnapshot();
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
     assertWith(
-        result.get(),
+        result,
         snapshotResult -> {
           assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
           assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
@@ -81,7 +77,7 @@ public class DepositSnapshotLoaderTest {
   }
 
   private String getResourceFilePath(final String resource) {
-    final URL resourceUrl = DepositSnapshotResourceLoader.class.getResource(resource);
+    final URL resourceUrl = DepositSnapshotLoader.class.getResource(resource);
     return resourceUrl.getFile();
   }
 }
