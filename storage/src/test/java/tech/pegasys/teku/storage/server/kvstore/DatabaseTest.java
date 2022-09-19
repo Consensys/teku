@@ -129,7 +129,8 @@ public class DatabaseTest {
 
   private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
       throws IOException {
-    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
+    final StoreConfig config = StoreConfig.builder().asyncStorageEnabled(false).build();
+    createStorageSystem(context, storageMode, config, false);
 
     // Initialize genesis store
     initGenesis();
