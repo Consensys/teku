@@ -81,7 +81,9 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            null,
+            false);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -128,7 +130,9 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            null,
+            false);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -178,7 +182,9 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            null,
+            false);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -224,7 +230,9 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            null,
+            false);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();

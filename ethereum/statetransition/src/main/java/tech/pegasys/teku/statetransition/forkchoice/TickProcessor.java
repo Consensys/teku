@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -36,7 +37,12 @@ public class TickProcessor {
     this.recentChainData = recentChainData;
   }
 
-  public synchronized SafeFuture<Void> onTick(final UInt64 currentTimeMillis) {
+  public SafeFuture<Void> onTick(final UInt64 currentTimeMillis) {
+    return onTick(currentTimeMillis, Optional.empty());
+  }
+
+  public synchronized SafeFuture<Void> onTick(
+      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
     if (currentTimeMillis.isLessThanOrEqualTo(highestProcessedTime)) {
       return lastUpdate;
     }
@@ -47,16 +53,22 @@ public class TickProcessor {
 
     nextUpdate = new SafeFuture<>();
     nextUpdateScheduled = true;
-    lastUpdate.thenCompose(__ -> processOnTick()).propagateTo(nextUpdate);
+    lastUpdate.thenCompose(__ -> processOnTick(performanceRecord)).propagateTo(nextUpdate);
     return nextUpdate;
   }
 
-  private synchronized SafeFuture<Void> processOnTick() {
+  private synchronized SafeFuture<Void> processOnTick(
+      final Optional<TickProcessingPerformance> performanceRecord) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     spec.onTick(transaction, highestPendingTime);
+    performanceRecord.ifPresent(TickProcessingPerformance::specOnTickComplete);
     highestProcessedTime = highestPendingTime;
     nextUpdateScheduled = false;
     lastUpdate = transaction.commit();
+    performanceRecord.ifPresent(
+        tickProcessingPerformance ->
+            lastUpdate =
+                lastUpdate.thenPeek(__ -> tickProcessingPerformance.onTickTxCommitComplete()));
     return lastUpdate;
   }
 }

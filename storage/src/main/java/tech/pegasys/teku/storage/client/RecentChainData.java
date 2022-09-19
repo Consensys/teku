@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -95,6 +96,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
+  private final TimeProvider timeProvider;
+  private final boolean txPerformanceEnabled;
+
   RecentChainData(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -105,7 +109,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final Spec spec) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
@@ -121,6 +127,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             "reorgs_total",
             "Total occurrences of reorganizations of the chain");
     this.spec = spec;
+    this.timeProvider = timeProvider;
+    this.txPerformanceEnabled = txPerformanceEnabled;
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -247,7 +255,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public StoreTransaction startStoreTransaction() {
-    return store.startTransaction(storageUpdateChannel, this);
+    return store.startTransaction(storageUpdateChannel, this, timeProvider, txPerformanceEnabled);
   }
 
   public VoteUpdater startVoteUpdate() {

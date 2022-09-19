@@ -102,7 +102,9 @@ public class StorageSystem implements AutoCloseable {
             chainStorageServer,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            null,
+            false);
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =

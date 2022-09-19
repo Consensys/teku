@@ -26,6 +26,7 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -54,7 +55,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final Spec spec) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     super(
         asyncRunner,
         metricsSystem,
@@ -65,7 +68,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
         voteUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        spec);
+        spec,
+        timeProvider,
+        txPerformanceEnabled);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
@@ -81,7 +86,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final Spec spec) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
@@ -92,7 +99,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            timeProvider,
+            txPerformanceEnabled);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
   }
@@ -107,7 +116,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final Spec spec) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
@@ -118,7 +129,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            spec);
+            spec,
+            timeProvider,
+            txPerformanceEnabled);
 
     return client.initializeFromStorage().join();
   }

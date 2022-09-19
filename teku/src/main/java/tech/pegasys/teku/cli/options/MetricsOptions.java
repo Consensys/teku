@@ -109,6 +109,16 @@ public class MetricsOptions {
       arity = "0..1")
   private boolean tickPerformanceEnabled = MetricsConfig.DEFAULT_TICK_PERFORMANCE_ENABLED;
 
+  @Option(
+      names = {"--Xmetrics-tx-timing-tracking-enabled"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether transaction timing metrics are tracked and reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean txPerformanceEnabled = MetricsConfig.DEFAULT_TX_PERFORMANCE_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
@@ -121,7 +131,8 @@ public class MetricsOptions {
                 .metricsPublishInterval(metricsPublicationInterval)
                 .idleTimeoutSeconds(idleTimeoutSeconds)
                 .blockPerformanceEnabled(blockPerformanceEnabled)
-                .tickPerformanceEnabled(tickPerformanceEnabled));
+                .tickPerformanceEnabled(tickPerformanceEnabled)
+                .txPerformanceEnabled(txPerformanceEnabled));
   }
 
   private URL parseMetricsEndpointUrl() {

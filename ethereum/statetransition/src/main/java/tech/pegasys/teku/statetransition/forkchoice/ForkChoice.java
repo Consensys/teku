@@ -660,8 +660,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
     final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
-    tickProcessor.onTick(currentTimeMillis).join();
-    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
+    tickProcessor.onTick(currentTimeMillis, performanceRecord).join();
     final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
     if (currentSlot.isGreaterThan(previousSlot)) {
       applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
@@ -685,7 +684,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
+    return SafeFuture.allOf(
+            tickProcessor.onTick(currentTime, Optional.empty()), applyDeferredAttestations(slot))
         .thenCompose(__ -> processHead(slot))
         .toVoid();
   }

@@ -40,6 +40,7 @@ public class MetricsConfig {
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = false;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
+  public static final boolean DEFAULT_TX_PERFORMANCE_ENABLED = true;
 
   private final boolean metricsEnabled;
   private final int metricsPort;
@@ -51,6 +52,7 @@ public class MetricsConfig {
   private final int idleTimeoutSeconds;
   private final boolean blockPerformanceEnabled;
   private final boolean tickPerformanceEnabled;
+  private final boolean txPerformanceEnabled;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -62,7 +64,8 @@ public class MetricsConfig {
       final int publicationInterval,
       final int idleTimeoutSeconds,
       final boolean blockPerformanceEnabled,
-      final boolean tickPerformanceEnabled) {
+      final boolean tickPerformanceEnabled,
+      final boolean txPerformanceEnabled) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -73,6 +76,7 @@ public class MetricsConfig {
     this.idleTimeoutSeconds = idleTimeoutSeconds;
     this.blockPerformanceEnabled = blockPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
+    this.txPerformanceEnabled = txPerformanceEnabled;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -119,6 +123,10 @@ public class MetricsConfig {
     return tickPerformanceEnabled;
   }
 
+  public boolean isTxPerformanceEnabled() {
+    return txPerformanceEnabled;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled = false;
@@ -131,6 +139,7 @@ public class MetricsConfig {
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
     private boolean tickPerformanceEnabled = DEFAULT_TICK_PERFORMANCE_ENABLED;
+    private boolean txPerformanceEnabled = DEFAULT_TX_PERFORMANCE_ENABLED;
 
     private MetricsConfigBuilder() {}
 
@@ -196,6 +205,11 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder txPerformanceEnabled(final boolean txPerformanceEnabled) {
+      this.txPerformanceEnabled = txPerformanceEnabled;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
           metricsEnabled,
@@ -207,7 +221,8 @@ public class MetricsConfig {
           metricsPublishInterval,
           idleTimeoutSeconds,
           blockPerformanceEnabled,
-          tickPerformanceEnabled);
+          tickPerformanceEnabled,
+          txPerformanceEnabled);
     }
   }
 }

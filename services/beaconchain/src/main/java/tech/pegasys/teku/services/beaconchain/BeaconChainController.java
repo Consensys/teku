@@ -354,7 +354,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     voteUpdateChannel,
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    spec))
+                    spec,
+                    timeProvider,
+                    beaconConfig.getMetricsConfig().isTxPerformanceEnabled()))
         .thenCompose(
             client -> {
               // Setup chain storage

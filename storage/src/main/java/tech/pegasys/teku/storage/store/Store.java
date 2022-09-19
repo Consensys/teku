@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -296,14 +297,17 @@ class Store implements UpdatableStore {
 
   @Override
   public StoreTransaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
-    return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
+    return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP, null, false);
   }
 
   @Override
   public StoreTransaction startTransaction(
-      final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
+      final StorageUpdateChannel storageUpdateChannel,
+      final StoreUpdateHandler updateHandler,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        spec, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, storageUpdateChannel, updateHandler, timeProvider, txPerformanceEnabled);
   }
 
   @Override

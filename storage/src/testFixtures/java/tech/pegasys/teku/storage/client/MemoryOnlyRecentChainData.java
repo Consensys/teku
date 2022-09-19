@@ -53,7 +53,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         voteUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        spec);
+        spec,
+        null,
+        false);
   }
 
   public static Builder builder() {

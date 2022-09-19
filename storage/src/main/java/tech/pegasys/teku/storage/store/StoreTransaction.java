@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -70,18 +71,26 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+  private Optional<TransactionPerformanceTracker> transactionPerformanceTracker;
 
   StoreTransaction(
       final Spec spec,
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
-      final UpdatableStore.StoreUpdateHandler updateHandler) {
+      final UpdatableStore.StoreUpdateHandler updateHandler,
+      final TimeProvider timeProvider,
+      final boolean txPerformanceEnabled) {
     this.spec = spec;
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
     this.updateHandler = updateHandler;
+    this.transactionPerformanceTracker =
+        txPerformanceEnabled
+            ? Optional.of(
+                new TransactionPerformanceTracker(timeProvider, timeProvider.getTimeInMillis()))
+            : Optional.empty();
   }
 
   @Override
@@ -158,27 +167,48 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return retrieveLatestFinalized()
         .thenCompose(
             latestFinalized -> {
+              transactionPerformanceTracker.ifPresent(
+                  TransactionPerformanceTracker::retrieveLastFinalizedCompleted);
               final StoreTransactionUpdates updates;
               // Lock so that we have a consistent view while calculating our updates
               final Lock writeLock = lock.writeLock();
               writeLock.lock();
               try {
+                transactionPerformanceTracker.ifPresent(
+                    TransactionPerformanceTracker::writeLockAcquired);
                 updates = StoreTransactionUpdatesFactory.create(spec, store, this, latestFinalized);
               } finally {
                 writeLock.unlock();
               }
 
               final StorageUpdate storageUpdate = updates.createStorageUpdate();
+              transactionPerformanceTracker.ifPresent(
+                  tracker ->
+                      tracker.updatesCreated(
+                          String.format(
+                              "dhb(%d)_fb(%d)_fs(%d)_fctp(%d)_hb(%d)_hs(%d)_sr(%d)",
+                              storageUpdate.getDeletedHotBlocks().size(),
+                              storageUpdate.getFinalizedBlocks().size(),
+                              storageUpdate.getFinalizedStates().size(),
+                              storageUpdate.getFinalizedChildToParentMap().size(),
+                              storageUpdate.getHotBlocks().size(),
+                              storageUpdate.getHotStates().size(),
+                              storageUpdate.getStateRoots().size())));
               final SafeFuture<UpdateResult> storageResult =
                   storageUpdateChannel.onStorageUpdate(storageUpdate);
               if (!storageUpdate.isFinalizedOptimisticTransitionBlockRootSet()
                   && store.asyncStorageEnabled) {
                 storageResult.ifExceptionGetsHereRaiseABug();
                 applyToStore(updates, UpdateResult.EMPTY);
+                transactionPerformanceTracker.ifPresent(TransactionPerformanceTracker::complete);
                 return SafeFuture.COMPLETE;
               } else {
                 return storageResult.thenAccept(
-                    updateResult -> applyToStore(updates, updateResult));
+                    updateResult -> {
+                      applyToStore(updates, updateResult);
+                      transactionPerformanceTracker.ifPresent(
+                          TransactionPerformanceTracker::complete);
+                    });
               }
             });
   }
@@ -189,16 +219,22 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     // Propagate changes to Store
     writeLock.lock();
     try {
+      transactionPerformanceTracker.ifPresent(
+          TransactionPerformanceTracker::applyToStoreWriteLockAcquired);
       // Add new data
       updates.applyToStore(store, updateResult);
     } finally {
       writeLock.unlock();
     }
+    transactionPerformanceTracker.ifPresent(TransactionPerformanceTracker::applyToStoreCompleted);
 
     // Signal back changes to the handler
     finalizedCheckpoint.ifPresent(
         checkpoint ->
             updateHandler.onNewFinalizedCheckpoint(checkpoint, finalizedCheckpointOptimistic));
+
+    transactionPerformanceTracker.ifPresent(
+        TransactionPerformanceTracker::applyToStoreOnNewFinalizedCompleted);
   }
 
   @Override

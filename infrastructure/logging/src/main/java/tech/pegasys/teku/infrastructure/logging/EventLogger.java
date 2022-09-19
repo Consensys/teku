@@ -277,6 +277,15 @@ public class EventLogger {
     warn(slowTickLog, Color.YELLOW);
   }
 
+  public void slowTxEvent(
+      final UInt64 txTime, final UInt64 totalProcessingDuration, final String timings) {
+    final String slowTxLog =
+        String.format(
+            "Slow Tx Event   *** Time: %s %s total: %sms",
+            txTime, timings, totalProcessingDuration);
+    warn(slowTxLog, Color.YELLOW);
+  }
+
   public void executionLayerStubEnabled() {
     error(
         "Execution Layer Stub has been enabled! This is UNSAFE! You WILL fail to produce blocks and may follow an invalid chain.",

@@ -11,36 +11,47 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.storage.store;
 
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class TickProcessingPerformance {
-
+public class TransactionPerformanceTracker {
   public static final String COMPLETE_LABEL = "complete";
   public static final int LATE_EVENT_MS = 500;
   private final PerformanceTracker performanceTracker;
   private final UInt64 startTime;
 
-  public TickProcessingPerformance(final TimeProvider timeProvider, final UInt64 startTime) {
+  public TransactionPerformanceTracker(final TimeProvider timeProvider, final UInt64 startTime) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
     this.startTime = startTime;
     performanceTracker.addEvent("start");
   }
 
-  public void onTickTxCommitComplete() {
-    performanceTracker.addEvent("on_tick_tx_commit_complete");
+  public void retrieveLastFinalizedCompleted() {
+    performanceTracker.addEvent("retrieve_last_finalized_completed");
   }
 
-  public void specOnTickComplete() {
-    performanceTracker.addEvent("spec_on_tick_complete");
+  public void writeLockAcquired() {
+    performanceTracker.addEvent("write_lock_acquired");
   }
 
-  public void deferredAttestationsApplied() {
-    performanceTracker.addEvent("deferred_attestations_applied");
+  public void updatesCreated(final String details) {
+    performanceTracker.addEvent("updates_created_" + details);
+  }
+
+  public void applyToStoreWriteLockAcquired() {
+    performanceTracker.addEvent("apply_to_store_write_lock_acquired");
+  }
+
+  public void applyToStoreCompleted() {
+    performanceTracker.addEvent("apply_to_store_completed");
+  }
+
+  public void applyToStoreOnNewFinalizedCompleted() {
+    performanceTracker.addEvent("apply_to_store_on_new_finalized");
   }
 
   public void complete() {
@@ -52,26 +63,6 @@ public class TickProcessingPerformance {
         (event, stepDuration) -> {},
         totalDuration -> {},
         (totalDuration, timings) ->
-            EventLogger.EVENT_LOG.slowTickEvent(startTime, totalDuration, timings));
-  }
-
-  public void startSlotComplete() {
-    performanceTracker.addEvent("start_slot_complete");
-  }
-
-  public void attestationsDueComplete() {
-    performanceTracker.addEvent("attestations_due_complete");
-  }
-
-  public void precomputeEpochComplete() {
-    performanceTracker.addEvent("precompute_epoch_complete");
-  }
-
-  public void forkChoiceTriggerUpdated() {
-    performanceTracker.addEvent("forkchoice_trigger_updated");
-  }
-
-  public void forkChoiceNotifierUpdated() {
-    performanceTracker.addEvent("forkchoice_notifier_updated");
+            EventLogger.EVENT_LOG.slowTxEvent(startTime, totalDuration, timings));
   }
 }
