@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -50,6 +49,4 @@ public interface MutableStore extends ReadOnlyStore {
   void removeProposerBoostRoot();
 
   void removeFinalizedOptimisticTransitionPayload();
-
-  void setFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 }

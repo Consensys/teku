@@ -48,8 +48,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DepositProvider
     implements SlotEventsChannel, Eth1EventsChannel, FinalizedCheckpointChannel {
@@ -60,6 +60,7 @@ public class DepositProvider
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
+  private final StorageUpdateChannel storageUpdateChannel;
   private DepositTree depositMerkleTree;
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
@@ -74,12 +75,14 @@ public class DepositProvider
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
+      final StorageUpdateChannel storageUpdateChannel,
       final Spec spec,
       final EventLogger eventLogger,
       final boolean useMissingDepositEventLogging) {
     this.eventLogger = eventLogger;
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
+    this.storageUpdateChannel = storageUpdateChannel;
     this.spec = spec;
     depositUtil = new DepositUtil(spec);
     depositMerkleTree = new DepositTree();
@@ -138,12 +141,11 @@ public class DepositProvider
         depositMerkleTree
             .getSnapshot()
             .ifPresent(
-                snapshot -> {
-                  LOG.trace("Storing DepositTreeSnapshot: {}", snapshot);
-                  final UpdatableStore.StoreTransaction storeTransaction =
-                      recentChainData.startStoreTransaction();
-                  storeTransaction.setFinalizedDepositSnapshot(snapshot);
-                  storeTransaction.commit().ifExceptionGetsHereRaiseABug();
+                depositTreeSnapshot -> {
+                  LOG.trace("Storing DepositTreeSnapshot: {}", depositTreeSnapshot);
+                  storageUpdateChannel
+                      .onFinalizedDepositSnapshot(depositTreeSnapshot)
+                      .ifExceptionGetsHereRaiseABug();
                 });
       }
     }

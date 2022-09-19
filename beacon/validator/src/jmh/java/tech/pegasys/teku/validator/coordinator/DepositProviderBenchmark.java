@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Fork(1)
@@ -68,6 +69,7 @@ public class DepositProviderBenchmark {
           metricsSystem,
           mock(RecentChainData.class),
           new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec)),
+          mock(StorageUpdateChannel.class),
           spec,
           EventLogger.EVENT_LOG,
           false);

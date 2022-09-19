@@ -21,6 +21,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -95,6 +96,12 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   public SafeFuture<Void> onWeakSubjectivityUpdate(
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return retry(delegate::onWeakSubjectivityUpdate, weakSubjectivityUpdate);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedDepositSnapshot(
+      final DepositTreeSnapshot depositTreeSnapshot) {
+    return retry(delegate::onFinalizedDepositSnapshot, depositTreeSnapshot);
   }
 
   @Override

@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -63,6 +64,7 @@ public class DepositProviderTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private List<tech.pegasys.teku.ethereum.pow.api.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
@@ -80,7 +82,13 @@ public class DepositProviderTest {
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
         new DepositProvider(
-            new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
+            new StubMetricsSystem(),
+            recentChainData,
+            eth1DataCache,
+            storageUpdateChannel,
+            spec,
+            eventLogger,
+            true);
     depositProvider.onSyncingStatusChanged(true);
     depositMerkleTree = new MerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
@@ -366,10 +374,7 @@ public class DepositProviderTest {
     when(eth1DataCache.getEth1DataAndHeight(eq(eth1Data1)))
         .thenReturn(
             Optional.of(new Eth1DataCache.Eth1DataAndHeight(eth1Data1, UInt64.valueOf(20))));
-    final UpdatableStore.StoreTransaction storeTransaction =
-        mock(UpdatableStore.StoreTransaction.class);
-    when(recentChainData.startStoreTransaction()).thenReturn(storeTransaction);
-    when(storeTransaction.commit()).thenReturn(SafeFuture.COMPLETE);
+    when(storageUpdateChannel.onFinalizedDepositSnapshot(any())).thenReturn(SafeFuture.COMPLETE);
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
 
     verify(eth1DataCache, times(1)).getEth1DataAndHeight(eq(eth1Data1));

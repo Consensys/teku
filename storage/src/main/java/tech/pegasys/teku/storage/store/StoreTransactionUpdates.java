@@ -82,8 +82,7 @@ class StoreTransactionUpdates {
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot,
-        tx.finalizedDepositSnapshot);
+        optimisticTransitionBlockRoot);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {

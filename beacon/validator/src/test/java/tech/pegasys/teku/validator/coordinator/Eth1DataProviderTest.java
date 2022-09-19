@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider.VotingPeriodInfo;
 
@@ -51,6 +52,7 @@ public class Eth1DataProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final StateAndMetaData stateAndMetaData =
       new StateAndMetaData(state, SpecMilestone.PHASE0, false, true);
   private final EventLogger eventLogger = mock(EventLogger.class);
@@ -68,7 +70,13 @@ public class Eth1DataProviderTest {
     final Eth1DataCache eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
     final DepositProvider depositProvider =
         new DepositProvider(
-            new StubMetricsSystem(), recentChainData, eth1DataCache, spec, eventLogger, true);
+            new StubMetricsSystem(),
+            recentChainData,
+            eth1DataCache,
+            storageUpdateChannel,
+            spec,
+            eventLogger,
+            true);
     depositProvider.onSyncingStatusChanged(true);
     eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 

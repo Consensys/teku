@@ -1696,9 +1696,7 @@ public class DatabaseTest {
     final DepositTreeSnapshot depositTreeSnapshot = dataStructureUtil.randomDepositTreeSnapshot();
     assertThat(database.getFinalizedDepositSnapshot().isEmpty()).isTrue();
 
-    final StoreTransaction storeTransaction = recentChainData.startStoreTransaction();
-    storeTransaction.setFinalizedDepositSnapshot(depositTreeSnapshot);
-    storeTransaction.commit().join();
+    database.setFinalizedDepositSnapshot(depositTreeSnapshot);
     assertThat(database.getFinalizedDepositSnapshot()).contains(depositTreeSnapshot);
   }
 

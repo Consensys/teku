@@ -590,7 +590,6 @@ public abstract class KvStoreDatabase<
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
-      update.getFinalizedDepositSnapshot().ifPresent(updater::setFinalizedDepositSnapshot);
 
       // Delete finalized data from hot db
 

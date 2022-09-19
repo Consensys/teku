@@ -565,6 +565,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             recentChainData,
             eth1DataCache,
+            storageUpdateChannel,
             spec,
             EVENT_LOG,
             beaconConfig.powchainConfig().useMissingDepositEventLogging());
