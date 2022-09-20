@@ -103,8 +103,8 @@ public class ReconstructHistoricalStatesService extends Service {
             });
   }
 
-  public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
-    Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
+  public void applyBlocks(final BeaconState latestState, final UInt64 anchorSlot) {
+    Context context = new Context(latestState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
     applyNextBlock(context)
         .finish(
             error -> {

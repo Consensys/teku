@@ -170,15 +170,20 @@ public class ReconstructHistoricalStatesServiceTest {
     final ChainUpdater updater = storageSystem.chainUpdater();
     updater.initializeGenesis();
     updater.advanceChain(5);
+    updater.finalizeCurrentChain(); // todo check needed
 
     when(chainDataClient.getLatestStateAtSlot(any()))
-        .thenReturn(storageSystem.recentChainData().retrieveStateInEffectAtSlot(UInt64.valueOf(5)));
-    setUpService(tempDir, getInitialAnchor());
+        .thenAnswer(
+            (i) -> storageSystem.combinedChainDataClient().getLatestStateAtSlot(i.getArgument(0)));
+    final Checkpoint initialAnchor = getInitialAnchor();
+    setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(7)) // todo check incorrect number of invocations
+    verify(
+            storageUpdateChannel, // todo check incorrect number of invocations
+            times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
         .onFinalizedState(any(), any());
   }
 
