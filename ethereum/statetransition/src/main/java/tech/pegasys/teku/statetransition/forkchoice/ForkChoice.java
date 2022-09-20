@@ -296,6 +296,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     return payloadExecutor
         .getExecutionResult()
+        .thenPeek(
+            __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenApplyAsync(
             payloadResult ->
                 importBlockAndState(
@@ -323,6 +325,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
       final PayloadValidationResult payloadValidationResult) {
+    blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
       final BlockImportResult result =

@@ -88,7 +88,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                 CombinedStorageChannel.class,
                 new CombinedStorageChannelSplitter(
                     serviceConfig.createAsyncRunner(
-                        "storage-query", STORAGE_QUERY_CHANNEL_PARALLELISM),
+                        "storage_query", STORAGE_QUERY_CHANNEL_PARALLELISM),
                     new RetryingStorageUpdateChannel(chainStorage, serviceConfig.getTimeProvider()),
                     chainStorage));
           } else {

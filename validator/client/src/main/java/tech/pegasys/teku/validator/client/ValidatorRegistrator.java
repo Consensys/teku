@@ -47,6 +47,7 @@ import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private static final UInt64 SLOTS_IN_THE_EPOCH_RUN_REGISTRATION = UInt64.valueOf(2);
 
   private final Map<BLSPublicKey, SignedValidatorRegistration> cachedValidatorRegistrations =
       Maps.newConcurrentMap();
@@ -162,15 +163,16 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return true;
     }
     final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    final boolean isBeginningOfEpoch = slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
-    if (isBeginningOfEpoch && registrationInProgress.get()) {
+    final boolean isTwoSlotsInTheEpoch =
+        slot.mod(spec.getSlotsPerEpoch(slot)).equals(SLOTS_IN_THE_EPOCH_RUN_REGISTRATION);
+    if (isTwoSlotsInTheEpoch && registrationInProgress.get()) {
       LOG.warn(
           "Validator(s) registration for epoch {} is still in progress. Will skip registration for the current epoch {}.",
           lastRunEpoch.get(),
           currentEpoch);
       return false;
     }
-    return isBeginningOfEpoch
+    return isTwoSlotsInTheEpoch
         && currentEpoch
             .minus(lastRunEpoch.get())
             .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
