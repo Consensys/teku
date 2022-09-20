@@ -98,13 +98,21 @@ public class ReconstructHistoricalStatesService extends Service {
               chainDataClient
                   .getLatestStateAtSlot(anchorSlot)
                   .thenAccept(
-                      latestState -> applyBlocks(latestState.orElse(genesisState), anchorSlot))
+                      latestState -> {
+                        final BeaconState state = latestState.orElse(genesisState);
+                        final UInt64 slot =
+                            latestState.isPresent()
+                                ? latestState.get().getSlot()
+                                : SpecConfig.GENESIS_SLOT.plus(1); // todo check logic
+                        applyBlocks(state, slot, anchorSlot);
+                      })
                   .ifExceptionGetsHereRaiseABug(); // todo fix
             });
   }
 
-  public void applyBlocks(final BeaconState latestState, final UInt64 anchorSlot) {
-    Context context = new Context(latestState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
+  public void applyBlocks(
+      final BeaconState latestState, final UInt64 slot, final UInt64 anchorSlot) {
+    Context context = new Context(latestState, slot, anchorSlot);
     applyNextBlock(context)
         .finish(
             error -> {
