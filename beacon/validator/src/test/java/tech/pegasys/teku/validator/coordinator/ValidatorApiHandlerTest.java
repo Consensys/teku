@@ -951,14 +951,16 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void registerValidators_shouldIgnoreExitedValidators() {
+  void registerValidators_shouldIgnoreExitedAndUnknownValidators() {
     final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomSignedValidatorRegistrations(4);
+        dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     final BLSPublicKey exitedUnslashedValidatorKey =
         validatorRegistrations.get(2).getMessage().getPublicKey();
     final BLSPublicKey exitedSlashedValidatorKey =
         validatorRegistrations.get(3).getMessage().getPublicKey();
+    final BLSPublicKey unknownValidatorKey =
+        validatorRegistrations.get(4).getMessage().getPublicKey();
 
     setupValidatorsState(
         validatorRegistrations,
@@ -985,7 +987,8 @@ class ValidatorApiHandlerTest {
     assertThat(capturedRegistrations)
         .hasSize(2)
         .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
-        .doesNotContain(exitedUnslashedValidatorKey, exitedSlashedValidatorKey);
+        .doesNotContain(
+            exitedUnslashedValidatorKey, exitedSlashedValidatorKey, unknownValidatorKey);
   }
 
   @Test
