@@ -53,7 +53,7 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldFail_WhenNeitherEth1NorExecutionEndpoint() {
-    assertThatThrownBy(() -> new PowchainService(serviceConfig, powConfig, Optional.empty()))
+    assertThatThrownBy(() -> new PowchainService(serviceConfig, powConfig, Optional.empty(), true))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -63,7 +63,7 @@ public class PowchainServiceTest {
     assertThatThrownBy(
             () ->
                 new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)))
+                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), true))
         .hasMessageContaining("not compatible with Websockets");
   }
 
@@ -83,6 +83,6 @@ public class PowchainServiceTest {
         .isThrownBy(
             () ->
                 new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)));
+                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), true));
   }
 }
