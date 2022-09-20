@@ -807,15 +807,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 signedValidatorRegistration -> {
                   final BLSPublicKey validatorIdentifier =
                       signedValidatorRegistration.getMessage().getPublicKey();
-                  final ValidatorStatus validatorStatus =
-                      validatorStatuses.get(validatorIdentifier);
-                  final boolean hasExited = validatorHasExited(validatorStatus);
-                  if (hasExited) {
+                  final boolean unknownOrHasExited =
+                      Optional.ofNullable(validatorStatuses.get(validatorIdentifier))
+                          .map(this::validatorHasExited)
+                          .orElse(true);
+                  if (unknownOrHasExited) {
                     LOG.debug(
-                        "Validator {} has exited. It will be skipped for registering.",
+                        "Validator {} is unknown or has exited. It will be skipped for registering.",
                         validatorIdentifier.toAbbreviatedString());
                   }
-                  return !hasExited;
+                  return !unknownOrHasExited;
                 })
             .collect(toList());
     if (validatorRegistrations.size() == applicableValidatorRegistrations.size()) {
