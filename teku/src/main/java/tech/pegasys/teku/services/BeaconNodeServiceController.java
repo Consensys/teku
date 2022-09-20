@@ -60,6 +60,9 @@ public class BeaconNodeServiceController extends ServiceController {
 
     return Optional.of(
         new PowchainService(
-            serviceConfig, tekuConfig.powchain(), maybeExecutionWeb3jClientProvider));
+            serviceConfig,
+            tekuConfig.powchain(),
+            maybeExecutionWeb3jClientProvider,
+            tekuConfig.storageConfiguration().isAsyncStorageEnabled()));
   }
 }

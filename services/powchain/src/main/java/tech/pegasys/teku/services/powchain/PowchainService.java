@@ -54,6 +54,7 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
@@ -70,7 +71,8 @@ public class PowchainService extends Service {
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
+      final boolean asyncStorage) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
@@ -168,11 +170,17 @@ public class PowchainService extends Service {
         powConfig.getDepositContractDeployBlock();
     final DepositSnapshotFileLoader depositSnapshotFileLoader =
         new DepositSnapshotFileLoader(powConfig.getDepositSnapshotPath());
-    final StorageQueryChannel historicalChainData =
-        serviceConfig.getEventChannels().getPublisher(StorageQueryChannel.class, asyncRunner);
+    final StorageQueryChannel storageQueryChannel;
+    if (asyncStorage) {
+      storageQueryChannel =
+          serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
+    } else {
+      storageQueryChannel =
+          serviceConfig.getEventChannels().getPublisher(StorageQueryChannel.class, asyncRunner);
+    }
     final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
         new DepositSnapshotStorageLoader(
-            powConfig.isDepositSnapshotStorageEnabled(), historicalChainData);
+            powConfig.isDepositSnapshotStorageEnabled(), storageQueryChannel);
 
     eth1DepositManager =
         new Eth1DepositManager(
