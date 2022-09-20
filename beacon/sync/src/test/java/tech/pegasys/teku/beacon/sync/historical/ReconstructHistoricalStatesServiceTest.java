@@ -174,7 +174,10 @@ public class ReconstructHistoricalStatesServiceTest {
 
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenAnswer(
-            (i) -> storageSystem.combinedChainDataClient().getLatestStateAtSlot(i.getArgument(0)));
+            invocation ->
+                storageSystem
+                    .combinedChainDataClient()
+                    .getLatestStateAtSlot(invocation.getArgument(0)));
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 
