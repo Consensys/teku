@@ -42,7 +42,8 @@ public class Eth1DepositManager {
   private final AsyncRunner asyncRunner;
   private final ValidatingEth1EventsPublisher eth1EventsPublisher;
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
-  private final DepositSnapshotLoader eth1SnapshotLoader;
+  private final DepositSnapshotFileLoader depositSnapshotFileLoader;
+  private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -54,7 +55,8 @@ public class Eth1DepositManager {
       final AsyncRunner asyncRunner,
       final ValidatingEth1EventsPublisher eth1EventsPublisher,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
-      final DepositSnapshotLoader eth1SnapshotLoader,
+      final DepositSnapshotFileLoader depositSnapshotFileLoader,
+      final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -64,7 +66,8 @@ public class Eth1DepositManager {
     this.asyncRunner = asyncRunner;
     this.eth1EventsPublisher = eth1EventsPublisher;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
-    this.eth1SnapshotLoader = eth1SnapshotLoader;
+    this.depositSnapshotFileLoader = depositSnapshotFileLoader;
+    this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -110,13 +113,14 @@ public class Eth1DepositManager {
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
     // If DepositTreeSnapshot is loaded from file, we prefer it
     final LoadDepositSnapshotResult depositSnapshotResult =
-        eth1SnapshotLoader.loadDepositSnapshot();
+        depositSnapshotFileLoader.loadDepositSnapshot();
     if (depositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
       return SafeFuture.completedFuture(depositSnapshotResult);
     }
+
     LOG.trace(
         "Deposit tree snapshot from file is not provided, trying to load it from the database");
-    return eth1DepositStorageChannel.loadFinalizedDepositSnapshot();
+    return depositSnapshotStorageLoader.loadDepositSnapshot();
   }
 
   public void stop() {

@@ -143,7 +143,7 @@ public class StorageSystem implements AutoCloseable {
   }
 
   public DepositStorage createDepositStorage() {
-    return DepositStorage.create(eth1EventsChannel, database, false);
+    return DepositStorage.create(eth1EventsChannel, database);
   }
 
   public Database database() {

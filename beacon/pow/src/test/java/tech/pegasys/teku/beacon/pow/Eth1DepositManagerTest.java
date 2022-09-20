@@ -66,7 +66,10 @@ class Eth1DepositManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
       mock(ValidatingEth1EventsPublisher.class);
-  private final DepositSnapshotLoader depositSnapshotLoader = mock(DepositSnapshotLoader.class);
+  private final DepositSnapshotFileLoader depositSnapshotFileLoader =
+      mock(DepositSnapshotFileLoader.class);
+  private final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
+      mock(DepositSnapshotStorageLoader.class);
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
   private final DepositProcessingController depositProcessingController =
@@ -91,7 +94,8 @@ class Eth1DepositManagerTest {
           asyncRunner,
           eth1EventsChannel,
           eth1DepositStorageChannel,
-          depositSnapshotLoader,
+          depositSnapshotFileLoader,
+          depositSnapshotStorageLoader,
           depositProcessingController,
           minimumGenesisTimeBlockFinder,
           Optional.empty(),
@@ -99,8 +103,9 @@ class Eth1DepositManagerTest {
 
   @BeforeEach
   public void setup() {
-    when(depositSnapshotLoader.loadDepositSnapshot()).thenReturn(LoadDepositSnapshotResult.EMPTY);
-    when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.EMPTY);
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
     Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
   }
@@ -385,7 +390,7 @@ class Eth1DepositManagerTest {
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.longValue(), UInt64.valueOf(lastBlockNumber));
-    when(depositSnapshotLoader.loadDepositSnapshot())
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
         .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
@@ -393,7 +398,7 @@ class Eth1DepositManagerTest {
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.plus(50).longValue(), UInt64.valueOf(lastBlockNumber).plus(500));
-    when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
                 LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromDb))));
@@ -421,7 +426,7 @@ class Eth1DepositManagerTest {
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.longValue(), UInt64.valueOf(lastBlockNumber));
-    when(eth1DepositStorageChannel.loadFinalizedDepositSnapshot())
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
                 LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromDb))));

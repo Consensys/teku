@@ -32,7 +32,8 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
 import tech.pegasys.teku.beacon.pow.DepositFetcher;
 import tech.pegasys.teku.beacon.pow.DepositProcessingController;
-import tech.pegasys.teku.beacon.pow.DepositSnapshotLoader;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotStorageLoader;
 import tech.pegasys.teku.beacon.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
 import tech.pegasys.teku.beacon.pow.Eth1HeadTracker;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 public class PowchainService extends Service {
 
@@ -164,8 +166,14 @@ public class PowchainService extends Service {
 
     final Optional<UInt64> eth1DepositContractDeployBlock =
         powConfig.getDepositContractDeployBlock();
-    final DepositSnapshotLoader eth1DepositSnapshotLoader =
-        new DepositSnapshotLoader(powConfig.getDepositSnapshot());
+    final DepositSnapshotFileLoader depositSnapshotFileLoader =
+        new DepositSnapshotFileLoader(powConfig.getDepositSnapshotPath());
+    final StorageQueryChannel historicalChainData =
+        serviceConfig.getEventChannels().getPublisher(StorageQueryChannel.class, asyncRunner);
+    final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
+        new DepositSnapshotStorageLoader(
+            powConfig.isDepositSnapshotStorageEnabled(), historicalChainData);
+
     eth1DepositManager =
         new Eth1DepositManager(
             config,
@@ -173,7 +181,8 @@ public class PowchainService extends Service {
             asyncRunner,
             eth1EventsPublisher,
             eth1DepositStorageChannel,
-            eth1DepositSnapshotLoader,
+            depositSnapshotFileLoader,
+            depositSnapshotStorageLoader,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock,

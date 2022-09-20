@@ -34,7 +34,7 @@ public class PowchainConfiguration {
   private final List<String> eth1Endpoints;
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
-  private final Optional<String> depositSnapshot;
+  private final Optional<String> depositSnapshotPath;
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
   private final boolean depositSnapshotStorageEnabled;
@@ -44,7 +44,7 @@ public class PowchainConfiguration {
       final List<String> eth1Endpoints,
       final Eth1Address depositContract,
       final Optional<UInt64> depositContractDeployBlock,
-      final Optional<String> depositSnapshot,
+      final Optional<String> depositSnapshotPath,
       final int eth1LogsMaxBlockRange,
       final boolean useMissingDepositEventLogging,
       final boolean depositSnapshotStorageEnabled) {
@@ -52,7 +52,7 @@ public class PowchainConfiguration {
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
-    this.depositSnapshot = depositSnapshot;
+    this.depositSnapshotPath = depositSnapshotPath;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
@@ -82,8 +82,8 @@ public class PowchainConfiguration {
     return depositContractDeployBlock;
   }
 
-  public Optional<String> getDepositSnapshot() {
-    return depositSnapshot;
+  public Optional<String> getDepositSnapshotPath() {
+    return depositSnapshotPath;
   }
 
   public boolean isDepositSnapshotStorageEnabled() {
@@ -103,7 +103,7 @@ public class PowchainConfiguration {
     private List<String> eth1Endpoints = new ArrayList<>();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
-    private Optional<String> depositSnapshot = Optional.empty();
+    private Optional<String> depositSnapshotPath = Optional.empty();
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
     private boolean depositSnapshotStorageEnabled = DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
@@ -117,7 +117,7 @@ public class PowchainConfiguration {
           eth1Endpoints,
           depositContract,
           depositContractDeployBlock,
-          depositSnapshot,
+          depositSnapshotPath,
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging,
           depositSnapshotStorageEnabled);
@@ -173,9 +173,9 @@ public class PowchainConfiguration {
       return this;
     }
 
-    public Builder depositSnapshot(final String depositSnapshot) {
-      if (StringUtils.isNotBlank(depositSnapshot)) {
-        this.depositSnapshot = Optional.of(depositSnapshot);
+    public Builder depositSnapshotPath(final String depositSnapshotPath) {
+      if (StringUtils.isNotBlank(depositSnapshotPath)) {
+        this.depositSnapshotPath = Optional.of(depositSnapshotPath);
       }
       return this;
     }

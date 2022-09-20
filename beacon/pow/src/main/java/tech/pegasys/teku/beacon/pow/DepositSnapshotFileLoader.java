@@ -26,12 +26,12 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
-public class DepositSnapshotLoader {
+public class DepositSnapshotFileLoader {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Optional<String> depositSnapshotResource;
 
-  public DepositSnapshotLoader(final Optional<String> depositSnapshotResource) {
+  public DepositSnapshotFileLoader(final Optional<String> depositSnapshotResource) {
     this.depositSnapshotResource = depositSnapshotResource;
   }
 

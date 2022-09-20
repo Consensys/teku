@@ -178,4 +178,9 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<Optional<Checkpoint>> getAnchor() {
     return asyncRunner.runAsync(queryDelegate::getAnchor);
   }
+
+  @Override
+  public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
+    return asyncRunner.runAsync(queryDelegate::getFinalizedDepositSnapshot);
+  }
 }

@@ -28,32 +28,32 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class DepositSnapshotLoaderTest {
+public class DepositSnapshotFileLoaderTest {
   private static final String SNAPSHOT_RESOURCE = "snapshot.ssz";
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private String notFoundResource;
-  private DepositSnapshotLoader depositSnapshotLoader;
+  private DepositSnapshotFileLoader depositSnapshotLoader;
 
   @BeforeEach
   public void setup() {
     this.notFoundResource = dataStructureUtil.randomBytes32().toHexString();
     this.depositSnapshotLoader =
-        new DepositSnapshotLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)));
+        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)));
   }
 
   @Test
   public void shouldReturnEmpty_whenNoDepositSnapshot() {
-    this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.empty());
+    this.depositSnapshotLoader = new DepositSnapshotFileLoader(Optional.empty());
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
     assertThat(result.getDepositTreeSnapshot()).isEmpty();
   }
 
   @Test
   public void shouldThrowInvalidConfigurationException_whenIncorrectResourcePath() {
-    this.depositSnapshotLoader = new DepositSnapshotLoader(Optional.of(notFoundResource));
+    this.depositSnapshotLoader = new DepositSnapshotFileLoader(Optional.of(notFoundResource));
     assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
         .isInstanceOf(InvalidConfigurationException.class);
   }
@@ -77,7 +77,7 @@ public class DepositSnapshotLoaderTest {
   }
 
   private String getResourceFilePath(final String resource) {
-    final URL resourceUrl = DepositSnapshotLoader.class.getResource(resource);
+    final URL resourceUrl = DepositSnapshotFileLoader.class.getResource(resource);
     return resourceUrl.getFile();
   }
 }

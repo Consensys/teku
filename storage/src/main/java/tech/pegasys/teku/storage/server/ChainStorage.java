@@ -297,4 +297,9 @@ public class ChainStorage
   public void onVotesUpdated(final Map<UInt64, VoteTracker> votes) {
     database.storeVotes(votes);
   }
+
+  @Override
+  public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
+    return SafeFuture.of(database::getFinalizedDepositSnapshot);
+  }
 }

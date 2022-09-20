@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 
 public interface Eth1DepositStorageChannel extends ChannelInterface {
   SafeFuture<ReplayDepositsResult> replayDepositEvents();
-
-  SafeFuture<LoadDepositSnapshotResult> loadFinalizedDepositSnapshot();
 }
