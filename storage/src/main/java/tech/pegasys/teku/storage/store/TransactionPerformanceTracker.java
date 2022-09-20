@@ -42,6 +42,10 @@ public class TransactionPerformanceTracker {
     performanceTracker.addEvent("updates_created_" + details);
   }
 
+  public void applyToStoreWriteLockAcquiring() {
+    performanceTracker.addEvent("apply_to_store_write_lock_acquiring");
+  }
+
   public void applyToStoreWriteLockAcquired() {
     performanceTracker.addEvent("apply_to_store_write_lock_acquired");
   }

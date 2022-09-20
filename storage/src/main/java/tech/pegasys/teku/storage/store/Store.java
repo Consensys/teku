@@ -170,6 +170,59 @@ class Store implements UpdatableStore {
     }
   }
 
+  protected static class LockLogger {
+    private final boolean isWrite;
+    private final long wait;
+    private long obtain, release;
+
+    static LockLogger waitingWrite() {
+      return new LockLogger(System.currentTimeMillis(), true);
+    }
+
+    static LockLogger waitingRead() {
+      return new LockLogger(System.currentTimeMillis(), false);
+    }
+
+    public void obtained() {
+      this.obtain = System.currentTimeMillis();
+    }
+
+    public void releasing() {
+      release = System.currentTimeMillis();
+      long total = release - wait;
+
+      if (total >= 100) {
+        logLock(total);
+      }
+    }
+
+    private LockLogger(long wait, boolean isWrite) {
+      this.wait = wait;
+      this.isWrite = isWrite;
+    }
+
+    private void logLock(long total) {
+      long waiting = obtain - wait;
+      long lockTime = release - obtain;
+
+      StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
+      String fullClassName = stackTraceElement.getClassName();
+      String className = fullClassName.substring(fullClassName.lastIndexOf(".") + 1);
+      String methodName = stackTraceElement.getMethodName();
+      int lineNumber = stackTraceElement.getLineNumber();
+
+      LOG.info(
+          "{} lock at {}.{}:{} - waitTime: {} - lockTime: {} - total: {}",
+          isWrite ? "Write" : "Read",
+          className,
+          methodName,
+          lineNumber,
+          waiting,
+          lockTime,
+          total);
+    }
+  }
+
   public static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -274,8 +327,10 @@ class Store implements UpdatableStore {
    */
   @Override
   public void startMetrics() {
+    LockLogger ll = LockLogger.waitingWrite();
     lock.writeLock().lock();
     try {
+      ll.obtained();
       blockCountGauge =
           Optional.of(
               SettableGauge.create(
@@ -286,6 +341,7 @@ class Store implements UpdatableStore {
       states.startMetrics();
       checkpointStates.startMetrics();
     } finally {
+      ll.releasing();
       lock.writeLock().unlock();
     }
   }
@@ -317,20 +373,26 @@ class Store implements UpdatableStore {
 
   @Override
   public UInt64 getTimeMillis() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return timeMillis;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public UInt64 getGenesisTime() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return genesisTime;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
@@ -342,92 +404,119 @@ class Store implements UpdatableStore {
 
   @Override
   public Checkpoint getJustifiedCheckpoint() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return justifiedCheckpoint;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public Checkpoint getFinalizedCheckpoint() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return finalizedAnchor.getCheckpoint();
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public AnchorPoint getLatestFinalized() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return finalizedAnchor;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public Optional<SlotAndExecutionPayloadSummary> getFinalizedOptimisticTransitionPayload() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return finalizedOptimisticTransitionPayload;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public UInt64 getLatestFinalizedBlockSlot() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return finalizedAnchor.getBlockSlot();
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return bestJustifiedCheckpoint;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public Optional<Bytes32> getProposerBoostRoot() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return proposerBoostRoot;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public boolean containsBlock(Bytes32 blockRoot) {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return forkChoiceStrategy.contains(blockRoot);
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       final List<Bytes32> blockRoots = new ArrayList<>();
       forkChoiceStrategy.processAllInOrder((root, slot, parent) -> blockRoots.add(root));
       return blockRoots;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
@@ -439,10 +528,13 @@ class Store implements UpdatableStore {
 
   @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return Optional.ofNullable(blocks.get(blockRoot));
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
@@ -499,10 +591,13 @@ class Store implements UpdatableStore {
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final AnchorPoint finalized;
 
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       finalized = this.finalizedAnchor;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
 
@@ -530,22 +625,28 @@ class Store implements UpdatableStore {
   }
 
   UInt64 getHighestVotedValidatorIndex() {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       return highestVotedValidatorIndex;
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
 
   VoteTracker getVote(UInt64 validatorIndex) {
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       if (validatorIndex.intValue() >= votes.length) {
         return null;
       }
       return votes[validatorIndex.intValue()];
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
   }
@@ -605,8 +706,10 @@ class Store implements UpdatableStore {
     // Capture the latest epoch boundary root along the way
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       forkChoiceStrategy.processHashesInChain(
           blockRoot,
           (root, slot, parent) -> {
@@ -617,6 +720,7 @@ class Store implements UpdatableStore {
           });
       treeBuilder.rootHash(finalizedAnchor.getRoot());
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
 
@@ -647,8 +751,10 @@ class Store implements UpdatableStore {
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
+    LockLogger ll = LockLogger.waitingRead();
     readLock.lock();
     try {
+      ll.obtained();
       forkChoiceStrategy.processHashesInChainWhile(
           blockRoot,
           (root, slot, parent, executionHash) -> {
@@ -664,6 +770,7 @@ class Store implements UpdatableStore {
             return blockState.isEmpty();
           });
     } finally {
+      ll.releasing();
       readLock.unlock();
     }
 
@@ -714,13 +821,16 @@ class Store implements UpdatableStore {
 
   private void putBlock(final SignedBeaconBlock block) {
     final Lock writeLock = lock.writeLock();
+    LockLogger ll = LockLogger.waitingWrite();
     writeLock.lock();
     try {
+      ll.obtained();
       if (containsBlock(block.getRoot())) {
         blocks.put(block.getRoot(), block);
         blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
       }
     } finally {
+      ll.releasing();
       writeLock.unlock();
     }
   }

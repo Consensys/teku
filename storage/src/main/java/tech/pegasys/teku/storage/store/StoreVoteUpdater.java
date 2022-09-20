@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.store.Store.LockLogger;
 
 public class StoreVoteUpdater implements VoteUpdater {
 
@@ -75,8 +76,10 @@ public class StoreVoteUpdater implements VoteUpdater {
     // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
     // protoArray lock first, and may deadlock when it later needs to get votes which requires the
     // store lock.
+    LockLogger ll = LockLogger.waitingWrite();
     lock.writeLock().lock();
     try {
+      ll.obtained();
       return store
           .getForkChoiceStrategy()
           .applyPendingVotes(
@@ -88,6 +91,7 @@ public class StoreVoteUpdater implements VoteUpdater {
               justifiedCheckpointEffectiveBalances,
               proposerBoostAmount);
     } finally {
+      ll.releasing();
       lock.writeLock().unlock();
     }
   }

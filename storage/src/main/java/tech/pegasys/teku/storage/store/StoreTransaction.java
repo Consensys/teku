@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
+import tech.pegasys.teku.storage.store.Store.LockLogger;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
@@ -172,12 +173,15 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               final StoreTransactionUpdates updates;
               // Lock so that we have a consistent view while calculating our updates
               final Lock writeLock = lock.writeLock();
+              LockLogger ll = LockLogger.waitingWrite();
               writeLock.lock();
               try {
+                ll.obtained();
                 transactionPerformanceTracker.ifPresent(
                     TransactionPerformanceTracker::writeLockAcquired);
                 updates = StoreTransactionUpdatesFactory.create(spec, store, this, latestFinalized);
               } finally {
+                ll.releasing();
                 writeLock.unlock();
               }
 
@@ -216,14 +220,19 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private void applyToStore(
       final StoreTransactionUpdates updates, final UpdateResult updateResult) {
     final Lock writeLock = lock.writeLock();
+    transactionPerformanceTracker.ifPresent(
+        TransactionPerformanceTracker::applyToStoreWriteLockAcquiring);
     // Propagate changes to Store
+    LockLogger ll = LockLogger.waitingWrite();
     writeLock.lock();
     try {
+      ll.obtained();
       transactionPerformanceTracker.ifPresent(
           TransactionPerformanceTracker::applyToStoreWriteLockAcquired);
       // Add new data
       updates.applyToStore(store, updateResult);
     } finally {
+      ll.releasing();
       writeLock.unlock();
     }
     transactionPerformanceTracker.ifPresent(TransactionPerformanceTracker::applyToStoreCompleted);
@@ -331,9 +340,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (this.blockData.isEmpty()) {
       return store.getOrderedBlockRoots();
     }
-
+    LockLogger ll = LockLogger.waitingRead();
     lock.readLock().lock();
     try {
+      ll.obtained();
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
       store.forkChoiceStrategy.processAllInOrder(
           (root, slot, parent) -> blockRootsBySlot.put(slot, root));
@@ -344,6 +354,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                   blockRootsBySlot.put(blockAndState.getSlot(), blockAndState.getRoot()));
       return blockRootsBySlot.values();
     } finally {
+      ll.releasing();
       lock.readLock().unlock();
     }
   }
