@@ -200,6 +200,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                               storageUpdate.getStateRoots().size())));
               final SafeFuture<UpdateResult> storageResult =
                   storageUpdateChannel.onStorageUpdate(storageUpdate);
+              transactionPerformanceTracker.ifPresent(
+                  TransactionPerformanceTracker::onStorageUpdate);
               if (!storageUpdate.isFinalizedOptimisticTransitionBlockRootSet()
                   && store.asyncStorageEnabled) {
                 storageResult.ifExceptionGetsHereRaiseABug();
@@ -209,6 +211,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               } else {
                 return storageResult.thenAccept(
                     updateResult -> {
+                      transactionPerformanceTracker.ifPresent(
+                          TransactionPerformanceTracker::storageSyncUpdate);
                       applyToStore(updates, updateResult);
                       transactionPerformanceTracker.ifPresent(
                           TransactionPerformanceTracker::complete);
