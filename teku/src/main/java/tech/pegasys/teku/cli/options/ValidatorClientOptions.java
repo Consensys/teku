@@ -25,17 +25,20 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 
 public class ValidatorClientOptions {
 
+  // Not setting in-line default value for beaconNodeEndpoints as it requires extra business logic
   @Option(
       names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
       paramLabel = "<ENDPOINT>",
       description =
-          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
+          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node"
+              + " will be used as a primary and others as failovers.",
       split = ",",
       arity = "1..*")
-  private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
+  private List<URI> beaconNodeApiEndpoints = null;
 
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
@@ -48,12 +51,16 @@ public class ValidatorClientOptions {
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xbeacon-node-event-stream-syncing-status-query-period"},
       paramLabel = "<INTEGER>",
       description =
-          "How often (in milliseconds) will the syncing status of the Beacon Node used for event streaming be queried. If the node is not synced or the query fails, the Validator Client will try to connect to an event stream of one of the failover Beacon Nodes if such are configured. "
-              + "If the primary Beacon Node has synced successfully after a failover, a reconnection to the primary Beacon Node event stream will be attempted.",
+          "How often (in milliseconds) will the syncing status of the Beacon Node used for event "
+              + "streaming be queried. If the node is not synced or the query fails, the "
+              + "Validator Client will try to connect to an event stream of one of the failover "
+              + "Beacon Nodes if such are configured. "
+              + "If the primary Beacon Node has synced successfully after a failover, a "
+              + "reconnection to the primary Beacon Node event stream will be attempted.",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "1")
@@ -79,6 +86,8 @@ public class ValidatorClientOptions {
   private String sentryConfigFile = null;
 
   public void configure(TekuConfiguration.Builder builder) {
+    configureBeaconNodeApiEndpoints();
+
     builder.validator(
         config ->
             config
@@ -90,18 +99,50 @@ public class ValidatorClientOptions {
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 
-  public List<URI> getBeaconNodeApiEndpoints() {
-    return beaconNodeApiEndpoints.stream()
-        .map(this::parseBeaconNodeApiEndpoint)
-        .collect(Collectors.toList());
+  private void configureBeaconNodeApiEndpoints() {
+    if (beaconNodeApiEndpoints != null && sentryConfigFile != null) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Cannot use beacon-node-api-endpoint and sentry-config-file at "
+              + "the same time.");
+    }
+
+    if (beaconNodeApiEndpoints == null) {
+      beaconNodeApiEndpoints =
+          parseBeaconNodeApiEndpoints(ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS);
+    }
+
+    if (sentryConfigFile != null) {
+      beaconNodeApiEndpoints =
+          parseBeaconNodeApiEndpoints(
+              new SentryNodesConfigLoader()
+                  .load(sentryConfigFile)
+                  .getBeaconNodesSentryConfig()
+                  .getDutiesProviderNodeConfig()
+                  .getEndpoints());
+    }
   }
 
-  private URI parseBeaconNodeApiEndpoint(final String apiEndpoint) {
-    try {
-      return new URI(apiEndpoint);
-    } catch (URISyntaxException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Beacon node API endpoint is not a valid URL: " + apiEndpoint, e);
+  public List<URI> getBeaconNodeApiEndpoints() {
+    if (beaconNodeApiEndpoints == null) {
+      configureBeaconNodeApiEndpoints();
     }
+
+    return beaconNodeApiEndpoints;
+  }
+
+  private List<URI> parseBeaconNodeApiEndpoints(final List<String> apiEndpoints) {
+    return apiEndpoints.stream()
+        .map(
+            endpoint -> {
+              try {
+                return new URI(endpoint);
+              } catch (URISyntaxException e) {
+                throw new InvalidConfigurationException(
+                    "Invalid configuration. Beacon node API endpoint is not a valid URL: "
+                        + endpoint,
+                    e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 }
