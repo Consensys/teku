@@ -44,7 +44,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposersDataManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 2;
+  private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 3;
   private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 2;
 
   private final Spec spec;
@@ -93,16 +93,32 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    // do clean up at second slot of each epoch
-    if (!slot.mod(spec.getSlotsPerEpoch(slot)).equals(UInt64.ONE)) {
+    // do clean up in the middle of the epoch
+    final int slotsPerEpoch = spec.getSlotsPerEpoch(slot);
+    final UInt64 slotInCurrentEpoch = slot.mod(slotsPerEpoch).plus(UInt64.ONE);
+    if (!slotInCurrentEpoch.equals(UInt64.valueOf(slotsPerEpoch).dividedBy(2))) {
       return;
     }
 
     // Remove expired prepared proposers
-    preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+    final int preparedProposersBeforeRemoval = preparedProposerInfoByValidatorIndex.size();
+    final boolean hasRemovedExpiredProposers =
+        preparedProposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+    if (hasRemovedExpiredProposers) {
+      final int preparedProposersAfterRemoval =
+          preparedProposersBeforeRemoval - preparedProposerInfoByValidatorIndex.size();
+      VALIDATOR_LOGGER.preparedBeaconProposersExpiration(slot, preparedProposersAfterRemoval);
+    }
 
     // Remove expired registered validators
-    validatorRegistrationInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+    final int registrationsBeforeRemoval = validatorRegistrationInfoByValidatorIndex.size();
+    final boolean hasRemovedExpiredRegistrations =
+        validatorRegistrationInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(slot));
+    if (hasRemovedExpiredRegistrations) {
+      final int registrationsAfterRemoval =
+          registrationsBeforeRemoval - validatorRegistrationInfoByValidatorIndex.size();
+      VALIDATOR_LOGGER.validatorRegistrationsExpiration(slot, registrationsAfterRemoval);
+    }
   }
 
   public void updatePreparedProposers(

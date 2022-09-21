@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -46,8 +47,10 @@ class EpochCachePrimerTest {
   private final Spec mockSpec = mock(Spec.class);
   private final BeaconStateUtil beaconStateUtil = mock(BeaconStateUtil.class);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final EpochCachePrimer primer = new EpochCachePrimer(mockSpec, recentChainData);
+  private final EpochCachePrimer primer =
+      new EpochCachePrimer(mockSpec, recentChainData, asyncRunner);
 
   @BeforeEach
   void setUp() {
@@ -80,6 +83,7 @@ class EpochCachePrimerTest {
   @Test
   void shouldNotPrecomputeEpochsBeforeHeadBlock() {
     primer.primeCacheForEpoch(UInt64.ZERO);
+    asyncRunner.executeQueuedActions();
 
     verify(mockSpec, never()).getBeaconProposerIndex(any(), any());
   }
@@ -87,6 +91,7 @@ class EpochCachePrimerTest {
   @Test
   void shouldNotPrecomputeMoreThanOneEpochAhead() {
     primer.primeCacheForEpoch(UInt64.valueOf(2));
+    asyncRunner.executeQueuedActions();
 
     verify(mockSpec, never()).getBeaconProposerIndex(any(), any());
   }
@@ -96,7 +101,21 @@ class EpochCachePrimerTest {
     final UInt64 epoch = UInt64.ONE;
 
     primer.primeCacheForEpoch(epoch);
+    asyncRunner.executeQueuedActions();
 
+    final BeaconState state = getStateForEpoch(epoch);
+    forEachSlotInEpoch(epoch, slot -> verify(mockSpec).getBeaconProposerIndex(state, slot));
+  }
+
+  @Test
+  void shouldPrimeAsynchronously() {
+    final UInt64 epoch = UInt64.ONE;
+
+    primer.primeCacheForEpoch(epoch);
+
+    verify(mockSpec, never()).getBeaconProposerIndex(any(), any());
+
+    asyncRunner.executeQueuedActions();
     final BeaconState state = getStateForEpoch(epoch);
     forEachSlotInEpoch(epoch, slot -> verify(mockSpec).getBeaconProposerIndex(state, slot));
   }
@@ -106,6 +125,7 @@ class EpochCachePrimerTest {
     final UInt64 epoch = UInt64.ONE;
 
     primer.primeCacheForEpoch(epoch);
+    asyncRunner.executeQueuedActions();
 
     final BeaconState state = getStateForEpoch(epoch);
     forEachSlotInEpoch(
@@ -117,6 +137,7 @@ class EpochCachePrimerTest {
     final UInt64 epoch = UInt64.ONE;
 
     primer.primeCacheForEpoch(epoch);
+    asyncRunner.executeQueuedActions();
 
     final BeaconState state = getStateForEpoch(epoch);
     final UInt64 lookaheadEpoch = epoch.plus(1);
@@ -145,6 +166,7 @@ class EpochCachePrimerTest {
     final UInt64 epoch = realSpec.getCurrentEpoch(newHead.getState()).plus(1);
 
     primer.primeCacheForEpoch(epoch);
+    asyncRunner.executeQueuedActions();
 
     final BeaconState state = getStateForEpoch(epoch);
     final BeaconState justifiedState =

@@ -27,7 +27,9 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
@@ -586,6 +588,10 @@ public class BlockManagerTest {
                 + PRESTATE_RETRIEVED_EVENT_LABEL
                 + " +3000ms, "
                 + PROCESSED_EVENT_LABEL
+                + " +0ms, "
+                + EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL
+                + " +0ms, "
+                + BEGIN_IMPORTING_LABEL
                 + " +0ms, "
                 + TRANSACTION_PREPARED_EVENT_LABEL
                 + " +0ms, "

@@ -27,7 +27,6 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -76,9 +75,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
-
-  @Mixin(name = "Unused Network Options")
-  private UnusedValidatorClientOptions unusedValidatorClientOptions;
 
   @CommandLine.Option(
       names = {"-n", "--network"},
@@ -148,7 +144,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     if (isAutoDetectNetworkOption(networkOption)) {
       builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
-      unusedValidatorClientOptions.configure(builder, networkOption);
+      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption));
     }
   }
 
