@@ -149,7 +149,7 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
-  void should_callPrepareBeaconProposerAtBeginningOfEpoch() {
+  void should_callPrepareBeaconProposerAtThirdSlotOfEpoch() {
     // not yet ready to provide a fee recipient to other consumers since the first sending hasn't
     // been done
     assertThat(beaconProposerPreparer.isReadyToProvideProperties()).isFalse();
@@ -415,11 +415,13 @@ public class BeaconProposerPreparerTest {
   }
 
   @TestTemplate
-  void should_notCallPrepareBeaconProposerAfterFirstSlotOfEpoch() {
+  void should_notCallPrepareBeaconProposerUnlessFirstTimeOrThirdSlotOfEpoch() {
     beaconProposerPreparer.onSlot(UInt64.ZERO);
-    verify(validatorApiChannel).prepareBeaconProposer(any());
+    beaconProposerPreparer.onSlot(UInt64.valueOf(2));
+    verify(validatorApiChannel, times(2)).prepareBeaconProposer(any());
 
     beaconProposerPreparer.onSlot(UInt64.ONE);
+    beaconProposerPreparer.onSlot(UInt64.valueOf(3));
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -471,7 +473,7 @@ public class BeaconProposerPreparerTest {
   }
 
   private ArgumentCaptor<Collection<BeaconPreparableProposer>> doCall() {
-    beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2));
+    beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2).plus(2));
 
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
