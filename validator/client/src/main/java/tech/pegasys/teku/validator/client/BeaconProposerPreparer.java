@@ -84,7 +84,7 @@ public class BeaconProposerPreparer
     if (validatorIndexProvider.isEmpty()) {
       return;
     }
-    if (firstCallDone.compareAndSet(false, true) || isBeginningOfEpoch(slot)) {
+    if (firstCallDone.compareAndSet(false, true) || isThirdSlotOfEpoch(slot)) {
       sendPreparableProposerList();
     }
   }
@@ -210,8 +210,8 @@ public class BeaconProposerPreparer
     return true;
   }
 
-  private boolean isBeginningOfEpoch(final UInt64 slot) {
-    return slot.mod(spec.getSlotsPerEpoch(slot)).isZero();
+  private boolean isThirdSlotOfEpoch(final UInt64 slot) {
+    return slot.mod(spec.getSlotsPerEpoch(slot)).equals(UInt64.valueOf(2));
   }
 
   private void sendPreparableProposerList() {
@@ -236,9 +236,18 @@ public class BeaconProposerPreparer
                           return buildBeaconPreparableProposerList(
                               Optional.empty(), publicKeyToIndex);
                         }))
-        .thenCompose(validatorApiChannel::prepareBeaconProposer)
+        .thenCompose(
+            beaconPreparableProposers ->
+                validatorApiChannel
+                    .prepareBeaconProposer(beaconPreparableProposers)
+                    .thenApply(__ -> beaconPreparableProposers))
         .finish(
-            () -> sentProposersAtLeastOnce.compareAndSet(false, true),
+            beaconPreparableProposers -> {
+              LOG.info(
+                  "Information about {} proposers has been sent successfully to the Beacon Node.",
+                  beaconPreparableProposers.size());
+              sentProposersAtLeastOnce.compareAndSet(false, true);
+            },
             VALIDATOR_LOGGER::beaconProposerPreparationFailed);
   }
 

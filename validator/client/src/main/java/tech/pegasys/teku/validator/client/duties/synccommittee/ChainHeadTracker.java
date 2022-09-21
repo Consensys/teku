@@ -26,7 +26,7 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
   public synchronized Optional<Bytes32> getCurrentChainHead(final UInt64 atSlot) {
     if (headBlockSlot.isGreaterThan(atSlot)) {
       // We've moved on and no longer have a reference to what the head block was at that slot
-      throw new ChainHeadBeyondSlotException(atSlot);
+      throw new ChainHeadBeyondSlotException(atSlot, headBlockSlot);
     }
     return headBlockRoot;
   }
