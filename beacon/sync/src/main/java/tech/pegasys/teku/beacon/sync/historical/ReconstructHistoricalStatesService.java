@@ -102,7 +102,7 @@ public class ReconstructHistoricalStatesService extends Service {
                         final BeaconState state = latestState.orElse(genesisState);
                         final UInt64 slot =
                             latestState.isPresent()
-                                ? latestState.get().getSlot()
+                                ? latestState.get().getSlot().plus(1)
                                 : SpecConfig.GENESIS_SLOT.plus(1); // todo check logic
                         applyBlocks(state, slot, anchorSlot);
                       })
