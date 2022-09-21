@@ -261,7 +261,7 @@ class SyncCommitteeScheduledDutiesTest {
               if (headNotAvailableReason.equals(HeadNotAvailableReason.NODE_SYNCING)) {
                 return Optional.empty();
               } else {
-                throw new ChainHeadBeyondSlotException(slot, slot.plus(1));
+                throw new ChainHeadBeyondSlotException(slot);
               }
             })
         .when(chainHeadTracker)

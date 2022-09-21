@@ -17,10 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ChainHeadBeyondSlotException extends RuntimeException {
 
-  public ChainHeadBeyondSlotException(final UInt64 slot, final UInt64 chainHeadSlot) {
-    super(
-        String.format(
-            "Chain head has advanced beyond slot %s. It is currently at slot %s.",
-            slot, chainHeadSlot));
+  public ChainHeadBeyondSlotException(final UInt64 slot) {
+    super("Chain head has advanced beyond slot " + slot);
   }
 }
