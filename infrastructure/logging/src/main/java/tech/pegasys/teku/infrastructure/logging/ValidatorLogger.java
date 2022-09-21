@@ -189,7 +189,7 @@ public class ValidatorLogger {
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%s%s prepared beacon proposer(s) expired at slot %s",
+                "%sInformation about %s prepared beacon proposer(s) expired at slot %s",
                 PREFIX, numberOfExpiredProposers, slot),
             Color.YELLOW));
   }
@@ -199,7 +199,7 @@ public class ValidatorLogger {
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%s%s validator registration(s) expired at slot %s",
+                "%sInformation about %s validator registration(s) expired at slot %s",
                 PREFIX, numberOfExpiredRegistrations, slot),
             Color.YELLOW));
   }

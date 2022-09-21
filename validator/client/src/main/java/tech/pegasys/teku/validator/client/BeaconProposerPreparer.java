@@ -244,7 +244,7 @@ public class BeaconProposerPreparer
         .finish(
             beaconPreparableProposers -> {
               LOG.info(
-                  "Information about {} proposers has been sent successfully to the Beacon Node.",
+                  "Information about {} proposers has been processed successfully by the Beacon Node.",
                   beaconPreparableProposers.size());
               sentProposersAtLeastOnce.compareAndSet(false, true);
             },
