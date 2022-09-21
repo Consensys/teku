@@ -350,25 +350,24 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return futureResponse.handleComposed(
         (response, throwable) -> {
           if (throwable != null) {
-            recordFailedFailoverRequest(delegate, method);
+            recordFailedRequest(delegate, method);
             return SafeFuture.failedFuture(throwable);
           }
-          recordSuccessfulFailoverRequest(delegate, method);
+          recordSuccessfulRequest(delegate, method);
           return SafeFuture.completedFuture(response);
         });
   }
 
-  private void recordSuccessfulFailoverRequest(
+  private void recordSuccessfulRequest(
       final RemoteValidatorApiChannel failover, final String method) {
-    recordFailoverRequest(failover, method, RequestOutcome.SUCCESS);
+    recordRequest(failover, method, RequestOutcome.SUCCESS);
   }
 
-  private void recordFailedFailoverRequest(
-      final RemoteValidatorApiChannel failover, final String method) {
-    recordFailoverRequest(failover, method, RequestOutcome.ERROR);
+  private void recordFailedRequest(final RemoteValidatorApiChannel failover, final String method) {
+    recordRequest(failover, method, RequestOutcome.ERROR);
   }
 
-  private void recordFailoverRequest(
+  private void recordRequest(
       final RemoteValidatorApiChannel failover, final String method, final RequestOutcome outcome) {
     failoverBeaconNodesRequestsCounter
         .labels(failover.getEndpoint().toString(), method, outcome.displayName)
