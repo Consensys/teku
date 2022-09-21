@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -169,8 +170,8 @@ public class ReconstructHistoricalStatesServiceTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater updater = storageSystem.chainUpdater();
     updater.initializeGenesis();
-    updater.advanceChain(5);
-    updater.finalizeCurrentChain(); // todo check needed
+    final SignedBlockAndState blockAndState = updater.advanceChain(5);
+    updater.updateBestBlock(blockAndState);
 
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenAnswer(
