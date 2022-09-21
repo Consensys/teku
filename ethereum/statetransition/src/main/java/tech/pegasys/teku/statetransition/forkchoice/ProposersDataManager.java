@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ProposersDataManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 3;
-  private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 3;
+  private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 2;
 
   private final Spec spec;
   private final EventThread eventThread;

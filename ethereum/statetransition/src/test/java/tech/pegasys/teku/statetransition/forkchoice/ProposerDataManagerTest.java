@@ -133,8 +133,16 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     assertPreparedProposersCount(1);
 
     final int slotsPerEpoch = spec.getSlotsPerEpoch(slot);
-    // middle of epoch
-    UInt64 futureSlot = UInt64.valueOf(slotsPerEpoch * 3L).plus(slotsPerEpoch / 2).minus(1);
+
+    // in 2 epochs in the middle of the epoch registrations expire
+    UInt64 futureSlot = UInt64.valueOf(slotsPerEpoch * 2L).plus(slotsPerEpoch / 2).minus(1);
+    proposersDataManager.onSlot(futureSlot);
+
+    assertRegisteredValidatorsCount(0);
+    assertPreparedProposersCount(1);
+
+    // in 3 epochs in the middle of the epoch prepared proposers expire
+    futureSlot = UInt64.valueOf(slotsPerEpoch * 3L).plus(slotsPerEpoch / 2).minus(1);
     proposersDataManager.onSlot(futureSlot);
 
     assertRegisteredValidatorsCount(0);
