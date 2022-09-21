@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
@@ -54,13 +53,11 @@ class KeyGeneratorTest {
     consoleAdapter = mock(ConsoleAdapter.class);
     commandSpec = mock(CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
-    final DepositSender depositSender = mock(DepositSender.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
     when(consoleAdapter.isConsoleAvailable()).thenReturn(true);
     when(consoleAdapter.readPassword(anyString(), any()))
         .thenReturn(EXPECTED_PASSWORD.toCharArray());
-    when(depositSender.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
   @Test

@@ -198,8 +198,6 @@ class LocalValidatorSourceTest {
 
   @Test
   void shouldRejectDeletingValidatorIfReadOnlySource() {
-    final KeyStoreData keyStoreData = mock(KeyStoreData.class);
-    when(keyStoreData.getPubkey()).thenReturn(dataStructureUtil.randomPublicKey().toSSZBytes());
     final DeleteKeyResult result =
         validatorSource.deleteValidator(dataStructureUtil.randomPublicKey());
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);

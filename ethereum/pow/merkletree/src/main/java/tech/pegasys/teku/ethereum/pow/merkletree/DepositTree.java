@@ -50,7 +50,7 @@ public class DepositTree {
     checkArgument(
         calculateDepositRoot(tree.getRoot(), snapshot.getDepositCount())
             .equals(snapshot.getDepositRoot()),
-        "Incorrect Deposit Tree snapshot {}, deposit root doesn't match",
+        "Incorrect Deposit Tree snapshot %s, deposit root doesn't match",
         snapshot);
     this.totalDepositCount = snapshot.getDepositCount();
     this.finalizedDepositCount = snapshot.getDepositCount();
