@@ -185,11 +185,11 @@ class FailoverValidatorApiHandlerTest {
     verify(primaryApiChannel, atLeastOnce()).getEndpoint();
     verifyNoMoreInteractions(primaryApiChannel);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
@@ -433,11 +433,11 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
