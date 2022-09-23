@@ -193,6 +193,26 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
+  public void preparedBeaconProposersExpiration(
+      final UInt64 slot, final int numberOfExpiredProposers) {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sInformation about %s prepared beacon proposer(s) expired at slot %s",
+                PREFIX, numberOfExpiredProposers, slot),
+            Color.YELLOW));
+  }
+
+  public void validatorRegistrationsExpiration(
+      final UInt64 slot, final int numberOfExpiredRegistrations) {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sInformation about %s validator registration(s) expired at slot %s",
+                PREFIX, numberOfExpiredRegistrations, slot),
+            Color.YELLOW));
+  }
+
   public void beaconProposerPreparationFailed(final Throwable error) {
     final String errorString = String.format("%sFailed to send proposers to Beacon Node", PREFIX);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);

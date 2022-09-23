@@ -25,17 +25,20 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 
 public class ValidatorClientOptions {
 
+  // Not setting in-line default value for beaconNodeEndpoints as it requires extra business logic
   @Option(
       names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
       paramLabel = "<ENDPOINT>",
       description =
-          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node will be used as a primary and others as failovers.",
+          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node"
+              + " will be used as a primary and others as failovers.",
       split = ",",
       arity = "1..*")
-  private List<String> beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
+  private List<URI> beaconNodeApiEndpoints = null;
 
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
@@ -80,6 +83,8 @@ public class ValidatorClientOptions {
   private String sentryConfigFile = null;
 
   public void configure(TekuConfiguration.Builder builder) {
+    configureBeaconNodeApiEndpoints();
+
     builder.validator(
         config ->
             config
@@ -90,18 +95,50 @@ public class ValidatorClientOptions {
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 
-  public List<URI> getBeaconNodeApiEndpoints() {
-    return beaconNodeApiEndpoints.stream()
-        .map(this::parseBeaconNodeApiEndpoint)
-        .collect(Collectors.toList());
+  private void configureBeaconNodeApiEndpoints() {
+    if (beaconNodeApiEndpoints != null && sentryConfigFile != null) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Cannot use beacon-node-api-endpoint and sentry-config-file at "
+              + "the same time.");
+    }
+
+    if (beaconNodeApiEndpoints == null) {
+      beaconNodeApiEndpoints =
+          parseBeaconNodeApiEndpoints(ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS);
+    }
+
+    if (sentryConfigFile != null) {
+      beaconNodeApiEndpoints =
+          parseBeaconNodeApiEndpoints(
+              new SentryNodesConfigLoader()
+                  .load(sentryConfigFile)
+                  .getBeaconNodesSentryConfig()
+                  .getDutiesProviderNodeConfig()
+                  .getEndpoints());
+    }
   }
 
-  private URI parseBeaconNodeApiEndpoint(final String apiEndpoint) {
-    try {
-      return new URI(apiEndpoint);
-    } catch (URISyntaxException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Beacon node API endpoint is not a valid URL: " + apiEndpoint, e);
+  public List<URI> getBeaconNodeApiEndpoints() {
+    if (beaconNodeApiEndpoints == null) {
+      configureBeaconNodeApiEndpoints();
     }
+
+    return beaconNodeApiEndpoints;
+  }
+
+  private List<URI> parseBeaconNodeApiEndpoints(final List<String> apiEndpoints) {
+    return apiEndpoints.stream()
+        .map(
+            endpoint -> {
+              try {
+                return new URI(endpoint);
+              } catch (URISyntaxException e) {
+                throw new InvalidConfigurationException(
+                    "Invalid configuration. Beacon node API endpoint is not a valid URL: "
+                        + endpoint,
+                    e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 }

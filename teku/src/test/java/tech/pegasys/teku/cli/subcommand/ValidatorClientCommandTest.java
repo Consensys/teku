@@ -15,6 +15,9 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.io.Resources;
+import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
+
   @BeforeEach
   void setUp() {
     expectValidatorClient = true;
@@ -69,15 +73,16 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void sentryConfigOption_shouldBuildExpectedConfigWhenOptionHasFileNameParam() {
+    final String sentryConfigPath = pathFor("sentry_node_config.json");
     final String[] argsWithSentryConfig =
         new String[] {
-          "vc", "--network", "minimal", "--Xsentry-config-file", "someconfig.json",
+          "vc", "--network", "minimal", "--Xsentry-config-file", sentryConfigPath,
         };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().getSentryNodeConfigurationFile())
-        .contains("someconfig.json");
+        .contains(sentryConfigPath);
   }
 
   @Test
@@ -105,5 +110,44 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput).contains("Missing required parameter for option '--Xsentry-config-file'");
+  }
+
+  @Test
+  public void shouldThrowErrorWhenUsingBeaconNodeEndpointAndSentryNodesConfig() {
+    final String[] args = {
+      "vc",
+      "--network",
+      "minimal",
+      "--beacon-node-api-endpoint",
+      "http://127.0.0.1:1234",
+      "--Xsentry-config-file",
+      "/tmp/foo.json"
+    };
+
+    int parseResult = beaconNodeCommand.parse(args);
+    assertThat(parseResult).isNotZero();
+
+    String cmdOutput = getCommandLineOutput();
+    assertThat(cmdOutput)
+        .contains("Cannot use beacon-node-api-endpoint and sentry-config-file at the same time");
+  }
+
+  @Test
+  public void dutiesProviderSentryNodeEndpointIsUsedAsMainBeaconNodeApiEndpoint() {
+    // From sentry_node_config.json
+    final URI expectedBeaconNodeApiEndpoint = URI.create("http://duties:5051");
+
+    final String[] args = {
+      "vc", "--network", "minimal", "--Xsentry-config-file", pathFor("sentry_node_config.json")
+    };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoints())
+        .contains(List.of(expectedBeaconNodeApiEndpoint));
+  }
+
+  private String pathFor(final String filename) {
+    return Resources.getResource(ValidatorClientCommandTest.class, filename).toString();
   }
 }

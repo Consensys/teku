@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
-import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
@@ -28,7 +27,6 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -78,16 +76,12 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
-  @Mixin(name = "Unused Network Options")
-  private UnusedValidatorClientOptions unusedValidatorClientOptions;
-
   @CommandLine.Option(
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description =
           "Represents which network to use. "
-              + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
-              + "Note that all other values for this option have been deprecated.",
+              + "Use `auto` to fetch network configuration from the beacon node endpoint directly.",
       arity = "1")
   private String networkOption = AUTO_NETWORK_OPTION;
 
@@ -141,15 +135,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
     return AUTO_NETWORK_OPTION.equalsIgnoreCase(option);
   }
 
-  private void showNetworkOptionDeprecationWarning() {
-    var deprecationWarning =
-        String.format(
-            "The '--network=%s' option is deprecated. Use '--network=auto' instead, "
-                + "which fetches network configuration from the beacon node endpoint.",
-            networkOption);
-    SUB_COMMAND_LOG.displayDeprecationWarning(deprecationWarning);
-  }
-
   private void configureEth2Network(TekuConfiguration.Builder builder) {
     if (parentCommand.isOptionSpecified("--network")) {
       throw new InvalidConfigurationException(
@@ -159,8 +144,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     if (isAutoDetectNetworkOption(networkOption)) {
       builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
-      showNetworkOptionDeprecationWarning();
-      unusedValidatorClientOptions.configure(builder, networkOption);
+      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption));
     }
   }
 

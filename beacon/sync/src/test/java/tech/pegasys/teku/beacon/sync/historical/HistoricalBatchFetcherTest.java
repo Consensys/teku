@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,8 +38,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -64,7 +61,6 @@ public class HistoricalBatchFetcherTest {
       ArgumentCaptor.forClass(Collection.class);
 
   private CombinedChainDataClient chainDataClient;
-  private final BeaconState beaconState = mock(BeaconState.class);
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
@@ -109,10 +105,6 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
             maxRequests);
-
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(beaconState.getForkInfo()).thenReturn(forkInfo);
-    when(forkInfo.getGenesisValidatorsRoot()).thenReturn(Bytes32.ZERO);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
