@@ -14,11 +14,13 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 
 public class UpdateResult {
 
   public static final UpdateResult EMPTY = new UpdateResult(Optional.empty());
+  public static final SafeFuture<UpdateResult> EMPTY_FUTURE = SafeFuture.completedFuture(EMPTY);
 
   private final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
 
