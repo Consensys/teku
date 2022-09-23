@@ -26,6 +26,8 @@ public class StoreAssertions {
             "stateCountGauge",
             "blockCountGauge",
             "checkpointCountGauge",
+            "votesLock",
+            "readVotesLock",
             "lock",
             "readLock",
             "blockProvider",
