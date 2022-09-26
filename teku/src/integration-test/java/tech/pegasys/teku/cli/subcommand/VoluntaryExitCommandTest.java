@@ -64,7 +64,7 @@ public class VoluntaryExitCommandTest {
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
-  private final String pubKey1 =
+  private final String pubKey =
       "0x82c2a92c6823d43bf11215eddd0f706f168945b298bf718288cf78fcef81df19cd1e5c9c49e7b8d689722fb409f0c0a4";
 
   @BeforeEach
@@ -85,7 +85,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitVidatorWithPubKey() {
+  public void shouldExitValidatorWithPubKey() {
     final String[] argsNetworkOptOnParent =
         new String[] {
           "voluntary-exit",
@@ -96,7 +96,7 @@ public class VoluntaryExitCommandTest {
           "--confirmation-enabled",
           "false",
           "--validator-public-keys",
-          pubKey1 + "," + BLSTestUtil.randomPublicKey(17).toString()
+          pubKey + "," + BLSTestUtil.randomPublicKey(17).toString()
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
@@ -142,7 +142,7 @@ public class VoluntaryExitCommandTest {
         .when(
             request()
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", pubKey1)))
+                .withQueryStringParameters(Parameter.param("id", pubKey)))
         .respond(response().withStatusCode(200).withBody(validator));
   }
 
