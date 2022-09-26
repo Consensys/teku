@@ -104,7 +104,9 @@ public class VoluntaryExitCommandTest {
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
     assertThat(stdOut.toString(UTF_8)).contains("Exit for validator 82c2a92 submitted.");
-    assertThat(stdOut.toString(UTF_8)).doesNotContain(String.format("Exit for validator %s submitted.", pubKey2.toString().substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", pubKey2.toString().substring(2, 9)));
   }
 
   private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
