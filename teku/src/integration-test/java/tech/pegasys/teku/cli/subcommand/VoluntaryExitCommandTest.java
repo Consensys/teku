@@ -35,6 +35,7 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 import tech.pegasys.teku.api.ConfigProvider;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
@@ -64,8 +65,10 @@ public class VoluntaryExitCommandTest {
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
-  private final String pubKey =
+  private final String pubKey1 =
       "0x82c2a92c6823d43bf11215eddd0f706f168945b298bf718288cf78fcef81df19cd1e5c9c49e7b8d689722fb409f0c0a4";
+
+  private final BLSPublicKey pubKey2 = BLSTestUtil.randomPublicKey(17);
 
   @BeforeEach
   public void setup(ClientAndServer server) throws IOException {
@@ -96,11 +99,12 @@ public class VoluntaryExitCommandTest {
           "--confirmation-enabled",
           "false",
           "--validator-public-keys",
-          pubKey + "," + BLSTestUtil.randomPublicKey(17).toString()
+          pubKey1 + "," + pubKey2.toString()
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
     assertThat(stdOut.toString(UTF_8)).contains("Exit for validator 82c2a92 submitted.");
+    assertThat(stdOut.toString(UTF_8)).doesNotContain(String.format("Exit for validator %s submitted.", pubKey2.toString().substring(2, 9)));
   }
 
   private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
@@ -142,7 +146,7 @@ public class VoluntaryExitCommandTest {
         .when(
             request()
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", pubKey)))
+                .withQueryStringParameters(Parameter.param("id", pubKey1)))
         .respond(response().withStatusCode(200).withBody(validator));
   }
 
