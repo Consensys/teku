@@ -37,6 +37,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -81,6 +82,8 @@ public class VoluntaryExitCommand implements Runnable {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
 
+  private Optional<List<BLSPublicKey>> pubKeysToExit = Optional.empty();
+
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
 
@@ -103,6 +106,17 @@ public class VoluntaryExitCommand implements Runnable {
       fallbackValue = "true",
       arity = "1")
   private boolean confirmationEnabled = true;
+
+  @CommandLine.Mixin(name = "Data")
+  private ValidatorClientDataOptions dataOptions;
+
+  @CommandLine.Option(
+      names = {"--validator-public-keys"},
+      description = "Exiting validators public keys",
+      paramLabel = "<STRINGS>",
+      split = ",",
+      arity = "1")
+  private List<String> validatorsPubKeys;
 
   @Override
   public void run() {
@@ -216,6 +230,13 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void initialise() {
+    if (validatorsPubKeys != null) {
+      this.pubKeysToExit =
+          Optional.of(
+              validatorsPubKeys.stream()
+                  .map(BLSPublicKey::fromHexString)
+                  .collect(Collectors.toList()));
+    }
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
@@ -261,6 +282,15 @@ public class VoluntaryExitCommand implements Runnable {
 
     try {
       validatorLoader.loadValidators();
+      pubKeysToExit.ifPresent(
+          blsPublicKeys ->
+              validatorLoader.getOwnedValidators().getActiveValidators().stream()
+                  .filter(validator -> !blsPublicKeys.contains(validator.getPublicKey()))
+                  .forEach(
+                      validator ->
+                          validatorLoader
+                              .getOwnedValidators()
+                              .removeValidator(validator.getPublicKey())));
       validators = validatorLoader.getOwnedValidators();
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
@@ -294,7 +324,11 @@ public class VoluntaryExitCommand implements Runnable {
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder =
         TekuConfiguration.builder().metrics(b -> b.metricsEnabled(false));
-    validatorKeysOptions.configure(builder);
+    if (pubKeysToExit.isPresent()) {
+      validatorKeysOptions.configure(builder, dataOptions);
+    } else {
+      validatorKeysOptions.configure(builder);
+    }
 
     validatorClientOptions.configure(builder);
     // we don't use the data path, but keep configuration happy.
