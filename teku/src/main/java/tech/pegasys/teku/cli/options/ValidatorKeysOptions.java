@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -26,9 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class ValidatorKeysOptions {
 
@@ -123,17 +120,6 @@ public class ValidatorKeysOptions {
                 .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
                 .validatorExternalSignerTruststorePasswordFile(
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
-  }
-
-  public void configure(
-      final TekuConfiguration.Builder builder, final ValidatorClientDataOptions dataOptions) {
-    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
-    validatorKeys =
-        List.of(
-            ValidatorClientService.getManagedLocalKeystorePath(dataDirLayout)
-                + File.pathSeparator
-                + ValidatorClientService.getManagedLocalKeystorePasswordPath(dataDirLayout));
-    configure(builder);
   }
 
   private List<String> parseValidatorExternalKeys() {

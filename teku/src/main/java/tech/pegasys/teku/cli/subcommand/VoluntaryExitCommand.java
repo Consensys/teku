@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -111,12 +112,21 @@ public class VoluntaryExitCommand implements Runnable {
   private ValidatorClientDataOptions dataOptions;
 
   @CommandLine.Option(
-      names = {"--validator-public-keys"},
-      description = "Exiting validators public keys",
+      names = {"--public-keys-filter"},
+      description = "Filters the exiting validators by public keys.",
       paramLabel = "<STRINGS>",
       split = ",",
       arity = "1")
-  private List<String> validatorsPubKeys;
+  private List<String> pubKeyFilter;
+
+  @CommandLine.Option(
+      names = {"--skip-keymanager-keys"},
+      description = "Ignores the key manager keys (Key manager validators won't be loaded).",
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "false",
+      arity = "1")
+  private boolean skipKeyManagerKeys = false;
 
   @Override
   public void run() {
@@ -230,12 +240,10 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void initialise() {
-    if (validatorsPubKeys != null) {
+    if (pubKeyFilter != null) {
       this.pubKeysToExit =
           Optional.of(
-              validatorsPubKeys.stream()
-                  .map(BLSPublicKey::fromHexString)
-                  .collect(Collectors.toList()));
+              pubKeyFilter.stream().map(BLSPublicKey::fromHexString).collect(Collectors.toList()));
     }
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
@@ -268,6 +276,12 @@ public class VoluntaryExitCommand implements Runnable {
         new SlashingProtectionLogger(
             slashingProtector, spec, asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
 
+    Optional<DataDirLayout> dataDirLayout = Optional.empty();
+
+    if (!skipKeyManagerKeys) {
+      dataDirLayout = Optional.of(DataDirLayout.createFrom(dataOptions.getDataConfig()));
+    }
+
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
@@ -278,7 +292,7 @@ public class VoluntaryExitCommand implements Runnable {
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            dataDirLayout);
 
     try {
       validatorLoader.loadValidators();
@@ -322,15 +336,13 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private TekuConfiguration tekuConfiguration() {
+
     final TekuConfiguration.Builder builder =
         TekuConfiguration.builder().metrics(b -> b.metricsEnabled(false));
-    if (pubKeysToExit.isPresent()) {
-      validatorKeysOptions.configure(builder, dataOptions);
-    } else {
-      validatorKeysOptions.configure(builder);
-    }
 
+    validatorKeysOptions.configure(builder);
     validatorClientOptions.configure(builder);
+
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
