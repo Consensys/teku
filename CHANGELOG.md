@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Filter out unknown validators when sending validator registrations to the builder network
+- Improve Execution Layer error logging
 
 ### Bug Fixes
+- Filter out unknown validators when sending validator registrations to the builder network
