@@ -22,7 +22,9 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.RejectingSlashingProtector;
-import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -78,7 +80,7 @@ public class VoluntaryExitCommand implements Runnable {
   private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
-  private OwnedValidators validators;
+  private Map<BLSPublicKey, Validator> validatorsMap;
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
@@ -137,7 +139,7 @@ public class VoluntaryExitCommand implements Runnable {
       if (confirmationEnabled) {
         confirmExits();
       }
-      getValidatorIndices(validators).forEach(this::submitExitForValidator);
+      getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
       if (ex instanceof InvalidConfigurationException
           && Throwables.getRootCause(ex) instanceof ConnectException) {
@@ -167,18 +169,16 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private String getValidatorAbbreviatedKeys() {
-    return validators.getPublicKeys().stream()
+    return validatorsMap.keySet().stream()
         .map(BLSPublicKey::toAbbreviatedString)
         .collect(Collectors.joining(", "));
   }
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
-      OwnedValidators blsPublicKeyValidatorMap) {
+      Map<BLSPublicKey, Validator> validatorsMap) {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
-        blsPublicKeyValidatorMap.getPublicKeys().stream()
-            .map(BLSPublicKey::toString)
-            .collect(Collectors.toList());
+        validatorsMap.keySet().stream().map(BLSPublicKey::toString).collect(Collectors.toList());
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<String> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
@@ -208,8 +208,7 @@ public class VoluntaryExitCommand implements Runnable {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
       final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
       final BLSSignature signature =
-          validators
-              .getValidator(publicKey)
+          Optional.ofNullable(validatorsMap.get(publicKey))
               .orElseThrow()
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
@@ -298,22 +297,27 @@ public class VoluntaryExitCommand implements Runnable {
             dataDirLayout);
 
     try {
-      validators = new OwnedValidators();
       validatorLoader.loadValidators();
-      final OwnedValidators ownedValidators = validatorLoader.getOwnedValidators();
+      final Map<BLSPublicKey, Validator> activeValidators =
+          validatorLoader.getOwnedValidators().getActiveValidators().stream()
+              .collect(Collectors.toMap(Validator::getPublicKey, validator -> validator));
       if (maybePubKeysToExit.isPresent()) {
+        validatorsMap = new HashMap<>();
         List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
-        ownedValidators.getActiveValidators().stream()
-            .filter(validator -> pubKeysToExit.contains(validator.getPublicKey()))
-            .forEach(validator -> validators.addValidator(validator));
+        activeValidators.keySet().stream()
+            .filter(pubKeysToExit::contains)
+            .forEach(
+                validatorPubKey ->
+                    validatorsMap.putIfAbsent(
+                        validatorPubKey, activeValidators.get(validatorPubKey)));
       } else {
-        validators = ownedValidators;
+        validatorsMap = activeValidators;
       }
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
     }
-    if (validators.hasNoValidators()) {
+    if (validatorsMap.isEmpty()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
     }
