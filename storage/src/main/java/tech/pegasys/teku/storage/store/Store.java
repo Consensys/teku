@@ -311,7 +311,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        spec, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, timingLock, storageUpdateChannel, updateHandler);
   }
 
   @Override

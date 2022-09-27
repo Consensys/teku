@@ -55,6 +55,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final Spec spec;
   private final Store store;
   private final ReadWriteLock lock;
+  private final ReadWriteLock timingLock;
   private final StorageUpdateChannel storageUpdateChannel;
 
   Optional<UInt64> timeMillis = Optional.empty();
@@ -75,11 +76,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final Spec spec,
       final Store store,
       final ReadWriteLock lock,
+      final ReadWriteLock timingLock,
       final StorageUpdateChannel storageUpdateChannel,
       final UpdatableStore.StoreUpdateHandler updateHandler) {
     this.spec = spec;
     this.store = store;
     this.lock = lock;
+    this.timingLock = timingLock;
     this.storageUpdateChannel = storageUpdateChannel;
     this.updateHandler = updateHandler;
   }
@@ -190,7 +193,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     writeLock.lock();
     try {
       // Add new data
-      updates.applyToStore(store, updateResult);
+      updates.applyToStore(timingLock, store, updateResult);
     } finally {
       writeLock.unlock();
     }
