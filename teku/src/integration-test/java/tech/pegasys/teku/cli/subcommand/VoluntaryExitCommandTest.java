@@ -109,8 +109,8 @@ public class VoluntaryExitCommandTest {
           "--data-validator-path",
           Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
               .getPath(),
-          "--skip-keymanager-keys",
-          "false",
+          "--include-keymanager-keys",
+          "true",
           "--validator-keys",
           Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
@@ -140,8 +140,8 @@ public class VoluntaryExitCommandTest {
           "--data-validator-path",
           Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
               .getPath(),
-          "--skip-keymanager-keys",
-          "false",
+          "--include-keymanager-keys",
+          "true",
           "--validator-keys",
           Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
@@ -174,8 +174,8 @@ public class VoluntaryExitCommandTest {
           "--data-validator-path",
           Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
               .getPath(),
-          "--skip-keymanager-keys",
-          "false",
+          "--include-keymanager-keys",
+          "true",
           "--validator-keys",
           Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")

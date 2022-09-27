@@ -121,13 +121,13 @@ public class VoluntaryExitCommand implements Runnable {
   private List<String> validatorPublicKeys;
 
   @CommandLine.Option(
-      names = {"--skip-keymanager-keys"},
-      description = "Do not load the key manager validator keys.",
+      names = {"--include-keymanager-keys"},
+      description = "Include validator keys managed via keymanager APIs.",
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       arity = "0..1")
-  private boolean skipKeyManagerKeys = true;
+  private boolean includeKeyManagerKeys = false;
 
   @Override
   public void run() {
@@ -281,7 +281,7 @@ public class VoluntaryExitCommand implements Runnable {
 
     Optional<DataDirLayout> dataDirLayout = Optional.empty();
 
-    if (!skipKeyManagerKeys) {
+    if (includeKeyManagerKeys) {
       dataDirLayout = Optional.of(DataDirLayout.createFrom(dataOptions.getDataConfig()));
     }
 
