@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -62,6 +67,8 @@ public class AttestationManager extends Service
   // AttestationManager
   private final SignatureVerificationService signatureVerificationService;
 
+  private final MetricsCountersByIntervals metricsCountersByIntervals;
+
   AttestationManager(
       final ForkChoice attestationProcessor,
       final PendingPool<ValidateableAttestation> pendingAttestations,
@@ -70,7 +77,8 @@ public class AttestationManager extends Service
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
       final SignatureVerificationService signatureVerificationService,
-      final ActiveValidatorChannel activeValidatorChannel) {
+      final ActiveValidatorChannel activeValidatorChannel,
+      final MetricsSystem metricsSystem) {
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
@@ -79,6 +87,15 @@ public class AttestationManager extends Service
     this.aggregateValidator = aggregateValidator;
     this.signatureVerificationService = signatureVerificationService;
     this.activeValidatorChannel = activeValidatorChannel;
+    this.metricsCountersByIntervals =
+        MetricsCountersByIntervals.create(
+            TekuMetricCategory.BEACON,
+            metricsSystem,
+            "attestation_validation_perf",
+            "attestation_validation_perf",
+            Collections.emptyList(),
+            Map.of(List.of(), List.of(25L, 50L, 100L, 200L, 500L)));
+    ;
   }
 
   public static AttestationManager create(
@@ -89,7 +106,8 @@ public class AttestationManager extends Service
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
       final SignatureVerificationService signatureVerificationService,
-      final ActiveValidatorChannel activeValidatorChannel) {
+      final ActiveValidatorChannel activeValidatorChannel,
+      final MetricsSystem metricsSystem) {
     return new AttestationManager(
         attestationProcessor,
         pendingAttestations,
@@ -98,7 +116,8 @@ public class AttestationManager extends Service
         attestationValidator,
         aggregateValidator,
         signatureVerificationService,
-        activeValidatorChannel);
+        activeValidatorChannel,
+        metricsSystem);
   }
 
   public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
@@ -138,8 +157,15 @@ public class AttestationManager extends Service
   }
 
   public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
+    final long start = System.currentTimeMillis();
     SafeFuture<InternalValidationResult> validationResult =
-        attestationValidator.validate(attestation);
+        attestationValidator
+            .validate(attestation)
+            .thenPeek(
+                __ -> {
+                  final long time = System.currentTimeMillis() - start;
+                  metricsCountersByIntervals.recordValue(time);
+                });
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
   }

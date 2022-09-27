@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -90,6 +91,7 @@ class AttestationManagerIntegrationTest {
   private final AttestationValidator attestationValidator =
       new AttestationValidator(spec, recentChainData, signatureVerificationService);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final AttestationManager attestationManager =
       new AttestationManager(
@@ -101,7 +103,8 @@ class AttestationManagerIntegrationTest {
           new AggregateAttestationValidator(
               spec, attestationValidator, signatureVerificationService),
           signatureVerificationService,
-          activeValidatorChannel);
+          activeValidatorChannel,
+          metricsSystem);
 
   // Version of forks with same fork version for previous and current
   // Guarantees that's the version used for signing regardless of slot

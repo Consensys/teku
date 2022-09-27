@@ -26,10 +26,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,9 +56,22 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   private final NavigableMap<UInt64, Map<BlockRootAndCommitteeIndex, ContributionData>>
       committeeContributionData = new TreeMap<>();
 
-  public SyncCommitteeMessagePool(final Spec spec, final SyncCommitteeMessageValidator validator) {
+  private final MetricsCountersByIntervals metricsCountersByIntervals;
+
+  public SyncCommitteeMessagePool(
+      final Spec spec,
+      final SyncCommitteeMessageValidator validator,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.validator = validator;
+    metricsCountersByIntervals =
+        MetricsCountersByIntervals.create(
+            TekuMetricCategory.BEACON,
+            metricsSystem,
+            "sync_committee_validation_perf",
+            "sync_committee_validation_perf",
+            Collections.emptyList(),
+            Map.of(List.of(), List.of(25L, 50L, 100L, 200L, 500L)));
   }
 
   public void subscribeOperationAdded(
@@ -75,10 +91,13 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
 
   private SafeFuture<InternalValidationResult> add(
       final ValidateableSyncCommitteeMessage message, final boolean fromNetwork) {
+    final long start = System.currentTimeMillis();
     return validator
         .validate(message)
         .thenPeek(
             result -> {
+              final long time = System.currentTimeMillis() - start;
+              metricsCountersByIntervals.recordValue(time);
               if (result.isAccept()) {
                 subscribers.forEach(
                     subscriber -> subscriber.onOperationAdded(message, result, fromNetwork));

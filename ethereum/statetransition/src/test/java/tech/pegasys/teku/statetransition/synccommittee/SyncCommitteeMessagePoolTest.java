@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -60,7 +61,10 @@ class SyncCommitteeMessagePoolTest {
   private final OperationAddedSubscriber<ValidateableSyncCommitteeMessage> subscriber =
       mock(OperationAddedSubscriber.class);
 
-  private final SyncCommitteeMessagePool pool = new SyncCommitteeMessagePool(spec, validator);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+
+  private final SyncCommitteeMessagePool pool =
+      new SyncCommitteeMessagePool(spec, validator, metricsSystem);
 
   @BeforeEach
   void setUp() {

@@ -97,7 +97,8 @@ class AttestationManagerTest {
           attestationValidator,
           aggregateValidator,
           signatureVerificationService,
-          activeValidatorCache);
+          activeValidatorCache,
+          metricsSystem);
 
   @BeforeEach
   public void setup() {

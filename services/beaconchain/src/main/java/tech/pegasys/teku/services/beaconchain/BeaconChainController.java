@@ -711,7 +711,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             attestationValidator,
             aggregateValidator,
             signatureVerificationService,
-            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
+            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner),
+            metricsSystem);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
@@ -740,7 +741,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 signatureVerificationService,
-                timeProvider));
+                timeProvider),
+            metricsSystem);
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
