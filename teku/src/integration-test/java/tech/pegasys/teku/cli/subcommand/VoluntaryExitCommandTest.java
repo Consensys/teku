@@ -78,7 +78,7 @@ public class VoluntaryExitCommandTest {
 
   private final String nonExistingKey = BLSTestUtil.randomPublicKey(17).toString();
 
-  private final String EXIT_SUBMITTED = "Exit for validator %s submitted.";
+  private final String exitSubmitted = "Exit for validator %s submitted.";
 
   @BeforeEach
   public void setup(ClientAndServer server) throws IOException {
@@ -150,7 +150,7 @@ public class VoluntaryExitCommandTest {
               + Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
                   .getPath(),
-          "--public-keys-filter",
+          "--validator-public-keys",
           keyManagerPubKey2 + "," + nonExistingKey
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
@@ -184,7 +184,7 @@ public class VoluntaryExitCommandTest {
               + Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
                   .getPath(),
-          "--public-keys-filter",
+          "--validator-public-keys",
           validatorPubKey1 + "," + nonExistingKey
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
@@ -216,7 +216,7 @@ public class VoluntaryExitCommandTest {
               + Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
                   .getPath(),
-          "--public-keys-filter",
+          "--validator-public-keys",
           keyManagerPubKey2 + "," + validatorPubKey1
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
@@ -352,11 +352,11 @@ public class VoluntaryExitCommandTest {
 
   private void assertValidatorExited(String pubKey) {
     assertThat(stdOut.toString(UTF_8))
-        .contains(String.format(EXIT_SUBMITTED, extractValidatorId(pubKey)));
+        .contains(String.format(exitSubmitted, extractValidatorId(pubKey)));
   }
 
   private void assertValidatorNotExited(String pubKey) {
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format(EXIT_SUBMITTED, extractValidatorId(pubKey)));
+        .doesNotContain(String.format(exitSubmitted, extractValidatorId(pubKey)));
   }
 }

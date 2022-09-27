@@ -112,12 +112,13 @@ public class VoluntaryExitCommand implements Runnable {
   private ValidatorClientDataOptions dataOptions;
 
   @CommandLine.Option(
-      names = {"--public-keys-filter"},
-      description = "Filter the exiting validators by public keys.",
+      names = {"--validator-public-keys"},
+      description =
+          "Optionally restrict the exit command to a specified list of public keys. When the parameter is not used, all keys will be exited.",
       paramLabel = "<STRINGS>",
       split = ",",
       arity = "0..1")
-  private List<String> pubKeyFilter;
+  private List<String> validatorPublicKeys;
 
   @CommandLine.Option(
       names = {"--skip-keymanager-keys"},
@@ -240,10 +241,12 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void initialise() {
-    if (pubKeyFilter != null) {
+    if (validatorPublicKeys != null) {
       this.pubKeysToExit =
           Optional.of(
-              pubKeyFilter.stream().map(BLSPublicKey::fromHexString).collect(Collectors.toList()));
+              validatorPublicKeys.stream()
+                  .map(BLSPublicKey::fromHexString)
+                  .collect(Collectors.toList()));
     }
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
