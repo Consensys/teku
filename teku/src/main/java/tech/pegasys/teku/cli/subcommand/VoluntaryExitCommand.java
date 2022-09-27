@@ -83,7 +83,7 @@ public class VoluntaryExitCommand implements Runnable {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
 
-  private Optional<List<BLSPublicKey>> pubKeysToExit = Optional.empty();
+  private Optional<List<BLSPublicKey>> maybePubKeysToExit = Optional.empty();
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -242,7 +242,7 @@ public class VoluntaryExitCommand implements Runnable {
 
   private void initialise() {
     if (validatorPublicKeys != null) {
-      this.pubKeysToExit =
+      this.maybePubKeysToExit =
           Optional.of(
               validatorPublicKeys.stream()
                   .map(BLSPublicKey::fromHexString)
@@ -299,7 +299,7 @@ public class VoluntaryExitCommand implements Runnable {
 
     try {
       validatorLoader.loadValidators();
-      pubKeysToExit.ifPresent(
+      maybePubKeysToExit.ifPresent(
           blsPublicKeys ->
               validatorLoader.getOwnedValidators().getActiveValidators().stream()
                   .filter(validator -> !blsPublicKeys.contains(validator.getPublicKey()))
