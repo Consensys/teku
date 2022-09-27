@@ -85,38 +85,25 @@ public abstract class Web3JClient {
             });
   }
 
-  private boolean isAuthenticationException(final Throwable exception) {
-    if (!(exception instanceof ClientConnectionException)) {
-      return false;
-    }
-    final String message = exception.getMessage();
-    return message.contains("received: 401") || message.contains("received: 403");
-  }
-
-  private boolean isTimeoutException(final Throwable exception) {
-    return exception instanceof TimeoutException;
-  }
-
   protected void handleError(final Throwable error) {
     handleError(error, false);
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
     final long timeNow = timeProvider.getTimeInMillis().longValue();
-    lastError.accumulateAndGet(
-        timeNow,
-        (lastErrorTime, givenErrorTimeUpdate) -> {
-          if (lastErrorTime == NO_ERROR_TIME
-              || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
-            if (isTimeoutException(error)) {
-              eventLog.executionClientRequestTimedOut();
-            } else {
-              eventLog.executionClientRequestFailed(error, couldBeAuthError);
-            }
-            return givenErrorTimeUpdate;
-          }
-          return lastErrorTime;
-        });
+    final long maybeUpdatedTime =
+        lastError.accumulateAndGet(
+            timeNow,
+            (lastErrorTime, givenErrorTimeUpdate) -> {
+              if (lastErrorTime == NO_ERROR_TIME
+                  || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
+                return givenErrorTimeUpdate;
+              }
+              return lastErrorTime;
+            });
+    if (maybeUpdatedTime == timeNow) {
+      logExecutionClientError(error, couldBeAuthError);
+    }
   }
 
   protected void handleSuccess() {
@@ -140,5 +127,21 @@ public abstract class Web3JClient {
 
   public boolean isWebsocketsClient() {
     return false;
+  }
+
+  private boolean isAuthenticationException(final Throwable exception) {
+    if (!(exception instanceof ClientConnectionException)) {
+      return false;
+    }
+    final String message = exception.getMessage();
+    return message.contains("received: 401") || message.contains("received: 403");
+  }
+
+  private void logExecutionClientError(final Throwable error, final boolean couldBeAuthError) {
+    if (error instanceof TimeoutException) {
+      eventLog.executionClientRequestTimedOut();
+    } else {
+      eventLog.executionClientRequestFailed(error, couldBeAuthError);
+    }
   }
 }
