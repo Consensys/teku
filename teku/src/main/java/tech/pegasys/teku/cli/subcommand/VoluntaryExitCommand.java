@@ -298,17 +298,17 @@ public class VoluntaryExitCommand implements Runnable {
             dataDirLayout);
 
     try {
+      validators = new OwnedValidators();
       validatorLoader.loadValidators();
-      maybePubKeysToExit.ifPresent(
-          blsPublicKeys ->
-              validatorLoader.getOwnedValidators().getActiveValidators().stream()
-                  .filter(validator -> !blsPublicKeys.contains(validator.getPublicKey()))
-                  .forEach(
-                      validator ->
-                          validatorLoader
-                              .getOwnedValidators()
-                              .removeValidator(validator.getPublicKey())));
-      validators = validatorLoader.getOwnedValidators();
+      final OwnedValidators ownedValidators = validatorLoader.getOwnedValidators();
+      if (maybePubKeysToExit.isPresent()) {
+        List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
+        ownedValidators.getActiveValidators().stream()
+            .filter(validator -> pubKeysToExit.contains(validator.getPublicKey()))
+            .forEach(validator -> validators.addValidator(validator));
+      } else {
+        validators = ownedValidators;
+      }
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
