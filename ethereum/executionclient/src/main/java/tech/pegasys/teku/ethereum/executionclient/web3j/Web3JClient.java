@@ -102,16 +102,21 @@ public abstract class Web3JClient {
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
-    final long lastErrorTime = lastError.get();
     final long timeNow = timeProvider.getTimeInMillis().longValue();
-    if (lastErrorTime == NO_ERROR_TIME || timeNow - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
-      lastError.set(timeNow);
-      if (isTimeoutException(error)) {
-        eventLog.executionClientRequestTimedOut();
-      } else {
-        eventLog.executionClientRequestFailed(error, couldBeAuthError);
-      }
-    }
+    lastError.accumulateAndGet(
+        timeNow,
+        (lastErrorTime, givenErrorTimeUpdate) -> {
+          if (lastErrorTime == NO_ERROR_TIME
+              || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
+            if (isTimeoutException(error)) {
+              eventLog.executionClientRequestTimedOut();
+            } else {
+              eventLog.executionClientRequestFailed(error, couldBeAuthError);
+            }
+            return givenErrorTimeUpdate;
+          }
+          return lastErrorTime;
+        });
   }
 
   protected void handleSuccess() {
