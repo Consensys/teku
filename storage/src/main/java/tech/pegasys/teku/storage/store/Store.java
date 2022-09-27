@@ -76,6 +76,8 @@ class Store implements UpdatableStore {
   private final Lock readVotesLock = votesLock.readLock();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
+  private final ReadWriteLock timingLock = new ReentrantReadWriteLock();
+  private final Lock readTimingLock = timingLock.readLock();
 
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
@@ -275,6 +277,8 @@ class Store implements UpdatableStore {
    */
   @Override
   public void startMetrics() {
+    votesLock.writeLock().lock();
+    timingLock.writeLock().lock();
     lock.writeLock().lock();
     try {
       blockCountGauge =
@@ -287,6 +291,8 @@ class Store implements UpdatableStore {
       states.startMetrics();
       checkpointStates.startMetrics();
     } finally {
+      votesLock.writeLock().unlock();
+      timingLock.writeLock().unlock();
       lock.writeLock().unlock();
     }
   }
@@ -305,7 +311,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        spec, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, timingLock, storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -315,21 +321,21 @@ class Store implements UpdatableStore {
 
   @Override
   public UInt64 getTimeMillis() {
-    readLock.lock();
+    readTimingLock.lock();
     try {
       return timeMillis;
     } finally {
-      readLock.unlock();
+      readTimingLock.unlock();
     }
   }
 
   @Override
   public UInt64 getGenesisTime() {
-    readLock.lock();
+    readTimingLock.lock();
     try {
       return genesisTime;
     } finally {
-      readLock.unlock();
+      readTimingLock.unlock();
     }
   }
 

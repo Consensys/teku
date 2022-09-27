@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -85,12 +86,18 @@ class StoreTransactionUpdates {
         optimisticTransitionBlockRoot);
   }
 
-  public void applyToStore(final Store store, final UpdateResult updateResult) {
+  public void applyToStore(
+      final ReadWriteLock timingLock, final Store store, final UpdateResult updateResult) {
     // Add new data
-    tx.timeMillis
-        .filter(t -> t.isGreaterThan(store.getTimeMillis()))
-        .ifPresent(value -> store.timeMillis = value);
-    tx.genesisTime.ifPresent(value -> store.genesisTime = value);
+    timingLock.writeLock().lock();
+    try {
+      tx.timeMillis
+          .filter(t -> t.isGreaterThan(store.getTimeMillis()))
+          .ifPresent(value -> store.timeMillis = value);
+      tx.genesisTime.ifPresent(value -> store.genesisTime = value);
+    } finally {
+      timingLock.writeLock().unlock();
+    }
     tx.justifiedCheckpoint.ifPresent(value -> store.justifiedCheckpoint = value);
     tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
