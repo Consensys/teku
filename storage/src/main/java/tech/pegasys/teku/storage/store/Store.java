@@ -711,7 +711,7 @@ class Store implements UpdatableStore {
   }
 
   private void putBlock(final SignedBeaconBlock block) {
-    final Lock writeLock = votesLock.writeLock();
+    final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
       if (containsBlock(block.getRoot())) {
