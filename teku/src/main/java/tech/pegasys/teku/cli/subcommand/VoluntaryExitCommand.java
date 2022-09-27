@@ -113,7 +113,7 @@ public class VoluntaryExitCommand implements Runnable {
 
   @CommandLine.Option(
       names = {"--public-keys-filter"},
-      description = "Filters the exiting validators by public keys.",
+      description = "Filter the exiting validators by public keys.",
       paramLabel = "<STRINGS>",
       split = ",",
       arity = "0..1")
@@ -121,8 +121,7 @@ public class VoluntaryExitCommand implements Runnable {
 
   @CommandLine.Option(
       names = {"--skip-keymanager-keys"},
-      description =
-          "Ignore the key manager keys (Key manager validators won't be loaded if set to true).",
+      description = "Do not load the key manager validator keys.",
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
