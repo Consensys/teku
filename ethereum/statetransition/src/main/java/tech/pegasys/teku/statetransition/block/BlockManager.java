@@ -189,7 +189,7 @@ public class BlockManager extends Service
             .or(
                 () -> {
                   if (invalidBlockRoots.containsKey(block.getParentRoot())) {
-                    return Optional.of(FailedBlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+                    return Optional.of(BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
                   }
                   return Optional.empty();
                 });

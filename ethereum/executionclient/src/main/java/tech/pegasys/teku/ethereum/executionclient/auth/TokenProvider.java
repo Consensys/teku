@@ -15,8 +15,9 @@ package tech.pegasys.teku.ethereum.executionclient.auth;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import java.sql.Date;
+
 import java.time.Instant;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
