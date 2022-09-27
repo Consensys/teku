@@ -116,17 +116,18 @@ public class VoluntaryExitCommand implements Runnable {
       description = "Filters the exiting validators by public keys.",
       paramLabel = "<STRINGS>",
       split = ",",
-      arity = "1")
+      arity = "0..1")
   private List<String> pubKeyFilter;
 
   @CommandLine.Option(
       names = {"--skip-keymanager-keys"},
-      description = "Ignores the key manager keys (Key manager validators won't be loaded).",
+      description =
+          "Ignore the key manager keys (Key manager validators won't be loaded if set to true).",
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      fallbackValue = "false",
-      arity = "1")
-  private boolean skipKeyManagerKeys = false;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean skipKeyManagerKeys = true;
 
   @Override
   public void run() {

@@ -65,16 +65,19 @@ public class VoluntaryExitCommandTest {
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
-  private final String pubKey1 =
+  private final String keyManagerPubKey2 =
       "0x82c2a92c6823d43bf11215eddd0f706f168945b298bf718288cf78fcef81df19cd1e5c9c49e7b8d689722fb409f0c0a4";
 
-  private final String pubKey2 = BLSTestUtil.randomPublicKey(17).toString();
+  private final String keyManagerPubKey1 =
+      "0x8b0f19f3306930d8a1e85a8084ef2caea044066dedfd3de0c22f28473dd07606da5d205ae09ee20072dc9f9e4fd32d79";
 
-  private final String pubKey3 =
+  private final String validatorPubKey1 =
       "0xa756543ed1f0bac08480d67b1d5ae30f808db65de40bd2006f41a727e4f4200d732cdbee4c81aa930e2ffdf561f0dd25";
 
-  private final String pubKey4 =
+  private final String validatorPubKey2 =
       "0xaa516161fd3d6857ac45a89b7f8f9ba604a8c87642e5ef9ccdab46d7dc4e32518a17a371673758073cb81c0d536cbff1";
+
+  private final String nonExistingKey = BLSTestUtil.randomPublicKey(17).toString();
 
   @BeforeEach
   public void setup(ClientAndServer server) throws IOException {
@@ -82,8 +85,7 @@ public class VoluntaryExitCommandTest {
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulHeadResponse(mockBeaconServer);
     configureSuccessfulGenesisResponse(mockBeaconServer);
-    configureSuccessfulValidator1Response(mockBeaconServer);
-    configureSuccessfulValidator3Response(mockBeaconServer);
+    configureSuccessfulValidatorResponses(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
     System.setOut(new PrintStream(stdOut));
   }
@@ -95,16 +97,18 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitValidatorWithPubKeyFromKeyManager() {
+  public void shouldExitAllLoadedValidators() {
     final String[] argsNetworkOptOnParent =
         new String[] {
           "voluntary-exit",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
           "--beacon-node-api-endpoint",
           getMockBeaconServerEndpoint(mockBeaconServer),
           "--confirmation-enabled",
+          "false",
+          "--data-validator-path",
+          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
+              .getPath(),
+          "--skip-keymanager-keys",
           "false",
           "--validator-keys",
           Resources.getResource(
@@ -113,33 +117,37 @@ public class VoluntaryExitCommandTest {
               + File.pathSeparator
               + Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
-                  .getPath(),
-          "--public-keys-filter",
-          pubKey1 + "," + pubKey2
+                  .getPath()
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
     assertThat(stdOut.toString(UTF_8))
-        .contains(String.format("Exit for validator %s submitted.", pubKey1.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey2.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey2.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey3.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", validatorPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey4.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", validatorPubKey2.substring(2, 9)));
   }
 
   @Test
-  public void shouldExitValidatorWithPubKeyFromPath() {
+  public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() {
     final String[] argsNetworkOptOnParent =
         new String[] {
           "voluntary-exit",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
           "--beacon-node-api-endpoint",
           getMockBeaconServerEndpoint(mockBeaconServer),
           "--confirmation-enabled",
+          "false",
+          "--data-validator-path",
+          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
+              .getPath(),
+          "--skip-keymanager-keys",
           "false",
           "--validator-keys",
           Resources.getResource(
@@ -150,18 +158,69 @@ public class VoluntaryExitCommandTest {
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
                   .getPath(),
           "--public-keys-filter",
-          pubKey3 + "," + pubKey2
+          keyManagerPubKey2 + "," + nonExistingKey
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
     assertThat(stdOut.toString(UTF_8))
-        .contains(String.format("Exit for validator %s submitted.", pubKey3.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey1.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey2.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey2.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", validatorPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey4.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", validatorPubKey2.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", nonExistingKey.substring(2, 9)));
+  }
+
+  @Test
+  public void shouldExitValidatorWithPubKeyFromPathOnly() {
+    final String[] argsNetworkOptOnParent =
+        new String[] {
+          "voluntary-exit",
+          "--beacon-node-api-endpoint",
+          getMockBeaconServerEndpoint(mockBeaconServer),
+          "--confirmation-enabled",
+          "false",
+          "--data-validator-path",
+          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
+              .getPath(),
+          "--skip-keymanager-keys",
+          "false",
+          "--validator-keys",
+          Resources.getResource(
+                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
+                  .getPath()
+              + File.pathSeparator
+              + Resources.getResource(
+                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
+                  .getPath(),
+          "--public-keys-filter",
+          validatorPubKey1 + "," + nonExistingKey
+        };
+    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(stdOut.toString(UTF_8))
+        .contains(
+            String.format("Exit for validator %s submitted.", validatorPubKey1.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", validatorPubKey2.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey1.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey2.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", nonExistingKey.substring(2, 9)));
   }
 
   @Test
@@ -173,8 +232,9 @@ public class VoluntaryExitCommandTest {
           getMockBeaconServerEndpoint(mockBeaconServer),
           "--confirmation-enabled",
           "false",
-          "--skip-keymanager-keys",
-          "true",
+          "--data-validator-path",
+          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
+              .getPath(),
           "--validator-keys",
           Resources.getResource(
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
@@ -184,18 +244,25 @@ public class VoluntaryExitCommandTest {
                       "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
                   .getPath(),
           "--public-keys-filter",
-          pubKey1 + "," + pubKey3
+          keyManagerPubKey2 + "," + validatorPubKey1
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(0);
     assertThat(stdOut.toString(UTF_8))
-        .contains(String.format("Exit for validator %s submitted.", pubKey3.substring(2, 9)));
+        .contains(
+            String.format("Exit for validator %s submitted.", validatorPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey1.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", validatorPubKey2.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey2.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey1.substring(2, 9)));
     assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format("Exit for validator %s submitted.", pubKey4.substring(2, 9)));
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", keyManagerPubKey2.substring(2, 9)));
+    assertThat(stdOut.toString(UTF_8))
+        .doesNotContain(
+            String.format("Exit for validator %s submitted.", nonExistingKey.substring(2, 9)));
   }
 
   private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
@@ -230,34 +297,80 @@ public class VoluntaryExitCommandTest {
         .respond(response().withStatusCode(200).withBody(testHead));
   }
 
-  private void configureSuccessfulValidator1Response(final ClientAndServer mockBeaconServer)
+  private void configureSuccessfulValidatorResponses(final ClientAndServer mockBeaconServer)
       throws IOException {
-    final String validator =
+    final String keyManagerValidator1 =
         Resources.toString(
             Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/82c2a92_response.json"),
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/8b0f19f_response.json"),
             UTF_8);
-    mockBeaconServer
-        .when(
-            request()
-                .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", pubKey1)))
-        .respond(response().withStatusCode(200).withBody(validator));
-  }
 
-  private void configureSuccessfulValidator3Response(final ClientAndServer mockBeaconServer)
-      throws IOException {
-    final String validator =
+    final String keyManagerValidator2 =
         Resources.toString(
             Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/a756543_response.json"),
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/82c2a92_response.json"),
             UTF_8);
+
+    final String validator1 =
+        Resources.toString(
+            Resources.getResource(
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/a756543_response.json"),
+            UTF_8);
+
+    final String validator2 =
+        Resources.toString(
+            Resources.getResource(
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/aa51616_response.json"),
+            UTF_8);
+
+    final String validators =
+        Resources.toString(
+            Resources.getResource(
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/validators_response.json"),
+            UTF_8);
+
     mockBeaconServer
         .when(
             request()
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", pubKey3)))
-        .respond(response().withStatusCode(200).withBody(validator));
+                .withQueryStringParameters(Parameter.param("id", keyManagerPubKey1)))
+        .respond(response().withStatusCode(200).withBody(keyManagerValidator1));
+
+    mockBeaconServer
+        .when(
+            request()
+                .withPath("/eth/v1/beacon/states/head/validators")
+                .withQueryStringParameters(Parameter.param("id", keyManagerPubKey2)))
+        .respond(response().withStatusCode(200).withBody(keyManagerValidator2));
+
+    mockBeaconServer
+        .when(
+            request()
+                .withPath("/eth/v1/beacon/states/head/validators")
+                .withQueryStringParameters(Parameter.param("id", validatorPubKey1)))
+        .respond(response().withStatusCode(200).withBody(validator1));
+
+    mockBeaconServer
+        .when(
+            request()
+                .withPath("/eth/v1/beacon/states/head/validators")
+                .withQueryStringParameters(Parameter.param("id", validatorPubKey2)))
+        .respond(response().withStatusCode(200).withBody(validator2));
+
+    mockBeaconServer
+        .when(
+            request()
+                .withPath("/eth/v1/beacon/states/head/validators")
+                .withQueryStringParameters(
+                    Parameter.param(
+                        "id",
+                        String.join(
+                            ",",
+                            validatorPubKey1,
+                            keyManagerPubKey1,
+                            keyManagerPubKey2,
+                            validatorPubKey2))))
+        .respond(response().withStatusCode(200).withBody(validators));
   }
 
   private void configureSuccessfulVoluntaryExitResponse(final ClientAndServer mockBeaconServer) {
