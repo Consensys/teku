@@ -148,11 +148,11 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
   private void processNotReadyResult(
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     if (isPrimaryNode) {
-      remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
       if (latestPrimaryNodeReadiness.compareAndSet(true, false)) {
         final boolean failoversConfigured = !failoverBeaconNodeApis.isEmpty();
         validatorLogger.primaryBeaconNodeNotReady(failoversConfigured);
       }
+      remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
     } else {
       remoteBeaconNodeSyncingChannel.onFailoverNodeNotInSync(beaconNodeApi);
     }
