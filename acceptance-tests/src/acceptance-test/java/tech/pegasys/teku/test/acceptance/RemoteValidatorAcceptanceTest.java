@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -87,7 +86,6 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodesSyncingQueryPeriod(Duration.ofSeconds(1))
                     .withBeaconNodes(beaconNode, failoverBeaconNode));
 
     validatorClient.start();

@@ -102,7 +102,9 @@ public class EventSourceBeaconChainEventAdapter
 
   @Override
   public void onPrimaryNodeNotInSync() {
-    switchToFailoverEventStreamIfAvailable();
+    if (currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
+      switchToFailoverEventStreamIfAvailable();
+    }
   }
 
   @Override
