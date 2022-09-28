@@ -75,12 +75,12 @@ public class DepositContract extends Contract {
     final Function function =
         new Function(
             FUNC_DEPOSIT,
-            Arrays.<Type>asList(
+            Arrays.asList(
                 new DynamicBytes(pubkey),
                 new DynamicBytes(withdrawalCredentials),
                 new DynamicBytes(signature),
                 new org.web3j.abi.datatypes.generated.Bytes32(depositDataRoot)),
-            Collections.<TypeReference<?>>emptyList());
+            Collections.emptyList());
     return executeRemoteCallTransaction(function, weiValue);
   }
 

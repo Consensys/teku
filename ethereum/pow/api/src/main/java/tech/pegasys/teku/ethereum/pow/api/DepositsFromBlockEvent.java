@@ -44,7 +44,7 @@ public class DepositsFromBlockEvent {
 
   protected void assertDepositsValid(final List<Deposit> deposits) {
     checkArgument(!deposits.isEmpty(), "Attempting to notify no events in a block");
-    if (deposits.size() <= 1) {
+    if (deposits.size() == 1) {
       return;
     }
 

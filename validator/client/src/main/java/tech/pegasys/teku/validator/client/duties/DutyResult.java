@@ -152,7 +152,7 @@ public class DutyResult {
           successCount,
           roots,
           context.size() > 0
-              ? Optional.of(context.stream().collect(Collectors.joining(", ")))
+              ? Optional.of(String.join(", ", context))
               : Optional.empty());
     }
     if (nodeSyncingCount > 0) {

@@ -153,12 +153,12 @@ public class StatusLogger {
   public void validatorsInitialised(final List<String> validators) {
     if (validators.size() > 100) {
       log.info("Loaded {} validators", validators.size());
-      log.debug("validators: {}", () -> validators.stream().collect(joining(", ")));
+      log.debug("validators: {}", () -> String.join(", ", validators));
     } else {
       log.info(
           "Loaded {} Validators: {}",
           validators::size,
-          () -> validators.stream().collect(joining(", ")));
+          () -> String.join(", ", validators));
     }
   }
 

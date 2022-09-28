@@ -90,7 +90,7 @@ public class NodeDataProvider {
   }
 
   public List<ProposerSlashing> getProposerSlashings() {
-    return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
+    return new ArrayList<>(proposerSlashingPool.getAll());
   }
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {

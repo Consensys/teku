@@ -84,7 +84,7 @@ public class VersionProvider {
     }
     if (osName.startsWith("os400")) {
       // Avoid the names such as os4000
-      if (osName.length() <= 5 || !Character.isDigit(osName.charAt(5))) {
+      if (osName.length() == 5 || !Character.isDigit(osName.charAt(5))) {
         return "os400";
       }
     }

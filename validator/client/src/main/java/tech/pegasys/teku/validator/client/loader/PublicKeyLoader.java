@@ -62,7 +62,7 @@ public class PublicKeyLoader {
   private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
     try {
       final String[] keys = objectMapper.readValue(new URL(url), String[].class);
-      return Arrays.asList(keys).stream()
+      return Arrays.stream(keys)
           .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
     } catch (IOException ex) {
       throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
