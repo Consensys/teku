@@ -24,7 +24,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:ssz'))
-  testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation 'com.squareup.okhttp3:mockwebserver'
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
