@@ -16,13 +16,14 @@ package tech.pegasys.teku.validator.remote;
 import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import okhttp3.HttpUrl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -33,16 +34,21 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
   private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
       Maps.newConcurrentMap();
 
+  private final AtomicBoolean latestPrimaryNodeStatus = new AtomicBoolean(true);
+
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
   private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
+  private final ValidatorLogger validatorLogger;
   private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel;
 
   public BeaconNodeReadinessManager(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
       final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
+      final ValidatorLogger validatorLogger,
       final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
+    this.validatorLogger = validatorLogger;
     this.remoteBeaconNodeSyncingChannel = remoteBeaconNodeSyncingChannel;
   }
 
@@ -120,34 +126,34 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
             })
         .thenAccept(
             isReady -> {
-              final Optional<Boolean> maybeCachedReadiness =
-                  Optional.ofNullable(readinessStatusCache.get(beaconNodeApi));
               readinessStatusCache.put(beaconNodeApi, isReady);
               if (isReady) {
-                processReadyResult(isPrimaryNode, maybeCachedReadiness);
+                processReadyResult(isPrimaryNode);
               } else {
                 processNotReadyResult(beaconNodeApi, isPrimaryNode);
               }
             });
   }
 
-  void processReadyResult(
-      final boolean isPrimaryNode, final Optional<Boolean> maybeCachedReadiness) {
+  void processReadyResult(final boolean isPrimaryNode) {
     if (!isPrimaryNode) {
       return;
     }
-    maybeCachedReadiness.ifPresent(
-        cachedReadiness -> {
-          if (!cachedReadiness) {
-            remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
-          }
-        });
+    if (latestPrimaryNodeStatus.compareAndSet(false, true)) {
+      validatorLogger.primaryBeaconNodeIsBackAndReady();
+      remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
+    }
   }
 
   void processNotReadyResult(
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     if (isPrimaryNode) {
       remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
+      if (latestPrimaryNodeStatus.compareAndSet(true, false)) {
+        final boolean failoversConfigured = !failoverBeaconNodeApis.isEmpty();
+        validatorLogger.primaryBeaconNodeNotReady(failoversConfigured);
+      }
+
     } else {
       remoteBeaconNodeSyncingChannel.onFailoverNodeNotInSync(beaconNodeApi);
     }

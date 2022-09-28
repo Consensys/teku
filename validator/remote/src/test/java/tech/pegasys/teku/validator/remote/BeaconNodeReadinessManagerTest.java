@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
@@ -41,12 +42,17 @@ public class BeaconNodeReadinessManagerTest {
   private final RemoteValidatorApiChannel failoverBeaconNodeApi =
       mock(RemoteValidatorApiChannel.class);
 
+  private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+
   private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
       mock(RemoteBeaconNodeSyncingChannel.class);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager =
       new BeaconNodeReadinessManager(
-          beaconNodeApi, List.of(failoverBeaconNodeApi), remoteBeaconNodeSyncingChannel);
+          beaconNodeApi,
+          List.of(failoverBeaconNodeApi),
+          validatorLogger,
+          remoteBeaconNodeSyncingChannel);
 
   @Test
   public void retrievesReadinessAndPublishesToAChannel() {

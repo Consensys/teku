@@ -174,7 +174,7 @@ public class EventSourceBeaconChainEventAdapter
     eventSource.close();
     eventSource = createEventSource(primaryBeaconNodeApi);
     currentBeaconNodeUsedForEventStreaming = primaryBeaconNodeApi;
-    validatorLogger.primaryBeaconNodeIsBackOnlineForEventStreaming();
+    validatorLogger.switchingBackToPrimaryBeaconNodeForEventStreaming();
     eventSource.start();
   }
 

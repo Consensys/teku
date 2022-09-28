@@ -104,7 +104,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
 
     validatorClient.waitForLogMessageContaining(
-        "Primary beacon node is back and ready for event streaming. Will attempt connecting.");
+        "Switching back to the primary beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete();
   }
