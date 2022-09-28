@@ -227,11 +227,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private void applyPosBlock(
       final Map<String, Object> step, final ExecutionLayerChannelStub executionLayer) {
-
     final Bytes32 blockHash = getBytes32(step, "block_hash");
-
     final Map<String, Object> payloadStatus = get(step, "payload_status");
-
     final PayloadStatus parsePayloadStatus = parsePayloadStatus(payloadStatus);
 
     executionLayer.addPosBlock(blockHash, parsePayloadStatus);
@@ -241,11 +238,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final ExecutionPayloadStatus status =
         ExecutionPayloadStatus.valueOf(get(payloadStatus, "status"));
     final Optional<Bytes32> latestValidHash =
-        getOptionalBytes32(payloadStatus, "latest_valid_hash");
-    final Optional<String> validation_error =
-        Optional.ofNullable(get(payloadStatus, "validation_error"));
+        getOptionallyBytes32(payloadStatus, "latest_valid_hash");
+    final Optional<String> validationError = getOptionally(payloadStatus, "validation_error");
 
-    return PayloadStatus.create(status, latestValidHash, validation_error);
+    return PayloadStatus.create(status, latestValidHash, validationError);
   }
 
   private void applyAttestation(
@@ -413,20 +409,26 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  private <T> T get(final Map<String, Object> yamlData, final String key) {
+  private static <T> T get(final Map<String, Object> yamlData, final String key) {
     return (T) yamlData.get(key);
   }
 
-  private UInt64 getUInt64(final Map<String, Object> yamlData, final String key) {
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  private static <T> Optional<T> getOptionally(
+      final Map<String, Object> yamlData, final String key) {
+    return Optional.ofNullable((T) yamlData.get(key));
+  }
+
+  private static UInt64 getUInt64(final Map<String, Object> yamlData, final String key) {
     return UInt64.valueOf(get(yamlData, key).toString());
   }
 
-  private Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
+  private static Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
     return Bytes32.fromHexString(get(yamlData, key));
   }
 
-  private Optional<Bytes32> getOptionalBytes32(
+  private static Optional<Bytes32> getOptionallyBytes32(
       final Map<String, Object> yamlData, final String key) {
-    return Optional.<String>ofNullable(get(yamlData, key)).map(Bytes32::fromHexString);
+    return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
   }
 }
