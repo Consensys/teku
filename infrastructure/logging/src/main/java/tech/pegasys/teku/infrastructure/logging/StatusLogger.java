@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
-import static java.util.stream.Collectors.joining;
 import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
 import java.math.BigInteger;
@@ -155,10 +154,7 @@ public class StatusLogger {
       log.info("Loaded {} validators", validators.size());
       log.debug("validators: {}", () -> String.join(", ", validators));
     } else {
-      log.info(
-          "Loaded {} Validators: {}",
-          validators::size,
-          () -> String.join(", ", validators));
+      log.info("Loaded {} Validators: {}", validators::size, () -> String.join(", ", validators));
     }
   }
 

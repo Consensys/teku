@@ -151,9 +151,7 @@ public class DutyResult {
           slot,
           successCount,
           roots,
-          context.size() > 0
-              ? Optional.of(String.join(", ", context))
-              : Optional.empty());
+          context.size() > 0 ? Optional.of(String.join(", ", context)) : Optional.empty());
     }
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);
