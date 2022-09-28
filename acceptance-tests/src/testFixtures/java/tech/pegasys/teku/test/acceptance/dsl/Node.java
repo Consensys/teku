@@ -55,15 +55,15 @@ public abstract class Node {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
+  protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
   protected final SimpleHttpClient httpClient = new SimpleHttpClient();
-  protected final JsonProvider jsonProvider = new JsonProvider();
-
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String NETWORK_FILE_PATH = "/network.yaml";
   protected static final String PRIVATE_KEY_FILE_PATH = "/private-key.txt";
   protected static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
+  protected static final String SENTRY_NODE_CONFIG_FILE_PATH = "/sentry-node-config.json";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   protected static final int P2P_PORT = 9000;

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -147,6 +148,8 @@ public class TekuValidatorNode extends Node {
     private final Map<File, String> configFileMap = new HashMap<>();
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
 
+    private boolean isUsingSentryNodeConfig = false;
+
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
       configMap.put("Xinterop-owned-validator-start-index", 0);
@@ -222,9 +225,34 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withSentryNodes(final SentryNodesConfig sentryNodesConfig) {
+      final File sentryNodesConfigFile;
+      try {
+        sentryNodesConfigFile = File.createTempFile("sentry-node-config", ".json");
+        sentryNodesConfigFile.deleteOnExit();
+
+        try (FileWriter fw = new FileWriter(sentryNodesConfigFile, StandardCharsets.UTF_8)) {
+          fw.write(sentryNodesConfig.toJson(JSON_PROVIDER));
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("Error creating sentry nodes configuration file", e);
+      }
+      configFileMap.put(sentryNodesConfigFile, SENTRY_NODE_CONFIG_FILE_PATH);
+
+      configMap.put("Xsentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
+      isUsingSentryNodeConfig = true;
+
+      return this;
+    }
+
     public void writeConfigFile() throws Exception {
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
+
+      if (isUsingSentryNodeConfig) {
+        configMap.remove("beacon-node-api-endpoint");
+      }
+
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
       if (maybeNetworkYaml.isPresent()) {
