@@ -34,7 +34,7 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
   private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
       Maps.newConcurrentMap();
 
-  private final AtomicBoolean latestPrimaryNodeStatus = new AtomicBoolean(true);
+  private final AtomicBoolean latestPrimaryNodeReadiness = new AtomicBoolean(true);
 
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
   private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
@@ -135,21 +135,21 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
             });
   }
 
-  void processReadyResult(final boolean isPrimaryNode) {
+  private void processReadyResult(final boolean isPrimaryNode) {
     if (!isPrimaryNode) {
       return;
     }
-    if (latestPrimaryNodeStatus.compareAndSet(false, true)) {
+    if (latestPrimaryNodeReadiness.compareAndSet(false, true)) {
       validatorLogger.primaryBeaconNodeIsBackAndReady();
       remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
     }
   }
 
-  void processNotReadyResult(
+  private void processNotReadyResult(
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     if (isPrimaryNode) {
       remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
-      if (latestPrimaryNodeStatus.compareAndSet(true, false)) {
+      if (latestPrimaryNodeReadiness.compareAndSet(true, false)) {
         final boolean failoversConfigured = !failoverBeaconNodeApis.isEmpty();
         validatorLogger.primaryBeaconNodeNotReady(failoversConfigured);
       }
