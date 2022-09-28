@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -85,29 +86,31 @@ public class MergeTransitionBlockValidator {
   }
 
   private SafeFuture<PayloadValidationResult> verifyFinalizedTransitionBlock() {
-    return recentChainData
-        .getStore()
-        .getFinalizedOptimisticTransitionPayload()
-        .map(
-            slotAndPayload ->
-                verifyTransitionPayload(
-                    slotAndPayload.getSlot(), slotAndPayload.getExecutionPayloadSummary()))
-        .orElse(SafeFuture.completedFuture(PayloadStatus.VALID))
-        .thenCompose(
-            status -> {
-              if (status.hasInvalidStatus()) {
-                return SafeFuture.failedFuture(
-                    new FatalServiceFailureException(
-                        "fork choice",
-                        "Optimistic sync finalized an invalid transition block. Unable to recover."));
-              }
-              if (status.hasValidStatus()) {
-                final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                transaction.removeFinalizedOptimisticTransitionPayload();
-                return transaction.commit().thenApply(__ -> new PayloadValidationResult(status));
-              }
-              return SafeFuture.completedFuture(new PayloadValidationResult(status));
-            });
+    final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
+        recentChainData.getStore().getFinalizedOptimisticTransitionPayload();
+
+    if (finalizedOptimisticTransitionPayload.isPresent()) {
+      return verifyTransitionPayload(
+              finalizedOptimisticTransitionPayload.get().getSlot(),
+              finalizedOptimisticTransitionPayload.get().getExecutionPayloadSummary())
+          .thenCompose(
+              status -> {
+                if (status.hasInvalidStatus()) {
+                  return SafeFuture.failedFuture(
+                      new FatalServiceFailureException(
+                          "fork choice",
+                          "Optimistic sync finalized an invalid transition block. Unable to recover."));
+                }
+                if (status.hasValidStatus()) {
+                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                  transaction.removeFinalizedOptimisticTransitionPayload();
+                  return transaction.commit().thenApply(__ -> new PayloadValidationResult(status));
+                }
+                return SafeFuture.completedFuture(new PayloadValidationResult(status));
+              });
+    }
+
+    return SafeFuture.completedFuture(PayloadValidationResult.VALID);
   }
 
   private boolean transitionBlockNotFinalized() {
