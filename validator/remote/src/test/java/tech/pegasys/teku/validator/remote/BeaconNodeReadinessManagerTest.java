@@ -60,7 +60,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
-    verifyNoInteractions(remoteBeaconNodeSyncingChannel);
+    verifyNoInteractions(validatorLogger, remoteBeaconNodeSyncingChannel);
 
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
@@ -71,6 +71,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
 
+    verifyNoInteractions(validatorLogger);
     verify(remoteBeaconNodeSyncingChannel).onFailoverNodeNotInSync(failoverBeaconNodeApi);
 
     when(beaconNodeApi.getSyncingStatus())
@@ -83,6 +84,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
+    verify(validatorLogger).primaryBeaconNodeNotReady(true);
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeNotInSync();
 
     // primary node recovers
@@ -92,6 +94,7 @@ public class BeaconNodeReadinessManagerTest {
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
+    verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeBackInSync();
   }
 
