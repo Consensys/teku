@@ -26,7 +26,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 /**
  * This utility contains helpers for calculating weak-subjectivity-related values. Logic is derived
  * from <a href=https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2>Weak Subjectivity in
- * Eth2.0</a></a> and the <a
+ * Eth2.0</a> and the <a
  * href=https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/weak-subjectivity.md>Weak
  * Subjectivity Guide</a>.
  */
