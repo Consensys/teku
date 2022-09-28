@@ -54,6 +54,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -75,6 +77,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("sync/optimistic", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
@@ -186,6 +189,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("attester_slashing")) {
         applyAttesterSlashing(testDefinition, forkChoice, step);
 
+      } else if (step.containsKey("block_hash")) {
+        applyPosBlock(step, executionLayer);
+
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
       }
@@ -217,6 +223,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           final UInt64 timestamp = UInt64.ZERO;
           return new PowBlock(blockHash, parentHash, totalDifficulty, timestamp);
         });
+  }
+
+  private void applyPosBlock(
+      final Map<String, Object> step, final ExecutionLayerChannelStub executionLayer) {
+
+    final Bytes32 blockHash = getBytes32(step, "block_hash");
+
+    final Map<String, Object> payloadStatus = get(step, "payload_status");
+
+    final PayloadStatus parsePayloadStatus = parsePayloadStatus(payloadStatus);
+
+    executionLayer.addPosBlock(blockHash, parsePayloadStatus);
+  }
+
+  private PayloadStatus parsePayloadStatus(final Map<String, Object> payloadStatus) {
+    final ExecutionPayloadStatus status =
+        ExecutionPayloadStatus.valueOf(get(payloadStatus, "status"));
+    final Optional<Bytes32> latestValidHash =
+        getOptionalBytes32(payloadStatus, "latest_valid_hash");
+    final Optional<String> validation_error =
+        Optional.ofNullable(get(payloadStatus, "validation_error"));
+
+    return PayloadStatus.create(status, latestValidHash, validation_error);
   }
 
   private void applyAttestation(
@@ -394,5 +423,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
     return Bytes32.fromHexString(get(yamlData, key));
+  }
+
+  private Optional<Bytes32> getOptionalBytes32(
+      final Map<String, Object> yamlData, final String key) {
+    return Optional.<String>ofNullable(get(yamlData, key)).map(Bytes32::fromHexString);
   }
 }
