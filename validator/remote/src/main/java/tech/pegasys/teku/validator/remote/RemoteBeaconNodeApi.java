@@ -157,7 +157,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
   @Override
   public SafeFuture<Void> unsubscribeFromEvents() {
-    return beaconChainEventAdapter.start();
+    return beaconChainEventAdapter.stop();
   }
 
   @Override
