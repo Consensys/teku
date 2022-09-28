@@ -96,8 +96,7 @@ public class ValidatorLogger {
   public void primaryBeaconNodeIsBackAndReady() {
     log.info(
         ColorConsolePrinter.print(
-            String.format(
-                "%sPrimary beacon node is back and ready to accept requests now. ", PREFIX),
+            String.format("%sPrimary beacon node is back and ready to accept requests now", PREFIX),
             Color.GREEN));
   }
 
