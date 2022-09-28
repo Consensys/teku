@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -49,7 +50,7 @@ public class WeakSubjectivityInitializer {
           final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(stateResource);
           try {
             return getAnchorPoint(spec, stateResource, sanitizedResource);
-          } catch (IOException e) {
+          } catch (IOException | SszDeserializeException e) {
             LOG.error(
                 String.format("Failed to load initial state from %s : ", sanitizedResource), e);
             if (!UrlSanitizer.urlContainsNonEmptyPath(stateResource)) {
@@ -64,7 +65,7 @@ public class WeakSubjectivityInitializer {
                       "Trying to load initial state from %s instead", sanitizedResourceWithPath));
               try {
                 return getAnchorPoint(spec, stateResourceWithPath, sanitizedResourceWithPath);
-              } catch (IOException ex) {
+              } catch (IOException | SszDeserializeException ex) {
                 throw new InvalidConfigurationException(
                     String.format(
                         "Failed to load initial state from both %s and %s : %s",

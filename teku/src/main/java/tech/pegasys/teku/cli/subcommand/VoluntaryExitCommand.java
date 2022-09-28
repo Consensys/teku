@@ -22,7 +22,9 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -47,12 +50,13 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.RejectingSlashingProtector;
-import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -76,10 +80,12 @@ public class VoluntaryExitCommand implements Runnable {
   private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
-  private OwnedValidators validators;
+  private Map<BLSPublicKey, Validator> validatorsMap;
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
+
+  private Optional<List<BLSPublicKey>> maybePubKeysToExit = Optional.empty();
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -104,6 +110,27 @@ public class VoluntaryExitCommand implements Runnable {
       arity = "1")
   private boolean confirmationEnabled = true;
 
+  @CommandLine.Mixin(name = "Data")
+  private ValidatorClientDataOptions dataOptions;
+
+  @CommandLine.Option(
+      names = {"--validator-public-keys"},
+      description =
+          "Optionally restrict the exit command to a specified list of public keys. When the parameter is not used, all keys will be exited.",
+      paramLabel = "<STRINGS>",
+      split = ",",
+      arity = "0..1")
+  private List<String> validatorPublicKeys;
+
+  @CommandLine.Option(
+      names = {"--include-keymanager-keys"},
+      description = "Include validator keys managed via keymanager APIs.",
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean includeKeyManagerKeys = false;
+
   @Override
   public void run() {
     SUB_COMMAND_LOG.display("Loading configuration...");
@@ -112,7 +139,7 @@ public class VoluntaryExitCommand implements Runnable {
       if (confirmationEnabled) {
         confirmExits();
       }
-      getValidatorIndices(validators).forEach(this::submitExitForValidator);
+      getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
       if (ex instanceof InvalidConfigurationException
           && Throwables.getRootCause(ex) instanceof ConnectException) {
@@ -142,18 +169,16 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private String getValidatorAbbreviatedKeys() {
-    return validators.getPublicKeys().stream()
+    return validatorsMap.keySet().stream()
         .map(BLSPublicKey::toAbbreviatedString)
         .collect(Collectors.joining(", "));
   }
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
-      OwnedValidators blsPublicKeyValidatorMap) {
+      Map<BLSPublicKey, Validator> validatorsMap) {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
-        blsPublicKeyValidatorMap.getPublicKeys().stream()
-            .map(BLSPublicKey::toString)
-            .collect(Collectors.toList());
+        validatorsMap.keySet().stream().map(BLSPublicKey::toString).collect(Collectors.toList());
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<String> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
@@ -183,8 +208,7 @@ public class VoluntaryExitCommand implements Runnable {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
       final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
       final BLSSignature signature =
-          validators
-              .getValidator(publicKey)
+          Optional.ofNullable(validatorsMap.get(publicKey))
               .orElseThrow()
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
@@ -216,6 +240,13 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void initialise() {
+    if (validatorPublicKeys != null) {
+      this.maybePubKeysToExit =
+          Optional.of(
+              validatorPublicKeys.stream()
+                  .map(BLSPublicKey::fromHexString)
+                  .collect(Collectors.toList()));
+    }
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
@@ -247,6 +278,12 @@ public class VoluntaryExitCommand implements Runnable {
         new SlashingProtectionLogger(
             slashingProtector, spec, asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
 
+    Optional<DataDirLayout> dataDirLayout = Optional.empty();
+
+    if (includeKeyManagerKeys) {
+      dataDirLayout = Optional.of(DataDirLayout.createFrom(dataOptions.getDataConfig()));
+    }
+
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
@@ -257,16 +294,30 @@ public class VoluntaryExitCommand implements Runnable {
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            dataDirLayout);
 
     try {
       validatorLoader.loadValidators();
-      validators = validatorLoader.getOwnedValidators();
+      final Map<BLSPublicKey, Validator> activeValidators =
+          validatorLoader.getOwnedValidators().getActiveValidators().stream()
+              .collect(Collectors.toMap(Validator::getPublicKey, validator -> validator));
+      if (maybePubKeysToExit.isPresent()) {
+        validatorsMap = new HashMap<>();
+        List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
+        activeValidators.keySet().stream()
+            .filter(pubKeysToExit::contains)
+            .forEach(
+                validatorPubKey ->
+                    validatorsMap.putIfAbsent(
+                        validatorPubKey, activeValidators.get(validatorPubKey)));
+      } else {
+        validatorsMap = activeValidators;
+      }
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
     }
-    if (validators.hasNoValidators()) {
+    if (validatorsMap.isEmpty()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
     }
@@ -292,11 +343,13 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private TekuConfiguration tekuConfiguration() {
+
     final TekuConfiguration.Builder builder =
         TekuConfiguration.builder().metrics(b -> b.metricsEnabled(false));
-    validatorKeysOptions.configure(builder);
 
+    validatorKeysOptions.configure(builder);
     validatorClientOptions.configure(builder);
+
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));

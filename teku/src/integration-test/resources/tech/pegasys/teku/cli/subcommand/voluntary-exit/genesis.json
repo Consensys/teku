@@ -1,0 +1,7 @@
+{
+  "data": {
+    "genesis_time": "1663181025",
+    "genesis_validators_root": "0xf03f804ff1c97ada13050eb617e66e88e1199c2ce1be0b6b27e36fafb8d3ee48",
+    "genesis_fork_version": "0x00004105"
+  }
+}
