@@ -19,22 +19,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
 public class BeaconNodeReadinessManagerTest {
-
-  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
-  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
   private static final SyncingStatus SYNCED_STATUS =
       new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty());
@@ -52,25 +44,9 @@ public class BeaconNodeReadinessManagerTest {
   private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
       mock(RemoteBeaconNodeSyncingChannel.class);
 
-  private final Duration beaconNodeSyncingQueryPeriod = Duration.ofMillis(100);
-
   private final BeaconNodeReadinessManager beaconNodeReadinessManager =
       new BeaconNodeReadinessManager(
-          beaconNodeApi,
-          List.of(failoverBeaconNodeApi),
-          stubAsyncRunner,
-          remoteBeaconNodeSyncingChannel,
-          beaconNodeSyncingQueryPeriod);
-
-  @BeforeEach
-  public void setUp() {
-    beaconNodeReadinessManager.start().join();
-  }
-
-  @AfterEach
-  public void cleanUp() {
-    beaconNodeReadinessManager.stop().join();
-  }
+          beaconNodeApi, List.of(failoverBeaconNodeApi), remoteBeaconNodeSyncingChannel);
 
   @Test
   public void retrievesReadinessAndPublishesToAChannel() {
@@ -114,7 +90,6 @@ public class BeaconNodeReadinessManagerTest {
   }
 
   private void advanceToNextQueryPeriod() {
-    stubTimeProvider.advanceTimeBy(beaconNodeSyncingQueryPeriod);
-    stubAsyncRunner.executeDueActions();
+    beaconNodeReadinessManager.onAttestationAggregationDue(UInt64.ZERO);
   }
 }

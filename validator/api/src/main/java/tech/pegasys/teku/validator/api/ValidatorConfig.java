@@ -53,7 +53,6 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
-  public static final Duration DEFAULT_BEACON_NODES_SYNCING_QUERY_PERIOD = Duration.ofSeconds(6);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -82,7 +81,6 @@ public class ValidatorConfig {
   private final Optional<UInt64> builderRegistrationTimestampOverride;
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
   private final int executorMaxQueueSize;
-  private final Duration beaconNodesSyncingQueryPeriod;
   private final Optional<String> sentryNodeConfigurationFile;
 
   private ValidatorConfig(
@@ -113,7 +111,6 @@ public class ValidatorConfig {
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final Duration beaconNodesSyncingQueryPeriod,
       final Optional<String> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -145,7 +142,6 @@ public class ValidatorConfig {
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
-    this.beaconNodesSyncingQueryPeriod = beaconNodesSyncingQueryPeriod;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
   }
 
@@ -260,10 +256,6 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
-  public Duration getBeaconNodesSyncingQueryPeriod() {
-    return beaconNodesSyncingQueryPeriod;
-  }
-
   public Optional<String> getSentryNodeConfigurationFile() {
     return sentryNodeConfigurationFile;
   }
@@ -313,7 +305,6 @@ public class ValidatorConfig {
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
-    private Duration beaconNodesSyncingQueryPeriod = DEFAULT_BEACON_NODES_SYNCING_QUERY_PERIOD;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private Builder() {}
@@ -495,11 +486,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder beaconNodesSyncingQueryPeriod(final Duration beaconNodesSyncingQueryPeriod) {
-      this.beaconNodesSyncingQueryPeriod = beaconNodesSyncingQueryPeriod;
-      return this;
-    }
-
     public Builder sentryNodeConfigurationFile(final String configFile) {
       this.sentryNodeConfigurationFile = Optional.ofNullable(configFile);
       return this;
@@ -539,7 +525,6 @@ public class ValidatorConfig {
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          beaconNodesSyncingQueryPeriod,
           sentryNodeConfigurationFile);
     }
 

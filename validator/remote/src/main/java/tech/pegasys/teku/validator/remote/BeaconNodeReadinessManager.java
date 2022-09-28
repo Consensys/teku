@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,12 +21,12 @@ import java.util.stream.Stream;
 import okhttp3.HttpUrl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.Cancellable;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public class BeaconNodeReadinessManager extends Service {
+public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -36,23 +35,15 @@ public class BeaconNodeReadinessManager extends Service {
 
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
   private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
-  private final AsyncRunner asyncRunner;
   private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel;
-  private final Duration beaconNodeSyncingQueryPeriod;
-
-  private volatile Cancellable syncingQueryTask;
 
   public BeaconNodeReadinessManager(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
       final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
-      final AsyncRunner asyncRunner,
-      final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel,
-      final Duration beaconNodeSyncingQueryPeriod) {
+      final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
-    this.asyncRunner = asyncRunner;
     this.remoteBeaconNodeSyncingChannel = remoteBeaconNodeSyncingChannel;
-    this.beaconNodeSyncingQueryPeriod = beaconNodeSyncingQueryPeriod;
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
@@ -60,32 +51,38 @@ public class BeaconNodeReadinessManager extends Service {
   }
 
   @Override
-  protected SafeFuture<?> doStart() {
-    syncingQueryTask =
-        asyncRunner.runWithFixedDelay(
-            () -> {
-              final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
-              final Stream<SafeFuture<?>> failoverReadinessChecks =
-                  failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
-              return SafeFuture.allOf(
-                  primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
-            },
-            beaconNodeSyncingQueryPeriod,
-            beaconNodeSyncingQueryPeriod,
+  public void onSlot(final UInt64 slot) {}
+
+  @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
+
+  @Override
+  public void onPossibleMissedEvents() {}
+
+  @Override
+  public void onValidatorsAdded() {}
+
+  @Override
+  public void onBlockProductionDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(final UInt64 slot) {
+    final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
+    final Stream<SafeFuture<?>> failoverReadinessChecks =
+        failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
+    SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks))
+        .finish(
             throwable ->
                 LOG.error(
                     "Error while querying the syncing status of the configured Beacon Nodes",
                     throwable));
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.fromRunnable(
-        () -> {
-          Optional.ofNullable(syncingQueryTask).ifPresent(Cancellable::cancel);
-          readinessStatusCache.clear();
-        });
   }
 
   private SafeFuture<Void> performPrimaryReadinessCheck() {

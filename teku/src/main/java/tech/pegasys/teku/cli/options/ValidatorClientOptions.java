@@ -17,7 +17,6 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import picocli.CommandLine;
@@ -51,19 +50,6 @@ public class ValidatorClientOptions {
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
-  @CommandLine.Option(
-      names = {"--Xbeacon-nodes-syncing-query-period"},
-      paramLabel = "<INTEGER>",
-      description =
-          "Period in seconds when the syncing status of the configured beacon nodes will be queried. "
-              + "The result of the query would be used to determine if a validator client should send requests to a beacon node or failover immediately. "
-              + "It would also be used to determine if the beacon node event stream should failover.",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "1")
-  private long beaconNodesSyncingQueryPeriod =
-      ValidatorConfig.DEFAULT_BEACON_NODES_SYNCING_QUERY_PERIOD.toSeconds();
-
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -91,7 +77,6 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
-                .beaconNodesSyncingQueryPeriod(Duration.ofSeconds(beaconNodesSyncingQueryPeriod))
                 .sentryNodeConfigurationFile(sentryConfigFile));
   }
 

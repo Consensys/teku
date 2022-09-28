@@ -49,15 +49,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   /** Time until we timeout the event stream if no events are received. */
   public static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
 
-  private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
 
   private RemoteBeaconNodeApi(
-      final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final BeaconChainEventAdapter beaconChainEventAdapter,
       final ValidatorApiChannel validatorApiChannel) {
-    this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.beaconChainEventAdapter = beaconChainEventAdapter;
     this.validatorApiChannel = validatorApiChannel;
   }
@@ -114,11 +111,9 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
-            primaryValidatorApi,
-            failoverValidatorApis,
-            asyncRunner,
-            remoteBeaconNodeSyncingChannel,
-            validatorConfig.getBeaconNodesSyncingQueryPeriod());
+            primaryValidatorApi, failoverValidatorApis, remoteBeaconNodeSyncingChannel);
+
+    eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
     final ValidatorApiChannel validatorApi =
         new MetricRecordingValidatorApiChannel(
@@ -149,18 +144,17 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     eventChannels.subscribe(RemoteBeaconNodeSyncingChannel.class, beaconChainEventAdapter);
 
-    return new RemoteBeaconNodeApi(
-        beaconNodeReadinessManager, beaconChainEventAdapter, validatorApi);
+    return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
   }
 
   @Override
   public SafeFuture<Void> subscribeToEvents() {
-    return SafeFuture.allOf(beaconChainEventAdapter.start(), beaconNodeReadinessManager.start());
+    return beaconChainEventAdapter.start();
   }
 
   @Override
   public SafeFuture<Void> unsubscribeFromEvents() {
-    return SafeFuture.allOf(beaconChainEventAdapter.stop(), beaconNodeReadinessManager.stop());
+    return beaconChainEventAdapter.start();
   }
 
   @Override

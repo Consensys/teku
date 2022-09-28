@@ -753,7 +753,7 @@ class FailoverValidatorApiHandlerTest {
     return stubMetricsSystem
         .getCounter(
             TekuMetricCategory.VALIDATOR,
-            FailoverValidatorApiHandler.FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME)
+            FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME)
         .getValue(apiChannel.getEndpoint().toString(), methodLabel, outcome.toString());
   }
 }

@@ -65,8 +65,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  static final String FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME =
-      "failover_beacon_nodes_requests_total";
+  static final String REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME =
+      "remote_beacon_nodes_requests_total";
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
@@ -87,9 +87,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME,
+            REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests sent to the configured Beacon Nodes endpoints",
-            "failover_endpoint",
+            "endpoint",
             "method",
             "outcome");
   }
@@ -316,18 +316,17 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       return runPrimaryRequestWithNoFailovers(request, method);
     }
     return makeFailoverRequest(
-        primaryDelegate, failoverDelegates.iterator(), request, true, method, new HashMap<>());
+        primaryDelegate, failoverDelegates.iterator(), request, method, new HashMap<>());
   }
 
   private <T> SafeFuture<T> makeFailoverRequest(
       final RemoteValidatorApiChannel currentDelegate,
       final Iterator<RemoteValidatorApiChannel> failoverDelegates,
       final ValidatorApiChannelRequest<T> request,
-      final boolean isPrimaryRequest,
       final String method,
       final Map<HttpUrl, Throwable> capturedExceptions) {
     final SafeFuture<T> response =
-        isPrimaryRequest
+        currentDelegate.equals(primaryDelegate)
             ? runPrimaryRequestWithConfiguredFailovers(request, method)
             : runFailoverRequest(currentDelegate, request, method);
     return response.exceptionallyCompose(
@@ -346,7 +345,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
               failedEndpoint,
               nextDelegate.getEndpoint());
           return makeFailoverRequest(
-              nextDelegate, failoverDelegates, request, false, method, capturedExceptions);
+              nextDelegate, failoverDelegates, request, method, capturedExceptions);
         });
   }
 
