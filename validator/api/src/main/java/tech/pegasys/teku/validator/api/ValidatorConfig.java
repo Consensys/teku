@@ -37,8 +37,8 @@ public class ValidatorConfig {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int DEFAULT_REST_API_PORT = 5051;
-  public static final List<String> DEFAULT_BEACON_NODE_API_ENDPOINTS =
-      List.of("http://127.0.0.1:" + DEFAULT_REST_API_PORT);
+  public static final List<URI> DEFAULT_BEACON_NODE_API_ENDPOINTS =
+      List.of(URI.create("http://127.0.0.1:" + DEFAULT_REST_API_PORT));
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;

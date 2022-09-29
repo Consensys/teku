@@ -129,7 +129,9 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
-        .contains("Cannot use beacon-node-api-endpoint and sentry-config-file at the same time");
+        .contains(
+            "Error: --beacon-node-api-endpoints=<ENDPOINT>, --Xsentry-config-file=<FILE> are "
+                + "mutually exclusive (specify only one)");
   }
 
   @Test
