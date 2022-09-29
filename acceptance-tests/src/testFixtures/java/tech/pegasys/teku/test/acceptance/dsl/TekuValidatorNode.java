@@ -24,7 +24,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -202,14 +201,6 @@ public class TekuValidatorNode extends Node {
           Arrays.stream(beaconNodes)
               .map(TekuNode::getBeaconRestApiUrl)
               .collect(Collectors.joining(",")));
-      return this;
-    }
-
-    public TekuValidatorNode.Config withBeaconNodeEventStreamSyncingStatusQueryPeriod(
-        final Duration syncingStatusQueryPeriod) {
-      configMap.put(
-          "Xbeacon-node-event-stream-syncing-status-query-period",
-          syncingStatusQueryPeriod.toMillis());
       return this;
     }
 
