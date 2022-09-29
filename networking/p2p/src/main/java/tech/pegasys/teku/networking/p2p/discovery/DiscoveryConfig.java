@@ -162,7 +162,7 @@ public class DiscoveryConfig {
       if (advertisedUdpPort.isPresent()) {
         if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
           throw new InvalidConfigurationException(
-              String.format("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt()));
+              String.format("Invalid advertisedUdpPort: %d", advertisedUdpPort.getAsInt()));
         }
       }
       this.advertisedUdpPort = advertisedUdpPort;

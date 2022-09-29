@@ -22,7 +22,7 @@ public class BlocksByRangeResponseInvalidResponseException extends InvalidRespon
       Peer peer, InvalidResponseType invalidResponseType) {
     super(
         String.format(
-            "Received invalid response from peer %s: " + invalidResponseType.describe(), peer));
+            "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()));
   }
 
   public BlocksByRangeResponseInvalidResponseException(InvalidResponseType invalidResponseType) {

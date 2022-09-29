@@ -69,7 +69,7 @@ public class ImportCommand implements Runnable {
     } catch (IOException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       SUB_COMMAND_LOG.exit(
-          1, String.format("Failed to read from import file: %s. %s" + importFile, cause));
+          1, String.format("Failed to read from import file: %s. %s", importFile, cause));
     }
 
     SUB_COMMAND_LOG.display("Writing slashing protection data to: " + slashProtectionPath);
