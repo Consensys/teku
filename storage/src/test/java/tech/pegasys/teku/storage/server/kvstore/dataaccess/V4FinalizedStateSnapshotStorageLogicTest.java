@@ -44,7 +44,7 @@ class V4FinalizedStateSnapshotStorageLogicTest {
   private final KvStoreAccessor db = mock(KvStoreAccessor.class);
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
   private final SchemaFinalizedSnapshotStateAdapter schema =
-      V6SchemaCombinedSnapshot.createV6(spec, true).asSchemaFinalized();
+      V6SchemaCombinedSnapshot.createV6(spec).asSchemaFinalized();
 
   private final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter> logic =
       new V4FinalizedStateSnapshotStorageLogic<>(STATE_STORAGE_FREQUENCY);

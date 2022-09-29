@@ -36,7 +36,6 @@ import tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArguments
 public class VersionedDatabaseFactoryTest {
 
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
-  public static final int MAX_KNOWN_NODE_CACHE_SIZE = 10_000;
   private final Eth1Address eth1Address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 

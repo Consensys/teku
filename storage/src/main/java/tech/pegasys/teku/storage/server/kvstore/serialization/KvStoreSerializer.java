@@ -44,6 +44,7 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();
+  KvStoreSerializer<VoteTracker> VOTE_TRACKER_SERIALIZER = new VoteTrackerSerializer();
 
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);
@@ -55,11 +56,6 @@ public interface KvStoreSerializer<T> {
 
   static KvStoreSerializer<SignedBeaconBlock> createSignedBlindedBlockSerializer(final Spec spec) {
     return new SignedBlindedBeaconBlockSerializer(spec);
-  }
-
-  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(
-      final boolean storeVotesEquivocation) {
-    return new VoteTrackerSerializer(storeVotesEquivocation);
   }
 
   T deserialize(final byte[] data);
