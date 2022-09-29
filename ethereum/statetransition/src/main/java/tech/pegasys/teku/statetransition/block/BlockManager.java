@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.FailedBlockImportResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -189,7 +188,7 @@ public class BlockManager extends Service
             .or(
                 () -> {
                   if (invalidBlockRoots.containsKey(block.getParentRoot())) {
-                    return Optional.of(FailedBlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
+                    return Optional.of(BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
                   }
                   return Optional.empty();
                 });

@@ -70,7 +70,7 @@ public class SignedBeaconBlock implements SignedBlock {
             () ->
                 beaconBlock.toVersionAltair().map(__ -> new SignedBeaconBlockAltair(internalBlock)),
             (Supplier<Optional<SignedBeaconBlock>>)
-                () -> Optional.<SignedBeaconBlock>of(new SignedBeaconBlockPhase0(internalBlock)))
+                () -> Optional.of(new SignedBeaconBlockPhase0(internalBlock)))
         .map(Supplier::get)
         .flatMap(Optional::stream)
         .findFirst()

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -90,7 +89,7 @@ public class NodeDataProvider {
   }
 
   public List<ProposerSlashing> getProposerSlashings() {
-    return proposerSlashingPool.getAll().stream().collect(Collectors.toList());
+    return new ArrayList<>(proposerSlashingPool.getAll());
   }
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {
