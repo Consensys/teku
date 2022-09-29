@@ -45,6 +45,8 @@ public class Web3JClientTest {
   private static final URI ENDPOINT = URI.create("");
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 
+  private final EventLogger eventLog = mock(EventLogger.class);
+
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
     final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
@@ -90,7 +92,7 @@ public class Web3JClientTest {
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldTimeoutIfResponseNotReceived(final ClientFactory clientFactory) throws Exception {
-    final Web3JClient client = clientFactory.create();
+    final Web3JClient client = clientFactory.create(eventLog);
     Request<Void, VoidResponse> request =
         new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
@@ -102,12 +104,12 @@ public class Web3JClientTest {
     SafeFutureAssert.assertThatSafeFuture(result).isCompleted();
     final Response<Void> response = SafeFutureAssert.safeJoin(result);
     assertThat(response.getErrorMessage()).isEqualTo(TimeoutException.class.getSimpleName());
+    verify(eventLog).executionClientRequestTimedOut();
   }
 
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldLogOnFirstSuccess(final ClientFactory clientFactory) throws Exception {
-    final EventLogger eventLog = mock(EventLogger.class);
     final Web3JClient client = clientFactory.create(eventLog);
     Request<Void, VoidResponse> request =
         new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
@@ -123,29 +125,23 @@ public class Web3JClientTest {
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldReportFailureAndRecovery(final ClientFactory clientFactory) throws Exception {
-    final EventLogger eventLog = mock(EventLogger.class);
     final Web3JClient client = clientFactory.create(eventLog);
     Request<Void, VoidResponse> request =
         new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
-    final Throwable error = new TimeoutException();
+    final Throwable error = new IllegalStateException("oopsy");
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(SafeFuture.failedFuture(error))
         .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
 
-    verify(eventLog).executionClientIsOffline(error, false);
+    verify(eventLog).executionClientRequestFailed(error, false);
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
-    verify(eventLog).executionClientIsOnline();
+    verify(eventLog).executionClientRecovered();
   }
 
   private interface ClientFactory {
-
-    default Web3JClient create() {
-      return create(mock(EventLogger.class));
-    }
-
     Web3JClient create(EventLogger eventLog);
   }
 }

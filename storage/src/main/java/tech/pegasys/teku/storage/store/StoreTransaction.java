@@ -170,7 +170,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
               final StorageUpdate storageUpdate = updates.createStorageUpdate();
               final SafeFuture<UpdateResult> storageResult =
-                  storageUpdateChannel.onStorageUpdate(storageUpdate);
+                  storageUpdate.isEmpty()
+                      ? UpdateResult.EMPTY_FUTURE
+                      : storageUpdateChannel.onStorageUpdate(storageUpdate);
+
               if (!storageUpdate.isFinalizedOptimisticTransitionBlockRootSet()
                   && store.asyncStorageEnabled) {
                 storageResult.ifExceptionGetsHereRaiseABug();

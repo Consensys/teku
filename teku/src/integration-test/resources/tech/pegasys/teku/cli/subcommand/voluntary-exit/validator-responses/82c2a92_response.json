@@ -1,0 +1,20 @@
+{
+  "execution_optimistic": false,
+  "data": [
+    {
+      "index": "2",
+      "balance": "1",
+      "status": "active_ongoing",
+      "validator": {
+        "pubkey": "0x82c2a92c6823d43bf11215eddd0f706f168945b298bf718288cf78fcef81df19cd1e5c9c49e7b8d689722fb409f0c0a4",
+        "withdrawal_credentials": "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+        "effective_balance": "1",
+        "slashed": false,
+        "activation_eligibility_epoch": "1",
+        "activation_epoch": "1",
+        "exit_epoch": "1",
+        "withdrawable_epoch": "1"
+      }
+    }
+  ]
+}
