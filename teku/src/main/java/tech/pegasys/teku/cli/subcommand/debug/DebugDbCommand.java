@@ -524,8 +524,6 @@ public class DebugDbCommand implements Runnable {
                     beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately())
                 .eth1DepositContract(
                     eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())
-                .storeVotesEquivocation(
-                    eth2NetworkOptions.getNetworkConfiguration().isEquivocatingIndicesEnabled())
                 .specProvider(spec)
                 .build());
     return databaseFactory.createDatabase();

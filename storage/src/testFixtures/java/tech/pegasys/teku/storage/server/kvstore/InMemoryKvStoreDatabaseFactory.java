@@ -37,12 +37,10 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
-    final V6SchemaCombinedSnapshot combinedSchema =
-        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     return KvStoreDatabase.createV4(
@@ -66,11 +64,9 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
-    final V6SchemaCombinedSnapshot combinedSchema =
-        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     return KvStoreDatabase.createWithStateSnapshots(
         db,
         combinedSchema,
@@ -89,11 +85,9 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
       final boolean storeBlockExecutionPayloadSeparately,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
-    final V6SchemaCombinedTreeState schema =
-        new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
+    final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     return KvStoreDatabase.createWithStateTree(
         new StubMetricsSystem(),
         db,

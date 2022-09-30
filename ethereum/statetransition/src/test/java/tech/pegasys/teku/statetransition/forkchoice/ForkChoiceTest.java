@@ -121,8 +121,6 @@ class ForkChoiceTest {
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
           PandaPrinter.NOOP,
-          false,
-          true,
           DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
   @BeforeEach
@@ -212,8 +210,6 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,
-            true,
-            false,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();

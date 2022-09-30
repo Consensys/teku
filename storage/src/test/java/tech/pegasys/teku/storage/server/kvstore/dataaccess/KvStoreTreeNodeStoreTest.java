@@ -37,7 +37,7 @@ class KvStoreTreeNodeStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Set<Bytes32> knownBranchCache = new HashSet<>();
   private final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
-  private final SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec, true);
+  private final SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
 
   private final KvStoreTreeNodeStore store =
       new KvStoreTreeNodeStore(knownBranchCache, transaction, schema);
