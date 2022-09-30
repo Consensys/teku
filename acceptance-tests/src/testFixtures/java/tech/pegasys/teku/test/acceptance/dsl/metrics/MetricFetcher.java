@@ -41,7 +41,8 @@ public class MetricFetcher {
   }
 
   public List<MetricValue> getAllMetrics() {
-    return allMatching(fetchAllMetricsFromEndpoint(), withAnyName(), withAnyLabels(), withAnyValue());
+    return allMatching(
+        fetchAllMetricsFromEndpoint(), withAnyName(), withAnyLabels(), withAnyValue());
   }
 
   public List<MetricValue> getMetricsByName(final String name) {
