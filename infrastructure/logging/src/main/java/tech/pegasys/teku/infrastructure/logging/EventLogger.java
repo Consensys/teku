@@ -35,7 +35,7 @@ public class EventLogger {
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
   private static final String EXECUTION_CLIENT_READINESS_USER_REMINDER =
-      "Make sure the Execution Client is online and synced.";
+      "Make sure the Execution Client is online and in sync.";
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
