@@ -58,8 +58,9 @@ public class TekuValidatorNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
     if (config.configMap.containsKey("validator-api-enabled")) {
-      container.withExposedPorts(VALIDATOR_API_PORT);
+      container.addExposedPort(VALIDATOR_API_PORT);
     }
+    container.addExposedPort(METRICS_PORT);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -159,6 +160,10 @@ public class TekuValidatorNode extends Node {
       configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
+      configMap.put("metrics-enabled", true);
+      configMap.put("metrics-port", METRICS_PORT);
+      configMap.put("metrics-interface", "0.0.0.0");
+      configMap.put("metrics-host-allowlist", "*");
     }
 
     public TekuValidatorNode.Config withInteropModeDisabled() {

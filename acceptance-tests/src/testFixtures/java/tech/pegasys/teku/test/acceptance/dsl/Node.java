@@ -165,6 +165,7 @@ public abstract class Node {
           assertThat(
                   MetricMatcher.anyMatching(
                       metrics, nameCondition, labelsCondition, valueCondition))
+              .withFailMessage("No matching metric")
               .isPresent();
         },
         timeoutAmount,
