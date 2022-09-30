@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.anyLabels;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withAnyLabels;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueEqualTo;
 
@@ -141,7 +141,7 @@ public abstract class Node {
   }
 
   public void waitForMetricWithValue(final String metricName, final double value) {
-    waitForMetric(withNameEqualsTo(metricName), anyLabels(), withValueEqualTo(value));
+    waitForMetric(withNameEqualsTo(metricName), withAnyLabels(), withValueEqualTo(value));
   }
 
   public void waitForMetric(

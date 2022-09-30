@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.metrics;
 
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.anyLabels;
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.anyName;
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.anyValue;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withAnyLabels;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withAnyName;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withAnyValue;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricMatcher.allMatching;
 
@@ -41,12 +41,12 @@ public class MetricFetcher {
   }
 
   public List<MetricValue> getAllMetrics() {
-    return allMatching(fetchAllMetricsFromEndpoint(), anyName(), anyLabels(), anyValue());
+    return allMatching(fetchAllMetricsFromEndpoint(), withAnyName(), withAnyLabels(), withAnyValue());
   }
 
   public List<MetricValue> getMetricsByName(final String name) {
     return allMatching(
-        fetchAllMetricsFromEndpoint(), withNameEqualsTo(name), anyLabels(), anyValue());
+        fetchAllMetricsFromEndpoint(), withNameEqualsTo(name), withAnyLabels(), withAnyValue());
   }
 
   /**

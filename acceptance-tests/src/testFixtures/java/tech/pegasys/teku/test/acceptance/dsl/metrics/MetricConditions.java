@@ -38,7 +38,7 @@ public class MetricConditions {
     boolean test(final Double value);
   }
 
-  public static MetricNameCondition anyName() {
+  public static MetricNameCondition withAnyName() {
     return (n) -> true;
   }
 
@@ -46,7 +46,7 @@ public class MetricConditions {
     return (n) -> n.equals(name);
   }
 
-  public static MetricLabelsCondition anyLabels() {
+  public static MetricLabelsCondition withAnyLabels() {
     return (l) -> true;
   }
 
@@ -83,7 +83,7 @@ public class MetricConditions {
         DoubleMath.fuzzyCompare(actualValue, value, DOUBLE_COMPARE_TOLERANCE) <= 0;
   }
 
-  public static MetricValuesCondition anyValue() {
+  public static MetricValuesCondition withAnyValue() {
     return (actualValue) -> true;
   }
 }
