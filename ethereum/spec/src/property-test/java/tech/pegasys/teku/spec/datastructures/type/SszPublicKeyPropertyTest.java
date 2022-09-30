@@ -16,8 +16,12 @@ package tech.pegasys.teku.spec.datastructures.type;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -29,14 +33,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszPublicKeyPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
-      throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SszPublicKey key = new SszPublicKey(dataStructureUtil.randomPublicKey());
+  void roundTrip(@ForAll("sszPublicKey") final SszPublicKey key) throws JsonProcessingException {
     final SszPublicKeySchema schema = key.getSchema();
     final DeserializableTypeDefinition<SszPublicKey> typeDefinition =
         schema.getJsonTypeDefinition();
@@ -50,5 +47,15 @@ public class SszPublicKeyPropertyTest {
     final String json = JsonUtil.serialize(key, typeDefinition);
     final SszPublicKey fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(key);
+  }
+
+  @Provide
+  Arbitrary<SszPublicKey> sszPublicKey() {
+    Arbitrary<Integer> seed = Arbitraries.integers();
+    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
+    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
+    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
+    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
+    return dsu.map(DataStructureUtil::randomPublicKey).map(SszPublicKey::new);
   }
 }

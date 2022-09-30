@@ -1431,6 +1431,10 @@ public final class DataStructureUtil {
     return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
+  public SignedContributionAndProof randomSignedContributionAndProof() {
+    return randomSignedContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
     return randomSignedContributionAndProof(slot, randomBytes32());
   }
@@ -1449,6 +1453,10 @@ public final class DataStructureUtil {
         .create(contributionAndProof, randomSignature());
   }
 
+  public ContributionAndProof randomContributionAndProof() {
+    return randomContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public ContributionAndProof randomContributionAndProof(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(slot)
@@ -1457,6 +1465,10 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomSyncCommitteeContribution(slot, beaconBlockRoot),
             randomSignature());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution() {
+    return randomSyncCommitteeContribution(randomUInt64(), randomBytes32());
   }
 
   public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {

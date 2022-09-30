@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
@@ -34,21 +35,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SyncCommitteeMessagePropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll("syncCommitteeMessage") final SyncCommitteeMessage syncCommitteeMessage)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SyncCommitteeMessage syncCommitteeMessage =
-        dataStructureUtil.randomSyncCommitteeMessage();
-    final SyncCommitteeMessageSchema schema =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .toVersionAltair()
-            .orElseThrow()
-            .getSyncCommitteeMessageSchema();
+    final SyncCommitteeMessageSchema schema = syncCommitteeMessage.getSchema();
     final DeserializableTypeDefinition<SyncCommitteeMessage> typeDefinition =
         schema.getJsonTypeDefinition();
 
@@ -64,8 +53,14 @@ public class SyncCommitteeMessagePropertyTest {
   }
 
   @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR));
+  Arbitrary<SyncCommitteeMessage> syncCommitteeMessage() {
+    Arbitrary<Integer> seed = Arbitraries.integers();
+    Arbitrary<SpecMilestone> milestone =
+        Arbitraries.of(SpecMilestone.class)
+            .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR));
+    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
+    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
+    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
+    return dsu.map(DataStructureUtil::randomSyncCommitteeMessage);
   }
 }
