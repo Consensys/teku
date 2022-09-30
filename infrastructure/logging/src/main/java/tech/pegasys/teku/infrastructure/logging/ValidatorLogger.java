@@ -95,10 +95,14 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void primaryBeaconNodeIsBackAndReady() {
+  public void primaryBeaconNodeIsBackAndReady(final boolean failoversConfigured) {
     log.info(
         ColorConsolePrinter.print(
-            String.format("%sPrimary beacon node is back and ready to accept requests now", PREFIX),
+            String.format(
+                "%sThe "
+                    + (failoversConfigured ? "primary " : "")
+                    + "beacon node is back and ready to accept requests now",
+                PREFIX),
             Color.GREEN));
   }
 

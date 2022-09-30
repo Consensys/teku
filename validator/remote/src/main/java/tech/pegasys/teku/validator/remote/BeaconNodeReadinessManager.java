@@ -140,7 +140,7 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
       return;
     }
     if (latestPrimaryNodeReadiness.compareAndSet(false, true)) {
-      validatorLogger.primaryBeaconNodeIsBackAndReady();
+      validatorLogger.primaryBeaconNodeIsBackAndReady(failoversConfigured());
       remoteBeaconNodeSyncingChannel.onPrimaryNodeBackInSync();
     }
   }
@@ -149,12 +149,15 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     if (isPrimaryNode) {
       if (latestPrimaryNodeReadiness.compareAndSet(true, false)) {
-        final boolean failoversConfigured = !failoverBeaconNodeApis.isEmpty();
-        validatorLogger.primaryBeaconNodeNotReady(failoversConfigured);
+        validatorLogger.primaryBeaconNodeNotReady(failoversConfigured());
       }
       remoteBeaconNodeSyncingChannel.onPrimaryNodeNotInSync();
     } else {
       remoteBeaconNodeSyncingChannel.onFailoverNodeNotInSync(beaconNodeApi);
     }
+  }
+
+  private boolean failoversConfigured() {
+    return !failoverBeaconNodeApis.isEmpty();
   }
 }
