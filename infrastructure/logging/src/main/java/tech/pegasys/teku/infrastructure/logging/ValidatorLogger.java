@@ -64,12 +64,39 @@ public class ValidatorLogger {
             Color.GREEN));
   }
 
-  public void primaryBeaconNodeIsBackOnlineForEventStreaming() {
+  public void switchingBackToPrimaryBeaconNodeForEventStreaming() {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPrimary beacon node is back and ready for event streaming. Will attempt connecting.",
+                "%sSwitching back to the primary beacon node for event streaming", PREFIX),
+            Color.GREEN));
+  }
+
+  public void noFailoverBeaconNodesAvailableForEventStreaming() {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sThere are no beacon nodes from the configured ones that are ready to be used as an event stream failover",
                 PREFIX),
+            Color.YELLOW));
+  }
+
+  public void primaryBeaconNodeNotReady(final boolean failoversConfigured) {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPrimary beacon node is not ready to accept requests (offline or not synced). "
+                    + (failoversConfigured
+                        ? "Future requests will use the configured failover beacon nodes until the primary one is ready again."
+                        : "Future requests are likely to fail."),
+                PREFIX),
+            Color.YELLOW));
+  }
+
+  public void primaryBeaconNodeIsBackAndReady() {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format("%sPrimary beacon node is back and ready to accept requests now", PREFIX),
             Color.GREEN));
   }
 
@@ -182,6 +209,26 @@ public class ValidatorLogger {
     log.error(
         ColorConsolePrinter.print(
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
+  }
+
+  public void preparedBeaconProposersExpiration(
+      final UInt64 slot, final int numberOfExpiredProposers) {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sInformation about %s prepared beacon proposer(s) expired at slot %s",
+                PREFIX, numberOfExpiredProposers, slot),
+            Color.YELLOW));
+  }
+
+  public void validatorRegistrationsExpiration(
+      final UInt64 slot, final int numberOfExpiredRegistrations) {
+    log.warn(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sInformation about %s validator registration(s) expired at slot %s",
+                PREFIX, numberOfExpiredRegistrations, slot),
+            Color.YELLOW));
   }
 
   public void beaconProposerPreparationFailed(final Throwable error) {

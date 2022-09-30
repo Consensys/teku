@@ -27,6 +27,6 @@ public class QuantityChecker {
         "Hex QUANTITY must start with 0x and can't be empty");
     checkArgument(
         hexQuantity.charAt(2) != '0' || hexQuantity.length() == 3,
-        "Hex QUANTITY must not have trailing zeros");
+        "Hex QUANTITY must not have leading zeros");
   }
 }

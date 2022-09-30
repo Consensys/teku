@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -64,28 +65,31 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  static final String FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME =
-      "failover_beacon_nodes_requests_total";
+  static final String REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME =
+      "remote_beacon_nodes_requests_total";
 
+  private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
   private final List<RemoteValidatorApiChannel> failoverDelegates;
   private final boolean failoversSendSubnetSubscriptions;
   private final LabelledMetric<Counter> failoverBeaconNodesRequestsCounter;
 
   public FailoverValidatorApiHandler(
+      final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final RemoteValidatorApiChannel primaryDelegate,
       final List<RemoteValidatorApiChannel> failoverDelegates,
       final boolean failoversSendSubnetSubscriptions,
       final MetricsSystem metricsSystem) {
+    this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the configured (if any) failover Beacon Nodes",
-            "failover_endpoint",
+            REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests sent to the configured Beacon Nodes endpoints",
+            "endpoint",
             "method",
             "outcome");
   }
@@ -269,10 +273,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final ValidatorApiChannelRequest<T> request,
       final String method,
       final boolean relayRequestToFailovers) {
-    final SafeFuture<T> primaryResponse = request.run(primaryDelegate);
     if (failoverDelegates.isEmpty() || !relayRequestToFailovers) {
-      return primaryResponse;
+      return runPrimaryRequestWithNoFailovers(request, method);
     }
+    final SafeFuture<T> primaryResponse = runPrimaryRequestWithConfiguredFailovers(request, method);
     final Map<HttpUrl, Throwable> capturedExceptions = new ConcurrentHashMap<>();
     final List<SafeFuture<T>> failoversResponses =
         failoverDelegates.stream()
@@ -309,78 +313,95 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   private <T> SafeFuture<T> tryRequestUntilSuccess(
       final ValidatorApiChannelRequest<T> request, final String method) {
     if (failoverDelegates.isEmpty()) {
-      return request.run(primaryDelegate);
+      return runPrimaryRequestWithNoFailovers(request, method);
     }
     return makeFailoverRequest(
-        primaryDelegate, failoverDelegates.iterator(), request, false, method, new HashMap<>());
+        primaryDelegate, failoverDelegates.iterator(), request, method, new HashMap<>());
   }
 
   private <T> SafeFuture<T> makeFailoverRequest(
       final RemoteValidatorApiChannel currentDelegate,
       final Iterator<RemoteValidatorApiChannel> failoverDelegates,
       final ValidatorApiChannelRequest<T> request,
-      final boolean isFailoverRequest,
       final String method,
       final Map<HttpUrl, Throwable> capturedExceptions) {
-    return runRequest(currentDelegate, request, method, isFailoverRequest)
-        .exceptionallyCompose(
-            throwable -> {
-              final HttpUrl failedEndpoint = currentDelegate.getEndpoint();
-              capturedExceptions.put(failedEndpoint, throwable);
-              if (!failoverDelegates.hasNext()) {
-                final FailoverRequestException failoverRequestException =
-                    new FailoverRequestException(method, capturedExceptions);
-                return SafeFuture.failedFuture(failoverRequestException);
-              }
-              final RemoteValidatorApiChannel nextDelegate = failoverDelegates.next();
-              LOG.debug(
-                  "Remote request ({}) to Beacon Node {} failed. Will try sending request to failover {}",
-                  method,
-                  failedEndpoint,
-                  nextDelegate.getEndpoint());
-              return makeFailoverRequest(
-                  nextDelegate, failoverDelegates, request, true, method, capturedExceptions);
-            });
+    final SafeFuture<T> response =
+        currentDelegate.equals(primaryDelegate)
+            ? runPrimaryRequestWithConfiguredFailovers(request, method)
+            : runFailoverRequest(currentDelegate, request, method);
+    return response.exceptionallyCompose(
+        throwable -> {
+          final HttpUrl failedEndpoint = currentDelegate.getEndpoint();
+          capturedExceptions.put(failedEndpoint, throwable);
+          if (!failoverDelegates.hasNext()) {
+            final FailoverRequestException failoverRequestException =
+                new FailoverRequestException(method, capturedExceptions);
+            return SafeFuture.failedFuture(failoverRequestException);
+          }
+          final RemoteValidatorApiChannel nextDelegate = failoverDelegates.next();
+          LOG.debug(
+              "Remote request ({}) to Beacon Node {} failed. Will try sending request to failover {}",
+              method,
+              failedEndpoint,
+              nextDelegate.getEndpoint());
+          return makeFailoverRequest(
+              nextDelegate, failoverDelegates, request, method, capturedExceptions);
+        });
+  }
+
+  private <T> SafeFuture<T> runPrimaryRequestWithNoFailovers(
+      final ValidatorApiChannelRequest<T> request, final String method) {
+    return runRequest(primaryDelegate, request, false, method);
+  }
+
+  private <T> SafeFuture<T> runPrimaryRequestWithConfiguredFailovers(
+      final ValidatorApiChannelRequest<T> request, final String method) {
+    return runRequest(primaryDelegate, request, true, method);
   }
 
   private <T> SafeFuture<T> runFailoverRequest(
-      final RemoteValidatorApiChannel failover,
+      final RemoteValidatorApiChannel delegate,
       final ValidatorApiChannelRequest<T> request,
       final String method) {
-    return runRequest(failover, request, method, true);
+    return runRequest(delegate, request, false, method);
   }
 
   private <T> SafeFuture<T> runRequest(
       final RemoteValidatorApiChannel delegate,
       final ValidatorApiChannelRequest<T> request,
-      final String method,
-      final boolean isFailoverRequest) {
-    final SafeFuture<T> futureResponse = request.run(delegate);
-    if (isFailoverRequest) {
-      return futureResponse.handleComposed(
-          (response, throwable) -> {
-            if (throwable != null) {
-              recordFailedFailoverRequest(delegate, method);
-              return SafeFuture.failedFuture(throwable);
-            }
-            recordSuccessfulFailoverRequest(delegate, method);
-            return SafeFuture.completedFuture(response);
-          });
+      final boolean failIfNotReady,
+      final String method) {
+    final SafeFuture<T> futureResponse;
+    if (!failIfNotReady || beaconNodeReadinessManager.isReady(delegate)) {
+      futureResponse = request.run(delegate);
+    } else {
+      final RemoteServiceNotAvailableException exception =
+          new RemoteServiceNotAvailableException(
+              String.format(
+                  "Beacon node %s was not ready to accept requests", delegate.getEndpoint()));
+      futureResponse = SafeFuture.failedFuture(exception);
     }
-    return futureResponse;
+    return futureResponse.handleComposed(
+        (response, throwable) -> {
+          if (throwable != null) {
+            recordFailedRequest(delegate, method);
+            return SafeFuture.failedFuture(throwable);
+          }
+          recordSuccessfulRequest(delegate, method);
+          return SafeFuture.completedFuture(response);
+        });
   }
 
-  private void recordSuccessfulFailoverRequest(
+  private void recordSuccessfulRequest(
       final RemoteValidatorApiChannel failover, final String method) {
-    recordFailoverRequest(failover, method, RequestOutcome.SUCCESS);
+    recordRequest(failover, method, RequestOutcome.SUCCESS);
   }
 
-  private void recordFailedFailoverRequest(
-      final RemoteValidatorApiChannel failover, final String method) {
-    recordFailoverRequest(failover, method, RequestOutcome.ERROR);
+  private void recordFailedRequest(final RemoteValidatorApiChannel failover, final String method) {
+    recordRequest(failover, method, RequestOutcome.ERROR);
   }
 
-  private void recordFailoverRequest(
+  private void recordRequest(
       final RemoteValidatorApiChannel failover, final String method, final RequestOutcome outcome) {
     failoverBeaconNodesRequestsCounter
         .labels(failover.getEndpoint().toString(), method, outcome.displayName)

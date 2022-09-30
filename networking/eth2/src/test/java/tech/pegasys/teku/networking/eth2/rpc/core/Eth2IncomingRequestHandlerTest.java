@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,13 +37,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
-  private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
       new BeaconBlocksByRangeRequestMessage(UInt64.ONE, UInt64.ONE, UInt64.ONE);
 
@@ -56,7 +53,6 @@ public class Eth2IncomingRequestHandlerTest
     super.setup();
     requestData = beaconChainMethods.beaconBlocksByRange().encodeRequest(request);
 
-    lenient().when(state.getSlot()).thenReturn(UInt64.ONE);
     lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));

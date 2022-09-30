@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -122,28 +123,29 @@ class ValidatorRegistratorTest {
   void doesNotRegisterValidators_ifNotReady() {
     when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
-    runRegistrationFlowForSlot(UInt64.ONE);
+    runRegistrationFlowForSlot(TWO);
 
     verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
   }
 
   @TestTemplate
-  void doesNotRegisterValidators_ifNotTwoSlotsInTheEpoch() {
+  void doesNotRegisterValidators_ifNotThreeSlotsInTheEpoch() {
     setActiveValidators(validator1, validator2, validator3);
 
-    // initially validators will be registered since it's the first call
-    runRegistrationFlowForSlot(TWO);
+    // initially validators will be registered anyway since it's the first call
+    runRegistrationFlowForSlot(ZERO);
 
     verify(validatorRegistrationBatchSender).sendInBatches(any());
 
-    // after the initial call, registration should not occur if not two slots in the epoch
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(UInt64.valueOf(3)));
+    // after the initial call, registration should not occur if not three slots in the epoch
+    runRegistrationFlowForSlot(
+        UInt64.valueOf(slotsPerEpoch).plus(UInt64.valueOf(3))); // fourth slot in the epoch
 
     verifyNoMoreInteractions(validatorRegistrationBatchSender);
   }
 
   @TestTemplate
-  void registersValidators_twoSlotsInTheEpoch() {
+  void registersValidators_threeSlotsInTheEpoch() {
     setActiveValidators(validator1, validator2, validator3);
 
     runRegistrationFlowForSlot(TWO);

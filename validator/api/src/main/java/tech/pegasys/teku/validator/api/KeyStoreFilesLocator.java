@@ -80,11 +80,8 @@ public class KeyStoreFilesLocator {
     if (keyFile.isDirectory() != passwordFile.isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
-              "Invalid configuration. --validator-keys entry (%s"
-                  + pathSeparator
-                  + "%s) must be both directories or both files",
-              keyFileName,
-              passwordFileName));
+              "Invalid configuration. --validator-keys entry (%s%s%s) must be both directories or both files",
+              keyFileName, pathSeparator, passwordFileName));
     }
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());

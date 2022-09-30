@@ -53,6 +53,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
+  private final Map<Bytes32, PayloadStatus> knownPosBlocks = new ConcurrentHashMap<>();
   private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
@@ -98,6 +99,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   public void addPowBlock(final PowBlock block) {
     knownBlocks.put(block.getBlockHash(), block);
+  }
+
+  public void addPosBlock(final Bytes32 blockHash, final PayloadStatus payloadStatus) {
+    knownPosBlocks.put(blockHash, payloadStatus);
   }
 
   @Override
@@ -242,11 +247,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+    final PayloadStatus returnedStatus =
+        Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
+            .orElse(payloadStatus);
     LOG.info(
         "newPayload: executionPayload blockHash: {} -> {}",
         executionPayload.getBlockHash(),
-        payloadStatus);
-    return SafeFuture.completedFuture(payloadStatus);
+        returnedStatus);
+    return SafeFuture.completedFuture(returnedStatus);
   }
 
   @Override

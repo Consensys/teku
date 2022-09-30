@@ -18,19 +18,12 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- The `--initial-state` and `--eth1-deposit-contract-address` options has been removed from the `validator-client` subcommand. They have been ignored for some time but are now completely removed.
 
 ### Additions and Improvements
-- Enables asynchronous database updates by default. This ensures slow disk access or LevelDB compactions don't cause delays in the beacon node.
-- Make Validator Client connect to a failover event stream (if failovers are configured) when the current Beacon Node is not synced
-- Detect Lodestar clients in `libp2p_connected_peers_current` metrics
-- Reduce CPU and Memory consumption in shuffling, which will improve epoch transition performance
-- Faster peer discovery on startup
-- Increased leveldb open files to 1000 files by default. If teku fails to start, update maximum open files to 2048 or unlimited.
+- Improve Execution Layer error logging
+- The `voluntary-exit` subcommand can restrict the exit to a specific list of validators public keys using the option `--validator-public-keys`.
+  Example: `teku voluntary-exit --beacon-node-api-endpoint=<ENDPOINT>[,<ENDPOINT>...]... --data-validator-path=<PATH> --include-keymanager-keys=<BOOLEAN> --validator-keys=<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE> --validator-public-keys=<PUBKEY>[,<PUBKEY>...]...`
+  To include validator keys managed via keymanager APIs, the option `--include-keymanager-keys` could be set to `true` (The default value is set to `false`)
 
 ### Bug Fixes
-- Resolves an issue with public key validation.
-- Fix `/eth/v1/validator/register_validator` responding with a 400 status code and a misleading error message in case of exceptions
-- Fix a `NullPointerException` for the gas limit when a proposer config is used and builder is enabled
-- Update snakeyaml dependency to resolve cve-2022-25857 which could result in excessive memory usage when parsing YAML content
-- Fixed an issue where the range requested for deposit logs was not reduced when using only `--ee-endpoint` leading to persistent timeouts with execution clients
+- Filter out unknown validators when sending validator registrations to the builder network
