@@ -128,7 +128,6 @@ public abstract class Node {
     waitForEpochAtOrAbove(currentEpoch + 1);
   }
 
-  // gauge
   public double getMetricValue(final String metricName) {
     final MetricFetcher metricFetcher = new MetricFetcher(httpClient, getMetricsUrl());
     final MetricValue metricValue = metricFetcher.getSingleMetricByName(metricName);
