@@ -35,7 +35,7 @@ public class EventLogger {
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
   private static final String EXECUTION_CLIENT_READINESS_USER_REMINDER =
-      "Make sure the Execution Client is online and ready.";
+      "Make sure the Execution Client is online and synced.";
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
@@ -147,9 +147,9 @@ public class EventLogger {
   }
 
   public void executionClientRequestTimedOut() {
-    error(
+    warn(
         "Execution Client request timed out. " + EXECUTION_CLIENT_READINESS_USER_REMINDER,
-        Color.RED);
+        Color.YELLOW);
   }
 
   public void executionClientRecovered() {
