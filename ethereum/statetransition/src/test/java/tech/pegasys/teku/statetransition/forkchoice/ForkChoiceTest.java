@@ -805,6 +805,15 @@ class ForkChoiceTest {
     }
   }
 
+  @Test
+  void prepareForBlockProduction_shouldNotSendForkChoiceUpdatedNotification() {
+    storageSystem.chainUpdater().setCurrentSlot(ONE);
+
+    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+
+    verifyNoInteractions(forkChoiceNotifier);
+  }
+
   private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {
     Set<PayloadStatus> statuses =
         Set.of(

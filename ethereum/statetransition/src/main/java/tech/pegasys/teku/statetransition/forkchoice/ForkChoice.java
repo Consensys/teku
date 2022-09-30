@@ -163,14 +163,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<Boolean> processHead() {
-    return processHead(Optional.empty());
+    return processHead(Optional.empty(), true);
   }
 
-  public SafeFuture<Boolean> processHead(UInt64 nodeSlot) {
-    return processHead(Optional.of(nodeSlot));
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), true);
   }
 
-  private SafeFuture<Boolean> processHead(Optional<UInt64> nodeSlot) {
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot, final boolean sendNotifications) {
+    return processHead(Optional.of(nodeSlot), sendNotifications);
+  }
+
+  private SafeFuture<Boolean> processHead(
+      final Optional<UInt64> nodeSlot, final boolean sendNotifications) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -220,7 +225,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+                      if (sendNotifications) {
+                        notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+                      }
                       return true;
                     }));
   }
@@ -675,7 +682,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
-        .thenCompose(__ -> processHead(slot))
+        .thenCompose(__ -> processHead(slot, false))
         .toVoid();
   }
 
