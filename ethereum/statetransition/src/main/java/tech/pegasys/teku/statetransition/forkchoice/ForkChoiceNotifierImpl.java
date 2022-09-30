@@ -156,7 +156,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     } else {
       // Request a new payload.
 
-      LOG.warn("No suitable payloadId, requesting a new one");
+      LOG.warn(
+          "No suitable payloadId for block production at slot {}, requesting a new one to the EL",
+          blockSlot);
 
       // to make sure that we deal with the same data when calculatePayloadAttributes asynchronously
       // returns, we save locally the current class reference.
