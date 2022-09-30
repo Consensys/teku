@@ -53,19 +53,4 @@ public class AggregateAndProofPropertyTest {
     final AggregateAndProof fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(aggregateAndProof);
   }
-
-  @Property
-  void randomSszDeserializationNoUnexpectedExceptions(
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final byte[] ssz) {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final AggregateAndProof.AggregateAndProofSchema schema =
-        spec.forMilestone(specMilestone).getSchemaDefinitions().getAggregateAndProofSchema();
-    try {
-      schema.sszDeserialize(Bytes.wrap(ssz));
-    } catch (SszDeserializeException e) {
-      // Expected error.
-    }
-  }
 }
