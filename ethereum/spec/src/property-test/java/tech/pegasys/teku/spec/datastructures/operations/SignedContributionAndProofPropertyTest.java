@@ -22,6 +22,7 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 import net.jqwik.api.constraints.Size;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -47,11 +49,19 @@ public class SignedContributionAndProofPropertyTest {
     final SignedContributionAndProof signedContributionAndProof =
         dataStructureUtil.randomSignedContributionAndProof(
             UInt64.fromLongBits(slot), Bytes32.wrap(beaconBlockRoot));
+    final SignedContributionAndProofSchema schema = signedContributionAndProof.getSchema();
     final DeserializableTypeDefinition<SignedContributionAndProof> typeDefinition =
-        signedContributionAndProof.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = signedContributionAndProof.sszSerialize();
+    final SignedContributionAndProof fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(signedContributionAndProof);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(signedContributionAndProof, typeDefinition);
-    final SignedContributionAndProof result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(signedContributionAndProof);
+    final SignedContributionAndProof fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(signedContributionAndProof);
   }
 
   @Provide

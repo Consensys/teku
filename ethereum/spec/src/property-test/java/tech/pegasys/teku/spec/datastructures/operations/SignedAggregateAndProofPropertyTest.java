@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -37,13 +38,19 @@ public class SignedAggregateAndProofPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SignedAggregateAndProof signedAggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
+    final SignedAggregateAndProof.SignedAggregateAndProofSchema schema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getSignedAggregateAndProofSchema();
     final DeserializableTypeDefinition<SignedAggregateAndProof> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getSignedAggregateAndProofSchema()
-            .getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = signedAggregateAndProof.sszSerialize();
+    final SignedAggregateAndProof fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(signedAggregateAndProof);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(signedAggregateAndProof, typeDefinition);
-    final SignedAggregateAndProof result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(signedAggregateAndProof);
+    final SignedAggregateAndProof fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(signedAggregateAndProof);
   }
 }

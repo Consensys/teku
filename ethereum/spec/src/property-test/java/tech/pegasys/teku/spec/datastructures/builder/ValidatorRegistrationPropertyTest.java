@@ -21,6 +21,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -39,11 +40,19 @@ public class ValidatorRegistrationPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final ValidatorRegistration registration = dataStructureUtil.randomValidatorRegistration();
+    final ValidatorRegistrationSchema schema = registration.getSchema();
     final DeserializableTypeDefinition<ValidatorRegistration> typeDefinition =
-        registration.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = registration.sszSerialize();
+    final ValidatorRegistration fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(registration);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(registration, typeDefinition);
-    final ValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(registration);
+    final ValidatorRegistration fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(registration);
   }
 
   @Provide

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,13 +37,19 @@ public class AttesterSlashingPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
+    final AttesterSlashing.AttesterSlashingSchema schema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getAttesterSlashingSchema();
     final DeserializableTypeDefinition<AttesterSlashing> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getAttesterSlashingSchema()
-            .getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = attesterSlashing.sszSerialize();
+    final AttesterSlashing fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(attesterSlashing);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(attesterSlashing, typeDefinition);
-    final AttesterSlashing result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(attesterSlashing);
+    final AttesterSlashing fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(attesterSlashing);
   }
 }

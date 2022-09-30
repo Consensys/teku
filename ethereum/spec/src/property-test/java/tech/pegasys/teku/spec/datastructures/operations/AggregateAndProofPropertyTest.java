@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -36,13 +38,34 @@ public class AggregateAndProofPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
+    final AggregateAndProof.AggregateAndProofSchema schema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getAggregateAndProofSchema();
     final DeserializableTypeDefinition<AggregateAndProof> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getAggregateAndProofSchema()
-            .getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = aggregateAndProof.sszSerialize();
+    final AggregateAndProof fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(aggregateAndProof);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(aggregateAndProof, typeDefinition);
-    final AggregateAndProof result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(aggregateAndProof);
+    final AggregateAndProof fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(aggregateAndProof);
+  }
+
+  @Property
+  void randomSszDeserializationNoUnexpectedExceptions(
+      @ForAll final SpecMilestone specMilestone,
+      @ForAll final Eth2Network network,
+      @ForAll final byte[] ssz) {
+    final Spec spec = TestSpecFactory.create(specMilestone, network);
+    final AggregateAndProof.AggregateAndProofSchema schema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getAggregateAndProofSchema();
+    try {
+      schema.sszDeserialize(Bytes.wrap(ssz));
+    } catch (SszDeserializeException e) {
+      // Expected error.
+    }
   }
 }

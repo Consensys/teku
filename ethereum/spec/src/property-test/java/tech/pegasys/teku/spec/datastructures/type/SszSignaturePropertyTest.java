@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class SszSignaturePropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SszSignature signature = new SszSignature(dataStructureUtil.randomSignature());
+    final SszSignatureSchema schema = signature.getSchema();
     final DeserializableTypeDefinition<SszSignature> typeDefinition =
-        signature.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = signature.sszSerialize();
+    final SszSignature fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(signature);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(signature, typeDefinition);
-    final SszSignature result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(signature);
+    final SszSignature fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(signature);
   }
 }

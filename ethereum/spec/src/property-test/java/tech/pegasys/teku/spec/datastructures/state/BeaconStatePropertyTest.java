@@ -18,12 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -38,14 +40,19 @@ public class BeaconStatePropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconStateSchema<?, ?> schema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getBeaconStateSchema();
     final DeserializableTypeDefinition<BeaconState> typeDefinition =
-        (DeserializableTypeDefinition<BeaconState>)
-            spec.forMilestone(specMilestone)
-                .getSchemaDefinitions()
-                .getBeaconStateSchema()
-                .getJsonTypeDefinition();
+        (DeserializableTypeDefinition<BeaconState>) schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = state.sszSerialize();
+    final BeaconState fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(state);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(state, typeDefinition);
-    final BeaconState result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(state);
+    final BeaconState fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(state);
   }
 }

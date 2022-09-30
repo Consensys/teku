@@ -21,12 +21,14 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -40,17 +42,25 @@ public class SyncAggregatePropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SyncAggregate syncAggregate = dataStructureUtil.randomSyncAggregate();
-    final DeserializableTypeDefinition<SyncAggregate> typeDefinition =
+    final SyncAggregateSchema schema =
         spec.forMilestone(specMilestone)
             .getSchemaDefinitions()
             .getBeaconBlockBodySchema()
             .toVersionAltair()
             .orElseThrow()
-            .getSyncAggregateSchema()
-            .getJsonTypeDefinition();
+            .getSyncAggregateSchema();
+    final DeserializableTypeDefinition<SyncAggregate> typeDefinition =
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = syncAggregate.sszSerialize();
+    final SyncAggregate fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(syncAggregate);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(syncAggregate, typeDefinition);
-    final SyncAggregate result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(syncAggregate);
+    final SyncAggregate fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(syncAggregate);
   }
 
   @Provide

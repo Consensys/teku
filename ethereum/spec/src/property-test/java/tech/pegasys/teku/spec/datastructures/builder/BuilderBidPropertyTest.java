@@ -21,6 +21,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -39,16 +40,23 @@ public class BuilderBidPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BuilderBid bid = dataStructureUtil.randomBuilderBid();
-    final DeserializableTypeDefinition<BuilderBid> typeDefinition =
+    final BuilderBidSchema schema =
         spec.forMilestone(specMilestone)
             .getSchemaDefinitions()
             .toVersionBellatrix()
             .orElseThrow()
-            .getBuilderBidSchema()
-            .getJsonTypeDefinition();
+            .getBuilderBidSchema();
+    final DeserializableTypeDefinition<BuilderBid> typeDefinition = schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = bid.sszSerialize();
+    final BuilderBid fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(bid);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(bid, typeDefinition);
-    final BuilderBid result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(bid);
+    final BuilderBid fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(bid);
   }
 
   @Provide

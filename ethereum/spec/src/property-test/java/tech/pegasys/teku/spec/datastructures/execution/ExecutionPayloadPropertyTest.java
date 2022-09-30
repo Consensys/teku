@@ -21,6 +21,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -38,13 +39,20 @@ public class ExecutionPayloadPropertyTest {
       throws JsonProcessingException {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayloadSchema schema = payload.getSchema();
     final DeserializableTypeDefinition<ExecutionPayload> typeDefinition =
-        payload.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = payload.sszSerialize();
+    final ExecutionPayload fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(payload);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(payload, typeDefinition);
-    final ExecutionPayload result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(payload);
+    final ExecutionPayload fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(payload);
   }
 
   @Provide

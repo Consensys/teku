@@ -21,12 +21,14 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -41,16 +43,24 @@ public class SyncCommitteeMessagePropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SyncCommitteeMessage syncCommitteeMessage =
         dataStructureUtil.randomSyncCommitteeMessage();
-    final DeserializableTypeDefinition<SyncCommitteeMessage> typeDefinition =
+    final SyncCommitteeMessageSchema schema =
         spec.forMilestone(specMilestone)
             .getSchemaDefinitions()
             .toVersionAltair()
             .orElseThrow()
-            .getSyncCommitteeMessageSchema()
-            .getJsonTypeDefinition();
+            .getSyncCommitteeMessageSchema();
+    final DeserializableTypeDefinition<SyncCommitteeMessage> typeDefinition =
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = syncCommitteeMessage.sszSerialize();
+    final SyncCommitteeMessage fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(syncCommitteeMessage);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(syncCommitteeMessage, typeDefinition);
-    final SyncCommitteeMessage result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(syncCommitteeMessage);
+    final SyncCommitteeMessage fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(syncCommitteeMessage);
   }
 
   @Provide

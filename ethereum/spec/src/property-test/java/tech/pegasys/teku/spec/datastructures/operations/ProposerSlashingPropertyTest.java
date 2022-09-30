@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class ProposerSlashingPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final ProposerSlashing proposerSlashing = dataStructureUtil.randomProposerSlashing();
+    final ProposerSlashing.ProposerSlashingSchema schema = proposerSlashing.getSchema();
     final DeserializableTypeDefinition<ProposerSlashing> typeDefinition =
-        proposerSlashing.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = proposerSlashing.sszSerialize();
+    final ProposerSlashing fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(proposerSlashing);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(proposerSlashing, typeDefinition);
-    final ProposerSlashing result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(proposerSlashing);
+    final ProposerSlashing fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(proposerSlashing);
   }
 }

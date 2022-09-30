@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class SszPublicKeyPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SszPublicKey key = new SszPublicKey(dataStructureUtil.randomPublicKey());
+    final SszPublicKeySchema schema = key.getSchema();
     final DeserializableTypeDefinition<SszPublicKey> typeDefinition =
-        key.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = key.sszSerialize();
+    final SszPublicKey fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(key);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(key, typeDefinition);
-    final SszPublicKey result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(key);
+    final SszPublicKey fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(key);
   }
 }

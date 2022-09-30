@@ -21,12 +21,14 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -41,16 +43,24 @@ public class SyncAggregatorSelectionDataPropertyTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final SyncAggregatorSelectionData syncAggregatorSelectionData =
         dataStructureUtil.randomSyncAggregatorSelectionData();
-    final DeserializableTypeDefinition<SyncAggregatorSelectionData> typeDefinition =
+    final SyncAggregatorSelectionDataSchema schema =
         spec.forMilestone(specMilestone)
             .getSchemaDefinitions()
             .toVersionAltair()
             .orElseThrow()
-            .getSyncAggregatorSelectionDataSchema()
-            .getJsonTypeDefinition();
+            .getSyncAggregatorSelectionDataSchema();
+    final DeserializableTypeDefinition<SyncAggregatorSelectionData> typeDefinition =
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = syncAggregatorSelectionData.sszSerialize();
+    final SyncAggregatorSelectionData fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(syncAggregatorSelectionData);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(syncAggregatorSelectionData, typeDefinition);
-    final SyncAggregatorSelectionData result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(syncAggregatorSelectionData);
+    final SyncAggregatorSelectionData fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(syncAggregatorSelectionData);
   }
 
   @Provide

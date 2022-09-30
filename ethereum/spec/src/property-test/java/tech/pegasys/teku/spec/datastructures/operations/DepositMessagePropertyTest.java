@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class DepositMessagePropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final DepositMessage depositMessage = dataStructureUtil.randomDepositMessage();
+    final DepositMessage.DepositMessageSchema schema = depositMessage.getSchema();
     final DeserializableTypeDefinition<DepositMessage> typeDefinition =
-        depositMessage.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = depositMessage.sszSerialize();
+    final DepositMessage fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(depositMessage);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(depositMessage, typeDefinition);
-    final DepositMessage result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(depositMessage);
+    final DepositMessage fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(depositMessage);
   }
 }

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class BeaconBlockHeaderPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BeaconBlockHeader header = dataStructureUtil.randomBeaconBlockHeader();
+    final BeaconBlockHeader.BeaconBlockHeaderSchema schema = header.getSchema();
     final DeserializableTypeDefinition<BeaconBlockHeader> typeDefinition =
-        header.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = header.sszSerialize();
+    final BeaconBlockHeader fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(header);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(header, typeDefinition);
-    final BeaconBlockHeader result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(header);
+    final BeaconBlockHeader fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(header);
   }
 }

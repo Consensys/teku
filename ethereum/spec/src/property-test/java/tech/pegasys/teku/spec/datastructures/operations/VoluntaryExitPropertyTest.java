@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +37,18 @@ public class VoluntaryExitPropertyTest {
     final Spec spec = TestSpecFactory.create(specMilestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final VoluntaryExit voluntaryExit = dataStructureUtil.randomVoluntaryExit();
+    final VoluntaryExit.VoluntaryExitSchema schema = voluntaryExit.getSchema();
     final DeserializableTypeDefinition<VoluntaryExit> typeDefinition =
-        voluntaryExit.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = voluntaryExit.sszSerialize();
+    final VoluntaryExit fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(voluntaryExit);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(voluntaryExit, typeDefinition);
-    final VoluntaryExit result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(voluntaryExit);
+    final VoluntaryExit fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(voluntaryExit);
   }
 }
