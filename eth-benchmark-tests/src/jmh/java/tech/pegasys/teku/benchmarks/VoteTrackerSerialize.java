@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.benchmarks;
 
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
+
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -23,22 +25,19 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 public class VoteTrackerSerialize {
 
   private static Spec spec = TestSpecFactory.createDefault();
   private static VoteTracker votes = new DataStructureUtil(spec).randomVoteTracker();
-  private static KvStoreSerializer<VoteTracker> serializer =
-      KvStoreSerializer.createVoteTrackerSerializer(false);
-  private static Bytes votesSerialized = Bytes.wrap(serializer.serialize(votes));
+  private static Bytes votesSerialized = Bytes.wrap(VOTE_TRACKER_SERIALIZER.serialize(votes));
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void voteTrackerSerialization() {
-    checkSize(Bytes.wrap(serializer.serialize(votes)));
+    checkSize(Bytes.wrap(VOTE_TRACKER_SERIALIZER.serialize(votes)));
   }
 
   @Benchmark
@@ -46,7 +45,7 @@ public class VoteTrackerSerialize {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void voteTrackerDeserialization() {
-    checkEpoch(serializer.deserialize(votesSerialized.toArrayUnsafe()));
+    checkEpoch(VOTE_TRACKER_SERIALIZER.deserialize(votesSerialized.toArrayUnsafe()));
   }
 
   private boolean checkSize(final Bytes serialize) {

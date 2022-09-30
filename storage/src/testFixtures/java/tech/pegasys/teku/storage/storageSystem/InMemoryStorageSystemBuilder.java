@@ -42,7 +42,6 @@ public class InMemoryStorageSystemBuilder {
   private int numberOfValidators = 3;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
-  private boolean storeVotesEquivocation = false;
 
   private Optional<AsyncRunner> asyncRunner = Optional.empty();
 
@@ -183,8 +182,7 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createLevelDbTreeDatabase() {
     if (hotDb == null) {
-      final V6SchemaCombinedTreeState schema =
-          new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
+      final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createTree(
@@ -192,15 +190,13 @@ public class InMemoryStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }
 
   private Database createV6Database() {
     if (hotDb == null) {
-      final V6SchemaCombinedSnapshot schema =
-          V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+      final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
@@ -209,7 +205,6 @@ public class InMemoryStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }
@@ -220,8 +215,7 @@ public class InMemoryStorageSystemBuilder {
   }
 
   private Database createV4Database() {
-    final V6SchemaCombinedSnapshot combinedSchema =
-        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     if (hotDb == null) {
       final Schema v4SchemaHot = combinedSchema.asSchemaHot();
       hotDb =
@@ -242,7 +236,6 @@ public class InMemoryStorageSystemBuilder {
         stateStorageFrequency,
         storeNonCanonicalBlocks,
         storeBlockExecutionPayloadSeparately,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }

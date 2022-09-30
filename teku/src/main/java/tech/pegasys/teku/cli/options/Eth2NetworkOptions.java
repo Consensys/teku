@@ -131,33 +131,12 @@ public class Eth2NetworkOptions {
   private Integer startupTimeoutSeconds;
 
   @Option(
-      names = {"--Xfork-choice-proposer-boost-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Whether to enable the fork choice proposer boost feature.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private Boolean proposerBoostEnabled = Eth2NetworkConfiguration.DEFAULT_PROPOSER_BOOST_ENABLED;
-
-  @Option(
       names = {"--Xprogressive-balances-mode"},
       paramLabel = "<MODE>",
       description = "Progressive balance optimization mode to use.",
       arity = "1",
       hidden = true)
   private ProgressiveBalancesMode progressiveBalancesMode = null;
-
-  @Option(
-      names = {"--Xfork-choice-equivocating-indices-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Whether to enable the fork choice equivocating indices feature.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private Boolean equivocatingIndicesEnabled =
-      Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;
 
   @Option(
       names = {"--Xfork-choice-before-proposing-enabled"},
@@ -169,6 +148,7 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Boolean forkChoiceBeforeProposingEnabled = null;
 
+  // can be removed after investigating the consequences of not doing it anymore
   @Option(
       names = {"--Xfork-choice-update-head-on-block-import-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -234,8 +214,6 @@ public class Eth2NetworkOptions {
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
-        .equivocatingIndicesEnabled(equivocatingIndicesEnabled)
-        .proposerBoostEnabled(proposerBoostEnabled)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled);
   }
 

@@ -15,19 +15,19 @@ steps:
     head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
 - block: block_67.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'
 - attestation: attestation_28.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'
 - attestation: attestation_13.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'
 - attestation: attestation_14.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'
 - attestation: attestation_15.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'
 - slot: 3
 - checks:
     head: '0x810032ce5f7960db44cad725c02303798d15f1153c37b8b61ea90e8d435107ec'

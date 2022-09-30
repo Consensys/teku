@@ -32,7 +32,7 @@ class KvStoreTreeNodeSourceTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec, true);
+  private final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
   private final KvStoreAccessor accessor =
       MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
 
