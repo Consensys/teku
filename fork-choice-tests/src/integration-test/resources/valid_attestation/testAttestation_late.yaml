@@ -30,7 +30,7 @@ steps:
     head: '0xe9c855d28999e4a86c1584edaef8a32cfb3c3e11751a740cd3627c15134e46c1'
 - attestation: attestation_4.ssz
 - checks:
-    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+    head: '0xe9c855d28999e4a86c1584edaef8a32cfb3c3e11751a740cd3627c15134e46c1'
 - attestation: attestation_5.ssz
 - checks:
     head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'

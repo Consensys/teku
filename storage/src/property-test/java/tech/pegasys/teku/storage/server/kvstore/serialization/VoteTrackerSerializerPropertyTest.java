@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
@@ -27,17 +28,14 @@ public class VoteTrackerSerializerPropertyTest {
   public void roundTrip(
       @ForAll @Size(32) final byte[] currentRootBytes,
       @ForAll @Size(32) final byte[] nextRootBytes,
-      @ForAll final long nextEpoch,
-      @ForAll final boolean storeVotesEquivocation) {
+      @ForAll final long nextEpoch) {
     VoteTracker value =
         new VoteTracker(
             Bytes32.wrap(currentRootBytes),
             Bytes32.wrap(nextRootBytes),
             UInt64.fromLongBits(nextEpoch));
-    final KvStoreSerializer<VoteTracker> serializer =
-        KvStoreSerializer.createVoteTrackerSerializer(storeVotesEquivocation);
-    final byte[] serialized = serializer.serialize(value);
-    final VoteTracker deserialized = serializer.deserialize(serialized);
+    final byte[] serialized = VOTE_TRACKER_SERIALIZER.serialize(value);
+    final VoteTracker deserialized = VOTE_TRACKER_SERIALIZER.deserialize(serialized);
     assertThat(deserialized).isEqualTo(value);
   }
 }

@@ -45,9 +45,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
   private final KvStoreColumn<UInt64, Bytes32> finalizedBlockRootBySlot;
 
-  private V6SchemaCombinedSnapshot(
-      final Spec spec, final boolean storeVotesEquivocation, final int finalizedOffset) {
-    super(spec, storeVotesEquivocation, finalizedOffset);
+  private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
+    super(spec, finalizedOffset);
     slotsByFinalizedRoot =
         KvStoreColumn.create(finalizedOffset + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
     finalizedBlocksBySlot =
@@ -78,14 +77,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(finalizedOffset + 9, UINT64_SERIALIZER, BYTES32_SERIALIZER);
   }
 
-  public static V6SchemaCombinedSnapshot createV4(
-      final Spec spec, final boolean storeVotesEquivocation) {
-    return new V6SchemaCombinedSnapshot(spec, storeVotesEquivocation, V4_FINALIZED_OFFSET);
+  public static V6SchemaCombinedSnapshot createV4(final Spec spec) {
+    return new V6SchemaCombinedSnapshot(spec, V4_FINALIZED_OFFSET);
   }
 
-  public static V6SchemaCombinedSnapshot createV6(
-      final Spec spec, final boolean storeVotesEquivocation) {
-    return new V6SchemaCombinedSnapshot(spec, storeVotesEquivocation, V6_FINALIZED_OFFSET);
+  public static V6SchemaCombinedSnapshot createV6(final Spec spec) {
+    return new V6SchemaCombinedSnapshot(spec, V6_FINALIZED_OFFSET);
   }
 
   @Override
