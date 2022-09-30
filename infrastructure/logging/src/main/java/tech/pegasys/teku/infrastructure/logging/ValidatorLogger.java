@@ -89,7 +89,7 @@ public class ValidatorLogger {
                 PREFIX,
                 failoversConfigured ? " primary" : "",
                 failoversConfigured
-                    ? "Future requests will use the configured failover beacon nodes until the primary one is ready again."
+                    ? "Future requests will use one of the configured failover beacon nodes until the primary one is ready again."
                     : "Future requests to it are likely to fail."),
             Color.YELLOW));
   }
