@@ -16,8 +16,12 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -29,14 +33,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class Eth1DataPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
-      throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final Eth1Data data = dataStructureUtil.randomEth1Data();
+  void roundTrip(@ForAll("eth1Data") final Eth1Data data) throws JsonProcessingException {
     final Eth1Data.Eth1DataSchema schema = data.getSchema();
     final DeserializableTypeDefinition<Eth1Data> typeDefinition = schema.getJsonTypeDefinition();
 
@@ -49,5 +46,15 @@ public class Eth1DataPropertyTest {
     final String json = JsonUtil.serialize(data, typeDefinition);
     final Eth1Data fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(data);
+  }
+
+  @Provide
+  Arbitrary<Eth1Data> eth1Data() {
+    Arbitrary<Integer> seed = Arbitraries.integers();
+    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
+    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
+    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
+    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
+    return dsu.map(DataStructureUtil::randomEth1Data);
   }
 }
