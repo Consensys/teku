@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelsContaining;
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
-import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
-
-import java.util.Map;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,46 +44,9 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
             config -> config.withInteropValidators(0, 32).withSentryNodes(sentryNodesConfig));
     remoteValidator.start();
 
-    waitForRemoteValidatorGettingProposerDutiesFromBeaconNode(remoteValidator, dutiesProviderNode);
-    waitForRemoteValidatorPublishingAttestationToBeaconNode(
-        remoteValidator, attestationPublisherNode);
-    waitForRemoteValidatorPublishingBlockToBeaconNode(remoteValidator, blockHandlerNode);
-  }
-
-  private void waitForRemoteValidatorGettingProposerDutiesFromBeaconNode(
-      final TekuValidatorNode remoteValidator, final TekuNode beaconNode) {
-    remoteValidator.waitForMetric(
-        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
-        withLabelsContaining(
-            Map.of(
-                "endpoint", beaconNode.getBeaconRestApiUrl() + "/",
-                "method", "get_proposer_duties",
-                "outcome", "success")),
-        withValueGreaterThan(0));
-  }
-
-  private void waitForRemoteValidatorPublishingBlockToBeaconNode(
-      final TekuValidatorNode remoteValidator, final TekuNode beaconNode) {
-    remoteValidator.waitForMetric(
-        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
-        withLabelsContaining(
-            Map.of(
-                "endpoint", beaconNode.getBeaconRestApiUrl() + "/",
-                "method", "publish_block",
-                "outcome", "success")),
-        withValueGreaterThan(0));
-  }
-
-  private void waitForRemoteValidatorPublishingAttestationToBeaconNode(
-      final TekuValidatorNode remoteValidator, final TekuNode beaconNode) {
-    remoteValidator.waitForMetric(
-        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
-        withLabelsContaining(
-            Map.of(
-                "endpoint", beaconNode.getBeaconRestApiUrl() + "/",
-                "method", "publish_attestation",
-                "outcome", "success")),
-        withValueGreaterThan(0));
+    remoteValidator.waitForDutiesRequestedFrom(dutiesProviderNode);
+    remoteValidator.waitForAttestationPublishedTo(attestationPublisherNode);
+    remoteValidator.waitForBlockPublishedTo(blockHandlerNode);
   }
 
   private TekuNode createAndStartPeerBeaconNode(

@@ -140,18 +140,18 @@ public abstract class Node {
     waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
   }
 
-  public void waitForMetricWithValue(final String metricName, final double value) {
+  protected void waitForMetricWithValue(final String metricName, final double value) {
     waitForMetric(withNameEqualsTo(metricName), withAnyLabels(), withValueEqualTo(value));
   }
 
-  public void waitForMetric(
+  protected void waitForMetric(
       final MetricNameCondition nameCondition,
       final MetricLabelsCondition labelsCondition,
       final MetricValuesCondition valueCondition) {
     waitForMetric(nameCondition, labelsCondition, valueCondition, 5, TimeUnit.MINUTES);
   }
 
-  public void waitForMetric(
+  protected void waitForMetric(
       final MetricNameCondition nameCondition,
       final MetricLabelsCondition labelsCondition,
       final MetricValuesCondition valueCondition,

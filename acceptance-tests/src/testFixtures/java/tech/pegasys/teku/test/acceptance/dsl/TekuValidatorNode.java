@@ -14,6 +14,9 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelsContaining;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.google.common.io.Resources;
 import java.io.File;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_API_PORT = 9052;
   protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
@@ -141,7 +145,41 @@ public class TekuValidatorNode extends Node {
         in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
+  public void waitForDutiesRequestedFrom(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "get_proposer_duties",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
+  public void waitForAttestationPublishedTo(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "publish_attestation",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
+  public void waitForBlockPublishedTo(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "publish_block",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
   public static class Config {
+
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
