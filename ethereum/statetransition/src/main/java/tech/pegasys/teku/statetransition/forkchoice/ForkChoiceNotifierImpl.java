@@ -76,8 +76,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
-  public void onForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
-    eventThread.execute(() -> internalForkChoiceUpdated(forkChoiceState));
+  public void onForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    eventThread.execute(() -> internalForkChoiceUpdated(forkChoiceState, proposingSlot));
   }
 
   @Override
@@ -199,7 +200,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     updatePayloadAttributes(currentSlot.plus(1));
   }
 
-  private void internalForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
+  private void internalForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalForkChoiceUpdated forkChoiceState {}", forkChoiceState);
@@ -208,9 +210,10 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
     LOG.debug("internalForkChoiceUpdated forkChoiceUpdateData {}", forkChoiceUpdateData);
 
-    recentChainData
-        .getCurrentSlot()
-        .ifPresent(currentSlot -> updatePayloadAttributes(currentSlot.plus(1)));
+    final Optional<UInt64> attributesSlot =
+        proposingSlot.or(() -> recentChainData.getCurrentSlot().map(UInt64::increment));
+
+    attributesSlot.ifPresent(this::updatePayloadAttributes);
 
     sendForkChoiceUpdated();
   }

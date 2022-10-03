@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -697,7 +698,8 @@ class ForkChoiceTest {
     ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
         ArgumentCaptor.forClass(ForkChoiceState.class);
 
-    verify(forkChoiceNotifier, times(2)).onForkChoiceUpdated(forkChoiceStateCaptor.capture());
+    verify(forkChoiceNotifier, times(2))
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), Optional.empty());
 
     // EL should have been notified of the invalid head first and after that the valid
     // head
@@ -775,7 +777,8 @@ class ForkChoiceTest {
 
     ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
         ArgumentCaptor.forClass(ForkChoiceState.class);
-    verify(forkChoiceNotifier, atLeastOnce()).onForkChoiceUpdated(forkChoiceStateCaptor.capture());
+    verify(forkChoiceNotifier, atLeastOnce())
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), Optional.empty());
 
     // last notification to EL should be a valid block
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
@@ -806,12 +809,12 @@ class ForkChoiceTest {
   }
 
   @Test
-  void prepareForBlockProduction_shouldNotSendForkChoiceUpdatedNotification() {
+  void prepareForBlockProduction_shouldSendForkChoiceUpdatedNotificationWithProposalSlot() {
     storageSystem.chainUpdater().setCurrentSlot(ONE);
 
     assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
 
-    verifyNoInteractions(forkChoiceNotifier);
+    verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
   }
 
   private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {
@@ -863,7 +866,8 @@ class ForkChoiceTest {
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,
-                optimisticHead));
+                optimisticHead),
+            Optional.empty());
   }
 
   private void assertForkChoiceUpdateNotification(
@@ -1110,7 +1114,7 @@ class ForkChoiceTest {
         stubber.doAnswer(onForkChoiceUpdatedResultAnswer);
       }
     }
-    stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any());
+    stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any(), any());
   }
 
   private Answer<Void> getOnForkChoiceUpdatedResultAnswer(ForkChoiceUpdatedResult result) {
