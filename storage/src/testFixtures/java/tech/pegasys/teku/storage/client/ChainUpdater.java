@@ -77,6 +77,13 @@ public class ChainUpdater {
     tx.commit().join();
   }
 
+  public void setTimeMillis(final UInt64 time) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setTimeMillis(time);
+    tx.commit().join();
+  }
+
   public SignedBlockAndState addNewBestBlock() {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     updateBestBlock(nextBlock);

@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
 import java.util.Optional;
@@ -809,12 +810,31 @@ class ForkChoiceTest {
   }
 
   @Test
-  void prepareForBlockProduction_shouldSendForkChoiceUpdatedNotificationWithProposalSlot() {
-    storageSystem.chainUpdater().setCurrentSlot(ONE);
+  void prepareForBlockProduction_NotYetInProposalSlotShouldRunOnTickWhenWithinTolerance() {
+    final UInt64 newTime =
+        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+            .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100);
+    storageSystem.chainUpdater().setTimeMillis(newTime);
 
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
     assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
 
     verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
+  }
+
+  @Test
+  void prepareForBlockProduction_NotYetInProposalSlotShouldNotRunOnTickWhenOutOfTolerance() {
+    final UInt64 newTime =
+        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+            .minusMinZero(BLOCK_CREATION_TOLERANCE_MS + 100);
+    storageSystem.chainUpdater().setTimeMillis(newTime);
+
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
+    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
+
+    verifyNoInteractions(forkChoiceNotifier);
   }
 
   private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {

@@ -682,7 +682,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
+    return SafeFuture.allOf(
+            tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
         .thenCompose(__ -> processHead(slot, true))
         .toVoid();
   }
