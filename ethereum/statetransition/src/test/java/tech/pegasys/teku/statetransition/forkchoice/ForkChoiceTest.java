@@ -699,7 +699,7 @@ class ForkChoiceTest {
         ArgumentCaptor.forClass(ForkChoiceState.class);
 
     verify(forkChoiceNotifier, times(2))
-        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), Optional.empty());
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.empty()));
 
     // EL should have been notified of the invalid head first and after that the valid
     // head
@@ -778,7 +778,7 @@ class ForkChoiceTest {
     ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
         ArgumentCaptor.forClass(ForkChoiceState.class);
     verify(forkChoiceNotifier, atLeastOnce())
-        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), Optional.empty());
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.empty()));
 
     // last notification to EL should be a valid block
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
