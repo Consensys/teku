@@ -16,24 +16,17 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBeaconBlockHeaderPropertyTest {
   @Property
-  void roundTrip(@ForAll("signedBeaconBlockHeader") final SignedBeaconBlockHeader header)
+  void roundTrip(
+      @ForAll(supplier = SignedBeaconBlockHeaderSupplier.class)
+          final SignedBeaconBlockHeader header)
       throws JsonProcessingException {
     final SignedBeaconBlockHeader.SignedBeaconBlockHeaderSchema schema = header.getSchema();
     final DeserializableTypeDefinition<SignedBeaconBlockHeader> typeDefinition =
@@ -48,15 +41,5 @@ public class SignedBeaconBlockHeaderPropertyTest {
     final String json = JsonUtil.serialize(header, typeDefinition);
     final SignedBeaconBlockHeader fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(header);
-  }
-
-  @Provide
-  Arbitrary<SignedBeaconBlockHeader> signedBeaconBlockHeader() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
-    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
-    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(DataStructureUtil::randomSignedBeaconBlockHeader);
   }
 }
