@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -74,6 +73,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private final Spec spec;
   private final EventThread forkChoiceExecutor;
+  private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
@@ -92,12 +92,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final PandaPrinter pandaPrinter,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
+    this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
@@ -125,6 +127,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceExecutor,
         recentChainData,
         forkChoiceNotifier,
+        new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         PandaPrinter.NOOP,
@@ -516,23 +519,23 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-      final Optional<UInt64> proposingSlot) {
-    final ForkChoiceState forkChoiceState =
-        getForkChoiceStrategy()
-            .getForkChoiceState(
-                recentChainData.getCurrentEpoch().orElseThrow(),
-                recentChainData.getJustifiedCheckpoint().orElseThrow(),
-                recentChainData.getFinalizedCheckpoint().orElseThrow());
+          final Optional<UInt64> proposingSlot) {
+    forkChoiceStateProvider
+        .getForkChoiceState()
+        .thenAccept(
+            forkChoiceState -> {
+              forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
 
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
-
-    if (optimisticSyncing
-        .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
-        .orElse(true)) {
-      optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
-      optimisticSyncSubscribers.deliver(
-          OptimisticHeadSubscriber::onOptimisticHeadChanged, forkChoiceState.isHeadOptimistic());
-    }
+              if (optimisticSyncing
+                  .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
+                  .orElse(true)) {
+                optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
+                optimisticSyncSubscribers.deliver(
+                    OptimisticHeadSubscriber::onOptimisticHeadChanged,
+                    forkChoiceState.isHeadOptimistic());
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private void applyVotesFromBlock(

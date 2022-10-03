@@ -85,6 +85,8 @@ class ForkChoiceNotifierTest {
       Optional.of(Eth1Address.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
+  private final ForkChoiceStateProvider forkChoiceStateProvider =
+      mock(ForkChoiceStateProvider.class);
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
@@ -120,6 +122,7 @@ class ForkChoiceNotifierTest {
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
+            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -159,6 +162,7 @@ class ForkChoiceNotifierTest {
                 defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
+            forkChoiceStateProvider,
             eventThread,
             timeProvider,
             spec,
@@ -834,6 +838,9 @@ class ForkChoiceNotifierTest {
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    when(forkChoiceStateProvider.getForkChoiceState())
+        .thenReturn(SafeFuture.completedFuture(forkChoiceState));
 
     when(executionLayerChannel.engineForkChoiceUpdated(
             forkChoiceState, Optional.of(payloadBuildingAttributes)))
