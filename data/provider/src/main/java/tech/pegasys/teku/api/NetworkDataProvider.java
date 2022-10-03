@@ -102,7 +102,7 @@ public class NetworkDataProvider {
     return network.getPeer(nodeId);
   }
 
-  private <R> Peer toPeer(final Eth2Peer eth2Peer) {
+  private Peer toPeer(final Eth2Peer eth2Peer) {
     final String peerId = eth2Peer.getId().toBase58();
     final String address = eth2Peer.getAddress().toExternalForm();
     final State state = eth2Peer.isConnected() ? State.connected : State.disconnected;

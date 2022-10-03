@@ -112,7 +112,7 @@ public class TerminalPowBlockMonitor {
     }
     timer.get().cancel();
     timer = Optional.empty();
-    LOG.info("Monitor has stopped");
+    LOG.info("TTD monitoring has stopped.");
   }
 
   public synchronized boolean isRunning() {
@@ -138,7 +138,7 @@ public class TerminalPowBlockMonitor {
     pollingCounter++;
 
     if (isMergeTransitionComplete(recentChainData.getChainHead())) {
-      LOG.info("MERGE is completed. Stopping.");
+      LOG.info("MERGE is completed.");
       stop();
       return;
     }

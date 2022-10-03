@@ -232,7 +232,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @return a new SafeFuture that is completed when all of the given SafeFutures complete
    * @throws NullPointerException if the array or any of its elements are {@code null}
    */
-  public static <U> SafeFuture<Void> allOfFailFast(final SafeFuture<?>... futures) {
+  public static SafeFuture<Void> allOfFailFast(final SafeFuture<?>... futures) {
     final SafeFuture<Void> complete = new SafeFuture<>();
     Stream.of(futures).forEach(future -> future.finish(() -> {}, complete::completeExceptionally));
     allOf(futures).propagateTo(complete);

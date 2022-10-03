@@ -43,11 +43,9 @@ public class LevelDbDatabaseFactory {
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
-    final V6SchemaCombinedSnapshot combinedSchema =
-        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
@@ -83,11 +81,9 @@ public class LevelDbDatabaseFactory {
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
-    final V6SchemaCombinedSnapshot schema =
-        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
@@ -114,12 +110,10 @@ public class LevelDbDatabaseFactory {
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
-      final boolean storeVotesEquivocation,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
-    final V6SchemaCombinedTreeState schema =
-        new V6SchemaCombinedTreeState(spec, storeVotesEquivocation);
+    final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());

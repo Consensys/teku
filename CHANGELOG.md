@@ -20,5 +20,10 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Improve Execution Layer error logging
+- The `voluntary-exit` subcommand can restrict the exit to a specific list of validators public keys using the option `--validator-public-keys`.
+  Example: `teku voluntary-exit --beacon-node-api-endpoint=<ENDPOINT>[,<ENDPOINT>...]... --data-validator-path=<PATH> --include-keymanager-keys=<BOOLEAN> --validator-keys=<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE> --validator-public-keys=<PUBKEY>[,<PUBKEY>...]...`
+  To include validator keys managed via keymanager APIs, the option `--include-keymanager-keys` could be set to `true` (The default value is set to `false`)
 
 ### Bug Fixes
+- Filter out unknown validators when sending validator registrations to the builder network

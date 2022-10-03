@@ -34,6 +34,9 @@ public class EventLogger {
   public static final EventLogger EVENT_LOG =
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
+  private static final String EXECUTION_CLIENT_READINESS_USER_REMINDER =
+      "Make sure the Execution Client is online and in sync.";
+
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
@@ -129,18 +132,28 @@ public class EventLogger {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
 
-  public void executionClientIsOffline(final Throwable error, final boolean couldBeAuthError) {
+  public void executionClientIsOnline() {
+    info("Execution Client is online", Color.GREEN);
+  }
+
+  public void executionClientRequestFailed(final Throwable error, final boolean couldBeAuthError) {
     error(
-        "Execution Client is offline"
+        "Execution Client request failed. "
             + (couldBeAuthError
-                ? ". Check the same JWT secret is configured for Teku and the execution client."
-                : ""),
+                ? "Check the same JWT secret is configured for Teku and the Execution Client."
+                : EXECUTION_CLIENT_READINESS_USER_REMINDER),
         Color.RED,
         error);
   }
 
-  public void executionClientIsOnline() {
-    info("Execution Client is online", Color.GREEN);
+  public void executionClientRequestTimedOut() {
+    warn(
+        "Execution Client request timed out. " + EXECUTION_CLIENT_READINESS_USER_REMINDER,
+        Color.YELLOW);
+  }
+
+  public void executionClientRecovered() {
+    info("Execution Client request succeeded after a previous failure", Color.GREEN);
   }
 
   public void builderIsOffline(final String errorMessage) {

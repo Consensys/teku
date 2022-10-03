@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.server;
 
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
@@ -40,7 +39,6 @@ public class StorageConfiguration {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
-  private final boolean storeVotesEquivocation;
   private final boolean asyncStorageEnabled;
 
   private StorageConfiguration(
@@ -50,7 +48,6 @@ public class StorageConfiguration {
       final DatabaseVersion dataStorageCreateDbVersion,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
-      final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
@@ -62,7 +59,6 @@ public class StorageConfiguration {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
-    this.storeVotesEquivocation = storeVotesEquivocation;
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.blockMigrationBatchSize = blockMigrationBatchSize;
     this.blockMigrationBatchDelay = blockMigrationBatchDelay;
@@ -98,10 +94,6 @@ public class StorageConfiguration {
     return maxKnownNodeCacheSize;
   }
 
-  public boolean isStoreVotesEquivocation() {
-    return storeVotesEquivocation;
-  }
-
   public boolean isStoreBlockExecutionPayloadSeparately() {
     return storeBlockExecutionPayloadSeparately;
   }
@@ -128,8 +120,6 @@ public class StorageConfiguration {
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
     private long dataStorageFrequency = DEFAULT_STORAGE_FREQUENCY;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
-    private boolean storeVotesEquivocation =
-        Eth2NetworkConfiguration.DEFAULT_EQUIVOCATING_INDICES_ENABLED;
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
@@ -171,11 +161,6 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder storeVotesEquivocation(boolean storeVotesEquivocation) {
-      this.storeVotesEquivocation = storeVotesEquivocation;
-      return this;
-    }
-
     public Builder specProvider(Spec spec) {
       this.spec = spec;
       return this;
@@ -208,7 +193,6 @@ public class StorageConfiguration {
           dataStorageCreateDbVersion,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
-          storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
