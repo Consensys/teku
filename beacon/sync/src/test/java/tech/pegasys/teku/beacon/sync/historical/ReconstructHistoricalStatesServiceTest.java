@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -169,9 +168,8 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldHandleStartWithPartialStorage(@TempDir final Path tempDir) throws IOException {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater updater = storageSystem.chainUpdater();
-    updater.initializeGenesis();
-    final SignedBlockAndState blockAndState = updater.advanceChain(5);
-    updater.updateBestBlock(blockAndState);
+    updater.initializeGenesis(chainBuilder.getGenesis());
+    updater.syncWithUpToSlot(chainBuilder, 5);
 
     when(chainDataClient.getLatestStateAtSlot(any()))
         .thenAnswer(
@@ -179,16 +177,14 @@ public class ReconstructHistoricalStatesServiceTest {
                 storageSystem
                     .combinedChainDataClient()
                     .getLatestStateAtSlot(invocation.getArgument(0)));
-    final Checkpoint initialAnchor = getInitialAnchor();
+    final Checkpoint initialAnchor =
+        storageSystem.chainBuilder().getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(
-            storageUpdateChannel, // todo check incorrect number of invocations
-            times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
-        .onFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(2)).onFinalizedState(any(), any());
   }
 
   private Checkpoint getInitialAnchor() {

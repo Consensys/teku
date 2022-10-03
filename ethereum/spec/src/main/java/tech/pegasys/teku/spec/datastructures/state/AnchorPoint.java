@@ -76,6 +76,18 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(spec, checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
 
+  public static AnchorPoint fromGenesisBlockAndState(
+      final Spec spec, final SignedBlockAndState genesis) {
+    checkArgument(isGenesisState(genesis.getState()), "Invalid genesis state supplied");
+
+    final SignedBeaconBlock signedGenesisBlock = genesis.getBlock();
+    final Bytes32 genesisBlockRoot = signedGenesisBlock.getMessage().hashTreeRoot();
+    final UInt64 genesisEpoch = spec.getCurrentEpoch(genesis.getState());
+    final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
+
+    return new AnchorPoint(spec, genesisCheckpoint, genesis.getState(), signedGenesisBlock);
+  }
+
   public static AnchorPoint fromGenesisState(final Spec spec, final BeaconState genesisState) {
     checkArgument(isGenesisState(genesisState), "Invalid genesis state supplied");
 

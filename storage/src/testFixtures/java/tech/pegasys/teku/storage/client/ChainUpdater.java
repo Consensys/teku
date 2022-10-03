@@ -116,6 +116,12 @@ public class ChainUpdater {
                     Bytes32.ZERO)));
   }
 
+  public SignedBlockAndState initializeGenesis(final SignedBlockAndState genesisBlockAndState) {
+    chainBuilder.assignGenesis(genesisBlockAndState);
+    recentChainData.initializeFromGenesis(genesisBlockAndState, UInt64.ZERO);
+    return genesisBlockAndState;
+  }
+
   public SignedBlockAndState initializeGenesis(
       final boolean signDeposits,
       final UInt64 depositAmount,
@@ -178,6 +184,14 @@ public class ChainUpdater {
   public void syncWith(final ChainBuilder otherChain) {
     otherChain.streamBlocksAndStates().forEach(this::saveBlock);
     updateBestBlock(otherChain.getLatestBlockAndState());
+  }
+
+  public void syncWithUpToSlot(final ChainBuilder otherChain, final long slot) {
+    otherChain
+        .streamBlocksAndStates()
+        .filter(signedBlockAndState -> signedBlockAndState.getSlot().isLessThanOrEqualTo(slot))
+        .forEach(this::saveBlock);
+    updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
   }
 
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
