@@ -518,8 +518,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof);
+    LOG.info("Local addAggregate:{}", attestation);
     return attestationManager
-        .addAggregate(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(attestation)
         .thenPeek(
             result -> {
               if (result.isReject()) {

@@ -115,6 +115,7 @@ public class AttestationManager extends Service
   }
 
   private void validateForGossipAndNotifySendSubscribers(ValidateableAttestation attestation) {
+    LOG.info("validateForGossipAndNotifySendSubscribers: {}", attestation);
     if (attestation.isAggregate()) {
       // We know the Attestation is valid, but need to validate the SignedAggregateAndProof wrapper
       aggregateValidator
@@ -122,8 +123,15 @@ public class AttestationManager extends Service
           .finish(
               result -> {
                 if (result.isAccept()) {
+                  LOG.info(
+                      "validateForGossipAndNotifySendSubscribers, resultIsAccept: {}", attestation);
                   attestationsToSendSubscribers.deliver(
                       ProcessedAttestationListener::accept, attestation);
+                } else if (attestation.isProducedLocally()) {
+                  LOG.info(
+                      "validateForGossipAndNotifySendSubscribers, isProducedLocallyNotAccepted: {}, result: {}",
+                      attestation,
+                      result);
                 }
               },
               error ->
