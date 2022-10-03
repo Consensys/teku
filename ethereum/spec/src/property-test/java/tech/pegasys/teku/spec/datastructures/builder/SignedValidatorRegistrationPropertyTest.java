@@ -16,25 +16,17 @@ package tech.pegasys.teku.spec.datastructures.builder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedValidatorRegistrationPropertyTest {
   @Property
   void roundTrip(
-      @ForAll("signedValidatorRegistration") final SignedValidatorRegistration registration)
+      @ForAll(supplier = SignedValidatorRegistrationSupplier.class)
+          final SignedValidatorRegistration registration)
       throws JsonProcessingException {
     final SignedValidatorRegistrationSchema schema = registration.getSchema();
     final DeserializableTypeDefinition<SignedValidatorRegistration> typeDefinition =
@@ -49,17 +41,5 @@ public class SignedValidatorRegistrationPropertyTest {
     final String json = JsonUtil.serialize(registration, typeDefinition);
     final SignedValidatorRegistration fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(registration);
-  }
-
-  @Provide
-  Arbitrary<SignedValidatorRegistration> signedValidatorRegistration() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone =
-        Arbitraries.of(SpecMilestone.class)
-            .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX));
-    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
-    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(DataStructureUtil::randomSignedValidatorRegistration);
   }
 }
