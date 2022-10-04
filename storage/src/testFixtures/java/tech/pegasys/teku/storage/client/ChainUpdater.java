@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.List;
 import java.util.Optional;
@@ -118,7 +119,7 @@ public class ChainUpdater {
 
   public SignedBlockAndState initializeGenesis(final SignedBlockAndState genesisBlockAndState) {
     chainBuilder.assignGenesis(genesisBlockAndState);
-    recentChainData.initializeFromGenesis(genesisBlockAndState, UInt64.ZERO);
+    recentChainData.initializeFromGenesis(genesisBlockAndState, GENESIS_SLOT);
     return genesisBlockAndState;
   }
 
