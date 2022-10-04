@@ -94,7 +94,7 @@ public class BeaconNodeReadinessManagerTest {
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
-    verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
+    verify(validatorLogger).primaryBeaconNodeIsBackAndReady(true);
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeBackInSync();
   }
 
