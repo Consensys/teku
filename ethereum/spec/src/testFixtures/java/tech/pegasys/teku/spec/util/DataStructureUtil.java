@@ -703,6 +703,10 @@ public final class DataStructureUtil {
     return signedBlock(beaconBlock);
   }
 
+  public SignedBeaconBlock randomSignedBeaconBlock() {
+    return randomSignedBeaconBlock(randomUInt64());
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
     return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -749,6 +753,10 @@ public final class DataStructureUtil {
     return new BeaconBlockBuilder(specVersion, this);
   }
 
+  public BeaconBlock randomBeaconBlock() {
+    return randomBeaconBlock(randomUInt64());
+  }
+
   public BeaconBlock randomBeaconBlock(long slotNum) {
     return randomBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -766,6 +774,10 @@ public final class DataStructureUtil {
         previousRoot,
         stateRoot,
         body);
+  }
+
+  public BeaconBlock randomBlindedBeaconBlock() {
+    return randomBlindedBeaconBlock(randomUInt64());
   }
 
   public BeaconBlock randomBlindedBeaconBlock(long slotNum) {
@@ -891,6 +903,10 @@ public final class DataStructureUtil {
   public BeaconBlockHeader randomBeaconBlockHeader(final UInt64 slot, final UInt64 proposerIndex) {
     return new BeaconBlockHeader(
         slot, proposerIndex, randomBytes32(), randomBytes32(), randomBytes32());
+  }
+
+  public BeaconBlockBody randomBlindedBeaconBlockBody() {
+    return randomBlindedBeaconBlockBody(randomUInt64());
   }
 
   public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
@@ -1431,6 +1447,10 @@ public final class DataStructureUtil {
     return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
+  public SignedContributionAndProof randomSignedContributionAndProof() {
+    return randomSignedContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
     return randomSignedContributionAndProof(slot, randomBytes32());
   }
@@ -1449,6 +1469,10 @@ public final class DataStructureUtil {
         .create(contributionAndProof, randomSignature());
   }
 
+  public ContributionAndProof randomContributionAndProof() {
+    return randomContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public ContributionAndProof randomContributionAndProof(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(slot)
@@ -1457,6 +1481,10 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomSyncCommitteeContribution(slot, beaconBlockRoot),
             randomSignature());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution() {
+    return randomSyncCommitteeContribution(randomUInt64(), randomBytes32());
   }
 
   public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {

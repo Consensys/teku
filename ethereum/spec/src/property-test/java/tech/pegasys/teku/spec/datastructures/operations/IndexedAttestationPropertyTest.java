@@ -18,31 +18,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class IndexedAttestationPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = IndexedAttestationSupplier.class)
+          final IndexedAttestation indexedAttestation)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestation.IndexedAttestationSchema schema = indexedAttestation.getSchema();
     final DeserializableTypeDefinition<IndexedAttestation> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getIndexedAttestationSchema()
-            .getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = indexedAttestation.sszSerialize();
+    final IndexedAttestation fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(indexedAttestation);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(indexedAttestation, typeDefinition);
-    final IndexedAttestation result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(indexedAttestation);
+    final IndexedAttestation fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(indexedAttestation);
   }
 }

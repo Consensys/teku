@@ -18,31 +18,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AttestationPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = AttestationSupplier.class) final Attestation attestation)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final DeserializableTypeDefinition<Attestation> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
+    final Attestation.AttestationSchema schema = attestation.getSchema();
+    final DeserializableTypeDefinition<Attestation> typeDefinition = schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = attestation.sszSerialize();
+    final Attestation fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(attestation);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(attestation, typeDefinition);
-    final Attestation result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(attestation);
+    final Attestation fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(attestation);
   }
 }

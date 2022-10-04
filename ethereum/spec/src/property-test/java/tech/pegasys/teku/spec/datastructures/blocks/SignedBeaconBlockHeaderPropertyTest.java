@@ -18,28 +18,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBeaconBlockHeaderPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = SignedBeaconBlockHeaderSupplier.class)
+          final SignedBeaconBlockHeader header)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SignedBeaconBlockHeader.SignedBeaconBlockHeaderSchema schema = header.getSchema();
     final DeserializableTypeDefinition<SignedBeaconBlockHeader> typeDefinition =
-        header.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = header.sszSerialize();
+    final SignedBeaconBlockHeader fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(header);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(header, typeDefinition);
-    final SignedBeaconBlockHeader result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(header);
+    final SignedBeaconBlockHeader fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(header);
   }
 }
