@@ -150,29 +150,27 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void doppelgangerDetectionIsDisabledByDefault() {
+  public void doppelgangerDetectionShouldBeDisabledByDefault() {
 
-    final String[] args = {
-            "vc", "--network", "minimal"
-    };
+    final String[] args = {"vc", "--network", "minimal"};
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().isDoppelgangerDetectionEnabled())
-            .isFalse();
+        .isFalse();
   }
 
   @Test
-  public void shouldenableDoppelgangerDetection() {
+  public void shouldEnableDoppelgangerDetection() {
 
     final String[] args = {
-            "vc", "--network", "minimal", "--Xdoppelganger-detection-enabled", "true"
+      "vc", "--network", "minimal", "--Xdoppelganger-detection-enabled", "true"
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().isDoppelgangerDetectionEnabled())
-            .isTrue();
+        .isTrue();
   }
 
   private String pathFor(final String filename) {
