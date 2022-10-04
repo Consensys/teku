@@ -98,7 +98,7 @@ public class ValidatorLogger {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sThe%s beacon node is back and ready to accept requests now",
+                "%sThe%s beacon node is back in sync and ready to accept requests now",
                 PREFIX, failoversConfigured ? " primary" : ""),
             Color.GREEN));
   }
