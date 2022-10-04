@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
@@ -73,6 +74,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
 
@@ -86,6 +88,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
           chainDataProvider,
+          nodeDataProvider,
           combinedChainDataClient,
           syncStateProvider,
           blockFactory,

@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -204,5 +205,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
         .registerValidators(validatorRegistrations);
+  }
+
+  @Override
+  public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch) {
+    return dutiesProviderChannel.checkValidatorsDoppelganger(validatorIndices, epoch);
   }
 }

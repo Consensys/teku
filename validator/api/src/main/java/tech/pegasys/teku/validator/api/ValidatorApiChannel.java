@@ -92,4 +92,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
       Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
   SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
+
+  SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch);
 }

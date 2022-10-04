@@ -22,6 +22,8 @@ import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
+import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,7 +38,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -80,6 +84,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
@@ -102,6 +107,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final ChainDataProvider chainDataProvider;
+  private final NodeDataProvider nodeDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
@@ -122,6 +128,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
+      final NodeDataProvider nodeDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
@@ -140,6 +147,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
+    this.nodeDataProvider = nodeDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
@@ -655,6 +663,29 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               return proposersDataManager.updateValidatorRegistrations(
                   applicableValidatorRegistrations, combinedChainDataClient.getCurrentSlot());
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, final UInt64 epoch) {
+    return nodeDataProvider
+        .getValidatorLiveness(validatorIndices, epoch, chainDataProvider.getCurrentEpoch())
+        .thenApply(
+            validatorLivenessAtEpoches ->
+                Optional.of(
+                    getDoppelgangerDetectionResultFromLiveness(validatorLivenessAtEpoches)));
+  }
+
+  private DoppelgangerDetectionResult getDoppelgangerDetectionResultFromLiveness(
+      final Optional<List<ValidatorLivenessAtEpoch>> maybeValidatorsLiveness) {
+    Object2BooleanMap<UInt64> validatorsLiveness = new Object2BooleanArrayMap<>();
+    maybeValidatorsLiveness.ifPresent(
+        validatorLivenessAtEpoches ->
+            validatorLivenessAtEpoches.forEach(
+                validatorLivenessAtEpoch ->
+                    validatorsLiveness.put(
+                        validatorLivenessAtEpoch.getIndex(), validatorLivenessAtEpoch.isLive())));
+    return new DoppelgangerDetectionResult(validatorsLiveness);
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
