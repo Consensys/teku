@@ -19,6 +19,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
@@ -599,6 +602,13 @@ public class TekuNode extends Node {
       // Can't capture artifacts if it's not running but then it probably didn't cause the failure
       LOG.debug("Not capturing artifacts from {} because it is not running", nodeAlias);
     }
+  }
+
+  public void waitForAggregateGossipReceived() {
+    waitForMetric(
+        withNameEqualsTo("libp2p_gossip_messages_total"),
+        withLabelValueSubstring("topic", "beacon_aggregate_and_proof"),
+        withValueGreaterThan(0));
   }
 
   public static class Config {
