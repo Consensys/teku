@@ -122,7 +122,7 @@ public class ForkChoiceUpdateData {
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {
     if (payloadBuildingAttributes.isEmpty()) {
       LOG.debug("isPayloadIdSuitable - payloadAttributes.isEmpty, returning false");
-      // EL building a block with wrong timestamp
+      // EL is not building a block
       return false;
     }
 

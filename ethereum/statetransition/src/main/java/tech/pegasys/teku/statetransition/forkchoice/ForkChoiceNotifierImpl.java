@@ -184,7 +184,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
                 if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   throw new IllegalStateException(
-                      "recalculated forkChoiceUpdateData still not suitable");
+                      "payloadId still not suitable after requesting a new one via FcU with recalculated data");
                 }
 
                 return forkChoiceUpdateData.getExecutionPayloadContext();
