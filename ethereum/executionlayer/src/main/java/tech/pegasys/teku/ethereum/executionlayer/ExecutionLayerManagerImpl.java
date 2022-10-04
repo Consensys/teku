@@ -228,7 +228,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .forkChoiceUpdated(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
             PayloadAttributesV1.fromInternalPayloadBuildingAttributes(payloadBuildingAttributes))
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
         .thenPeek(
             forkChoiceUpdatedResult ->
@@ -263,7 +263,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return executionEngineClient
         .getPayload(executionPayloadContext.getPayloadId())
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
                 () ->
@@ -285,7 +285,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return executionEngineClient
         .newPayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(
             payloadStatus ->
@@ -304,7 +304,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return executionEngineClient
         .exchangeTransitionConfiguration(
             TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
         .thenPeek(
             remoteTransitionConfiguration ->
@@ -330,7 +330,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return builderClient
         .orElseThrow()
         .registerValidators(slot, signedValidatorRegistrations)
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
         .thenPeek(
             __ ->
                 LOG.trace(
@@ -383,7 +383,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return builderClient
         .orElseThrow()
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
         .thenPeek(
             signedBuilderBidMaybe ->
                 LOG.trace(
@@ -474,7 +474,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 new RuntimeException(
                     "Unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBeaconBlock)
-        .thenApply(ExecutionLayerManagerImpl::unwrapResponseOrThrow)
+        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
         .thenPeek(
             executionPayload -> {
               logReceivedBuilderExecutionPayload(executionPayload);
@@ -500,8 +500,23 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return latestBuilderAvailability.get();
   }
 
-  private static <K> K unwrapResponseOrThrow(final Response<K> response) {
-    checkArgument(response.isSuccess(), "Invalid remote response: %s", response.getErrorMessage());
+  private static <K> K unwrapExecutionClientResponseOrThrow(final Response<K> response) {
+    return unwrapResponseOrThrow(RemoteService.EXECUTION_CLIENT, response);
+  }
+
+  private static <K> K unwrapBuilderResponseOrThrow(final Response<K> response) {
+    return unwrapResponseOrThrow(RemoteService.BUILDER, response);
+  }
+
+  private static <K> K unwrapResponseOrThrow(
+      final RemoteService remoteService, final Response<K> response) {
+    if (response.isFailure()) {
+      final String errorMessage =
+          String.format(
+              "Invalid remote response from the %s: %s",
+              remoteService.displayName, response.getErrorMessage());
+      throw new InvalidRemoteResponseException(errorMessage);
+    }
     return response.getPayload();
   }
 
@@ -589,6 +604,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
       this.executionPayload = executionPayload;
       this.reason = reason;
+    }
+  }
+
+  private enum RemoteService {
+    EXECUTION_CLIENT("execution client"),
+    BUILDER("builder");
+
+    private final String displayName;
+
+    RemoteService(final String displayName) {
+      this.displayName = displayName;
     }
   }
 
