@@ -179,12 +179,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
                         .withForkChoiceState(forkChoiceState)
                         .withPayloadBuildingAttributes(payloadBuildingAttributes);
 
+                sendForkChoiceUpdated();
+
                 if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   throw new IllegalStateException(
                       "recalculated forkChoiceUpdateData still not suitable");
                 }
 
-                sendForkChoiceUpdated();
                 return forkChoiceUpdateData.getExecutionPayloadContext();
               })
           .thenCompose(
