@@ -14,11 +14,11 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 public class BuilderBidValidationException extends Exception {
-  public BuilderBidValidationException(String message) {
+  public BuilderBidValidationException(final String message) {
     super(message);
   }
 
-  public BuilderBidValidationException(String message, Throwable cause) {
+  public BuilderBidValidationException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

@@ -16,46 +16,30 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
 public class SyncAggregatePropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SyncAggregate syncAggregate = dataStructureUtil.randomSyncAggregate();
+    final SyncAggregateSchema schema = syncAggregate.getSchema();
     final DeserializableTypeDefinition<SyncAggregate> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getBeaconBlockBodySchema()
-            .toVersionAltair()
-            .orElseThrow()
-            .getSyncAggregateSchema()
-            .getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(syncAggregate, typeDefinition);
-    final SyncAggregate result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(syncAggregate);
-  }
+        schema.getJsonTypeDefinition();
 
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR));
+    // Round-trip SSZ serialization.
+    final Bytes ssz = syncAggregate.sszSerialize();
+    final SyncAggregate fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(syncAggregate);
+
+    // Round-trip JSON serialization.
+    final String json = JsonUtil.serialize(syncAggregate, typeDefinition);
+    final SyncAggregate fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(syncAggregate);
   }
 }

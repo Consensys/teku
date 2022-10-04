@@ -16,47 +16,32 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
-import net.jqwik.api.constraints.Size;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 
 public class ContributionAndProofPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long slot,
-      @ForAll @Size(32) final byte[] beaconBlockRoot)
+      @ForAll(supplier = ContributionAndProofSupplier.class)
+          final ContributionAndProof contributionAndProof)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final ContributionAndProof contributionAndProof =
-        dataStructureUtil.randomContributionAndProof(
-            UInt64.fromLongBits(slot), Bytes32.wrap(beaconBlockRoot));
+    final ContributionAndProofSchema schema = contributionAndProof.getSchema();
     final DeserializableTypeDefinition<ContributionAndProof> typeDefinition =
-        contributionAndProof.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(contributionAndProof, typeDefinition);
-    final ContributionAndProof result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(contributionAndProof);
-  }
+        schema.getJsonTypeDefinition();
 
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR));
+    // Round-trip SSZ serialization.
+    final Bytes ssz = contributionAndProof.sszSerialize();
+    final ContributionAndProof fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(contributionAndProof);
+
+    // Round-trip JSON serialization.
+    final String json = JsonUtil.serialize(contributionAndProof, typeDefinition);
+    final ContributionAndProof fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(contributionAndProof);
   }
 }

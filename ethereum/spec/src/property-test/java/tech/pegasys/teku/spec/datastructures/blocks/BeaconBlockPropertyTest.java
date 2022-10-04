@@ -18,33 +18,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlockPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long slot)
+  void roundTrip(@ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(UInt64.fromLongBits(slot));
-    final DeserializableTypeDefinition<BeaconBlock> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .getBeaconBlockSchema()
-            .getJsonTypeDefinition();
+    final BeaconBlockSchema schema = block.getSchema();
+    final DeserializableTypeDefinition<BeaconBlock> typeDefinition = schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = block.sszSerialize();
+    final BeaconBlock fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(block);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(block, typeDefinition);
-    final BeaconBlock result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(block);
+    final BeaconBlock fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(block);
   }
 }
