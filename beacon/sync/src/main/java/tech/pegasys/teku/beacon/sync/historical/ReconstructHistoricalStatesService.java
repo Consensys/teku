@@ -104,7 +104,7 @@ public class ReconstructHistoricalStatesService extends Service {
                             latestState.map(BeaconState::getSlot).orElse(GENESIS_SLOT).increment();
                         applyBlocks(state, slot, anchorSlot);
                       })
-                  .ifExceptionGetsHereRaiseABug(); // todo fix
+                  .ifExceptionGetsHereRaiseABug(); // todo check
             });
   }
 
