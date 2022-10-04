@@ -40,5 +40,9 @@ public class AttestationGossipAcceptanceTest extends AcceptanceTestBase {
     node2.start();
 
     node2.waitForAttestationBeingGossiped(32, 64);
+
+    // Check aggregate gossip is also being received by both nodes.
+    node1.waitForAggregateGossipReceived();
+    node2.waitForAggregateGossipReceived();
   }
 }

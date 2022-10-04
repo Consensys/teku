@@ -59,6 +59,14 @@ public class MetricConditions {
                         && actualLabels.get(entry.getKey()).equals(entry.getValue()));
   }
 
+  public static MetricLabelsCondition withLabelValueSubstring(
+      final String labelName, final String labelValueSubstring) {
+    return actualLabels -> {
+      final String actual = actualLabels.get(labelName);
+      return actual != null && actual.contains(labelValueSubstring);
+    };
+  }
+
   public static MetricValuesCondition withValueEqualTo(double value) {
     return (actualValue) -> DoubleMath.fuzzyEquals(actualValue, value, DOUBLE_COMPARE_TOLERANCE);
   }
