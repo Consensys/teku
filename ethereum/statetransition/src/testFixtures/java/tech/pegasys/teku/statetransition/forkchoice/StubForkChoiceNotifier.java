@@ -36,17 +36,19 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   }
 
   @Override
-  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+  public long subscribeToForkChoiceUpdatedResult(
+      final ForkChoiceUpdatedResultSubscriber subscriber) {
     return subscribers.subscribe(subscriber);
   }
 
   @Override
-  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
+  public boolean unsubscribeFromForkChoiceUpdatedResult(final long subscriberId) {
     return subscribers.unsubscribe(subscriberId);
   }
 
   @Override
-  public void onForkChoiceUpdated(ForkChoiceState forkChoiceState) {
+  public void onForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     subscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
@@ -54,17 +56,17 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   }
 
   @Override
-  public void onAttestationsDue(UInt64 slot) {}
+  public void onAttestationsDue(final UInt64 slot) {}
 
   @Override
-  public void onSyncingStatusChanged(boolean inSync) {}
+  public void onSyncingStatusChanged(final boolean inSync) {}
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      Bytes32 parentBeaconBlockRoot, UInt64 blockSlot) {
+      final Bytes32 parentBeaconBlockRoot, UInt64 blockSlot) {
     return null;
   }
 
   @Override
-  public void onTerminalBlockReached(Bytes32 executionBlockHash) {}
+  public void onTerminalBlockReached(final Bytes32 executionBlockHash) {}
 }

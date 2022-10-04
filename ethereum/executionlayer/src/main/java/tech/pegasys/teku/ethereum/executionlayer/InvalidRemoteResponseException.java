@@ -13,12 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-public class BuilderBidValidationException extends Exception {
-  public BuilderBidValidationException(final String message) {
-    super(message);
-  }
+public class InvalidRemoteResponseException extends RuntimeException {
 
-  public BuilderBidValidationException(final String message, final Throwable cause) {
-    super(message, cause);
+  public InvalidRemoteResponseException(final String message) {
+    super(message);
   }
 }
