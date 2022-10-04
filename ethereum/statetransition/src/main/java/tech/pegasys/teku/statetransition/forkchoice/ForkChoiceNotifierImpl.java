@@ -134,6 +134,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
    *     <p>2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
       final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
