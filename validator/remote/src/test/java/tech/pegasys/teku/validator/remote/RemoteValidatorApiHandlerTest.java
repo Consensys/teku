@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,6 +51,8 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -74,6 +77,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -554,6 +558,57 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(result).isCompleted();
     verify(typeDefClient).registerValidators(validatorRegistrations);
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_InvokeApiWithCorrectRequest()
+      throws ExecutionException, InterruptedException {
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isEmpty();
+    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
+  }
+
+  @Test
+  public void checkValidatorsDoppelgangerShouldReturnDoppelgangerDetectionResult()
+      throws ExecutionException, InterruptedException {
+    final UInt64 firstIndex = dataStructureUtil.randomUInt64();
+    final UInt64 secondIndex = dataStructureUtil.randomUInt64();
+    final UInt64 thirdIndex = dataStructureUtil.randomUInt64();
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+
+    List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
+
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches =
+        List.of(
+            new ValidatorLivenessAtEpoch(firstIndex, epoch, false),
+            new ValidatorLivenessAtEpoch(secondIndex, epoch, true),
+            new ValidatorLivenessAtEpoch(thirdIndex, epoch, true));
+    PostValidatorLivenessResponse postValidatorLivenessResponse =
+        new PostValidatorLivenessResponse(validatorLivenessAtEpoches);
+    when(apiClient.sendValidatorsLiveness(any(), any()))
+        .thenReturn(Optional.of(postValidatorLivenessResponse));
+
+    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isPresent();
+    assertThat(result.get().get().validatorIsLive(firstIndex)).isFalse();
+    assertThat(result.get().get().validatorIsLive(secondIndex)).isTrue();
+    assertThat(result.get().get().validatorIsLive(thirdIndex)).isTrue();
+    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
   }
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {

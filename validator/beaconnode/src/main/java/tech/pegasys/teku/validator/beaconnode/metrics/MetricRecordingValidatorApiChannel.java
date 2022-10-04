@@ -277,7 +277,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
       List<UInt64> validatorIndices, UInt64 epoch) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.checkValidatorsDoppelganger(validatorIndices, epoch),
         BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }

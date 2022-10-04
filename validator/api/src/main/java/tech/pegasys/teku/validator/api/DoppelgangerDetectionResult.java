@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.validator.api;
 
-import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DoppelgangerDetectionResult {
@@ -27,5 +28,9 @@ public class DoppelgangerDetectionResult {
   public boolean validatorIsLive(UInt64 validatorIndex) {
     return this.validators.containsKey(validatorIndex)
         && this.validators.getOrDefault(validatorIndex, false);
+  }
+
+  public Set<UInt64> getLiveValidatorIndices() {
+    return validators.keySet().stream().filter(this::validatorIsLive).collect(Collectors.toSet());
   }
 }

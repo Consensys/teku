@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,6 +53,7 @@ import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
@@ -102,6 +104,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
@@ -1008,6 +1011,64 @@ class ValidatorApiHandlerTest {
     SafeFutureAssert.assertThatSafeFuture(result)
         .isCompletedExceptionallyWithMessage(
             "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_ShouldReturnEmptyResult()
+      throws ExecutionException, InterruptedException {
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final Optional<UInt64> currentEpoch = Optional.of(epoch.plus(dataStructureUtil.randomEpoch()));
+
+    when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
+    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+
+    verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isPresent();
+    assertThat(result.get().get().getLiveValidatorIndices()).isEmpty();
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_ShouldReturnDoppelgangerDetectionResult()
+      throws ExecutionException, InterruptedException {
+    final UInt64 firstIndex = dataStructureUtil.randomUInt64();
+    final UInt64 secondIndex = dataStructureUtil.randomUInt64();
+    final UInt64 thirdIndex = dataStructureUtil.randomUInt64();
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+
+    final Optional<UInt64> currentEpoch = Optional.of(epoch.plus(dataStructureUtil.randomEpoch()));
+
+    List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
+
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches =
+        List.of(
+            new ValidatorLivenessAtEpoch(firstIndex, epoch, false),
+            new ValidatorLivenessAtEpoch(secondIndex, epoch, true),
+            new ValidatorLivenessAtEpoch(thirdIndex, epoch, true));
+
+    when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(validatorLivenessAtEpoches)));
+
+    when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
+
+    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+
+    verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isPresent();
+    assertThat(result.get().get().validatorIsLive(firstIndex)).isFalse();
+    assertThat(result.get().get().validatorIsLive(secondIndex)).isTrue();
+    assertThat(result.get().get().validatorIsLive(thirdIndex)).isTrue();
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
