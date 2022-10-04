@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public interface ForkChoiceNotifier {
-  void onForkChoiceUpdated(ForkChoiceState forkChoiceState);
+  void onForkChoiceUpdated(ForkChoiceState forkChoiceState, Optional<UInt64> proposingSlot);
 
   void onAttestationsDue(UInt64 slot);
 

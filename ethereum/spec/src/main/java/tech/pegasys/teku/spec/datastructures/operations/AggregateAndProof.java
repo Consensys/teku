@@ -77,4 +77,9 @@ public class AggregateAndProof
   public BLSSignature getSelectionProof() {
     return getField2().getSignature();
   }
+
+  @Override
+  public AggregateAndProofSchema getSchema() {
+    return (AggregateAndProofSchema) super.getSchema();
+  }
 }

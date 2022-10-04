@@ -16,40 +16,28 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ExecutionPayloadPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = ExecutionPayloadSupplier.class) final ExecutionPayload payload)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-
-    final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayloadSchema schema = payload.getSchema();
     final DeserializableTypeDefinition<ExecutionPayload> typeDefinition =
-        payload.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(payload, typeDefinition);
-    final ExecutionPayload result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(payload);
-  }
+        schema.getJsonTypeDefinition();
 
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX));
+    // Round-trip SSZ serialization.
+    final Bytes ssz = payload.sszSerialize();
+    final ExecutionPayload fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(payload);
+
+    // Round-trip JSON serialization.
+    final String json = JsonUtil.serialize(payload, typeDefinition);
+    final ExecutionPayload fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(payload);
   }
 }

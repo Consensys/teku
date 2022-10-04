@@ -163,14 +163,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<Boolean> processHead() {
-    return processHead(Optional.empty());
+    return processHead(Optional.empty(), false);
   }
 
-  public SafeFuture<Boolean> processHead(UInt64 nodeSlot) {
-    return processHead(Optional.of(nodeSlot));
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), false);
   }
 
-  private SafeFuture<Boolean> processHead(Optional<UInt64> nodeSlot) {
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot, final boolean isPreProposal) {
+    return processHead(Optional.of(nodeSlot), isPreProposal);
+  }
+
+  private SafeFuture<Boolean> processHead(
+      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -220,7 +225,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+                          isPreProposal ? nodeSlot : Optional.empty());
+
                       return true;
                     }));
   }
@@ -402,7 +409,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (forkChoiceUpdateHeadOnBlockImportEnabled) {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     }
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
 
@@ -508,7 +515,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+      final Optional<UInt64> proposingSlot) {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
@@ -516,7 +524,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
 
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
 
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
@@ -674,8 +682,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
-        .thenCompose(__ -> processHead(slot))
+    return SafeFuture.allOf(
+            tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
+        .thenCompose(__ -> processHead(slot, true))
         .toVoid();
   }
 

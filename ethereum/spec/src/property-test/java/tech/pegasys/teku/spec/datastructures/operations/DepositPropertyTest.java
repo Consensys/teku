@@ -18,28 +18,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = DepositSupplier.class) final Deposit deposit)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final Deposit deposit = dataStructureUtil.randomDeposit();
-    final DeserializableTypeDefinition<Deposit> typeDefinition =
-        deposit.getSchema().getJsonTypeDefinition();
+    final Deposit.DepositSchema schema = deposit.getSchema();
+    final DeserializableTypeDefinition<Deposit> typeDefinition = schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = deposit.sszSerialize();
+    final Deposit fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(deposit);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(deposit, typeDefinition);
-    final Deposit result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(deposit);
+    final Deposit fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(deposit);
   }
 }

@@ -209,6 +209,22 @@ class ForkChoiceNotifierTest {
 
   @Test
   void
+      onForkChoiceUpdated_shouldSendNotificationWithPayloadBuildingAttributesForProposerAtProposingSlot() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(headState, blockSlot);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+  }
+
+  @Test
+  void
       onForkChoiceUpdated_shouldSendNotificationWithoutPayloadBuildingAttributesWhenNotProposingNext() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
@@ -797,8 +813,13 @@ class ForkChoiceNotifierTest {
   }
 
   private void notifyForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
+    notifyForkChoiceUpdated(forkChoiceState, Optional.empty());
+  }
+
+  private void notifyForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     forkChoiceUpdatedResultNotification = null;
-    notifier.onForkChoiceUpdated(forkChoiceState);
+    notifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
     assertThat(forkChoiceUpdatedResultNotification).isNotNull();
     assertThat(forkChoiceUpdatedResultNotification.getForkChoiceUpdatedResult()).isCompleted();
   }
