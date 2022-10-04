@@ -13,32 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class DepositMessagePropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = DepositMessageSupplier.class) final DepositMessage depositMessage)
       throws JsonProcessingException {
-    final DepositMessage.DepositMessageSchema schema = depositMessage.getSchema();
-    final DeserializableTypeDefinition<DepositMessage> typeDefinition =
-        schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = depositMessage.sszSerialize();
-    final DepositMessage fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(depositMessage);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(depositMessage, typeDefinition);
-    final DepositMessage fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(depositMessage);
+    assertRoundTrip(depositMessage);
   }
 }

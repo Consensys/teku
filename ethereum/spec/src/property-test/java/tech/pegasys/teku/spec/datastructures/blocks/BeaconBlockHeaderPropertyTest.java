@@ -13,31 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BeaconBlockHeaderPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = BeaconBlockHeaderSupplier.class) final BeaconBlockHeader header)
+  void roundTrip(
+      @ForAll(supplier = BeaconBlockHeaderSupplier.class) final BeaconBlockHeader beaconBlockHeader)
       throws JsonProcessingException {
-    final BeaconBlockHeader.BeaconBlockHeaderSchema schema = header.getSchema();
-    final DeserializableTypeDefinition<BeaconBlockHeader> typeDefinition =
-        schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = header.sszSerialize();
-    final BeaconBlockHeader fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(header);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(header, typeDefinition);
-    final BeaconBlockHeader fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(header);
+    assertRoundTrip(beaconBlockHeader);
   }
 }
