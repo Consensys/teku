@@ -27,7 +27,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 public class BlindedBeaconBlockBodyPropertyTest {
   @Property
   @SuppressWarnings("unchecked")
-  void roundTrip(@ForAll(supplier = BeaconBlockBodySupplier.class) final BeaconBlockBody body)
+  void roundTrip(
+      @ForAll(supplier = BlindedBeaconBlockBodySupplier.class) final BeaconBlockBody body)
       throws JsonProcessingException {
     final BeaconBlockBodySchema<?> schema = body.getSchema();
     final DeserializableTypeDefinition<BeaconBlockBody> typeDefinition =

@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.util;
 
+import java.util.function.Function;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
@@ -23,14 +24,30 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedBeaconBlockProvider implements ArbitrarySupplier<SignedBeaconBlock> {
+public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<T> {
+  private final Function<DataStructureUtil, T> accessor;
+  private final SpecMilestone minimumSpecMilestone;
+
+  protected DataStructureUtilSupplier(final Function<DataStructureUtil, T> accessor) {
+    this.accessor = accessor;
+    this.minimumSpecMilestone = SpecMilestone.PHASE0;
+  }
+
+  protected DataStructureUtilSupplier(
+      final Function<DataStructureUtil, T> accessor, final SpecMilestone minimumSpecMilestone) {
+    this.accessor = accessor;
+    this.minimumSpecMilestone = minimumSpecMilestone;
+  }
+
   @Override
-  public Arbitrary<SignedBeaconBlock> get() {
+  public Arbitrary<T> get() {
     Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
+    Arbitrary<SpecMilestone> milestone =
+        Arbitraries.of(SpecMilestone.class)
+            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
     Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
     Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(DataStructureUtil::randomSignedBeaconBlock);
+    return dsu.map(accessor);
   }
 }

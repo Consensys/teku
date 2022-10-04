@@ -13,24 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.ArbitrarySupplier;
-import net.jqwik.api.Combinators;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SszPublicKeySupplier implements ArbitrarySupplier<SszPublicKey> {
-  @Override
-  public Arbitrary<SszPublicKey> get() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
-    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
-    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(DataStructureUtil::randomPublicKey).map(SszPublicKey::new);
+public class SszPublicKeySupplier extends DataStructureUtilSupplier<SszPublicKey> {
+  public SszPublicKeySupplier() {
+    super(DataStructureUtil::randomSszPublicKey);
   }
 }
