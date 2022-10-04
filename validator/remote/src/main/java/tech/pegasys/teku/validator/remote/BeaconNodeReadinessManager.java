@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,6 +56,12 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
     return readinessStatusCache.getOrDefault(beaconNodeApi, true);
+  }
+
+  public Iterator<RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
+    return failoverBeaconNodeApis.stream()
+        .sorted(Comparator.comparing(this::isReady).reversed())
+        .iterator();
   }
 
   @Override
