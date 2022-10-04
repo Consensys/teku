@@ -47,4 +47,9 @@ public class BuilderBid
   public BLSPublicKey getPublicKey() {
     return getField2().getBLSPublicKey();
   }
+
+  @Override
+  public BuilderBidSchema getSchema() {
+    return (BuilderBidSchema) super.getSchema();
+  }
 }

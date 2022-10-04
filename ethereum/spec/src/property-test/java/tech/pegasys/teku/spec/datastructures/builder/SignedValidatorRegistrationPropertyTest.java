@@ -16,40 +16,30 @@ package tech.pegasys.teku.spec.datastructures.builder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedValidatorRegistrationPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = SignedValidatorRegistrationSupplier.class)
+          final SignedValidatorRegistration registration)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedValidatorRegistration registration =
-        dataStructureUtil.randomSignedValidatorRegistration();
+    final SignedValidatorRegistrationSchema schema = registration.getSchema();
     final DeserializableTypeDefinition<SignedValidatorRegistration> typeDefinition =
-        registration.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(registration, typeDefinition);
-    final SignedValidatorRegistration result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(registration);
-  }
+        schema.getJsonTypeDefinition();
 
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX));
+    // Round-trip SSZ serialization.
+    final Bytes ssz = registration.sszSerialize();
+    final SignedValidatorRegistration fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(registration);
+
+    // Round-trip JSON serialization.
+    final String json = JsonUtil.serialize(registration, typeDefinition);
+    final SignedValidatorRegistration fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(registration);
   }
 }

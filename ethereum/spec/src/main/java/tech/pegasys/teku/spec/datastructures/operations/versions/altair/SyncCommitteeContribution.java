@@ -65,4 +65,9 @@ public class SyncCommitteeContribution
   public BLSSignature getSignature() {
     return getField4().getSignature();
   }
+
+  @Override
+  public SyncCommitteeContributionSchema getSchema() {
+    return (SyncCommitteeContributionSchema) super.getSchema();
+  }
 }

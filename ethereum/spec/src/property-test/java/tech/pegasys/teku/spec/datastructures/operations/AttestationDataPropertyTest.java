@@ -18,28 +18,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AttestationDataPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = AttestationDataSupplier.class) final AttestationData attestationData)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData.AttestationDataSchema schema = attestationData.getSchema();
     final DeserializableTypeDefinition<AttestationData> typeDefinition =
-        attestationData.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = attestationData.sszSerialize();
+    final AttestationData fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(attestationData);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(attestationData, typeDefinition);
-    final AttestationData result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(attestationData);
+    final AttestationData fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(attestationData);
   }
 }

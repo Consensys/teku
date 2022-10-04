@@ -40,4 +40,9 @@ public class SyncAggregatorSelectionData
   public UInt64 getSubcommitteeIndex() {
     return getField1().get();
   }
+
+  @Override
+  public SyncAggregatorSelectionDataSchema getSchema() {
+    return (SyncAggregatorSelectionDataSchema) super.getSchema();
+  }
 }

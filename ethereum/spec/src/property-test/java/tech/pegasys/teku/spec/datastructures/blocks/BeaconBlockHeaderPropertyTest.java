@@ -18,28 +18,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlockHeaderPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = BeaconBlockHeaderSupplier.class) final BeaconBlockHeader header)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BeaconBlockHeader header = dataStructureUtil.randomBeaconBlockHeader();
+    final BeaconBlockHeader.BeaconBlockHeaderSchema schema = header.getSchema();
     final DeserializableTypeDefinition<BeaconBlockHeader> typeDefinition =
-        header.getSchema().getJsonTypeDefinition();
+        schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = header.sszSerialize();
+    final BeaconBlockHeader fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(header);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(header, typeDefinition);
-    final BeaconBlockHeader result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(header);
+    final BeaconBlockHeader fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(header);
   }
 }
