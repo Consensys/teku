@@ -16,40 +16,27 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class TransactionPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = TransactionSupplier.class) final Transaction transaction)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final Transaction transaction = dataStructureUtil.randomExecutionPayloadTransaction();
+    final TransactionSchema schema = transaction.getSchema();
+    final DeserializableTypeDefinition<Transaction> typeDefinition = schema.getJsonTypeDefinition();
 
-    final DeserializableTypeDefinition<Transaction> typeDefinition =
-        transaction.getSchema().getJsonTypeDefinition();
+    // Round-trip SSZ serialization.
+    final Bytes ssz = transaction.sszSerialize();
+    final Transaction fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(transaction);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(transaction, typeDefinition);
-    final Transaction result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(transaction);
-  }
-
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX));
+    final Transaction fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(transaction);
   }
 }

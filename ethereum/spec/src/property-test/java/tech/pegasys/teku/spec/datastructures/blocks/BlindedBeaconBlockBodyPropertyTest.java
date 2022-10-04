@@ -18,37 +18,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
 public class BlindedBeaconBlockBodyPropertyTest {
   @Property
   @SuppressWarnings("unchecked")
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network,
-      @ForAll final long slot)
+  void roundTrip(@ForAll(supplier = BeaconBlockBodySupplier.class) final BeaconBlockBody body)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BeaconBlockBody body =
-        dataStructureUtil.randomBlindedBeaconBlockBody(UInt64.fromLongBits(slot));
+    final BeaconBlockBodySchema<?> schema = body.getSchema();
     final DeserializableTypeDefinition<BeaconBlockBody> typeDefinition =
-        (DeserializableTypeDefinition<BeaconBlockBody>)
-            spec.forMilestone(specMilestone)
-                .getSchemaDefinitions()
-                .getBlindedBeaconBlockBodySchema()
-                .getJsonTypeDefinition();
+        (DeserializableTypeDefinition<BeaconBlockBody>) schema.getJsonTypeDefinition();
+
+    // Round-trip SSZ serialization.
+    final Bytes ssz = body.sszSerialize();
+    final BeaconBlockBody fromSsz = schema.sszDeserialize(ssz);
+    assertThat(fromSsz).isEqualTo(body);
+
+    // Round-trip JSON serialization.
     final String json = JsonUtil.serialize(body, typeDefinition);
-    final BeaconBlockBody result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(body);
+    final BeaconBlockBody fromJson = JsonUtil.parse(json, typeDefinition);
+    assertThat(fromJson).isEqualTo(body);
   }
 }
