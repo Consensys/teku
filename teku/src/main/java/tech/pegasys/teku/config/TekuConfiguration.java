@@ -221,8 +221,6 @@ public class TekuConfiguration {
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
-      storageConfigurationBuilder.storeVotesEquivocation(
-          eth2NetworkConfiguration.isEquivocatingIndicesEnabled());
       DataConfig dataConfig = dataConfigBuilder.build();
       ValidatorConfig validatorConfig = validatorConfigBuilder.build();
 

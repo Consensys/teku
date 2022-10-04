@@ -40,15 +40,13 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeVotesEquivocation,
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
       final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
-    final V6SchemaCombinedSnapshot combinedSchema =
-        V6SchemaCombinedSnapshot.createV4(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
