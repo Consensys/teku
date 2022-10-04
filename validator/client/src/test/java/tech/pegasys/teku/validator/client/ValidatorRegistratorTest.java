@@ -163,6 +163,26 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registersValidators_shouldRegisterIfDefaultBuilderIsEnabledAndNoSpecificBuilderConfig() {
+    when(proposerConfig.isBuilderEnabledForPubKey(validator1.getPublicKey()))
+        .thenReturn(Optional.empty());
+    when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(true);
+
+    setActiveValidators(validator1);
+
+    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    registrationCalls.forEach(
+        registrationCall ->
+            verifyRegistrations(registrationCall, List.of(validator1), Optional.empty()));
+
+    verify(signer, times(1)).signValidatorRegistration(any());
+  }
+
+  @TestTemplate
   void registersValidators_shouldRegisterWithTimestampOverride() {
     final UInt64 timestampOverride = dataStructureUtil.randomUInt64();
 
