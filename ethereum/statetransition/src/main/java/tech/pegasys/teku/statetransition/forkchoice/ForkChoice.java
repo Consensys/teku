@@ -519,7 +519,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-          final Optional<UInt64> proposingSlot) {
+      final Optional<UInt64> proposingSlot) {
     forkChoiceStateProvider
         .getForkChoiceState()
         .thenAccept(
