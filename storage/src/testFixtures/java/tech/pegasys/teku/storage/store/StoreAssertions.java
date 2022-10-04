@@ -28,8 +28,6 @@ public class StoreAssertions {
             "checkpointCountGauge",
             "votesLock",
             "readVotesLock",
-            "timingLock",
-            "readTimingLock",
             "lock",
             "readLock",
             "blockProvider",
