@@ -511,7 +511,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private static <K> K unwrapResponseOrThrow(
       final RemoteService remoteService, final Response<K> response) {
     if (response.isFailure()) {
-      String errorMessage =
+      final String errorMessage =
           String.format(
               "Invalid remote response from the %s: %s",
               remoteService.displayName, response.getErrorMessage());
