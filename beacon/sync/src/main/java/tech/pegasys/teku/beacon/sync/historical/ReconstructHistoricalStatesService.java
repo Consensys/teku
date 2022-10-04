@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.base.Throwables;
 import java.io.IOException;
@@ -28,7 +29,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
@@ -101,9 +101,7 @@ public class ReconstructHistoricalStatesService extends Service {
                       latestState -> {
                         final BeaconState state = latestState.orElse(genesisState);
                         final UInt64 slot =
-                            latestState.isPresent()
-                                ? latestState.get().getSlot().plus(1)
-                                : SpecConfig.GENESIS_SLOT.plus(1); // todo check logic
+                            latestState.map(BeaconState::getSlot).orElse(GENESIS_SLOT).increment();
                         applyBlocks(state, slot, anchorSlot);
                       })
                   .ifExceptionGetsHereRaiseABug(); // todo fix
