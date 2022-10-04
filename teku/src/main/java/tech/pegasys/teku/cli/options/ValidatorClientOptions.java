@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
 import java.net.URI;
@@ -53,6 +54,16 @@ public class ValidatorClientOptions {
       fallbackValue = "true")
   private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
+  @Option(
+      names = {"--Xdoppelganger-detection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable validators doppelganger detection",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
 
@@ -61,6 +72,7 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
+                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
