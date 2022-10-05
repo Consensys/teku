@@ -134,6 +134,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -234,6 +235,10 @@ public final class DataStructureUtil {
     return BLSTestUtil.randomSignature(nextSeed());
   }
 
+  public SszSignature randomSszSignature() {
+    return new SszSignature(randomSignature());
+  }
+
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, Supplier<T> valueGenerator, long numItems) {
     return randomSszList(schema, numItems, valueGenerator);
@@ -329,6 +334,10 @@ public final class DataStructureUtil {
 
   public BLSPublicKey randomPublicKey() {
     return pubKeyGenerator.get();
+  }
+
+  public SszPublicKey randomSszPublicKey() {
+    return new SszPublicKey(randomPublicKey());
   }
 
   public Bytes48 randomPublicKeyBytes() {
@@ -705,6 +714,10 @@ public final class DataStructureUtil {
     return signedBlock(beaconBlock);
   }
 
+  public SignedBeaconBlock randomSignedBeaconBlock() {
+    return randomSignedBeaconBlock(randomUInt64());
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
     return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -751,6 +764,10 @@ public final class DataStructureUtil {
     return new BeaconBlockBuilder(specVersion, this);
   }
 
+  public BeaconBlock randomBeaconBlock() {
+    return randomBeaconBlock(randomUInt64());
+  }
+
   public BeaconBlock randomBeaconBlock(long slotNum) {
     return randomBeaconBlock(UInt64.valueOf(slotNum));
   }
@@ -768,6 +785,10 @@ public final class DataStructureUtil {
         previousRoot,
         stateRoot,
         body);
+  }
+
+  public BeaconBlock randomBlindedBeaconBlock() {
+    return randomBlindedBeaconBlock(randomUInt64());
   }
 
   public BeaconBlock randomBlindedBeaconBlock(long slotNum) {
@@ -893,6 +914,10 @@ public final class DataStructureUtil {
   public BeaconBlockHeader randomBeaconBlockHeader(final UInt64 slot, final UInt64 proposerIndex) {
     return new BeaconBlockHeader(
         slot, proposerIndex, randomBytes32(), randomBytes32(), randomBytes32());
+  }
+
+  public BeaconBlockBody randomBlindedBeaconBlockBody() {
+    return randomBlindedBeaconBlockBody(randomUInt64());
   }
 
   public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
@@ -1449,6 +1474,10 @@ public final class DataStructureUtil {
     return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
+  public SignedContributionAndProof randomSignedContributionAndProof() {
+    return randomSignedContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
     return randomSignedContributionAndProof(slot, randomBytes32());
   }
@@ -1467,6 +1496,10 @@ public final class DataStructureUtil {
         .create(contributionAndProof, randomSignature());
   }
 
+  public ContributionAndProof randomContributionAndProof() {
+    return randomContributionAndProof(randomUInt64(), randomBytes32());
+  }
+
   public ContributionAndProof randomContributionAndProof(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(slot)
@@ -1475,6 +1508,10 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomSyncCommitteeContribution(slot, beaconBlockRoot),
             randomSignature());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution() {
+    return randomSyncCommitteeContribution(randomUInt64(), randomBytes32());
   }
 
   public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {

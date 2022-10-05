@@ -13,33 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AttestationDataPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = AttestationDataSupplier.class) final AttestationData attestationData)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final DeserializableTypeDefinition<AttestationData> typeDefinition =
-        attestationData.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(attestationData, typeDefinition);
-    final AttestationData result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(attestationData);
+    assertRoundTrip(attestationData);
   }
 }

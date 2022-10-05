@@ -519,9 +519,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    final boolean proposerBoostEnabled = beaconConfig.eth2NetworkConfig().isProposerBoostEnabled();
-    final boolean equivocatingIndicesEnabled =
-        beaconConfig.eth2NetworkConfig().isEquivocatingIndicesEnabled();
     forkChoice =
         new ForkChoice(
             spec,
@@ -531,8 +528,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
-            proposerBoostEnabled,
-            equivocatingIndicesEnabled,
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
     forkChoiceTrigger =
         beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()

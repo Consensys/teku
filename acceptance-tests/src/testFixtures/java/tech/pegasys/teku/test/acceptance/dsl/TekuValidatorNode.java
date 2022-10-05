@@ -14,17 +14,20 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelsContaining;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_API_PORT = 9052;
   protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
@@ -58,8 +62,9 @@ public class TekuValidatorNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
     if (config.configMap.containsKey("validator-api-enabled")) {
-      container.withExposedPorts(VALIDATOR_API_PORT);
+      container.addExposedPort(VALIDATOR_API_PORT);
     }
+    container.addExposedPort(METRICS_PORT);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -140,13 +145,49 @@ public class TekuValidatorNode extends Node {
         in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
+  public void waitForDutiesRequestedFrom(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "get_proposer_duties",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
+  public void waitForAttestationPublishedTo(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "publish_attestation",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
+  public void waitForBlockPublishedTo(final TekuNode node) {
+    waitForMetric(
+        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withLabelsContaining(
+            Map.of(
+                "endpoint", node.getBeaconRestApiUrl() + "/",
+                "method", "publish_block",
+                "outcome", "success")),
+        withValueGreaterThan(0));
+  }
+
   public static class Config {
+
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
     private boolean keyfilesGenerated = false;
     private final Map<File, String> configFileMap = new HashMap<>();
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+
+    private boolean isUsingSentryNodeConfig = false;
 
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
@@ -157,6 +198,10 @@ public class TekuValidatorNode extends Node {
       configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
+      configMap.put("metrics-enabled", true);
+      configMap.put("metrics-port", METRICS_PORT);
+      configMap.put("metrics-interface", "0.0.0.0");
+      configMap.put("metrics-host-allowlist", "*");
     }
 
     public TekuValidatorNode.Config withInteropModeDisabled() {
@@ -205,14 +250,6 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withBeaconNodeEventStreamSyncingStatusQueryPeriod(
-        final Duration syncingStatusQueryPeriod) {
-      configMap.put(
-          "Xbeacon-node-event-stream-syncing-status-query-period",
-          syncingStatusQueryPeriod.toMillis());
-      return this;
-    }
-
     public TekuValidatorNode.Config withNetwork(String networkName) {
       configMap.put("network", networkName);
       return this;
@@ -231,9 +268,34 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withSentryNodes(final SentryNodesConfig sentryNodesConfig) {
+      final File sentryNodesConfigFile;
+      try {
+        sentryNodesConfigFile = File.createTempFile("sentry-node-config", ".json");
+        sentryNodesConfigFile.deleteOnExit();
+
+        try (FileWriter fw = new FileWriter(sentryNodesConfigFile, StandardCharsets.UTF_8)) {
+          fw.write(sentryNodesConfig.toJson(JSON_PROVIDER));
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("Error creating sentry nodes configuration file", e);
+      }
+      configFileMap.put(sentryNodesConfigFile, SENTRY_NODE_CONFIG_FILE_PATH);
+
+      configMap.put("Xsentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
+      isUsingSentryNodeConfig = true;
+
+      return this;
+    }
+
     public void writeConfigFile() throws Exception {
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
+
+      if (isUsingSentryNodeConfig) {
+        configMap.remove("beacon-node-api-endpoint");
+      }
+
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
       if (maybeNetworkYaml.isPresent()) {

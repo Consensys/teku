@@ -54,6 +54,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -75,6 +77,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("sync/optimistic", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
@@ -116,8 +119,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,
-            true,
-            true,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
@@ -186,6 +187,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("attester_slashing")) {
         applyAttesterSlashing(testDefinition, forkChoice, step);
 
+      } else if (step.containsKey("block_hash")) {
+        applyPosBlock(step, executionLayer);
+
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
       }
@@ -217,6 +221,25 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           final UInt64 timestamp = UInt64.ZERO;
           return new PowBlock(blockHash, parentHash, totalDifficulty, timestamp);
         });
+  }
+
+  private void applyPosBlock(
+      final Map<String, Object> step, final ExecutionLayerChannelStub executionLayer) {
+    final Bytes32 blockHash = getBytes32(step, "block_hash");
+    final Map<String, Object> payloadStatus = get(step, "payload_status");
+    final PayloadStatus parsePayloadStatus = parsePayloadStatus(payloadStatus);
+
+    executionLayer.addPosBlock(blockHash, parsePayloadStatus);
+  }
+
+  private PayloadStatus parsePayloadStatus(final Map<String, Object> payloadStatus) {
+    final ExecutionPayloadStatus status =
+        ExecutionPayloadStatus.valueOf(get(payloadStatus, "status"));
+    final Optional<Bytes32> latestValidHash =
+        getOptionallyBytes32(payloadStatus, "latest_valid_hash");
+    final Optional<String> validationError = getOptionally(payloadStatus, "validation_error");
+
+    return PayloadStatus.create(status, latestValidHash, validationError);
   }
 
   private void applyAttestation(
@@ -384,15 +407,26 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  private <T> T get(final Map<String, Object> yamlData, final String key) {
+  private static <T> T get(final Map<String, Object> yamlData, final String key) {
     return (T) yamlData.get(key);
   }
 
-  private UInt64 getUInt64(final Map<String, Object> yamlData, final String key) {
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  private static <T> Optional<T> getOptionally(
+      final Map<String, Object> yamlData, final String key) {
+    return Optional.ofNullable((T) yamlData.get(key));
+  }
+
+  private static UInt64 getUInt64(final Map<String, Object> yamlData, final String key) {
     return UInt64.valueOf(get(yamlData, key).toString());
   }
 
-  private Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
+  private static Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
     return Bytes32.fromHexString(get(yamlData, key));
+  }
+
+  private static Optional<Bytes32> getOptionallyBytes32(
+      final Map<String, Object> yamlData, final String key) {
+    return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
   }
 }

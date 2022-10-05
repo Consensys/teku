@@ -19,6 +19,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
+import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
@@ -184,7 +187,7 @@ public class TekuNode extends Node {
       final Eth2EventHandler.PackedMessage packedMessage) {
     try {
       return Optional.of(
-          jsonProvider.jsonToObject(
+          JSON_PROVIDER.jsonToObject(
               packedMessage.getMessageEvent().getData(), SignedContributionAndProof.class));
     } catch (JsonProcessingException e) {
       return Optional.empty();
@@ -221,7 +224,7 @@ public class TekuNode extends Node {
       final Eth2EventHandler.PackedMessage packedMessage) {
     try {
       return Optional.of(
-          jsonProvider.jsonToObject(packedMessage.getMessageEvent().getData(), HeadEvent.class)
+          JSON_PROVIDER.jsonToObject(packedMessage.getMessageEvent().getData(), HeadEvent.class)
               .slot);
     } catch (JsonProcessingException e) {
       LOG.error("Failed to process head event", e);
@@ -249,9 +252,9 @@ public class TekuNode extends Node {
     final ValidatorLivenessRequest request = new ValidatorLivenessRequest(epoch, validators);
     final String response =
         httpClient.post(
-            getRestApiUrl(), "/eth/v1/validator/liveness", jsonProvider.objectToJSON(request));
+            getRestApiUrl(), "/eth/v1/validator/liveness", JSON_PROVIDER.objectToJSON(request));
     final PostValidatorLivenessResponse livenessResponse =
-        jsonProvider.jsonToObject(response, PostValidatorLivenessResponse.class);
+        JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
     for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
       output.put(entry.index, entry.isLive);
@@ -275,7 +278,7 @@ public class TekuNode extends Node {
   private UInt64 fetchGenesisTime() throws IOException {
     String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
     final GetGenesisResponse response =
-        jsonProvider.jsonToObject(genesisTime, GetGenesisResponse.class);
+        JSON_PROVIDER.jsonToObject(genesisTime, GetGenesisResponse.class);
     return response.data.genesisTime;
   }
 
@@ -403,7 +406,7 @@ public class TekuNode extends Node {
     }
 
     final GetBlockRootResponse response =
-        jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
+        JSON_PROVIDER.jsonToObject(result, GetBlockRootResponse.class);
 
     return Optional.of(Pair.of(response.data.root, response.execution_optimistic));
   }
@@ -433,7 +436,7 @@ public class TekuNode extends Node {
       return Optional.empty();
     }
     final GetStateFinalityCheckpointsResponse response =
-        jsonProvider.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
+        JSON_PROVIDER.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
     return Optional.of(response.data);
   }
 
@@ -442,7 +445,7 @@ public class TekuNode extends Node {
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponseV2.class).data);
+      return Optional.of(JSON_PROVIDER.jsonToObject(result, GetBlockResponseV2.class).data);
     }
   }
 
@@ -599,6 +602,13 @@ public class TekuNode extends Node {
       // Can't capture artifacts if it's not running but then it probably didn't cause the failure
       LOG.debug("Not capturing artifacts from {} because it is not running", nodeAlias);
     }
+  }
+
+  public void waitForAggregateGossipReceived() {
+    waitForMetric(
+        withNameEqualsTo("libp2p_gossip_messages_total"),
+        withLabelValueSubstring("topic", "beacon_aggregate_and_proof"),
+        withValueGreaterThan(0));
   }
 
   public static class Config {

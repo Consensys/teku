@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -29,43 +30,19 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 
 public class ValidatorClientOptions {
 
-  // Not setting in-line default value for beaconNodeEndpoints as it requires extra business logic
-  @Option(
-      names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
-      paramLabel = "<ENDPOINT>",
-      description =
-          "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node"
-              + " will be used as a primary and others as failovers.",
-      split = ",",
-      arity = "1..*")
-  private List<URI> beaconNodeApiEndpoints = null;
+  @ArgGroup(multiplicity = "0..1")
+  private ExclusiveParams exclusiveParams = new ExclusiveParams();
 
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Send subnet subscriptions to Beacon Nodes which are used as failovers",
+      description = "Send subnet subscriptions to beacon nodes which are used as failovers",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
-
-  @Option(
-      names = {"--Xbeacon-node-event-stream-syncing-status-query-period"},
-      paramLabel = "<INTEGER>",
-      description =
-          "How often (in milliseconds) will the syncing status of the Beacon Node used for event "
-              + "streaming be queried. If the node is not synced or the query fails, the "
-              + "Validator Client will try to connect to an event stream of one of the failover "
-              + "Beacon Nodes if such are configured. "
-              + "If the primary Beacon Node has synced successfully after a failover, a "
-              + "reconnection to the primary Beacon Node event stream will be attempted.",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "1")
-  private long beaconNodeEventStreamSyncingStatusQueryPeriod =
-      ValidatorConfig.DEFAULT_BEACON_NODE_EVENT_STREAM_SYNCING_STATUS_QUERY_PERIOD.toMillis();
 
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
@@ -78,12 +55,14 @@ public class ValidatorClientOptions {
   private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
   @Option(
-      names = {"--Xsentry-config-file"},
-      paramLabel = "<FILE>",
-      description = "Config file with sentry node configuration",
+      names = {"--Xdoppelganger-detection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable validators doppelganger detection",
       hidden = true,
-      arity = "1")
-  private String sentryConfigFile = null;
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
@@ -93,41 +72,30 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
+                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
-                .beaconNodeEventStreamSyncingStatusQueryPeriod(
-                    Duration.ofMillis(beaconNodeEventStreamSyncingStatusQueryPeriod))
-                .sentryNodeConfigurationFile(sentryConfigFile));
+                .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
 
   private void configureBeaconNodeApiEndpoints() {
-    if (beaconNodeApiEndpoints != null && sentryConfigFile != null) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Cannot use beacon-node-api-endpoint and sentry-config-file at "
-              + "the same time.");
-    }
-
-    if (beaconNodeApiEndpoints == null) {
-      beaconNodeApiEndpoints =
-          parseBeaconNodeApiEndpoints(ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS);
-    }
-
-    if (sentryConfigFile != null) {
-      beaconNodeApiEndpoints =
-          parseBeaconNodeApiEndpoints(
-              new SentryNodesConfigLoader()
-                  .load(sentryConfigFile)
-                  .getBeaconNodesSentryConfig()
-                  .getDutiesProviderNodeConfig()
-                  .getEndpoints());
+    if (exclusiveParams.beaconNodeApiEndpoints == null) {
+      if (exclusiveParams.sentryConfigFile == null) {
+        exclusiveParams.beaconNodeApiEndpoints = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINTS;
+      } else {
+        exclusiveParams.beaconNodeApiEndpoints =
+            parseBeaconNodeApiEndpoints(
+                new SentryNodesConfigLoader()
+                    .load(exclusiveParams.sentryConfigFile)
+                    .getBeaconNodesSentryConfig()
+                    .getDutiesProviderNodeConfig()
+                    .getEndpoints());
+      }
     }
   }
 
   public List<URI> getBeaconNodeApiEndpoints() {
-    if (beaconNodeApiEndpoints == null) {
-      configureBeaconNodeApiEndpoints();
-    }
-
-    return beaconNodeApiEndpoints;
+    configureBeaconNodeApiEndpoints();
+    return exclusiveParams.beaconNodeApiEndpoints;
   }
 
   private List<URI> parseBeaconNodeApiEndpoints(final List<String> apiEndpoints) {
@@ -144,5 +112,26 @@ public class ValidatorClientOptions {
               }
             })
         .collect(Collectors.toList());
+  }
+
+  private static class ExclusiveParams {
+
+    @Option(
+        names = {"--beacon-node-api-endpoint", "--beacon-node-api-endpoints"},
+        paramLabel = "<ENDPOINT>",
+        description =
+            "Beacon Node REST API endpoint(s). If more than one endpoint is defined, the first node"
+                + " will be used as a primary and others as failovers.",
+        split = ",",
+        arity = "1..*")
+    List<URI> beaconNodeApiEndpoints;
+
+    @Option(
+        names = {"--Xsentry-config-file"},
+        paramLabel = "<FILE>",
+        description = "Config file with sentry node configuration",
+        hidden = true,
+        arity = "1")
+    String sentryConfigFile = null;
   }
 }

@@ -340,8 +340,7 @@ class RestBuilderClientTest {
     verifyRequest("POST", apiPath, Optional.of(requestBody));
   }
 
-  private <T> void verifyRequest(
-      String method, String apiPath, Optional<String> expectedRequestBody) {
+  private void verifyRequest(String method, String apiPath, Optional<String> expectedRequestBody) {
     try {
       RecordedRequest request = mockWebServer.takeRequest();
       assertThat(request.getMethod()).isEqualTo(method);

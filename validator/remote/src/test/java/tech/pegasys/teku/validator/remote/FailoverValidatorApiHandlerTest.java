@@ -14,9 +14,12 @@
 package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Streams;
@@ -80,14 +83,17 @@ class FailoverValidatorApiHandlerTest {
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
+  private BeaconNodeReadinessManager beaconNodeReadinessManager;
+
   private RemoteValidatorApiChannel primaryApiChannel;
   private RemoteValidatorApiChannel failoverApiChannel1;
   private RemoteValidatorApiChannel failoverApiChannel2;
-
   private FailoverValidatorApiHandler failoverApiHandler;
 
   @BeforeEach
   void setUp() {
+    beaconNodeReadinessManager = mock(BeaconNodeReadinessManager.class);
+
     primaryApiChannel = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel1 = mock(RemoteValidatorApiChannel.class);
     failoverApiChannel2 = mock(RemoteValidatorApiChannel.class);
@@ -95,14 +101,22 @@ class FailoverValidatorApiHandlerTest {
     final Supplier<HttpUrl> randomHttpUrlGenerator =
         () -> HttpUrl.get("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
+    final List<RemoteValidatorApiChannel> failoverDelegates =
+        List.of(failoverApiChannel1, failoverApiChannel2);
+
+    when(beaconNodeReadinessManager.isReady(any())).thenReturn(true);
+    when(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
+        .thenReturn(failoverDelegates.iterator());
+
     when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel2.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager,
             primaryApiChannel,
-            List.of(failoverApiChannel1, failoverApiChannel2),
+            failoverDelegates,
             true,
             stubMetricsSystem);
   }
@@ -120,11 +134,15 @@ class FailoverValidatorApiHandlerTest {
 
     verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
@@ -142,14 +160,44 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(response);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRequestsUsingFailover")
+  <T> void requestFailoversImmediatelyIfPrimaryBeaconNodeMarkedAsNotReady(
+      final ValidatorApiChannelRequest<T> request, final String methodLabel, final T response) {
+
+    setupSuccesses(request, response, failoverApiChannel1);
+
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verify(primaryApiChannel, atLeastOnce()).getEndpoint();
+    verifyNoMoreInteractions(primaryApiChannel);
+
+    verifyRequestCounters(
+        failoverApiChannel1,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
+        failoverApiChannel2,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -163,11 +211,15 @@ class FailoverValidatorApiHandlerTest {
 
     verifyFailoverRequestExceptionIsThrown(result, methodLabel);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
@@ -178,11 +230,19 @@ class FailoverValidatorApiHandlerTest {
   <T> void requestFailsAndNoFailoversConfigured(final ValidatorApiChannelRequest<T> request) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
+        new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
+
+    // readiness is ignored
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
 
     setupFailures(request, primaryApiChannel);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWithMessage(
+            "Request failed for " + primaryApiChannel.getEndpoint());
 
     assertThat(result).isCompletedExceptionally();
 
@@ -199,6 +259,7 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager,
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
             false,
@@ -213,11 +274,15 @@ class FailoverValidatorApiHandlerTest {
 
     verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
@@ -241,11 +306,15 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
@@ -256,11 +325,15 @@ class FailoverValidatorApiHandlerTest {
   <T> void requestIsNotRelayedIfNoFailoversAreConfigured(
       final ValidatorApiChannelRequest<T> request,
       final Consumer<ValidatorApiChannel> verifyCallIsMade,
-      final String ignoredMethodLabel,
+      final String methodLabel,
       final T response) {
 
     failoverApiHandler =
-        new FailoverValidatorApiHandler(primaryApiChannel, List.of(), true, stubMetricsSystem);
+        new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
+
+    // readiness is ignored
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
 
     setupSuccesses(request, response, primaryApiChannel);
 
@@ -268,6 +341,11 @@ class FailoverValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(response);
     verifyCallIsMade.accept(primaryApiChannel);
+
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
 
     verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
   }
@@ -291,11 +369,15 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
@@ -320,11 +402,47 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        failoverApiChannel2,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getRelayRequests")
+  <T> void relayedResponseReceivedFromFailoverIfPrimaryBeaconNodeMarkedAsNotReady(
+      final ValidatorApiChannelRequest<T> request,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade,
+      final String methodLabel,
+      final T response) {
+
+    setupSuccesses(request, response, failoverApiChannel1, failoverApiChannel2);
+
+    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+
+    verify(primaryApiChannel, atLeastOnce()).getEndpoint();
+    verifyNoMoreInteractions(primaryApiChannel);
+
+    verifyCallIsMade.accept(failoverApiChannel1);
+    verifyCallIsMade.accept(failoverApiChannel2);
+
+    verifyRequestCounters(
+        failoverApiChannel1,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
@@ -351,11 +469,15 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
@@ -379,11 +501,15 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(failoverApiChannel1);
     verifyCallIsMade.accept(failoverApiChannel2);
 
-    verifyFailoverCounters(
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
+    verifyRequestCounters(
         failoverApiChannel1,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
-    verifyFailoverCounters(
+    verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
@@ -590,7 +716,7 @@ class FailoverValidatorApiHandlerTest {
     return Arguments.of(Named.of(name, request), verifyCallIsMade, methodLabel, response);
   }
 
-  private void verifyFailoverCounters(
+  private void verifyRequestCounters(
       final RemoteValidatorApiChannel failoverApiChannel,
       final String methodLabel,
       final Map<RequestOutcome, Long> expectedCountByRequestOutcome) {
@@ -632,7 +758,7 @@ class FailoverValidatorApiHandlerTest {
     return stubMetricsSystem
         .getCounter(
             TekuMetricCategory.VALIDATOR,
-            FailoverValidatorApiHandler.FAILOVER_BEACON_NODES_REQUESTS_COUNTER_NAME)
+            FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME)
         .getValue(apiChannel.getEndpoint().toString(), methodLabel, outcome.toString());
   }
 }

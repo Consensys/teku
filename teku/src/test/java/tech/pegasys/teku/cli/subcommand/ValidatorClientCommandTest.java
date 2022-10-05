@@ -129,7 +129,9 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
-        .contains("Cannot use beacon-node-api-endpoint and sentry-config-file at the same time");
+        .contains(
+            "Error: --beacon-node-api-endpoints=<ENDPOINT>, --Xsentry-config-file=<FILE> are "
+                + "mutually exclusive (specify only one)");
   }
 
   @Test
@@ -145,6 +147,30 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoints())
         .contains(List.of(expectedBeaconNodeApiEndpoint));
+  }
+
+  @Test
+  public void doppelgangerDetectionShouldBeDisabledByDefault() {
+
+    final String[] args = {"vc", "--network", "minimal"};
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().isDoppelgangerDetectionEnabled())
+        .isFalse();
+  }
+
+  @Test
+  public void shouldEnableDoppelgangerDetection() {
+
+    final String[] args = {
+      "vc", "--network", "minimal", "--Xdoppelganger-detection-enabled", "true"
+    };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().isDoppelgangerDetectionEnabled())
+        .isTrue();
   }
 
   private String pathFor(final String filename) {

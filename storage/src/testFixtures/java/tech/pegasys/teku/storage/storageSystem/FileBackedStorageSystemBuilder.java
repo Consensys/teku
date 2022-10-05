@@ -51,7 +51,6 @@ public class FileBackedStorageSystemBuilder {
   private Path archiveDir;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
-  private boolean storeVotesEquivocation = false;
   private boolean storeBlockExecutionPayloadSeparately = false;
   private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
   private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
@@ -195,7 +194,6 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }
@@ -203,8 +201,7 @@ public class FileBackedStorageSystemBuilder {
   private Database createV6Database() {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
 
-    final V6SchemaCombinedSnapshot schema =
-        V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+    final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
@@ -230,7 +227,6 @@ public class FileBackedStorageSystemBuilder {
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }
@@ -246,7 +242,6 @@ public class FileBackedStorageSystemBuilder {
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
         10_000,
-        storeVotesEquivocation,
         asyncRunner,
         spec);
   }
@@ -259,7 +254,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,
@@ -275,7 +269,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeVotesEquivocation,
         storeBlockExecutionPayloadSeparately,
         blockMigrationBatchSize,
         blockMigrationBatchDelay,

@@ -118,8 +118,8 @@ public class BesuNode extends Node {
   private String fetchEnodeUrl() throws Exception {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
-        httpClient.post(baseUri, "", jsonProvider.objectToJSON(new Request("admin_nodeInfo")));
-    final ObjectMapper objectMapper = jsonProvider.getObjectMapper();
+        httpClient.post(baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_nodeInfo")));
+    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
     final JavaType nodeInfoResponseType =
         objectMapper
             .getTypeFactory()
@@ -134,8 +134,8 @@ public class BesuNode extends Node {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
         httpClient.post(
-            baseUri, "", jsonProvider.objectToJSON(new Request("admin_addPeer", enode)));
-    final ObjectMapper objectMapper = jsonProvider.getObjectMapper();
+            baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_addPeer", enode)));
+    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
     final JavaType removePeerResponseType =
         objectMapper.getTypeFactory().constructParametricType(Response.class, Boolean.class);
     final Response<Boolean> removePeerResponse =

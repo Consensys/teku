@@ -49,7 +49,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final int maxKnownNodeCacheSize;
   private final int blockMigrationBatchSize;
   private final int blockMigrationBatchDelay;
-  private boolean storeBlockExecutionPayloadSeparately;
+  private final boolean storeBlockExecutionPayloadSeparately;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
@@ -59,8 +59,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
-
-  private final boolean storeVotesEquivocation;
 
   private final Optional<AsyncRunner> asyncRunner;
 
@@ -83,7 +81,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
     this.blockMigrationBatchSize = config.getBlockMigrationBatchSize();
     this.blockMigrationBatchDelay = config.getBlockMigrationBatchDelay();
-    this.storeVotesEquivocation = config.isStoreVotesEquivocation();
     this.spec = config.getSpec();
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -176,7 +173,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
@@ -205,7 +201,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeVotesEquivocation,
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
@@ -221,8 +216,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
       final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
-      final V6SchemaCombinedSnapshot schema =
-          V6SchemaCombinedSnapshot.createV6(spec, storeVotesEquivocation);
+      final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
@@ -261,7 +255,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          storeVotesEquivocation,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -282,7 +275,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          storeVotesEquivocation,
           asyncRunner,
           spec);
     } catch (final IOException e) {
@@ -303,7 +295,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
           maxKnownNodeCacheSize,
-          storeVotesEquivocation,
           asyncRunner,
           spec);
     } catch (final IOException e) {

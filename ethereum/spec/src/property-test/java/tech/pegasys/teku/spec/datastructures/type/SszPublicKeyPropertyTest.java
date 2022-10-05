@@ -13,33 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszPublicKeyPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = SszPublicKeySupplier.class) final SszPublicKey sszPublicKey)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SszPublicKey key = new SszPublicKey(dataStructureUtil.randomPublicKey());
-    final DeserializableTypeDefinition<SszPublicKey> typeDefinition =
-        key.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(key, typeDefinition);
-    final SszPublicKey result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(key);
+    assertRoundTrip(sszPublicKey);
   }
 }

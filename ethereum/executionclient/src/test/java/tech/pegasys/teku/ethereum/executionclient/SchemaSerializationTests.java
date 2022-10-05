@@ -166,7 +166,7 @@ public class SchemaSerializationTests {
   }
 
   @TestTemplate
-  void shouldThrowDeserializingUIntQuantityWithTrailingZeros() {
+  void shouldThrowDeserializingUIntQuantityWithLeadingZeros() {
 
     assertThrows(
         IllegalArgumentException.class,

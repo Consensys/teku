@@ -47,8 +47,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
 
   private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
 
-  public V6SchemaCombinedTreeState(final Spec spec, final boolean storeVotesEquivocation) {
-    super(spec, storeVotesEquivocation, V6_FINALIZED_OFFSET);
+  public V6SchemaCombinedTreeState(final Spec spec) {
+    super(spec, V6_FINALIZED_OFFSET);
     slotsByFinalizedRoot =
         KvStoreColumn.create(V6_FINALIZED_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
     slotsByFinalizedStateRoot =

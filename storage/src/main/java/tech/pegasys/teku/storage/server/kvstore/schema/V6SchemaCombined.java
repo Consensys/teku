@@ -21,6 +21,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
@@ -82,21 +83,18 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
 
-  protected V6SchemaCombined(
-      final Spec spec, final boolean storeVotesEquivocation, final int finalizedOffset) {
+  protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
     final KvStoreSerializer<SignedBeaconBlock> signedBlockSerializer =
         KvStoreSerializer.createSignedBlockSerializer(spec);
     hotBlocksByRoot = KvStoreColumn.create(1, BYTES32_SERIALIZER, signedBlockSerializer);
-
     final KvStoreSerializer<BeaconState> stateSerializer =
         KvStoreSerializer.createStateSerializer(spec);
     checkpointStates = KvStoreColumn.create(2, CHECKPOINT_SERIALIZER, stateSerializer);
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
-    final KvStoreSerializer<VoteTracker> voteTrackerSerializer =
-        KvStoreSerializer.createVoteTrackerSerializer(storeVotesEquivocation);
-    votes = KvStoreColumn.create(3, UINT64_SERIALIZER, voteTrackerSerializer);
+
+    votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
   }

@@ -187,7 +187,7 @@ public class DepositFetcher {
     final BigInteger blockNumber = block.getNumber();
     final List<DepositContract.DepositEventEventResponse> deposits =
         depositEventsByBlock.get(new BlockNumberAndHash(blockNumber, block.getHash()));
-    checkNotNull(deposits, "Did not find any deposits for block {}", blockNumber);
+    checkNotNull(deposits, "Did not find any deposits for block %s", blockNumber);
     LOG.trace("Successfully fetched deposit events for block: {} ", blockNumber);
     postDeposits(createDepositFromBlockEvent(block, deposits));
   }

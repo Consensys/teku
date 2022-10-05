@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.api;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +39,7 @@ public class StorageUpdate {
   private final Set<Bytes32> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final boolean isEmpty;
 
   public StorageUpdate(
       final Optional<UInt64> genesisTime,
@@ -59,16 +62,24 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    checkArgument(
+        optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
+        "Can't have optimisticTransitionBlockRoot present but not set");
+
+    this.isEmpty =
+        genesisTime.isEmpty()
+            && justifiedCheckpoint.isEmpty()
+            && finalizedChainData.isEmpty()
+            && bestJustifiedCheckpoint.isEmpty()
+            && hotBlocks.isEmpty()
+            && hotStates.isEmpty()
+            && deletedHotBlocks.isEmpty()
+            && stateRoots.isEmpty()
+            && !optimisticTransitionBlockRootSet;
   }
 
   public boolean isEmpty() {
-    return genesisTime.isEmpty()
-        && justifiedCheckpoint.isEmpty()
-        && finalizedChainData.isEmpty()
-        && bestJustifiedCheckpoint.isEmpty()
-        && hotBlocks.isEmpty()
-        && deletedHotBlocks.isEmpty()
-        && stateRoots.isEmpty();
+    return isEmpty;
   }
 
   public Optional<UInt64> getGenesisTime() {

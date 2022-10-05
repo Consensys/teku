@@ -208,38 +208,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldEnableEquivocatingIndices() {
-    final Eth2NetworkConfiguration networkConfig =
-        getTekuConfigurationFromArguments("--Xfork-choice-equivocating-indices-enabled")
-            .eth2NetworkConfiguration();
-    assertThat(networkConfig.isEquivocatingIndicesEnabled()).isTrue();
-  }
-
-  @Test
-  void shouldDisableEquivocatingIndices() {
-    final Eth2NetworkConfiguration networkConfig =
-        getTekuConfigurationFromArguments("--Xfork-choice-equivocating-indices-enabled=false")
-            .eth2NetworkConfiguration();
-    assertThat(networkConfig.isEquivocatingIndicesEnabled()).isFalse();
-  }
-
-  @Test
-  void shouldEnableProposerBoost() {
-    final Eth2NetworkConfiguration networkConfig =
-        getTekuConfigurationFromArguments("--Xfork-choice-proposer-boost-enabled")
-            .eth2NetworkConfiguration();
-    assertThat(networkConfig.isProposerBoostEnabled()).isTrue();
-  }
-
-  @Test
-  void shouldDisableProposerBoost() {
-    final Eth2NetworkConfiguration networkConfig =
-        getTekuConfigurationFromArguments("--Xfork-choice-proposer-boost-enabled=false")
-            .eth2NetworkConfiguration();
-    assertThat(networkConfig.isProposerBoostEnabled()).isFalse();
-  }
-
-  @Test
   void shouldEnableForkChoiceBeforeProposing() {
     final Eth2NetworkConfiguration networkConfig =
         getTekuConfigurationFromArguments("--Xfork-choice-before-proposing-enabled")

@@ -77,9 +77,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
-  private final boolean proposerBoostEnabled;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
-  private final boolean equivocatingIndicesEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
   private final PandaPrinter pandaPrinter;
@@ -97,8 +95,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final PandaPrinter pandaPrinter,
-      final boolean proposerBoostEnabled,
-      final boolean equivocatingIndicesEnabled,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -106,8 +102,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
     this.pandaPrinter = pandaPrinter;
-    this.proposerBoostEnabled = proposerBoostEnabled;
-    this.equivocatingIndicesEnabled = equivocatingIndicesEnabled;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
@@ -116,8 +110,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   /**
-   * @deprecated Provided only to avoid having to hard code proposerBoostEnabled in lots of tests.
-   *     Will be removed when the feature toggle is removed.
+   * @deprecated Provided only to avoid having to hard code forkChoiceUpdateHeadOnBlockImportEnabled
+   *     in lots of tests. Will be removed when the feature toggle is removed.
    */
   @Deprecated
   public ForkChoice(
@@ -134,8 +128,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         PandaPrinter.NOOP,
-        false,
-        false,
         true);
   }
 
@@ -171,14 +163,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<Boolean> processHead() {
-    return processHead(Optional.empty());
+    return processHead(Optional.empty(), false);
   }
 
-  public SafeFuture<Boolean> processHead(UInt64 nodeSlot) {
-    return processHead(Optional.of(nodeSlot));
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), false);
   }
 
-  private SafeFuture<Boolean> processHead(Optional<UInt64> nodeSlot) {
+  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot, final boolean isPreProposal) {
+    return processHead(Optional.of(nodeSlot), isPreProposal);
+  }
+
+  private SafeFuture<Boolean> processHead(
+      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -228,7 +225,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+                          isPreProposal ? nodeSlot : Optional.empty());
+
                       return true;
                     }));
   }
@@ -372,7 +371,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     forkChoiceUtil.applyBlockToStore(
         transaction, block, postState, payloadResult.hasNotValidatedStatus());
 
-    if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+    if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
       final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
 
@@ -410,7 +409,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (forkChoiceUpdateHeadOnBlockImportEnabled) {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     }
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
 
@@ -516,7 +515,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+      final Optional<UInt64> proposingSlot) {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
@@ -524,7 +524,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
 
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
 
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
@@ -620,9 +620,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void applyAttesterSlashingsFromBlock(
       final SignedBeaconBlock signedBeaconBlock, final VoteUpdater voteUpdater) {
-    if (!equivocatingIndicesEnabled) {
-      return;
-    }
     signedBeaconBlock
         .getMessage()
         .getBody()
@@ -634,7 +631,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final AttesterSlashing slashing,
       InternalValidationResult validationStatus,
       boolean fromNetwork) {
-    if (!equivocatingIndicesEnabled || !validationStatus.isAccept()) {
+    if (!validationStatus.isAccept()) {
       return;
     }
     onForkChoiceThread(
@@ -685,8 +682,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOf(tickProcessor.onTick(currentTime), applyDeferredAttestations(slot))
-        .thenCompose(__ -> processHead(slot))
+    return SafeFuture.allOf(
+            tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
+        .thenCompose(__ -> processHead(slot, true))
         .toVoid();
   }
 

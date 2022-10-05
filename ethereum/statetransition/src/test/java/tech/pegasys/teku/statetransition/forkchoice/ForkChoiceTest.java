@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
 import java.util.Optional;
@@ -121,8 +123,6 @@ class ForkChoiceTest {
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
           PandaPrinter.NOOP,
-          false,
-          true,
           DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
   @BeforeEach
@@ -212,8 +212,6 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,
-            true,
-            false,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
@@ -701,7 +699,8 @@ class ForkChoiceTest {
     ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
         ArgumentCaptor.forClass(ForkChoiceState.class);
 
-    verify(forkChoiceNotifier, times(2)).onForkChoiceUpdated(forkChoiceStateCaptor.capture());
+    verify(forkChoiceNotifier, times(2))
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.empty()));
 
     // EL should have been notified of the invalid head first and after that the valid
     // head
@@ -779,7 +778,8 @@ class ForkChoiceTest {
 
     ArgumentCaptor<ForkChoiceState> forkChoiceStateCaptor =
         ArgumentCaptor.forClass(ForkChoiceState.class);
-    verify(forkChoiceNotifier, atLeastOnce()).onForkChoiceUpdated(forkChoiceStateCaptor.capture());
+    verify(forkChoiceNotifier, atLeastOnce())
+        .onForkChoiceUpdated(forkChoiceStateCaptor.capture(), eq(Optional.empty()));
 
     // last notification to EL should be a valid block
     ForkChoiceState lastNotifiedState = forkChoiceStateCaptor.getValue();
@@ -807,6 +807,34 @@ class ForkChoiceTest {
         assertThat(logCaptor.getErrorLogs()).isEmpty();
       }
     }
+  }
+
+  @Test
+  void prepareForBlockProduction_NotYetInProposalSlotShouldRunOnTickWhenWithinTolerance() {
+    final UInt64 newTime =
+        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+            .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100);
+    storageSystem.chainUpdater().setTimeMillis(newTime);
+
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
+    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
+
+    verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
+  }
+
+  @Test
+  void prepareForBlockProduction_NotYetInProposalSlotShouldNotRunOnTickWhenOutOfTolerance() {
+    final UInt64 newTime =
+        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+            .minusMinZero(BLOCK_CREATION_TOLERANCE_MS + 100);
+    storageSystem.chainUpdater().setTimeMillis(newTime);
+
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
+    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
+
+    verifyNoInteractions(forkChoiceNotifier);
   }
 
   private static Stream<ForkChoiceUpdatedResult> getForkChoiceUpdatedResults() {
@@ -858,7 +886,8 @@ class ForkChoiceTest {
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,
-                optimisticHead));
+                optimisticHead),
+            Optional.empty());
   }
 
   private void assertForkChoiceUpdateNotification(
@@ -1105,7 +1134,7 @@ class ForkChoiceTest {
         stubber.doAnswer(onForkChoiceUpdatedResultAnswer);
       }
     }
-    stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any());
+    stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any(), any());
   }
 
   private Answer<Void> getOnForkChoiceUpdatedResultAnswer(ForkChoiceUpdatedResult result) {

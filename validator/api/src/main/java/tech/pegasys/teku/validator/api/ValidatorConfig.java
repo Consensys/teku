@@ -37,10 +37,11 @@ public class ValidatorConfig {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int DEFAULT_REST_API_PORT = 5051;
-  public static final List<String> DEFAULT_BEACON_NODE_API_ENDPOINTS =
-      List.of("http://127.0.0.1:" + DEFAULT_REST_API_PORT);
+  public static final List<URI> DEFAULT_BEACON_NODE_API_ENDPOINTS =
+      List.of(URI.create("http://127.0.0.1:" + DEFAULT_REST_API_PORT));
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
+  public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -53,8 +54,6 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
-  public static final Duration DEFAULT_BEACON_NODE_EVENT_STREAM_SYNCING_STATUS_QUERY_PERIOD =
-      Duration.ofSeconds(12);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -77,13 +76,13 @@ public class ValidatorConfig {
   private final boolean blindedBeaconBlocksEnabled;
   private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
+  private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
   private final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride;
   private final int executorMaxQueueSize;
-  private final Duration beaconNodeEventStreamSyncingStatusQueryPeriod;
   private final Optional<String> sentryNodeConfigurationFile;
 
   private ValidatorConfig(
@@ -108,13 +107,13 @@ public class ValidatorConfig {
       final boolean builderRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
+      final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final Duration beaconNodeEventStreamSyncingStatusQueryPeriod,
       final Optional<String> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -140,14 +139,13 @@ public class ValidatorConfig {
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+    this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
-    this.beaconNodeEventStreamSyncingStatusQueryPeriod =
-        beaconNodeEventStreamSyncingStatusQueryPeriod;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
   }
 
@@ -250,6 +248,10 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
+  public boolean isDoppelgangerDetectionEnabled() {
+    return doppelgangerDetectionEnabled;
+  }
+
   public boolean isFailoversSendSubnetSubscriptionsEnabled() {
     return failoversSendSubnetSubscriptionsEnabled;
   }
@@ -260,10 +262,6 @@ public class ValidatorConfig {
 
   public int getExecutorMaxQueueSize() {
     return executorMaxQueueSize;
-  }
-
-  public Duration getBeaconNodeEventStreamSyncingStatusQueryPeriod() {
-    return beaconNodeEventStreamSyncingStatusQueryPeriod;
   }
 
   public Optional<String> getSentryNodeConfigurationFile() {
@@ -307,6 +305,7 @@ public class ValidatorConfig {
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+    private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
@@ -315,8 +314,6 @@ public class ValidatorConfig {
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
-    private Duration beaconNodeEventStreamSyncingStatusQueryPeriod =
-        DEFAULT_BEACON_NODE_EVENT_STREAM_SYNCING_STATUS_QUERY_PERIOD;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private Builder() {}
@@ -460,6 +457,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder doppelgangerDetectionEnabled(final boolean doppelgangerDetectionEnabled) {
+      this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
+      return this;
+    }
+
     public Builder failoversSendSubnetSubscriptionsEnabled(
         final boolean failoversSendSubnetSubscriptionsEnabled) {
       this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
@@ -498,13 +500,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder beaconNodeEventStreamSyncingStatusQueryPeriod(
-        final Duration beaconNodeEventStreamSyncingStatusQueryPeriod) {
-      this.beaconNodeEventStreamSyncingStatusQueryPeriod =
-          beaconNodeEventStreamSyncingStatusQueryPeriod;
-      return this;
-    }
-
     public Builder sentryNodeConfigurationFile(final String configFile) {
       this.sentryNodeConfigurationFile = Optional.ofNullable(configFile);
       return this;
@@ -538,13 +533,13 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
+          doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          beaconNodeEventStreamSyncingStatusQueryPeriod,
           sentryNodeConfigurationFile);
     }
 
