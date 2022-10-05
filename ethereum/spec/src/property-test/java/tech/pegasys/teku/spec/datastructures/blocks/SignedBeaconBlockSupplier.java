@@ -11,20 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
+import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-
-public class ExecutionPayloadHeaderPropertyTest {
-  @Property
-  void roundTrip(
-      @ForAll(supplier = ExecutionPayloadHeaderSupplier.class)
-          ExecutionPayloadHeader executionPayloadHeader)
-      throws JsonProcessingException {
-    assertRoundTrip(executionPayloadHeader);
+public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
+  public SignedBeaconBlockSupplier() {
+    super(DataStructureUtil::randomSignedBeaconBlock);
   }
 }

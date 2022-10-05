@@ -13,32 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class ProposerSlashingPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = ProposerSlashingSupplier.class) final ProposerSlashing proposerSlashing)
       throws JsonProcessingException {
-    final ProposerSlashing.ProposerSlashingSchema schema = proposerSlashing.getSchema();
-    final DeserializableTypeDefinition<ProposerSlashing> typeDefinition =
-        schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = proposerSlashing.sszSerialize();
-    final ProposerSlashing fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(proposerSlashing);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(proposerSlashing, typeDefinition);
-    final ProposerSlashing fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(proposerSlashing);
+    assertRoundTrip(proposerSlashing);
   }
 }

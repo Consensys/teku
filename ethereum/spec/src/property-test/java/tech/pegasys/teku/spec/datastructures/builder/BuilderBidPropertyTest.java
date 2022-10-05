@@ -13,30 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BuilderBidPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = BuilderBidSupplier.class) final BuilderBid bid)
+  void roundTrip(@ForAll(supplier = BuilderBidSupplier.class) final BuilderBid builderBid)
       throws JsonProcessingException {
-    final BuilderBidSchema schema = bid.getSchema();
-    final DeserializableTypeDefinition<BuilderBid> typeDefinition = schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = bid.sszSerialize();
-    final BuilderBid fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(bid);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(bid, typeDefinition);
-    final BuilderBid fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(bid);
+    assertRoundTrip(builderBid);
   }
 }

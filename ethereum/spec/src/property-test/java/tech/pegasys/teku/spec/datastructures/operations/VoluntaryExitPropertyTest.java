@@ -13,31 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class VoluntaryExitPropertyTest {
   @Property
   void roundTrip(@ForAll(supplier = VoluntaryExitSupplier.class) final VoluntaryExit voluntaryExit)
       throws JsonProcessingException {
-    final VoluntaryExit.VoluntaryExitSchema schema = voluntaryExit.getSchema();
-    final DeserializableTypeDefinition<VoluntaryExit> typeDefinition =
-        schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = voluntaryExit.sszSerialize();
-    final VoluntaryExit fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(voluntaryExit);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(voluntaryExit, typeDefinition);
-    final VoluntaryExit fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(voluntaryExit);
+    assertRoundTrip(voluntaryExit);
   }
 }
