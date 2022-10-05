@@ -8,7 +8,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.14.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.15.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -61,7 +61,7 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder
-    dependency 'org.webjars:swagger-ui:4.14.2'
+    dependency 'org.webjars:swagger-ui:4.10.3'
     dependency 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.149'
     dependency 'com.github.oshi:oshi-core-java11:6.2.2'
