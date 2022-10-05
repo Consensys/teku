@@ -21,7 +21,7 @@ import net.jqwik.api.Property;
 
 public class BlindedBeaconBlockPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock beaconBlock)
+  void roundTrip(@ForAll(supplier = BlindedBeaconBlockSupplier.class) final BeaconBlock beaconBlock)
       throws JsonProcessingException {
     assertRoundTrip(beaconBlock);
   }

@@ -13,25 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.ArbitrarySupplier;
-import net.jqwik.api.Combinators;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlindedBeaconBlockBodySupplier implements ArbitrarySupplier<BeaconBlockBody> {
-  @Override
-  public Arbitrary<BeaconBlockBody> get() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
-    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
-    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(DataStructureUtil::randomBlindedBeaconBlockBody);
+public class BlindedBeaconBlockBodySupplier extends DataStructureUtilSupplier<BeaconBlockBody> {
+  public BlindedBeaconBlockBodySupplier() {
+    super(DataStructureUtil::randomBlindedBeaconBlockBody);
   }
 }

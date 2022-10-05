@@ -132,6 +132,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -232,6 +233,10 @@ public final class DataStructureUtil {
     return BLSTestUtil.randomSignature(nextSeed());
   }
 
+  public SszSignature randomSszSignature() {
+    return new SszSignature(randomSignature());
+  }
+
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, Supplier<T> valueGenerator, long numItems) {
     return randomSszList(schema, numItems, valueGenerator);
@@ -327,6 +332,10 @@ public final class DataStructureUtil {
 
   public BLSPublicKey randomPublicKey() {
     return pubKeyGenerator.get();
+  }
+
+  public SszPublicKey randomSszPublicKey() {
+    return new SszPublicKey(randomPublicKey());
   }
 
   public Bytes48 randomPublicKeyBytes() {

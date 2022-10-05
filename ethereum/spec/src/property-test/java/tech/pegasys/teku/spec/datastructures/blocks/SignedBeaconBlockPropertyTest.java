@@ -22,7 +22,7 @@ import net.jqwik.api.Property;
 public class SignedBeaconBlockPropertyTest {
   @Property
   void roundTrip(
-      @ForAll(supplier = SignedBeaconBlockProvider.class) final SignedBeaconBlock signedBeaconBlock)
+      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock)
       throws JsonProcessingException {
     assertRoundTrip(signedBeaconBlock);
   }
