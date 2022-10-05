@@ -839,7 +839,7 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(forkChoiceStateProvider.getForkChoiceState())
+    when(forkChoiceStateProvider.getForkChoiceStateAsync())
         .thenReturn(SafeFuture.completedFuture(forkChoiceState));
 
     when(executionLayerChannel.engineForkChoiceUpdated(
