@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.operations;
+package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ProposerSlashingSupplier extends DataStructureUtilSupplier<ProposerSlashing> {
-  public ProposerSlashingSupplier() {
-    super(DataStructureUtil::randomProposerSlashing);
+public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
+  public SignedBeaconBlockSupplier() {
+    super(DataStructureUtil::randomSignedBeaconBlock);
   }
 }

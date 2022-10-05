@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedBeaconBlockPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SignedBeaconBlockProvider.class) final SignedBeaconBlock block)
+  void roundTrip(@ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock block)
       throws JsonProcessingException {
     final SignedBeaconBlockSchema schema = block.getSchema();
     final DeserializableTypeDefinition<SignedBeaconBlock> typeDefinition =
