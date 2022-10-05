@@ -200,6 +200,7 @@ allprojects {
       check('LongDoubleConversion', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('DirectInvocationOnMock', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // We don't apply strict javadoc requirements yet
       check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
