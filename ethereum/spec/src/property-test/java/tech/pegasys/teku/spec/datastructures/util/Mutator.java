@@ -79,7 +79,7 @@ public class Mutator {
 
     for (final byte b : input.toArray()) {
       final double randomNumber = Math.abs(random.nextGaussian());
-      if (randomNumber <= MUTATION_PROBABILITY) {
+      if (randomNumber < MUTATION_PROBABILITY) {
 
         Mutation op = null;
         for (final Map.Entry<Mutation, Range> entry : RANGE_MAP.entrySet()) {
