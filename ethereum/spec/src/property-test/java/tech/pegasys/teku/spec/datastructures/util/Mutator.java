@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Mutator {
@@ -31,7 +29,7 @@ public class Mutator {
     DELETE
   }
 
-  /** Likelihood that a specific mutation will happen. */
+  /** Likelihood that a specific mutation will happen. A number between 0 and 1. */
   private static final Map<Mutation, Double> MUTATION_PROBABILITIES =
       Map.of(
           Mutation.REPLACE, 0.01,
@@ -39,29 +37,27 @@ public class Mutator {
           Mutation.ADD_AFTER, 0.001,
           Mutation.DELETE, 0.001);
 
-  /** The total probability that a mutation of any kind will happen. */
-  private static final double MUTATION_PROBABILITY =
-      MUTATION_PROBABILITIES.values().stream().reduce(0.0, Double::sum);
-
-  /** If a random number falls in this range, that mutation should happen. */
-  private static final Map<Mutation, Range> RANGE_MAP = new HashMap<>();
+  /** A map used to determine which mutation should occur, if any. */
+  private static final TreeMap<Double, Mutation> PROBABILITY_MAP = new TreeMap<>();
 
   static {
-    // Make a map of non-overlapping ranges. The range reflects the probability of that mutation.
-    // When fuzzing, a random number will be chosen. To determine which mutation should occur, we
-    // check which of these ranges the random number falls into. For example, you could expect this
-    // map to look something like:
+    // Make a probability map to be queried with TreeMap.ceilingEntry(). For each non-zero
+    // probability, create a new entry where the key is the cumulative probability. Given a random
+    // number between 0 and 1, TreeMap.ceilingEntry(randomNumber) will return a mutation (or null)
+    // that corresponds to its probability. You could expect this map to look something like:
     //
     // {
-    //    REPLACE: Range(0, 0.01),
-    //    ADD_BEFORE: Range(0.01, 0.011),
-    //    ADD_AFTER: Range(0.011, 0.012),
-    //    DELETE: Range(0.012, 0.013)
+    //    0.010: REPLACE
+    //    0.011: ADD_BEFORE
+    //    0.012: ADD_AFTER
+    //    0.013: DELETE
     // }
-    double start = 0.0;
+    double cumulativeProbability = 0.0;
     for (Map.Entry<Mutation, Double> entry : MUTATION_PROBABILITIES.entrySet()) {
-      RANGE_MAP.put(entry.getKey(), new Range(start, start + entry.getValue()));
-      start += entry.getValue();
+      if (entry.getValue() > 0.0) {
+        cumulativeProbability += entry.getValue();
+        PROBABILITY_MAP.put(cumulativeProbability, entry.getKey());
+      }
     }
   }
 
@@ -78,19 +74,10 @@ public class Mutator {
     final List<Bytes> sections = new ArrayList<>();
 
     for (final byte b : input.toArray()) {
-      final double randomNumber = Math.abs(random.nextGaussian());
-      if (randomNumber < MUTATION_PROBABILITY) {
-
-        Mutation op = null;
-        for (final Map.Entry<Mutation, Range> entry : RANGE_MAP.entrySet()) {
-          if (entry.getValue().contains(randomNumber)) {
-            op = entry.getKey();
-            break;
-          }
-        }
-        assertThat(op).isNotNull();
-
-        switch (op) {
+      final double randomNumber = random.nextDouble();
+      final Map.Entry<Double, Mutation> entry = PROBABILITY_MAP.ceilingEntry(randomNumber);
+      if (entry != null) {
+        switch (entry.getValue()) {
           case ADD_BEFORE:
             final byte before = (byte) random.nextInt();
             sections.add(Bytes.of(before, b));
@@ -111,21 +98,5 @@ public class Mutator {
       }
     }
     return Bytes.concatenate(sections);
-  }
-
-  private static class Range {
-    private final double a;
-    private final double b;
-
-    public Range(final double a, final double b) {
-      assertThat(a).isLessThanOrEqualTo(b);
-      this.a = a;
-      this.b = b;
-    }
-
-    /** Does the value fall into the exclusive [a, b) range. */
-    public boolean contains(final double value) {
-      return a <= value && value < b;
-    }
   }
 }
