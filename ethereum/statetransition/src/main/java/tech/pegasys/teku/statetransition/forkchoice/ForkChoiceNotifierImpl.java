@@ -134,7 +134,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
    *     <p>2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
    */
-  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<Optional<ExecutionPayloadContext>> internalGetPayloadId(
       final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
@@ -170,7 +169,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
       final ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
 
       return forkChoiceStateProvider
-          .getForkChoiceState()
+          .getForkChoiceStateAsync()
           .thenCombine(
               proposersDataManager.calculatePayloadBuildingAttributes(
                   blockSlot, inSync, localForkChoiceUpdateData, true),
@@ -187,18 +186,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
                       "payloadId still not suitable after requesting a new one via FcU with recalculated data");
                 }
 
-                return forkChoiceUpdateData.getExecutionPayloadContext();
+                return forkChoiceUpdateData;
               })
-          .thenCompose(
-              executionPayloadContextFuture ->
-                  executionPayloadContextFuture.thenApply(
-                      maybeExecutionPayloadContext -> {
-                        if (maybeExecutionPayloadContext.isEmpty()) {
-                          throw new IllegalStateException(
-                              "Unable to obtain an executionPayloadContext");
-                        }
-                        return maybeExecutionPayloadContext;
-                      }));
+          .thenCompose(ForkChoiceUpdateData::getExecutionPayloadContext)
+          .thenApply(
+              maybeExecutionPayloadContext -> {
+                if (maybeExecutionPayloadContext.isEmpty()) {
+                  throw new IllegalStateException("Unable to obtain an executionPayloadContext");
+                }
+                return maybeExecutionPayloadContext;
+              });
     }
   }
 

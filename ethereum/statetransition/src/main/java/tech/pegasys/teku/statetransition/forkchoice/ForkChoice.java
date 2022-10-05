@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -520,22 +521,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
       final Optional<UInt64> proposingSlot) {
-    forkChoiceStateProvider
-        .getForkChoiceState()
-        .thenAccept(
-            forkChoiceState -> {
-              forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
 
-              if (optimisticSyncing
-                  .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
-                  .orElse(true)) {
-                optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
-                optimisticSyncSubscribers.deliver(
-                    OptimisticHeadSubscriber::onOptimisticHeadChanged,
-                    forkChoiceState.isHeadOptimistic());
-              }
-            })
-        .ifExceptionGetsHereRaiseABug();
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+
+    if (optimisticSyncing
+        .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
+        .orElse(true)) {
+      optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
+      optimisticSyncSubscribers.deliver(
+          OptimisticHeadSubscriber::onOptimisticHeadChanged, forkChoiceState.isHeadOptimistic());
+    }
   }
 
   private void applyVotesFromBlock(
