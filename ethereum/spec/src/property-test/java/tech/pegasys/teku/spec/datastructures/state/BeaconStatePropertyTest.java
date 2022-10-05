@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,9 +23,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class BeaconStatePropertyTest {
   @Property(tries = 100)
-  @SuppressWarnings("unchecked")
   void roundTrip(@ForAll(supplier = BeaconStateSupplier.class) final BeaconState beaconState)
       throws JsonProcessingException {
     assertRoundTrip(beaconState);
+  }
+
+  @Property(tries = 100)
+  void deserializeMutated(
+      @ForAll(supplier = BeaconStateSupplier.class) final BeaconState beaconState,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(beaconState, seed);
   }
 }

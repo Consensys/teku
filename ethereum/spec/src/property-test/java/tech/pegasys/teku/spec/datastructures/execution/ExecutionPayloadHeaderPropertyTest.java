@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,5 +27,13 @@ public class ExecutionPayloadHeaderPropertyTest {
           ExecutionPayloadHeader executionPayloadHeader)
       throws JsonProcessingException {
     assertRoundTrip(executionPayloadHeader);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = ExecutionPayloadHeaderSupplier.class)
+          ExecutionPayloadHeader executionPayloadHeader,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(executionPayloadHeader, seed);
   }
 }
