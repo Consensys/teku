@@ -195,7 +195,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                               createSignedValidatorRegistration(maybeProposerConfig, validator))
                       .flatMap(Optional::stream);
 
-              return SafeFuture.collectAll(validatorRegistrationsFutures)
+              return SafeFuture.collectAllSuccessful(validatorRegistrationsFutures)
                   .thenCompose(validatorRegistrationBatchSender::sendInBatches);
             });
   }
@@ -297,6 +297,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Signer signer) {
     return signer
         .signValidatorRegistration(validatorRegistration)
+        .whenException(
+            throwable -> {
+              final String errorMessage =
+                  String.format(
+                      "Exception while signing validator registration for %s. Signing will be attempted again next epoch.",
+                      cacheKey);
+              LOG.warn(errorMessage, throwable);
+            })
         .thenApply(
             signature -> {
               final SignedValidatorRegistration signedValidatorRegistration =
