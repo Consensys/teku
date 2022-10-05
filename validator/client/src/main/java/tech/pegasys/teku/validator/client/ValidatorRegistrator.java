@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -189,15 +190,36 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .thenCompose(
             maybeProposerConfig -> {
               final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-                  validators.stream()
-                      .map(
-                          validator ->
-                              createSignedValidatorRegistration(maybeProposerConfig, validator))
-                      .flatMap(Optional::stream);
-
-              return SafeFuture.collectAll(validatorRegistrationsFutures)
+                  createValidatorRegistrations(validators, maybeProposerConfig);
+              return SafeFuture.collectAllSuccessful(validatorRegistrationsFutures)
                   .thenCompose(validatorRegistrationBatchSender::sendInBatches);
             });
+  }
+
+  private Stream<SafeFuture<SignedValidatorRegistration>> createValidatorRegistrations(
+      final List<Validator> validators, final Optional<ProposerConfig> maybeProposerConfig) {
+    return validators.stream()
+        .map(
+            validator ->
+                createSignedValidatorRegistration(
+                    maybeProposerConfig,
+                    validator,
+                    throwable -> {
+                      final String errorMessage =
+                          String.format(
+                              "Exception while creating a validator registration for %s. Creation will be attempted again next epoch.",
+                              validator.getPublicKey());
+                      LOG.warn(errorMessage, throwable);
+                    }))
+        .flatMap(Optional::stream);
+  }
+
+  private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
+      final Optional<ProposerConfig> maybeProposerConfig,
+      final Validator validator,
+      final Consumer<Throwable> errorHandler) {
+    return createSignedValidatorRegistration(maybeProposerConfig, validator)
+        .map(registrationFuture -> registrationFuture.whenException(errorHandler));
   }
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(

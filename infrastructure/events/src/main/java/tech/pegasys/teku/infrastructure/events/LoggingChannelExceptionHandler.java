@@ -26,7 +26,7 @@ public enum LoggingChannelExceptionHandler implements ChannelExceptionHandler {
       final Object subscriber,
       final Method invokedMethod,
       final Object[] args) {
-    LogManager.getLogger(invokedMethod.getClass())
+    LogManager.getLogger(invokedMethod.getDeclaringClass())
         .error(
             "Unhandled error in subscriber "
                 + subscriber.getClass().getName()

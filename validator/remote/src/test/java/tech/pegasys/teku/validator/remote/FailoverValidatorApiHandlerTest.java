@@ -101,7 +101,12 @@ class FailoverValidatorApiHandlerTest {
     final Supplier<HttpUrl> randomHttpUrlGenerator =
         () -> HttpUrl.get("http://" + DATA_STRUCTURE_UTIL.randomBytes4().toHexString() + ".com");
 
+    final List<RemoteValidatorApiChannel> failoverDelegates =
+        List.of(failoverApiChannel1, failoverApiChannel2);
+
     when(beaconNodeReadinessManager.isReady(any())).thenReturn(true);
+    when(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
+        .thenReturn(failoverDelegates.iterator());
 
     when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
@@ -111,7 +116,7 @@ class FailoverValidatorApiHandlerTest {
         new FailoverValidatorApiHandler(
             beaconNodeReadinessManager,
             primaryApiChannel,
-            List.of(failoverApiChannel1, failoverApiChannel2),
+            failoverDelegates,
             true,
             stubMetricsSystem);
   }

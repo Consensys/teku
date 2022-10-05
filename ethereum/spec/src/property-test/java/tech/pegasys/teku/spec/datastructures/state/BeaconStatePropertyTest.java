@@ -13,34 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 
 public class BeaconStatePropertyTest {
   @Property(tries = 100)
   @SuppressWarnings("unchecked")
-  void roundTrip(@ForAll(supplier = BeaconStateSupplier.class) final BeaconState state)
+  void roundTrip(@ForAll(supplier = BeaconStateSupplier.class) final BeaconState beaconState)
       throws JsonProcessingException {
-    final BeaconStateSchema<?, ?> schema = state.getBeaconStateSchema();
-    final DeserializableTypeDefinition<BeaconState> typeDefinition =
-        (DeserializableTypeDefinition<BeaconState>) schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = state.sszSerialize();
-    final BeaconState fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(state);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(state, typeDefinition);
-    final BeaconState fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(state);
+    assertRoundTrip(beaconState);
   }
 }
