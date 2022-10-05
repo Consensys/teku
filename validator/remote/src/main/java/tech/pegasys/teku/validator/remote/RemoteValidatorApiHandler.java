@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toMap;
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +36,7 @@ import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -68,7 +67,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -450,7 +448,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
       List<UInt64> validatorIndices, UInt64 epoch) {
     return sendRequest(
         () ->
@@ -459,14 +457,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .map(this::responseToDoppelgangerDetectionResult));
   }
 
-  private DoppelgangerDetectionResult responseToDoppelgangerDetectionResult(
+  private List<ValidatorLivenessAtEpoch> responseToDoppelgangerDetectionResult(
       final PostValidatorLivenessResponse response) {
-    Object2BooleanMap<UInt64> validatorsLiveness = new Object2BooleanArrayMap<>();
-    response.data.forEach(
-        validatorLivenessAtEpoch ->
-            validatorsLiveness.put(
-                validatorLivenessAtEpoch.index, validatorLivenessAtEpoch.isLive));
-    return new DoppelgangerDetectionResult(validatorsLiveness);
+    return response.data.stream()
+        .map(
+            validatorLivenessAtEpoch ->
+                new ValidatorLivenessAtEpoch(
+                    validatorLivenessAtEpoch.index,
+                    validatorLivenessAtEpoch.epoch,
+                    validatorLivenessAtEpoch.isLive))
+        .collect(Collectors.toList());
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

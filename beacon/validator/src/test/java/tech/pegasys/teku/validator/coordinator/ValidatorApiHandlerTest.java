@@ -104,7 +104,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
@@ -1027,13 +1026,12 @@ class ValidatorApiHandlerTest {
     when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
-    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
         validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
 
     verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
     assertThat(result).isCompleted();
-    assertThat(result.get()).isPresent();
-    assertThat(result.get().get().getLiveValidatorIndices()).isEmpty();
+    assertThat(result.get()).isEmpty();
   }
 
   @Test
@@ -1060,15 +1058,25 @@ class ValidatorApiHandlerTest {
 
     when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
 
-    final SafeFuture<Optional<DoppelgangerDetectionResult>> result =
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
         validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
 
     verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
     assertThat(result).isCompleted();
     assertThat(result.get()).isPresent();
-    assertThat(result.get().get().validatorIsLive(firstIndex)).isFalse();
-    assertThat(result.get().get().validatorIsLive(secondIndex)).isTrue();
-    assertThat(result.get().get().validatorIsLive(thirdIndex)).isTrue();
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochesResult = result.get().get();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, firstIndex)).isFalse();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, secondIndex)).isTrue();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, thirdIndex)).isTrue();
+  }
+
+  private boolean validatorIsLive(
+      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches, UInt64 validatorIndex) {
+    return validatorLivenessAtEpoches.stream()
+        .anyMatch(
+            validatorLivenessAtEpoch ->
+                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                    && validatorLivenessAtEpoch.isLive());
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {

@@ -22,8 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
-import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -84,7 +82,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.DoppelgangerDetectionResult;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
@@ -666,26 +663,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
       final List<UInt64> validatorIndices, final UInt64 epoch) {
-    return nodeDataProvider
-        .getValidatorLiveness(validatorIndices, epoch, chainDataProvider.getCurrentEpoch())
-        .thenApply(
-            validatorLivenessAtEpoches ->
-                Optional.of(
-                    getDoppelgangerDetectionResultFromLiveness(validatorLivenessAtEpoches)));
-  }
-
-  private DoppelgangerDetectionResult getDoppelgangerDetectionResultFromLiveness(
-      final Optional<List<ValidatorLivenessAtEpoch>> maybeValidatorsLiveness) {
-    final Object2BooleanMap<UInt64> validatorsLiveness = new Object2BooleanArrayMap<>();
-    maybeValidatorsLiveness.ifPresent(
-        validatorLivenessAtEpoches ->
-            validatorLivenessAtEpoches.forEach(
-                validatorLivenessAtEpoch ->
-                    validatorsLiveness.put(
-                        validatorLivenessAtEpoch.getIndex(), validatorLivenessAtEpoch.isLive())));
-    return new DoppelgangerDetectionResult(validatorsLiveness);
+    return nodeDataProvider.getValidatorLiveness(
+        validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
