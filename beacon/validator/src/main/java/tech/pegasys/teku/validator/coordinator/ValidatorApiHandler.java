@@ -667,7 +667,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<DoppelgangerDetectionResult>> checkValidatorsDoppelganger(
-      List<UInt64> validatorIndices, final UInt64 epoch) {
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
     return nodeDataProvider
         .getValidatorLiveness(validatorIndices, epoch, chainDataProvider.getCurrentEpoch())
         .thenApply(
@@ -678,7 +678,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private DoppelgangerDetectionResult getDoppelgangerDetectionResultFromLiveness(
       final Optional<List<ValidatorLivenessAtEpoch>> maybeValidatorsLiveness) {
-    Object2BooleanMap<UInt64> validatorsLiveness = new Object2BooleanArrayMap<>();
+    final Object2BooleanMap<UInt64> validatorsLiveness = new Object2BooleanArrayMap<>();
     maybeValidatorsLiveness.ifPresent(
         validatorLivenessAtEpoches ->
             validatorLivenessAtEpoches.forEach(
