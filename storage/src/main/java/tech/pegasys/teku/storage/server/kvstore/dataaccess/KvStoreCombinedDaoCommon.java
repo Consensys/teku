@@ -134,6 +134,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
     void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
     void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+
+    void removeDepositsFromBlockEvent(UInt64 blockNumber);
   }
 
   interface FinalizedUpdaterCommon extends AutoCloseable {

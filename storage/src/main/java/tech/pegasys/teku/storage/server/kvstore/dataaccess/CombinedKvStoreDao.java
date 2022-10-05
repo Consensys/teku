@@ -656,6 +656,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
+      transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
+    }
+
+    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();

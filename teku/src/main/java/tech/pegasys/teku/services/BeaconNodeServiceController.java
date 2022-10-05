@@ -29,7 +29,11 @@ public class BeaconNodeServiceController extends ServiceController {
   public BeaconNodeServiceController(
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
-    services.add(new StorageService(serviceConfig, tekuConfig.storageConfiguration()));
+    services.add(
+        new StorageService(
+            serviceConfig,
+            tekuConfig.storageConfiguration(),
+            tekuConfig.powchain().isDepositSnapshotStorageEnabled()));
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain

@@ -316,6 +316,11 @@ public class V4HotKvStoreDao {
     }
 
     @Override
+    public void removeDepositsFromBlockEvent(UInt64 blockNumber) {
+      transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
+    }
+
+    @Override
     public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
       transaction.put(schema.getVariableFinalizedDepositSnapshot(), finalizedDepositSnapshot);
     }

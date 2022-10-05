@@ -512,6 +512,14 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {
+    try (final HotUpdaterCommon updater = hotUpdater()) {
+      blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {
     try (final HotUpdaterCommon hotUpdater = hotUpdater()) {
       hotUpdater.addVotes(votes);

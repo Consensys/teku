@@ -638,6 +638,11 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
+      hotUpdater.removeDepositsFromBlockEvent(blockNumber);
+    }
+
+    @Override
     public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
       hotUpdater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
     }

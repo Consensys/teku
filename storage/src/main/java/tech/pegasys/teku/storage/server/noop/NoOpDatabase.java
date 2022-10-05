@@ -223,6 +223,9 @@ public class NoOpDatabase implements Database {
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {}
 
   @Override
+  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {}
+
+  @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
 
   @Override

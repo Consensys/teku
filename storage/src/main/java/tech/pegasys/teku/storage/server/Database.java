@@ -147,6 +147,8 @@ public interface Database extends AutoCloseable {
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
+  void removeDepositsFromBlockEvents(List<UInt64> blockNumbers);
+
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
   Map<String, Long> getColumnCounts();
