@@ -66,7 +66,7 @@ public class BeaconNodeReadinessManagerTest {
     when(failoverBeaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
 
-    advanceToNextQueryPeriod();
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
@@ -79,7 +79,7 @@ public class BeaconNodeReadinessManagerTest {
     when(failoverBeaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(OPTIMISTICALLY_SYNCING_STATUS));
 
-    advanceToNextQueryPeriod();
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
@@ -90,7 +90,7 @@ public class BeaconNodeReadinessManagerTest {
     // primary node recovers
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
 
-    advanceToNextQueryPeriod();
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
@@ -98,7 +98,34 @@ public class BeaconNodeReadinessManagerTest {
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeBackInSync();
   }
 
-  private void advanceToNextQueryPeriod() {
+  @Test
+  public void ordersFailoversByReadiness() {
+    final RemoteValidatorApiChannel anotherFailover = mock(RemoteValidatorApiChannel.class);
+    final RemoteValidatorApiChannel yetAnotherFailover = mock(RemoteValidatorApiChannel.class);
+    final BeaconNodeReadinessManager beaconNodeReadinessManager =
+        new BeaconNodeReadinessManager(
+            beaconNodeApi,
+            List.of(failoverBeaconNodeApi, anotherFailover, yetAnotherFailover),
+            validatorLogger,
+            remoteBeaconNodeSyncingChannel);
+
+    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+
+    when(failoverBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+    when(anotherFailover.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+    when(yetAnotherFailover.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    assertThat(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
+        .toIterable()
+        .containsExactly(anotherFailover, failoverBeaconNodeApi, yetAnotherFailover);
+  }
+
+  private void advanceToNextQueryPeriod(
+      final BeaconNodeReadinessManager beaconNodeReadinessManager) {
     beaconNodeReadinessManager.onAttestationAggregationDue(UInt64.ZERO);
   }
 }
