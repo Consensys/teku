@@ -40,6 +40,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChains;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
@@ -168,7 +169,7 @@ class BatchSyncTest {
 
   @Test
   void shouldFailSyncWhenTargetChainHasNoPeersAndThereAreNoOutstandingRequests() {
-    final TargetChains targetChains = new TargetChains();
+    final TargetChains targetChains = new TargetChains(mock(SettableLabelledGauge.class), "target");
     targetChains.onPeerStatusUpdated(syncSource, targetChain.getChainHead());
     targetChain = targetChains.streamChains().findFirst().orElseThrow();
 
