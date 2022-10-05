@@ -212,9 +212,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final Stream<SafeFuture<Optional<T>>> optionalFutures =
         futures.map(future -> future.thenApply(Optional::of).exceptionally(__ -> Optional.empty()));
     return collectAll(optionalFutures)
-        .thenApply(
-            results ->
-                results.stream().filter(Optional::isPresent).map(Optional::get).collect(toList()));
+        .thenApply(results -> results.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   /**

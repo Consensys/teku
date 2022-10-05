@@ -1129,7 +1129,13 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void collectAllSuccessful_getsSuccessfulResultsWhenSomeFuturesCompleteExceptionally() {
+  void collectAllSuccessful_completeWithEmptyListWhenNoFuturesSupplied() {
+    assertThat(SafeFuture.collectAllSuccessful(Stream.empty()))
+        .isCompletedWithValue(Collections.emptyList());
+  }
+
+  @Test
+  public void collectAllSuccessful_completesWithListOfResultsEvenIfSomeFuturesFail() {
     final SafeFuture<String> fooFuture = SafeFuture.completedFuture("foo");
     final SafeFuture<String> barFuture = SafeFuture.completedFuture("bar");
     final SafeFuture<String> failedFuture = SafeFuture.failedFuture(new IllegalStateException());
