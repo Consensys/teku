@@ -13,16 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 
 public class ContributionAndProofPropertyTest {
   @Property
@@ -30,18 +26,6 @@ public class ContributionAndProofPropertyTest {
       @ForAll(supplier = ContributionAndProofSupplier.class)
           final ContributionAndProof contributionAndProof)
       throws JsonProcessingException {
-    final ContributionAndProofSchema schema = contributionAndProof.getSchema();
-    final DeserializableTypeDefinition<ContributionAndProof> typeDefinition =
-        schema.getJsonTypeDefinition();
-
-    // Round-trip SSZ serialization.
-    final Bytes ssz = contributionAndProof.sszSerialize();
-    final ContributionAndProof fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(contributionAndProof);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(contributionAndProof, typeDefinition);
-    final ContributionAndProof fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(contributionAndProof);
+    assertRoundTrip(contributionAndProof);
   }
 }
