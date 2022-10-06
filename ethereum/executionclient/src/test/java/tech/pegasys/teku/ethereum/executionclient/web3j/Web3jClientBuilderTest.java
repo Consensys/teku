@@ -19,108 +19,156 @@ import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3jClientBuilderTest {
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
+
+  private final String endpoint = "http://localhost";
+  private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final Duration timeout = Duration.ofMinutes(1);
+  private final ExecutionClientEventsChannel executionClientEventsPublisher =
+      mock(ExecutionClientEventsChannel.class);
 
   @Test
   public void shouldFailSettingBadEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    assertThatThrownBy(() -> builder.endpoint("http://^"))
+    assertThatThrownBy(() -> new Web3jClientBuilder().endpoint("http://^"))
         .isInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
   public void shouldFailBuildPreconditionCheckWithNoEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(timeProvider)
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     assertThatThrownBy(builder::build).isInstanceOf(NullPointerException.class);
   }
 
   @Test
   public void shouldFailBuildPreconditionCheckWithNoTimeout() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder.timeProvider(mock(TimeProvider.class)).endpoint("http://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(timeProvider)
+            .endpoint(endpoint)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     assertThatThrownBy(builder::build).isInstanceOf(NullPointerException.class);
   }
 
   @Test
   public void shouldFailBuildPreconditionCheckWithNoTimeprovider() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder.timeout(DEFAULT_TIMEOUT).endpoint("http://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .endpoint(endpoint)
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
+    assertThatThrownBy(builder::build).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  public void shouldFailBuildPreconditionCheckWithNoExecutionClientEventPublisher() {
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder().timeProvider(timeProvider).endpoint(endpoint).timeout(timeout);
+
     assertThatThrownBy(builder::build).isInstanceOf(NullPointerException.class);
   }
 
   @Test
   public void shouldFailBuildWithUnsupportedEndpointScheme() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("abc://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(timeProvider)
+            .endpoint("abc://localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     assertThatThrownBy(builder::build).isInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
   public void shouldFailBuildWithNullEndpointScheme() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder.timeProvider(mock(TimeProvider.class)).timeout(DEFAULT_TIMEOUT).endpoint("localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(timeProvider)
+            .endpoint("localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     assertThatThrownBy(builder::build).hasMessageContaining("scheme is not supported");
   }
 
   @Test
   public void shouldBuildHttpClientWithHttpEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("http://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(mock(TimeProvider.class))
+            .endpoint("http://localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     Web3JClient client = builder.build();
+
     assertThat(client).isInstanceOf(Web3jHttpClient.class);
   }
 
   @Test
   public void shouldBuildHttpClientWithHttpsEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("https://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(mock(TimeProvider.class))
+            .endpoint("https://localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     Web3JClient client = builder.build();
+
     assertThat(client).isInstanceOf(Web3jHttpClient.class);
   }
 
   @Test
   public void shouldBuildWebsocketClientWithWsEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("ws://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(mock(TimeProvider.class))
+            .endpoint("ws://localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     Web3JClient client = builder.build();
+
     assertThat(client).isInstanceOf(Web3jWebsocketClient.class);
   }
 
   @Test
   public void shouldBuildWebsocketClientWithWssEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("wss://localhost");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(mock(TimeProvider.class))
+            .endpoint("wss://localhost")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     Web3JClient client = builder.build();
+
     assertThat(client).isInstanceOf(Web3jWebsocketClient.class);
   }
 
   @Test
   public void shouldBuildIpcClientWithFileEndpoint() {
-    Web3jClientBuilder builder = new Web3jClientBuilder();
-    builder
-        .timeProvider(mock(TimeProvider.class))
-        .timeout(DEFAULT_TIMEOUT)
-        .endpoint("file:/some/path");
+    Web3jClientBuilder builder =
+        new Web3jClientBuilder()
+            .timeProvider(mock(TimeProvider.class))
+            .endpoint("file:/some/path")
+            .timeout(timeout)
+            .executionClientEventsPublisher(executionClientEventsPublisher);
+
     Web3JClient client = builder.build();
+
     assertThat(client).isInstanceOf(Web3jIpcClient.class);
   }
 }

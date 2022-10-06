@@ -18,11 +18,13 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessa
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.exceptions.ClientConnectionException;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -36,6 +38,7 @@ public abstract class Web3JClient {
 
   private final EventLogger eventLog;
   private final TimeProvider timeProvider;
+  private final ExecutionClientEventsChannel executionClientEventsPublisher;
   private Web3jService web3jService;
   private Web3j eth1Web3j;
 
@@ -43,10 +46,15 @@ public abstract class Web3JClient {
   // available but uses a very old value to make sure we log if the first request fails
   private final AtomicLong lastError = new AtomicLong(STARTUP_LAST_ERROR_TIME);
   private boolean initialized = false;
+  private final AtomicBoolean isAvailable = new AtomicBoolean(false);
 
-  protected Web3JClient(final EventLogger eventLog, final TimeProvider timeProvider) {
+  protected Web3JClient(
+      final EventLogger eventLog,
+      final TimeProvider timeProvider,
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
     this.eventLog = eventLog;
     this.timeProvider = timeProvider;
+    this.executionClientEventsPublisher = executionClientEventsPublisher;
   }
 
   protected synchronized void initWeb3jService(final Web3jService web3jService) {
@@ -104,6 +112,10 @@ public abstract class Web3JClient {
     if (maybeUpdatedTime == timeNow) {
       logExecutionClientError(error, couldBeAuthError);
     }
+
+    if (isAvailable.compareAndSet(true, false)) {
+      executionClientEventsPublisher.onAvailabilityUpdated(isAvailable.get());
+    }
   }
 
   protected void handleSuccess() {
@@ -112,6 +124,10 @@ public abstract class Web3JClient {
       eventLog.executionClientIsOnline();
     } else if (lastErrorTime != NO_ERROR_TIME) {
       eventLog.executionClientRecovered();
+    }
+
+    if (isAvailable.compareAndSet(false, true)) {
+      executionClientEventsPublisher.onAvailabilityUpdated(isAvailable.get());
     }
   }
 

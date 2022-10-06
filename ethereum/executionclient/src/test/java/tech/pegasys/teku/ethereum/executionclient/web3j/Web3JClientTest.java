@@ -14,8 +14,10 @@
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -33,6 +35,7 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.VoidResponse;
 import org.web3j.protocol.websocket.WebSocketService;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -42,10 +45,14 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3JClientTest {
+
   private static final URI ENDPOINT = URI.create("");
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 
   private final EventLogger eventLog = mock(EventLogger.class);
+
+  private final ExecutionClientEventsChannel executionClientEventsPublisher =
+      mock(ExecutionClientEventsChannel.class);
 
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
@@ -55,34 +62,49 @@ public class Web3JClientTest {
     return Stream.<Named<ClientFactory>>of(
             Named.of(
                 "Web3JClient",
-                eventLog -> {
-                  final Web3JClient web3jClient = new Web3JClient(eventLog, timeProvider) {};
+                (eventLog, executionClientEventsPublisher) -> {
+                  final Web3JClient web3jClient =
+                      new Web3JClient(eventLog, timeProvider, executionClientEventsPublisher) {};
                   web3jClient.initWeb3jService(web3jService);
                   return web3jClient;
                 }),
             Named.of(
                 "Web3jHttpClient",
-                eventLog -> {
+                (eventLog, executionClientEventsPublisher) -> {
                   final Web3jHttpClient client =
                       new Web3jHttpClient(
-                          eventLog, ENDPOINT, timeProvider, DEFAULT_TIMEOUT, Optional.empty()) {};
+                          eventLog,
+                          ENDPOINT,
+                          timeProvider,
+                          DEFAULT_TIMEOUT,
+                          Optional.empty(),
+                          executionClientEventsPublisher) {};
                   client.initWeb3jService(web3jService);
                   return client;
                 }),
             Named.of(
                 "Web3jWebsocketClient",
-                eventLog -> {
+                (eventLog, executionClientEventsPublisher) -> {
                   final Web3jWebsocketClient client =
-                      new Web3jWebsocketClient(eventLog, ENDPOINT, timeProvider, Optional.empty());
+                      new Web3jWebsocketClient(
+                          eventLog,
+                          ENDPOINT,
+                          timeProvider,
+                          Optional.empty(),
+                          executionClientEventsPublisher);
                   client.initWeb3jService(webSocketService);
                   return client;
                 }),
             Named.of(
                 "Web3jIpcClient",
-                eventLog -> {
+                (eventLog, executionClientEventsPublisher) -> {
                   final Web3jIpcClient client =
                       new Web3jIpcClient(
-                          eventLog, URI.create("file:/a"), timeProvider, Optional.empty());
+                          eventLog,
+                          URI.create("file:/a"),
+                          timeProvider,
+                          Optional.empty(),
+                          executionClientEventsPublisher);
                   client.initWeb3jService(web3jService);
                   return client;
                 }))
@@ -92,9 +114,8 @@ public class Web3JClientTest {
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldTimeoutIfResponseNotReceived(final ClientFactory clientFactory) throws Exception {
-    final Web3JClient client = clientFactory.create(eventLog);
-    Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(new CompletableFuture<>());
 
@@ -110,9 +131,8 @@ public class Web3JClientTest {
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldLogOnFirstSuccess(final ClientFactory clientFactory) throws Exception {
-    final Web3JClient client = clientFactory.create(eventLog);
-    Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
 
@@ -125,9 +145,8 @@ public class Web3JClientTest {
   @ParameterizedTest
   @MethodSource("getClientInstances")
   void shouldReportFailureAndRecovery(final ClientFactory clientFactory) throws Exception {
-    final Web3JClient client = clientFactory.create(eventLog);
-    Request<Void, VoidResponse> request =
-        new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
     final Throwable error = new IllegalStateException("oopsy");
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(SafeFuture.failedFuture(error))
@@ -141,7 +160,83 @@ public class Web3JClientTest {
     verify(eventLog).executionClientRecovered();
   }
 
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldUpdateAvailabilityAfterFirstSuccessfulRequest(final ClientFactory clientFactory)
+      throws Exception {
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(true));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldNotUpdateAvailabilityAfterSubsequentsSuccessfulRequests(
+      final ClientFactory clientFactory) throws Exception {
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(true));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verifyNoMoreInteractions(executionClientEventsPublisher);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldUpdateAvailabilityWhenAvailableAndNextRequestFails(final ClientFactory clientFactory)
+      throws Exception {
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(true));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(false));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldNotUpdateAvailabilityAfterSubsequentsFailedRequests(final ClientFactory clientFactory)
+      throws Exception {
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(new VoidResponse()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(true));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(false));
+
+    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verifyNoMoreInteractions(executionClientEventsPublisher);
+  }
+
+  private static Request<Void, VoidResponse> createRequest(final Web3JClient client) {
+    return new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
+  }
+
   private interface ClientFactory {
-    Web3JClient create(EventLogger eventLog);
+
+    Web3JClient create(
+        EventLogger eventLog, ExecutionClientEventsChannel executionClientEventsPublisher);
   }
 }
