@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
@@ -71,7 +70,7 @@ public class Mutator {
    */
   public static Bytes mutate(final Bytes input, final int seed) {
     final Random random = new Random(seed);
-    final List<Bytes> sections = new ArrayList<>();
+    final ByteArrayOutputStream out = new ByteArrayOutputStream(input.size());
 
     for (final byte b : input.toArray()) {
       final double randomNumber = random.nextDouble();
@@ -80,23 +79,25 @@ public class Mutator {
         switch (entry.getValue()) {
           case ADD_BEFORE:
             final byte before = (byte) random.nextInt();
-            sections.add(Bytes.of(before, b));
+            out.write(before);
+            out.write(b);
             break;
           case ADD_AFTER:
             final byte after = (byte) random.nextInt();
-            sections.add(Bytes.of(b, after));
+            out.write(b);
+            out.write(after);
             break;
           case REPLACE:
             final byte replace = (byte) random.nextInt();
-            sections.add(Bytes.of(replace));
+            out.write(replace);
             break;
           case DELETE:
             break;
         }
       } else {
-        sections.add(Bytes.of(b));
+        out.write(b);
       }
     }
-    return Bytes.concatenate(sections);
+    return Bytes.wrap(out.toByteArray());
   }
 }
