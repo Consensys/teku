@@ -192,6 +192,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
+
+  protected volatile DataProvider dataProvider;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
@@ -406,6 +408,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
     initPerformanceTracker();
+    initDataProvider();
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
@@ -503,6 +506,32 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
+  }
+
+  protected void initDataProvider() {
+    dataProvider =
+        DataProvider.builder()
+            .spec(spec)
+            .recentChainData(recentChainData)
+            .combinedChainDataClient(combinedChainDataClient)
+            .p2pNetwork(p2pNetwork)
+            .syncService(syncService)
+            .validatorApiChannel(
+                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
+            .attestationPool(attestationPool)
+            .blockManager(blockManager)
+            .attestationManager(attestationManager)
+            .isLivenessTrackingEnabled(
+                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .activeValidatorChannel(
+                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
+            .attesterSlashingPool(attesterSlashingPool)
+            .proposerSlashingPool(proposerSlashingPool)
+            .voluntaryExitPool(voluntaryExitPool)
+            .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .proposersDataManager(proposersDataManager)
+            .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
+            .build();
   }
 
   protected void initCombinedChainDataClient() {
@@ -621,6 +650,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
+            dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
             syncService,
             blockFactory,
@@ -829,29 +859,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
       LOG.info("rest-api-enabled is false, not starting rest api.");
       return;
     }
-    final DataProvider dataProvider =
-        DataProvider.builder()
-            .spec(spec)
-            .recentChainData(recentChainData)
-            .combinedChainDataClient(combinedChainDataClient)
-            .p2pNetwork(p2pNetwork)
-            .syncService(syncService)
-            .validatorApiChannel(
-                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
-            .attestationPool(attestationPool)
-            .blockManager(blockManager)
-            .attestationManager(attestationManager)
-            .isLivenessTrackingEnabled(
-                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
-            .activeValidatorChannel(
-                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
-            .attesterSlashingPool(attesterSlashingPool)
-            .proposerSlashingPool(proposerSlashingPool)
-            .voluntaryExitPool(voluntaryExitPool)
-            .syncCommitteeContributionPool(syncCommitteeContributionPool)
-            .proposersDataManager(proposersDataManager)
-            .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
-            .build();
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
     final BeaconRestApi api =

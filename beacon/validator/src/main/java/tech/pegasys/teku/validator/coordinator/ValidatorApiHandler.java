@@ -36,7 +36,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -102,6 +104,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final ChainDataProvider chainDataProvider;
+  private final NodeDataProvider nodeDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
@@ -122,6 +125,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
+      final NodeDataProvider nodeDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
@@ -140,6 +144,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
+    this.nodeDataProvider = nodeDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
@@ -655,6 +660,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               return proposersDataManager.updateValidatorRegistrations(
                   applicableValidatorRegistrations, combinedChainDataClient.getCurrentSlot());
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
+    return nodeDataProvider.getValidatorLiveness(
+        validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
