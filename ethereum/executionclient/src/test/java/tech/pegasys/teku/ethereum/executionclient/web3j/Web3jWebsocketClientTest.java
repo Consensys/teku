@@ -35,14 +35,18 @@ import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.VoidResponse;
 import org.web3j.protocol.websocket.WebSocketService;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Web3jWebsocketClientTest {
+
   private static final Duration TIMEOUT = Duration.ofSeconds(10000000);
   private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
+  private final ExecutionClientEventsChannel executionClientEventsPublisher =
+      mock(ExecutionClientEventsChannel.class);
   private final WebSocketService webSocketService = mock(WebSocketService.class);
   private final URI endpoint = URI.create("");
   private Web3jWebsocketClient web3jWebsocketClient;
@@ -50,7 +54,8 @@ public class Web3jWebsocketClientTest {
   @BeforeEach
   public void setup() {
     this.web3jWebsocketClient =
-        new Web3jWebsocketClient(EVENT_LOG, endpoint, timeProvider, Optional.empty());
+        new Web3jWebsocketClient(
+            EVENT_LOG, endpoint, timeProvider, Optional.empty(), executionClientEventsPublisher);
     web3jWebsocketClient.initWeb3jService(webSocketService);
   }
 

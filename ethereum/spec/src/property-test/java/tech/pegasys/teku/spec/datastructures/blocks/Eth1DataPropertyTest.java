@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,5 +25,11 @@ public class Eth1DataPropertyTest {
   void roundTrip(@ForAll(supplier = Eth1DataSupplier.class) final Eth1Data eth1Data)
       throws JsonProcessingException {
     assertRoundTrip(eth1Data);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = Eth1DataSupplier.class) final Eth1Data eth1Data, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(eth1Data, seed);
   }
 }

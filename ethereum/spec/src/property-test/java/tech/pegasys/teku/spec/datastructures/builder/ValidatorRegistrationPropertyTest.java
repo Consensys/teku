@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,5 +27,13 @@ public class ValidatorRegistrationPropertyTest {
           final ValidatorRegistration validatorRegistration)
       throws JsonProcessingException {
     assertRoundTrip(validatorRegistration);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = ValidatorRegistrationSupplier.class)
+          final ValidatorRegistration validatorRegistration,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(validatorRegistration, seed);
   }
 }

@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 
 public class PropertyTestHelper {
   @SuppressWarnings("unchecked")
@@ -38,5 +39,19 @@ public class PropertyTestHelper {
     final String json = JsonUtil.serialize(data, typeDefinition);
     final T fromJson = JsonUtil.parse(json, typeDefinition);
     assertThat(fromJson).isEqualTo(data);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T extends SszData, S extends SszSchema<T>>
+      void assertDeserializeMutatedThrowsExpected(final T data, final int seed) {
+    final S schema = (S) data.getSchema();
+    final Bytes ssz = data.sszSerialize();
+    final Bytes mutated = Mutator.mutate(ssz, seed);
+
+    try {
+      schema.sszDeserialize(mutated);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOfAny(SszDeserializeException.class, IllegalArgumentException.class);
+    }
   }
 }
