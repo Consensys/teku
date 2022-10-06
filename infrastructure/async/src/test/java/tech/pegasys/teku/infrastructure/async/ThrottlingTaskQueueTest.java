@@ -53,6 +53,7 @@ public class ThrottlingTaskQueueTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void prioritizesRequests() {
     final SafeFuture<Void> initialRequest = new SafeFuture<>();
     final SafeFuture<Void> prioritizedRequest = new SafeFuture<>();
