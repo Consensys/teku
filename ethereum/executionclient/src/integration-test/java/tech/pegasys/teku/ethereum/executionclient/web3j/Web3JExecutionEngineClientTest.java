@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
+import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -35,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
@@ -56,6 +58,8 @@ public class Web3JExecutionEngineClientTest {
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final ExecutionClientEventsChannel executionClientEventsPublisher =
+      mock(ExecutionClientEventsChannel.class);
 
   Writer jsonWriter;
   JsonGenerator jsonGenerator;
@@ -80,6 +84,7 @@ public class Web3JExecutionEngineClientTest {
             .timeout(DEFAULT_TIMEOUT)
             .jwtConfigOpt(Optional.empty())
             .timeProvider(timeProvider)
+            .executionClientEventsPublisher(executionClientEventsPublisher)
             .build();
     eeClient = new Web3JExecutionEngineClient(web3JClient);
   }
