@@ -17,6 +17,9 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.quartz.JobDetail;
@@ -85,6 +88,7 @@ public class TimerService extends Service {
                       // contention), then just skip it and fire the next event when it is due
                       .withMisfireHandlingInstructionNextWithRemainingCount()
                       .repeatForever())
+              .startAt(Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS)))
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();
