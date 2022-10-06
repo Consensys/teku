@@ -133,7 +133,8 @@ public class PostValidatorLiveness extends MigratingEndpointAdapter {
 
     final ValidatorLivenessRequest requestBody = request.getRequestBody();
     SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> future =
-        nodeDataProvider.getValidatorLiveness(requestBody, chainDataProvider.getCurrentEpoch());
+        nodeDataProvider.getValidatorLiveness(
+            requestBody.getIndices(), requestBody.getEpoch(), chainDataProvider.getCurrentEpoch());
 
     request.respondAsync(
         future.thenApply(

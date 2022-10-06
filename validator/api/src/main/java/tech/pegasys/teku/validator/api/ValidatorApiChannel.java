@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -92,4 +93,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
       Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
   SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
+
+  SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch);
 }

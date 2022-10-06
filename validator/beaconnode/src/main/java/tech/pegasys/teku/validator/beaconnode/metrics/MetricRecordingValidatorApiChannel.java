@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -271,6 +272,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countDataRequest(
         delegate.registerValidators(validatorRegistrations),
         BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch) {
+    return countOptionalDataRequest(
+        delegate.checkValidatorsDoppelganger(validatorIndices, epoch),
+        BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }
 
   private <T> SafeFuture<T> countDataRequest(

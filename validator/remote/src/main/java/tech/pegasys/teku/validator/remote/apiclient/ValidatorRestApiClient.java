@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -87,4 +88,7 @@ public interface ValidatorRestApiClient {
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
   void prepareBeaconProposer(final List<BeaconPreparableProposer> beaconPreparableProposers);
+
+  Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
+      UInt64 epoch, List<UInt64> validatorsIndices);
 }

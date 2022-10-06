@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -177,6 +178,12 @@ class MetricRecordingValidatorApiChannelTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final int subcommitteeIndex = dataStructureUtil.randomPositiveInt();
     final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
     return Stream.of(
         requestDataTest(
             "getGenesisData",
@@ -204,7 +211,12 @@ class MetricRecordingValidatorApiChannelTest {
             channel ->
                 channel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
             BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD,
-            dataStructureUtil.randomSyncCommitteeContribution(slot)));
+            dataStructureUtil.randomSyncCommitteeContribution(slot)),
+        requestDataTest(
+            "checkValidatorsDoppelganger",
+            channel -> channel.checkValidatorsDoppelganger(validatorIndices, epoch),
+            BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD,
+            new ArrayList<>()));
   }
 
   public static Stream<Arguments> getSendDataArguments() {

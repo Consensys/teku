@@ -22,7 +22,6 @@ import java.util.Optional;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -127,14 +126,16 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(
-      final ValidatorLivenessRequest request, final Optional<UInt64> maybeCurrentEpoch) {
+      final List<UInt64> validatorIndices,
+      final UInt64 epoch,
+      final Optional<UInt64> maybeCurrentEpoch) {
     if (!isLivenessTrackingEnabled) {
       return SafeFuture.failedFuture(
           new BadRequestException(
               "Validator liveness tracking is not enabled on this beacon node, cannot service request"));
     }
     // if no validator indices were requested, that's a bad request.
-    if (request.getIndices().isEmpty()) {
+    if (validatorIndices.isEmpty()) {
       return SafeFuture.failedFuture(
           new BadRequestException("No validator indices posted in validator liveness request"));
     }
@@ -143,30 +144,29 @@ public class NodeDataProvider {
     }
 
     final UInt64 currentEpoch = maybeCurrentEpoch.get();
-    if (currentEpoch.isLessThan(request.getEpoch())) {
+    if (currentEpoch.isLessThan(epoch)) {
       return SafeFuture.failedFuture(
           new BadRequestException(
               String.format(
                   "Current node epoch %s, cannot check liveness for a future epoch %s",
-                  currentEpoch, request.getEpoch())));
-    } else if (currentEpoch.minusMinZero(TRACKED_EPOCHS).isGreaterThan(request.getEpoch())) {
+                  currentEpoch, epoch)));
+    } else if (currentEpoch.minusMinZero(TRACKED_EPOCHS).isGreaterThan(epoch)) {
       return SafeFuture.failedFuture(
           new BadRequestException(
               String.format(
                   "Current node epoch %s, cannot check liveness for an epoch (%s) more than %d in the past",
-                  currentEpoch, request.getEpoch(), TRACKED_EPOCHS)));
+                  currentEpoch, epoch, TRACKED_EPOCHS)));
     }
 
     return activeValidatorChannel
-        .validatorsLiveAtEpoch(request.getIndices(), request.getEpoch())
+        .validatorsLiveAtEpoch(validatorIndices, epoch)
         .thenApply(
             validatorLivenessMap -> {
               final List<ValidatorLivenessAtEpoch> livenessAtEpochs = new ArrayList<>();
               validatorLivenessMap.forEach(
                   (validatorIndex, liveness) ->
                       livenessAtEpochs.add(
-                          new ValidatorLivenessAtEpoch(
-                              validatorIndex, request.getEpoch(), liveness)));
+                          new ValidatorLivenessAtEpoch(validatorIndex, epoch, liveness)));
               return Optional.of(livenessAtEpochs);
             });
   }
