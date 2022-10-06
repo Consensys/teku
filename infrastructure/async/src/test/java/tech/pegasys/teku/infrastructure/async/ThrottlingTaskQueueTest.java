@@ -38,13 +38,15 @@ public class ThrottlingTaskQueueTest {
     final List<SafeFuture<Void>> requests =
         IntStream.range(0, 100)
             .mapToObj(
-                __ ->
-                    stubAsyncRunner.runAsync(
-                        () -> {
-                          assertThat(throttlingTaskQueue.getInflightTaskCount())
-                              .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
-                        }))
-            .peek(request -> throttlingTaskQueue.queueTask(() -> request))
+                __ -> {
+                  final SafeFuture<Void> request =
+                      stubAsyncRunner.runAsync(
+                          () -> {
+                            assertThat(throttlingTaskQueue.getInflightTaskCount())
+                                .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
+                          });
+                  return throttlingTaskQueue.queueTask(() -> request);
+                })
             .collect(Collectors.toList());
 
     stubAsyncRunner.executeQueuedActions();
