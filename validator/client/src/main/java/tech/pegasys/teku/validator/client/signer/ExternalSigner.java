@@ -159,7 +159,8 @@ public class ExternalSigner implements Signer {
                 signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
                 SignType.AGGREGATION_SLOT,
                 Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
-                slashableGenericMessage("aggregation slot")));
+                slashableGenericMessage("aggregation slot")),
+        true);
   }
 
   @Override
@@ -257,21 +258,23 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
-    return sign(
-        signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
-        SignType.VALIDATOR_REGISTRATION,
-        Map.of(
-            "validator_registration",
-            Map.of(
-                "fee_recipient",
-                validatorRegistration.getFeeRecipient().toHexString(),
-                "gas_limit",
-                validatorRegistration.getGasLimit(),
-                "timestamp",
-                validatorRegistration.getTimestamp(),
-                "pubkey",
-                validatorRegistration.getPublicKey().toString())),
-        slashableGenericMessage("validator registration"));
+    return taskQueue.queueTask(
+        () ->
+            sign(
+                signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
+                SignType.VALIDATOR_REGISTRATION,
+                Map.of(
+                    "validator_registration",
+                    Map.of(
+                        "fee_recipient",
+                        validatorRegistration.getFeeRecipient().toHexString(),
+                        "gas_limit",
+                        validatorRegistration.getGasLimit(),
+                        "timestamp",
+                        validatorRegistration.getTimestamp(),
+                        "pubkey",
+                        validatorRegistration.getPublicKey().toString())),
+                slashableGenericMessage("validator registration")));
   }
 
   @Override

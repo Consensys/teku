@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
+
+  private final Deque<Runnable> queuedTasks = new ConcurrentLinkedDeque<>();
+
   private final int maximumConcurrentTasks;
-  private final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
+
   private int inflightTaskCount = 0;
 
   public ThrottlingTaskQueue(
@@ -35,16 +39,31 @@ public class ThrottlingTaskQueue {
         metricCategory, metricName, "Number of tasks queued", queuedTasks::size);
   }
 
-  public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
+  public <T> SafeFuture<T> queueTask(
+      final Supplier<SafeFuture<T>> request, final boolean prioritize) {
     final SafeFuture<T> future = new SafeFuture<>();
-    queuedTasks.add(
+    final Runnable taskToQueue =
         () -> {
           final SafeFuture<T> requestFuture = request.get();
           requestFuture.propagateTo(future);
           requestFuture.always(this::taskComplete);
-        });
+        };
+    if (prioritize) {
+      queuedTasks.addFirst(taskToQueue);
+    } else {
+      queuedTasks.addLast(taskToQueue);
+    }
     processQueuedTasks();
     return future;
+  }
+
+  public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
+    return queueTask(request, false);
+  }
+
+  @VisibleForTesting
+  int getInflightTaskCount() {
+    return inflightTaskCount;
   }
 
   private synchronized void taskComplete() {
@@ -55,7 +74,7 @@ public class ThrottlingTaskQueue {
   private synchronized void processQueuedTasks() {
     while (inflightTaskCount < maximumConcurrentTasks && !queuedTasks.isEmpty()) {
       inflightTaskCount++;
-      queuedTasks.remove().run();
+      queuedTasks.removeFirst().run();
     }
   }
 }
