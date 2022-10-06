@@ -85,6 +85,9 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
 
   @Override
   public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
+    if (depositSnapshotStorageEnabled) {
+      return;
+    }
     if (shouldProcessEvent(event.getBlockNumber().bigIntegerValue())) {
       database.addDepositsFromBlockEvent(event);
     }
