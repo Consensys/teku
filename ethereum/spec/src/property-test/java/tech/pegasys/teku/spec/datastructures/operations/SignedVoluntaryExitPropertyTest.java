@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedVoluntaryExitPropertyTest {
   @Property
@@ -28,18 +26,14 @@ public class SignedVoluntaryExitPropertyTest {
       @ForAll(supplier = SignedVoluntaryExitSupplier.class)
           final SignedVoluntaryExit signedVoluntaryExit)
       throws JsonProcessingException {
-    final SignedVoluntaryExit.SignedVoluntaryExitSchema schema = signedVoluntaryExit.getSchema();
-    final DeserializableTypeDefinition<SignedVoluntaryExit> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(signedVoluntaryExit);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = signedVoluntaryExit.sszSerialize();
-    final SignedVoluntaryExit fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(signedVoluntaryExit);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(signedVoluntaryExit, typeDefinition);
-    final SignedVoluntaryExit fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(signedVoluntaryExit);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedVoluntaryExitSupplier.class)
+          final SignedVoluntaryExit signedVoluntaryExit,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedVoluntaryExit, seed);
   }
 }

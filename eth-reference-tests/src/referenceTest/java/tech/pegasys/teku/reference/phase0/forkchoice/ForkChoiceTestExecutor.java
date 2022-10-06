@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.PandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
@@ -110,12 +111,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+    final InlineEventThread eventThread = new InlineEventThread();
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
-            new InlineEventThread(),
+            eventThread,
             recentChainData,
             new StubForkChoiceNotifier(),
+            new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,

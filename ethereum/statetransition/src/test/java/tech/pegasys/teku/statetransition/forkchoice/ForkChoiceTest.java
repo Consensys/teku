@@ -114,12 +114,16 @@ class ForkChoiceTest {
       new ExecutionLayerChannelStub(spec, false, Optional.empty());
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
+
+  private final InlineEventThread eventThread = new InlineEventThread();
+
   private ForkChoice forkChoice =
       new ForkChoice(
           spec,
-          new InlineEventThread(),
+          eventThread,
           recentChainData,
           forkChoiceNotifier,
+          new ForkChoiceStateProvider(eventThread, recentChainData),
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
           PandaPrinter.NOOP,
@@ -206,9 +210,10 @@ class ForkChoiceTest {
     forkChoice =
         new ForkChoice(
             spec,
-            new InlineEventThread(),
+            eventThread,
             recentChainData,
             forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             PandaPrinter.NOOP,

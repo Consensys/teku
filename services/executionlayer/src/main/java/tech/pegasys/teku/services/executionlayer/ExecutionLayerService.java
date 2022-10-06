@@ -28,6 +28,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
@@ -57,6 +58,9 @@ public class ExecutionLayerService extends Service {
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
 
+    final ExecutionClientEventsChannel executionClientEventsPublisher =
+        serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
+
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
@@ -64,7 +68,8 @@ public class ExecutionLayerService extends Service {
             true,
             config.getEngineJwtSecretFile(),
             beaconDataDirectory,
-            timeProvider);
+            timeProvider,
+            executionClientEventsPublisher);
 
     final Optional<RestClientProvider> builderRestClientProvider =
         config

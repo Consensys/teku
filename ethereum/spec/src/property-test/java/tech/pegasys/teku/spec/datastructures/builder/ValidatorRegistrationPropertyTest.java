@@ -13,33 +13,27 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class ValidatorRegistrationPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = ValidatorRegistrationSupplier.class)
-          final ValidatorRegistration registration)
+          final ValidatorRegistration validatorRegistration)
       throws JsonProcessingException {
-    final ValidatorRegistrationSchema schema = registration.getSchema();
-    final DeserializableTypeDefinition<ValidatorRegistration> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(validatorRegistration);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = registration.sszSerialize();
-    final ValidatorRegistration fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(registration);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(registration, typeDefinition);
-    final ValidatorRegistration fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(registration);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = ValidatorRegistrationSupplier.class)
+          final ValidatorRegistration validatorRegistration,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(validatorRegistration, seed);
   }
 }

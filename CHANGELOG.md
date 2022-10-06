@@ -21,9 +21,12 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Improve Execution Layer error logging
+- Add new validator client metric `validator_remote_beacon_nodes_requests_total` which tracks the requests made to remote beacon nodes (useful when there are failovers configured)
 - The `voluntary-exit` subcommand can restrict the exit to a specific list of validators public keys using the option `--validator-public-keys`.
   Example: `teku voluntary-exit --beacon-node-api-endpoint=<ENDPOINT>[,<ENDPOINT>...]... --data-validator-path=<PATH> --include-keymanager-keys=<BOOLEAN> --validator-keys=<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE> --validator-public-keys=<PUBKEY>[,<PUBKEY>...]...`
   To include validator keys managed via keymanager APIs, the option `--include-keymanager-keys` could be set to `true` (The default value is set to `false`)
 
 ### Bug Fixes
 - Filter out unknown validators when sending validator registrations to the builder network
+- Fix issue which could cause locally produced aggregates to not be gossiped
+- Fix issue where the sync module could cause `Unexpected rejected execution due to full task queue in nioEventLoopGroup` log messages and high CPU usage

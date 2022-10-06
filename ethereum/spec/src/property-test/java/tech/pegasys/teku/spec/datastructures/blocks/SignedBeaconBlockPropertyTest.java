@@ -13,31 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedBeaconBlockPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SignedBeaconBlockProvider.class) final SignedBeaconBlock block)
+  void roundTrip(
+      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock)
       throws JsonProcessingException {
-    final SignedBeaconBlockSchema schema = block.getSchema();
-    final DeserializableTypeDefinition<SignedBeaconBlock> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(signedBeaconBlock);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = block.sszSerialize();
-    final SignedBeaconBlock fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(block);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(block, typeDefinition);
-    final SignedBeaconBlock result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(block);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedBeaconBlock, seed);
   }
 }

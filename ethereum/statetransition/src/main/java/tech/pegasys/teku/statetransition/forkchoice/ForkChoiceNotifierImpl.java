@@ -36,6 +36,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
+  private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final ExecutionLayerChannel executionLayerChannel;
   private final RecentChainData recentChainData;
   private final ProposersDataManager proposersDataManager;
@@ -50,12 +51,14 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private boolean inSync = false; // Assume we are not in sync at startup.
 
   public ForkChoiceNotifierImpl(
+      final ForkChoiceStateProvider forkChoiceStateProvider,
       final EventThread eventThread,
       final TimeProvider timeProvider,
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
       final ProposersDataManager proposersDataManager) {
+    this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.eventThread = eventThread;
     this.spec = spec;
     this.executionLayerChannel = executionLayerChannel;
@@ -155,7 +158,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
       // Pre-merge so ok to use default payload
       return SafeFuture.completedFuture(Optional.empty());
     } else {
-      // Request a new payload.
+      // Request a new payload with refreshed forkChoiceState and payloadBuildingAttributes
 
       LOG.warn(
           "No suitable payloadId for block production at slot {}, requesting a new one to the EL",
@@ -163,27 +166,35 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
       // to make sure that we deal with the same data when calculatePayloadAttributes asynchronously
       // returns, we save locally the current class reference.
-      ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
-      return proposersDataManager
-          .calculatePayloadBuildingAttributes(blockSlot, inSync, localForkChoiceUpdateData, true)
-          .thenCompose(
-              newPayloadAttributes -> {
+      final ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
 
-                // we make the updated local data global, reverting any potential data not yet sent
-                // to EL
+      return forkChoiceStateProvider
+          .getForkChoiceStateAsync()
+          .thenCombine(
+              proposersDataManager.calculatePayloadBuildingAttributes(
+                  blockSlot, inSync, localForkChoiceUpdateData, true),
+              (forkChoiceState, payloadBuildingAttributes) -> {
                 forkChoiceUpdateData =
-                    localForkChoiceUpdateData.withPayloadBuildingAttributes(newPayloadAttributes);
+                    localForkChoiceUpdateData
+                        .withForkChoiceState(forkChoiceState)
+                        .withPayloadBuildingAttributes(payloadBuildingAttributes);
+
                 sendForkChoiceUpdated();
-                return forkChoiceUpdateData
-                    .getExecutionPayloadContext()
-                    .thenApply(
-                        executionPayloadContext -> {
-                          if (executionPayloadContext.isEmpty()) {
-                            throw new IllegalStateException(
-                                "Unable to obtain an executionPayloadContext");
-                          }
-                          return executionPayloadContext;
-                        });
+
+                if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
+                  throw new IllegalStateException(
+                      "payloadId still not suitable after requesting a new one via FcU with recalculated data");
+                }
+
+                return forkChoiceUpdateData;
+              })
+          .thenCompose(ForkChoiceUpdateData::getExecutionPayloadContext)
+          .thenApply(
+              maybeExecutionPayloadContext -> {
+                if (maybeExecutionPayloadContext.isEmpty()) {
+                  throw new IllegalStateException("Unable to obtain an executionPayloadContext");
+                }
+                return maybeExecutionPayloadContext;
               });
     }
   }

@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -190,6 +191,28 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   public static <T> SafeFuture<List<T>> collectAll(final SafeFuture<T>... futures) {
     return allOf(futures)
         .thenApply(__ -> Stream.of(futures).map(SafeFuture::join).collect(toList()));
+  }
+
+  /**
+   * Waits for all the supplied futures to complete then returns a single future that combines all
+   * the successful results.
+   *
+   * <p>If all the futures complete successfully the returned future completes with a {@link List}
+   * of each result in the same order as the futures were given.
+   *
+   * <p>If any futures complete exceptionally the returned future completes with a {@link List} of
+   * each result in the same order as the futures were given filtering out the exceptionally
+   * completed futures.
+   *
+   * @param futures the futures to collect results from
+   * @param <T> the result type to collect
+   * @return a new future that completes when all the supplied futures complete
+   */
+  public static <T> SafeFuture<List<T>> collectAllSuccessful(final Stream<SafeFuture<T>> futures) {
+    final Stream<SafeFuture<Optional<T>>> optionalFutures =
+        futures.map(future -> future.thenApply(Optional::of).exceptionally(__ -> Optional.empty()));
+    return collectAll(optionalFutures)
+        .thenApply(results -> results.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   /**

@@ -13,31 +13,24 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SszSignaturePropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SszSignatureSupplier.class) final SszSignature signature)
+  void roundTrip(@ForAll(supplier = SszSignatureSupplier.class) final SszSignature sszSignature)
       throws JsonProcessingException {
-    final SszSignatureSchema schema = signature.getSchema();
-    final DeserializableTypeDefinition<SszSignature> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(sszSignature);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = signature.sszSerialize();
-    final SszSignature fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(signature);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(signature, typeDefinition);
-    final SszSignature fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(signature);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SszSignatureSupplier.class) final SszSignature sszSignature,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(sszSignature, seed);
   }
 }

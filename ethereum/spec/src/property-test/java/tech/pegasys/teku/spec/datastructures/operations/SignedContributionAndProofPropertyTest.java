@@ -13,16 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
 
 public class SignedContributionAndProofPropertyTest {
   @Property
@@ -30,18 +27,14 @@ public class SignedContributionAndProofPropertyTest {
       @ForAll(supplier = SignedContributionAndProofSupplier.class)
           final SignedContributionAndProof signedContributionAndProof)
       throws JsonProcessingException {
-    final SignedContributionAndProofSchema schema = signedContributionAndProof.getSchema();
-    final DeserializableTypeDefinition<SignedContributionAndProof> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(signedContributionAndProof);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = signedContributionAndProof.sszSerialize();
-    final SignedContributionAndProof fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(signedContributionAndProof);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(signedContributionAndProof, typeDefinition);
-    final SignedContributionAndProof fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(signedContributionAndProof);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedContributionAndProofSupplier.class)
+          final SignedContributionAndProof signedContributionAndProof,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedContributionAndProof, seed);
   }
 }

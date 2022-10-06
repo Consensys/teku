@@ -13,33 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
 public class SyncAggregatePropertyTest {
   @Property
   void roundTrip(@ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate)
       throws JsonProcessingException {
-    final SyncAggregateSchema schema = syncAggregate.getSchema();
-    final DeserializableTypeDefinition<SyncAggregate> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(syncAggregate);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = syncAggregate.sszSerialize();
-    final SyncAggregate fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(syncAggregate);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(syncAggregate, typeDefinition);
-    final SyncAggregate fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(syncAggregate);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(syncAggregate, seed);
   }
 }
