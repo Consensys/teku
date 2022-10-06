@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 public class ThrottlingTaskQueue {
 
   private final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
-  private final Queue<Runnable> prioritizedTasks = new ConcurrentLinkedQueue<>();
+  private final Queue<Runnable> queuedPrioritizedTasks = new ConcurrentLinkedQueue<>();
 
   private final int maximumConcurrentTasks;
 
@@ -50,7 +50,7 @@ public class ThrottlingTaskQueue {
           requestFuture.always(this::taskComplete);
         };
     if (prioritize) {
-      prioritizedTasks.add(taskToQueue);
+      queuedPrioritizedTasks.add(taskToQueue);
     } else {
       queuedTasks.add(taskToQueue);
     }
@@ -76,12 +76,14 @@ public class ThrottlingTaskQueue {
     while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
       inflightTaskCount++;
       final Runnable taskToRun =
-          !prioritizedTasks.isEmpty() ? prioritizedTasks.remove() : queuedTasks.remove();
+          !queuedPrioritizedTasks.isEmpty()
+              ? queuedPrioritizedTasks.remove()
+              : queuedTasks.remove();
       taskToRun.run();
     }
   }
 
   private int getQueuedTasksCount() {
-    return queuedTasks.size() + prioritizedTasks.size();
+    return queuedTasks.size() + queuedPrioritizedTasks.size();
   }
 }
