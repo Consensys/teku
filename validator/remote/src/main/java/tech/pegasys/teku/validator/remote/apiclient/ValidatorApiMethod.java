@@ -45,7 +45,8 @@ public enum ValidatorApiMethod {
   REGISTER_VALIDATOR("/eth/v1/validator/register_validator"),
   GET_BLOCK_HEADER("eth/v1/beacon/headers/:block_id"),
   GET_CONFIG_SPEC("/eth/v1/config/spec"),
-  EVENTS("eth/v1/events");
+  EVENTS("eth/v1/events"),
+  SEND_VALIDATOR_LIVENESS("/eth/v1/validator/liveness");
 
   private final String path;
 

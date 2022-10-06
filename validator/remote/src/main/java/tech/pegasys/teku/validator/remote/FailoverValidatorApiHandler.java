@@ -31,6 +31,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -252,6 +253,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.registerValidators(validatorRegistrations),
         BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch) {
+    return relayRequest(
+        apiChannel -> apiChannel.checkValidatorsDoppelganger(validatorIndices, epoch),
+        BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }
 
   private <T> SafeFuture<T> relayRequest(

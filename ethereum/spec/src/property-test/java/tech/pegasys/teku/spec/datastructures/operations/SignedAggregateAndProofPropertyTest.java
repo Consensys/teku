@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,5 +27,13 @@ public class SignedAggregateAndProofPropertyTest {
           final SignedAggregateAndProof signedAggregateAndProof)
       throws JsonProcessingException {
     assertRoundTrip(signedAggregateAndProof);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedAggregateAndProofSupplier.class)
+          final SignedAggregateAndProof signedAggregateAndProof,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedAggregateAndProof, seed);
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,5 +27,13 @@ public class SignedBeaconBlockHeaderPropertyTest {
           final SignedBeaconBlockHeader signedBeaconBlockHeader)
       throws JsonProcessingException {
     assertRoundTrip(signedBeaconBlockHeader);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedBeaconBlockHeaderSupplier.class)
+          final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedBeaconBlockHeader, seed);
   }
 }

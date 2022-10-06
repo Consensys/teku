@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -54,8 +55,6 @@ import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 class ValidatorRegistratorTest {
-
-  private static final UInt64 TWO = UInt64.valueOf(2);
 
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
   private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
@@ -123,7 +122,7 @@ class ValidatorRegistratorTest {
   void doesNotRegisterValidators_ifNotReady() {
     when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
   }
@@ -148,8 +147,8 @@ class ValidatorRegistratorTest {
   void registersValidators_threeSlotsInTheEpoch() {
     setActiveValidators(validator1, validator2, validator3);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -170,8 +169,8 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -191,8 +190,8 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -221,8 +220,8 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -247,8 +246,8 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1, validator2);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -278,8 +277,8 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1, validator2);
 
-    runRegistrationFlowForSlot(TWO);
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -301,14 +300,14 @@ class ValidatorRegistratorTest {
   void cleanupsCache_ifValidatorIsNoLongerActive() {
     setActiveValidators(validator1, validator2, validator3);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
 
     // validator1 not active anymore
     setActiveValidators(validator2, validator3);
 
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(1);
 
     assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(2);
   }
@@ -322,7 +321,7 @@ class ValidatorRegistratorTest {
 
     setActiveValidators(validator1, validator2, validator3, validator4, validator5);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     final Eth1Address otherEth1Address = dataStructureUtil.randomEth1Address();
     final UInt64 otherGasLimit = dataStructureUtil.randomUInt64();
@@ -345,7 +344,7 @@ class ValidatorRegistratorTest {
     when(proposerConfig.getBuilderRegistrationOverrides(validator5.getPublicKey()))
         .thenReturn(Optional.of(new RegistrationOverrides(otherTimestamp, null)));
 
-    runRegistrationFlowForSlot(UInt64.valueOf(slotsPerEpoch).plus(TWO));
+    runRegistrationFlowForEpoch(1);
 
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
 
@@ -403,7 +402,7 @@ class ValidatorRegistratorTest {
   void registersNewlyAddedValidators() {
     setActiveValidators(validator1);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     // new validators are added
     setActiveValidators(validator1, validator2, validator3);
@@ -434,7 +433,7 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.empty());
     when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(false);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
@@ -455,7 +454,7 @@ class ValidatorRegistratorTest {
         .thenReturn(Optional.empty());
     when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
 
@@ -488,10 +487,32 @@ class ValidatorRegistratorTest {
     when(validatorRegistrationPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.empty());
 
-    runRegistrationFlowForSlot(TWO);
+    runRegistrationFlowForEpoch(0);
 
     final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
     verifyRegistrations(registrationCalls, List.of(validator1));
+  }
+
+  @TestTemplate
+  void registerValidatorsEvenIfOneRegistrationSigningFails() {
+    setActiveValidators(validator1, validator2, validator3);
+
+    when(signer.signValidatorRegistration(
+            argThat(
+                validatorRegistration ->
+                    validatorRegistration.getPublicKey().equals(validator2.getPublicKey()))))
+        // signing initially fails for validator2
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")))
+        // then it succeeds
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+
+    runRegistrationFlowForEpoch(0);
+    runRegistrationFlowForEpoch(1);
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator3));
+    verifyRegistrations(registrationCalls.get(1), List.of(validator1, validator2, validator3));
   }
 
   private void setActiveValidators(final Validator... validators) {
@@ -500,6 +521,12 @@ class ValidatorRegistratorTest {
   }
 
   private void runRegistrationFlowForSlot(final UInt64 slot) {
+    validatorRegistrator.onSlot(slot);
+  }
+
+  private void runRegistrationFlowForEpoch(final int epoch) {
+    // third slot in the epoch
+    final UInt64 slot = UInt64.valueOf(epoch).times(slotsPerEpoch).plus(2);
     validatorRegistrator.onSlot(slot);
   }
 

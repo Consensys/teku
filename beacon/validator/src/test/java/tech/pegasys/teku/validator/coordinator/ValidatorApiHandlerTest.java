@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +51,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
@@ -132,6 +135,7 @@ class ValidatorApiHandlerTest {
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
@@ -145,6 +149,7 @@ class ValidatorApiHandlerTest {
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
           chainDataProvider,
+          nodeDataProvider,
           chainDataClient,
           syncStateProvider,
           blockFactory,
@@ -397,6 +402,7 @@ class ValidatorApiHandlerTest {
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             chainDataProvider,
+            nodeDataProvider,
             chainDataClient,
             syncStateProvider,
             blockFactory,
@@ -1004,6 +1010,73 @@ class ValidatorApiHandlerTest {
     SafeFutureAssert.assertThatSafeFuture(result)
         .isCompletedExceptionallyWithMessage(
             "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_ShouldReturnEmptyResult()
+      throws ExecutionException, InterruptedException {
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final Optional<UInt64> currentEpoch = Optional.of(epoch.plus(dataStructureUtil.randomEpoch()));
+
+    when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
+        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+
+    verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isEmpty();
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_ShouldReturnDoppelgangerDetectionResult()
+      throws ExecutionException, InterruptedException {
+    final UInt64 firstIndex = dataStructureUtil.randomUInt64();
+    final UInt64 secondIndex = dataStructureUtil.randomUInt64();
+    final UInt64 thirdIndex = dataStructureUtil.randomUInt64();
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+
+    final Optional<UInt64> currentEpoch = Optional.of(epoch.plus(dataStructureUtil.randomEpoch()));
+
+    List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
+
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches =
+        List.of(
+            new ValidatorLivenessAtEpoch(firstIndex, epoch, false),
+            new ValidatorLivenessAtEpoch(secondIndex, epoch, true),
+            new ValidatorLivenessAtEpoch(thirdIndex, epoch, true));
+
+    when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(validatorLivenessAtEpoches)));
+
+    when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
+
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
+        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+
+    verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isPresent();
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochesResult = result.get().get();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, firstIndex)).isFalse();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, secondIndex)).isTrue();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, thirdIndex)).isTrue();
+  }
+
+  private boolean validatorIsLive(
+      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches, UInt64 validatorIndex) {
+    return validatorLivenessAtEpoches.stream()
+        .anyMatch(
+            validatorLivenessAtEpoch ->
+                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                    && validatorLivenessAtEpoch.isLive());
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
