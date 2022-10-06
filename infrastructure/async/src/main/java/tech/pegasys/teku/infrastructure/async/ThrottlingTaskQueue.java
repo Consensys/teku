@@ -37,7 +37,7 @@ public class ThrottlingTaskQueue {
     this.maximumConcurrentTasks = maximumConcurrentTasks;
 
     metricsSystem.createGauge(
-        metricCategory, metricName, "Number of tasks queued", queuedTasks::size);
+        metricCategory, metricName, "Number of tasks queued", this::getQueuedTasksCount);
   }
 
   public <T> SafeFuture<T> queueTask(

@@ -27,11 +27,13 @@ public class ThrottlingTaskQueueTest {
 
   private static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   private final ThrottlingTaskQueue throttlingTaskQueue =
       new ThrottlingTaskQueue(
-          MAXIMUM_CONCURRENT_TASKS, new StubMetricsSystem(), TekuMetricCategory.BEACON, "test");
+          MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test");
 
   @Test
   public void throttlesRequests() {
@@ -50,6 +52,9 @@ public class ThrottlingTaskQueueTest {
                   return throttlingTaskQueue.queueTask(() -> request, prioritize);
                 })
             .collect(Collectors.toList());
+
+    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(97);
+    assertThat(throttlingTaskQueue.getInflightTaskCount()).isEqualTo(3);
 
     stubAsyncRunner.executeQueuedActions();
 
@@ -83,10 +88,17 @@ public class ThrottlingTaskQueueTest {
         },
         true);
 
+    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(2);
+    assertThat(throttlingTaskQueue.getInflightTaskCount()).isEqualTo(3);
+
     initialRequest.complete(null);
     normalRequest.complete(null);
     prioritizedRequest.complete(null);
 
     assertThat(assertion).isCompleted();
+  }
+
+  public double getNumberOfQueuedTasksMetric() {
+    return stubMetricsSystem.getGauge(TekuMetricCategory.BEACON, "test").getValue();
   }
 }
