@@ -14,15 +14,16 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Deque;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
 
-  private final Deque<Runnable> queuedTasks = new ConcurrentLinkedDeque<>();
+  private final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
+  private final Queue<Runnable> prioritizedTasks = new ConcurrentLinkedQueue<>();
 
   private final int maximumConcurrentTasks;
 
@@ -49,9 +50,9 @@ public class ThrottlingTaskQueue {
           requestFuture.always(this::taskComplete);
         };
     if (prioritize) {
-      queuedTasks.addFirst(taskToQueue);
+      prioritizedTasks.add(taskToQueue);
     } else {
-      queuedTasks.addLast(taskToQueue);
+      queuedTasks.add(taskToQueue);
     }
     processQueuedTasks();
     return future;
@@ -72,9 +73,15 @@ public class ThrottlingTaskQueue {
   }
 
   private synchronized void processQueuedTasks() {
-    while (inflightTaskCount < maximumConcurrentTasks && !queuedTasks.isEmpty()) {
+    while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
       inflightTaskCount++;
-      queuedTasks.removeFirst().run();
+      final Runnable taskToRun =
+          !prioritizedTasks.isEmpty() ? prioritizedTasks.remove() : queuedTasks.remove();
+      taskToRun.run();
     }
+  }
+
+  private int getQueuedTasksCount() {
+    return queuedTasks.size() + prioritizedTasks.size();
   }
 }
