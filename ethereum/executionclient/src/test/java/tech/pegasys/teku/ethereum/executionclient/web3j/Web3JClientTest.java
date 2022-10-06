@@ -209,27 +209,6 @@ public class Web3JClientTest {
     verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(false));
   }
 
-  @ParameterizedTest
-  @MethodSource("getClientInstances")
-  void shouldNotUpdateAvailabilityAfterSubsequentsFailedRequests(final ClientFactory clientFactory)
-      throws Exception {
-    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
-    Request<Void, VoidResponse> request = createRequest(client);
-    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
-        .thenReturn(SafeFuture.completedFuture(new VoidResponse()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
-
-    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
-    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(true));
-
-    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
-    verify(executionClientEventsPublisher).onAvailabilityUpdated(eq(false));
-
-    Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
-    verifyNoMoreInteractions(executionClientEventsPublisher);
-  }
-
   private static Request<Void, VoidResponse> createRequest(final Web3JClient client) {
     return new Request<>("test", new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
   }
