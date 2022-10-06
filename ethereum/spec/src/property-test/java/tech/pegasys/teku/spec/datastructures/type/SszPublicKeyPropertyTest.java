@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,5 +25,12 @@ public class SszPublicKeyPropertyTest {
   void roundTrip(@ForAll(supplier = SszPublicKeySupplier.class) final SszPublicKey sszPublicKey)
       throws JsonProcessingException {
     assertRoundTrip(sszPublicKey);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SszPublicKeySupplier.class) final SszPublicKey sszPublicKey,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(sszPublicKey, seed);
   }
 }
