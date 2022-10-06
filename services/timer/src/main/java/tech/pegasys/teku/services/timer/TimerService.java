@@ -88,7 +88,7 @@ public class TimerService extends Service {
                       // contention), then just skip it and fire the next event when it is due
                       .withMisfireHandlingInstructionNextWithRemainingCount()
                       .repeatForever())
-              .startAt(Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS).minusSeconds(1)))
+              .startAt(Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS)))
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();
