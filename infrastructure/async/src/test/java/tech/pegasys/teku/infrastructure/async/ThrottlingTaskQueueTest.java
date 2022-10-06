@@ -38,14 +38,16 @@ public class ThrottlingTaskQueueTest {
     final List<SafeFuture<Void>> requests =
         IntStream.range(0, 100)
             .mapToObj(
-                __ -> {
+                element -> {
                   final SafeFuture<Void> request =
                       stubAsyncRunner.runAsync(
                           () -> {
                             assertThat(throttlingTaskQueue.getInflightTaskCount())
                                 .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
                           });
-                  return throttlingTaskQueue.queueTask(() -> request);
+                  // prioritize 1/3 of requests
+                  final boolean prioritize = element % 3 == 0;
+                  return throttlingTaskQueue.queueTask(() -> request, prioritize);
                 })
             .collect(Collectors.toList());
 
