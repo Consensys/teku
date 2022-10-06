@@ -13,31 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedBuilderBidPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SignedBuilderBidSupplier.class) final SignedBuilderBid bid)
+  void roundTrip(
+      @ForAll(supplier = SignedBuilderBidSupplier.class) final SignedBuilderBid signedBuilderBid)
       throws JsonProcessingException {
-    final SignedBuilderBidSchema schema = bid.getSchema();
-    final DeserializableTypeDefinition<SignedBuilderBid> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(signedBuilderBid);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = bid.sszSerialize();
-    final SignedBuilderBid fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(bid);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(bid, typeDefinition);
-    final SignedBuilderBid fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(bid);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SignedBuilderBidSupplier.class) final SignedBuilderBid signedBuilderBid,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedBuilderBid, seed);
   }
 }

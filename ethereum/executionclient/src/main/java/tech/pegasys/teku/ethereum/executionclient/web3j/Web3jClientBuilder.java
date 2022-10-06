@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -30,6 +31,8 @@ public class Web3jClientBuilder {
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
   private Duration timeout;
+
+  private ExecutionClientEventsChannel executionClientEventsPublisher;
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
@@ -62,20 +65,35 @@ public class Web3jClientBuilder {
     return this;
   }
 
+  public Web3jClientBuilder executionClientEventsPublisher(
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
+    this.executionClientEventsPublisher = executionClientEventsPublisher;
+    return this;
+  }
+
   public Web3JClient build() {
     checkNotNull(timeProvider);
+    checkNotNull(executionClientEventsPublisher);
     checkNotNull(endpoint);
     checkNotNull(timeout);
     requireNonNull(endpoint.getScheme(), () -> prepareInvalidSchemeMessage(endpoint));
     switch (endpoint.getScheme()) {
       case "http":
       case "https":
-        return new Web3jHttpClient(EVENT_LOG, endpoint, timeProvider, timeout, jwtConfigOpt);
+        return new Web3jHttpClient(
+            EVENT_LOG,
+            endpoint,
+            timeProvider,
+            timeout,
+            jwtConfigOpt,
+            executionClientEventsPublisher);
       case "ws":
       case "wss":
-        return new Web3jWebsocketClient(EVENT_LOG, endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jWebsocketClient(
+            EVENT_LOG, endpoint, timeProvider, jwtConfigOpt, executionClientEventsPublisher);
       case "file":
-        return new Web3jIpcClient(EVENT_LOG, endpoint, timeProvider, jwtConfigOpt);
+        return new Web3jIpcClient(
+            EVENT_LOG, endpoint, timeProvider, jwtConfigOpt, executionClientEventsPublisher);
       default:
         throw new InvalidConfigurationException(prepareInvalidSchemeMessage(endpoint));
     }

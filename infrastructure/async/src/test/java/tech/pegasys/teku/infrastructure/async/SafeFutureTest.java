@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
@@ -1125,6 +1126,26 @@ public class SafeFutureTest {
     SafeFutureAssert.assertThatSafeFuture(result)
         .isCompletedExceptionallyWith(IllegalStateException.class)
         .hasMessage("oopsy");
+  }
+
+  @Test
+  void collectAllSuccessful_completeWithEmptyListWhenNoFuturesSupplied() {
+    assertThat(SafeFuture.collectAllSuccessful(Stream.empty()))
+        .isCompletedWithValue(Collections.emptyList());
+  }
+
+  @Test
+  public void collectAllSuccessful_completesWithListOfResultsEvenIfSomeFuturesFail() {
+    final SafeFuture<String> fooFuture = SafeFuture.completedFuture("foo");
+    final SafeFuture<String> barFuture = SafeFuture.completedFuture("bar");
+    final SafeFuture<String> failedFuture = SafeFuture.failedFuture(new IllegalStateException());
+
+    final SafeFuture<List<String>> futureResult =
+        SafeFuture.collectAllSuccessful(Stream.of(fooFuture, failedFuture, barFuture));
+
+    final List<String> result = SafeFutureAssert.safeJoin(futureResult);
+
+    assertThat(result).containsExactly("foo", "bar");
   }
 
   private List<Throwable> collectUncaughtExceptions() {

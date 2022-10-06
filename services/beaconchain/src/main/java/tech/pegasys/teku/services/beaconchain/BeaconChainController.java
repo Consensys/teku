@@ -103,6 +103,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
@@ -214,6 +215,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
+  protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
@@ -379,6 +381,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAll() {
     initKeyValueStore();
     initExecutionLayer();
+    initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
     initForkChoice();
@@ -525,6 +528,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceExecutor,
             recentChainData,
             forkChoiceNotifier,
+            forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
@@ -983,6 +987,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  protected void initForkChoiceStateProvider() {
+    LOG.debug("BeaconChainController.initForkChoiceStateProvider()");
+    forkChoiceStateProvider = new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData);
+  }
+
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     final AsyncRunnerEventThread eventThread =
@@ -999,7 +1008,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            eventThread, timeProvider, spec, executionLayer, recentChainData, proposersDataManager);
+            forkChoiceStateProvider,
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayer,
+            recentChainData,
+            proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

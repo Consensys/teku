@@ -13,30 +13,23 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Eth1DataPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = Eth1DataSupplier.class) final Eth1Data data)
+  void roundTrip(@ForAll(supplier = Eth1DataSupplier.class) final Eth1Data eth1Data)
       throws JsonProcessingException {
-    final Eth1Data.Eth1DataSchema schema = data.getSchema();
-    final DeserializableTypeDefinition<Eth1Data> typeDefinition = schema.getJsonTypeDefinition();
+    assertRoundTrip(eth1Data);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = data.sszSerialize();
-    final Eth1Data fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(data);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(data, typeDefinition);
-    final Eth1Data fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(data);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = Eth1DataSupplier.class) final Eth1Data eth1Data, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(eth1Data, seed);
   }
 }

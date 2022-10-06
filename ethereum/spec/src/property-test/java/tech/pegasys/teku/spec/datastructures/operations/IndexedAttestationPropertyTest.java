@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class IndexedAttestationPropertyTest {
   @Property
@@ -28,18 +26,14 @@ public class IndexedAttestationPropertyTest {
       @ForAll(supplier = IndexedAttestationSupplier.class)
           final IndexedAttestation indexedAttestation)
       throws JsonProcessingException {
-    final IndexedAttestation.IndexedAttestationSchema schema = indexedAttestation.getSchema();
-    final DeserializableTypeDefinition<IndexedAttestation> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(indexedAttestation);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = indexedAttestation.sszSerialize();
-    final IndexedAttestation fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(indexedAttestation);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(indexedAttestation, typeDefinition);
-    final IndexedAttestation fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(indexedAttestation);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = IndexedAttestationSupplier.class)
+          final IndexedAttestation indexedAttestation,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(indexedAttestation, seed);
   }
 }

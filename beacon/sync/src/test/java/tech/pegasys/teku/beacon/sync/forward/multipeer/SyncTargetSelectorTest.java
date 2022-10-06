@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChains;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -44,8 +45,10 @@ class SyncTargetSelectorTest {
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocks = mock(PendingPool.class);
 
-  private final TargetChains finalizedChains = new TargetChains();
-  private final TargetChains nonfinalizedChains = new TargetChains();
+  private final TargetChains finalizedChains =
+      new TargetChains(mock(SettableLabelledGauge.class), "finalized");
+  private final TargetChains nonfinalizedChains =
+      new TargetChains(mock(SettableLabelledGauge.class), "nonfinalized");
 
   private final SyncTargetSelector selector =
       new SyncTargetSelector(

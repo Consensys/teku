@@ -13,31 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class ExecutionPayloadPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = ExecutionPayloadSupplier.class) final ExecutionPayload payload)
+  void roundTrip(
+      @ForAll(supplier = ExecutionPayloadSupplier.class) final ExecutionPayload executionPayload)
       throws JsonProcessingException {
-    final ExecutionPayloadSchema schema = payload.getSchema();
-    final DeserializableTypeDefinition<ExecutionPayload> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(executionPayload);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = payload.sszSerialize();
-    final ExecutionPayload fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(payload);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(payload, typeDefinition);
-    final ExecutionPayload fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(payload);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = ExecutionPayloadSupplier.class) final ExecutionPayload executionPayload,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(executionPayload, seed);
   }
 }

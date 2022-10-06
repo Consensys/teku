@@ -11,13 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.operations;
+package tech.pegasys.teku.ethereum.executionclient.events;
 
-import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-public class ProposerSlashingSupplier extends DataStructureUtilSupplier<ProposerSlashing> {
-  public ProposerSlashingSupplier() {
-    super(DataStructureUtil::randomProposerSlashing);
-  }
+public interface ExecutionClientEventsChannel extends VoidReturningChannelInterface {
+
+  void onAvailabilityUpdated(boolean isAvailable);
 }

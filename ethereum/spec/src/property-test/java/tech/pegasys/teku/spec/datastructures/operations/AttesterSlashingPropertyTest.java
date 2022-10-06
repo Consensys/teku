@@ -13,32 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class AttesterSlashingPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = AttesterSlashingSupplier.class) final AttesterSlashing attesterSlashing)
       throws JsonProcessingException {
-    final AttesterSlashing.AttesterSlashingSchema schema = attesterSlashing.getSchema();
-    final DeserializableTypeDefinition<AttesterSlashing> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(attesterSlashing);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = attesterSlashing.sszSerialize();
-    final AttesterSlashing fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(attesterSlashing);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(attesterSlashing, typeDefinition);
-    final AttesterSlashing fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(attesterSlashing);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = AttesterSlashingSupplier.class) final AttesterSlashing attesterSlashing,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(attesterSlashing, seed);
   }
 }

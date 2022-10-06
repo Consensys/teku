@@ -13,16 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 
 public class SyncCommitteeContributionPropertyTest {
   @Property
@@ -30,18 +27,14 @@ public class SyncCommitteeContributionPropertyTest {
       @ForAll(supplier = SyncCommitteeContributionSupplier.class)
           final SyncCommitteeContribution syncCommitteeContribution)
       throws JsonProcessingException {
-    final SyncCommitteeContributionSchema schema = syncCommitteeContribution.getSchema();
-    final DeserializableTypeDefinition<SyncCommitteeContribution> typeDefinition =
-        schema.getJsonTypeDefinition();
+    assertRoundTrip(syncCommitteeContribution);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = syncCommitteeContribution.sszSerialize();
-    final SyncCommitteeContribution fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(syncCommitteeContribution);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(syncCommitteeContribution, typeDefinition);
-    final SyncCommitteeContribution fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(syncCommitteeContribution);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SyncCommitteeContributionSupplier.class)
+          final SyncCommitteeContribution syncCommitteeContribution,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(syncCommitteeContribution, seed);
   }
 }

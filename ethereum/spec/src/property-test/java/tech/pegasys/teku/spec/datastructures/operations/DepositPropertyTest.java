@@ -13,30 +13,23 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class DepositPropertyTest {
   @Property
   void roundTrip(@ForAll(supplier = DepositSupplier.class) final Deposit deposit)
       throws JsonProcessingException {
-    final Deposit.DepositSchema schema = deposit.getSchema();
-    final DeserializableTypeDefinition<Deposit> typeDefinition = schema.getJsonTypeDefinition();
+    assertRoundTrip(deposit);
+  }
 
-    // Round-trip SSZ serialization.
-    final Bytes ssz = deposit.sszSerialize();
-    final Deposit fromSsz = schema.sszDeserialize(ssz);
-    assertThat(fromSsz).isEqualTo(deposit);
-
-    // Round-trip JSON serialization.
-    final String json = JsonUtil.serialize(deposit, typeDefinition);
-    final Deposit fromJson = JsonUtil.parse(json, typeDefinition);
-    assertThat(fromJson).isEqualTo(deposit);
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = DepositSupplier.class) final Deposit deposit, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(deposit, seed);
   }
 }
