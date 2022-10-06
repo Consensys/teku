@@ -71,7 +71,7 @@ public class ExternalMetricNode extends Node {
   private List<Map<String, Object>> getPublishedObjects() throws URISyntaxException, IOException {
     String response = getResponse();
     LOG.debug("Metric data was published " + response);
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final ObjectMapper mapper = JSON_PROVIDER.getObjectMapper();
     JsonNode node = mapper.readTree(response);
     final List<Map<String, Object>> result = new ArrayList<>();
     assertThat(node.isArray()).isTrue();

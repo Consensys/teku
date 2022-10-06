@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
@@ -33,20 +34,24 @@ public class TargetChains {
 
   private final Map<SlotAndBlockRoot, TargetChain> chains = new HashMap<>();
   private final Map<SyncSource, SlotAndBlockRoot> lastPeerTarget = new HashMap<>();
+  private final SettableLabelledGauge targetChainCountGauge;
+  private final String chainType;
+
+  public TargetChains(final SettableLabelledGauge targetChainCountGauge, final String chainType) {
+    this.targetChainCountGauge = targetChainCountGauge;
+    this.chainType = chainType;
+  }
 
   public void onPeerStatusUpdated(final SyncSource peer, final SlotAndBlockRoot chainHead) {
     removePeerFromLastChain(peer);
     chains.computeIfAbsent(chainHead, TargetChain::new).addPeer(peer);
     lastPeerTarget.put(peer, chainHead);
+    targetChainCountGauge.set(chains.size(), chainType);
   }
 
   public void onPeerDisconnected(final SyncSource peer) {
     removePeerFromLastChain(peer);
     lastPeerTarget.remove(peer);
-  }
-
-  public boolean containsChain(final TargetChain chain) {
-    return chains.containsKey(chain.getChainHead());
   }
 
   public Stream<TargetChain> streamChains() {
@@ -59,6 +64,7 @@ public class TargetChains {
       previousChain.removePeer(peer);
       if (previousChain.getPeerCount() == 0) {
         chains.remove(previousChain.getChainHead());
+        targetChainCountGauge.set(chains.size(), chainType);
       }
     }
   }

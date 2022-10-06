@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchFactory;
@@ -28,6 +29,8 @@ import tech.pegasys.teku.infrastructure.async.OrderedAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -62,6 +65,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
   }
 
   public static MultipeerSyncService create(
+      final MetricsSystem metricsSystem,
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
@@ -72,9 +76,16 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final Spec spec) {
     LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
-
-    final TargetChains finalizedTargetChains = new TargetChains();
-    final TargetChains nonfinalizedTargetChains = new TargetChains();
+    final SettableLabelledGauge targetChainCountGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.LIBP2P,
+            "target_chains_current",
+            "Current number of target chains being tracked",
+            "type");
+    final TargetChains finalizedTargetChains = new TargetChains(targetChainCountGauge, "finalized");
+    final TargetChains nonfinalizedTargetChains =
+        new TargetChains(targetChainCountGauge, "nonfinalized");
     final BatchSync batchSync =
         BatchSync.create(
             eventThread,

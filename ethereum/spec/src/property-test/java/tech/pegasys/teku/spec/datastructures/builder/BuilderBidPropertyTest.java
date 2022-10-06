@@ -13,47 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BuilderBidPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll final int seed,
-      @ForAll("milestone") final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+  void roundTrip(@ForAll(supplier = BuilderBidSupplier.class) final BuilderBid builderBid)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BuilderBid bid = dataStructureUtil.randomBuilderBid();
-    final DeserializableTypeDefinition<BuilderBid> typeDefinition =
-        spec.forMilestone(specMilestone)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getBuilderBidSchema()
-            .getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(bid, typeDefinition);
-    final BuilderBid result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(bid);
-  }
-
-  @Provide
-  Arbitrary<SpecMilestone> milestone() {
-    return Arbitraries.of(SpecMilestone.class)
-        .filter(m -> m.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX));
+    assertRoundTrip(builderBid);
   }
 }

@@ -72,6 +72,8 @@ class Store implements UpdatableStore {
 
   private final int hotStatePersistenceFrequencyInEpochs;
 
+  private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
+  private final Lock readVotesLock = votesLock.readLock();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
 
@@ -273,6 +275,7 @@ class Store implements UpdatableStore {
    */
   @Override
   public void startMetrics() {
+    votesLock.writeLock().lock();
     lock.writeLock().lock();
     try {
       blockCountGauge =
@@ -285,6 +288,7 @@ class Store implements UpdatableStore {
       states.startMetrics();
       checkpointStates.startMetrics();
     } finally {
+      votesLock.writeLock().unlock();
       lock.writeLock().unlock();
     }
   }
@@ -308,7 +312,7 @@ class Store implements UpdatableStore {
 
   @Override
   public VoteUpdater startVoteUpdate(final VoteUpdateChannel voteUpdateChannel) {
-    return new StoreVoteUpdater(this, lock, voteUpdateChannel);
+    return new StoreVoteUpdater(this, votesLock, voteUpdateChannel);
   }
 
   @Override
@@ -526,23 +530,23 @@ class Store implements UpdatableStore {
   }
 
   UInt64 getHighestVotedValidatorIndex() {
-    readLock.lock();
+    readVotesLock.lock();
     try {
       return highestVotedValidatorIndex;
     } finally {
-      readLock.unlock();
+      readVotesLock.unlock();
     }
   }
 
   VoteTracker getVote(UInt64 validatorIndex) {
-    readLock.lock();
+    readVotesLock.lock();
     try {
       if (validatorIndex.intValue() >= votes.length) {
         return null;
       }
       return votes[validatorIndex.intValue()];
     } finally {
-      readLock.unlock();
+      readVotesLock.unlock();
     }
   }
 

@@ -115,7 +115,7 @@ public class AttestationManager extends Service
   }
 
   private void validateForGossipAndNotifySendSubscribers(ValidateableAttestation attestation) {
-    if (attestation.isAggregate()) {
+    if (attestation.isAggregate() && !attestation.isAcceptedAsGossip()) {
       // We know the Attestation is valid, but need to validate the SignedAggregateAndProof wrapper
       aggregateValidator
           .validate(attestation)

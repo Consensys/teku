@@ -552,10 +552,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         protoArray.markNodeValid(blockRoot);
       } else if (status.isInvalid()) {
         if (verifiedInvalidTransition) {
-          LOG.warn("Payload for block root {} was invalid", blockRoot);
+          LOG.warn("Payload for block root {} marked as invalid by Execution Client", blockRoot);
           protoArray.markNodeInvalid(blockRoot, result.getLatestValidHash());
         } else {
-          LOG.warn("Payload for child of block root {} was invalid", blockRoot);
+          LOG.warn(
+              "Payload for child of block root {} marked as invalid by Execution Client",
+              blockRoot);
           protoArray.markParentChainInvalid(blockRoot, result.getLatestValidHash());
         }
       } else {

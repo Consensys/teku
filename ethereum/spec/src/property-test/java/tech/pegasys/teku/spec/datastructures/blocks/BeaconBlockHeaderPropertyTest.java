@@ -13,33 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlockHeaderPropertyTest {
   @Property
   void roundTrip(
-      @ForAll final int seed,
-      @ForAll final SpecMilestone specMilestone,
-      @ForAll final Eth2Network network)
+      @ForAll(supplier = BeaconBlockHeaderSupplier.class) final BeaconBlockHeader beaconBlockHeader)
       throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.create(specMilestone, network);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BeaconBlockHeader header = dataStructureUtil.randomBeaconBlockHeader();
-    final DeserializableTypeDefinition<BeaconBlockHeader> typeDefinition =
-        header.getSchema().getJsonTypeDefinition();
-    final String json = JsonUtil.serialize(header, typeDefinition);
-    final BeaconBlockHeader result = JsonUtil.parse(json, typeDefinition);
-    assertThat(result).isEqualTo(header);
+    assertRoundTrip(beaconBlockHeader);
   }
 }
