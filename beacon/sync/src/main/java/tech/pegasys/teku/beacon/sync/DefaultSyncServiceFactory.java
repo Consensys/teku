@@ -139,6 +139,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     if (syncConfig.isMultiPeerSyncEnabled()) {
       forwardSync =
           MultipeerSyncService.create(
+              metrics,
               asyncRunnerFactory,
               asyncRunner,
               timeProvider,

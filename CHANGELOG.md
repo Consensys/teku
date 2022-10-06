@@ -29,3 +29,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Filter out unknown validators when sending validator registrations to the builder network
 - Fix issue which could cause locally produced aggregates to not be gossiped
+- Fix issue where the sync module could cause `Unexpected rejected execution due to full task queue in nioEventLoopGroup` log messages and high CPU usage

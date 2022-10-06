@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -49,8 +50,10 @@ class PeerChainTrackerTest {
   private final SyncSource syncSource = mock(SyncSource.class);
   private final SyncSourceFactory syncSourceFactory = mock(SyncSourceFactory.class);
 
-  private final TargetChains finalizedChains = new TargetChains();
-  private final TargetChains nonfinalizedChains = new TargetChains();
+  private final TargetChains finalizedChains =
+      new TargetChains(mock(SettableLabelledGauge.class), "finalized");
+  private final TargetChains nonfinalizedChains =
+      new TargetChains(mock(SettableLabelledGauge.class), "nonfinalized");
   private final EventThread eventThread = new InlineEventThread();
   private final PeerStatus status =
       new PeerStatus(
@@ -102,6 +105,19 @@ class PeerChainTrackerTest {
     assertThat(nonfinalizedChains.streamChains()).isEmpty();
   }
 
+  @Test
+  void shouldNotTrackPeerWhenStatusUpdateReceivedAfterDisconnect() {
+    // The peer may disconnect while we're still processing its status update in which case the
+    // PeerChainTracker will get the disconnect event followed by a status update
+    connectPeer(peer);
+    disconnectPeer(peer);
+
+    updateStatus(peer, status);
+
+    assertThat(finalizedChains.streamChains()).isEmpty();
+    assertThat(nonfinalizedChains.streamChains()).isEmpty();
+  }
+
   private void updateStatus(final Eth2Peer peer, final PeerStatus status) {
     final ArgumentCaptor<PeerStatusSubscriber> statusCaptor =
         ArgumentCaptor.forClass(PeerStatusSubscriber.class);
@@ -118,6 +134,7 @@ class PeerChainTrackerTest {
 
     final PeerDisconnectedSubscriber statusSubscriber = disconnectCaptor.getValue();
     statusSubscriber.onDisconnected(Optional.empty(), false);
+    when(peer.isConnected()).thenReturn(false);
   }
 
   @SuppressWarnings("unchecked")
@@ -125,6 +142,7 @@ class PeerChainTrackerTest {
     final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> connectCaptor =
         ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
     verify(p2pNetwork).subscribeConnect(connectCaptor.capture());
+    when(peer.isConnected()).thenReturn(true);
 
     final PeerConnectedSubscriber<Eth2Peer> connectSubscriber = connectCaptor.getValue();
     connectSubscriber.onConnected(peer);

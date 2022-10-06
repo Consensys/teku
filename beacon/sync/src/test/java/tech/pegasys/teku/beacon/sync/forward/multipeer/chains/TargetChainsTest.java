@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -27,7 +28,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class TargetChainsTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private final TargetChains targetChains = new TargetChains();
+  private final TargetChains targetChains =
+      new TargetChains(mock(SettableLabelledGauge.class), "chains");
   private final SyncSource peer1 = mock(SyncSource.class);
   private final SyncSource peer2 = mock(SyncSource.class);
 
