@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,5 +25,12 @@ public class VoluntaryExitPropertyTest {
   void roundTrip(@ForAll(supplier = VoluntaryExitSupplier.class) final VoluntaryExit voluntaryExit)
       throws JsonProcessingException {
     assertRoundTrip(voluntaryExit);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = VoluntaryExitSupplier.class) final VoluntaryExit voluntaryExit,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(voluntaryExit, seed);
   }
 }

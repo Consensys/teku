@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,5 +26,12 @@ public class SyncAggregatePropertyTest {
   void roundTrip(@ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate)
       throws JsonProcessingException {
     assertRoundTrip(syncAggregate);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(syncAggregate, seed);
   }
 }
