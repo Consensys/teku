@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessa
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
@@ -45,6 +46,7 @@ public abstract class Web3JClient {
   // available but uses a very old value to make sure we log if the first request fails
   private final AtomicLong lastError = new AtomicLong(STARTUP_LAST_ERROR_TIME);
   private boolean initialized = false;
+  private final AtomicBoolean isAvailable = new AtomicBoolean(false);
 
   protected Web3JClient(
       final EventLogger eventLog,
@@ -111,6 +113,10 @@ public abstract class Web3JClient {
       logExecutionClientError(error, couldBeAuthError);
       executionClientEventsPublisher.onAvailabilityUpdated(false);
     }
+
+    if (isAvailable.compareAndSet(true, false)) {
+      executionClientEventsPublisher.onAvailabilityUpdated(isAvailable.get());
+    }
   }
 
   protected void handleSuccess() {
@@ -121,6 +127,10 @@ public abstract class Web3JClient {
     } else if (lastErrorTime != NO_ERROR_TIME) {
       eventLog.executionClientRecovered();
       executionClientEventsPublisher.onAvailabilityUpdated(true);
+    }
+
+    if (isAvailable.compareAndSet(false, true)) {
+      executionClientEventsPublisher.onAvailabilityUpdated(isAvailable.get());
     }
   }
 
