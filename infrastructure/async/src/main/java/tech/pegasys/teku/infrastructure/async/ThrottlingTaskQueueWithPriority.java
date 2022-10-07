@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.Collection;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -25,12 +23,20 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
 
   private final Queue<Runnable> queuedPrioritizedTasks = new ConcurrentLinkedQueue<>();
 
-  public ThrottlingTaskQueueWithPriority(
+  public static ThrottlingTaskQueueWithPriority create(
       final int maximumConcurrentTasks,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
-    super(maximumConcurrentTasks, metricsSystem, metricCategory, metricName);
+    final ThrottlingTaskQueueWithPriority taskQueue =
+        new ThrottlingTaskQueueWithPriority(maximumConcurrentTasks);
+    metricsSystem.createGauge(
+        metricCategory, metricName, "Number of tasks queued", taskQueue::getQueuedTasksCount);
+    return taskQueue;
+  }
+
+  private ThrottlingTaskQueueWithPriority(final int maximumConcurrentTasks) {
+    super(maximumConcurrentTasks);
   }
 
   public <T> SafeFuture<T> queueTask(
@@ -54,7 +60,6 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
 
   @Override
   protected int getQueuedTasksCount() {
-    return queuedTasks.size()
-        + Optional.ofNullable(queuedPrioritizedTasks).map(Collection::size).orElse(0);
+    return queuedTasks.size() + queuedPrioritizedTasks.size();
   }
 }

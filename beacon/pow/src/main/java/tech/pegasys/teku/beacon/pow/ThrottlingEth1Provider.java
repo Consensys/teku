@@ -38,7 +38,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     taskQueue =
-        new ThrottlingTaskQueue(
+        ThrottlingTaskQueue.create(
             maximumConcurrentRequests,
             metricsSystem,
             TekuMetricCategory.BEACON,

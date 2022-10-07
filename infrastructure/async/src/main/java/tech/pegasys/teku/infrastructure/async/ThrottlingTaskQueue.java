@@ -28,14 +28,22 @@ public class ThrottlingTaskQueue {
 
   private int inflightTaskCount = 0;
 
-  public ThrottlingTaskQueue(
+  public static ThrottlingTaskQueue create(
       final int maximumConcurrentTasks,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
-    this.maximumConcurrentTasks = maximumConcurrentTasks;
+    final ThrottlingTaskQueue throttlingTaskQueue = new ThrottlingTaskQueue(maximumConcurrentTasks);
     metricsSystem.createGauge(
-        metricCategory, metricName, "Number of tasks queued", this::getQueuedTasksCount);
+        metricCategory,
+        metricName,
+        "Number of tasks queued",
+        throttlingTaskQueue::getQueuedTasksCount);
+    return throttlingTaskQueue;
+  }
+
+  protected ThrottlingTaskQueue(final int maximumConcurrentTasks) {
+    this.maximumConcurrentTasks = maximumConcurrentTasks;
   }
 
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {

@@ -220,7 +220,7 @@ public class ValidatorSourceFactory {
   private ThrottlingTaskQueueWithPriority initializeExternalSignerTaskQueue() {
     if (externalSignerTaskQueue == null) {
       externalSignerTaskQueue =
-          new ThrottlingTaskQueueWithPriority(
+          ThrottlingTaskQueueWithPriority.create(
               config.getValidatorExternalSignerConcurrentRequestLimit(),
               metricsSystem,
               TekuMetricCategory.VALIDATOR,

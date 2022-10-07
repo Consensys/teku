@@ -32,7 +32,7 @@ public class ThrottlingTaskQueueWithPriorityTest {
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   private final ThrottlingTaskQueueWithPriority taskQueue =
-      new ThrottlingTaskQueueWithPriority(
+      ThrottlingTaskQueueWithPriority.create(
           MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
 
   @Test

@@ -31,7 +31,7 @@ public class ThrottlingTaskQueueTest {
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   private final ThrottlingTaskQueue taskQueue =
-      new ThrottlingTaskQueue(
+      ThrottlingTaskQueue.create(
           MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
 
   @Test
