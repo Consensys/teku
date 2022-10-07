@@ -33,13 +33,10 @@ public class ThrottlingTaskQueue {
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
-    final ThrottlingTaskQueue throttlingTaskQueue = new ThrottlingTaskQueue(maximumConcurrentTasks);
+    final ThrottlingTaskQueue taskQueue = new ThrottlingTaskQueue(maximumConcurrentTasks);
     metricsSystem.createGauge(
-        metricCategory,
-        metricName,
-        "Number of tasks queued",
-        throttlingTaskQueue::getQueuedTasksCount);
-    return throttlingTaskQueue;
+        metricCategory, metricName, "Number of tasks queued", taskQueue.queuedTasks::size);
+    return taskQueue;
   }
 
   protected ThrottlingTaskQueue(final int maximumConcurrentTasks) {

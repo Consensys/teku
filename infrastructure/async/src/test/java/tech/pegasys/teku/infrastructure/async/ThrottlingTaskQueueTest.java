@@ -50,7 +50,7 @@ public class ThrottlingTaskQueueTest {
                 })
             .collect(Collectors.toList());
 
-    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(97);
+    assertThat(getQueuedTasksGaugeValue()).isEqualTo(97);
     assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
 
     stubAsyncRunner.executeQueuedActions();
@@ -58,7 +58,7 @@ public class ThrottlingTaskQueueTest {
     requests.forEach(request -> assertThat(request).isCompleted());
   }
 
-  private double getNumberOfQueuedTasksMetric() {
+  private double getQueuedTasksGaugeValue() {
     return stubMetricsSystem.getGauge(TekuMetricCategory.BEACON, "test_metric").getValue();
   }
 }

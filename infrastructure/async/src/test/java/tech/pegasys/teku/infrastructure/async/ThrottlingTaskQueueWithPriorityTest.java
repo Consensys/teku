@@ -55,7 +55,8 @@ public class ThrottlingTaskQueueWithPriorityTest {
                 })
             .collect(Collectors.toList());
 
-    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(97);
+    assertThat(getQueuedTasksGaugeValue(true)).isEqualTo(33);
+    assertThat(getQueuedTasksGaugeValue(false)).isEqualTo(64);
     assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
 
     stubAsyncRunner.executeQueuedActions();
@@ -90,7 +91,8 @@ public class ThrottlingTaskQueueWithPriorityTest {
         },
         true);
 
-    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(2);
+    assertThat(getQueuedTasksGaugeValue(true)).isEqualTo(1);
+    assertThat(getQueuedTasksGaugeValue(false)).isEqualTo(1);
     assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
 
     initialRequest.complete(null);
@@ -100,7 +102,10 @@ public class ThrottlingTaskQueueWithPriorityTest {
     assertThat(assertion).isCompleted();
   }
 
-  private double getNumberOfQueuedTasksMetric() {
-    return stubMetricsSystem.getGauge(TekuMetricCategory.BEACON, "test_metric").getValue();
+  private double getQueuedTasksGaugeValue(final boolean priority) {
+    return stubMetricsSystem
+        .getLabelledGauge(TekuMetricCategory.BEACON, "test_metric")
+        .getValue(priority ? "high" : "normal")
+        .orElseThrow();
   }
 }
