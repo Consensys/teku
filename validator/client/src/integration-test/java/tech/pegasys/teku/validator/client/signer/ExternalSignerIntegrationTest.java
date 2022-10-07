@@ -69,7 +69,7 @@ public class ExternalSignerIntegrationTest {
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final ThrottlingTaskQueueWithPriority queue =
-      new ThrottlingTaskQueueWithPriority(
+      ThrottlingTaskQueueWithPriority.create(
           8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
   private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
 

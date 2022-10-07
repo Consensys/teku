@@ -84,7 +84,7 @@ public class ExternalValidatorSourceTest {
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
             .build();
     externalSignerTaskQueue =
-        new ThrottlingTaskQueueWithPriority(
+        ThrottlingTaskQueueWithPriority.create(
             config.getValidatorExternalSignerConcurrentRequestLimit(),
             metricsSystem,
             TekuMetricCategory.VALIDATOR,

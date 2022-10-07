@@ -83,7 +83,7 @@ public class ExternalSignerAltairIntegrationTest {
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final ThrottlingTaskQueueWithPriority queue =
-      new ThrottlingTaskQueueWithPriority(
+      ThrottlingTaskQueueWithPriority.create(
           8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
 
   private ClientAndServer client;
