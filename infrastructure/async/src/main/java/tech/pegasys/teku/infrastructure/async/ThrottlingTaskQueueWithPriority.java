@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import java.util.Collection;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -52,6 +54,7 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
 
   @Override
   protected int getQueuedTasksCount() {
-    return queuedTasks.size() + queuedPrioritizedTasks.size();
+    return queuedTasks.size()
+        + Optional.ofNullable(queuedPrioritizedTasks).map(Collection::size).orElse(0);
   }
 }
