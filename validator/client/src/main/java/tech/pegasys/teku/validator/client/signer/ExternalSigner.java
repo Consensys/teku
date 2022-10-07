@@ -41,7 +41,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -67,7 +67,7 @@ public class ExternalSigner implements Signer {
   private final Duration timeout;
   private final Spec spec;
   private final HttpClient httpClient;
-  private final ThrottlingTaskQueue taskQueue;
+  private final ThrottlingTaskQueueWithPriority taskQueue;
   private final SigningRootUtil signingRootUtil;
 
   private final Counter successCounter;
@@ -80,7 +80,7 @@ public class ExternalSigner implements Signer {
       final URL signingServiceUrl,
       final BLSPublicKey blsPublicKey,
       final Duration timeout,
-      final ThrottlingTaskQueue taskQueue,
+      final ThrottlingTaskQueueWithPriority taskQueue,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.httpClient = httpClient;
@@ -159,7 +159,8 @@ public class ExternalSigner implements Signer {
                 signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
                 SignType.AGGREGATION_SLOT,
                 Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
-                slashableGenericMessage("aggregation slot")));
+                slashableGenericMessage("aggregation slot")),
+        true);
   }
 
   @Override
@@ -257,21 +258,23 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
-    return sign(
-        signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
-        SignType.VALIDATOR_REGISTRATION,
-        Map.of(
-            "validator_registration",
-            Map.of(
-                "fee_recipient",
-                validatorRegistration.getFeeRecipient().toHexString(),
-                "gas_limit",
-                validatorRegistration.getGasLimit(),
-                "timestamp",
-                validatorRegistration.getTimestamp(),
-                "pubkey",
-                validatorRegistration.getPublicKey().toString())),
-        slashableGenericMessage("validator registration"));
+    return taskQueue.queueTask(
+        () ->
+            sign(
+                signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
+                SignType.VALIDATOR_REGISTRATION,
+                Map.of(
+                    "validator_registration",
+                    Map.of(
+                        "fee_recipient",
+                        validatorRegistration.getFeeRecipient().toHexString(),
+                        "gas_limit",
+                        validatorRegistration.getGasLimit(),
+                        "timestamp",
+                        validatorRegistration.getTimestamp(),
+                        "pubkey",
+                        validatorRegistration.getPublicKey().toString())),
+                slashableGenericMessage("validator registration")));
   }
 
   @Override

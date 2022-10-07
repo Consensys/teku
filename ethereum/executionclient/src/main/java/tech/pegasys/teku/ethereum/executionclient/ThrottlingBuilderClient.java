@@ -38,7 +38,7 @@ public class ThrottlingBuilderClient implements BuilderClient {
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     taskQueue =
-        new ThrottlingTaskQueue(
+        ThrottlingTaskQueue.create(
             maximumConcurrentRequests,
             metricsSystem,
             TekuMetricCategory.BEACON,

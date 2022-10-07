@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -20,42 +21,67 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
+
+  protected final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
+
   private final int maximumConcurrentTasks;
-  private final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
+
   private int inflightTaskCount = 0;
 
-  public ThrottlingTaskQueue(
+  public static ThrottlingTaskQueue create(
       final int maximumConcurrentTasks,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
-    this.maximumConcurrentTasks = maximumConcurrentTasks;
-
+    final ThrottlingTaskQueue taskQueue = new ThrottlingTaskQueue(maximumConcurrentTasks);
     metricsSystem.createGauge(
-        metricCategory, metricName, "Number of tasks queued", queuedTasks::size);
+        metricCategory, metricName, "Number of tasks queued", taskQueue.queuedTasks::size);
+    return taskQueue;
+  }
+
+  protected ThrottlingTaskQueue(final int maximumConcurrentTasks) {
+    this.maximumConcurrentTasks = maximumConcurrentTasks;
   }
 
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
-    final SafeFuture<T> future = new SafeFuture<>();
-    queuedTasks.add(
-        () -> {
-          final SafeFuture<T> requestFuture = request.get();
-          requestFuture.propagateTo(future);
-          requestFuture.always(this::taskComplete);
-        });
+    final SafeFuture<T> target = new SafeFuture<>();
+    final Runnable taskToQueue = getTaskToQueue(request, target);
+    queuedTasks.add(taskToQueue);
     processQueuedTasks();
-    return future;
+    return target;
+  }
+
+  protected <T> Runnable getTaskToQueue(
+      final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
+    return () -> {
+      final SafeFuture<T> requestFuture = request.get();
+      requestFuture.propagateTo(target);
+      requestFuture.always(this::taskComplete);
+    };
+  }
+
+  protected Runnable getTaskToRun() {
+    return queuedTasks.remove();
+  }
+
+  protected synchronized void processQueuedTasks() {
+    while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
+      inflightTaskCount++;
+      getTaskToRun().run();
+    }
+  }
+
+  protected int getQueuedTasksCount() {
+    return queuedTasks.size();
+  }
+
+  @VisibleForTesting
+  int getInflightTaskCount() {
+    return inflightTaskCount;
   }
 
   private synchronized void taskComplete() {
     inflightTaskCount--;
     processQueuedTasks();
-  }
-
-  private synchronized void processQueuedTasks() {
-    while (inflightTaskCount < maximumConcurrentTasks && !queuedTasks.isEmpty()) {
-      inflightTaskCount++;
-      queuedTasks.remove().run();
-    }
   }
 }
