@@ -22,8 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
 
-  private final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
-  private final Queue<Runnable> queuedPrioritizedTasks = new ConcurrentLinkedQueue<>();
+  protected final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
 
   private final int maximumConcurrentTasks;
 
@@ -35,31 +34,40 @@ public class ThrottlingTaskQueue {
       final TekuMetricCategory metricCategory,
       final String metricName) {
     this.maximumConcurrentTasks = maximumConcurrentTasks;
-
     metricsSystem.createGauge(
         metricCategory, metricName, "Number of tasks queued", this::getQueuedTasksCount);
   }
 
-  public <T> SafeFuture<T> queueTask(
-      final Supplier<SafeFuture<T>> request, final boolean prioritize) {
-    final SafeFuture<T> future = new SafeFuture<>();
-    final Runnable taskToQueue =
-        () -> {
-          final SafeFuture<T> requestFuture = request.get();
-          requestFuture.propagateTo(future);
-          requestFuture.always(this::taskComplete);
-        };
-    if (prioritize) {
-      queuedPrioritizedTasks.add(taskToQueue);
-    } else {
-      queuedTasks.add(taskToQueue);
-    }
+  public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
+    final SafeFuture<T> target = new SafeFuture<>();
+    final Runnable taskToQueue = getTaskToQueue(request, target);
+    queuedTasks.add(taskToQueue);
     processQueuedTasks();
-    return future;
+    return target;
   }
 
-  public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
-    return queueTask(request, false);
+  protected <T> Runnable getTaskToQueue(
+      final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
+    return () -> {
+      final SafeFuture<T> requestFuture = request.get();
+      requestFuture.propagateTo(target);
+      requestFuture.always(this::taskComplete);
+    };
+  }
+
+  protected Runnable getTaskToRun() {
+    return queuedTasks.remove();
+  }
+
+  protected synchronized void processQueuedTasks() {
+    while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
+      inflightTaskCount++;
+      getTaskToRun().run();
+    }
+  }
+
+  protected int getQueuedTasksCount() {
+    return queuedTasks.size();
   }
 
   @VisibleForTesting
@@ -70,20 +78,5 @@ public class ThrottlingTaskQueue {
   private synchronized void taskComplete() {
     inflightTaskCount--;
     processQueuedTasks();
-  }
-
-  private synchronized void processQueuedTasks() {
-    while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
-      inflightTaskCount++;
-      final Runnable taskToRun =
-          !queuedPrioritizedTasks.isEmpty()
-              ? queuedPrioritizedTasks.remove()
-              : queuedTasks.remove();
-      taskToRun.run();
-    }
-  }
-
-  private int getQueuedTasksCount() {
-    return queuedTasks.size() + queuedPrioritizedTasks.size();
   }
 }

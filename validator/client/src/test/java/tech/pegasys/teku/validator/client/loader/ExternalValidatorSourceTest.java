@@ -43,7 +43,7 @@ import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -65,7 +65,7 @@ public class ExternalValidatorSourceTest {
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = new StubAsyncRunner();
-  private ThrottlingTaskQueue externalSignerTaskQueue;
+  private ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
 
   private final Supplier<HttpClient> httpClientFactory = () -> httpClient;
 
@@ -84,7 +84,7 @@ public class ExternalValidatorSourceTest {
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
             .build();
     externalSignerTaskQueue =
-        new ThrottlingTaskQueue(
+        new ThrottlingTaskQueueWithPriority(
             config.getValidatorExternalSignerConcurrentRequestLimit(),
             metricsSystem,
             TekuMetricCategory.VALIDATOR,

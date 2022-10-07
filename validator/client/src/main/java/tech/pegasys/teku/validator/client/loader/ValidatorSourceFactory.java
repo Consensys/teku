@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -73,7 +73,7 @@ public class ValidatorSourceFactory {
   private final Optional<DataDirLayout> maybeDataDir;
   private Optional<ValidatorSource> mutableLocalValidatorSource = Optional.empty();
   private Optional<ValidatorSource> mutableExternalValidatorSource = Optional.empty();
-  private ThrottlingTaskQueue externalSignerTaskQueue;
+  private ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
 
   public ValidatorSourceFactory(
       final Spec spec,
@@ -217,10 +217,10 @@ public class ValidatorSourceFactory {
     return new SlashingProtectedValidatorSource(validatorSource, slashingProtector);
   }
 
-  private ThrottlingTaskQueue initializeExternalSignerTaskQueue() {
+  private ThrottlingTaskQueueWithPriority initializeExternalSignerTaskQueue() {
     if (externalSignerTaskQueue == null) {
       externalSignerTaskQueue =
-          new ThrottlingTaskQueue(
+          new ThrottlingTaskQueueWithPriority(
               config.getValidatorExternalSignerConcurrentRequestLimit(),
               metricsSystem,
               TekuMetricCategory.VALIDATOR,

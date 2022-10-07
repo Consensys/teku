@@ -16,13 +16,14 @@ package tech.pegasys.teku.infrastructure.async;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
-public class ThrottlingTaskQueueTest {
+public class ThrottlingTaskQueueWithPriorityTest {
 
   private static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
@@ -30,8 +31,8 @@ public class ThrottlingTaskQueueTest {
 
   private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
-  private final ThrottlingTaskQueue taskQueue =
-      new ThrottlingTaskQueue(
+  private final ThrottlingTaskQueueWithPriority taskQueue =
+      new ThrottlingTaskQueueWithPriority(
           MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
 
   @Test
@@ -46,6 +47,10 @@ public class ThrottlingTaskQueueTest {
                             assertThat(taskQueue.getInflightTaskCount())
                                 .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
                           });
+                  // prioritize 1/3 of requests
+                  if (element % 3 == 0) {
+                    return taskQueue.queueTask(() -> request, true);
+                  }
                   return taskQueue.queueTask(() -> request);
                 })
             .collect(Collectors.toList());
@@ -56,6 +61,43 @@ public class ThrottlingTaskQueueTest {
     stubAsyncRunner.executeQueuedActions();
 
     requests.forEach(request -> assertThat(request).isCompleted());
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void prioritizesRequests() {
+    final SafeFuture<Void> initialRequest = new SafeFuture<>();
+    final SafeFuture<Void> prioritizedRequest = new SafeFuture<>();
+    final SafeFuture<Void> normalRequest = new SafeFuture<>();
+
+    final AtomicBoolean priorityFirst = new AtomicBoolean(false);
+
+    // fill queue
+    IntStream.range(0, MAXIMUM_CONCURRENT_TASKS)
+        .forEach(__ -> taskQueue.queueTask(() -> initialRequest));
+    final SafeFuture<Void> assertion =
+        taskQueue.queueTask(
+            () -> {
+              // make sure the prioritized request is ran first
+              // even though It has been queued after this one
+              assertThat(priorityFirst).isTrue();
+              return normalRequest;
+            });
+    taskQueue.queueTask(
+        () -> {
+          priorityFirst.set(true);
+          return prioritizedRequest;
+        },
+        true);
+
+    assertThat(getNumberOfQueuedTasksMetric()).isEqualTo(2);
+    assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
+
+    initialRequest.complete(null);
+    normalRequest.complete(null);
+    prioritizedRequest.complete(null);
+
+    assertThat(assertion).isCompleted();
   }
 
   private double getNumberOfQueuedTasksMetric() {

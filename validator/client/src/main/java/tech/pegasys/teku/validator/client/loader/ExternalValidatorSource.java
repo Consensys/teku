@@ -35,7 +35,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -54,7 +54,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   private final ValidatorConfig config;
   private final Supplier<HttpClient> externalSignerHttpClientFactory;
   private final PublicKeyLoader publicKeyLoader;
-  private final ThrottlingTaskQueue externalSignerTaskQueue;
+  private final ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
@@ -63,7 +63,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
-      final ThrottlingTaskQueue externalSignerTaskQueue,
+      final ThrottlingTaskQueueWithPriority externalSignerTaskQueue,
       final MetricsSystem metricsSystem,
       final boolean readOnly,
       final Optional<DataDirLayout> maybeDataDirLayout) {
@@ -84,7 +84,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final boolean readOnly,
-      final ThrottlingTaskQueue externalSignerTaskQueue,
+      final ThrottlingTaskQueueWithPriority externalSignerTaskQueue,
       final Optional<DataDirLayout> maybeDataDirLayout) {
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, asyncRunner);
     return new ExternalValidatorSource(
