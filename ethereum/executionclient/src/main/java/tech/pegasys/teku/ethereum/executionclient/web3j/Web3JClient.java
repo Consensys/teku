@@ -117,10 +117,11 @@ public abstract class Web3JClient {
     final long lastErrorTime = lastError.getAndUpdate(x -> NO_ERROR_TIME);
     if (lastErrorTime == STARTUP_LAST_ERROR_TIME) {
       eventLog.executionClientIsOnline();
+      executionClientEventsPublisher.onAvailabilityUpdated(true);
     } else if (lastErrorTime != NO_ERROR_TIME) {
       eventLog.executionClientRecovered();
+      executionClientEventsPublisher.onAvailabilityUpdated(true);
     }
-    executionClientEventsPublisher.onAvailabilityUpdated(true);
   }
 
   public synchronized Web3jService getWeb3jService() {
