@@ -30,28 +30,46 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
   private final Spec spec;
   private final int faultInspectionWindow;
   private final int minimumUniqueBlockRootsInWindow;
+  private final int consecutiveAllowedFaults;
 
   public BuilderCircuitBreakerImpl(
-      final Spec spec, final int faultInspectionWindow, final int allowedFaults) {
+      final Spec spec,
+      final int faultInspectionWindow,
+      final int allowedFaults,
+      final int consecutiveAllowedFaults) {
     checkArgument(
         faultInspectionWindow > allowedFaults,
         "FaultInspectionWindow must be greater than AllowedFaults");
+    checkArgument(
+        faultInspectionWindow > consecutiveAllowedFaults,
+        "ConsecutiveAllowedFaults must be greater than AllowedFaults");
     this.spec = spec;
     this.faultInspectionWindow = faultInspectionWindow;
     this.minimumUniqueBlockRootsInWindow = faultInspectionWindow - allowedFaults;
+    this.consecutiveAllowedFaults = consecutiveAllowedFaults;
   }
 
   @Override
   public boolean isEngaged(final BeaconState state) {
 
-    final int uniqueBlockRootsCount = getLatestUniqueBlockRootsCount(state);
-    if (uniqueBlockRootsCount < minimumUniqueBlockRootsInWindow) {
+    final InspectionWindowCounters inspectionWindowCounters = getLatestUniqueBlockRootsCount(state);
+    if (inspectionWindowCounters.uniqueBlockRootsCount < minimumUniqueBlockRootsInWindow) {
       LOG.debug(
           "Builder circuit breaker engaged: slot: {}, uniqueBlockRootsCount: {}, window: {},  minimumUniqueBlockRootsInWindow: {}",
           state.getSlot(),
-          uniqueBlockRootsCount,
+          inspectionWindowCounters.uniqueBlockRootsCount,
           faultInspectionWindow,
           minimumUniqueBlockRootsInWindow);
+      return true;
+    }
+
+    if (inspectionWindowCounters.lastConsecutiveEmptySlots > consecutiveAllowedFaults) {
+      LOG.debug(
+          "Builder circuit breaker engaged: slot: {}, lastConsecutiveEmptySlots: {}, window: {},  consecutiveAllowedFaults: {}",
+          state.getSlot(),
+          inspectionWindowCounters.lastConsecutiveEmptySlots,
+          faultInspectionWindow,
+          consecutiveAllowedFaults);
       return true;
     }
 
@@ -61,7 +79,8 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
   }
 
   @VisibleForTesting
-  int getLatestUniqueBlockRootsCount(final BeaconState state) throws IllegalArgumentException {
+  InspectionWindowCounters getLatestUniqueBlockRootsCount(final BeaconState state)
+      throws IllegalArgumentException {
     final int slotsPerHistoricalRoot =
         spec.atSlot(state.getSlot()).getConfig().getSlotsPerHistoricalRoot();
     checkArgument(
@@ -85,11 +104,19 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
     final UInt64 firstSlotOfInspectionWindow = state.getSlot().minusMinZero(faultInspectionWindow);
     final UInt64 lastSlotOfInspectionWindow = state.getSlot().minusMinZero(1);
 
+    int lastConsecutiveEmptySlots =
+        lastSlotOfInspectionWindow.minus(state.getLatestBlockHeader().getSlot()).intValue();
+
     // if getLatestBlockHeader is outside the fault window,
     // we have definitely missed all blocks so count will be 0
+    // consecutive missed slots at least the entire window size
     if (state.getLatestBlockHeader().getSlot().isLessThan(firstSlotOfInspectionWindow)) {
-      return 0;
+      return new InspectionWindowCounters(0, lastConsecutiveEmptySlots);
     }
+
+    // we can consider getLatestBlockHeader root because at this stage has been already updated with
+    // state root
+    uniqueBlockRoots.add(state.getLatestBlockHeader().getRoot());
 
     UInt64 currentSlot = firstSlotOfInspectionWindow;
     while (currentSlot.isLessThan(lastSlotOfInspectionWindow)) {
@@ -98,13 +125,17 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
       currentSlot = currentSlot.increment();
     }
 
-    int uniqueBlockRootsCount = uniqueBlockRoots.size();
+    return new InspectionWindowCounters(uniqueBlockRoots.size(), lastConsecutiveEmptySlots);
+  }
 
-    // let's count the latest block header only if it is from the last slot
-    if (state.getLatestBlockHeader().getSlot().equals(lastSlotOfInspectionWindow)) {
-      uniqueBlockRootsCount++;
+  protected static class InspectionWindowCounters {
+    final int uniqueBlockRootsCount;
+    final int lastConsecutiveEmptySlots;
+
+    private InspectionWindowCounters(
+        final int uniqueBlockRootsCount, final int lastConsecutiveEmptySlots) {
+      this.uniqueBlockRootsCount = uniqueBlockRootsCount;
+      this.lastConsecutiveEmptySlots = lastConsecutiveEmptySlots;
     }
-
-    return uniqueBlockRootsCount;
   }
 }
