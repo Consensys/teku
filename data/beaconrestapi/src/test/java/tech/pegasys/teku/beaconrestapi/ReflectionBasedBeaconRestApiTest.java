@@ -26,6 +26,7 @@ import io.javalin.jetty.JettyServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -72,6 +73,9 @@ class ReflectionBasedBeaconRestApiTest {
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
 
+  private final ExecutionClientDataProvider executionClientDataProvider =
+      mock(ExecutionClientDataProvider.class);
+
   @BeforeEach
   public void setup() {
     BeaconRestApiConfig beaconRestApiConfig =
@@ -109,6 +113,7 @@ class ReflectionBasedBeaconRestApiTest {
         eventChannels,
         new StubAsyncRunner(),
         StubTimeProvider.withTimeInMillis(1000),
+        executionClientDataProvider,
         app,
         storageClient.getSpec());
   }

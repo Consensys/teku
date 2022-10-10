@@ -41,6 +41,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
@@ -151,6 +152,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     final Info applicationInfo = createApplicationInfo();
     openApiDocBuilder =
@@ -186,7 +188,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     addExceptionHandlers();
     addStandardApiHandlers(
         dataProvider, spec, eventChannels, asyncRunner, timeProvider, configuration);
-    addTekuSpecificHandlers(dataProvider, eth1DataProvider, spec);
+    addTekuSpecificHandlers(dataProvider, eth1DataProvider, executionClientDataProvider, spec);
     migratedOpenApi = openApiDocBuilder.build();
   }
 
@@ -288,6 +290,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     this.app =
         Javalin.create(
@@ -313,16 +316,18 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
         eventChannels,
         asyncRunner,
         timeProvider,
+        executionClientDataProvider,
         spec);
   }
 
-  ReflectionBasedBeaconRestApi(
+  public ReflectionBasedBeaconRestApi(
       final DataProvider dataProvider,
       final Eth1DataProvider eth1DataProvider,
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
       final Javalin app,
       final Spec spec) {
     this.app = app;
@@ -333,6 +338,7 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
         eventChannels,
         asyncRunner,
         timeProvider,
+        executionClientDataProvider,
         spec);
   }
 
@@ -387,11 +393,14 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   private void addTekuSpecificHandlers(
-      final DataProvider provider, final Eth1DataProvider eth1DataProvider, final Spec spec) {
+      final DataProvider provider,
+      final Eth1DataProvider eth1DataProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
+      final Spec spec) {
     addMigratedEndpoint(new PutLogLevel());
     addMigratedEndpoint(new GetStateByBlockRoot(provider, spec));
     addMigratedEndpoint(new Liveness(provider));
-    addMigratedEndpoint(new Readiness(provider));
+    addMigratedEndpoint(new Readiness(provider, executionClientDataProvider));
     addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
     addMigratedEndpoint(new GetPeersScore(provider));
     addMigratedEndpoint(new GetProtoArray(provider));

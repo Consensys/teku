@@ -34,6 +34,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
@@ -46,17 +47,22 @@ public class Readiness extends MigratingEndpointAdapter {
   private final ChainDataProvider chainDataProvider;
   private final NetworkDataProvider networkDataProvider;
 
-  public Readiness(final DataProvider provider) {
+  private final ExecutionClientDataProvider executionClientDataProvider;
+
+  public Readiness(
+      final DataProvider provider, final ExecutionClientDataProvider executionClientDataProvider) {
     this(
         provider.getSyncDataProvider(),
         provider.getChainDataProvider(),
-        provider.getNetworkDataProvider());
+        provider.getNetworkDataProvider(),
+        executionClientDataProvider);
   }
 
   Readiness(
       final SyncDataProvider syncProvider,
       final ChainDataProvider chainDataProvider,
-      final NetworkDataProvider networkDataProvider) {
+      final NetworkDataProvider networkDataProvider,
+      final ExecutionClientDataProvider executionClientDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("readiness")
@@ -70,6 +76,7 @@ public class Readiness extends MigratingEndpointAdapter {
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
     this.networkDataProvider = networkDataProvider;
+    this.executionClientDataProvider = executionClientDataProvider;
   }
 
   @OpenApi(
@@ -103,7 +110,8 @@ public class Readiness extends MigratingEndpointAdapter {
 
     if (!chainDataProvider.isStoreAvailable()
         || syncProvider.isSyncing()
-        || belowTargetPeerCount(targetPeerCount)) {
+        || belowTargetPeerCount(targetPeerCount)
+        || !executionClientDataProvider.isExecutionClientAvailable()) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else {
       request.respondWithCode(SC_OK);

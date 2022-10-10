@@ -29,6 +29,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
@@ -126,6 +127,8 @@ public class ReflectionBasedBeaconRestApiV1Test {
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final ExecutionClientDataProvider executionClientDataProvider =
+      mock(ExecutionClientDataProvider.class);
 
   @BeforeEach
   public void setup() {
@@ -165,6 +168,7 @@ public class ReflectionBasedBeaconRestApiV1Test {
         eventChannels,
         new StubAsyncRunner(),
         StubTimeProvider.withTimeInMillis(1000),
+        executionClientDataProvider,
         app,
         storageClient.getSpec());
   }

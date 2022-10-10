@@ -3,6 +3,7 @@ dependencies {
     implementation project(':ethereum:pow:api')
     implementation project(':data:provider')
     implementation project(':data:serializer')
+    implementation project(':ethereum:executionclient')
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
