@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.validator.client;
 
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -192,10 +195,45 @@ public class ValidatorClientService extends Service {
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem());
+
+    validatorClientService.loadValidators(validatorApiChannel, asyncRunner);
+
+    if (validatorConfig.isDoppelgangerDetectionEnabled()) {
+      final SafeFuture<IntCollection> maybeValidatorIndices =
+          validatorClientService.validatorIndexProvider.getValidatorIndices();
+      final SafeFuture<UInt64> maybeGenesisTime = genesisDataProvider.getGenesisTime();
+      SafeFuture.allOf(maybeValidatorIndices, maybeGenesisTime)
+          .thenApply(
+              __ -> {
+                IntCollection validatorIndices = maybeValidatorIndices.join();
+                UInt64 genesisTime = maybeGenesisTime.join();
+                final UInt64 currentEpoch =
+                    validatorClientService.spec.computeEpochAtSlot(
+                        validatorClientService.spec.getCurrentSlot(
+                            services.getTimeProvider().getTimeInMillis(), genesisTime));
+                final List<UInt64> validatorsIndices =
+                    validatorIndices
+                        .intStream()
+                        .mapToObj(UInt64::valueOf)
+                        .collect(Collectors.toList());
+                DoppelgangerDetectionService doppelgangerDetectionService =
+                    new DoppelgangerDetectionService(
+                        asyncRunner,
+                        validatorApiChannel,
+                        validatorsIndices,
+                        currentEpoch,
+                        validatorClientService.spec,
+                        services.getTimeProvider(),
+                        genesisDataProvider);
+                doppelgangerDetectionService.start();
+                return SafeFuture.COMPLETE;
+              });
+    }
+
     asyncRunner
         .runAsync(
             () ->
-                validatorClientService.initializeValidators(
+                validatorClientService.scheduleValidatorsDuties(
                     config, validatorApiChannel, asyncRunner))
         .propagateTo(validatorClientService.initializationComplete);
     return validatorClientService;
@@ -269,15 +307,20 @@ public class ValidatorClientService extends Service {
             : Optional.empty());
   }
 
-  private void initializeValidators(
+  private void loadValidators(
+      final ValidatorApiChannel validatorApiChannel, final AsyncRunner asyncRunner) {
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    this.validatorIndexProvider =
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
+    validatorIndexProvider.lookupValidators();
+  }
+
+  private void scheduleValidatorsDuties(
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
-    validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-
-    this.validatorIndexProvider =
-        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
