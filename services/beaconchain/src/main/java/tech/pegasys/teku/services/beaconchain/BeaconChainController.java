@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -861,6 +863,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
+    final ExecutionClientDataProvider executionClientDataProvider =
+        new ExecutionClientDataProvider();
+    eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
+
     final BeaconRestApi api =
         beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
             ? new JsonTypeDefinitionBeaconRestApi(
@@ -870,6 +876,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
+                executionClientDataProvider,
                 spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
@@ -878,6 +885,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
+                executionClientDataProvider,
                 spec);
     beaconRestAPI = Optional.of(api);
 

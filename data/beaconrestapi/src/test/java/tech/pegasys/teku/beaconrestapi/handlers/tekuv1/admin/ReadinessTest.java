@@ -37,13 +37,15 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    setHandler(new Readiness(syncDataProvider, chainDataProvider, network));
+    setHandler(
+        new Readiness(syncDataProvider, chainDataProvider, network, executionClientDataProvider));
   }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
 
     handler.handleRequest(request);
 
@@ -57,6 +59,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     final Eth2Peer peer1 = mock(Eth2Peer.class);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
     when(eth2P2PNetwork.streamPeers())
         .thenReturn(Stream.of(peer1, peer1))
         .thenReturn(Stream.of(peer1, peer1));
@@ -119,6 +122,18 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers()).thenReturn(Stream.of(peer1)).thenReturn(Stream.of(peer1));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  public void shouldReturnUnavailableWhenExecutionClientIsNotAvailable() throws Exception {
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
 
     handler.handleRequest(request);
 
