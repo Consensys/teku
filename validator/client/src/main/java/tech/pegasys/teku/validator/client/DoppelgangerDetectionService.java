@@ -77,6 +77,7 @@ public class DoppelgangerDetectionService extends Service {
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<Void> checkValidatorsDoppelganger() {
     genesisDataProvider
         .getGenesisTime()

@@ -109,6 +109,7 @@ public class ValidatorClientService extends Service {
     this.metricsSystem = metricsSystem;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public static ValidatorClientService create(
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
@@ -203,7 +204,7 @@ public class ValidatorClientService extends Service {
           validatorClientService.validatorIndexProvider.getValidatorIndices();
       final SafeFuture<UInt64> maybeGenesisTime = genesisDataProvider.getGenesisTime();
       SafeFuture.allOf(maybeValidatorIndices, maybeGenesisTime)
-          .thenApply(
+          .thenAccept(
               __ -> {
                 IntCollection validatorIndices = maybeValidatorIndices.join();
                 UInt64 genesisTime = maybeGenesisTime.join();
@@ -226,7 +227,6 @@ public class ValidatorClientService extends Service {
                         services.getTimeProvider(),
                         genesisDataProvider);
                 doppelgangerDetectionService.start();
-                return SafeFuture.COMPLETE;
               });
     }
 
