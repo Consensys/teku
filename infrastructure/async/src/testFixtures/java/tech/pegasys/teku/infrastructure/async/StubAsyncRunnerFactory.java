@@ -22,6 +22,7 @@ public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
 
   @Override
   public AsyncRunner create(final String name, final int maxThreads, final int maxQueueSize) {
+    validateAsyncRunnerName(name);
     final StubAsyncRunner asyncRunner = new StubAsyncRunner();
     runners.add(asyncRunner);
     return asyncRunner;
