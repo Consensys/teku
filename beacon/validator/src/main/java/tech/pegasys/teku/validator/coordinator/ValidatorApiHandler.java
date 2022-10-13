@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -821,7 +820,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       signedValidatorRegistration.getMessage().getPublicKey();
                   final boolean unknownOrHasExited =
                       Optional.ofNullable(validatorStatuses.get(validatorIdentifier))
-                          .map(this::validatorHasExited)
+                          .map(ValidatorStatus::hasExited)
                           .orElse(true);
                   if (unknownOrHasExited) {
                     LOG.debug(
@@ -835,11 +834,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return validatorRegistrations;
     }
     return validatorRegistrations.getSchema().createFromElements(applicableValidatorRegistrations);
-  }
-
-  private boolean validatorHasExited(final ValidatorStatus validatorStatus) {
-    return Objects.equals(validatorStatus, ValidatorStatus.exited_slashed)
-        || Objects.equals(validatorStatus, ValidatorStatus.exited_unslashed);
   }
 
   private static <A, B, R> Optional<R> combine(

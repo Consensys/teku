@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -958,23 +959,29 @@ class ValidatorApiHandlerTest {
 
   @Test
   void registerValidators_shouldIgnoreExitedAndUnknownValidators() {
+    final int numOfValidatorRegistrationsAttempted = ValidatorStatus.values().length + 2;
+
     final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomSignedValidatorRegistrations(5);
+        dataStructureUtil.randomSignedValidatorRegistrations(numOfValidatorRegistrationsAttempted);
 
-    final BLSPublicKey exitedUnslashedValidatorKey =
-        validatorRegistrations.get(2).getMessage().getPublicKey();
-    final BLSPublicKey exitedSlashedValidatorKey =
-        validatorRegistrations.get(3).getMessage().getPublicKey();
-    final BLSPublicKey unknownValidatorKey =
-        validatorRegistrations.get(4).getMessage().getPublicKey();
+    final Map<BLSPublicKey, ValidatorStatus> knownValidators =
+        IntStream.range(0, ValidatorStatus.values().length)
+            .mapToObj(
+                statusIdx ->
+                    Map.entry(
+                        validatorRegistrations.get(statusIdx).getMessage().getPublicKey(),
+                        ValidatorStatus.values()[statusIdx]))
+            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
 
-    setupValidatorsState(
-        validatorRegistrations,
-        Map.of(
-            exitedUnslashedValidatorKey,
-            ValidatorStatus.exited_unslashed,
-            exitedSlashedValidatorKey,
-            ValidatorStatus.exited_slashed));
+    final List<BLSPublicKey> exitedOrUnknownKeys =
+        IntStream.range(
+                ValidatorStatus.exited_unslashed.ordinal(), numOfValidatorRegistrationsAttempted)
+            .mapToObj(
+                statusOrdinal ->
+                    validatorRegistrations.get(statusOrdinal).getMessage().getPublicKey())
+            .collect(Collectors.toUnmodifiableList());
+
+    setupValidatorsState(validatorRegistrations, ValidatorStatus.values().length, knownValidators);
 
     when(chainDataClient.getCurrentSlot()).thenReturn(ONE);
 
@@ -991,10 +998,9 @@ class ValidatorApiHandlerTest {
     final SszList<SignedValidatorRegistration> capturedRegistrations = argumentCaptor.getValue();
 
     assertThat(capturedRegistrations)
-        .hasSize(2)
+        .hasSize(5)
         .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
-        .doesNotContain(
-            exitedUnslashedValidatorKey, exitedSlashedValidatorKey, unknownValidatorKey);
+        .doesNotContainAnyElementsOf(exitedOrUnknownKeys);
   }
 
   @Test
@@ -1110,14 +1116,16 @@ class ValidatorApiHandlerTest {
 
   private void setupValidatorsState(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    setupValidatorsState(validatorRegistrations, Collections.emptyMap());
+    setupValidatorsState(
+        validatorRegistrations, validatorRegistrations.size(), Collections.emptyMap());
   }
 
   private void setupValidatorsState(
       final SszList<SignedValidatorRegistration> validatorRegistrations,
+      final int numOfValidatorsToSetup,
       final Map<BLSPublicKey, ValidatorStatus> statusOverrides) {
     final List<StateValidatorData> data =
-        IntStream.range(0, 4)
+        IntStream.range(0, numOfValidatorsToSetup)
             .mapToObj(
                 index -> {
                   final SignedValidatorRegistration validatorRegistration =
