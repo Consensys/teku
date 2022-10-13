@@ -40,9 +40,6 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
     checkArgument(
         faultInspectionWindow > allowedFaults,
         "FaultInspectionWindow must be greater than AllowedFaults");
-    checkArgument(
-        faultInspectionWindow > consecutiveAllowedFaults,
-        "ConsecutiveAllowedFaults must be greater than AllowedFaults");
     this.spec = spec;
     this.faultInspectionWindow = faultInspectionWindow;
     this.minimumUniqueBlockRootsInWindow = faultInspectionWindow - allowedFaults;
@@ -107,10 +104,7 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
     int lastConsecutiveEmptySlots =
         lastSlotOfInspectionWindow.minus(state.getLatestBlockHeader().getSlot()).intValue();
 
-    // if getLatestBlockHeader is outside the fault window,
-    // we have definitely missed all blocks so count will be 0
-    // consecutive missed slots at least the entire window size
-    if (state.getLatestBlockHeader().getSlot().isLessThan(firstSlotOfInspectionWindow)) {
+    if (lastConsecutiveEmptySlots >= faultInspectionWindow) {
       return new InspectionWindowCounters(0, lastConsecutiveEmptySlots);
     }
 
