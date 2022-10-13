@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +40,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
+
+  private static final Duration EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT = Duration.ofSeconds(8);
+
   private final Web3JClient web3JClient;
 
   public Web3JExecutionEngineClient(final Web3JClient web3JClient) {
@@ -119,7 +123,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(transitionConfiguration),
             web3JClient.getWeb3jService(),
             TransitionConfigurationV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT);
   }
 
   static class ExecutionPayloadV1Web3jResponse
