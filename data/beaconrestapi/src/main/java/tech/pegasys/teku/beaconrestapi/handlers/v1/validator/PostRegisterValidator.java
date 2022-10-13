@@ -80,13 +80,13 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = PostRegisterValidatorRequest[].class)}),
       description =
-          "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
+          "Prepares the beacon node for engaging with external builders. The information must be sent by the beacon node to the builder network. The information supplied for each validator is considered persistent until overwritten by new information for the given validator, or until the beacon node restarts.\n\n"
               + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
               + "Also note that only registrations for active or pending validators must be sent to the builder network. Registrations for unknown or exited validators must be filtered out and not sent to the builder network.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            description = "Preparation information has been received."),
+            description = "Registration information has been received."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
