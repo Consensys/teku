@@ -53,7 +53,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
             .summary("Register validators with builder")
             .description(
                 "Prepares the beacon node for engaging with external builders."
-                    + " The information will be sent by the beacon node to the builder network."
+                    + " The information must be sent by the beacon node to the builder network."
                     + " It is expected that the validator client will send this information periodically"
                     + " to ensure the beacon node has correct and timely registration information"
                     + " to provide to builders. The validator client should not sign blinded beacon"
@@ -82,7 +82,7 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
       description =
           "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
               + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
-              + "Also note that only registrations for active or pending validators will be sent to the builder network. Registrations for unknown or exited validators will be filtered out and not sent to the builder network.",
+              + "Also note that only registrations for active or pending validators must be sent to the builder network. Registrations for unknown or exited validators must be filtered out and not sent to the builder network.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
