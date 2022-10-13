@@ -178,15 +178,13 @@ public class BuilderCircuitBreakerImplTest {
       throws SlotProcessingException, EpochProcessingException {
     final UInt64 blockBuildingSlot = UInt64.valueOf(69);
 
-    // window from 59 to 68 (10 slots)
-
     // build up to 58
     final BeaconState preState = advance(58, false);
 
     final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
-    assertCounters(state, 0, INSPECTION_WINDOW);
+    assertCounters(state, 0, 10);
   }
 
   private BeaconState advance(final long toSlot, final boolean missing) {
