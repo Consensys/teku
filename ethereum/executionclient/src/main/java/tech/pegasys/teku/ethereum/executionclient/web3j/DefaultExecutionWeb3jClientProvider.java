@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClientProvider {
@@ -26,6 +27,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
   private final Duration timeout;
   private final Optional<JwtConfig> jwtConfig;
   private final TimeProvider timeProvider;
+  private final ExecutionClientEventsChannel executionClientEventsPublisher;
 
   private boolean alreadyBuilt = false;
   private Web3JClient web3JClient;
@@ -34,12 +36,14 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
       final String eeEndpoint,
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
     checkNotNull(eeEndpoint);
     this.eeEndpoint = eeEndpoint;
     this.timeout = timeout;
     this.jwtConfig = jwtConfig;
     this.timeProvider = timeProvider;
+    this.executionClientEventsPublisher = executionClientEventsPublisher;
   }
 
   private synchronized void buildClient() {
@@ -53,6 +57,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
             .timeout(timeout)
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
+            .executionClientEventsPublisher(executionClientEventsPublisher)
             .build();
     this.alreadyBuilt = true;
   }

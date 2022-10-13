@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -103,6 +105,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
@@ -191,6 +194,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
+
+  protected volatile DataProvider dataProvider;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
@@ -214,6 +219,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
+  protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
@@ -379,6 +385,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAll() {
     initKeyValueStore();
     initExecutionLayer();
+    initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
     initForkChoice();
@@ -403,6 +410,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
     initPerformanceTracker();
+    initDataProvider();
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
@@ -502,6 +510,32 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
+  protected void initDataProvider() {
+    dataProvider =
+        DataProvider.builder()
+            .spec(spec)
+            .recentChainData(recentChainData)
+            .combinedChainDataClient(combinedChainDataClient)
+            .p2pNetwork(p2pNetwork)
+            .syncService(syncService)
+            .validatorApiChannel(
+                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
+            .attestationPool(attestationPool)
+            .blockManager(blockManager)
+            .attestationManager(attestationManager)
+            .isLivenessTrackingEnabled(
+                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .activeValidatorChannel(
+                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
+            .attesterSlashingPool(attesterSlashingPool)
+            .proposerSlashingPool(proposerSlashingPool)
+            .voluntaryExitPool(voluntaryExitPool)
+            .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .proposersDataManager(proposersDataManager)
+            .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
+            .build();
+  }
+
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
@@ -525,6 +559,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceExecutor,
             recentChainData,
             forkChoiceNotifier,
+            forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             new ActivePandaPrinter(keyValueStore, STATUS_LOG),
@@ -617,6 +652,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
+            dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
             syncService,
             blockFactory,
@@ -825,30 +861,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
       LOG.info("rest-api-enabled is false, not starting rest api.");
       return;
     }
-    final DataProvider dataProvider =
-        DataProvider.builder()
-            .spec(spec)
-            .recentChainData(recentChainData)
-            .combinedChainDataClient(combinedChainDataClient)
-            .p2pNetwork(p2pNetwork)
-            .syncService(syncService)
-            .validatorApiChannel(
-                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
-            .attestationPool(attestationPool)
-            .blockManager(blockManager)
-            .attestationManager(attestationManager)
-            .isLivenessTrackingEnabled(
-                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
-            .activeValidatorChannel(
-                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
-            .attesterSlashingPool(attesterSlashingPool)
-            .proposerSlashingPool(proposerSlashingPool)
-            .voluntaryExitPool(voluntaryExitPool)
-            .syncCommitteeContributionPool(syncCommitteeContributionPool)
-            .proposersDataManager(proposersDataManager)
-            .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
-            .build();
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
+
+    final ExecutionClientDataProvider executionClientDataProvider =
+        new ExecutionClientDataProvider();
+    eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
 
     final BeaconRestApi api =
         beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
@@ -859,6 +876,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
+                executionClientDataProvider,
                 spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
@@ -867,6 +885,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
+                executionClientDataProvider,
                 spec);
     beaconRestAPI = Optional.of(api);
 
@@ -983,6 +1002,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  protected void initForkChoiceStateProvider() {
+    LOG.debug("BeaconChainController.initForkChoiceStateProvider()");
+    forkChoiceStateProvider = new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData);
+  }
+
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     final AsyncRunnerEventThread eventThread =
@@ -999,7 +1023,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
-            eventThread, timeProvider, spec, executionLayer, recentChainData, proposersDataManager);
+            forkChoiceStateProvider,
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayer,
+            recentChainData,
+            proposersDataManager);
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

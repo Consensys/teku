@@ -86,6 +86,14 @@
       "moduleLicense": "Eclipse Public License - v 2.0"
     },
     {
+      "moduleName": "com.github.oshi:oshi-core-java11",
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleName": "com.google.code.gson:gson",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
       "moduleName": "io.libp2p:jvm-libp2p-minimal",
       "moduleLicense": "Apache License, Version 2.0",
       "moduleLicenseUrl": "https://github.com/libp2p/jvm-libp2p/blob/develop/LICENSE-APACHE"
@@ -115,7 +123,19 @@
       "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1"
     },
     {
+      "moduleName": "net.java.dev.jna:jna-jpms",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "net.java.dev.jna:jna-platform-jpms",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
       "moduleName": "org.codehaus.mojo:animal-sniffer-annotations",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.codehaus.woodstox:stax2-api",
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
@@ -127,12 +147,32 @@
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
-      "moduleName": "org.fusesource.leveldbjni:leveldbjni-all",
+      "moduleName": "org.fusesource.hawtjni:hawtjni-runtime",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.fusesource.leveldbjni:leveldbjni",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.fusesource.leveldbjni:leveldbjni-win32",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.fusesource.leveldbjni:leveldbjni-win64",
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
       "moduleName": "org.hdrhistogram:HdrHistogram",
       "moduleLicense": "The 2-Clause BSD License"
+    },
+    {
+      "moduleName": "org.javassist:javassist",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.java-websocket:Java-WebSocket",
+      "moduleLicense": "MIT License"
     },
     {
       "moduleName": "org.ow2.asm",
@@ -143,8 +183,9 @@
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
-      "moduleName": "org.codehaus.woodstox:stax2-api",
+      "moduleName": "tech.pegasys:noise-java",
       "moduleLicense": "Apache License, Version 2.0"
     }
   ]
 }
+

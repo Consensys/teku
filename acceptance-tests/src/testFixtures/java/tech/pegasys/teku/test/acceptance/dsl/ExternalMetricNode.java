@@ -190,7 +190,7 @@ public class ExternalMetricNode extends Node {
     assertThat(publishedData.get("client_name")).isEqualTo("teku");
 
     assertThat((String) publishedData.get("client_version"))
-        .matches(Pattern.compile("^\\d\\d\\.\\d\\.\\d.*"));
+        .matches(Pattern.compile("^\\d\\d\\.\\d{1,2}\\.\\d.*"));
     assertThat(publishedData.get("client_build")).isEqualTo(0L);
     assertThat(publishedData.get("sync_eth2_fallback_configured")).isEqualTo(false);
     assertThat(publishedData.get("sync_eth2_fallback_connected")).isEqualTo(false);

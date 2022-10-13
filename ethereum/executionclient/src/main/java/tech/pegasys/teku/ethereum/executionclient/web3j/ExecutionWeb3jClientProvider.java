@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -54,7 +55,8 @@ public interface ExecutionWeb3jClientProvider {
       final boolean jwtSupported,
       final Optional<String> jwtSecretFile,
       final Path beaconDataDirectory,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
     if (endpoint.startsWith(PREVIOUS_STUB_ENDPOINT_PREFIX)) {
       throw new InvalidConfigurationException(
           "Using the stub execution engine is unsafe. This is only designed for testing. Please use a real execution client.");
@@ -63,7 +65,8 @@ public interface ExecutionWeb3jClientProvider {
     } else {
       final Optional<JwtConfig> jwtConfig =
           JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, beaconDataDirectory);
-      return new DefaultExecutionWeb3jClientProvider(endpoint, timeout, jwtConfig, timeProvider);
+      return new DefaultExecutionWeb3jClientProvider(
+          endpoint, timeout, jwtConfig, timeProvider, executionClientEventsPublisher);
     }
   }
 

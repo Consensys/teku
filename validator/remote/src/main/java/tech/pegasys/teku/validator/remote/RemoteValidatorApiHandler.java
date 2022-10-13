@@ -36,10 +36,12 @@ import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -443,6 +445,28 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     return sendRequest(() -> typeDefClient.registerValidators(validatorRegistrations));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+      List<UInt64> validatorIndices, UInt64 epoch) {
+    return sendRequest(
+        () ->
+            apiClient
+                .sendValidatorsLiveness(epoch, validatorIndices)
+                .map(this::responseToDoppelgangerDetectionResult));
+  }
+
+  private List<ValidatorLivenessAtEpoch> responseToDoppelgangerDetectionResult(
+      final PostValidatorLivenessResponse response) {
+    return response.data.stream()
+        .map(
+            validatorLivenessAtEpoch ->
+                new ValidatorLivenessAtEpoch(
+                    validatorLivenessAtEpoch.index,
+                    validatorLivenessAtEpoch.epoch,
+                    validatorLivenessAtEpoch.isLive))
+        .collect(Collectors.toList());
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

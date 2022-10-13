@@ -38,18 +38,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -554,6 +557,71 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(result).isCompleted();
     verify(typeDefClient).registerValidators(validatorRegistrations);
+  }
+
+  @Test
+  public void checkValidatorsDoppelganger_InvokeApiWithCorrectRequest()
+      throws ExecutionException, InterruptedException {
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
+        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isEmpty();
+    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
+  }
+
+  @Test
+  public void checkValidatorsDoppelgangerShouldReturnDoppelgangerDetectionResult()
+      throws ExecutionException, InterruptedException {
+    final UInt64 firstIndex = dataStructureUtil.randomUInt64();
+    final UInt64 secondIndex = dataStructureUtil.randomUInt64();
+    final UInt64 thirdIndex = dataStructureUtil.randomUInt64();
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+
+    List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
+
+    List<tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch>
+        validatorLivenessAtEpoches =
+            List.of(
+                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
+                    firstIndex, epoch, false),
+                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
+                    secondIndex, epoch, true),
+                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
+                    thirdIndex, epoch, true));
+    PostValidatorLivenessResponse postValidatorLivenessResponse =
+        new PostValidatorLivenessResponse(validatorLivenessAtEpoches);
+    when(apiClient.sendValidatorsLiveness(any(), any()))
+        .thenReturn(Optional.of(postValidatorLivenessResponse));
+
+    final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
+        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isPresent();
+    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochesResult = result.get().get();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, firstIndex)).isFalse();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, secondIndex)).isTrue();
+    assertThat(validatorIsLive(validatorLivenessAtEpochesResult, thirdIndex)).isTrue();
+    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
+  }
+
+  private boolean validatorIsLive(
+      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches, UInt64 validatorIndex) {
+    return validatorLivenessAtEpoches.stream()
+        .anyMatch(
+            validatorLivenessAtEpoch ->
+                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                    && validatorLivenessAtEpoch.isLive());
   }
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {

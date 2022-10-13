@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,5 +28,13 @@ public class SyncCommitteeMessagePropertyTest {
           final SyncCommitteeMessage syncCommitteeMessage)
       throws JsonProcessingException {
     assertRoundTrip(syncCommitteeMessage);
+  }
+
+  @Property
+  void deserializeMutated(
+      @ForAll(supplier = SyncCommitteeMessageSupplier.class)
+          final SyncCommitteeMessage syncCommitteeMessage,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(syncCommitteeMessage, seed);
   }
 }

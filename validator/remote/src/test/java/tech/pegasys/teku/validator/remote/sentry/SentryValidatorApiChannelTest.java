@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -40,6 +44,8 @@ class SentryValidatorApiChannelTest {
   private ValidatorApiChannel dutiesProviderChannel;
   private ValidatorApiChannel blockHandlerChannel;
   private ValidatorApiChannel attestationPublisherChannel;
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @BeforeEach
   void setUp() {
@@ -420,6 +426,20 @@ class SentryValidatorApiChannelTest {
     sentryValidatorApiChannel.registerValidators(sszList);
 
     verify(dutiesProviderChannel).registerValidators(eq(sszList));
+    verifyNoInteractions(blockHandlerChannel);
+    verifyNoInteractions(attestationPublisherChannel);
+  }
+
+  @Test
+  void checkValidatorsDoppelgangerShouldUseDutiesChannelWhenAvailable() {
+    final List<UInt64> validatorIndices =
+        List.of(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64());
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    sentryValidatorApiChannel.checkValidatorsDoppelganger(validatorIndices, epoch);
+    verify(dutiesProviderChannel).checkValidatorsDoppelganger(validatorIndices, epoch);
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

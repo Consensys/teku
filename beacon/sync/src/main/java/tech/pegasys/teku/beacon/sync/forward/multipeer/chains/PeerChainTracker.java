@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
  * non-finalized chains.
  */
 public class PeerChainTracker {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
@@ -81,6 +84,10 @@ public class PeerChainTracker {
 
   private void onPeerStatusUpdate(final Eth2Peer peer, final PeerStatus status) {
     eventThread.checkOnEventThread();
+    if (!peer.isConnected()) {
+      LOG.debug("Ignoring update from disconnected peer");
+      return;
+    }
     final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
     final SlotAndBlockRoot finalizedChainHead =
         new SlotAndBlockRoot(

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORT
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
@@ -109,6 +110,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 
 public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
+
   private final RestApi restApi;
 
   public JsonTypeDefinitionBeaconRestApi(
@@ -118,10 +120,18 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     restApi =
         create(
-            config, dataProvider, eth1DataProvider, eventChannels, asyncRunner, timeProvider, spec);
+            config,
+            dataProvider,
+            eth1DataProvider,
+            eventChannels,
+            asyncRunner,
+            timeProvider,
+            executionClientDataProvider,
+            spec);
   }
 
   @Override
@@ -146,6 +156,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
     return new RestApiBuilder()
@@ -269,7 +280,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new PutLogLevel())
         .endpoint(new GetStateByBlockRoot(dataProvider, spec))
         .endpoint(new Liveness(dataProvider))
-        .endpoint(new Readiness(dataProvider))
+        .endpoint(new Readiness(dataProvider, executionClientDataProvider))
         .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
         .endpoint(new GetPeersScore(dataProvider))
         .endpoint(new GetProtoArray(dataProvider))
