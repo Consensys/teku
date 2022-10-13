@@ -109,7 +109,6 @@ public class ValidatorClientService extends Service {
     this.metricsSystem = metricsSystem;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   public static ValidatorClientService create(
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
@@ -199,20 +198,20 @@ public class ValidatorClientService extends Service {
 
     validatorClientService.loadValidators(validatorApiChannel, asyncRunner);
 
+    final SafeFuture<?> doppelgangerDetection;
+
     if (validatorConfig.isDoppelgangerDetectionEnabled()) {
       final SafeFuture<IntCollection> maybeValidatorIndices =
           validatorClientService.validatorIndexProvider.getValidatorIndices();
-      final SafeFuture<UInt64> maybeGenesisTime = genesisDataProvider.getGenesisTime();
-      SafeFuture.allOf(maybeValidatorIndices, maybeGenesisTime)
-          .thenAccept(
-              __ -> {
-                IntCollection validatorIndices = maybeValidatorIndices.join();
-                UInt64 genesisTime = maybeGenesisTime.join();
+      doppelgangerDetection =
+          maybeValidatorIndices.thenCombine(
+              genesisDataProvider.getGenesisTime(),
+              (validatorIndices, genesisTime) -> {
                 final UInt64 currentEpoch =
                     validatorClientService.spec.computeEpochAtSlot(
                         validatorClientService.spec.getCurrentSlot(
                             services.getTimeProvider().getTimeInMillis(), genesisTime));
-                final List<UInt64> validatorsIndices =
+                final List<UInt64> validatorIndicesList =
                     validatorIndices
                         .intStream()
                         .mapToObj(UInt64::valueOf)
@@ -221,21 +220,28 @@ public class ValidatorClientService extends Service {
                     new DoppelgangerDetectionService(
                         asyncRunner,
                         validatorApiChannel,
-                        validatorsIndices,
+                        validatorIndicesList,
                         currentEpoch,
                         validatorClientService.spec,
                         services.getTimeProvider(),
                         genesisDataProvider);
-                doppelgangerDetectionService.start();
+                return doppelgangerDetectionService.start().join();
               });
+    } else {
+      doppelgangerDetection = SafeFuture.COMPLETE;
     }
 
-    asyncRunner
-        .runAsync(
-            () ->
-                validatorClientService.scheduleValidatorsDuties(
-                    config, validatorApiChannel, asyncRunner))
-        .propagateTo(validatorClientService.initializationComplete);
+    doppelgangerDetection
+        .thenAccept(
+            __ ->
+                asyncRunner
+                    .runAsync(
+                        () ->
+                            validatorClientService.scheduleValidatorsDuties(
+                                config, validatorApiChannel, asyncRunner))
+                    .propagateTo(validatorClientService.initializationComplete))
+        .ifExceptionGetsHereRaiseABug();
+
     return validatorClientService;
   }
 

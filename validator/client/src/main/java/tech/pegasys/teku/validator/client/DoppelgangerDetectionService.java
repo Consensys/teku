@@ -77,17 +77,16 @@ public class DoppelgangerDetectionService extends Service {
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private SafeFuture<Void> checkValidatorsDoppelganger() {
-    genesisDataProvider
+  private SafeFuture<?> checkValidatorsDoppelganger() {
+    return genesisDataProvider
         .getGenesisTime()
-        .thenApply(
+        .thenCompose(
             genesisTime -> {
               final UInt64 currentEpoch =
                   spec.computeEpochAtSlot(
                       spec.getCurrentSlot(timeProvider.getTimeInMillis(), genesisTime));
               if (currentEpoch.minus(epoch).isGreaterThan(2)) {
-                doStop();
+                return stop();
               }
               return validatorApiChannel
                   .checkValidatorsDoppelganger(validatorIndices, epoch)
@@ -97,15 +96,15 @@ public class DoppelgangerDetectionService extends Service {
                         LOGGER.error("Unable to check validators doppelganger.", throwable);
                         return false;
                       })
-                  .thenAccept(
+                  .thenApply(
                       doppelgangerDetected -> {
                         if (doppelgangerDetected) {
                           LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");
                           System.exit(1);
                         }
+                        return null;
                       });
             });
-    return SafeFuture.COMPLETE;
   }
 
   private boolean doppelgangerDetected(
