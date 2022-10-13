@@ -76,7 +76,7 @@ public class HistoricalBlockSyncServiceTest {
       Optional.of("https://example.com/state.ssz");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
       new ReconstructHistoricalStatesService(
-          storageUpdateChannel, chainData, spec, genesisStateResource);
+          storageUpdateChannel, chainData, spec, metricsSystem, genesisStateResource);
 
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =

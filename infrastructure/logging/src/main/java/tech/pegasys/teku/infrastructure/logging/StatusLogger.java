@@ -178,6 +178,10 @@ public class StatusLogger {
     log.info("Recorded {} of {} finalized blocks", numberRecorded, totalToRecord);
   }
 
+  public void reconstructedHistoricalBlocks(final int numberRecorded, final int totalToRecord) {
+    log.info("Recorded {} of {} historical blocks", numberRecorded, totalToRecord);
+  }
+
   public void generatingMockStartGenesis(final long genesisTime, final int size) {
     log.info(
         "Starting with mocked start interoperability mode with genesis time {} and {} validators",
