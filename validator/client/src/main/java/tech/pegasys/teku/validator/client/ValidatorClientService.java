@@ -75,10 +75,10 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
-  private final Optional<ProposerConfigProvider> proposerConfigProvider;
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
+  private final Optional<ProposerConfigManager> proposerConfigManager;
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private final MetricsSystem metricsSystem;
@@ -89,7 +89,7 @@ public class ValidatorClientService extends Service {
       final BeaconNodeApi beaconNodeApi,
       final Optional<RestApi> validatorRestApi,
       final ForkProvider forkProvider,
-      final Optional<ProposerConfigProvider> proposerConfigProvider,
+      final Optional<ProposerConfigManager> proposerConfigManager,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
@@ -99,7 +99,7 @@ public class ValidatorClientService extends Service {
     this.beaconNodeApi = beaconNodeApi;
     this.validatorRestApi = validatorRestApi;
     this.forkProvider = forkProvider;
-    this.proposerConfigProvider = proposerConfigProvider;
+    this.proposerConfigManager = proposerConfigManager;
     this.beaconProposerPreparer = beaconProposerPreparer;
     this.validatorRegistrator = validatorRegistrator;
     this.spec = spec;
@@ -125,31 +125,37 @@ public class ValidatorClientService extends Service {
     final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
-    Optional<ProposerConfigProvider> proposerConfigProvider = Optional.empty();
+    Optional<ProposerConfigManager> proposerConfigManager = Optional.empty();
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
     Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
     if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      proposerConfigProvider =
+
+      final ProposerConfigProvider proposerConfigProvider =
+          ProposerConfigProvider.create(
+              asyncRunner,
+              validatorConfig.getRefreshProposerConfigFromSource(),
+              new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+              services.getTimeProvider(),
+              validatorConfig.getProposerConfigSource());
+
+      proposerConfigManager =
           Optional.of(
-              ProposerConfigProvider.create(
-                  asyncRunner,
-                  validatorConfig.getRefreshProposerConfigFromSource(),
-                  new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
-                  services.getTimeProvider(),
-                  validatorConfig.getProposerConfigSource()));
+              new ProposerConfigManager(
+                  validatorConfig.getProposerDefaultFeeRecipient(),
+                  validatorConfig.getBuilderRegistrationDefaultGasLimit(),
+                  new RuntimeProposerConfig(
+                      Optional.of(
+                          ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
+                              .resolve("api-proposer-config.json"))),
+                  proposerConfigProvider));
 
       beaconProposerPreparer =
           Optional.of(
               new BeaconProposerPreparer(
                   validatorApiChannel,
                   Optional.empty(),
-                  proposerConfigProvider.get(),
-                  validatorConfig.getProposerDefaultFeeRecipient(),
-                  validatorConfig.getBuilderRegistrationDefaultGasLimit(),
-                  config.getSpec(),
-                  Optional.of(
-                      ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
-                          .resolve("api-proposer-config.json"))));
+                  proposerConfigManager.get(),
+                  config.getSpec()));
 
       validatorRegistrator =
           Optional.of(
@@ -157,9 +163,9 @@ public class ValidatorClientService extends Service {
                   config.getSpec(),
                   services.getTimeProvider(),
                   validatorLoader.getOwnedValidators(),
-                  proposerConfigProvider.get(),
+                  proposerConfigManager.get(),
                   validatorConfig,
-                  beaconProposerPreparer.get(),
+                  proposerConfigManager.get(),
                   new ValidatorRegistrationBatchSender(
                       validatorConfig.getBuilderRegistrationSendingBatchSize(),
                       validatorApiChannel)));
@@ -169,7 +175,7 @@ public class ValidatorClientService extends Service {
           Optional.of(
               ValidatorRestApi.create(
                   validatorApiConfig,
-                  beaconProposerPreparer,
+                  proposerConfigManager,
                   new ActiveKeyManager(
                       validatorLoader,
                       services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
@@ -184,12 +190,11 @@ public class ValidatorClientService extends Service {
             beaconNodeApi,
             validatorRestApi,
             forkProvider,
-            proposerConfigProvider,
+            proposerConfigManager,
             beaconProposerPreparer,
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem());
-
     asyncRunner
         .runAsync(
             () ->
@@ -332,9 +337,7 @@ public class ValidatorClientService extends Service {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       beaconProposerPreparer.ifPresent(
           preparer -> {
-            preparer.initialize(
-                Optional.of(validatorIndexProvider),
-                Optional.of(validatorLoader.getOwnedValidators()));
+            preparer.initialize(Optional.of(validatorIndexProvider));
             validatorTimingChannels.add(preparer);
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
@@ -379,9 +382,9 @@ public class ValidatorClientService extends Service {
     return initializationComplete
         .thenCompose(
             __ ->
-                proposerConfigProvider
-                    .map(ProposerConfigProvider::getProposerConfig)
-                    .orElse(SafeFuture.completedFuture(Optional.empty())))
+                proposerConfigManager
+                    .map(manager -> manager.initialize(validatorLoader.getOwnedValidators()))
+                    .orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());

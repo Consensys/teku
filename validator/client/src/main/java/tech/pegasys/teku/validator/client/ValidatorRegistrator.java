@@ -42,9 +42,7 @@ import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
-import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -60,7 +58,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final Spec spec;
   private final TimeProvider timeProvider;
   private final OwnedValidators ownedValidators;
-  private final ProposerConfigProvider proposerConfigProvider;
+  private final ProposerConfigManager proposerConfigManager;
   private final ValidatorConfig validatorConfig;
   private final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider;
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender;
@@ -69,14 +67,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Spec spec,
       final TimeProvider timeProvider,
       final OwnedValidators ownedValidators,
-      final ProposerConfigProvider proposerConfigProvider,
+      final ProposerConfigManager proposerConfigManager,
       final ValidatorConfig validatorConfig,
       final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider,
       final ValidatorRegistrationBatchSender validatorRegistrationBatchSender) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
-    this.proposerConfigProvider = proposerConfigProvider;
+    this.proposerConfigManager = proposerConfigManager;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
     this.validatorRegistrationBatchSender = validatorRegistrationBatchSender;
     this.validatorConfig = validatorConfig;
@@ -185,24 +183,23 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return SafeFuture.COMPLETE;
     }
 
-    return proposerConfigProvider
-        .getProposerConfig()
+    return proposerConfigManager
+        .refresh()
         .thenCompose(
-            maybeProposerConfig -> {
+            __ -> {
               final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
-                  createValidatorRegistrations(validators, maybeProposerConfig);
+                  createValidatorRegistrations(validators);
               return SafeFuture.collectAllSuccessful(validatorRegistrationsFutures)
                   .thenCompose(validatorRegistrationBatchSender::sendInBatches);
             });
   }
 
   private Stream<SafeFuture<SignedValidatorRegistration>> createValidatorRegistrations(
-      final List<Validator> validators, final Optional<ProposerConfig> maybeProposerConfig) {
+      final List<Validator> validators) {
     return validators.stream()
         .map(
             validator ->
                 createSignedValidatorRegistration(
-                    maybeProposerConfig,
                     validator,
                     throwable -> {
                       final String errorMessage =
@@ -215,19 +212,17 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
-      final Optional<ProposerConfig> maybeProposerConfig,
-      final Validator validator,
-      final Consumer<Throwable> errorHandler) {
-    return createSignedValidatorRegistration(maybeProposerConfig, validator)
+      final Validator validator, final Consumer<Throwable> errorHandler) {
+    return createSignedValidatorRegistration(validator)
         .map(registrationFuture -> registrationFuture.whenException(errorHandler));
   }
 
   private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
-      final Optional<ProposerConfig> maybeProposerConfig, final Validator validator) {
+      final Validator validator) {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
-    if (!registrationIsEnabled(maybeProposerConfig, publicKey)) {
+    if (!registrationIsEnabled(publicKey)) {
       LOG.trace("Validator registration is disabled for {}", publicKey);
       return Optional.empty();
     }
@@ -243,12 +238,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     }
 
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
-    final UInt64 gasLimit = getGasLimit(publicKey);
+    final UInt64 gasLimit =
+        validatorRegistrationPropertiesProvider
+            .getGasLimit(publicKey)
+            .orElseThrow(); // TODO: trying to obtain gasLimit for a not-owned key?
 
     final Optional<UInt64> maybeTimestampOverride =
-        getTimestampOverride(maybeProposerConfig, publicKey);
+        proposerConfigManager.getBuilderRegistrationTimestampOverride(publicKey);
     final Optional<BLSPublicKey> maybePublicKeyOverride =
-        getPublicKeyOverride(maybeProposerConfig, publicKey);
+        proposerConfigManager.getBuilderRegistrationPublicKeyOverride(publicKey);
 
     final ValidatorRegistration validatorRegistration =
         createValidatorRegistration(
@@ -281,10 +279,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             });
   }
 
-  private boolean registrationIsEnabled(
-      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
-    return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.isBuilderEnabledForPubKey(publicKey))
+  private boolean registrationIsEnabled(final BLSPublicKey publicKey) {
+    return proposerConfigManager
+        .isBuilderEnabledForPubKey(publicKey)
         .orElse(validatorConfig.isBuilderRegistrationDefaultEnabled());
   }
 
@@ -295,22 +292,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final UInt64 timestamp) {
     return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
         feeRecipient, gasLimit, timestamp, publicKey);
-  }
-
-  private Optional<UInt64> getTimestampOverride(
-      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
-    return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.getBuilderRegistrationOverrides(publicKey))
-        .flatMap(RegistrationOverrides::getTimestamp)
-        .or(validatorConfig::getBuilderRegistrationTimestampOverride);
-  }
-
-  private Optional<BLSPublicKey> getPublicKeyOverride(
-      final Optional<ProposerConfig> maybeProposerConfig, final BLSPublicKey publicKey) {
-    return maybeProposerConfig
-        .flatMap(proposerConfig -> proposerConfig.getBuilderRegistrationOverrides(publicKey))
-        .flatMap(RegistrationOverrides::getPublicKey)
-        .or(validatorConfig::getBuilderRegistrationPublicKeyOverride);
   }
 
   private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(

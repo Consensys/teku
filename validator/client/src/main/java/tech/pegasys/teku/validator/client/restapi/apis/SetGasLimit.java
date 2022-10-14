@@ -29,13 +29,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.SetGasLimitException;
 
 public class SetGasLimit extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/gas_limit";
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
   private static final DeserializableTypeDefinition<SetGasLimit.SetGasLimitBody>
       GAS_LIMIT_REQUEST_BODY =
@@ -49,7 +49,7 @@ public class SetGasLimit extends RestApiEndpoint {
                   SetGasLimit.SetGasLimitBody::setGasLimit)
               .build();
 
-  public SetGasLimit(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public SetGasLimit(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("SetGasLimit")
@@ -68,7 +68,7 @@ public class SetGasLimit extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
@@ -82,7 +82,7 @@ public class SetGasLimit extends RestApiEndpoint {
       return;
     }
     try {
-      beaconProposerPreparer
+      proposerConfigManager
           .orElseThrow(
               () ->
                   new IllegalArgumentException(
