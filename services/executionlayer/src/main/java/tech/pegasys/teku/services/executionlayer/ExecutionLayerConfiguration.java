@@ -27,6 +27,7 @@ public class ExecutionLayerConfiguration {
   public static final boolean DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED = true;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 32;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 8;
+  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
 
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
 
@@ -38,6 +39,7 @@ public class ExecutionLayerConfiguration {
   boolean isBuilderCircuitBreakerEnabled;
   int builderCircuitBreakerWindow;
   int builderCircuitBreakerAllowedFaults;
+  int builderCircuitBreakerAllowedConsecutiveFaults;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -47,7 +49,8 @@ public class ExecutionLayerConfiguration {
       final Optional<String> builderEndpoint,
       final boolean isBuilderCircuitBreakerEnabled,
       final int builderCircuitBreakerWindow,
-      final int builderCircuitBreakerAllowedFaults) {
+      final int builderCircuitBreakerAllowedFaults,
+      final int builderCircuitBreakerAllowedConsecutiveFaults) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineVersion = engineVersion;
@@ -56,6 +59,8 @@ public class ExecutionLayerConfiguration {
     this.isBuilderCircuitBreakerEnabled = isBuilderCircuitBreakerEnabled;
     this.builderCircuitBreakerWindow = builderCircuitBreakerWindow;
     this.builderCircuitBreakerAllowedFaults = builderCircuitBreakerAllowedFaults;
+    this.builderCircuitBreakerAllowedConsecutiveFaults =
+        builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
   public static Builder builder() {
@@ -101,6 +106,10 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedFaults;
   }
 
+  public int getBuilderCircuitBreakerAllowedConsecutiveFaults() {
+    return builderCircuitBreakerAllowedConsecutiveFaults;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
@@ -110,6 +119,8 @@ public class ExecutionLayerConfiguration {
     private boolean isBuilderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
     private int builderCircuitBreakerWindow = DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
+    private int builderCircuitBreakerAllowedConsecutiveFaults =
+        DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
     private Builder() {}
 
@@ -124,7 +135,8 @@ public class ExecutionLayerConfiguration {
           builderEndpoint,
           isBuilderCircuitBreakerEnabled,
           builderCircuitBreakerWindow,
-          builderCircuitBreakerAllowedFaults);
+          builderCircuitBreakerAllowedFaults,
+          builderCircuitBreakerAllowedConsecutiveFaults);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -160,6 +172,13 @@ public class ExecutionLayerConfiguration {
     public Builder builderCircuitBreakerAllowedFaults(
         final int builderCircuitBreakerAllowedFaults) {
       this.builderCircuitBreakerAllowedFaults = builderCircuitBreakerAllowedFaults;
+      return this;
+    }
+
+    public Builder builderCircuitBreakerAllowedConsecutiveFaults(
+        final int builderCircuitBreakerAllowedConsecutiveFaults) {
+      this.builderCircuitBreakerAllowedConsecutiveFaults =
+          builderCircuitBreakerAllowedConsecutiveFaults;
       return this;
     }
 

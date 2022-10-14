@@ -29,13 +29,15 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
 public class BuilderCircuitBreakerImplTest {
+  private static final int INSPECTION_WINDOW = 10;
+  private static final int ALLOWED_FAULTS = 5;
+  private static final int ALLOWED_CONSECUTIVE_FAULTS = 2;
+
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
 
   private final BuilderCircuitBreakerImpl builderCircuitBreaker =
-      new BuilderCircuitBreakerImpl(spec, INSPECTION_WINDOW, ALLOWED_FAULTS);
-
-  private static final int INSPECTION_WINDOW = 10;
-  private static final int ALLOWED_FAULTS = 5;
+      new BuilderCircuitBreakerImpl(
+          spec, INSPECTION_WINDOW, ALLOWED_FAULTS, ALLOWED_CONSECUTIVE_FAULTS);
 
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
@@ -58,15 +60,15 @@ public class BuilderCircuitBreakerImplTest {
   }
 
   @Test
-  void shouldNotEngage_noMissedSlots() {
+  void shouldNotEngage_noMissedSlots() throws SlotProcessingException, EpochProcessingException {
     final UInt64 blockBuildingSlot = UInt64.valueOf(32);
 
     final BeaconState preState = advance(31, false);
 
-    final BeaconState state = preState.updated(s -> s.setSlot(blockBuildingSlot));
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(10);
+    assertCounters(state, 10, 0);
   }
 
   @Test
@@ -89,7 +91,24 @@ public class BuilderCircuitBreakerImplTest {
     final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(5);
+    assertCounters(state, 5, 0);
+  }
+
+  @Test
+  void shouldNotEngage_minimalConsecutiveAllowedFaults()
+      throws SlotProcessingException, EpochProcessingException {
+    final UInt64 blockBuildingSlot = UInt64.valueOf(69);
+
+    // window from 59 to 68 (10 slots)
+
+    // no missing slot up to 66 (unique count: 8)
+    final BeaconState preState = advance(66, false);
+
+    // generate state for the building slot
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isFalse();
+    assertCounters(state, 8, 2);
   }
 
   @Test
@@ -109,7 +128,7 @@ public class BuilderCircuitBreakerImplTest {
     final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(4);
+    assertCounters(state, 4, 0);
   }
 
   @Test
@@ -130,7 +149,28 @@ public class BuilderCircuitBreakerImplTest {
     final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(4);
+    assertCounters(state, 4, 1);
+  }
+
+  @Test
+  void shouldEngage_belowAllowedFaultsWithTooManyLastSlotsEmpty()
+      throws SlotProcessingException, EpochProcessingException {
+    final UInt64 blockBuildingSlot = UInt64.valueOf(69);
+
+    // window from 59 to 68 (10 slots)
+
+    // no missing slot up to 63 (unique count: 5)
+    advance(63, false);
+
+    // 64, 65 with block (unique count: 5 + 1)
+    final BeaconState preState = advance(65, true);
+
+    // generate state for the building slot
+    // last block header will be from slot 65
+    final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
+
+    assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
+    assertCounters(state, 6, 3);
   }
 
   @Test
@@ -138,15 +178,13 @@ public class BuilderCircuitBreakerImplTest {
       throws SlotProcessingException, EpochProcessingException {
     final UInt64 blockBuildingSlot = UInt64.valueOf(69);
 
-    // window from 59 to 68 (10 slots)
-
     // build up to 58
     final BeaconState preState = advance(58, false);
 
     final BeaconState state = spec.processSlots(preState, blockBuildingSlot);
 
     assertThat(builderCircuitBreaker.isEngaged(state)).isTrue();
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state)).isEqualTo(0);
+    assertCounters(state, 0, 10);
   }
 
   private BeaconState advance(final long toSlot, final boolean missing) {
@@ -156,5 +194,18 @@ public class BuilderCircuitBreakerImplTest {
       chainBuilder.generateBlocksUpToSlot(toSlot);
     }
     return chainBuilder.getLatestBlockAndState().getState();
+  }
+
+  private void assertCounters(
+      final BeaconState state,
+      final int uniqueBlockRootsCount,
+      final int lastConsecutiveIdenticalBlockRoots) {
+    assertThat(builderCircuitBreaker.getInspectionWindowCounters(state))
+        .matches(
+            counters -> counters.uniqueBlockRootsCount == uniqueBlockRootsCount,
+            "uniqueBlockRootsCount must match")
+        .matches(
+            counters -> counters.lastConsecutiveEmptySlots == lastConsecutiveIdenticalBlockRoots,
+            "lastConsecutiveIdenticalBlockRoots must match");
   }
 }
