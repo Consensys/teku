@@ -200,7 +200,7 @@ public class BuilderCircuitBreakerImplTest {
       final BeaconState state,
       final int uniqueBlockRootsCount,
       final int lastConsecutiveIdenticalBlockRoots) {
-    assertThat(builderCircuitBreaker.getLatestUniqueBlockRootsCount(state))
+    assertThat(builderCircuitBreaker.getInspectionWindowCounters(state))
         .matches(
             counters -> counters.uniqueBlockRootsCount == uniqueBlockRootsCount,
             "uniqueBlockRootsCount must match")

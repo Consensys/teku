@@ -49,7 +49,7 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
   @Override
   public boolean isEngaged(final BeaconState state) {
 
-    final InspectionWindowCounters inspectionWindowCounters = getLatestUniqueBlockRootsCount(state);
+    final InspectionWindowCounters inspectionWindowCounters = getInspectionWindowCounters(state);
     if (inspectionWindowCounters.uniqueBlockRootsCount < minimumUniqueBlockRootsInWindow) {
       LOG.debug(
           "Builder circuit breaker engaged: slot: {}, uniqueBlockRootsCount: {}, window: {},  minimumUniqueBlockRootsInWindow: {}",
@@ -76,7 +76,7 @@ public class BuilderCircuitBreakerImpl implements BuilderCircuitBreaker {
   }
 
   @VisibleForTesting
-  InspectionWindowCounters getLatestUniqueBlockRootsCount(final BeaconState state)
+  InspectionWindowCounters getInspectionWindowCounters(final BeaconState state)
       throws IllegalArgumentException {
     final int slotsPerHistoricalRoot =
         spec.atSlot(state.getSlot()).getConfig().getSlotsPerHistoricalRoot();
