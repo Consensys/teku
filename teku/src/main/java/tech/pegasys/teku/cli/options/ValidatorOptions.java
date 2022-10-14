@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -100,6 +102,16 @@ public class ValidatorOptions {
       arity = "1")
   private int executorMaxQueueSize = ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
+  @Option(
+      names = {"--Xdoppelganger-detection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable validators doppelganger detection",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -112,7 +124,8 @@ public class ValidatorOptions {
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                 .generateEarlyAttestations(generateEarlyAttestations)
-                .executorMaxQueueSize(executorMaxQueueSize));
+                .executorMaxQueueSize(executorMaxQueueSize)
+                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

@@ -62,6 +62,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
@@ -332,6 +333,32 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(NatMethod.UPNP);
   }
 
+  @Test
+  public void doppelgangerDetectionShouldBeDisabledByDefault() {
+    final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .validatorClient()
+                .getValidatorConfig()
+                .isDoppelgangerDetectionEnabled())
+        .isTrue();
+  }
+
+  @Test
+  public void shouldSetDoppelgangerDetection() {
+    final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .validatorClient()
+                .getValidatorConfig()
+                .isDoppelgangerDetectionEnabled())
+        .isTrue();
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -523,7 +550,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
                     .graffitiProvider(new FileBackedGraffitiProvider())
-                    .generateEarlyAttestations(true))
+                    .generateEarlyAttestations(true)
+                    .doppelgangerDetectionEnabled(
+                        ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED))
         .metrics(
             b ->
                 b.metricsEnabled(false)
