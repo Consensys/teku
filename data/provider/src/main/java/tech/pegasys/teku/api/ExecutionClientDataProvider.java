@@ -18,7 +18,7 @@ import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsCh
 
 public class ExecutionClientDataProvider implements ExecutionClientEventsChannel {
 
-  private final AtomicBoolean isExecutionClientAvailable = new AtomicBoolean(false);
+  private final AtomicBoolean isExecutionClientAvailable = new AtomicBoolean(true);
 
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
