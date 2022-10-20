@@ -494,7 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             })
         .exceptionally(
             error -> {
-              LOG.debug(
+              LOG.error(
                   "Failed to send signed attestation for slot {}, block {}",
                   attestation.getData().getSlot(),
                   attestation.getData().getBeaconBlockRoot(),
