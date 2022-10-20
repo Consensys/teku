@@ -493,10 +493,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
             })
         .exceptionally(
-            error ->
-                InternalValidationResult.reject(
-                    "Failed to send signed attestation for slot %s, block %s",
-                    attestation.getData().getSlot(), attestation.getData().getBeaconBlockRoot()));
+            error -> {
+              LOG.debug(
+                  "Failed to send signed attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error);
+              return InternalValidationResult.reject(
+                  "Failed to send signed attestation for slot %s, block %s: %s",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error.getMessage());
+            });
   }
 
   private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
