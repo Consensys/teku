@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -493,10 +494,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
             })
         .exceptionally(
-            error ->
-                InternalValidationResult.reject(
-                    "Failed to send signed attestation for slot %s, block %s",
-                    attestation.getData().getSlot(), attestation.getData().getBeaconBlockRoot()));
+            error -> {
+              LOG.error(
+                  "Failed to send signed attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error);
+              return InternalValidationResult.reject(
+                  "Failed to send signed attestation for slot %s, block %s: %s",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  getMessageOrSimpleName(error));
+            });
   }
 
   private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
