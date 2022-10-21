@@ -1,6 +1,6 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.4.2'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4'
