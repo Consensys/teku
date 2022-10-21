@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -503,7 +504,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Failed to send signed attestation for slot %s, block %s: %s",
                   attestation.getData().getSlot(),
                   attestation.getData().getBeaconBlockRoot(),
-                  error.getMessage());
+                  ExceptionUtils.getMessage(error));
             });
   }
 
