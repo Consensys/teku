@@ -354,11 +354,6 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
     //    addMigratedEndpoint(new GetVersion());
   }
 
-  private void addMigratedEndpoint(final MigratingEndpointAdapter endpoint) {
-    endpoint.addEndpoint(app);
-    openApiDocBuilder.endpoint(endpoint);
-  }
-
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
     //    addMigratedEndpoint(new PostAttesterDuties(dataProvider));
     //    addMigratedEndpoint(new GetProposerDuties(dataProvider));

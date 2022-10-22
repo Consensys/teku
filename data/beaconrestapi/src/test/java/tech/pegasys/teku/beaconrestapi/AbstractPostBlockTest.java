@@ -31,12 +31,13 @@ import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
 
-  public abstract MigratingEndpointAdapter getHandler();
+  public abstract RestApiEndpoint getHandler();
 
   public abstract boolean isBlinded();
 

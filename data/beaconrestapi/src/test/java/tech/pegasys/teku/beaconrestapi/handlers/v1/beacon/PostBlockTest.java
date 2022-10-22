@@ -14,12 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import tech.pegasys.teku.beaconrestapi.AbstractPostBlockTest;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 
 class PostBlockTest extends AbstractPostBlockTest {
 
   @Override
-  public MigratingEndpointAdapter getHandler() {
+  public RestApiEndpoint getHandler() {
     return new PostBlock(validatorDataProvider, syncDataProvider, spec, schemaDefinitionCache);
   }
 
