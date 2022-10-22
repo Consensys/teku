@@ -15,31 +15,22 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class PostProposerSlashing extends MigratingEndpointAdapter {
+public class PostProposerSlashing extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/proposer_slashings";
   private final NodeDataProvider nodeDataProvider;
 
@@ -65,34 +56,6 @@ public class PostProposerSlashing extends MigratingEndpointAdapter {
                 HTTP_ERROR_RESPONSE_TYPE)
             .build());
     this.nodeDataProvider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Submit proposer slashing object",
-      tags = {TAG_BEACON},
-      description =
-          "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-      requestBody =
-          @OpenApiRequestBody(
-              content = {
-                @OpenApiContent(from = tech.pegasys.teku.api.schema.ProposerSlashing.class)
-              }),
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            description =
-                "Proposer Slashing has been successfully validated, added to the pool, and broadcast."),
-        @OpenApiResponse(
-            status = RES_BAD_REQUEST,
-            description =
-                "Invalid proposer slashing, it will never pass validation so it's rejected"),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

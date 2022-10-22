@@ -16,33 +16,24 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-public class PostAggregateAndProofs extends MigratingEndpointAdapter {
+public class PostAggregateAndProofs extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/aggregate_and_proofs";
   private final ValidatorDataProvider provider;
 
@@ -66,30 +57,6 @@ public class PostAggregateAndProofs extends MigratingEndpointAdapter {
             .response(SC_OK, "Successfully published aggregate.")
             .build());
     this.provider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Publish aggregate and proofs",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {
-                @OpenApiContent(
-                    from = tech.pegasys.teku.api.schema.SignedAggregateAndProof.class,
-                    isArray = true)
-              }),
-      description =
-          "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
-      responses = {
-        @OpenApiResponse(status = RES_OK, description = "Successfully published aggregate."),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

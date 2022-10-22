@@ -44,77 +44,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetGlobalValidatorInclusion;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetValidatorInclusion;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateSyncCommittees;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -213,18 +142,19 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
 
   private void addConfigHandlers(
       final DataProvider dataProvider, final Eth1Address depositAddress) {
-    addMigratedEndpoint(new GetDepositContract(depositAddress, dataProvider.getConfigProvider()));
-    addMigratedEndpoint(new GetForkSchedule(dataProvider));
-    addMigratedEndpoint(new GetSpec(dataProvider));
+    //    addMigratedEndpoint(new GetDepositContract(depositAddress,
+    // dataProvider.getConfigProvider()));
+    //    addMigratedEndpoint(new GetForkSchedule(dataProvider));
+    //    addMigratedEndpoint(new GetSpec(dataProvider));
   }
 
   private void addDebugHandlers(final DataProvider dataProvider, final Spec spec) {
-    addMigratedEndpoint(new GetChainHeadsV1(dataProvider));
-    addMigratedEndpoint(new GetChainHeadsV2(dataProvider));
-    addMigratedEndpoint(
-        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
-            dataProvider, spec, schemaCache));
-    addMigratedEndpoint(new GetState(dataProvider, schemaCache));
+    //    addMigratedEndpoint(new GetChainHeadsV1(dataProvider));
+    //    addMigratedEndpoint(new GetChainHeadsV2(dataProvider));
+    //    addMigratedEndpoint(
+    //        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
+    //            dataProvider, spec, schemaCache));
+    //    addMigratedEndpoint(new GetState(dataProvider, schemaCache));
   }
 
   private void addHostAllowlistHandler(final BeaconRestApiConfig configuration) {
@@ -397,31 +327,31 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final Eth1DataProvider eth1DataProvider,
       final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
-    addMigratedEndpoint(new PutLogLevel());
-    addMigratedEndpoint(new GetStateByBlockRoot(provider, spec));
-    addMigratedEndpoint(new Liveness(provider));
-    addMigratedEndpoint(new Readiness(provider, executionClientDataProvider));
-    addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
-    addMigratedEndpoint(new GetPeersScore(provider));
-    addMigratedEndpoint(new GetProtoArray(provider));
-    addMigratedEndpoint(new GetProposersData(provider));
-    addMigratedEndpoint(new GetDeposits(eth1DataProvider));
-    addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetEth1DataCache(eth1DataProvider));
-    addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
-    addMigratedEndpoint(new GetDepositSnapshot(eth1DataProvider));
-    addMigratedEndpoint(new GetGlobalValidatorInclusion(provider));
-    addMigratedEndpoint(new GetValidatorInclusion(provider));
+    //    addMigratedEndpoint(new PutLogLevel());
+    //    addMigratedEndpoint(new GetStateByBlockRoot(provider, spec));
+    //    addMigratedEndpoint(new Liveness(provider));
+    //    addMigratedEndpoint(new Readiness(provider, executionClientDataProvider));
+    //    addMigratedEndpoint(new GetAllBlocksAtSlot(provider, schemaCache));
+    //    addMigratedEndpoint(new GetPeersScore(provider));
+    //    addMigratedEndpoint(new GetProtoArray(provider));
+    //    addMigratedEndpoint(new GetProposersData(provider));
+    //    addMigratedEndpoint(new GetDeposits(eth1DataProvider));
+    //    addMigratedEndpoint(new GetEth1Data(provider, eth1DataProvider));
+    //    addMigratedEndpoint(new GetEth1DataCache(eth1DataProvider));
+    //    addMigratedEndpoint(new GetEth1VotingSummary(provider, eth1DataProvider));
+    //    addMigratedEndpoint(new GetDepositSnapshot(eth1DataProvider));
+    //    addMigratedEndpoint(new GetGlobalValidatorInclusion(provider));
+    //    addMigratedEndpoint(new GetValidatorInclusion(provider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
-    addMigratedEndpoint(new GetHealth(provider));
-    addMigratedEndpoint(new GetIdentity(provider));
-    addMigratedEndpoint(new GetPeers(provider));
-    addMigratedEndpoint(new GetPeerCount(provider));
-    addMigratedEndpoint(new GetPeerById(provider));
-    addMigratedEndpoint(new GetSyncing(provider));
-    addMigratedEndpoint(new GetVersion());
+    //    addMigratedEndpoint(new GetHealth(provider));
+    //    addMigratedEndpoint(new GetIdentity(provider));
+    //    addMigratedEndpoint(new GetPeers(provider));
+    //    addMigratedEndpoint(new GetPeerCount(provider));
+    //    addMigratedEndpoint(new GetPeerById(provider));
+    //    addMigratedEndpoint(new GetSyncing(provider));
+    //    addMigratedEndpoint(new GetVersion());
   }
 
   private void addMigratedEndpoint(final MigratingEndpointAdapter endpoint) {
@@ -430,63 +360,64 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
   }
 
   private void addValidatorHandlers(final DataProvider dataProvider, final Spec spec) {
-    addMigratedEndpoint(new PostAttesterDuties(dataProvider));
-    addMigratedEndpoint(new GetProposerDuties(dataProvider));
-    addMigratedEndpoint(
-        new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
-            dataProvider, schemaCache));
-    addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
-    addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
-    addMigratedEndpoint(new GetAttestationData(dataProvider));
-    addMigratedEndpoint(new GetAggregateAttestation(dataProvider, spec));
-    addMigratedEndpoint(
-        new PostAggregateAndProofs(dataProvider, spec.getGenesisSchemaDefinitions()));
-    addMigratedEndpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider));
-    addMigratedEndpoint(new PostSyncDuties(dataProvider));
-    addMigratedEndpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache));
-    addMigratedEndpoint(new PostSyncCommitteeSubscriptions(dataProvider));
-    addMigratedEndpoint(new PostContributionAndProofs(dataProvider, schemaCache));
-    addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
-    addMigratedEndpoint(new PostRegisterValidator(dataProvider));
+    //    addMigratedEndpoint(new PostAttesterDuties(dataProvider));
+    //    addMigratedEndpoint(new GetProposerDuties(dataProvider));
+    //    addMigratedEndpoint(
+    //        new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
+    //            dataProvider, schemaCache));
+    //    addMigratedEndpoint(new GetNewBlock(dataProvider, spec, schemaCache));
+    //    addMigratedEndpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache));
+    //    addMigratedEndpoint(new GetAttestationData(dataProvider));
+    //    addMigratedEndpoint(new GetAggregateAttestation(dataProvider, spec));
+    //    addMigratedEndpoint(
+    //        new PostAggregateAndProofs(dataProvider, spec.getGenesisSchemaDefinitions()));
+    //    addMigratedEndpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider));
+    //    addMigratedEndpoint(new PostSyncDuties(dataProvider));
+    //    addMigratedEndpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache));
+    //    addMigratedEndpoint(new PostSyncCommitteeSubscriptions(dataProvider));
+    //    addMigratedEndpoint(new PostContributionAndProofs(dataProvider, schemaCache));
+    //    addMigratedEndpoint(new PostPrepareBeaconProposer(dataProvider));
+    //    addMigratedEndpoint(new PostRegisterValidator(dataProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider, final Spec spec) {
-    addMigratedEndpoint(new GetGenesis(dataProvider));
-    addMigratedEndpoint(new GetStateRoot(dataProvider));
-    addMigratedEndpoint(new GetStateFork(dataProvider));
-    addMigratedEndpoint(new GetStateFinalityCheckpoints(dataProvider));
-    addMigratedEndpoint(new GetStateValidators(dataProvider));
-    addMigratedEndpoint(new GetStateValidator(dataProvider));
-    addMigratedEndpoint(new GetStateValidatorBalances(dataProvider));
-    addMigratedEndpoint(new GetStateCommittees(dataProvider));
-    addMigratedEndpoint(new GetStateSyncCommittees(dataProvider));
+    //    addMigratedEndpoint(new GetGenesis(dataProvider));
+    //    addMigratedEndpoint(new GetStateRoot(dataProvider));
+    //    addMigratedEndpoint(new GetStateFork(dataProvider));
+    //    addMigratedEndpoint(new GetStateFinalityCheckpoints(dataProvider));
+    //    addMigratedEndpoint(new GetStateValidators(dataProvider));
+    //    addMigratedEndpoint(new GetStateValidator(dataProvider));
+    //    addMigratedEndpoint(new GetStateValidatorBalances(dataProvider));
+    //    addMigratedEndpoint(new GetStateCommittees(dataProvider));
+    //    addMigratedEndpoint(new GetStateSyncCommittees(dataProvider));
 
-    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
-    addMigratedEndpoint(new GetBlockHeader(dataProvider));
+    //    addMigratedEndpoint(new GetBlockHeaders(dataProvider));
+    //    addMigratedEndpoint(new GetBlockHeader(dataProvider));
 
-    addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
-    addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
+    //    addMigratedEndpoint(new PostBlock(dataProvider, spec, schemaCache));
+    //    addMigratedEndpoint(new PostBlindedBlock(dataProvider, spec, schemaCache));
 
-    addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
-    addMigratedEndpoint(
-        new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider, schemaCache));
-    addMigratedEndpoint(new GetFinalizedCheckpointState(dataProvider, spec));
+    //    addMigratedEndpoint(new GetBlock(dataProvider, schemaCache));
+    //    addMigratedEndpoint(
+    //        new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(dataProvider,
+    // schemaCache));
+    //    addMigratedEndpoint(new GetFinalizedCheckpointState(dataProvider, spec));
 
-    addMigratedEndpoint(new GetBlockRoot(dataProvider));
-    addMigratedEndpoint(new GetFinalizedBlockRoot(dataProvider));
-    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
+    //    addMigratedEndpoint(new GetBlockRoot(dataProvider));
+    //    addMigratedEndpoint(new GetFinalizedBlockRoot(dataProvider));
+    //    addMigratedEndpoint(new GetBlockAttestations(dataProvider, spec));
 
-    addMigratedEndpoint(new GetAttestations(dataProvider, spec));
-    addMigratedEndpoint(new PostAttestation(dataProvider, schemaCache));
+    //    addMigratedEndpoint(new GetAttestations(dataProvider, spec));
+    //    addMigratedEndpoint(new PostAttestation(dataProvider, schemaCache));
 
-    addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
-    addMigratedEndpoint(new PostAttesterSlashing(dataProvider, spec));
-    addMigratedEndpoint(new GetProposerSlashings(dataProvider));
-    addMigratedEndpoint(new PostProposerSlashing(dataProvider));
-    addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
-    addMigratedEndpoint(new PostVoluntaryExit(dataProvider));
-    addMigratedEndpoint(new PostSyncCommittees(dataProvider));
-    addMigratedEndpoint(new PostValidatorLiveness(dataProvider));
+    //    addMigratedEndpoint(new GetAttesterSlashings(dataProvider, spec));
+    //    addMigratedEndpoint(new PostAttesterSlashing(dataProvider, spec));
+    //    addMigratedEndpoint(new GetProposerSlashings(dataProvider));
+    //    addMigratedEndpoint(new PostProposerSlashing(dataProvider));
+    //    addMigratedEndpoint(new GetVoluntaryExits(dataProvider));
+    //    addMigratedEndpoint(new PostVoluntaryExit(dataProvider));
+    //    addMigratedEndpoint(new PostSyncCommittees(dataProvider));
+    //    addMigratedEndpoint(new PostValidatorLiveness(dataProvider));
   }
 
   private void addEventHandler(
@@ -495,13 +426,13 @@ public class ReflectionBasedBeaconRestApi implements BeaconRestApi {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final BeaconRestApiConfig configuration) {
-    addMigratedEndpoint(
-        new GetEvents(
-            dataProvider,
-            eventChannels,
-            asyncRunner,
-            timeProvider,
-            configuration.getMaxPendingEvents()));
+    //    addMigratedEndpoint(
+    //        new GetEvents(
+    //            dataProvider,
+    //            eventChannels,
+    //            asyncRunner,
+    //            timeProvider,
+    //            configuration.getMaxPendingEvents()));
   }
 
   @Override

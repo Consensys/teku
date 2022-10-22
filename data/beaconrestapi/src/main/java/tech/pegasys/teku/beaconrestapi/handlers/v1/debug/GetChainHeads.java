@@ -17,14 +17,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 
-public abstract class GetChainHeads extends MigratingEndpointAdapter {
+public abstract class GetChainHeads extends RestApiEndpoint {
 
   private final ChainDataProvider chainDataProvider;
 
