@@ -80,6 +80,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
+
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
 
   protected Spec spec;
@@ -209,25 +210,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .build();
 
     beaconRestApi =
-        config.isEnableMigratedRestApi()
-            ? new JsonTypeDefinitionBeaconRestApi(
-                dataProvider,
-                eth1DataProvider,
-                config,
-                eventChannels,
-                SyncAsyncRunner.SYNC_RUNNER,
-                StubTimeProvider.withTimeInMillis(1000),
-                executionClientDataProvider,
-                spec)
-            : new ReflectionBasedBeaconRestApi(
-                dataProvider,
-                eth1DataProvider,
-                config,
-                eventChannels,
-                SyncAsyncRunner.SYNC_RUNNER,
-                StubTimeProvider.withTimeInMillis(1000),
-                executionClientDataProvider,
-                spec);
+        new JsonTypeDefinitionBeaconRestApi(
+            dataProvider,
+            eth1DataProvider,
+            config,
+            eventChannels,
+            SyncAsyncRunner.SYNC_RUNNER,
+            StubTimeProvider.withTimeInMillis(1000),
+            executionClientDataProvider,
+            spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }
