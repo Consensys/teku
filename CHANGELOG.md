@@ -20,8 +20,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Enabled new framework for REST API with better performance and less memory usage. The new framework does not cause any breaking changes, however if needed the old version can be restored with `--Xrest-api-migrated-enabled=false`
-- Updated jackson-databind library to version 2.13.4.2 addressing [CVE-2022-42003](https://nvd.nist.gov/vuln/detail/CVE-2022-42003)
 
 ### Bug Fixes
-- Fix issue where /readiness endpoint returned 200 when Execution Client was not available.
