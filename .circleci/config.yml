@@ -6,10 +6,9 @@ executors:
   small_executor:
     docker:
       - image: cimg/openjdk:11.0.13
-        auth: &docker-auth
-          # Don't panic, throw away account to avoid Docker rate limits when downloading.
-          username: "cddockeruser"
-          password: "fa8651f2-88be-48b7-98ce-e711bd376252"
+        auth:
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
     resource_class: small
     working_directory: ~/project
     environment:
@@ -20,7 +19,8 @@ executors:
     docker:
       - image: docker:stable-git
         auth:
-          <<: *docker-auth
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
     resource_class: small
     working_directory: ~/project
 
@@ -28,7 +28,8 @@ executors:
     docker:
       - image: cimg/openjdk:11.0.13
         auth:
-          <<: *docker-auth
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
     resource_class: medium
     working_directory: ~/project
     environment:
@@ -40,7 +41,8 @@ executors:
     docker:
       - image: cimg/openjdk:11.0.13
         auth:
-          <<: *docker-auth
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
     resource_class: "medium+"
     working_directory: ~/project
     environment:
@@ -51,7 +53,8 @@ executors:
     docker:
       - image: cimg/openjdk:11.0.13
         auth:
-          <<: *docker-auth
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
     resource_class: large
     working_directory: ~/project
     environment:
@@ -79,7 +82,8 @@ executors:
     docker:
       - image: circleci/node:14-buster
         auth:
-          <<: *docker-auth
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO
 
 commands:
   prepare:
@@ -532,20 +536,28 @@ workflows:
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+          context:
+            - dockerhub-quorumengineering-ro              
       - spotless:
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - windowsBuild:
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - referenceTestsPrep:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - referenceTests:
           requires:
             - assemble
@@ -553,36 +565,48 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - unitTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - propertyTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - integrationTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - acceptanceTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - extractAPISpec:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro              
       - publish-cloudsmith:
           filters:
             branches:
@@ -601,6 +625,7 @@ workflows:
             - spotless
             - windowsBuild
           context:
+            - dockerhub-quorumengineering-ro
             - cloudsmith-protocols
       - publishDockerAmd64:
           filters:
@@ -620,6 +645,7 @@ workflows:
             - spotless
             - windowsBuild
           context:
+            - dockerhub-quorumengineering-ro
             - dockerhub-quorumengineering-rw
             - dockerhub-opsquorum-dct         
       - publishDockerArm64:
@@ -640,6 +666,7 @@ workflows:
             - spotless
             - windowsBuild
           context:
+            - dockerhub-quorumengineering-ro
             - dockerhub-quorumengineering-rw
             - dockerhub-opsquorum-dct      
       - manifestDocker:
@@ -654,6 +681,7 @@ workflows:
             - publishDockerArm64
             - publishDockerAmd64
           context:
+            - dockerhub-quorumengineering-ro
             - dockerhub-quorumengineering-rw
             - dockerhub-opsquorum-dct                               
       - publishAPISpec:
@@ -673,6 +701,8 @@ workflows:
             - extractAPISpec
             - spotless
             - windowsBuild
+          context:
+            - dockerhub-quorumengineering-ro            
   nightly:
     triggers:
       - schedule:
