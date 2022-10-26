@@ -44,6 +44,18 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
 
   @Option(
+      names = {"--Xfailovers-send-signed-duties-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Send signed duties (blocks, attestations, aggregations, ...) to beacon nodes which are used as failovers",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean failoversSendSignedDutiesEnabled =
+      ValidatorConfig.DEFAULT_FAILOVERS_SEND_SIGNED_DUTIES_ENABLED;
+
+  @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use SSZ encoding for API block requests",
@@ -62,6 +74,7 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
+                .failoversSendSignedDutiesEnabled(failoversSendSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
 

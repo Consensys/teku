@@ -126,6 +126,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 primaryValidatorApi,
                 failoverValidatorApis,
                 validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
+                validatorConfig.isFailoversSendSignedDutiesEnabled(),
                 metricsSystem));
 
     final EventSourceBeaconChainEventAdapter beaconChainEventAdapter =

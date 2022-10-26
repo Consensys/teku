@@ -107,6 +107,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                 dutiesProviderPrimaryValidatorApiChannel,
                 dutiesProviderFailoverValidatorApiChannel,
                 validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
+                validatorConfig.isFailoversSendSignedDutiesEnabled(),
                 serviceConfig.getMetricsSystem()));
 
     final Optional<ValidatorApiChannel> blockHandlerValidatorApi =
@@ -229,6 +230,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             primaryValidatorApi,
             failoverValidatorApis,
             validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
+            validatorConfig.isFailoversSendSignedDutiesEnabled(),
             metricsSystem));
   }
 

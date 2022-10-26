@@ -40,6 +40,7 @@ public class ValidatorConfig {
   public static final List<URI> DEFAULT_BEACON_NODE_API_ENDPOINTS =
       List.of(URI.create("http://127.0.0.1:" + DEFAULT_REST_API_PORT));
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
+  public static final boolean DEFAULT_FAILOVERS_SEND_SIGNED_DUTIES_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = false;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
@@ -78,6 +79,7 @@ public class ValidatorConfig {
   private final boolean validatorClientUseSszBlocksEnabled;
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
+  private final boolean failoversSendSignedDutiesEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
@@ -109,6 +111,7 @@ public class ValidatorConfig {
       final boolean validatorClientUseSszBlocksEnabled,
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
+      final boolean failoversSendSignedDutiesEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
@@ -141,6 +144,7 @@ public class ValidatorConfig {
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
+    this.failoversSendSignedDutiesEnabled = failoversSendSignedDutiesEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
@@ -256,6 +260,10 @@ public class ValidatorConfig {
     return failoversSendSubnetSubscriptionsEnabled;
   }
 
+  public boolean isFailoversSendSignedDutiesEnabled() {
+    return failoversSendSignedDutiesEnabled;
+  }
+
   public boolean isBuilderRegistrationDefaultEnabled() {
     return builderRegistrationDefaultEnabled;
   }
@@ -308,6 +316,7 @@ public class ValidatorConfig {
     private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
+    private boolean failoversSendSignedDutiesEnabled = DEFAULT_FAILOVERS_SEND_SIGNED_DUTIES_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
@@ -468,6 +477,12 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder failoversSendSignedDutiesEnabled(
+        final boolean failoversSendSignedDutiesEnabled) {
+      this.failoversSendSignedDutiesEnabled = failoversSendSignedDutiesEnabled;
+      return this;
+    }
+
     public Builder builderRegistrationDefaultGasLimit(
         final UInt64 builderRegistrationDefaultGasLimit) {
       this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
@@ -535,6 +550,7 @@ public class ValidatorConfig {
           validatorClientSszBlocksEnabled,
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
+          failoversSendSignedDutiesEnabled,
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,

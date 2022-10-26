@@ -68,10 +68,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   static final String REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME =
       "remote_beacon_nodes_requests_total";
 
+  private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
+      new ConcurrentHashMap<>();
+
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
   private final List<RemoteValidatorApiChannel> failoverDelegates;
   private final boolean failoversSendSubnetSubscriptions;
+  private final boolean failoversSendSignedDuties;
   private final LabelledMetric<Counter> failoverBeaconNodesRequestsCounter;
 
   public FailoverValidatorApiHandler(
@@ -79,11 +83,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final RemoteValidatorApiChannel primaryDelegate,
       final List<RemoteValidatorApiChannel> failoverDelegates,
       final boolean failoversSendSubnetSubscriptions,
+      final boolean failoversSendSignedDuties,
       final MetricsSystem metricsSystem) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
+    this.failoversSendSignedDuties = failoversSendSignedDuties;
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
@@ -145,9 +151,17 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
-    return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createUnsignedBlock(slot, randaoReveal, graffiti, blinded),
-        BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
+    final ValidatorApiChannelRequest<Optional<BeaconBlock>> request =
+        apiChannel ->
+            apiChannel
+                .createUnsignedBlock(slot, randaoReveal, graffiti, blinded)
+                .whenSuccess(
+                    () -> {
+                      if (!failoverDelegates.isEmpty() && blinded) {
+                        blindedBlockCreatorCache.put(slot, apiChannel);
+                      }
+                    });
+    return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 
   @Override
@@ -205,7 +219,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations) {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
-        BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
+        BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
+        failoversSendSignedDuties);
   }
 
   @Override
@@ -213,14 +228,24 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return relayRequest(
         apiChannel -> apiChannel.sendAggregateAndProofs(aggregateAndProofs),
-        BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD);
+        BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
+        failoversSendSignedDuties);
   }
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
+    final UInt64 slot = block.getMessage().getSlot();
+    if (block.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
+      final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
+      LOG.info(
+          "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
+          slot);
+      return blockCreatorApiChannel.sendSignedBlock(block);
+    }
     return relayRequest(
         apiChannel -> apiChannel.sendSignedBlock(block),
-        BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
+        BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
+        failoversSendSignedDuties);
   }
 
   @Override
@@ -228,7 +253,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return relayRequest(
         apiChannel -> apiChannel.sendSyncCommitteeMessages(syncCommitteeMessages),
-        BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD);
+        BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
+        failoversSendSignedDuties);
   }
 
   @Override
@@ -236,7 +262,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedContributionAndProofs(signedContributionAndProofs),
-        BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD);
+        BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD,
+        failoversSendSignedDuties);
   }
 
   @Override
@@ -257,8 +284,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
-      List<UInt64> validatorIndices, UInt64 epoch) {
-    return relayRequest(
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
+    return tryRequestUntilSuccess(
         apiChannel -> apiChannel.checkValidatorsDoppelganger(validatorIndices, epoch),
         BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }
