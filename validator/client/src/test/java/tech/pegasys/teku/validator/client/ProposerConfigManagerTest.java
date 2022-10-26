@@ -275,6 +275,26 @@ public class ProposerConfigManagerTest {
   }
 
   @Test
+  void getFeeRecipient_shouldReturnRuntimeConfiguration(@TempDir final Path tempDir)
+      throws IOException {
+    proposerWithRuntimeConfiguration(tempDir);
+
+    assertThat(proposerConfigManager.getFeeRecipient(validatorInRuntimeConfig.getPublicKey()))
+        .contains(validatorFeeRecipientRuntime);
+  }
+
+  @Test
+  void getFeeRecipient_shouldReturnRuntimeConfigurationIfProposerConfigIsNotConfigured(
+      @TempDir final Path tempDir) throws IOException {
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    proposerWithRuntimeConfiguration(tempDir);
+
+    assertThat(proposerConfigManager.getFeeRecipient(validatorInRuntimeConfig.getPublicKey()))
+        .contains(validatorFeeRecipientRuntime);
+  }
+
+  @Test
   void getFeeRecipient_shouldReturnConfigurationFileValueFirst(@TempDir final Path tempDir)
       throws IOException {
     proposerWithRuntimeConfiguration(tempDir);

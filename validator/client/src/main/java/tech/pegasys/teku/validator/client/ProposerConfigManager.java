@@ -181,7 +181,7 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
     final Optional<ProposerConfig> localMaybeProposerConfig = maybeProposerConfig.get();
 
     if (localMaybeProposerConfig.isEmpty()) {
-      return Optional.empty();
+      return runtimeProposerConfig.getProposerConfig(publicKey).flatMap(selector);
     }
     return localMaybeProposerConfig
         .get()

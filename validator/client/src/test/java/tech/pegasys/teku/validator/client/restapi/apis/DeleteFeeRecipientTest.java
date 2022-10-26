@@ -49,13 +49,14 @@ class DeleteFeeRecipientTest {
 
   @Test
   void shouldReturnFailureWhenKeyNotFound() throws JsonProcessingException {
-    when(proposerConfigManager.getFeeRecipient(any())).thenReturn(Optional.empty());
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(false);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
   void shouldReturnForbiddenWhenDeleteFails() throws JsonProcessingException {
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
     when(proposerConfigManager.getFeeRecipient(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
     when(proposerConfigManager.deleteFeeRecipient(any())).thenReturn(false);
@@ -65,6 +66,7 @@ class DeleteFeeRecipientTest {
 
   @Test
   void shouldReturnSuccessWhenDeleteSucceeds() throws JsonProcessingException {
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
     when(proposerConfigManager.getFeeRecipient(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
     when(proposerConfigManager.deleteFeeRecipient(any())).thenReturn(true);
