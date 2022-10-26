@@ -114,7 +114,7 @@ public class ProposerConfigManagerTest {
 
     when(ownedValidators.getValidator(any())).thenReturn(Optional.of(defaultOwnedValidator));
 
-    assertThat(setUpProposerConfigManager(Optional.empty(), Optional.empty())).isCompleted();
+    setUpProposerConfigManager(Optional.empty(), Optional.empty());
   }
 
   @ParameterizedTest
@@ -409,7 +409,7 @@ public class ProposerConfigManagerTest {
 
     when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(builderDefaultEnabled);
 
-    assertThat(setUpProposerConfigManager(Optional.empty(), Optional.empty())).isCompleted();
+    setUpProposerConfigManager(Optional.empty(), Optional.empty());
   }
 
   private void prepareConfigWithValidatorSpecificProperty(
@@ -425,7 +425,7 @@ public class ProposerConfigManagerTest {
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
 
-    assertThat(setUpProposerConfigManager(Optional.empty(), Optional.empty())).isCompleted();
+    setUpProposerConfigManager(Optional.empty(), Optional.empty());
   }
 
   private void prepareConfigWithDefaultConfigProperty(final Properties property, final Object value)
@@ -436,7 +436,7 @@ public class ProposerConfigManagerTest {
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
 
-    assertThat(setUpProposerConfigManager(Optional.empty(), Optional.empty())).isCompleted();
+    setUpProposerConfigManager(Optional.empty(), Optional.empty());
   }
 
   private ProposerConfig.Config buildSingleConfigWithProperty(
@@ -469,19 +469,17 @@ public class ProposerConfigManagerTest {
 
   private void proposerWithRuntimeConfiguration(final Path tempDir) throws IOException {
 
-    assertThat(
-            setUpProposerConfigManager(
-                Optional.of(tempDir),
-                Optional.of(
-                    String.format(
-                        "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}",
-                        validatorInRuntimeConfig.getPublicKey(),
-                        validatorFeeRecipientRuntime,
-                        validatorGasLimitRuntime.toString()))))
-        .isCompleted();
+    setUpProposerConfigManager(
+        Optional.of(tempDir),
+        Optional.of(
+            String.format(
+                "{\"%s\":{\"fee_recipient\":\"%s\",\"gas_limit\":\"%s\"}}",
+                validatorInRuntimeConfig.getPublicKey(),
+                validatorFeeRecipientRuntime,
+                validatorGasLimitRuntime.toString())));
   }
 
-  private SafeFuture<Void> setUpProposerConfigManager(
+  private void setUpProposerConfigManager(
       final Optional<Path> runtimeConfigPath, final Optional<String> existingRuntimeData)
       throws IOException {
     Optional<Path> storagePath = Optional.empty();
@@ -497,7 +495,9 @@ public class ProposerConfigManagerTest {
         new ProposerConfigManager(
             validatorConfig, new RuntimeProposerConfig(storagePath), proposerConfigProvider);
 
-    return proposerConfigManager.initialize(ownedValidators);
+    assertThat(proposerConfigManager.isReadyToProvideProperties()).isFalse();
+    assertThat(proposerConfigManager.initialize(ownedValidators)).isCompleted();
+    assertThat(proposerConfigManager.isReadyToProvideProperties()).isTrue();
   }
 
   enum Properties {

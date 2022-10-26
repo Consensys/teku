@@ -75,7 +75,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (isNotReadyToRegister()) {
+    if (!isReadyToRegister()) {
       return;
     }
     if (registrationNeedsToBeRun(slot)) {
@@ -109,7 +109,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onValidatorsAdded() {
-    if (isNotReadyToRegister() || lastRunEpoch.get() == null) {
+    if (!isReadyToRegister() || lastRunEpoch.get() == null) {
       return;
     }
 
@@ -135,11 +135,11 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return cachedValidatorRegistrations.size();
   }
 
-  private boolean isNotReadyToRegister() {
-    if (!validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
-      LOG.debug("Not ready to register validator(s).");
+  private boolean isReadyToRegister() {
+    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
       return true;
     }
+    LOG.debug("Not ready to register validator(s).");
     return false;
   }
 

@@ -40,6 +40,7 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
 
   private final AtomicReference<Optional<ProposerConfig>> maybeProposerConfig =
       new AtomicReference<>(Optional.empty());
+  private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private Optional<OwnedValidators> ownedValidators = Optional.empty();
 
@@ -55,7 +56,8 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
 
   public SafeFuture<Void> initialize(final OwnedValidators ownedValidators) {
     this.ownedValidators = Optional.of(ownedValidators);
-    return internalRefresh();
+    internalRefresh().propagateTo(initializationComplete);
+    return initializationComplete;
   }
 
   @Override
@@ -141,7 +143,7 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
 
   @Override
   public boolean isReadyToProvideProperties() {
-    return maybeProposerConfig.get().isPresent();
+    return initializationComplete.isCompletedNormally();
   }
 
   @Override
