@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1152,9 +1151,8 @@ public class SafeFutureTest {
   @Test
   public void whenSuccessActionIsExecutedWhenFutureIsCompleted() {
     final AtomicBoolean flag = new AtomicBoolean(false);
-    final SafeFuture<String> future = new SafeFuture<String>().whenSuccess(() -> flag.set(true));
-    future.complete("foobar");
-    Waiter.waitFor(flag::get, 100, TimeUnit.MILLISECONDS);
+    SafeFuture.completedFuture("foobar").whenSuccess(() -> flag.set(true));
+    assertThat(flag).isTrue();
   }
 
   private List<Throwable> collectUncaughtExceptions() {
