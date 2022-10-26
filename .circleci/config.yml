@@ -8,6 +8,7 @@ executors:
       - image: cimg/openjdk:11.0.13
         auth: &docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
+          # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
           username: "cddockeruser"
           password: "fa8651f2-88be-48b7-98ce-e711bd376252"
     resource_class: small
