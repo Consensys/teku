@@ -613,7 +613,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Returns the future which completes with the same result or exception The consumer is invoked if
+   * Returns the future which completes with the same result or exception. The consumer is invoked if
    * this future completes exceptionally
    */
   public SafeFuture<T> whenException(final Consumer<Throwable> action) {
@@ -627,7 +627,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Returns the future which completes with the same result or exception The action is run if this
+   * Returns the future which completes with the same result or exception. The action is run if this
    * future completes successfully
    */
   public SafeFuture<T> whenSuccess(final Runnable action) {
