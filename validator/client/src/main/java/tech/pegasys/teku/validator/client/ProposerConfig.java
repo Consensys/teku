@@ -52,27 +52,6 @@ public class ProposerConfig {
     return getConfigForPubKey(Bytes48.fromHexString(pubKey));
   }
 
-  public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey pubKey) {
-    return getBuilderConfigForPubKeyOrDefault(pubKey).flatMap(BuilderConfig::isEnabled);
-  }
-
-  public Optional<UInt64> getBuilderGasLimitForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilderGasLimit();
-  }
-
-  public Optional<RegistrationOverrides> getBuilderRegistrationOverrides(
-      final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey)
-        .getBuilder()
-        .flatMap(BuilderConfig::getRegistrationOverrides);
-  }
-
-  public Optional<BuilderConfig> getBuilderConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
-    return getConfigForPubKey(pubKey)
-        .map(Config::getBuilder)
-        .orElseGet(() -> defaultConfig.getBuilder());
-  }
-
   public Config getDefaultConfig() {
     return defaultConfig;
   }
@@ -83,10 +62,6 @@ public class ProposerConfig {
 
   private Optional<Config> getConfigForPubKey(final Bytes48 pubKey) {
     return Optional.ofNullable(proposerConfig.get(pubKey));
-  }
-
-  private Config getConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
-    return getConfigForPubKey(pubKey).orElse(defaultConfig);
   }
 
   @Override
