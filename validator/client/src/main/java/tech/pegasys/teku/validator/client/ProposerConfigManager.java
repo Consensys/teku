@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,20 +55,7 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
 
   public SafeFuture<Void> initialize(final OwnedValidators ownedValidators) {
     this.ownedValidators = Optional.of(ownedValidators);
-    return internalRefresh()
-        .thenRun(
-            () -> {
-              boolean defaultFeeRecipientInProposerConfigPresent =
-                  maybeProposerConfig
-                      .get()
-                      .map(ProposerConfig::getDefaultConfig)
-                      .map(config -> config.getFeeRecipient().isPresent())
-                      .orElse(false);
-              checkState(
-                  config.getProposerDefaultFeeRecipient().isPresent()
-                      || defaultFeeRecipientInProposerConfigPresent,
-                  "default fee recipient or proposerConfig with default fee recipient is required");
-            });
+    return internalRefresh();
   }
 
   @Override

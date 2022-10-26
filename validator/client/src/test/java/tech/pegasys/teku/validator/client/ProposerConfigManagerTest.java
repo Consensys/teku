@@ -161,6 +161,18 @@ public class ProposerConfigManagerTest {
     }
   }
 
+  @Test
+  void initialize_throwsIfProposerConfigProviderThrows() {
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.failedFuture(new IOException("error")));
+
+    proposerConfigManager =
+        new ProposerConfigManager(
+            validatorConfig, new RuntimeProposerConfig(Optional.empty()), proposerConfigProvider);
+
+    assertThat(proposerConfigManager.initialize(ownedValidators)).isCompletedExceptionally();
+  }
+
   @ParameterizedTest
   @EnumSource(Properties.class)
   void shouldReturnDefaultConfig(final Properties property) throws IOException {
