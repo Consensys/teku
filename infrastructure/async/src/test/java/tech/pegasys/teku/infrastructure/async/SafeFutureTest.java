@@ -1151,7 +1151,9 @@ public class SafeFutureTest {
   @Test
   public void whenSuccessActionIsExecutedWhenFutureIsCompleted() {
     final AtomicBoolean flag = new AtomicBoolean(false);
-    SafeFuture.completedFuture("foobar").whenSuccess(() -> flag.set(true));
+    SafeFuture<String> future =
+        SafeFuture.completedFuture("foobar").whenSuccess(() -> flag.set(true));
+    assertThat(future).isCompleted();
     assertThat(flag).isTrue();
   }
 
