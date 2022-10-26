@@ -71,10 +71,14 @@ public class GetFeeRecipient extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
     final Optional<Eth1Address> maybeFeeRecipient =
-        proposerConfigManager.isPresent()
-            ? proposerConfigManager.get().getFeeRecipient(publicKey)
-            : Optional.empty();
+        manager.isOwnedValidator(publicKey) ? manager.getFeeRecipient(publicKey) : Optional.empty();
     if (maybeFeeRecipient.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Fee recipient not found");
       return;

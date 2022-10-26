@@ -55,11 +55,17 @@ public class DeleteGasLimit extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    if (proposerConfigManager.orElseThrow().getGasLimit(publicKey).isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Gas limit not found");
       return;
     }
-    if (!proposerConfigManager.orElseThrow().deleteGasLimit(publicKey)) {
+    if (!manager.deleteGasLimit(publicKey)) {
       request.respondError(SC_FORBIDDEN, "Gas limit for public key could not be removed.");
       return;
     }

@@ -171,7 +171,6 @@ public class ProposerConfig {
         @JsonProperty(value = "gas_limit") final UInt64 gasLimit,
         @JsonProperty(value = "registration_overrides")
             final RegistrationOverrides registrationOverrides) {
-      checkNotNull(enabled, "\"enabled\" is required in \"builder\"");
       this.enabled = enabled;
       this.gasLimit = gasLimit;
       this.registrationOverrides = registrationOverrides;

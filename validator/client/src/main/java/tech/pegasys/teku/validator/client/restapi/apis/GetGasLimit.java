@@ -74,17 +74,17 @@ public class GetGasLimit extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    Optional<UInt64> maybeGasLimit =
-        this.proposerConfigManager.map(
-            preparer ->
-                preparer.getGasLimit(publicKey).isPresent()
-                    ? preparer.getGasLimit(publicKey).get()
-                    : null);
-    if (maybeGasLimit.isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Gas limit not found");
       return;
     }
-    request.respondOk(new GetGasLimitResponse(maybeGasLimit.get(), publicKey));
+    request.respondOk(new GetGasLimitResponse(manager.getGasLimit(publicKey), publicKey));
   }
 
   static class GetGasLimitResponse {

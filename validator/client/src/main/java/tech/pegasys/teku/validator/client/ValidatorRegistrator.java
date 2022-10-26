@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.signatures.Signer;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -58,26 +57,20 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final Spec spec;
   private final TimeProvider timeProvider;
   private final OwnedValidators ownedValidators;
-  private final ProposerConfigManager proposerConfigManager;
-  private final ValidatorConfig validatorConfig;
-  private final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider;
+  private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender;
 
   public ValidatorRegistrator(
       final Spec spec,
       final TimeProvider timeProvider,
       final OwnedValidators ownedValidators,
-      final ProposerConfigManager proposerConfigManager,
-      final ValidatorConfig validatorConfig,
-      final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider,
+      final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
       final ValidatorRegistrationBatchSender validatorRegistrationBatchSender) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
-    this.proposerConfigManager = proposerConfigManager;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
     this.validatorRegistrationBatchSender = validatorRegistrationBatchSender;
-    this.validatorConfig = validatorConfig;
   }
 
   @Override
@@ -142,12 +135,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return cachedValidatorRegistrations.size();
   }
 
-  private UInt64 getGasLimit(final BLSPublicKey publicKey) {
-    return validatorRegistrationPropertiesProvider
-        .getGasLimit(publicKey)
-        .orElse(validatorConfig.getBuilderRegistrationDefaultGasLimit());
-  }
-
   private boolean isNotReadyToRegister() {
     if (!validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
       LOG.debug("Not ready to register validator(s).");
@@ -183,7 +170,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       return SafeFuture.COMPLETE;
     }
 
-    return proposerConfigManager
+    return validatorRegistrationPropertiesProvider
         .refresh()
         .thenCompose(
             __ -> {
@@ -222,7 +209,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
-    if (!registrationIsEnabled(publicKey)) {
+    final boolean builderEnabled =
+        validatorRegistrationPropertiesProvider.isBuilderEnabled(publicKey);
+
+    if (!builderEnabled) {
       LOG.trace("Validator registration is disabled for {}", publicKey);
       return Optional.empty();
     }
@@ -238,15 +228,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     }
 
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
-    final UInt64 gasLimit =
-        validatorRegistrationPropertiesProvider
-            .getGasLimit(publicKey)
-            .orElseThrow(); // TODO: trying to obtain gasLimit for a not-owned key?
+    final UInt64 gasLimit = validatorRegistrationPropertiesProvider.getGasLimit(publicKey);
 
     final Optional<UInt64> maybeTimestampOverride =
-        proposerConfigManager.getBuilderRegistrationTimestampOverride(publicKey);
+        validatorRegistrationPropertiesProvider.getBuilderRegistrationTimestampOverride(publicKey);
     final Optional<BLSPublicKey> maybePublicKeyOverride =
-        proposerConfigManager.getBuilderRegistrationPublicKeyOverride(publicKey);
+        validatorRegistrationPropertiesProvider.getBuilderRegistrationPublicKeyOverride(publicKey);
 
     final ValidatorRegistration validatorRegistration =
         createValidatorRegistration(
@@ -277,12 +264,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
               return Optional.of(
                   signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer));
             });
-  }
-
-  private boolean registrationIsEnabled(final BLSPublicKey publicKey) {
-    return proposerConfigManager
-        .isBuilderEnabledForPubKey(publicKey)
-        .orElse(validatorConfig.isBuilderRegistrationDefaultEnabled());
   }
 
   private ValidatorRegistration createValidatorRegistration(

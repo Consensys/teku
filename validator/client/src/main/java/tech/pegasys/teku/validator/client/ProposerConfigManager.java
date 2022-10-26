@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,17 +25,17 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
-public class ProposerConfigManager implements ValidatorRegistrationPropertiesProvider {
+public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Optional<Eth1Address> defaultFeeRecipient;
-  private final UInt64 defaultGasLimit;
+  private final ValidatorConfig config;
   private final RuntimeProposerConfig runtimeProposerConfig;
   private final ProposerConfigProvider proposerConfigProvider;
 
@@ -44,22 +45,34 @@ public class ProposerConfigManager implements ValidatorRegistrationPropertiesPro
   private Optional<OwnedValidators> ownedValidators = Optional.empty();
 
   public ProposerConfigManager(
-      final Optional<Eth1Address> defaultFeeRecipient,
-      final UInt64 defaultGasLimit,
+      final ValidatorConfig config,
       final RuntimeProposerConfig runtimeProposerConfig,
       final ProposerConfigProvider proposerConfigProvider) {
-    checkNotNull(defaultGasLimit, "A default Gas Limit is expected");
-    this.defaultFeeRecipient = defaultFeeRecipient;
-    this.defaultGasLimit = defaultGasLimit;
+    checkNotNull(config.getBuilderRegistrationDefaultGasLimit(), "A default Gas Limit is expected");
+    this.config = config;
     this.runtimeProposerConfig = runtimeProposerConfig;
     this.proposerConfigProvider = proposerConfigProvider;
   }
 
   public SafeFuture<Void> initialize(final OwnedValidators ownedValidators) {
     this.ownedValidators = Optional.of(ownedValidators);
-    return internalRefresh();
+    return internalRefresh()
+        .thenRun(
+            () -> {
+              boolean defaultFeeRecipientInProposerConfigPresent =
+                  maybeProposerConfig
+                      .get()
+                      .map(ProposerConfig::getDefaultConfig)
+                      .map(config -> config.getFeeRecipient().isPresent())
+                      .orElse(false);
+              checkState(
+                  config.getProposerDefaultFeeRecipient().isPresent()
+                      || defaultFeeRecipientInProposerConfigPresent,
+                  "default fee recipient or proposerConfig with default fee recipient is required");
+            });
   }
 
+  @Override
   public SafeFuture<Void> refresh() {
     return internalRefresh()
         .exceptionally(
@@ -130,22 +143,14 @@ public class ProposerConfigManager implements ValidatorRegistrationPropertiesPro
   // - default set by --validators-proposer-default-fee-recipient
   @Override
   public Optional<Eth1Address> getFeeRecipient(final BLSPublicKey publicKey) {
-    if (!isOwnedValidator(publicKey)) {
-      return Optional.empty();
-    }
-
     return getAttributeWithFallback(Config::getFeeRecipient, publicKey)
-        .or(() -> defaultFeeRecipient);
+        .or(config::getProposerDefaultFeeRecipient);
   }
 
   @Override
-  public Optional<UInt64> getGasLimit(final BLSPublicKey publicKey) {
-    if (!isOwnedValidator(publicKey)) {
-      return Optional.empty();
-    }
-
+  public UInt64 getGasLimit(final BLSPublicKey publicKey) {
     return getAttributeWithFallback(Config::getBuilderGasLimit, publicKey)
-        .or(() -> Optional.of(defaultGasLimit));
+        .orElse(config.getBuilderRegistrationDefaultGasLimit());
   }
 
   @Override
@@ -153,30 +158,36 @@ public class ProposerConfigManager implements ValidatorRegistrationPropertiesPro
     return maybeProposerConfig.get().isPresent();
   }
 
-  public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey publicKey) {
+  @Override
+  public boolean isBuilderEnabled(final BLSPublicKey publicKey) {
     return getAttributeWithFallback(
-        config -> config.getBuilder().flatMap(BuilderConfig::isEnabled), publicKey);
+            config -> config.getBuilder().flatMap(BuilderConfig::isEnabled), publicKey)
+        .orElse(config.isBuilderRegistrationDefaultEnabled());
   }
 
+  @Override
   public Optional<UInt64> getBuilderRegistrationTimestampOverride(final BLSPublicKey publicKey) {
     return getAttributeWithFallback(
-        config ->
-            config
-                .getBuilder()
-                .flatMap(BuilderConfig::getRegistrationOverrides)
-                .flatMap(RegistrationOverrides::getTimestamp),
-        publicKey);
+            config ->
+                config
+                    .getBuilder()
+                    .flatMap(BuilderConfig::getRegistrationOverrides)
+                    .flatMap(RegistrationOverrides::getTimestamp),
+            publicKey)
+        .or(config::getBuilderRegistrationTimestampOverride);
   }
 
+  @Override
   public Optional<BLSPublicKey> getBuilderRegistrationPublicKeyOverride(
       final BLSPublicKey publicKey) {
     return getAttributeWithFallback(
-        config ->
-            config
-                .getBuilder()
-                .flatMap(BuilderConfig::getRegistrationOverrides)
-                .flatMap(RegistrationOverrides::getPublicKey),
-        publicKey);
+            config ->
+                config
+                    .getBuilder()
+                    .flatMap(BuilderConfig::getRegistrationOverrides)
+                    .flatMap(RegistrationOverrides::getPublicKey),
+            publicKey)
+        .or(config::getBuilderRegistrationPublicKeyOverride);
   }
 
   private <T> Optional<T> getAttributeWithFallback(
@@ -208,7 +219,7 @@ public class ProposerConfigManager implements ValidatorRegistrationPropertiesPro
         .flatMap(Config::getBuilderGasLimit);
   }
 
-  private boolean isOwnedValidator(final BLSPublicKey publicKey) {
+  public boolean isOwnedValidator(final BLSPublicKey publicKey) {
     return ownedValidators.isPresent() && ownedValidators.get().getValidator(publicKey).isPresent();
   }
 }

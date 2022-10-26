@@ -141,8 +141,7 @@ public class ValidatorClientService extends Service {
       proposerConfigManager =
           Optional.of(
               new ProposerConfigManager(
-                  validatorConfig.getProposerDefaultFeeRecipient(),
-                  validatorConfig.getBuilderRegistrationDefaultGasLimit(),
+                  validatorConfig,
                   new RuntimeProposerConfig(
                       Optional.of(
                           ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
@@ -163,8 +162,6 @@ public class ValidatorClientService extends Service {
                   config.getSpec(),
                   services.getTimeProvider(),
                   validatorLoader.getOwnedValidators(),
-                  proposerConfigManager.get(),
-                  validatorConfig,
                   proposerConfigManager.get(),
                   new ValidatorRegistrationBatchSender(
                       validatorConfig.getBuilderRegistrationSendingBatchSize(),

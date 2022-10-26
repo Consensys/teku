@@ -53,11 +53,17 @@ public class DeleteFeeRecipient extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    if (proposerConfigManager.orElseThrow().getFeeRecipient(publicKey).isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Fee recipient not found");
       return;
     }
-    if (!proposerConfigManager.orElseThrow().deleteFeeRecipient(publicKey)) {
+    if (!manager.deleteFeeRecipient(publicKey)) {
       request.respondError(SC_FORBIDDEN, "Fee recipient for public key could not be removed.");
       return;
     }

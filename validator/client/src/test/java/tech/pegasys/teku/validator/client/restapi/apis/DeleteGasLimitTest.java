@@ -32,12 +32,12 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 public class DeleteGasLimitTest {
 
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
-  private final DeleteGasLimit handler = new DeleteGasLimit(Optional.of(beaconProposerPreparer));
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
+  private final DeleteGasLimit handler = new DeleteGasLimit(Optional.of(proposerConfigManager));
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
@@ -49,25 +49,25 @@ public class DeleteGasLimitTest {
 
   @Test
   void shouldReturnFailureWhenKeyNotFound() throws JsonProcessingException {
-    when(beaconProposerPreparer.getGasLimit(any())).thenReturn(Optional.empty());
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(false);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
   void shouldReturnForbiddenWhenDeleteFails() throws JsonProcessingException {
-    when(beaconProposerPreparer.getGasLimit(any()))
-        .thenReturn(Optional.of(dataStructureUtil.randomUInt64()));
-    when(beaconProposerPreparer.deleteGasLimit(any())).thenReturn(false);
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
+    when(proposerConfigManager.getGasLimit(any())).thenReturn(dataStructureUtil.randomUInt64());
+    when(proposerConfigManager.deleteGasLimit(any())).thenReturn(false);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
   void shouldReturnSuccessWhenDeleteSucceeds() throws JsonProcessingException {
-    when(beaconProposerPreparer.getGasLimit(any()))
-        .thenReturn(Optional.of(dataStructureUtil.randomUInt64()));
-    when(beaconProposerPreparer.deleteGasLimit(any())).thenReturn(true);
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
+    when(proposerConfigManager.getGasLimit(any())).thenReturn(dataStructureUtil.randomUInt64());
+    when(proposerConfigManager.deleteGasLimit(any())).thenReturn(true);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
   }

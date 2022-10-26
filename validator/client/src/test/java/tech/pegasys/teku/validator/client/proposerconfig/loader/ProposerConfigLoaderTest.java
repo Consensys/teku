@@ -181,7 +181,7 @@ public class ProposerConfigLoaderTest {
             Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
 
     assertThat(defaultConfig.getBuilder()).isPresent();
-    assertThat(defaultConfig.getBuilder().get().isEnabled()).isTrue();
+    assertThat(defaultConfig.getBuilder().get().isEnabled()).isEqualTo(Optional.of(true));
   }
 
   private void validateContentWithValidatorRegistration2(final ProposerConfig config) {
@@ -195,7 +195,7 @@ public class ProposerConfigLoaderTest {
 
     assertThat(theConfig.get().getBuilder()).isPresent();
     final BuilderConfig builder = theConfig.get().getBuilder().get();
-    assertThat(builder.isEnabled()).isTrue();
+    assertThat(builder.isEnabled()).isEqualTo(Optional.of(true));
     assertThat(builder.getGasLimit().orElseThrow()).isEqualTo(UInt64.valueOf(12345654321L));
 
     final Config defaultConfig = config.getDefaultConfig();
@@ -204,7 +204,7 @@ public class ProposerConfigLoaderTest {
             Optional.of(Eth1Address.fromHexString("0x6e35733c5af9B61374A128e6F85f553aF09ff89A")));
 
     assertThat(defaultConfig.getBuilder()).isPresent();
-    assertThat(defaultConfig.getBuilder().get().isEnabled()).isFalse();
+    assertThat(defaultConfig.getBuilder().get().isEnabled()).isEqualTo(Optional.of(false));
     assertThat(defaultConfig.getBuilder().get().getGasLimit()).isEmpty();
   }
 

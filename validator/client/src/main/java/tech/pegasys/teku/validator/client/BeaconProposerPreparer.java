@@ -36,7 +36,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final ValidatorApiChannel validatorApiChannel;
   private Optional<ValidatorIndexProvider> validatorIndexProvider;
 
-  private final ProposerConfigManager proposerConfigManager;
+  private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider;
   private final Spec spec;
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
@@ -45,11 +45,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public BeaconProposerPreparer(
       final ValidatorApiChannel validatorApiChannel,
       final Optional<ValidatorIndexProvider> validatorIndexProvider,
-      final ProposerConfigManager proposerConfigManager,
+      final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider,
       final Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
-    this.proposerConfigManager = proposerConfigManager;
+    this.proposerConfigPropertiesProvider = proposerConfigPropertiesProvider;
     this.spec = spec;
   }
 
@@ -106,7 +106,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
         .orElseThrow()
         .getValidatorIndicesByPublicKey()
         .thenCombine(
-            proposerConfigManager.refresh(),
+            proposerConfigPropertiesProvider.refresh(),
             (publicKeyToIndex, __) -> buildBeaconPreparableProposerList(publicKeyToIndex))
         .thenCompose(
             beaconPreparableProposers ->
@@ -128,7 +128,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     return blsPublicKeyToIndexMap.entrySet().stream()
         .map(
             entry ->
-                proposerConfigManager
+                proposerConfigPropertiesProvider
                     .getFeeRecipient(entry.getKey())
                     .map(
                         eth1Address ->

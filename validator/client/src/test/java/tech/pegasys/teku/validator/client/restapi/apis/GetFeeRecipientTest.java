@@ -34,13 +34,13 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 class GetFeeRecipientTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
-  private final GetFeeRecipient handler = new GetFeeRecipient(Optional.of(beaconProposerPreparer));
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
+  private final GetFeeRecipient handler = new GetFeeRecipient(Optional.of(proposerConfigManager));
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
@@ -62,7 +62,7 @@ class GetFeeRecipientTest {
 
   @Test
   void shouldRespondNotFound() throws JsonProcessingException {
-    when(beaconProposerPreparer.getFeeRecipient(any())).thenReturn(Optional.empty());
+    when(proposerConfigManager.getFeeRecipient(any())).thenReturn(Optional.empty());
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
