@@ -365,11 +365,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
-                    .tekuConfiguration()
-                    .validatorClient()
-                    .getValidatorConfig()
-                    .isDoppelgangerDetectionEnabled())
-            .isFalse();
+                .tekuConfiguration()
+                .validatorClient()
+                .getValidatorConfig()
+                .isDoppelgangerDetectionEnabled())
+        .isFalse();
   }
 
   private Path createConfigFile() throws IOException {
