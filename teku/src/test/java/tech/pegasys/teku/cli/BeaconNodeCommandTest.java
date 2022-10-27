@@ -335,6 +335,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void doppelgangerDetectionShouldBeDisabledByDefault() {
+    final String[] args = {};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .validatorClient()
+                .getValidatorConfig()
+                .isDoppelgangerDetectionEnabled())
+        .isFalse();
+  }
+
+  @Test
+  public void shouldEnableDoppelgangerDetection() {
     final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
     beaconNodeCommand.parse(args);
     assertThat(
@@ -347,16 +360,16 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldSetDoppelgangerDetection() {
-    final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
+  public void shouldDisableDoppelgangerDetection() {
+    final String[] args = {"--Xdoppelganger-detection-enabled", "false"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
-                .tekuConfiguration()
-                .validatorClient()
-                .getValidatorConfig()
-                .isDoppelgangerDetectionEnabled())
-        .isTrue();
+                    .tekuConfiguration()
+                    .validatorClient()
+                    .getValidatorConfig()
+                    .isDoppelgangerDetectionEnabled())
+            .isFalse();
   }
 
   private Path createConfigFile() throws IOException {
