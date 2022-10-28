@@ -101,7 +101,8 @@ public class ExecutionLayerService extends Service {
           new BuilderCircuitBreakerImpl(
               config.getSpec(),
               config.getBuilderCircuitBreakerWindow(),
-              config.getBuilderCircuitBreakerAllowedFaults());
+              config.getBuilderCircuitBreakerAllowedFaults(),
+              config.getBuilderCircuitBreakerAllowedConsecutiveFaults());
     } else {
       builderCircuitBreaker = BuilderCircuitBreaker.NOOP;
     }

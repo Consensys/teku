@@ -96,6 +96,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .restApiCorsAllowedOrigins(new ArrayList<>())
           .beaconLivenessTrackingEnabled(true)
           .eth1DepositContractAddress(Eth1Address.ZERO)
+          .enableMigratedRestApi(false)
           .build();
   private static final BeaconRestApiConfig MIGRATED_CONFIG =
       BeaconRestApiConfig.builder()

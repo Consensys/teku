@@ -22,4 +22,3 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
-- Fix issue where /readiness endpoint returned 200 when Execution Client was not available.
