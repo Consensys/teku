@@ -316,7 +316,8 @@ public class ValidatorConfig {
     private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
-    private boolean failoversPublishSignedDutiesEnabled = DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
+    private boolean failoversPublishSignedDutiesEnabled =
+        DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
