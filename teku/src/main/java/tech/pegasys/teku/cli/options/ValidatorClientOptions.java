@@ -36,7 +36,7 @@ public class ValidatorClientOptions {
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Send subnet subscriptions to failover beacon nodes in addition to the primary node",
+          "Send subnet subscriptions to the configured failover beacon nodes in addition to the primary node",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
@@ -48,7 +48,7 @@ public class ValidatorClientOptions {
       names = {"--Xfailovers-publish-signed-duties-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Publish signed duties (blocks, attestations, aggregations, ...) to failover beacon nodes in addition to the primary node",
+          "Publish signed duties (blocks, attestations, aggregations, ...) to the configured failover beacon nodes in addition to the primary node",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
