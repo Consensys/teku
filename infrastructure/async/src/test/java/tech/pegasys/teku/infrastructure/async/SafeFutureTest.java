@@ -1151,10 +1151,20 @@ public class SafeFutureTest {
   @Test
   public void whenSuccessActionIsExecutedWhenFutureIsCompleted() {
     final AtomicBoolean flag = new AtomicBoolean(false);
-    SafeFuture<String> future =
+    final SafeFuture<String> future =
         SafeFuture.completedFuture("foobar").whenSuccess(() -> flag.set(true));
     assertThat(future).isCompleted();
     assertThat(flag).isTrue();
+  }
+
+  @Test
+  public void whenSuccessActionIsNotExecutedWhenFutureCompletesExceptionally() {
+    final AtomicBoolean flag = new AtomicBoolean(false);
+    final SafeFuture<Object> future =
+        SafeFuture.failedFuture(new IllegalStateException("oopsy"))
+            .whenSuccess(() -> flag.set(true));
+    assertThat(future).isCompletedExceptionally();
+    assertThat(flag).isFalse();
   }
 
   private List<Throwable> collectUncaughtExceptions() {

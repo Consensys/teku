@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -69,13 +70,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       "remote_beacon_nodes_requests_total";
 
   private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
-      new ConcurrentHashMap<>();
+      LimitedMap.createNonSynchronized(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
   private final List<RemoteValidatorApiChannel> failoverDelegates;
   private final boolean failoversSendSubnetSubscriptions;
-  private final boolean failoversSendSignedDuties;
+  private final boolean failoversPublishSignedDuties;
   private final LabelledMetric<Counter> failoverBeaconNodesRequestsCounter;
 
   public FailoverValidatorApiHandler(
@@ -83,18 +84,18 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final RemoteValidatorApiChannel primaryDelegate,
       final List<RemoteValidatorApiChannel> failoverDelegates,
       final boolean failoversSendSubnetSubscriptions,
-      final boolean failoversSendSignedDuties,
+      final boolean failoversPublishSignedDuties,
       final MetricsSystem metricsSystem) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
     this.failoversSendSubnetSubscriptions = failoversSendSubnetSubscriptions;
-    this.failoversSendSignedDuties = failoversSendSignedDuties;
+    this.failoversPublishSignedDuties = failoversPublishSignedDuties;
     failoverBeaconNodesRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
             REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the configured Beacon Nodes endpoints",
+            "Counter recording the number of requests sent to the configured Beacon Nodes endpoint(s)",
             "endpoint",
             "method",
             "outcome");
@@ -220,7 +221,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
-        failoversSendSignedDuties);
+        failoversPublishSignedDuties);
   }
 
   @Override
@@ -229,7 +230,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendAggregateAndProofs(aggregateAndProofs),
         BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
-        failoversSendSignedDuties);
+        failoversPublishSignedDuties);
   }
 
   @Override
@@ -245,7 +246,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedBlock(block),
         BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
-        failoversSendSignedDuties);
+        failoversPublishSignedDuties);
   }
 
   @Override
@@ -254,7 +255,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendSyncCommitteeMessages(syncCommitteeMessages),
         BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
-        failoversSendSignedDuties);
+        failoversPublishSignedDuties);
   }
 
   @Override
@@ -263,7 +264,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedContributionAndProofs(signedContributionAndProofs),
         BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD,
-        failoversSendSignedDuties);
+        failoversPublishSignedDuties);
   }
 
   @Override

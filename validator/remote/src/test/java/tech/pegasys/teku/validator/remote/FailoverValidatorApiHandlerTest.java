@@ -300,8 +300,8 @@ class FailoverValidatorApiHandlerTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getSendSignedDutiesRequests")
-  <T> void requestIsNotRelayedToFailoversIfFailoversSendSignedDutiesIsDisabled(
+  @MethodSource("getPublishSignedDutiesRequests")
+  <T> void requestIsNotRelayedToFailoversIfFailoversPublishSignedDutiesIsDisabled(
       final ValidatorApiChannelRequest<T> request,
       final Consumer<ValidatorApiChannel> verifyCallIsMade,
       final String methodLabel,
@@ -707,7 +707,7 @@ class FailoverValidatorApiHandlerTest {
 
     return Streams.concat(
         getSubscriptionRequests(),
-        getSendSignedDutiesRequests(),
+        getPublishSignedDutiesRequests(),
         Stream.of(
             getArguments(
                 "prepareBeaconProposer",
@@ -724,7 +724,7 @@ class FailoverValidatorApiHandlerTest {
                 null)));
   }
 
-  private static Stream<Arguments> getSendSignedDutiesRequests() {
+  private static Stream<Arguments> getPublishSignedDutiesRequests() {
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final SubmitDataError submitDataError =
         new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
