@@ -14,13 +14,25 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 public interface AsyncRunnerFactory {
 
   int DEFAULT_MAX_QUEUE_SIZE = 5000;
+  Pattern ASYNC_RUNNER_NAME_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9_]*");
 
   default AsyncRunner create(String name, int maxThreads) {
+    validateAsyncRunnerName(name);
     return create(name, maxThreads, DEFAULT_MAX_QUEUE_SIZE);
+  }
+
+  default void validateAsyncRunnerName(String asyncRunnerName) {
+    if (!ASYNC_RUNNER_NAME_PATTERN.matcher(asyncRunnerName).matches()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid async runner name %s. Must match the regex %s",
+              asyncRunnerName, ASYNC_RUNNER_NAME_PATTERN.pattern()));
+    }
   }
 
   AsyncRunner create(String name, int maxThreads, int maxQueueSize);
