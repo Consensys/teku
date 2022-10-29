@@ -196,7 +196,7 @@ public class ValidatorClientService extends Service {
             config.getSpec(),
             services.getMetricsSystem());
 
-    validatorClientService.loadValidators(validatorApiChannel, asyncRunner);
+    validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
     final SafeFuture<?> doppelgangerDetection;
 
@@ -313,13 +313,12 @@ public class ValidatorClientService extends Service {
             : Optional.empty());
   }
 
-  private void loadValidators(
+  private void initializeValidators(
       final ValidatorApiChannel validatorApiChannel, final AsyncRunner asyncRunner) {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
-    validatorIndexProvider.lookupValidators();
   }
 
   private void scheduleValidatorsDuties(
