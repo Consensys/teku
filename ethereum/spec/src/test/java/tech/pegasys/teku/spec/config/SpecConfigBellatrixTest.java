@@ -80,7 +80,7 @@ public class SpecConfigBellatrixTest {
       final SpecConfigAltair altairConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
-    return new SpecConfigBellatrix(
+    return new SpecConfigBellatrixImpl(
         altairConfig,
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
