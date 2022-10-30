@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
@@ -32,7 +32,7 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
   private final URL externalSignerUrl;
   private final BLSPublicKey publicKey;
   private final Duration externalSignerTimeout;
-  private final ThrottlingTaskQueue externalSignerTaskQueue;
+  private final ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
   private final boolean readOnly;
 
@@ -42,7 +42,7 @@ class ExternalValidatorProvider implements ValidatorSource.ValidatorProvider {
       final URL externalSignerUrl,
       final BLSPublicKey publicKey,
       final Duration externalSignerTimeout,
-      final ThrottlingTaskQueue externalSignerTaskQueue,
+      final ThrottlingTaskQueueWithPriority externalSignerTaskQueue,
       final MetricsSystem metricsSystem,
       final boolean readOnly) {
     this.spec = spec;

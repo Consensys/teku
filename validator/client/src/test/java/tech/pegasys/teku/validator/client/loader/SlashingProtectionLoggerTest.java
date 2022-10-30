@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -164,7 +164,7 @@ public class SlashingProtectionLoggerTest {
               new URL("http://127.0.0.1/"),
               publicKey,
               TIMEOUT,
-              mock(ThrottlingTaskQueue.class),
+              mock(ThrottlingTaskQueueWithPriority.class),
               metricsSystem);
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);

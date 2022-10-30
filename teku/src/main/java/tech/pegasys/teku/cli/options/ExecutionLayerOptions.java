@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
@@ -87,6 +88,15 @@ public class ExecutionLayerOptions {
       hidden = true)
   private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 
+  @Option(
+      names = {"--Xbuilder-circuit-breaker-allowed-consecutive-faults"},
+      paramLabel = "<INTEGER>",
+      description = "Circuit Breaker maximum allowed consecutive faults (missing block).",
+      arity = "1",
+      hidden = true)
+  private int builderCircuitBreakerAllowedConsecutiveFaults =
+      DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -96,7 +106,9 @@ public class ExecutionLayerOptions {
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)
-                .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults));
+                .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
+                .builderCircuitBreakerAllowedConsecutiveFaults(
+                    builderCircuitBreakerAllowedConsecutiveFaults));
     depositOptions.configure(builder);
   }
 }

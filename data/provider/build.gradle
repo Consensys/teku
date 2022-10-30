@@ -2,6 +2,7 @@ dependencies {
     api project(':ethereum:spec')
 
     implementation project(':data:serializer')
+    implementation project(':ethereum:executionclient')
     implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')

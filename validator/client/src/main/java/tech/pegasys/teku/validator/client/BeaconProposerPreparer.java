@@ -243,7 +243,7 @@ public class BeaconProposerPreparer
                     .thenApply(__ -> beaconPreparableProposers))
         .finish(
             beaconPreparableProposers -> {
-              LOG.info(
+              LOG.debug(
                   "Information about {} proposers has been processed successfully by the Beacon Node.",
                   beaconPreparableProposers.size());
               sentProposersAtLeastOnce.compareAndSet(false, true);

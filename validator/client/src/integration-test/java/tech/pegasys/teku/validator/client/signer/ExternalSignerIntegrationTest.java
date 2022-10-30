@@ -43,7 +43,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,8 +68,9 @@ public class ExternalSignerIntegrationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final ThrottlingTaskQueue queue =
-      new ThrottlingTaskQueue(8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
+  private final ThrottlingTaskQueueWithPriority queue =
+      ThrottlingTaskQueueWithPriority.create(
+          8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
   private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
 
   private ClientAndServer client;

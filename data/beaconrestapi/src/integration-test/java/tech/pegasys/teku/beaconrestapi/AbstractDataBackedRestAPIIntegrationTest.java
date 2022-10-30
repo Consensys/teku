@@ -36,6 +36,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -95,6 +96,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .restApiCorsAllowedOrigins(new ArrayList<>())
           .beaconLivenessTrackingEnabled(true)
           .eth1DepositContractAddress(Eth1Address.ZERO)
+          .enableMigratedRestApi(false)
           .build();
   private static final BeaconRestApiConfig MIGRATED_CONFIG =
       BeaconRestApiConfig.builder()
@@ -126,6 +128,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
+
+  protected final ExecutionClientDataProvider executionClientDataProvider =
+      mock(ExecutionClientDataProvider.class);
 
   private StorageSystem storageSystem;
 
@@ -212,6 +217,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 eventChannels,
                 SyncAsyncRunner.SYNC_RUNNER,
                 StubTimeProvider.withTimeInMillis(1000),
+                executionClientDataProvider,
                 spec)
             : new ReflectionBasedBeaconRestApi(
                 dataProvider,
@@ -220,6 +226,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 eventChannels,
                 SyncAsyncRunner.SYNC_RUNNER,
                 StubTimeProvider.withTimeInMillis(1000),
+                executionClientDataProvider,
                 spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();

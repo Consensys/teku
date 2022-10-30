@@ -35,7 +35,7 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
@@ -57,8 +57,9 @@ public class ExternalSignerBellatrixBlockSigningIntegrationTest {
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final ThrottlingTaskQueue queue =
-      new ThrottlingTaskQueue(8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
+  private final ThrottlingTaskQueueWithPriority queue =
+      ThrottlingTaskQueueWithPriority.create(
+          8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
 
   private ClientAndServer client;
   private ExternalSigner externalSigner;

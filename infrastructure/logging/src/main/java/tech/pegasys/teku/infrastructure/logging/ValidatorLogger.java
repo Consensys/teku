@@ -239,6 +239,15 @@ public class ValidatorLogger {
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 
+  public void validatorRegistrationsSentToTheBuilderNetwork(
+      final int successfullySentRegistrations, final int totalRegistrations) {
+    final String infoString =
+        String.format(
+            "%s%s out of %s validator(s) registrations were successfully sent to the builder network via the Beacon Node.",
+            PREFIX, successfullySentRegistrations, totalRegistrations);
+    log.info(ColorConsolePrinter.print(infoString, Color.GREEN));
+  }
+
   public void registeringValidatorsFailed(final Throwable error) {
     final String errorString =
         String.format(

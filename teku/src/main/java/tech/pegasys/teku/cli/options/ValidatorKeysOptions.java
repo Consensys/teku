@@ -98,7 +98,8 @@ public class ValidatorKeysOptions {
   @CommandLine.Option(
       names = {"--Xvalidators-external-signer-concurrent-limit"},
       paramLabel = "<INTEGER>",
-      description = "The maximum number of concurrent background requests to make to the signer.",
+      description =
+          "The maximum number of concurrent background requests to make to the signer. This only applies for aggregation slot and validator registration requests.",
       hidden = true,
       arity = "1")
   private int validatorExternalSignerConcurrentRequestLimit =
