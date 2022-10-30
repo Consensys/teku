@@ -735,7 +735,7 @@ public class SpecConfigBuilder {
     }
 
     SpecConfig build(final SpecConfigAltair specConfig) {
-      return new SpecConfigBellatrix(
+      return new SpecConfigBellatrixImpl(
           specConfig,
           bellatrixForkVersion,
           bellatrixForkEpoch,
