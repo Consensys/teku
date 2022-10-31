@@ -61,7 +61,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconRestApiTypes {
-  private static final StringValueTypeDefinition<StatusParameter> STATUS_PARAMETER_VALUE =
+  private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
       DeserializableTypeDefinition.string(StatusParameter.class)
           .formatter(StatusParameter::toString)
           .parser(StatusParameter::valueOf)
@@ -137,8 +137,7 @@ public class BeaconRestApiTypes {
               PARAM_PEER_ID_DESCRIPTION, "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"));
 
   public static final ParameterMetadata<StatusParameter> STATUS_PARAMETER =
-      new ParameterMetadata<>(
-          STATUS, STATUS_PARAMETER_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
+      new ParameterMetadata<>(STATUS, STATUS_VALUE.withDescription(PARAM_STATUS_DESCRIPTION));
 
   public static final ParameterMetadata<Bytes32> ATTESTATION_DATA_ROOT_PARAMETER =
       new ParameterMetadata<>(
