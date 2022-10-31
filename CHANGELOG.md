@@ -18,6 +18,9 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- The logic with which the default configuration is applied when using `validators-proposer-config` has been updated.
+  The logic is now more intuitive but a given proposer config file may result in a different configuration compared with the previous Teku version.
+  (Refer to https://github.com/ConsenSys/teku/pull/6325#issue-1409631918 for more information).  
 
 ### Additions and Improvements
 

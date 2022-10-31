@@ -16,13 +16,22 @@ package tech.pegasys.teku.validator.client;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ValidatorRegistrationPropertiesProvider {
+public interface ProposerConfigPropertiesProvider {
 
   Optional<Eth1Address> getFeeRecipient(BLSPublicKey publicKey);
 
-  Optional<UInt64> getGasLimit(BLSPublicKey publicKey);
+  UInt64 getGasLimit(BLSPublicKey publicKey);
+
+  Optional<UInt64> getBuilderRegistrationTimestampOverride(BLSPublicKey publicKey);
+
+  Optional<BLSPublicKey> getBuilderRegistrationPublicKeyOverride(BLSPublicKey publicKey);
+
+  boolean isBuilderEnabled(BLSPublicKey publicKey);
+
+  SafeFuture<Void> refresh();
 
   boolean isReadyToProvideProperties();
 }

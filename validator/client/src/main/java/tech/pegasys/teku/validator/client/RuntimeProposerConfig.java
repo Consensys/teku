@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 
 public class RuntimeProposerConfig {
   private final Optional<Path> storagePath;
@@ -45,23 +46,27 @@ public class RuntimeProposerConfig {
           .parser(BLSPublicKey::fromHexString)
           .format("byte")
           .build();
-  private static final DeserializableTypeDefinition<Config> CONFIG_TYPE =
-      DeserializableTypeDefinition.object(Config.class, ConfigBuilder.class)
-          .initializer(ConfigBuilder::new)
-          .finisher(ConfigBuilder::build)
+  private static final DeserializableTypeDefinition<RuntimeConfig> CONFIG_TYPE =
+      DeserializableTypeDefinition.object(RuntimeConfig.class, RuntimeConfigBuilder.class)
+          .initializer(RuntimeConfigBuilder::new)
+          .finisher(RuntimeConfigBuilder::build)
           .name("RuntimeProposerConfig")
           .withOptionalField(
               "fee_recipient",
               ETH1ADDRESS_TYPE,
-              Config::getFeeRecipient,
-              ConfigBuilder::feeRecipient)
+              RuntimeConfig::getFeeRecipient,
+              RuntimeConfigBuilder::feeRecipient)
           .withOptionalField(
-              "gas_limit", CoreTypes.UINT64_TYPE, Config::getGasLimit, ConfigBuilder::gasLimit)
+              "gas_limit",
+              CoreTypes.UINT64_TYPE,
+              RuntimeConfig::getBuilderGasLimit,
+              RuntimeConfigBuilder::gasLimit)
           .build();
-  private static final DeserializableTypeDefinition<Map<BLSPublicKey, Config>> CONFIG_MAP_TYPE =
-      DeserializableTypeDefinition.mapOf(PUBKEY_TYPE, CONFIG_TYPE, ConcurrentHashMap::new);
+  private static final DeserializableTypeDefinition<Map<BLSPublicKey, RuntimeConfig>>
+      CONFIG_MAP_TYPE =
+          DeserializableTypeDefinition.mapOf(PUBKEY_TYPE, CONFIG_TYPE, ConcurrentHashMap::new);
 
-  private final Map<BLSPublicKey, Config> proposerConfigMap = new ConcurrentHashMap<>();
+  private final Map<BLSPublicKey, RuntimeConfig> proposerConfigMap = new ConcurrentHashMap<>();
 
   public RuntimeProposerConfig(final Optional<Path> storagePath) {
     this.storagePath = storagePath;
@@ -78,21 +83,22 @@ public class RuntimeProposerConfig {
   }
 
   public Optional<Eth1Address> getEth1AddressForPubKey(final BLSPublicKey publicKey) {
-    return getProposerConfig(publicKey).flatMap(Config::getFeeRecipient);
+    return getProposerConfig(publicKey).flatMap(RuntimeConfig::getFeeRecipient);
   }
 
   public Optional<UInt64> getGasLimitForPubKey(final BLSPublicKey publicKey) {
-    return getProposerConfig(publicKey).flatMap(Config::getGasLimit);
+    return getProposerConfig(publicKey).flatMap(RuntimeConfig::getBuilderGasLimit);
   }
 
   synchronized void updateFeeRecipient(
       final BLSPublicKey publicKey, final Eth1Address eth1Address) {
     Preconditions.checkNotNull(eth1Address, "should delete rather than update to null");
-    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    final Optional<RuntimeConfig> currentConfig = getProposerConfig(publicKey);
     if (currentConfig.isEmpty()) {
-      proposerConfigMap.put(publicKey, new Config(Optional.of(eth1Address), Optional.empty()));
+      proposerConfigMap.put(
+          publicKey, new RuntimeConfigBuilder().feeRecipient(Optional.of(eth1Address)).build());
     } else {
-      ConfigBuilder configBuilder = new ConfigBuilder(currentConfig.get());
+      RuntimeConfigBuilder configBuilder = new RuntimeConfigBuilder(currentConfig.get());
       configBuilder.feeRecipient(Optional.of(eth1Address));
       updateEntry(publicKey, configBuilder.build());
     }
@@ -101,18 +107,19 @@ public class RuntimeProposerConfig {
 
   synchronized void updateGasLimit(final BLSPublicKey publicKey, final UInt64 gasLimit) {
     Preconditions.checkNotNull(gasLimit, "should delete rather than update to null");
-    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    final Optional<RuntimeConfig> currentConfig = getProposerConfig(publicKey);
     if (currentConfig.isEmpty()) {
-      proposerConfigMap.put(publicKey, new Config(Optional.empty(), Optional.of(gasLimit)));
+      proposerConfigMap.put(
+          publicKey, new RuntimeConfigBuilder().gasLimit(Optional.of(gasLimit)).build());
     } else {
-      ConfigBuilder configBuilder = new ConfigBuilder(currentConfig.get());
+      RuntimeConfigBuilder configBuilder = new RuntimeConfigBuilder(currentConfig.get());
       configBuilder.gasLimit(Optional.of(gasLimit));
       updateEntry(publicKey, configBuilder.build());
     }
     storagePath.ifPresent(this::save);
   }
 
-  private synchronized void updateEntry(final BLSPublicKey publicKey, final Config config) {
+  private synchronized void updateEntry(final BLSPublicKey publicKey, final RuntimeConfig config) {
     if (config.isEmpty()) {
       proposerConfigMap.remove(publicKey);
     } else {
@@ -121,9 +128,9 @@ public class RuntimeProposerConfig {
   }
 
   synchronized void deleteFeeRecipient(final BLSPublicKey publicKey) {
-    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    final Optional<RuntimeConfig> currentConfig = getProposerConfig(publicKey);
     if (currentConfig.isPresent()) {
-      ConfigBuilder builder = new ConfigBuilder(currentConfig.get());
+      RuntimeConfigBuilder builder = new RuntimeConfigBuilder(currentConfig.get());
       builder.feeRecipient(Optional.empty());
       updateEntry(publicKey, builder.build());
       storagePath.ifPresent(this::save);
@@ -131,16 +138,16 @@ public class RuntimeProposerConfig {
   }
 
   synchronized void deleteGasLimit(final BLSPublicKey publicKey) {
-    final Optional<Config> currentConfig = getProposerConfig(publicKey);
+    final Optional<RuntimeConfig> currentConfig = getProposerConfig(publicKey);
     if (currentConfig.isPresent()) {
-      ConfigBuilder builder = new ConfigBuilder(currentConfig.get());
+      RuntimeConfigBuilder builder = new RuntimeConfigBuilder(currentConfig.get());
       builder.gasLimit(Optional.empty());
       updateEntry(publicKey, builder.build());
       storagePath.ifPresent(this::save);
     }
   }
 
-  private Optional<Config> getProposerConfig(final BLSPublicKey publicKey) {
+  public Optional<RuntimeConfig> getProposerConfig(final BLSPublicKey publicKey) {
     return Optional.ofNullable(proposerConfigMap.get(publicKey));
   }
 
@@ -152,51 +159,42 @@ public class RuntimeProposerConfig {
     }
   }
 
-  static class Config {
-    private final Optional<Eth1Address> feeRecipient;
-    private final Optional<UInt64> gasLimit;
+  static class RuntimeConfig extends ProposerConfig.Config {
 
-    public Config(final Optional<Eth1Address> feeRecipient, final Optional<UInt64> gasLimit) {
-      this.feeRecipient = feeRecipient;
-      this.gasLimit = gasLimit;
-    }
-
-    public Optional<Eth1Address> getFeeRecipient() {
-      return feeRecipient;
-    }
-
-    public Optional<UInt64> getGasLimit() {
-      return gasLimit;
+    public RuntimeConfig(final Eth1Address feeRecipient, final BuilderConfig builder) {
+      super(feeRecipient, builder);
     }
 
     public boolean isEmpty() {
-      return feeRecipient.isEmpty() && gasLimit.isEmpty();
+      return getFeeRecipient().isEmpty() && getBuilderGasLimit().isEmpty();
     }
   }
 
-  static class ConfigBuilder {
+  static class RuntimeConfigBuilder {
     private Optional<Eth1Address> feeRecipient = Optional.empty();
     private Optional<UInt64> gasLimit = Optional.empty();
 
-    public ConfigBuilder() {}
+    public RuntimeConfigBuilder() {}
 
-    public ConfigBuilder(final Config currentConfig) {
+    public RuntimeConfigBuilder(final RuntimeConfig currentConfig) {
       feeRecipient = currentConfig.getFeeRecipient();
-      gasLimit = currentConfig.getGasLimit();
+      gasLimit = currentConfig.getBuilderGasLimit();
     }
 
-    public ConfigBuilder feeRecipient(final Optional<Eth1Address> feeRecipient) {
+    public RuntimeConfigBuilder feeRecipient(final Optional<Eth1Address> feeRecipient) {
       this.feeRecipient = feeRecipient;
       return this;
     }
 
-    public ConfigBuilder gasLimit(final Optional<UInt64> gasLimit) {
+    public RuntimeConfigBuilder gasLimit(final Optional<UInt64> gasLimit) {
       this.gasLimit = gasLimit;
       return this;
     }
 
-    public Config build() {
-      return new Config(feeRecipient, gasLimit);
+    public RuntimeConfig build() {
+      return new RuntimeConfig(
+          feeRecipient.orElse(null),
+          gasLimit.map(gl -> new ProposerConfig.BuilderConfig(null, gl, null)).orElse(null));
     }
   }
 }
