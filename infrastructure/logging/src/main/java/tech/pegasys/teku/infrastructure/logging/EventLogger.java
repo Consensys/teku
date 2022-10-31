@@ -153,17 +153,17 @@ public class EventLogger {
   }
 
   public void builderIsNotAvailable(final String errorMessage) {
-    final String builderOfflineEventLog =
+    final String builderIsNotAvailableEventLog =
         String.format(
             "The builder is not available: %s. Block production will fallback to the execution engine.",
             errorMessage);
-    warn(builderOfflineEventLog, Color.YELLOW);
+    warn(builderIsNotAvailableEventLog, Color.YELLOW);
   }
 
-  public void builderIsAvailableAgain() {
-    final String builderOnlineEventLog =
-        "The builder is available again. It will be used for block production.";
-    info(builderOnlineEventLog, Color.GREEN);
+  public void builderIsAvailable() {
+    final String builderIsAvailableEventLog =
+        "The builder is available. It will be used for block production.";
+    info(builderIsAvailableEventLog, Color.GREEN);
   }
 
   public void syncStart() {

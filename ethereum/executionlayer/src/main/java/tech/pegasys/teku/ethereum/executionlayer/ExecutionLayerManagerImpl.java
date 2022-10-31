@@ -533,7 +533,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 markBuilderAsNotAvailable(statusResponse.getErrorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
-                  eventLogger.builderIsAvailableAgain();
+                  eventLogger.builderIsAvailable();
                 }
               }
             },

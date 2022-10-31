@@ -137,7 +137,7 @@ class ExecutionLayerManagerImplTest {
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
-    verify(eventLogger).builderIsAvailableAgain();
+    verify(eventLogger).builderIsAvailable();
   }
 
   @Test
