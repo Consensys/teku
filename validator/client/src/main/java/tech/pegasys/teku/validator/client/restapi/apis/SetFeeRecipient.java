@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.SetFeeRecipientException;
 
 public class SetFeeRecipient extends RestApiEndpoint {
@@ -47,10 +47,10 @@ public class SetFeeRecipient extends RestApiEndpoint {
                   SetFeeRecipientBody::setEth1Address)
               .build();
 
-  // beaconProposerPreparer is only empty when debug tools is creating documentation
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  // proposerConfigManager is only empty when debug tools is creating documentation
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
-  public SetFeeRecipient(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public SetFeeRecipient(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("SetFeeRecipient")
@@ -71,7 +71,7 @@ public class SetFeeRecipient extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
@@ -79,7 +79,7 @@ public class SetFeeRecipient extends RestApiEndpoint {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final SetFeeRecipientBody body = request.getRequestBody();
     try {
-      beaconProposerPreparer
+      proposerConfigManager
           .orElseThrow(
               () ->
                   new IllegalArgumentException(

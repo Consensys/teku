@@ -48,20 +48,14 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
-import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 class ValidatorRegistratorTest {
 
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
-  private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
-  private final ProposerConfig proposerConfig = mock(ProposerConfig.class);
-  private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
-  private final ValidatorRegistrationPropertiesProvider validatorRegistrationPropertiesProvider =
-      mock(ValidatorRegistrationPropertiesProvider.class);
+  private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider =
+      mock(ProposerConfigPropertiesProvider.class);
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender =
       mock(ValidatorRegistrationBatchSender.class);
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
@@ -95,22 +89,18 @@ class ValidatorRegistratorTest {
             specContext.getSpec(),
             stubTimeProvider,
             ownedValidators,
-            proposerConfigProvider,
-            validatorConfig,
-            validatorRegistrationPropertiesProvider,
+            proposerConfigPropertiesProvider,
             validatorRegistrationBatchSender);
     when(validatorRegistrationBatchSender.sendInBatches(any())).thenReturn(SafeFuture.COMPLETE);
 
-    when(proposerConfigProvider.getProposerConfig())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(any())).thenReturn(true);
 
-    when(proposerConfig.isBuilderEnabledForPubKey(any())).thenReturn(Optional.of(true));
-
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(any()))
+    when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
+    when(proposerConfigPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(eth1Address));
-    when(validatorRegistrationPropertiesProvider.getGasLimit(any()))
-        .thenReturn(Optional.of(gasLimit));
+    when(proposerConfigPropertiesProvider.getGasLimit(any())).thenReturn(gasLimit);
+
+    when(proposerConfigPropertiesProvider.refresh()).thenReturn(SafeFuture.COMPLETE);
 
     // random signature for all signings
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
@@ -120,7 +110,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
+    when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     runRegistrationFlowForEpoch(0);
 
@@ -162,61 +152,12 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
-  void registersValidators_shouldRegisterIfDefaultBuilderIsEnabledAndNoSpecificBuilderConfig() {
-    when(proposerConfig.isBuilderEnabledForPubKey(validator1.getPublicKey()))
-        .thenReturn(Optional.empty());
-    when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(true);
-
-    setActiveValidators(validator1);
-
-    runRegistrationFlowForEpoch(0);
-    runRegistrationFlowForEpoch(1);
-
-    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
-
-    registrationCalls.forEach(
-        registrationCall ->
-            verifyRegistrations(registrationCall, List.of(validator1), Optional.empty()));
-
-    verify(signer, times(1)).signValidatorRegistration(any());
-  }
-
-  @TestTemplate
   void registersValidators_shouldRegisterWithTimestampOverride() {
     final UInt64 timestampOverride = dataStructureUtil.randomUInt64();
 
-    when(validatorConfig.getBuilderRegistrationTimestampOverride())
+    when(proposerConfigPropertiesProvider.getBuilderRegistrationTimestampOverride(
+            validator1.getPublicKey()))
         .thenReturn(Optional.of(timestampOverride));
-
-    setActiveValidators(validator1);
-
-    runRegistrationFlowForEpoch(0);
-    runRegistrationFlowForEpoch(1);
-
-    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
-
-    registrationCalls.forEach(
-        registrationCall ->
-            verifyRegistrations(
-                registrationCall,
-                List.of(validator1),
-                Optional.of(
-                    validatorRegistration ->
-                        assertThat(validatorRegistration.getTimestamp())
-                            .isEqualTo(timestampOverride))));
-
-    verify(signer, times(1)).signValidatorRegistration(any());
-  }
-
-  @TestTemplate
-  void registersValidators_shouldRegisterWithTimestampOverrideViaProposerConfig() {
-    final UInt64 timestampOverride = dataStructureUtil.randomUInt64();
-
-    when(proposerConfig.getBuilderRegistrationOverrides(validator1.getPublicKey()))
-        .thenReturn(Optional.of(new RegistrationOverrides(timestampOverride, null)));
-    // this override should not be used
-    when(validatorConfig.getBuilderRegistrationTimestampOverride())
-        .thenReturn(Optional.of(dataStructureUtil.randomUInt64()));
 
     setActiveValidators(validator1);
 
@@ -241,39 +182,12 @@ class ValidatorRegistratorTest {
   @TestTemplate
   void registersValidators_shouldRegisterWithPublicKeyOverride() {
     final BLSPublicKey publicKeyOverride = dataStructureUtil.randomPublicKey();
-    when(validatorConfig.getBuilderRegistrationPublicKeyOverride())
+    when(proposerConfigPropertiesProvider.getBuilderRegistrationPublicKeyOverride(
+            validator1.getPublicKey()))
         .thenReturn(Optional.of(publicKeyOverride));
-
-    setActiveValidators(validator1, validator2);
-
-    runRegistrationFlowForEpoch(0);
-    runRegistrationFlowForEpoch(1);
-
-    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
-
-    registrationCalls.forEach(
-        registrationCall ->
-            verifyRegistrations(
-                registrationCall,
-                List.of(validator1, validator2),
-                Map.of(
-                    validator1.getPublicKey(),
-                    publicKeyOverride,
-                    validator2.getPublicKey(),
-                    publicKeyOverride)));
-
-    verify(signer, times(2)).signValidatorRegistration(any());
-  }
-
-  @TestTemplate
-  void registersValidators_shouldRegisterWithPublicKeyOverrideViaProposerConfig() {
-    final BLSPublicKey publicKeyOverride = dataStructureUtil.randomPublicKey();
-
-    when(proposerConfig.getBuilderRegistrationOverrides(any()))
-        .thenReturn(Optional.of(new RegistrationOverrides(null, publicKeyOverride)));
-    // this override should not be used
-    when(validatorConfig.getBuilderRegistrationPublicKeyOverride())
-        .thenReturn(Optional.of(dataStructureUtil.randomPublicKey()));
+    when(proposerConfigPropertiesProvider.getBuilderRegistrationPublicKeyOverride(
+            validator2.getPublicKey()))
+        .thenReturn(Optional.of(publicKeyOverride));
 
     setActiveValidators(validator1, validator2);
 
@@ -329,20 +243,22 @@ class ValidatorRegistratorTest {
     final UInt64 otherTimestamp = dataStructureUtil.randomUInt64();
 
     // fee recipient changed for validator2
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
+    when(proposerConfigPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.of(otherEth1Address));
 
     // gas limit changed for validator3
-    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
-        .thenReturn(Optional.of(otherGasLimit));
+    when(proposerConfigPropertiesProvider.getGasLimit(validator3.getPublicKey()))
+        .thenReturn(otherGasLimit);
 
     // public key overwritten for validator4
-    when(proposerConfig.getBuilderRegistrationOverrides(validator4.getPublicKey()))
-        .thenReturn(Optional.of(new RegistrationOverrides(null, otherPublicKey)));
+    when(proposerConfigPropertiesProvider.getBuilderRegistrationPublicKeyOverride(
+            validator4.getPublicKey()))
+        .thenReturn(Optional.of(otherPublicKey));
 
     // timestamp overwritten for validator5
-    when(proposerConfig.getBuilderRegistrationOverrides(validator5.getPublicKey()))
-        .thenReturn(Optional.of(new RegistrationOverrides(otherTimestamp, null)));
+    when(proposerConfigPropertiesProvider.getBuilderRegistrationTimestampOverride(
+            validator5.getPublicKey()))
+        .thenReturn(Optional.of(otherTimestamp));
 
     runRegistrationFlowForEpoch(1);
 
@@ -391,7 +307,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterNewlyAddedValidators_ifNotReady() {
-    when(validatorRegistrationPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
+    when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
     validatorRegistrator.onValidatorsAdded();
 
@@ -425,13 +341,10 @@ class ValidatorRegistratorTest {
     setActiveValidators(validator1, validator2, validator3);
 
     // validator registration is disabled for validator2
-    when(proposerConfig.isBuilderEnabledForPubKey(validator2.getPublicKey()))
-        .thenReturn(Optional.of(false));
-    // validator registration enabled flag is not present for validator 3, so will fall back to
-    // false
-    when(proposerConfig.isBuilderEnabledForPubKey(validator3.getPublicKey()))
-        .thenReturn(Optional.empty());
-    when(validatorConfig.isBuilderRegistrationDefaultEnabled()).thenReturn(false);
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator2.getPublicKey()))
+        .thenReturn(false);
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator3.getPublicKey()))
+        .thenReturn(false);
 
     runRegistrationFlowForEpoch(0);
 
@@ -441,19 +354,17 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void retrievesCorrectGasLimitForValidators() {
-    setActiveValidators(validator1, validator2, validator3);
+    setActiveValidators(validator1, validator2);
 
     final UInt64 validator2GasLimit = UInt64.valueOf(28_000_000);
-    final UInt64 defaultGasLimit = UInt64.valueOf(27_000_000);
+    final UInt64 validator1GasLimit = UInt64.valueOf(27_000_000);
+
+    when(proposerConfigPropertiesProvider.getGasLimit(validator1.getPublicKey()))
+        .thenReturn(validator1GasLimit);
 
     // validator2 will have custom gas limit
-    when(validatorRegistrationPropertiesProvider.getGasLimit(validator2.getPublicKey()))
-        .thenReturn(Optional.of(validator2GasLimit));
-    // validator3 gas limit will fall back to a default
-    when(validatorRegistrationPropertiesProvider.getGasLimit(validator3.getPublicKey()))
-        .thenReturn(Optional.empty());
-    when(validatorConfig.getBuilderRegistrationDefaultGasLimit()).thenReturn(defaultGasLimit);
-
+    when(proposerConfigPropertiesProvider.getGasLimit(validator2.getPublicKey()))
+        .thenReturn(validator2GasLimit);
     runRegistrationFlowForEpoch(0);
 
     final List<SignedValidatorRegistration> registrationCalls = captureRegistrationCall();
@@ -463,20 +374,15 @@ class ValidatorRegistratorTest {
           BLSPublicKey publicKey = validatorRegistration.getPublicKey();
           UInt64 gasLimit = validatorRegistration.getGasLimit();
           if (publicKey.equals(validator1.getPublicKey())) {
-            assertThat(gasLimit).isEqualTo(this.gasLimit);
+            assertThat(gasLimit).isEqualTo(validator1GasLimit);
           }
           if (publicKey.equals(validator2.getPublicKey())) {
             assertThat(gasLimit).isEqualTo(validator2GasLimit);
           }
-          if (publicKey.equals(validator3.getPublicKey())) {
-            assertThat(gasLimit).isEqualTo(defaultGasLimit);
-          }
         };
 
     verifyRegistrations(
-        registrationCalls,
-        List.of(validator1, validator2, validator3),
-        Optional.of(gasLimitRequirements));
+        registrationCalls, List.of(validator1, validator2), Optional.of(gasLimitRequirements));
   }
 
   @TestTemplate
@@ -484,7 +390,7 @@ class ValidatorRegistratorTest {
     setActiveValidators(validator1, validator2);
 
     // no fee recipient provided for validator2
-    when(validatorRegistrationPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
+    when(proposerConfigPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
         .thenReturn(Optional.empty());
 
     runRegistrationFlowForEpoch(0);

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,6 +41,14 @@ public class ProposerConfig {
       @JsonProperty(value = "default_config") final Config defaultConfig) {
     checkNotNull(defaultConfig, "\"default_config\" is required");
     checkNotNull(defaultConfig.feeRecipient, "\"fee_recipient\" is required in \"default_config\"");
+    checkState(
+        defaultConfig.builder == null || defaultConfig.builder.enabled != null,
+        "\"enabled\" is required in \"default_config.builder\"");
+    checkState(
+        defaultConfig.builder == null
+            || defaultConfig.builder.registrationOverrides == null
+            || defaultConfig.builder.registrationOverrides.publicKey == null,
+        "\"publicKey\" is not allowed in \"default_config.builder.registrationOverrides\"");
     this.proposerConfig = proposerConfig == null ? ImmutableMap.of() : proposerConfig;
     this.defaultConfig = defaultConfig;
   }
@@ -52,21 +61,6 @@ public class ProposerConfig {
     return getConfigForPubKey(Bytes48.fromHexString(pubKey));
   }
 
-  public Optional<Boolean> isBuilderEnabledForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilder().map(BuilderConfig::isEnabled);
-  }
-
-  public Optional<UInt64> getBuilderGasLimitForPubKey(final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey).getBuilderGasLimit();
-  }
-
-  public Optional<RegistrationOverrides> getBuilderRegistrationOverrides(
-      final BLSPublicKey pubKey) {
-    return getConfigForPubKeyOrDefault(pubKey)
-        .getBuilder()
-        .flatMap(BuilderConfig::getRegistrationOverrides);
-  }
-
   public Config getDefaultConfig() {
     return defaultConfig;
   }
@@ -77,10 +71,6 @@ public class ProposerConfig {
 
   private Optional<Config> getConfigForPubKey(final Bytes48 pubKey) {
     return Optional.ofNullable(proposerConfig.get(pubKey));
-  }
-
-  private Config getConfigForPubKeyOrDefault(final BLSPublicKey pubKey) {
-    return getConfigForPubKey(pubKey).orElse(defaultConfig);
   }
 
   @Override
@@ -165,14 +155,13 @@ public class ProposerConfig {
         @JsonProperty(value = "gas_limit") final UInt64 gasLimit,
         @JsonProperty(value = "registration_overrides")
             final RegistrationOverrides registrationOverrides) {
-      checkNotNull(enabled, "\"enabled\" is required in \"builder\"");
       this.enabled = enabled;
       this.gasLimit = gasLimit;
       this.registrationOverrides = registrationOverrides;
     }
 
-    public Boolean isEnabled() {
-      return enabled;
+    public Optional<Boolean> isEnabled() {
+      return Optional.ofNullable(enabled);
     }
 
     public Optional<UInt64> getGasLimit() {
