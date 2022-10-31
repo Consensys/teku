@@ -199,12 +199,7 @@ public class ProposerConfigManagerTest {
             .isEqualTo(randomGasLimit);
         break;
       case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY:
-        final BLSPublicKey randomKey = dataStructureUtil.randomPublicKey();
-        prepareConfigWithDefaultConfigProperty(property, randomKey);
-        assertThat(
-                proposerConfigManager.getBuilderRegistrationPublicKeyOverride(
-                    validatorNotInConfig.getPublicKey()))
-            .contains(randomKey);
+        // not allowed
         break;
       case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP:
         final UInt64 randomTimestamp = dataStructureUtil.randomUInt64();
@@ -420,7 +415,7 @@ public class ProposerConfigManagerTest {
                 validatorInConfig.getPublicKey().toBytesCompressed(),
                 buildSingleConfigWithProperty(property, value, false)),
             new ProposerConfig.Config(
-                defaultFeeRecipientConfig, new ProposerConfig.BuilderConfig(null, null, null)));
+                defaultFeeRecipientConfig, new ProposerConfig.BuilderConfig(false, null, null)));
 
     when(proposerConfigProvider.getProposerConfig())
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
@@ -451,17 +446,19 @@ public class ProposerConfigManagerTest {
       case BUILDER_GAS_LIMIT:
         return new ProposerConfig.Config(
             isDefault ? defaultFeeRecipientConfig : null,
-            new ProposerConfig.BuilderConfig(null, (UInt64) value, null));
+            new ProposerConfig.BuilderConfig(isDefault ? false : null, (UInt64) value, null));
       case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY:
         return new ProposerConfig.Config(
             isDefault ? defaultFeeRecipientConfig : null,
             new ProposerConfig.BuilderConfig(
-                null, null, new RegistrationOverrides(null, (BLSPublicKey) value)));
+                isDefault ? false : null,
+                null,
+                new RegistrationOverrides(null, (BLSPublicKey) value)));
       case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP:
         return new ProposerConfig.Config(
             isDefault ? defaultFeeRecipientConfig : null,
             new ProposerConfig.BuilderConfig(
-                null, null, new RegistrationOverrides((UInt64) value, null)));
+                isDefault ? false : null, null, new RegistrationOverrides((UInt64) value, null)));
     }
 
     throw new RuntimeException();
