@@ -57,12 +57,13 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
       return false;
     }
     final SpecConfigCapellaImpl that = (SpecConfigCapellaImpl) o;
-    return Objects.equals(capellaForkVersion, that.capellaForkVersion)
+    return Objects.equals(specConfig, that.specConfig)
+        && Objects.equals(capellaForkVersion, that.capellaForkVersion)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(capellaForkVersion, capellaForkEpoch);
+    return Objects.hash(specConfig, capellaForkVersion, capellaForkEpoch);
   }
 }
