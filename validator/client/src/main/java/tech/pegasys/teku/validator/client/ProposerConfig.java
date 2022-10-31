@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,6 +41,14 @@ public class ProposerConfig {
       @JsonProperty(value = "default_config") final Config defaultConfig) {
     checkNotNull(defaultConfig, "\"default_config\" is required");
     checkNotNull(defaultConfig.feeRecipient, "\"fee_recipient\" is required in \"default_config\"");
+    checkState(
+        defaultConfig.builder == null || defaultConfig.builder.enabled != null,
+        "\"enabled\" is required in \"default_config.builder\"");
+    checkState(
+        defaultConfig.builder == null
+            || defaultConfig.builder.registrationOverrides == null
+            || defaultConfig.builder.registrationOverrides.publicKey == null,
+        "\"publicKey\" is not allowed in \"default_config.builder.registrationOverrides\"");
     this.proposerConfig = proposerConfig == null ? ImmutableMap.of() : proposerConfig;
     this.defaultConfig = defaultConfig;
   }

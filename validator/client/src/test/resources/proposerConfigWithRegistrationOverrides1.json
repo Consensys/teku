@@ -16,8 +16,7 @@
     "builder": {
       "enabled": false,
       "registration_overrides": {
-        "timestamp": "1235",
-        "public_key": "0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a"
+        "timestamp": "1235"
       }
     }
   }

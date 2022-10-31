@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.proposerconfig.loader;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Optional;
@@ -105,21 +106,45 @@ public class ProposerConfigLoaderTest {
   void shouldNotLoadMissingFeeRecipient() {
     final URL resource = Resources.getResource("proposerConfigInvalid4.json");
 
-    assertThatThrownBy(() -> loader.getProposerConfig(resource));
+    assertThatThrownBy(() -> loader.getProposerConfig(resource))
+        .hasRootCauseInstanceOf(NullPointerException.class)
+        .hasRootCauseMessage("\"fee_recipient\" is required in \"default_config\"");
   }
 
   @Test
   void shouldNotLoadMissingDefault() {
     final URL resource = Resources.getResource("proposerConfigInvalid5.json");
 
-    assertThatThrownBy(() -> loader.getProposerConfig(resource));
+    assertThatThrownBy(() -> loader.getProposerConfig(resource))
+        .hasRootCauseInstanceOf(NullPointerException.class)
+        .hasRootCauseMessage("\"default_config\" is required");
   }
 
   @Test
   void shouldNotLoadInvalidJson() {
     final URL resource = Resources.getResource("proposerConfigInvalid6.json");
 
-    assertThatThrownBy(() -> loader.getProposerConfig(resource));
+    assertThatThrownBy(() -> loader.getProposerConfig(resource))
+        .hasRootCauseInstanceOf(JsonParseException.class);
+  }
+
+  @Test
+  void shouldNotLoadMissingEnabledInBuilderDefaultConfig() {
+    final URL resource = Resources.getResource("proposerConfigInvalid7.json");
+
+    assertThatThrownBy(() -> loader.getProposerConfig(resource))
+        .hasRootCauseInstanceOf(IllegalStateException.class)
+        .hasRootCauseMessage("\"enabled\" is required in \"default_config.builder\"");
+  }
+
+  @Test
+  void shouldNotLoadBuilderOverridesWithPubKeyInDefaultConfig() {
+    final URL resource = Resources.getResource("proposerConfigInvalid8.json");
+
+    assertThatThrownBy(() -> loader.getProposerConfig(resource))
+        .hasRootCauseInstanceOf(IllegalStateException.class)
+        .hasRootCauseMessage(
+            "\"publicKey\" is not allowed in \"default_config.builder.registrationOverrides\"");
   }
 
   private void validateContent1(final ProposerConfig config) {
@@ -221,10 +246,7 @@ public class ProposerConfigLoaderTest {
     assertThat(defaultRegistrationOverrides)
         .hasValueSatisfying(
             registrationOverrides -> {
-              assertThat(registrationOverrides.getPublicKey())
-                  .hasValue(
-                      BLSPublicKey.fromHexString(
-                          "0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a"));
+              assertThat(registrationOverrides.getPublicKey()).isEmpty();
               assertThat(registrationOverrides.getTimestamp()).hasValue(UInt64.valueOf(1235));
             });
   }
