@@ -102,6 +102,13 @@ public class SpecConfigLoader {
         reader.readAndApply(bellatrixInput, ignoreUnknownConfigItems);
       }
     }
+
+    try (final InputStream capellaInput = loadCapellaPreset(preset).orElse(null)) {
+      // capella is optional
+      if (capellaInput != null) {
+        reader.readAndApply(capellaInput, ignoreUnknownConfigItems);
+      }
+    }
   }
 
   private static InputStream loadConfigurationFile(final String source) throws IOException {
@@ -130,6 +137,11 @@ public class SpecConfigLoader {
   private static Optional<InputStream> loadBellatrixPreset(final String preset) throws IOException {
     return getPresetLoader()
         .load(PRESET_PATH + preset + "/bellatrix.yaml", PRESET_PATH + preset + "/bellatrix.yml");
+  }
+
+  private static Optional<InputStream> loadCapellaPreset(final String preset) throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/capella.yaml", PRESET_PATH + preset + "/capella.yml");
   }
 
   private static ResourceLoader getConfigLoader() {
