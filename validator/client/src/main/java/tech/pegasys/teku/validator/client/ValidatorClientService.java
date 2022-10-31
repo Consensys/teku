@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.validator.client;
 
-import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -31,7 +29,7 @@ import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -78,6 +76,9 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
+
+  private Optional<DoppelgangerDetectionService> maybeDoppelgangerDetectionService =
+      Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
@@ -201,32 +202,14 @@ public class ValidatorClientService extends Service {
     final SafeFuture<?> doppelgangerDetection;
 
     if (validatorConfig.isDoppelgangerDetectionEnabled()) {
-      final SafeFuture<IntCollection> maybeValidatorIndices =
-          validatorClientService.validatorIndexProvider.getValidatorIndices();
-      doppelgangerDetection =
-          maybeValidatorIndices.thenCombine(
-              genesisDataProvider.getGenesisTime(),
-              (validatorIndices, genesisTime) -> {
-                final UInt64 currentEpoch =
-                    validatorClientService.spec.computeEpochAtSlot(
-                        validatorClientService.spec.getCurrentSlot(
-                            services.getTimeProvider().getTimeInMillis(), genesisTime));
-                final List<UInt64> validatorIndicesList =
-                    validatorIndices
-                        .intStream()
-                        .mapToObj(UInt64::valueOf)
-                        .collect(Collectors.toList());
-                DoppelgangerDetectionService doppelgangerDetectionService =
-                    new DoppelgangerDetectionService(
-                        asyncRunner,
-                        validatorApiChannel,
-                        validatorIndicesList,
-                        currentEpoch,
-                        validatorClientService.spec,
-                        services.getTimeProvider(),
-                        genesisDataProvider);
-                return doppelgangerDetectionService.start().join();
-              });
+      validatorClientService.initializeDoppelgangerDetectionService(
+          asyncRunner,
+          validatorApiChannel,
+          validatorClientService.validatorIndexProvider,
+          validatorClientService.spec,
+          services.getTimeProvider(),
+          genesisDataProvider);
+      doppelgangerDetection = SafeFuture.COMPLETE;
     } else {
       doppelgangerDetection = SafeFuture.COMPLETE;
     }
@@ -243,6 +226,24 @@ public class ValidatorClientService extends Service {
         .ifExceptionGetsHereRaiseABug();
 
     return validatorClientService;
+  }
+
+  private void initializeDoppelgangerDetectionService(
+      AsyncRunner asyncRunner,
+      ValidatorApiChannel validatorApiChannel,
+      ValidatorIndexProvider validatorIndexProvider,
+      Spec spec,
+      TimeProvider timeProvider,
+      GenesisDataProvider genesisDataProvider) {
+    DoppelgangerDetectionService doppelgangerDetectionService =
+        new DoppelgangerDetectionService(
+            asyncRunner,
+            validatorApiChannel,
+            validatorIndexProvider,
+            spec,
+            timeProvider,
+            genesisDataProvider);
+    maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetectionService);
   }
 
   private static BeaconNodeApi createBeaconNodeApi(
@@ -435,6 +436,7 @@ public class ValidatorClientService extends Service {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
+              maybeDoppelgangerDetectionService.ifPresent(Service::start);
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -36,25 +37,24 @@ public class DoppelgangerDetectionService extends Service {
   private final Duration doppelgangerCheckDelay = Duration.ofSeconds(12);
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
-  private final List<UInt64> validatorIndices;
-  private final UInt64 epoch;
+  private final ValidatorIndexProvider validatorIndexProvider;
   private final Spec spec;
   private final TimeProvider timeProvider;
   private final GenesisDataProvider genesisDataProvider;
+
+  private Optional<UInt64> epochAtStart = Optional.empty();
   private volatile Cancellable doppelgangerDetectionTask;
 
   public DoppelgangerDetectionService(
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
-      final List<UInt64> validatorIndices,
-      final UInt64 epoch,
+      final ValidatorIndexProvider validatorIndexProvider,
       final Spec spec,
       final TimeProvider timeProvider,
       final GenesisDataProvider genesisDataProvider) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
-    this.validatorIndices = validatorIndices;
-    this.epoch = epoch;
+    this.validatorIndexProvider = validatorIndexProvider;
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.genesisDataProvider = genesisDataProvider;
@@ -65,7 +65,7 @@ public class DoppelgangerDetectionService extends Service {
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
             this::checkValidatorsDoppelganger,
-            Duration.ZERO,
+            doppelgangerCheckDelay,
             doppelgangerCheckDelay,
             throwable -> LOGGER.error("Error while checking validators doppelgangers.", throwable));
     return SafeFuture.COMPLETE;
@@ -85,30 +85,54 @@ public class DoppelgangerDetectionService extends Service {
               final UInt64 currentEpoch =
                   spec.computeEpochAtSlot(
                       spec.getCurrentSlot(timeProvider.getTimeInMillis(), genesisTime));
-              if (currentEpoch.minus(epoch).isGreaterThan(2)) {
+              if (epochAtStart.isEmpty()) {
+                epochAtStart = Optional.of(currentEpoch);
+              }
+
+              if(currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
                 return stop();
               }
-              return validatorApiChannel
-                  .checkValidatorsDoppelganger(validatorIndices, epoch)
-                  .thenApply(this::doppelgangerDetected)
-                  .exceptionally(
-                      throwable -> {
-                        LOGGER.error("Unable to check validators doppelganger.", throwable);
-                        return false;
-                      })
-                  .thenApply(
-                      doppelgangerDetected -> {
-                        if (doppelgangerDetected) {
-                          LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");
-                          System.exit(1);
-                        }
-                        return null;
-                      });
+
+              final SafeFuture<IntCollection> maybeValidatorIndices =
+                  validatorIndexProvider.getValidatorIndices();
+              maybeValidatorIndices.thenApply(
+                  validatorIndices ->
+                      validatorApiChannel
+                          .checkValidatorsDoppelganger(
+                              validatorIndices
+                                  .intStream()
+                                  .mapToObj(UInt64::valueOf)
+                                  .collect(Collectors.toList()),
+                              currentEpoch)
+                          .thenApply(
+                              validatorLivenessAtEpoches ->
+                                  doppelgangerDetected(
+                                      validatorLivenessAtEpoches,
+                                      validatorIndices
+                                          .intStream()
+                                          .mapToObj(UInt64::valueOf)
+                                          .collect(Collectors.toList())))
+                          .exceptionally(
+                              throwable -> {
+                                LOGGER.error("Unable to check validators doppelganger.", throwable);
+                                return false;
+                              })
+                          .thenApply(
+                              doppelgangerDetected -> {
+                                if (doppelgangerDetected) {
+                                  LOGGER.fatal(
+                                      "Doppelganger detected. Shutting down Validator Client.");
+                                  System.exit(1);
+                                }
+                                return null;
+                              }));
+              return null;
             });
   }
 
   private boolean doppelgangerDetected(
-      Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches) {
+      Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
+      List<UInt64> validatorIndices) {
     if (validatorLivenessAtEpoches.isPresent()) {
       List<ValidatorLivenessAtEpoch> doppelgangers =
           validatorLivenessAtEpoches.get().stream()
