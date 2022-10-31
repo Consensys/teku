@@ -1148,6 +1148,25 @@ public class SafeFutureTest {
     assertThat(result).containsExactly("foo", "bar");
   }
 
+  @Test
+  public void whenSuccessActionIsExecutedWhenFutureIsCompleted() {
+    final AtomicBoolean flag = new AtomicBoolean(false);
+    final SafeFuture<String> future =
+        SafeFuture.completedFuture("foobar").whenSuccess(() -> flag.set(true));
+    assertThat(future).isCompleted();
+    assertThat(flag).isTrue();
+  }
+
+  @Test
+  public void whenSuccessActionIsNotExecutedWhenFutureCompletesExceptionally() {
+    final AtomicBoolean flag = new AtomicBoolean(false);
+    final SafeFuture<Object> future =
+        SafeFuture.failedFuture(new IllegalStateException("oopsy"))
+            .whenSuccess(() -> flag.set(true));
+    assertThat(future).isCompletedExceptionally();
+    assertThat(flag).isFalse();
+  }
+
   private List<Throwable> collectUncaughtExceptions() {
     final List<Throwable> caughtExceptions = new ArrayList<>();
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));

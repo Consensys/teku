@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -38,9 +39,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -62,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -78,7 +82,7 @@ import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.ValidatorA
 
 class FailoverValidatorApiHandlerTest {
 
-  private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static final Spec SPEC = TestSpecFactory.createMinimalBellatrix();
   private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
@@ -117,6 +121,7 @@ class FailoverValidatorApiHandlerTest {
             beaconNodeReadinessManager,
             primaryApiChannel,
             failoverDelegates,
+            true,
             true,
             stubMetricsSystem);
   }
@@ -231,7 +236,12 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
+            beaconNodeReadinessManager,
+            primaryApiChannel,
+            List.of(),
+            true,
+            true,
+            stubMetricsSystem);
 
     // readiness is ignored
     when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
@@ -262,6 +272,47 @@ class FailoverValidatorApiHandlerTest {
             beaconNodeReadinessManager,
             primaryApiChannel,
             List.of(failoverApiChannel1, failoverApiChannel2),
+            false,
+            true,
+            stubMetricsSystem);
+
+    setupSuccesses(request, response, primaryApiChannel);
+
+    final SafeFuture<T> result = request.run(failoverApiHandler);
+
+    assertThat(result).isCompletedWithValue(response);
+    verifyCallIsMade.accept(primaryApiChannel);
+
+    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
+
+    verifyRequestCounters(
+        primaryApiChannel,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
+        failoverApiChannel1,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
+    verifyRequestCounters(
+        failoverApiChannel2,
+        methodLabel,
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getPublishSignedDutiesRequests")
+  <T> void requestIsNotRelayedToFailoversIfFailoversPublishSignedDutiesIsDisabled(
+      final ValidatorApiChannelRequest<T> request,
+      final Consumer<ValidatorApiChannel> verifyCallIsMade,
+      final String methodLabel,
+      final T response) {
+
+    failoverApiHandler =
+        new FailoverValidatorApiHandler(
+            beaconNodeReadinessManager,
+            primaryApiChannel,
+            List.of(failoverApiChannel1, failoverApiChannel2),
+            true,
             false,
             stubMetricsSystem);
 
@@ -330,7 +381,12 @@ class FailoverValidatorApiHandlerTest {
 
     failoverApiHandler =
         new FailoverValidatorApiHandler(
-            beaconNodeReadinessManager, primaryApiChannel, List.of(), true, stubMetricsSystem);
+            beaconNodeReadinessManager,
+            primaryApiChannel,
+            List.of(),
+            true,
+            true,
+            stubMetricsSystem);
 
     // readiness is ignored
     when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
@@ -515,6 +571,40 @@ class FailoverValidatorApiHandlerTest {
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
   }
 
+  @Test
+  public void publishesBlindedBlockOnlyToTheBeaconNodeWhichCreatedIt() {
+    final UInt64 slot = UInt64.ONE;
+    final BLSSignature randaoReveal = DATA_STRUCTURE_UTIL.randomSignature();
+
+    final ValidatorApiChannelRequest<Optional<BeaconBlock>> creationRequest =
+        apiChannel -> apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), true);
+
+    setupFailures(creationRequest, primaryApiChannel);
+    setupSuccesses(creationRequest, Optional.of(mock(BeaconBlock.class)), failoverApiChannel1);
+
+    SafeFutureAssert.assertThatSafeFuture(creationRequest.run(failoverApiHandler)).isCompleted();
+
+    final SignedBeaconBlock blindedBlock =
+        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
+
+    final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
+        apiChannel -> apiChannel.sendSignedBlock(blindedBlock);
+
+    setupSuccesses(
+        publishingRequest,
+        mock(SendSignedBlockResult.class),
+        primaryApiChannel,
+        failoverApiChannel1,
+        failoverApiChannel2);
+
+    SafeFutureAssert.assertThatSafeFuture(publishingRequest.run(failoverApiHandler)).isCompleted();
+
+    verify(failoverApiChannel1).sendSignedBlock(blindedBlock);
+
+    verify(primaryApiChannel, never()).sendSignedBlock(blindedBlock);
+    verify(failoverApiChannel2, never()).sendSignedBlock(blindedBlock);
+  }
+
   private <T> void setupSuccesses(
       final ValidatorApiChannelRequest<T> request,
       final T response,
@@ -547,6 +637,8 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 epoch = DATA_STRUCTURE_UTIL.randomUInt64();
     final Bytes32 randomBytes32 = DATA_STRUCTURE_UTIL.randomBytes32();
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
+    final ValidatorLivenessAtEpoch validatorLivenessAtEpoch =
+        new ValidatorLivenessAtEpoch(UInt64.ZERO, UInt64.ZERO, false);
 
     return Stream.of(
         getArguments(
@@ -582,7 +674,7 @@ class FailoverValidatorApiHandlerTest {
         getArguments(
             "createUnsignedBlock",
             apiChannel ->
-                apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), true),
+                apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), false),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BeaconBlock.class))),
         getArguments(
@@ -599,10 +691,40 @@ class FailoverValidatorApiHandlerTest {
             "createSyncCommitteeContribution",
             apiChannel -> apiChannel.createSyncCommitteeContribution(slot, 0, randomBytes32),
             BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD,
-            Optional.of(mock(SyncCommitteeContribution.class))));
+            Optional.of(mock(SyncCommitteeContribution.class))),
+        getArguments(
+            "checkValidatorsDoppelganger",
+            apiChannel -> apiChannel.checkValidatorsDoppelganger(List.of(UInt64.ZERO), epoch),
+            BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD,
+            Optional.of(List.of(validatorLivenessAtEpoch))));
   }
 
   private static Stream<Arguments> getRelayRequests() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
+    final BeaconPreparableProposer beaconPreparableProposer =
+        DATA_STRUCTURE_UTIL.randomBeaconPreparableProposer();
+
+    return Streams.concat(
+        getSubscriptionRequests(),
+        getPublishSignedDutiesRequests(),
+        Stream.of(
+            getArguments(
+                "prepareBeaconProposer",
+                apiChannel -> apiChannel.prepareBeaconProposer(List.of(beaconPreparableProposer)),
+                apiChannel ->
+                    verify(apiChannel).prepareBeaconProposer(List.of(beaconPreparableProposer)),
+                BeaconNodeRequestLabels.PREPARE_BEACON_PROPOSERS_METHOD,
+                null),
+            getArguments(
+                "registerValidators",
+                apiChannel -> apiChannel.registerValidators(validatorRegistrations),
+                apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations),
+                BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD,
+                null)));
+  }
+
+  private static Stream<Arguments> getPublishSignedDutiesRequests() {
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final SubmitDataError submitDataError =
         new SubmitDataError(DATA_STRUCTURE_UTIL.randomUInt64(), "foo");
@@ -614,53 +736,43 @@ class FailoverValidatorApiHandlerTest {
         DATA_STRUCTURE_UTIL.randomSyncCommitteeMessage();
     final SignedContributionAndProof signedContributionAndProof =
         DATA_STRUCTURE_UTIL.randomSignedContributionAndProof(2);
-    final SszList<SignedValidatorRegistration> validatorRegistrations =
-        DATA_STRUCTURE_UTIL.randomSignedValidatorRegistrations(3);
 
-    return Streams.concat(
-        getSubscriptionRequests(),
-        Stream.of(
-            getArguments(
-                "sendSignedAttestations",
-                apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
-                apiChannel -> verify(apiChannel).sendSignedAttestations(List.of(attestation)),
-                BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
-                List.of(submitDataError)),
-            getArguments(
-                "sendAggregateAndProofs",
-                apiChannel -> apiChannel.sendAggregateAndProofs(List.of(signedAggregateAndProof)),
-                apiChannel ->
-                    verify(apiChannel).sendAggregateAndProofs(List.of(signedAggregateAndProof)),
-                BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
-                List.of(submitDataError)),
-            getArguments(
-                "sendSignedBlock",
-                apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
-                apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock),
-                BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
-                mock(SendSignedBlockResult.class)),
-            getArguments(
-                "sendSyncCommitteeMessages",
-                apiChannel -> apiChannel.sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
-                apiChannel ->
-                    verify(apiChannel).sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
-                BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
-                List.of(submitDataError)),
-            getArguments(
-                "sendSignedContributionAndProofs",
-                apiChannel ->
-                    apiChannel.sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
-                apiChannel ->
-                    verify(apiChannel)
-                        .sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
-                BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD,
-                null),
-            getArguments(
-                "registerValidators",
-                apiChannel -> apiChannel.registerValidators(validatorRegistrations),
-                apiChannel -> verify(apiChannel).registerValidators(validatorRegistrations),
-                BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD,
-                null)));
+    return Stream.of(
+        getArguments(
+            "sendSignedAttestations",
+            apiChannel -> apiChannel.sendSignedAttestations(List.of(attestation)),
+            apiChannel -> verify(apiChannel).sendSignedAttestations(List.of(attestation)),
+            BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
+            List.of(submitDataError)),
+        getArguments(
+            "sendAggregateAndProofs",
+            apiChannel -> apiChannel.sendAggregateAndProofs(List.of(signedAggregateAndProof)),
+            apiChannel ->
+                verify(apiChannel).sendAggregateAndProofs(List.of(signedAggregateAndProof)),
+            BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
+            List.of(submitDataError)),
+        getArguments(
+            "sendSignedBlock",
+            apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
+            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock),
+            BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
+            mock(SendSignedBlockResult.class)),
+        getArguments(
+            "sendSyncCommitteeMessages",
+            apiChannel -> apiChannel.sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
+            apiChannel ->
+                verify(apiChannel).sendSyncCommitteeMessages(List.of(syncCommitteeMessage)),
+            BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
+            List.of(submitDataError)),
+        getArguments(
+            "sendSignedContributionAndProofs",
+            apiChannel ->
+                apiChannel.sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
+            apiChannel ->
+                verify(apiChannel)
+                    .sendSignedContributionAndProofs(List.of(signedContributionAndProof)),
+            BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD,
+            null));
   }
 
   private static Stream<Arguments> getSubscriptionRequests() {
@@ -747,8 +859,7 @@ class FailoverValidatorApiHandlerTest {
   }
 
   private String getExceptionMessageForEndpoint(final HttpUrl endpoint) {
-    return String.format(
-        "%s: java.lang.IllegalStateException: Request failed for %s", endpoint, endpoint);
+    return String.format("java.lang.IllegalStateException: Request failed for %s", endpoint);
   }
 
   private long getFailoverCounterValue(
