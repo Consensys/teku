@@ -70,7 +70,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       "remote_beacon_nodes_requests_total";
 
   private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
-      LimitedMap.createNonSynchronized(2);
+      LimitedMap.createSynchronized(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
