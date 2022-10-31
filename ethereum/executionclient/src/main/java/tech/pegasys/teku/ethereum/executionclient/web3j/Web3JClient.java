@@ -119,7 +119,6 @@ public abstract class Web3JClient {
       eventLog.executionClientIsOnline();
       executionClientEventsPublisher.onAvailabilityUpdated(true);
     } else if (lastErrorTime != NO_ERROR_TIME) {
-      eventLog.executionClientRecovered();
       executionClientEventsPublisher.onAvailabilityUpdated(true);
     }
   }

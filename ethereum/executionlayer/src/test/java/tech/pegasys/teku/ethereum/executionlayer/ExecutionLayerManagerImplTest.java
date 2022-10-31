@@ -99,7 +99,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).builderIsOffline("oops");
+    verify(eventLogger).builderIsNotAvailable("oops");
   }
 
   @Test
@@ -110,7 +110,7 @@ class ExecutionLayerManagerImplTest {
     updateBuilderStatus(builderClientResponse);
 
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).builderIsOffline("oops");
+    verify(eventLogger).builderIsNotAvailable("oops");
   }
 
   @Test
@@ -130,14 +130,14 @@ class ExecutionLayerManagerImplTest {
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isFalse();
-    verify(eventLogger).builderIsOffline("oops");
+    verify(eventLogger).builderIsNotAvailable("oops");
 
     // Given builder status is back to being ok
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
     assertThat(executionLayerManager.isBuilderAvailable()).isTrue();
-    verify(eventLogger).builderIsBackOnline();
+    verify(eventLogger).builderIsAvailableAgain();
   }
 
   @Test

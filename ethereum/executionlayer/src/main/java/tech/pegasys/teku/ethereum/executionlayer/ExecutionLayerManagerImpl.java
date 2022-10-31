@@ -533,7 +533,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 markBuilderAsNotAvailable(statusResponse.getErrorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
-                  eventLogger.builderIsBackOnline();
+                  eventLogger.builderIsAvailableAgain();
                 }
               }
             },
@@ -562,7 +562,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private void markBuilderAsNotAvailable(final String errorMessage) {
     latestBuilderAvailability.set(false);
-    eventLogger.builderIsOffline(errorMessage);
+    eventLogger.builderIsNotAvailable(errorMessage);
   }
 
   private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
