@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -873,8 +875,8 @@ public class SpecConfigBuilder {
   }
 
   public class CapellaBuilder {
-    private Bytes4 capellaForkVersion;
-    private UInt64 capellaForkEpoch;
+    private Bytes4 capellaForkVersion = Bytes4.fromHexString("0x03000000");
+    private UInt64 capellaForkEpoch = UInt64.valueOf("18446744073709551615");
 
     private CapellaBuilder() {}
 
