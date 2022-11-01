@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlockHeaderSupplier extends DataStructureUtilSupplier<BeaconBlockHeader> {
