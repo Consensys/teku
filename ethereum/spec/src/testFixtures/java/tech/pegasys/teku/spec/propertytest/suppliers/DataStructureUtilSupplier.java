@@ -20,8 +20,6 @@ import net.jqwik.api.ArbitrarySupplier;
 import net.jqwik.api.Combinators;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<T> {
@@ -42,14 +40,7 @@ public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<
   @Override
   public Arbitrary<T> get() {
     Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<SpecMilestone> milestone =
-        Arbitraries.of(SpecMilestone.class)
-            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
-    Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec =
-        Combinators.combine(milestone, network)
-            .as(TestSpecFactory::create)
-            .ignoreException(IllegalArgumentException.class);
+    Arbitrary<Spec> spec = new SpecSupplier(minimumSpecMilestone).get();
     Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
     return dsu.map(accessor);
   }

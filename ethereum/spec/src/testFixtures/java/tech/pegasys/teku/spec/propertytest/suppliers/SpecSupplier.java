@@ -24,9 +24,22 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecSupplier implements ArbitrarySupplier<Spec> {
 
+  private final SpecMilestone minimumSpecMilestone;
+
+  @SuppressWarnings("unused")
+  public SpecSupplier() {
+    this(SpecMilestone.PHASE0);
+  }
+
+  public SpecSupplier(final SpecMilestone minimumSpecMilestone) {
+    this.minimumSpecMilestone = minimumSpecMilestone;
+  }
+
   @Override
   public Arbitrary<Spec> get() {
-    Arbitrary<SpecMilestone> milestone = Arbitraries.of(SpecMilestone.class);
+    Arbitrary<SpecMilestone> milestone =
+        Arbitraries.of(SpecMilestone.class)
+            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
     return Combinators.combine(milestone, network)
         .as(TestSpecFactory::create)
