@@ -167,6 +167,7 @@ public class ValidatorDataProvider {
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
         break;
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockBellatrix.class);
         break;
       default:
@@ -190,6 +191,7 @@ public class ValidatorDataProvider {
         signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
         break;
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockBellatrix.class);
         break;
       default:

@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -48,17 +49,15 @@ import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends MigratingEndpointAdapter {
@@ -133,7 +132,16 @@ public class GetNewBlock extends MigratingEndpointAdapter {
             SerializableTypeDefinition.<BeaconBlock>object()
                 .name("ProduceBlockV2Response")
                 .withField(
-                    "data", getBlockSchemaDefinition(schemaDefinitionCache), Function.identity())
+                    "data",
+                    getSchemaDefinitionForAllMilestones(
+                        schemaDefinitionCache,
+                        "Block",
+                        SchemaDefinitions::getBeaconBlockSchema,
+                        (beaconBlock, milestone) ->
+                            schemaDefinitionCache
+                                .milestoneAtSlot(beaconBlock.getSlot())
+                                .equals(milestone)),
+                    Function.identity())
                 .withField(
                     "version",
                     MILESTONE_TYPE,
@@ -158,21 +166,5 @@ public class GetNewBlock extends MigratingEndpointAdapter {
                 maybeBlock
                     .map(AsyncApiResponse::respondOk)
                     .orElseThrow(ChainDataUnavailableException::new)));
-  }
-
-  private static SerializableOneOfTypeDefinition<BeaconBlock> getBlockSchemaDefinition(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<BeaconBlock> builder =
-        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("Block");
-
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      builder.withType(
-          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
-          schemaDefinitionCache
-              .getSchemaDefinition(milestone)
-              .getBeaconBlockSchema()
-              .getJsonTypeDefinition());
-    }
-    return builder.build();
   }
 }

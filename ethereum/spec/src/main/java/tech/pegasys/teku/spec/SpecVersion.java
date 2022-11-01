@@ -17,14 +17,17 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.SpecLogicBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.SpecLogicCapella;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -52,6 +55,8 @@ public class SpecVersion extends DelegatingSpecLogic {
         return specConfig.toVersionAltair().map(SpecVersion::createAltair);
       case BELLATRIX:
         return specConfig.toVersionBellatrix().map(SpecVersion::createBellatrix);
+      case CAPELLA:
+        return specConfig.toVersionCapella().map(SpecVersion::createCapella);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
     }
@@ -73,6 +78,12 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SchemaDefinitionsBellatrix schemaDefinitions = new SchemaDefinitionsBellatrix(specConfig);
     final SpecLogic specLogic = SpecLogicBellatrix.create(specConfig, schemaDefinitions);
     return new SpecVersion(SpecMilestone.BELLATRIX, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createCapella(final SpecConfigCapella specConfig) {
+    final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(specConfig);
+    final SpecLogicCapella specLogic = SpecLogicCapella.create(specConfig, schemaDefinitions);
+    return new SpecVersion(SpecMilestone.CAPELLA, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

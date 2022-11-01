@@ -88,6 +88,7 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         return new BlindedBlockBellatrix(
             block.getSlot(),
             block.getProposerIndex(),
@@ -118,6 +119,7 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         return new BeaconBlockBellatrix(
             block.getSlot(),
             block.getProposerIndex(),
@@ -159,6 +161,7 @@ public class SchemaObjectProvider {
       case ALTAIR:
         return new BeaconStateAltair(state);
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         return new BeaconStateBellatrix(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);

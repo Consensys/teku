@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
@@ -110,6 +111,8 @@ public class SpecConfigBuilder {
   // Bellatrix
   private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
 
+  private Optional<CapellaBuilder> capellaBuilder = Optional.empty();
+
   public SpecConfig build() {
     validate();
     SpecConfig config =
@@ -168,9 +171,14 @@ public class SpecConfigBuilder {
 
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
+      Optional<SpecConfigBellatrix> bellatrixConfig = Optional.empty();
       config = altairConfig;
       if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixIncluded()) {
-        config = bellatrixBuilder.get().build(altairConfig);
+        bellatrixConfig = Optional.of(bellatrixBuilder.get().build(altairConfig));
+        config = bellatrixConfig.get();
+      }
+      if (capellaBuilder.isPresent() && capellaBuilder.get().isCapellaIncluded()) {
+        config = capellaBuilder.get().build(bellatrixConfig.orElseThrow());
       }
     }
     return config;
@@ -231,6 +239,7 @@ public class SpecConfigBuilder {
     bellatrixBuilder
         .filter(BellatrixBuilder::isBellatrixIncluded)
         .ifPresent(BellatrixBuilder::validate);
+    capellaBuilder.ifPresent(CapellaBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -734,7 +743,7 @@ public class SpecConfigBuilder {
       return bellatrixForkEpoch != null;
     }
 
-    SpecConfig build(final SpecConfigAltair specConfig) {
+    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
       return new SpecConfigBellatrixImpl(
           specConfig,
           bellatrixForkVersion,
@@ -853,6 +862,46 @@ public class SpecConfigBuilder {
         final int safeSlotsToImportOptimistically) {
       this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
+    }
+  }
+
+  public SpecConfigBuilder capellaBuilder(final Consumer<CapellaBuilder> consumer) {
+    if (capellaBuilder.isEmpty()) {
+      capellaBuilder = Optional.of(new CapellaBuilder());
+    }
+    consumer.accept(capellaBuilder.get());
+    return this;
+  }
+
+  public class CapellaBuilder {
+    private Bytes4 capellaForkVersion;
+    private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
+
+    private CapellaBuilder() {}
+
+    SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
+      return new SpecConfigCapellaImpl(specConfig, capellaForkVersion, capellaForkEpoch);
+    }
+
+    public boolean isCapellaIncluded() {
+      return capellaForkEpoch != null;
+    }
+
+    public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+      checkNotNull(capellaForkEpoch);
+      this.capellaForkEpoch = capellaForkEpoch;
+      return this;
+    }
+
+    public CapellaBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
+      checkNotNull(capellaForkVersion);
+      this.capellaForkVersion = capellaForkVersion;
+      return this;
+    }
+
+    public void validate() {
+      validateConstant("capellaForkVersion", capellaForkVersion);
+      validateConstant("capellaForkEpoch", capellaForkEpoch);
     }
   }
 }

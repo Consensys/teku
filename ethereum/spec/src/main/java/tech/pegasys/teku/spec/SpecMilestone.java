@@ -21,11 +21,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 
 public enum SpecMilestone {
   PHASE0,
   ALTAIR,
-  BELLATRIX;
+  BELLATRIX,
+  CAPELLA;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})
@@ -79,6 +81,8 @@ public enum SpecMilestone {
         return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
       case BELLATRIX:
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
+      case CAPELLA:
+        return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }
@@ -94,6 +98,8 @@ public enum SpecMilestone {
         return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
       case BELLATRIX:
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
+      case CAPELLA:
+        return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }

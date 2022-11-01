@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -58,6 +59,13 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
   static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
       final Class<TObject> itemType, final Function<TObject, String> serializer) {
     return new EnumTypeDefinition<>(itemType, serializer);
+  }
+
+  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType,
+      final Function<TObject, String> serializer,
+      final Set<TObject> excludedEnumerations) {
+    return new EnumTypeDefinition<>(itemType, serializer, excludedEnumerations);
   }
 
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(
