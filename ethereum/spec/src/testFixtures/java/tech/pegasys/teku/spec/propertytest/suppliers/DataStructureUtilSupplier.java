@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.util;
+package tech.pegasys.teku.spec.propertytest.suppliers;
 
 import java.util.function.Function;
 import net.jqwik.api.Arbitraries;
@@ -46,7 +46,10 @@ public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<
         Arbitraries.of(SpecMilestone.class)
             .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
+    Arbitrary<Spec> spec =
+        Combinators.combine(milestone, network)
+            .as(TestSpecFactory::create)
+            .ignoreException(IllegalArgumentException.class);
     Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
     return dsu.map(accessor);
   }
