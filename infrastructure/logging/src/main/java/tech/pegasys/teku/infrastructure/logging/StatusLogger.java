@@ -381,11 +381,6 @@ public class StatusLogger {
             Color.RED));
   }
 
-  public void posActivated(final String pandas) {
-    log.info(print("Merge Completed", Color.GREEN));
-    log.info(pandas);
-  }
-
   public void loadingDepositSnapshot(final String snapshotResource) {
     log.info("Loading deposit tree snapshot from {}", snapshotResource);
   }

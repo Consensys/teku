@@ -188,20 +188,15 @@ public class EventLogger {
       final Bytes32 bestBlockRoot,
       final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
-      final boolean mergeComplete,
       final int numPeers) {
     String blockRoot = "                                                       ... empty";
     if (nodeSlot.equals(headSlot)) {
       blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
-    final String panda =
-        mergeComplete && System.getProperty("teku.pandas", "false").equalsIgnoreCase("true")
-            ? "🐼 "
-            : "";
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, %sBlock: %s, Justified: %s, Finalized: %s, Peers: %d",
-            nodeSlot, panda, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
+            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
+            nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
     info(slotEventLog, Color.WHITE);
   }
 
