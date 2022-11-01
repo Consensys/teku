@@ -21,7 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_exiting;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ongoing;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_slashed;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_slashed;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_unslashed;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_initialized;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_queued;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -31,14 +37,21 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -100,6 +113,30 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
 
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("provideStatusParameters")
+  public void shouldGetValidatorsByStatusParameter(
+      final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
+      throws Exception {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "head")
+            .listQueryParameter("status", statusParameters)
+            .build();
+
+    final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
+        chainDataProvider
+            .getStateValidators("head", List.of(), expectedValidatorStatuses)
+            .get()
+            .orElseThrow();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+  }
+
   @Test
   public void shouldGetBadRequestForInvalidState() {
     final StubRestApiRequest request =
@@ -152,5 +189,23 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
             Resources.getResource(GetStateValidatorsTest.class, "getStateValidatorsTest.json"),
             UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void statusParameterEnumContainsAllValidatorStatuses() {
+    assertThat(ValidatorStatus.values())
+        .allMatch(
+            validatorStatus ->
+                Arrays.stream(StatusParameter.values())
+                    .anyMatch(
+                        statusParameter -> statusParameter.name().equals(validatorStatus.name())));
+  }
+
+  private static Stream<Arguments> provideStatusParameters() {
+    return Stream.of(
+        Arguments.of(List.of("active"), Set.of(active_ongoing, active_exiting, active_slashed)),
+        Arguments.of(List.of("pending"), Set.of(pending_initialized, pending_queued)),
+        Arguments.of(List.of("exited"), Set.of(exited_slashed, exited_unslashed)),
+        Arguments.of(List.of("withdrawal"), Set.of(withdrawal_done, withdrawal_possible)));
   }
 }

@@ -36,16 +36,17 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.Sets;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -127,8 +128,9 @@ public class GetStateValidators extends MigratingEndpointAdapter {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
-    final Set<ValidatorStatus> statusFilter =
-        Sets.newHashSet(request.getQueryParameterList(STATUS_PARAMETER));
+    final List<StatusParameter> statusParameters = request.getQueryParameterList(STATUS_PARAMETER);
+
+    final Set<ValidatorStatus> statusFilter = getApplicableValidatorStatuses(statusParameters);
 
     SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorData>>>> future =
         chainDataProvider.getStateValidators(
@@ -140,5 +142,33 @@ public class GetStateValidators extends MigratingEndpointAdapter {
                 maybeData
                     .map(AsyncApiResponse::respondOk)
                     .orElseGet(AsyncApiResponse::respondNotFound)));
+  }
+
+  private Set<ValidatorStatus> getApplicableValidatorStatuses(
+      final List<StatusParameter> statusParameters) {
+    return statusParameters.stream()
+        .flatMap(
+            statusParameter ->
+                Arrays.stream(ValidatorStatus.values())
+                    .filter(
+                        validatorStatus -> validatorStatus.name().contains(statusParameter.name())))
+        .collect(Collectors.toSet());
+  }
+
+  @SuppressWarnings("JavaCase")
+  public enum StatusParameter {
+    pending_initialized,
+    pending_queued,
+    active_ongoing,
+    active_exiting,
+    active_slashed,
+    exited_unslashed,
+    exited_slashed,
+    withdrawal_possible,
+    withdrawal_done,
+    active,
+    pending,
+    exited,
+    withdrawal;
   }
 }

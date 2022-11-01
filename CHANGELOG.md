@@ -25,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
