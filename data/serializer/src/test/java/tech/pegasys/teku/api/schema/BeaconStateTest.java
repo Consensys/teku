@@ -41,7 +41,7 @@ public class BeaconStateTest {
         beaconState = new BeaconStateAltair(beaconStateInternal);
         break;
       case BELLATRIX:
-      case CAPELLA: // TODO
+      case CAPELLA: // TODO CAPELLA
         beaconState = new BeaconStateBellatrix(beaconStateInternal);
         break;
       default:

@@ -1363,7 +1363,7 @@ public final class DataStructureUtil {
       case ALTAIR:
         return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
-      case CAPELLA: // TODO provide Capella state builder
+      case CAPELLA: // TODO CAPELLA
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);

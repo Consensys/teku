@@ -74,13 +74,17 @@ public class JsonProviderPropertyTest {
           Map.of(
               SpecMilestone.PHASE0, SignedBeaconBlockPhase0.class,
               SpecMilestone.ALTAIR, SignedBeaconBlockAltair.class,
-              SpecMilestone.BELLATRIX, SignedBeaconBlockBellatrix.class);
+              SpecMilestone.BELLATRIX, SignedBeaconBlockBellatrix.class,
+              // TODO CAPELLA
+              SpecMilestone.CAPELLA, SignedBeaconBlockBellatrix.class);
 
   private static final Map<SpecMilestone, Class<? extends BeaconState>> BEACON_STATE_CLASS_MAP =
       Map.of(
           SpecMilestone.PHASE0, BeaconStatePhase0.class,
           SpecMilestone.ALTAIR, BeaconStateAltair.class,
-          SpecMilestone.BELLATRIX, BeaconStateBellatrix.class);
+          SpecMilestone.BELLATRIX, BeaconStateBellatrix.class,
+          // TODO CAPELLA
+          SpecMilestone.CAPELLA, BeaconStateBellatrix.class);
 
   @Property
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {
