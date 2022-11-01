@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
@@ -23,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -875,8 +874,8 @@ public class SpecConfigBuilder {
   }
 
   public class CapellaBuilder {
-    private Bytes4 capellaForkVersion = Bytes4.fromHexString("0x03000000");
-    private UInt64 capellaForkEpoch = UInt64.valueOf("18446744073709551615");
+    private Bytes4 capellaForkVersion;
+    private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
 
     private CapellaBuilder() {}
 

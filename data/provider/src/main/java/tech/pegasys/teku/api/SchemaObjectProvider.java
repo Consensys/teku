@@ -161,6 +161,7 @@ public class SchemaObjectProvider {
       case ALTAIR:
         return new BeaconStateAltair(state);
       case BELLATRIX:
+      case CAPELLA: // TODO
         return new BeaconStateBellatrix(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
