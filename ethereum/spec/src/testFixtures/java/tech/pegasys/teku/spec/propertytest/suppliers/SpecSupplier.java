@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.util;
+package tech.pegasys.teku.spec.propertytest.suppliers;
 
-import java.util.function.Function;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
@@ -22,32 +21,29 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<T> {
-  private final Function<DataStructureUtil, T> accessor;
+public class SpecSupplier implements ArbitrarySupplier<Spec> {
+
   private final SpecMilestone minimumSpecMilestone;
 
-  protected DataStructureUtilSupplier(final Function<DataStructureUtil, T> accessor) {
-    this.accessor = accessor;
-    this.minimumSpecMilestone = SpecMilestone.PHASE0;
+  @SuppressWarnings("unused")
+  public SpecSupplier() {
+    this(SpecMilestone.PHASE0);
   }
 
-  protected DataStructureUtilSupplier(
-      final Function<DataStructureUtil, T> accessor, final SpecMilestone minimumSpecMilestone) {
-    this.accessor = accessor;
+  public SpecSupplier(final SpecMilestone minimumSpecMilestone) {
     this.minimumSpecMilestone = minimumSpecMilestone;
   }
 
   @Override
-  public Arbitrary<T> get() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
+  public Arbitrary<Spec> get() {
     Arbitrary<SpecMilestone> milestone =
         Arbitraries.of(SpecMilestone.class)
             .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
-    Arbitrary<Spec> spec = Combinators.combine(milestone, network).as(TestSpecFactory::create);
-    Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
-    return dsu.map(accessor);
+    return Combinators.combine(milestone, network)
+        .as(TestSpecFactory::create)
+        // Not all network and milestone combinations create a valid config
+        .ignoreException(IllegalArgumentException.class);
   }
 }

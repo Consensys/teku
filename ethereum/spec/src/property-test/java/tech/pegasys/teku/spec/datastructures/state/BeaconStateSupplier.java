@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateSupplier extends DataStructureUtilSupplier<BeaconState> {
