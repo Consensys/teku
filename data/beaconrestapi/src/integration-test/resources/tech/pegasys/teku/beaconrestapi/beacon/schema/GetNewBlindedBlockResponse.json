@@ -3,7 +3,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
+      "enum" : [ "phase0", "altair", "bellatrix" ]
     },
     "data" : {
       "$ref" : "#/components/schemas/UnsignedBlindedBlock"
