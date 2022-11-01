@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
@@ -48,17 +49,15 @@ import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 @SuppressWarnings("unused")
@@ -156,7 +155,14 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
                 .name("GetNewBlindedBlockResponse")
                 .withField(
                     "data",
-                    getBlindedBlockSchemaDefinition(schemaDefinitionCache),
+                    getSchemaDefinitionForAllMilestones(
+                        schemaDefinitionCache,
+                        "BlindedBlock",
+                        SchemaDefinitions::getBlindedBeaconBlockSchema,
+                        (beaconBlock, milestone) ->
+                            schemaDefinitionCache
+                                .milestoneAtSlot(beaconBlock.getSlot())
+                                .equals(milestone)),
                     Function.identity())
                 .withField(
                     "version",
@@ -166,20 +172,5 @@ public class GetNewBlindedBlock extends MigratingEndpointAdapter {
             sszResponseType(
                 block -> spec.getForkSchedule().getSpecMilestoneAtSlot(block.getSlot())))
         .build();
-  }
-
-  private static SerializableOneOfTypeDefinition<BeaconBlock> getBlindedBlockSchemaDefinition(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<BeaconBlock> builder =
-        new SerializableOneOfTypeDefinitionBuilder<BeaconBlock>().title("BlindedBlock");
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      builder.withType(
-          block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone),
-          schemaDefinitionCache
-              .getSchemaDefinition(milestone)
-              .getBlindedBeaconBlockSchema()
-              .getJsonTypeDefinition());
-    }
-    return builder.build();
   }
 }
