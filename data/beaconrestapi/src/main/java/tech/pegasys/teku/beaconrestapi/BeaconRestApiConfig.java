@@ -31,7 +31,6 @@ public class BeaconRestApiConfig {
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
   public static final int DEFAULT_SUBSCRIBE_THREADS_COUNT = 1;
-  public static final boolean DEFAULT_ENABLE_MIGRATED_BEACON_REST_API = true;
 
   // Beacon REST API
   private final int restApiPort;

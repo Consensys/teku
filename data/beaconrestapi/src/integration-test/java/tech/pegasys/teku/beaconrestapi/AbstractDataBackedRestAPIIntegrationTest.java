@@ -99,17 +99,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .eth1DepositContractAddress(Eth1Address.ZERO)
           .enableMigratedRestApi(false)
           .build();
-  private static final BeaconRestApiConfig MIGRATED_CONFIG =
-      BeaconRestApiConfig.builder()
-          .restApiPort(0)
-          .restApiEnabled(true)
-          .restApiDocsEnabled(true)
-          .enableMigratedRestApi(true)
-          .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-          .restApiCorsAllowedOrigins(new ArrayList<>())
-          .beaconLivenessTrackingEnabled(true)
-          .eth1DepositContractAddress(Eth1Address.ZERO)
-          .build();
 
   protected ActiveValidatorChannel activeValidatorChannel;
 
@@ -239,10 +228,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startRestAPIAtGenesis() {
     startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, CONFIG);
-  }
-
-  protected void startMigratedRestAPIAtGenesis() {
-    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, MIGRATED_CONFIG);
   }
 
   protected void startRestApiAtGenesisStoringNonCanonicalBlocks() {
