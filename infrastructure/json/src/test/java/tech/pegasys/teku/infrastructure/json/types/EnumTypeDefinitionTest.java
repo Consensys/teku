@@ -14,7 +14,11 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Objects;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
@@ -30,6 +34,15 @@ public class EnumTypeDefinitionTest {
   @Test
   void shouldParseEnum() throws Exception {
     assertThat(JsonUtil.parse("\"no\"", definition)).isEqualTo(YesNo.NO);
+  }
+
+  @Test
+  void shouldDefineFilteredList() throws JsonProcessingException {
+    DeserializableTypeDefinition<YesNo> definition =
+        DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString, Set.of(YesNo.YES));
+    assertThatThrownBy(() -> JsonUtil.serialize(YesNo.YES, definition))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(JsonUtil.serialize(YesNo.NO, definition)).isEqualTo("\"no\"");
   }
 
   private enum YesNo {

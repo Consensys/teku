@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.json.types;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +70,9 @@ public class EthereumTypes {
 
   public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       DeserializableTypeDefinition.enumOf(
-          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT));
+          SpecMilestone.class,
+          milestone -> milestone.name().toLowerCase(Locale.ROOT),
+          Set.of(SpecMilestone.CAPELLA));
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<T> sszResponseType() {
