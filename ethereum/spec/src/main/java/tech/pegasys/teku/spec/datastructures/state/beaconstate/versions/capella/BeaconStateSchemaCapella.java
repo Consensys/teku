@@ -50,7 +50,7 @@ public class BeaconStateSchemaCapella
   }
 
   @Override
-  public BeaconStateBellatrix createFromBackingNode(final TreeNode node) {
-    return null;
+  public BeaconStateBellatrix createFromBackingNode(TreeNode node) {
+    return new BeaconStateCapellaImpl(this, node);
   }
 }

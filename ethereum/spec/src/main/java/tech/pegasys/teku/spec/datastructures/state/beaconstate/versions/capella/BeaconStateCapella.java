@@ -32,7 +32,6 @@ public interface BeaconStateCapella extends BeaconStateBellatrix {
       MoreObjects.ToStringHelper stringBuilder, BeaconStateCapella state) {
     BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, state);
   }
-  ;
 
   @Override
   default Optional<BeaconStateCapella> toVersionCapella() {

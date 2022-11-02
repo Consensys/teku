@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -20,12 +21,15 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema10;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -81,46 +85,61 @@ public class BeaconBlockBodySchemaCapellaImpl
 
   @Override
   public BeaconBlockBody createEmpty() {
-    return null;
+    return new BeaconBlockBodyCapellaImpl(this);
   }
 
   @Override
   public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
-    return null;
+    return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
   }
 
   @Override
   public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
-    return null;
+    return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
   }
-
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<Attestation, ?> getAttestationsSchema() {
-    return null;
+    return (SszListSchema<Attestation, ?>) getFieldSchema5();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<Deposit, ?> getDepositsSchema() {
-    return null;
+    return (SszListSchema<Deposit, ?>) getFieldSchema6();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
-    return null;
+    return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
   }
 
   @Override
   public SyncAggregateSchema getSyncAggregateSchema() {
-    return null;
+    return (SyncAggregateSchema) getFieldSchema8();
+  }
+
+  @Override
+  public BeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyCapellaImpl(this, node);
   }
 
   @Override
   public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return null;
+    return (ExecutionPayloadSchema) getFieldSchema9();
   }
 
   @Override
-  public BeaconBlockBodyCapellaImpl createFromBackingNode(final TreeNode node) {
-    return null;
+  public Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<Long> getBlindedNodeGeneralizedIndex() {
+    final long childGeneralizedIndex =
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+    final long relativeIndex = getExecutionPayloadSchema().getBlindedNodeGeneralizedIndex();
+    return Optional.of(GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
   }
 }
