@@ -1,21 +1,39 @@
 {
   "post" : {
     "tags" : [ "Experimental" ],
+    "operationId" : "postValidatorLiveness",
     "summary" : "Get Validator Liveness",
-    "description" : "Requests the beacon node to indicate if a validator has been    observed to be live in a given epoch. The beacon node might detect liveness by    observing messages from the validator on the network, in the beacon chain,    from its API or from any other source. It is important to note that the    values returned by the beacon node are not canonical; they are best-effort    and based upon a subjective view of the network.",
-    "operationId" : "postEthV1ValidatorLiveness",
+    "description" : "Requests the beacon node to indicate if a validator has beenobserved to be live in a given epoch. The beacon node might detect liveness byobserving messages from the validator on the network, in the beacon chain,from its API or from any other source. It is important to note that thevalues returned by the beacon node are not canonical; they are best-effortand based upon a subjective view of the network.",
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/ValidatorLivenessRequest"
+            "type" : "object",
+            "required" : [ "epoch", "indices" ],
+            "properties" : {
+              "epoch" : {
+                "type" : "string",
+                "description" : "unsigned 64 bit integer",
+                "example" : "1",
+                "format" : "uint64"
+              },
+              "indices" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string",
+                  "description" : "unsigned 64 bit integer",
+                  "example" : "1",
+                  "format" : "uint64"
+                }
+              }
+            }
           }
         }
       }
     },
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Successful Response",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -24,14 +42,35 @@
           }
         }
       },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "400" : {
-        "description" : "Invalid parameter supplied"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

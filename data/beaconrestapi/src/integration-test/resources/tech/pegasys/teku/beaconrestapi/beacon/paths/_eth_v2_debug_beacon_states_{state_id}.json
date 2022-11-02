@@ -1,45 +1,65 @@
 {
   "get" : {
     "tags" : [ "Debug" ],
-    "summary" : "Get state",
+    "operationId" : "getStateV2",
+    "summary" : "Get full BeaconState object",
     "description" : "Returns full BeaconState object for given state_id.\n\nUse Accept header to select `application/octet-stream` if SSZ response type is required.",
-    "operationId" : "getEthV2DebugBeaconStatesWithState_id",
     "parameters" : [ {
       "name" : "state_id",
-      "in" : "path",
-      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
+        "content" : {
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          },
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateV2Response"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateResponseV2"
-            }
-          },
-          "application/octet-stream" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/Unit"
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "400" : {
-        "description" : "Bad Request"
-      },
-      "404" : {
-        "description" : "Not Found"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

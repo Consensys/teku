@@ -1,30 +1,47 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "getProposerSlashings",
     "summary" : "Get proposer slashings",
     "description" : "Retrieves proposer slashings known by the node but not necessarily incorporated into any block.",
-    "operationId" : "getEthV1BeaconPoolProposer_slashings",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetProposerSlashingsResponse"
+              "$ref" : "#/components/schemas/GetPoolProposerSlashingsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   },
   "post" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "postProposerSlashing",
     "summary" : "Submit proposer slashing object",
-    "description" : "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-    "operationId" : "postEthV1BeaconPoolProposer_slashings",
+    "description" : "Submits proposer slashing object to node's pool and, if it passes validation, the node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {
         "application/json" : {
@@ -36,13 +53,28 @@
     },
     "responses" : {
       "200" : {
-        "description" : "Proposer Slashing has been successfully validated, added to the pool, and broadcast."
+        "description" : "Proposer Slashing has been successfully validated, added to the pool, and broadcast.",
+        "content" : { }
       },
       "400" : {
-        "description" : "Invalid proposer slashing, it will never pass validation so it's rejected"
+        "description" : "Invalid proposer slashing, it will never pass validation so it's rejected",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

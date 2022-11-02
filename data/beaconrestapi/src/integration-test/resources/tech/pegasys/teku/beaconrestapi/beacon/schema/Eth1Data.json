@@ -1,18 +1,24 @@
 {
+  "title" : "Eth1Data",
   "type" : "object",
+  "required" : [ "deposit_root", "deposit_count", "block_hash" ],
   "properties" : {
     "deposit_root" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
     },
     "deposit_count" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     },
     "block_hash" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
     }
   }

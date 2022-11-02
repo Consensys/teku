@@ -1,8 +1,10 @@
 {
+  "title" : "GetEth1VotingSummaryResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/Eth1VotingSummarySchema"
+      "$ref" : "#/components/schemas/Eth1VotingSummary"
     }
   }
 }

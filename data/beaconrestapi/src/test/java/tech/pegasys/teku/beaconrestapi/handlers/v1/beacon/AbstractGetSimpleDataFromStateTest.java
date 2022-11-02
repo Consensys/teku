@@ -22,9 +22,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ROOT_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -51,8 +49,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
   }
 
   @Test
-  void shouldReturnNotFound()
-      throws JsonProcessingException, ExecutionException, InterruptedException {
+  void shouldReturnNotFound() throws JsonProcessingException {
     request.setPathParameter("state_id", "head");
     when(chainDataProvider.getBeaconStateAndMetadata(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
@@ -64,7 +61,7 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
   }
 
   @Test
-  public void shouldThrowBadRequest() throws JsonProcessingException {
+  public void shouldThrowBadRequest() {
     when(chainDataProvider.getBeaconStateAndMetadata(eq("invalid")))
         .thenThrow(new BadRequestException("invalid state"));
     request.setPathParameter("state_id", "invalid");
@@ -87,11 +84,6 @@ public class AbstractGetSimpleDataFromStateTest extends AbstractMigratedBeaconHa
               .withNotFoundResponse()
               .build(),
           chainDataProvider);
-    }
-
-    @Override
-    public void handle(final Context ctx) throws Exception {
-      adapt(ctx);
     }
   }
 }

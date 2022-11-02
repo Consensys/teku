@@ -1,21 +1,22 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "getBlockHeader",
     "summary" : "Get block header",
     "description" : "Retrieves block header for given block id.",
-    "operationId" : "getEthV1BeaconHeadersWithBlock_id",
     "parameters" : [ {
       "name" : "block_id",
-      "in" : "path",
-      "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -24,14 +25,35 @@
           }
         }
       },
-      "400" : {
-        "description" : "Bad Request"
-      },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

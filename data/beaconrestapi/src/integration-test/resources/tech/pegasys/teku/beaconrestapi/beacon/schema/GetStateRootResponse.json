@@ -1,11 +1,22 @@
 {
+  "title" : "GetStateRootResponse",
   "type" : "object",
+  "required" : [ "execution_optimistic", "data" ],
   "properties" : {
     "execution_optimistic" : {
       "type" : "boolean"
     },
     "data" : {
-      "$ref" : "#/components/schemas/Root"
+      "type" : "object",
+      "required" : [ "root" ],
+      "properties" : {
+        "root" : {
+          "type" : "string",
+          "description" : "Bytes32 hexadecimal",
+          "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+          "format" : "byte"
+        }
+      }
     }
   }
 }

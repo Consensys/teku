@@ -14,18 +14,10 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.debug.GetChainHeadsResponse;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -58,25 +50,5 @@ public class GetChainHeadsV1 extends GetChainHeads {
             .deprecated(true)
             .response(SC_OK, "Success", responseType(CHAIN_HEAD_TYPE_V1))
             .build());
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get fork choice leaves",
-      tags = {TAG_DEBUG},
-      deprecated = true,
-      description =
-          "Retrieves all possible chain heads (leaves of fork choice tree).\n\n"
-              + "Deprecated - use `/eth/v2/debug/beacon/heads",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetChainHeadsResponse.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 }

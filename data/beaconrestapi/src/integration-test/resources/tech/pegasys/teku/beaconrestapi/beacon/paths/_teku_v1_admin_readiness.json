@@ -1,26 +1,47 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "readiness",
     "summary" : "Get node readiness",
     "description" : "Returns 200 if the node is ready to accept traffic",
-    "operationId" : "getTekuV1AdminReadiness",
     "parameters" : [ {
       "name" : "target_peer_count",
       "in" : "query",
-      "description" : "Returns 503 status code when current peer count is below than target",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "Returns 503 status code when current peer count is below than target",
+        "example" : "1",
+        "format" : "integer"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "Node is ready"
-      },
-      "400" : {
-        "description" : "Cannot parse target_peer_count parameter passed in request"
+        "description" : "Node is ready",
+        "content" : { }
       },
       "503" : {
-        "description" : "Node not initialized or having issues"
+        "description" : "Node not initialized or having issues",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

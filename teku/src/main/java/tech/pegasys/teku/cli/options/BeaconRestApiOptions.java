@@ -21,6 +21,7 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconRestApiOptions {
+
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
   private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
@@ -119,17 +120,6 @@ public class BeaconRestApiOptions {
       hidden = true)
   private int validatorThreads = BeaconRestApiConfig.DEFAULT_SUBSCRIBE_THREADS_COUNT;
 
-  @Option(
-      names = {"--Xrest-api-migrated-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable migrated beacon rest api",
-      hidden = true,
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean enableMigratedRestApi =
-      BeaconRestApiConfig.DEFAULT_ENABLE_MIGRATED_BEACON_REST_API;
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
         restApiBuilder ->
@@ -143,7 +133,6 @@ public class BeaconRestApiOptions {
                 .maxUrlLength(maxUrlLength)
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
                 .maxPendingEvents(maxPendingEvents)
-                .validatorThreads(validatorThreads)
-                .enableMigratedRestApi(enableMigratedRestApi));
+                .validatorThreads(validatorThreads));
   }
 }
