@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
-import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
@@ -25,16 +25,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 
-class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBellatrix>
-    implements BeaconStateBellatrix, BeaconStateCache, ValidatorStatsAltair {
+public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconStateCapella>
+    implements BeaconStateCapella, BeaconStateCache, ValidatorStatsAltair {
 
-  BeaconStateBellatrixImpl(
+  BeaconStateCapellaImpl(
       final BeaconStateSchema<BeaconStateBellatrix, MutableBeaconStateBellatrix> schema) {
     super(schema);
   }
 
-  BeaconStateBellatrixImpl(
+  BeaconStateCapellaImpl(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -42,7 +45,7 @@ class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBel
     super(type, backingNode, cache, transitionCaches);
   }
 
-  BeaconStateBellatrixImpl(
+  BeaconStateCapellaImpl(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -53,12 +56,12 @@ class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBel
   }
 
   @Override
-  public MutableBeaconStateBellatrix createWritableCopy() {
-    return new MutableBeaconStateBellatrixImpl(this);
+  public MutableBeaconStateCapella createWritableCopy() {
+    return new MutableBeaconStateCapellaImpl(this);
   }
 
   @Override
-  protected void describeCustomFields(ToStringHelper stringBuilder) {
-    BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
+  protected void describeCustomFields(MoreObjects.ToStringHelper stringBuilder) {
+    BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
   }
 }

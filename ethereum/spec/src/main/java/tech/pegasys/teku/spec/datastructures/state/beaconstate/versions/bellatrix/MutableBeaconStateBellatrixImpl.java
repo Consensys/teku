@@ -59,7 +59,7 @@ class MutableBeaconStateBellatrixImpl extends AbstractMutableBeaconState<BeaconS
 
   @Override
   protected void addCustomFields(ToStringHelper stringBuilder) {
-    BeaconStateBellatrixImpl.describeCustomFields(stringBuilder, this);
+    BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
   }
 
   @Override
