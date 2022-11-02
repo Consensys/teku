@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -101,46 +100,46 @@ public class DoppelgangerDetectionService extends Service {
                 return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
               }
 
-              final SafeFuture<IntCollection> maybeValidatorIndices =
-                  validatorIndexProvider.getValidatorIndices();
-              maybeValidatorIndices.thenApply(
-                  validatorIndices ->
-                      validatorApiChannel
-                          .checkValidatorsDoppelganger(
-                              validatorIndices
-                                  .intStream()
-                                  .mapToObj(UInt64::valueOf)
-                                  .collect(Collectors.toList()),
-                              currentEpoch)
-                          .thenApply(
-                              validatorLivenessAtEpoches ->
-                                  doppelgangerDetected(
-                                      validatorLivenessAtEpoches,
-                                      validatorIndices
-                                          .intStream()
-                                          .mapToObj(UInt64::valueOf)
-                                          .collect(Collectors.toList())))
-                          .exceptionally(
-                              throwable -> {
-                                LOGGER.error("Unable to check validators doppelganger.", throwable);
-                                return false;
-                              })
-                          .thenApply(
-                              doppelgangerDetected -> {
-                                if (doppelgangerDetected) {
-                                  LOGGER.fatal(
-                                      "Doppelganger detected. Shutting down Validator Client.");
-                                  System.exit(1);
-                                }
-                                return SafeFuture.COMPLETE;
-                              }));
-              return SafeFuture.COMPLETE;
+              return validatorIndexProvider
+                  .getValidatorIndices()
+                  .thenCompose(
+                      validatorIndices ->
+                          validatorApiChannel
+                              .checkValidatorsDoppelganger(
+                                  validatorIndices
+                                      .intStream()
+                                      .mapToObj(UInt64::valueOf)
+                                      .collect(Collectors.toList()),
+                                  currentEpoch)
+                              .thenApply(
+                                  validatorLivenessAtEpoches ->
+                                      doppelgangerDetected(
+                                          validatorLivenessAtEpoches,
+                                          validatorIndices
+                                              .intStream()
+                                              .mapToObj(UInt64::valueOf)
+                                              .collect(Collectors.toList())))
+                              .exceptionally(
+                                  throwable -> {
+                                    LOGGER.error(
+                                        "Unable to check validators doppelganger.", throwable);
+                                    return false;
+                                  })
+                              .thenApply(
+                                  doppelgangerDetected -> {
+                                    if (doppelgangerDetected) {
+                                      LOGGER.fatal(
+                                          "Doppelganger detected. Shutting down Validator Client.");
+                                      System.exit(1);
+                                    }
+                                    return null;
+                                  }));
             });
   }
 
   private boolean doppelgangerDetected(
-      Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
-      List<UInt64> validatorIndices) {
+      final Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
+      final List<UInt64> validatorIndices) {
     if (validatorLivenessAtEpoches.isPresent()) {
       List<ValidatorLivenessAtEpoch> doppelgangers =
           validatorLivenessAtEpoches.get().stream()

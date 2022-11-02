@@ -428,14 +428,13 @@ public class ValidatorClientService extends Service {
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
               if (maybeDoppelgangerDetectionService.isPresent()) {
-                maybeDoppelgangerDetectionService
+                return maybeDoppelgangerDetectionService
                     .get()
                     .start()
                     .thenCompose(___ -> subscribeToEvents());
               } else {
                 return subscribeToEvents();
               }
-              return SafeFuture.COMPLETE;
             });
   }
 
