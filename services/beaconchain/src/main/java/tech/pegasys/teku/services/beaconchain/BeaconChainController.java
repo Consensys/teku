@@ -101,7 +101,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
-import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -562,7 +561,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
-            new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
     forkChoiceTrigger =
         beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()

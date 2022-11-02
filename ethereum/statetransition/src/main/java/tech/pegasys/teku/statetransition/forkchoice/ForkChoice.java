@@ -81,7 +81,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
-  private final PandaPrinter pandaPrinter;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -96,7 +95,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final PandaPrinter pandaPrinter,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -104,7 +102,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
-    this.pandaPrinter = pandaPrinter;
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
@@ -131,7 +128,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        PandaPrinter.NOOP,
         true);
   }
 
@@ -311,13 +307,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     indexedAttestationCache,
                     postState,
                     payloadResult),
-            forkChoiceExecutor)
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful()) {
-                blockSlotState.ifPresent(state -> pandaPrinter.onBlockImported(state, block));
-              }
-            });
+            forkChoiceExecutor);
   }
 
   private BlockImportResult importBlockAndState(
