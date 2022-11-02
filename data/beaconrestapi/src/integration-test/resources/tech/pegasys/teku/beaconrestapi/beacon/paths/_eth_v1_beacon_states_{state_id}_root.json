@@ -1,21 +1,22 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "getStateRoot",
     "summary" : "Get state root",
     "description" : "Calculates HashTreeRoot for state with given 'state_id'. If stateId is root, same value will be returned.",
-    "operationId" : "getEthV1BeaconStatesWithState_idRoot",
     "parameters" : [ {
       "name" : "state_id",
-      "in" : "path",
-      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -24,14 +25,35 @@
           }
         }
       },
-      "400" : {
-        "description" : "Bad Request"
-      },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

@@ -1,34 +1,59 @@
 {
   "get" : {
     "tags" : [ "Node" ],
+    "operationId" : "getNodePeer",
     "summary" : "Get node peer",
     "description" : "Retrieves data about the given peer.",
-    "operationId" : "getEthV1NodePeersWithPeer_id",
     "parameters" : [ {
       "name" : "peer_id",
-      "in" : "path",
-      "description" : "Cryptographic hash of a peer’s public key. [Read more](https://docs.libp2p.io/concepts/peer-id/)",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "Cryptographic hash of a peer’s public key. [Read more](https://docs.libp2p.io/concepts/peer-id/)",
+        "example" : "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PeerResponse"
+              "$ref" : "#/components/schemas/GetPeerResponse"
             }
           }
         }
       },
       "404" : {
-        "description" : "Peer not found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

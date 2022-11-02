@@ -1,12 +1,12 @@
 {
   "get" : {
     "tags" : [ "Config" ],
+    "operationId" : "getDepositContractAddress",
     "summary" : "Get deposit contract address",
     "description" : "Retrieve deposit contract address and genesis fork version.",
-    "operationId" : "getEthV1ConfigDeposit_contract",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -15,8 +15,25 @@
           }
         }
       },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

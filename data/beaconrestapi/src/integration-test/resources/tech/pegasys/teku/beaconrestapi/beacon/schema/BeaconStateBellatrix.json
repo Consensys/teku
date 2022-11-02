@@ -1,17 +1,24 @@
 {
+  "title" : "BeaconStateBellatrix",
   "type" : "object",
+  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header" ],
   "properties" : {
     "genesis_time" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     },
     "genesis_validators_root" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
     },
     "slot" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     },
     "fork" : {
@@ -25,6 +32,7 @@
       "items" : {
         "type" : "string",
         "description" : "Bytes32 hexadecimal",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
         "format" : "byte"
       }
     },
@@ -33,6 +41,7 @@
       "items" : {
         "type" : "string",
         "description" : "Bytes32 hexadecimal",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
         "format" : "byte"
       }
     },
@@ -41,6 +50,7 @@
       "items" : {
         "type" : "string",
         "description" : "Bytes32 hexadecimal",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
         "format" : "byte"
       }
     },
@@ -55,6 +65,8 @@
     },
     "eth1_deposit_index" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     },
     "validators" : {
@@ -67,6 +79,8 @@
       "type" : "array",
       "items" : {
         "type" : "string",
+        "description" : "unsigned 64 bit integer",
+        "example" : "1",
         "format" : "uint64"
       }
     },
@@ -75,6 +89,7 @@
       "items" : {
         "type" : "string",
         "description" : "Bytes32 hexadecimal",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
         "format" : "byte"
       }
     },
@@ -82,6 +97,8 @@
       "type" : "array",
       "items" : {
         "type" : "string",
+        "description" : "unsigned 64 bit integer",
+        "example" : "1",
         "format" : "uint64"
       }
     },
@@ -89,20 +106,25 @@
       "type" : "array",
       "items" : {
         "type" : "string",
-        "example" : "1"
+        "example" : "1",
+        "description" : "unsigned 8 bit integer, max value 255",
+        "format" : "uint8"
       }
     },
     "current_epoch_participation" : {
       "type" : "array",
       "items" : {
         "type" : "string",
-        "example" : "1"
+        "example" : "1",
+        "description" : "unsigned 8 bit integer, max value 255",
+        "format" : "uint8"
       }
     },
     "justification_bits" : {
       "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "SSZ hexadecimal",
-      "format" : "byte"
+      "format" : "bytes"
     },
     "previous_justified_checkpoint" : {
       "$ref" : "#/components/schemas/Checkpoint"
@@ -117,7 +139,9 @@
       "type" : "array",
       "items" : {
         "type" : "string",
-        "example" : "1"
+        "description" : "unsigned 64 bit integer",
+        "example" : "1",
+        "format" : "uint64"
       }
     },
     "current_sync_committee" : {

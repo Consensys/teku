@@ -1,28 +1,42 @@
 {
   "put" : {
     "tags" : [ "Teku" ],
+    "operationId" : "putLogLevel",
     "summary" : "Changes the log level without restarting.",
     "description" : "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.",
-    "operationId" : "putTekuV1AdminLog_level",
     "requestBody" : {
-      "description" : "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n  \"log_filter\": [(String; Optional)]\n}\n```",
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/LogLevel"
+            "$ref" : "#/components/schemas/PutLogLevelRequest"
           }
         }
       }
     },
     "responses" : {
       "204" : {
-        "description" : "The LogLevel was accepted and applied"
+        "description" : "The LogLevel was accepted and applied",
+        "content" : { }
       },
       "400" : {
-        "description" : "Invalid body supplied."
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

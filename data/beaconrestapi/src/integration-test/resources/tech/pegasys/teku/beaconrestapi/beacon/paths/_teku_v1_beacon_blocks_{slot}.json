@@ -1,21 +1,23 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getAllBlocksAtSlot",
     "summary" : "Get blocks at slot",
     "description" : "Get all blocks (canonical and non-canonical) by slot.",
-    "operationId" : "getTekuV1BeaconBlocksWithSlot",
     "parameters" : [ {
       "name" : "slot",
-      "in" : "path",
-      "description" : "slot of the blocks to retrieve.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "slot of the blocks to retrieve.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -24,17 +26,45 @@
           }
         }
       },
-      "400" : {
-        "description" : "Bad Request"
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

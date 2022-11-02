@@ -1,21 +1,23 @@
 {
   "get" : {
     "tags" : [ "Experimental" ],
+    "operationId" : "getFinalizedBlockRoot",
     "summary" : "Get finalized block root",
-    "description" : "Retrieves hashTreeRoot of the finalized beacon block",
-    "operationId" : "getEthV1CheckpointFinalized_blocksWithSlotRoot",
+    "description" : "Retrieves hashTreeRoot of finalized Beacon Block.\n\nResponds with 404 if block at a slot is either unavailable or not yet finalized.",
     "parameters" : [ {
       "name" : "slot",
-      "in" : "path",
-      "description" : "The slot for which the block should be proposed.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`uint64` value representing slot",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -24,14 +26,35 @@
           }
         }
       },
-      "400" : {
-        "description" : "Bad Request"
-      },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }
