@@ -97,6 +97,7 @@ public class BeaconBlockBodySchemaCapellaImpl
   public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
     return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
   }
+
   @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<Attestation, ?> getAttestationsSchema() {
