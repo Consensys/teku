@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -1513,6 +1514,14 @@ public final class DataStructureUtil {
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange() {
+    final UInt64 validatorIndex = randomUInt64();
+    final BLSPublicKey fromBlsPubkey = randomPublicKey();
+    final Bytes20 toExecutionAddress = randomBytes20();
+
+    return new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
   }
 
   private int randomInt(final int bound) {
