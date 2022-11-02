@@ -88,11 +88,13 @@ public class BeaconBlockBodySchemaCapellaImpl
     return new BeaconBlockBodyCapellaImpl(this);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
     return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
     return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
