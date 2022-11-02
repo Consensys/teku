@@ -40,7 +40,7 @@ public class Withdrawal
         SszUInt64.of(amount));
   }
 
-  Withdrawal(WithdrawalSchema type, TreeNode backingNode) {
+  Withdrawal(final WithdrawalSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
