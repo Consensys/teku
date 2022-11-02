@@ -102,7 +102,7 @@ public class TerminalPowBlockMonitor {
                 this::monitor,
                 pollingPeriod,
                 (error) -> LOG.error("An error occurred while executing the monitor task", error)));
-    LOG.info(
+    LOG.debug(
         "Monitor has started. Waiting BELLATRIX fork activation. Polling every {}", pollingPeriod);
   }
 
@@ -112,7 +112,7 @@ public class TerminalPowBlockMonitor {
     }
     timer.get().cancel();
     timer = Optional.empty();
-    LOG.info("TTD monitoring has stopped.");
+    LOG.debug("TTD monitoring has stopped.");
   }
 
   public synchronized boolean isRunning() {
@@ -138,7 +138,7 @@ public class TerminalPowBlockMonitor {
     pollingCounter++;
 
     if (isMergeTransitionComplete(recentChainData.getChainHead())) {
-      LOG.info("MERGE is completed.");
+      LOG.debug("MERGE is completed.");
       stop();
       return;
     }
@@ -174,26 +174,25 @@ public class TerminalPowBlockMonitor {
     }
 
     if (isMergeTransitionComplete(chainHead)) {
-      LOG.info("MERGE is completed. Stopping.");
+      LOG.debug("MERGE is completed. Stopping.");
       stop();
       return;
     }
 
     if (specConfigBellatrix.getTerminalBlockHash().isZero()) {
       maybeBlockHashTracking = Optional.empty();
-      LOG.info(
+      LOG.debug(
           "Enabling tracking by Block Total Difficulty {}",
           specConfigBellatrix.getTerminalTotalDifficulty());
     } else {
       maybeBlockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
-      LOG.info(
+      LOG.debug(
           "Enabling tracking by Block Hash {} and Activation Epoch {}",
           specConfigBellatrix.getTerminalBlockHash(),
           specConfigBellatrix.getTerminalBlockHashActivationEpoch());
     }
 
     isBellatrixActive = true;
-    LOG.info("Monitor is now active");
   }
 
   private void checkTerminalBlockByBlockHash(final Bytes32 blockHashTracking) {

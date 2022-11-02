@@ -11,13 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 
-public interface PandaPrinter {
-  PandaPrinter NOOP = (preState, block) -> {};
+public interface BeaconBlockBodySchemaCapella<T extends BeaconBlockBodyCapella>
+    extends BeaconBlockBodySchemaBellatrix<T> {
 
-  void onBlockImported(BeaconState preState, SignedBeaconBlock block);
+  @Override
+  default Optional<BeaconBlockBodySchemaCapella<?>> toVersionCapella() {
+    return Optional.of(this);
+  }
 }

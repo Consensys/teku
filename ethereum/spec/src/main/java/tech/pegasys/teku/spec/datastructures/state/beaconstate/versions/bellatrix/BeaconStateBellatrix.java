@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix;
 
+import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -50,5 +51,10 @@ public interface BeaconStateBellatrix extends BeaconStateAltair {
     MutableBeaconStateBellatrix writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
+  }
+
+  static void describeCustomBellatrixFields(
+      MoreObjects.ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
+    stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
   }
 }
