@@ -199,8 +199,6 @@ public class ValidatorClientService extends Service {
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
-    final SafeFuture<?> doppelgangerDetection;
-
     if (validatorConfig.isDoppelgangerDetectionEnabled()) {
       validatorClientService.initializeDoppelgangerDetectionService(
           asyncRunner,
@@ -209,21 +207,14 @@ public class ValidatorClientService extends Service {
           validatorClientService.spec,
           services.getTimeProvider(),
           genesisDataProvider);
-      doppelgangerDetection = SafeFuture.COMPLETE;
-    } else {
-      doppelgangerDetection = SafeFuture.COMPLETE;
     }
 
-    doppelgangerDetection
-        .thenAccept(
-            __ ->
-                asyncRunner
-                    .runAsync(
-                        () ->
-                            validatorClientService.scheduleValidatorsDuties(
-                                config, validatorApiChannel, asyncRunner))
-                    .propagateTo(validatorClientService.initializationComplete))
-        .ifExceptionGetsHereRaiseABug();
+    asyncRunner
+        .runAsync(
+            () ->
+                validatorClientService.scheduleValidatorsDuties(
+                    config, validatorApiChannel, asyncRunner))
+        .propagateTo(validatorClientService.initializationComplete);
 
     return validatorClientService;
   }
@@ -436,18 +427,29 @@ public class ValidatorClientService extends Service {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
-              maybeDoppelgangerDetectionService.ifPresent(Service::start);
-              eventChannels.subscribe(
-                  ValidatorTimingChannel.class,
-                  new ValidatorTimingActions(
-                      validatorStatusLogger,
-                      validatorIndexProvider,
-                      validatorTimingChannels,
-                      spec,
-                      metricsSystem));
-              validatorStatusLogger.printInitialValidatorStatuses().ifExceptionGetsHereRaiseABug();
-              return beaconNodeApi.subscribeToEvents();
+              if (maybeDoppelgangerDetectionService.isPresent()) {
+                maybeDoppelgangerDetectionService
+                    .get()
+                    .start()
+                    .thenCompose(___ -> subscribeToEvents());
+              } else {
+                return subscribeToEvents();
+              }
+              return SafeFuture.COMPLETE;
             });
+  }
+
+  private SafeFuture<Void> subscribeToEvents() {
+    eventChannels.subscribe(
+        ValidatorTimingChannel.class,
+        new ValidatorTimingActions(
+            validatorStatusLogger,
+            validatorIndexProvider,
+            validatorTimingChannels,
+            spec,
+            metricsSystem));
+    validatorStatusLogger.printInitialValidatorStatuses().ifExceptionGetsHereRaiseABug();
+    return beaconNodeApi.subscribeToEvents();
   }
 
   @Override

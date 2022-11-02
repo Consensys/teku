@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +46,8 @@ public class DoppelgangerDetectionService extends Service {
   private Optional<UInt64> epochAtStart = Optional.empty();
   private volatile Cancellable doppelgangerDetectionTask;
 
+  private final AtomicBoolean doppelgangerCheckFinished;
+
   public DoppelgangerDetectionService(
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
@@ -58,6 +61,7 @@ public class DoppelgangerDetectionService extends Service {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.genesisDataProvider = genesisDataProvider;
+    this.doppelgangerCheckFinished = new AtomicBoolean(false);
   }
 
   @Override
@@ -68,7 +72,11 @@ public class DoppelgangerDetectionService extends Service {
             doppelgangerCheckDelay,
             doppelgangerCheckDelay,
             throwable -> LOGGER.error("Error while checking validators doppelgangers.", throwable));
-    return SafeFuture.COMPLETE;
+    while (true) {
+      if (doppelgangerCheckFinished.get()) {
+        return SafeFuture.COMPLETE;
+      }
+    }
   }
 
   @Override
@@ -89,8 +97,8 @@ public class DoppelgangerDetectionService extends Service {
                 epochAtStart = Optional.of(currentEpoch);
               }
 
-              if(currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
-                return stop();
+              if (currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
+                return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
               }
 
               final SafeFuture<IntCollection> maybeValidatorIndices =
@@ -124,9 +132,9 @@ public class DoppelgangerDetectionService extends Service {
                                       "Doppelganger detected. Shutting down Validator Client.");
                                   System.exit(1);
                                 }
-                                return null;
+                                return SafeFuture.COMPLETE;
                               }));
-              return null;
+              return SafeFuture.COMPLETE;
             });
   }
 
