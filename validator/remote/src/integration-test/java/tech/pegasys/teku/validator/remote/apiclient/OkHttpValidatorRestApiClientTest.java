@@ -235,7 +235,7 @@ class OkHttpValidatorRestApiClientTest {
         apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
 
     assertThat(beaconBlock).isPresent();
-    assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
+    assertThat(beaconBlock.get()).isEqualTo(expectedBeaconBlock);
   }
 
   @Test
@@ -283,7 +283,7 @@ class OkHttpValidatorRestApiClientTest {
         apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
 
     assertThat(beaconBlock).isPresent();
-    assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
+    assertThat(beaconBlock.get()).isEqualTo(expectedBeaconBlock);
   }
 
   @ParameterizedTest
