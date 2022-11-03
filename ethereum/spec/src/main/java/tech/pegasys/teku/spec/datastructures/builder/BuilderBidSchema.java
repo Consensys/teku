@@ -24,9 +24,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class BuilderBidSchema
-    extends ContainerSchema3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
-  public BuilderBidSchema(final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
+public class BuilderBidSchema<T extends ExecutionPayloadHeader>
+    extends ContainerSchema3<BuilderBid, T, SszUInt256, SszPublicKey> {
+  public BuilderBidSchema(final ExecutionPayloadHeaderSchema<T> executionPayloadHeaderSchema) {
     super(
         "BuilderBid",
         namedSchema("header", executionPayloadHeaderSchema),
