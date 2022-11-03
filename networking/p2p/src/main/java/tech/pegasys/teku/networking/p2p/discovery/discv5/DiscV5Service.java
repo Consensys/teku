@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.SecretKey;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.DiscoverySystem;
@@ -80,7 +79,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final DiscoverySystemBuilder discoverySystemBuilder,
       final NodeRecordConverter nodeRecordConverter) {
     this.asyncRunner = asyncRunner;
-    this.localNodePrivateKey = SecretKey.fromBytes(Bytes32.wrap(privateKey));
+    this.localNodePrivateKey = SecretKeyParser.fromLibP2pPrivKey(privateKey);
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
     final String listenAddress = p2pConfig.getNetworkInterface();
