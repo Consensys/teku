@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -139,6 +140,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
@@ -1513,6 +1515,16 @@ public final class DataStructureUtil {
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange() {
+    final UInt64 validatorIndex = randomUInt64();
+    final BLSPublicKey fromBlsPubkey = randomPublicKey();
+    final Bytes20 toExecutionAddress = randomBytes20();
+
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(validatorIndex, fromBlsPubkey, toExecutionAddress);
   }
 
   private int randomInt(final int bound) {
