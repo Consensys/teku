@@ -105,7 +105,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
                   deposits,
                   voluntaryExits,
                   syncAggregate,
-                  header));
+                  header.toVersionBellatrix().orElseThrow()));
     }
     return executionPayload.thenApply(
         payload ->

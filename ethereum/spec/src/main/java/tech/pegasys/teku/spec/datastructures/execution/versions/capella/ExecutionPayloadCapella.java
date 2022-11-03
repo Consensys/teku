@@ -11,19 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
-public interface BlindedBeaconBlockBodySchemaBellatrix<T extends BlindedBeaconBlockBodyBellatrix>
-    extends BeaconBlockBodySchemaAltair<T> {
+public interface ExecutionPayloadCapella extends ExecutionPayload {
 
-  ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema();
+  SszList<Withdrawal> getWithdrawals();
 
   @Override
-  default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
+  default Optional<SszList<Withdrawal>> getOptionalWithdrawals() {
+    return Optional.of(getWithdrawals());
+  }
+
+  @Override
+  default Optional<ExecutionPayloadCapella> toVersionCapella() {
     return Optional.of(this);
   }
 }

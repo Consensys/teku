@@ -11,17 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
-public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszContainerSchema<T> {
-
-  @Override
-  T createFromBackingNode(TreeNode node);
-
-  TransactionSchema getTransactionSchema();
-
-  long getBlindedNodeGeneralizedIndex();
-}
+public interface ExecutionPayloadSchemaCapella<T extends ExecutionPayloadCapella>
+    extends ExecutionPayloadSchema<T> {}

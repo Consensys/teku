@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -52,7 +53,9 @@ public class BeaconStateSchemaBellatrix
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchema(SpecConfigBellatrix.required(specConfig)));
+            () ->
+                new ExecutionPayloadHeaderSchemaBellatrix(
+                    SpecConfigBellatrix.required(specConfig)));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))

@@ -31,6 +31,7 @@ public enum ExecutionPayloadFields implements SszFieldName {
   BASE_FEE_PER_GAS,
   BLOCK_HASH,
   TRANSACTIONS,
+  WITHDRAWALS,
   TRANSACTIONS_ROOT,
   WITHDRAWALS_ROOT;
 

@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -21,19 +20,19 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container14;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema14;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container15;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
-public class ExecutionPayloadBellatrix
-    extends Container14<
-        ExecutionPayloadBellatrix,
+public class ExecutionPayloadCapellaImpl
+    extends Container15<
+        ExecutionPayloadCapellaImpl,
         SszBytes32,
         SszByteVector,
         SszBytes32,
@@ -47,12 +46,13 @@ public class ExecutionPayloadBellatrix
         SszByteList,
         SszUInt256,
         SszBytes32,
-        SszList<Transaction>>
-    implements ExecutionPayload {
+        SszList<Transaction>,
+        SszList<Withdrawal>>
+    implements ExecutionPayloadCapella {
 
-  public ExecutionPayloadBellatrix(
-      ContainerSchema14<
-              ExecutionPayloadBellatrix,
+  protected ExecutionPayloadCapellaImpl(
+      ContainerSchema15<
+              ExecutionPayloadCapellaImpl,
               SszBytes32,
               SszByteVector,
               SszBytes32,
@@ -66,44 +66,11 @@ public class ExecutionPayloadBellatrix
               SszByteList,
               SszUInt256,
               SszBytes32,
-              SszList<Transaction>>
-          type,
+              SszList<Transaction>,
+              SszList<Withdrawal>>
+          schema,
       TreeNode backingNode) {
-    super(type, backingNode);
-  }
-
-  public ExecutionPayloadBellatrix(
-      ExecutionPayloadSchemaBellatrix schema,
-      SszBytes32 parentHash,
-      SszByteVector feeRecipient,
-      SszBytes32 stateRoot,
-      SszBytes32 receiptsRoot,
-      SszByteVector logsBloom,
-      SszBytes32 random,
-      SszUInt64 blockNumber,
-      SszUInt64 gasLimit,
-      SszUInt64 gasUsed,
-      SszUInt64 timestamp,
-      SszByteList extraData,
-      SszUInt256 baseFeePerGas,
-      SszBytes32 blockHash,
-      SszList<Transaction> transactions) {
-    super(
-        schema,
-        parentHash,
-        feeRecipient,
-        stateRoot,
-        receiptsRoot,
-        logsBloom,
-        random,
-        blockNumber,
-        gasLimit,
-        gasUsed,
-        timestamp,
-        extraData,
-        baseFeePerGas,
-        blockHash,
-        transactions);
+    super(schema, backingNode);
   }
 
   @Override
@@ -192,12 +159,12 @@ public class ExecutionPayloadBellatrix
   }
 
   @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
+  public SszList<Withdrawal> getWithdrawals() {
+    return getField14();
   }
 
   @Override
-  public Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
+  public TreeNode getUnblindedNode() {
+    return getTransactions().getBackingNode();
   }
 }

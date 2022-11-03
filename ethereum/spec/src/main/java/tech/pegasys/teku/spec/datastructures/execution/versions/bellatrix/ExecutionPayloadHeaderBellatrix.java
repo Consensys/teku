@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container14;
@@ -28,12 +27,11 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
-public class ExecutionPayloadBellatrix
+public class ExecutionPayloadHeaderBellatrix
     extends Container14<
-        ExecutionPayloadBellatrix,
+        ExecutionPayloadHeaderBellatrix,
         SszBytes32,
         SszByteVector,
         SszBytes32,
@@ -47,12 +45,12 @@ public class ExecutionPayloadBellatrix
         SszByteList,
         SszUInt256,
         SszBytes32,
-        SszList<Transaction>>
-    implements ExecutionPayload {
+        SszBytes32>
+    implements ExecutionPayloadHeader {
 
-  public ExecutionPayloadBellatrix(
+  public ExecutionPayloadHeaderBellatrix(
       ContainerSchema14<
-              ExecutionPayloadBellatrix,
+              ExecutionPayloadHeaderBellatrix,
               SszBytes32,
               SszByteVector,
               SszBytes32,
@@ -66,14 +64,14 @@ public class ExecutionPayloadBellatrix
               SszByteList,
               SszUInt256,
               SszBytes32,
-              SszList<Transaction>>
+              SszBytes32>
           type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public ExecutionPayloadBellatrix(
-      ExecutionPayloadSchemaBellatrix schema,
+  public ExecutionPayloadHeaderBellatrix(
+      ExecutionPayloadHeaderSchemaBellatrix schema,
       SszBytes32 parentHash,
       SszByteVector feeRecipient,
       SszBytes32 stateRoot,
@@ -87,7 +85,7 @@ public class ExecutionPayloadBellatrix
       SszByteList extraData,
       SszUInt256 baseFeePerGas,
       SszBytes32 blockHash,
-      SszList<Transaction> transactions) {
+      SszBytes32 transactionsRoot) {
     super(
         schema,
         parentHash,
@@ -103,17 +101,17 @@ public class ExecutionPayloadBellatrix
         extraData,
         baseFeePerGas,
         blockHash,
-        transactions);
+        transactionsRoot);
   }
 
   @Override
   public boolean isDefaultPayload() {
-    return super.isDefault();
+    return isHeaderOfDefaultPayload();
   }
 
   @Override
-  public ExecutionPayloadSchemaBellatrix getSchema() {
-    return (ExecutionPayloadSchemaBellatrix) super.getSchema();
+  public ExecutionPayloadHeaderSchemaBellatrix getSchema() {
+    return (ExecutionPayloadHeaderSchemaBellatrix) super.getSchema();
   }
 
   @Override
@@ -182,22 +180,22 @@ public class ExecutionPayloadBellatrix
   }
 
   @Override
+  public Bytes32 getTransactionsRoot() {
+    return getField13().get();
+  }
+
+  @Override
   public Bytes32 getPayloadHash() {
     return hashTreeRoot();
   }
 
   @Override
-  public SszList<Transaction> getTransactions() {
-    return getField13();
+  public boolean isHeaderOfDefaultPayload() {
+    return equals(getSchema().getHeaderOfDefaultPayload());
   }
 
   @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
-  }
-
-  @Override
-  public Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
+  public Optional<ExecutionPayloadHeaderBellatrix> toVersionBellatrix() {
     return Optional.of(this);
   }
 }

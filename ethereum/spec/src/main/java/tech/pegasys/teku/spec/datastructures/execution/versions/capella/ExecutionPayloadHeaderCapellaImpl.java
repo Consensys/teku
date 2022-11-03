@@ -11,29 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container14;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema14;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container15;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 
-public class ExecutionPayloadBellatrix
-    extends Container14<
-        ExecutionPayloadBellatrix,
+public class ExecutionPayloadHeaderCapellaImpl
+    extends Container15<
+        ExecutionPayloadHeaderCapellaImpl,
         SszBytes32,
         SszByteVector,
         SszBytes32,
@@ -47,12 +44,13 @@ public class ExecutionPayloadBellatrix
         SszByteList,
         SszUInt256,
         SszBytes32,
-        SszList<Transaction>>
-    implements ExecutionPayload {
+        SszBytes32,
+        SszBytes32>
+    implements ExecutionPayloadHeaderCapella {
 
-  public ExecutionPayloadBellatrix(
-      ContainerSchema14<
-              ExecutionPayloadBellatrix,
+  protected ExecutionPayloadHeaderCapellaImpl(
+      ContainerSchema15<
+              ExecutionPayloadHeaderCapellaImpl,
               SszBytes32,
               SszByteVector,
               SszBytes32,
@@ -66,14 +64,15 @@ public class ExecutionPayloadBellatrix
               SszByteList,
               SszUInt256,
               SszBytes32,
-              SszList<Transaction>>
-          type,
-      TreeNode backingNode) {
-    super(type, backingNode);
+              SszBytes32,
+              SszBytes32>
+          schema,
+      TreeNode backingTree) {
+    super(schema, backingTree);
   }
 
-  public ExecutionPayloadBellatrix(
-      ExecutionPayloadSchemaBellatrix schema,
+  public ExecutionPayloadHeaderCapellaImpl(
+      ExecutionPayloadHeaderSchemaCapellaImpl schema,
       SszBytes32 parentHash,
       SszByteVector feeRecipient,
       SszBytes32 stateRoot,
@@ -87,7 +86,8 @@ public class ExecutionPayloadBellatrix
       SszByteList extraData,
       SszUInt256 baseFeePerGas,
       SszBytes32 blockHash,
-      SszList<Transaction> transactions) {
+      SszBytes32 transactionsRoot,
+      SszBytes32 withdrawalsRoot) {
     super(
         schema,
         parentHash,
@@ -103,17 +103,22 @@ public class ExecutionPayloadBellatrix
         extraData,
         baseFeePerGas,
         blockHash,
-        transactions);
+        transactionsRoot,
+        withdrawalsRoot);
   }
 
   @Override
   public boolean isDefaultPayload() {
-    return super.isDefault();
+    return isHeaderOfDefaultPayload();
   }
 
   @Override
-  public ExecutionPayloadSchemaBellatrix getSchema() {
-    return (ExecutionPayloadSchemaBellatrix) super.getSchema();
+  public ExecutionPayloadHeaderSchemaBellatrix getSchema() {
+    return (ExecutionPayloadHeaderSchemaBellatrix) super.getSchema();
+  }
+
+  public boolean isHeaderOfDefaultPayload() {
+    return equals(getSchema().getHeaderOfDefaultPayload());
   }
 
   @Override
@@ -181,23 +186,17 @@ public class ExecutionPayloadBellatrix
     return getField12().get();
   }
 
+  public Bytes32 getTransactionsRoot() {
+    return getField13().get();
+  }
+
   @Override
   public Bytes32 getPayloadHash() {
     return hashTreeRoot();
   }
 
   @Override
-  public SszList<Transaction> getTransactions() {
-    return getField13();
-  }
-
-  @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
-  }
-
-  @Override
-  public Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
+  public Bytes32 getWithdrawalsRoot() {
+    return null;
   }
 }

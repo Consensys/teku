@@ -26,21 +26,18 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.RECEIPTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema14;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
@@ -48,13 +45,11 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
-public class ExecutionPayloadSchemaBellatrix
+public class ExecutionPayloadHeaderSchemaBellatrix
     extends ContainerSchema14<
-        ExecutionPayloadBellatrix,
+        ExecutionPayloadHeaderBellatrix,
         SszBytes32,
         SszByteVector,
         SszBytes32,
@@ -68,14 +63,15 @@ public class ExecutionPayloadSchemaBellatrix
         SszByteList,
         SszUInt256,
         SszBytes32,
-        SszList<Transaction>>
-    implements ExecutionPayloadSchema<ExecutionPayloadBellatrix> {
+        SszBytes32>
+    implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderBellatrix> {
 
-  private final ExecutionPayloadBellatrix defaultExecutionPayload;
+  private final ExecutionPayloadHeaderBellatrix defaultExecutionPayloadHeader;
+  private final ExecutionPayloadHeaderBellatrix executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadSchemaBellatrix(final SpecConfigBellatrix specConfig) {
+  public ExecutionPayloadHeaderSchemaBellatrix(final SpecConfigBellatrix specConfig) {
     super(
-        "ExecutionPayloadBellatrix",
+        "ExecutionPayloadHeaderBellatrix",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(FEE_RECIPIENT, SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema(STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -89,15 +85,18 @@ public class ExecutionPayloadSchemaBellatrix
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(
-            TRANSACTIONS,
-            SszListSchema.create(
-                new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
+        namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
-    this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
+    final ExecutionPayloadBellatrix defaultExecutionPayload =
+        new ExecutionPayloadSchemaBellatrix(specConfig).getDefault();
+
+    this.executionPayloadHeaderOfDefaultPayload =
+        createFromExecutionPayload(defaultExecutionPayload);
+
+    this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
 
-  public ExecutionPayload create(
+  public ExecutionPayloadHeaderBellatrix create(
       Bytes32 parentHash,
       Bytes20 feeRecipient,
       Bytes32 stateRoot,
@@ -111,8 +110,8 @@ public class ExecutionPayloadSchemaBellatrix
       Bytes extraData,
       UInt256 baseFeePerGas,
       Bytes32 blockHash,
-      List<Bytes> transactions) {
-    return new ExecutionPayloadBellatrix(
+      Bytes32 transactionsRoot) {
+    return new ExecutionPayloadHeaderBellatrix(
         this,
         SszBytes32.of(parentHash),
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
@@ -127,37 +126,48 @@ public class ExecutionPayloadSchemaBellatrix
         getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
         SszBytes32.of(blockHash),
-        transactions.stream()
-            .map(getTransactionSchema()::fromBytes)
-            .collect(getTransactionsSchema().collector()));
+        SszBytes32.of(transactionsRoot));
+  }
+
+  public ExecutionPayloadHeaderBellatrix createFromExecutionPayload(
+      final ExecutionPayload executionPayload) {
+    return new ExecutionPayloadHeaderBellatrix(
+        this,
+        SszBytes32.of(executionPayload.getParentHash()),
+        SszByteVector.fromBytes(executionPayload.getFeeRecipient().getWrappedBytes()),
+        SszBytes32.of(executionPayload.getStateRoot()),
+        SszBytes32.of(executionPayload.getReceiptsRoot()),
+        SszByteVector.fromBytes(executionPayload.getLogsBloom()),
+        SszBytes32.of(executionPayload.getPrevRandao()),
+        SszUInt64.of(executionPayload.getBlockNumber()),
+        SszUInt64.of(executionPayload.getGasLimit()),
+        SszUInt64.of(executionPayload.getGasUsed()),
+        SszUInt64.of(executionPayload.getTimestamp()),
+        getExtraDataSchema().fromBytes(executionPayload.getExtraData()),
+        SszUInt256.of(executionPayload.getBaseFeePerGas()),
+        SszBytes32.of(executionPayload.getBlockHash()),
+        SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()));
   }
 
   @Override
-  public TransactionSchema getTransactionSchema() {
-    return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  public ExecutionPayloadHeaderBellatrix getDefault() {
+    return defaultExecutionPayloadHeader;
+  }
+
+  public ExecutionPayloadHeaderBellatrix getHeaderOfDefaultPayload() {
+    return executionPayloadHeaderOfDefaultPayload;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBellatrix createFromBackingNode(TreeNode node) {
+    return new ExecutionPayloadHeaderBellatrix(this, node);
   }
 
   @Override
   public long getBlindedNodeGeneralizedIndex() {
-    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS));
+    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT));
   }
 
-  @Override
-  public ExecutionPayloadBellatrix getDefault() {
-    return defaultExecutionPayload;
-  }
-
-  @Override
-  public ExecutionPayloadBellatrix createFromBackingNode(TreeNode node) {
-    return new ExecutionPayloadBellatrix(this, node);
-  }
-
-  @SuppressWarnings("unchecked")
-  private SszListSchema<Transaction, ?> getTransactionsSchema() {
-    return (SszListSchema<Transaction, ?>) getFieldSchema13();
-  }
-
-  @SuppressWarnings("unchecked")
   private SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
   }
