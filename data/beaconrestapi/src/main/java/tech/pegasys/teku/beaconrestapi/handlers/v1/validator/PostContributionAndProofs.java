@@ -14,26 +14,17 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -41,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-public class PostContributionAndProofs extends MigratingEndpointAdapter {
+public class PostContributionAndProofs extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/contribution_and_proofs";
   private final ValidatorDataProvider provider;
 
@@ -64,32 +55,6 @@ public class PostContributionAndProofs extends MigratingEndpointAdapter {
             .response(SC_OK, "Successful response")
             .build());
     this.provider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Publish contribution and proofs",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {
-                @OpenApiContent(
-                    from = tech.pegasys.teku.api.schema.altair.SignedContributionAndProof.class,
-                    isArray = true)
-              }),
-      description =
-          "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            description = "Successfully published contribution and proofs."),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

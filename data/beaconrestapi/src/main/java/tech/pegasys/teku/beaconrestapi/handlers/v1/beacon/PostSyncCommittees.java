@@ -16,25 +16,14 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
@@ -43,12 +32,13 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefiniti
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-public class PostSyncCommittees extends MigratingEndpointAdapter {
+public class PostSyncCommittees extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
   private final ValidatorDataProvider provider;
 
@@ -79,38 +69,6 @@ public class PostSyncCommittees extends MigratingEndpointAdapter {
                 getBadRequestResponseTypes())
             .build());
     this.provider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Submit sync committee messages to node",
-      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {
-                @OpenApiContent(
-                    from = tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage.class,
-                    isArray = true)
-              }),
-      description =
-          "Submits sync committee message objects to the node.\n\n"
-              + "Sync committee messages are not present in phase0, but are required for Altair networks.\n\n"
-              + "If a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\n"
-              + "If one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            description = "The sync committee messages were accepted, validated, and submitted"),
-        @OpenApiResponse(
-            status = RES_BAD_REQUEST,
-            description = "Errors with one or more sync committee messages",
-            content = @OpenApiContent(from = PostDataFailureResponse.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

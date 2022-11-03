@@ -1,44 +1,68 @@
 {
   "get" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "getStateSyncCommittees",
     "summary" : "Get sync committees",
     "description" : "Retrieves the sync committees for the given state.",
-    "operationId" : "getEthV1BeaconStatesWithState_idSync_committees",
     "parameters" : [ {
       "name" : "state_id",
-      "in" : "path",
-      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     }, {
       "name" : "epoch",
       "in" : "query",
-      "description" : "`uint64` Epoch number to query.",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateSyncCommitteesResponse"
+              "$ref" : "#/components/schemas/GetEpochSyncCommitteesResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "400" : {
-        "description" : "Bad Request"
-      },
-      "404" : {
-        "description" : "Not Found"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

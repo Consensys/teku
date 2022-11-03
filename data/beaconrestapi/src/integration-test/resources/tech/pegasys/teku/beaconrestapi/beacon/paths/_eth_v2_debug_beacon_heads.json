@@ -1,22 +1,48 @@
 {
   "get" : {
     "tags" : [ "Debug" ],
+    "operationId" : "getDebugChainHeadsV2",
     "summary" : "Get fork choice leaves",
     "description" : "Retrieves all possible chain heads (leaves of fork choice tree).",
-    "operationId" : "getEthV2DebugBeaconHeads",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Success",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetChainHeadsResponseV2"
+              "type" : "object",
+              "required" : [ "data" ],
+              "properties" : {
+                "data" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ChainHeadV2"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

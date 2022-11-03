@@ -1,27 +1,31 @@
 {
+  "title" : "ValidatorRegistration",
   "type" : "object",
+  "required" : [ "fee_recipient", "gas_limit", "timestamp", "pubkey" ],
   "properties" : {
     "fee_recipient" : {
-      "pattern" : "^0x[a-fA-F0-9]{40}$",
       "type" : "string",
-      "description" : "An address on the execution (Ethereum 1) network.",
-      "example" : "0xabcf8e0d4e9587369b2301d0790347320302cc09"
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "SSZ hexadecimal",
+      "format" : "bytes"
     },
     "gas_limit" : {
       "type" : "string",
-      "format" : "uint64",
-      "example" : "1"
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
     },
     "timestamp" : {
       "type" : "string",
-      "format" : "uint64",
-      "example" : "1"
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
     },
     "pubkey" : {
-      "pattern" : "^0x[a-fA-F0-9]{96}$",
       "type" : "string",
-      "description" : "The validator's BLS public key, uniquely identifying them. 48-bytes, hex encoded with 0x prefix, case insensitive.",
-      "example" : "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "Bytes48 hexadecimal",
+      "format" : "bytes"
     }
   }
 }

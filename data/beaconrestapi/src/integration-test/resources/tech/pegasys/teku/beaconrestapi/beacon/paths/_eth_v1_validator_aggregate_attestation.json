@@ -1,29 +1,33 @@
 {
   "get" : {
     "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "getAggregateAttestation",
     "summary" : "Get aggregated attestations",
     "description" : "Aggregates all attestations matching given attestation data root and slot.",
-    "operationId" : "getEthV1ValidatorAggregate_attestation",
     "parameters" : [ {
       "name" : "attestation_data_root",
-      "in" : "query",
-      "description" : "`String` HashTreeRoot of AttestationData that validator wants aggregated.",
       "required" : true,
+      "in" : "query",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`String` HashTreeRoot of AttestationData that validator wants aggregated.",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+        "format" : "byte"
       }
     }, {
       "name" : "slot",
-      "in" : "query",
-      "description" : "`uint64` Non-finalized slot for which to create the aggregation.",
       "required" : true,
+      "in" : "query",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`uint64` Non-finalized slot for which to create the aggregation.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "Returns aggregated `Attestation` object with same `AttestationData` root.",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -32,17 +36,35 @@
           }
         }
       },
-      "400" : {
-        "description" : "Invalid parameter supplied"
-      },
       "404" : {
-        "description" : "No matching attestations were found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
-      "403" : {
-        "description" : "Beacon node was not assigned to aggregate on that subnet"
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Beacon node internal error."
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

@@ -1,5 +1,7 @@
 {
+  "title" : "GetBlockAttestationsResponse",
   "type" : "object",
+  "required" : [ "execution_optimistic", "data" ],
   "properties" : {
     "execution_optimistic" : {
       "type" : "boolean"

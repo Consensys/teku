@@ -1,12 +1,12 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getDeposits",
     "summary" : "Get deposits",
     "description" : "Get all deposits currently held for inclusion in future blocks.",
-    "operationId" : "getTekuV1BeaconPoolDeposits",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -15,11 +15,25 @@
           }
         }
       },
-      "404" : {
-        "description" : "Not Found"
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

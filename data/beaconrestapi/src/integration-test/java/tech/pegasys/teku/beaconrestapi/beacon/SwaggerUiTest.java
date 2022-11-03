@@ -15,9 +15,12 @@ package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder.SWAGGER_INITIALIZER_JS;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
@@ -29,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
+  private static final String SWAGGER_PATH = "/swagger-ui";
+  private static final String JSON_SCHEMA_PATH = "/swagger-docs";
 
   @BeforeEach
   public void setup() {
@@ -37,9 +42,25 @@ public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldShowSwaggerInterface() throws IOException {
-    Set<String> links = findLinks(getUrl("/swagger-ui"));
+    Set<String> links = findAssets(getUrl(SWAGGER_PATH));
 
     links.forEach(this::checkPath);
+  }
+
+  @Test
+  public void shouldContainInitializerWithPatchedJsonSchemaLink() throws IOException {
+    Set<String> links = findAssets(getUrl(SWAGGER_PATH));
+    Optional<String> initializerPath = Optional.empty();
+    for (String link : links) {
+      if (link.endsWith(SWAGGER_INITIALIZER_JS)) {
+        initializerPath = Optional.of(link);
+        break;
+      }
+    }
+    assertThat(initializerPath).isNotEmpty();
+
+    Response response = getResponse(initializerPath.get());
+    assertThat(response.body().string()).contains(JSON_SCHEMA_PATH);
   }
 
   private void checkPath(String path) {
@@ -51,16 +72,25 @@ public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
     }
   }
 
-  private static Set<String> findLinks(String url) throws IOException {
+  private static Set<String> findAssets(String url) throws IOException {
 
     Set<String> links = new HashSet<>();
 
     Document doc =
         Jsoup.connect(url).data("query", "Java").userAgent("Mozilla").timeout(3000).get();
 
-    Elements elements = doc.select("link[href]");
-    for (Element element : elements) {
-      links.add(element.attr("href"));
+    final URL baseUrl = new URL(url);
+
+    // Resources
+    Elements resources = doc.select("link[href]");
+    for (Element element : resources) {
+      links.add(new URL(baseUrl, element.attr("href")).getPath());
+    }
+
+    // Scripts
+    Elements scripts = doc.select("script");
+    for (Element element : scripts) {
+      links.add(new URL(baseUrl, element.attr("src")).getPath());
     }
 
     return links;

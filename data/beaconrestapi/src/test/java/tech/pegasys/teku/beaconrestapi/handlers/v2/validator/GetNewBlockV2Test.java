@@ -14,11 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import tech.pegasys.teku.beaconrestapi.AbstractGetNewBlockTest;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 
 public class GetNewBlockV2Test extends AbstractGetNewBlockTest {
   @Override
-  public MigratingEndpointAdapter getHandler() {
+  public RestApiEndpoint getHandler() {
     return new GetNewBlock(validatorDataProvider, spec, schemaDefinitionCache);
   }
 

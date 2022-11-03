@@ -45,7 +45,6 @@ import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
-import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
@@ -171,6 +170,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
+
   private static final Logger LOG = LogManager.getLogger();
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
@@ -865,9 +865,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ExecutionClientDataProvider();
     eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
 
-    final BeaconRestApi api =
-        beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
-            ? new JsonTypeDefinitionBeaconRestApi(
+    beaconRestAPI =
+        Optional.of(
+            new JsonTypeDefinitionBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
                 beaconConfig.beaconRestApiConfig(),
@@ -875,17 +875,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventAsyncRunner,
                 timeProvider,
                 executionClientDataProvider,
-                spec)
-            : new ReflectionBasedBeaconRestApi(
-                dataProvider,
-                eth1DataProvider,
-                beaconConfig.beaconRestApiConfig(),
-                eventChannels,
-                eventAsyncRunner,
-                timeProvider,
-                executionClientDataProvider,
-                spec);
-    beaconRestAPI = Optional.of(api);
+                spec));
 
     if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
       final int initialValidatorsCount =
@@ -1069,7 +1059,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       setupInteropState();
     } else if (!beaconConfig.powchainConfig().isEnabled()) {
       throw new InvalidConfigurationException(
-          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
+          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state"
+              + ".");
     }
   }
 

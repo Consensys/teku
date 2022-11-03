@@ -15,30 +15,20 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.request.v1.validator.PostRegisterValidatorRequest;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class PostRegisterValidator extends MigratingEndpointAdapter {
+public class PostRegisterValidator extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/register_validator";
   private final ValidatorDataProvider validatorDataProvider;
 
@@ -69,30 +59,6 @@ public class PostRegisterValidator extends MigratingEndpointAdapter {
             .build());
 
     this.validatorDataProvider = validatorDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Register validators with builder",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {@OpenApiContent(from = PostRegisterValidatorRequest[].class)}),
-      description =
-          "Prepares the beacon node for engaging with external builders. The information must be sent by the beacon node to the builder network. The information supplied for each validator is considered persistent until overwritten by new information for the given validator, or until the beacon node restarts.\n\n"
-              + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
-              + "Also note that only registrations for active or pending validators must be sent to the builder network. Registrations for unknown or exited validators must be filtered out and not sent to the builder network.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            description = "Registration information has been received."),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

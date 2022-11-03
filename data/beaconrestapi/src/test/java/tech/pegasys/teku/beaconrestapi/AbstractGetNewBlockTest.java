@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -71,7 +72,7 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);
   }
 
-  public abstract MigratingEndpointAdapter getHandler();
+  public abstract RestApiEndpoint getHandler();
 
   public abstract boolean isBlindedBlocks();
 }

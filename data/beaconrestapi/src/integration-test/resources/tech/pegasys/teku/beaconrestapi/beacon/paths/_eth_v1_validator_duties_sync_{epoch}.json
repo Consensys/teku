@@ -1,25 +1,30 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "postSyncDuties",
     "summary" : "Get sync committee duties",
     "description" : "Requests the beacon node to provide a set of sync committee duties",
-    "operationId" : "postEthV1ValidatorDutiesSyncWithEpoch",
     "parameters" : [ {
       "name" : "epoch",
-      "in" : "path",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "requestBody" : {
-      "description" : "An array of the validator indices for which to obtain the duties.\n\n```\n[\n  \"(uint64)\",\n  ...\n]\n```\n\n",
       "content" : {
         "application/json" : {
           "schema" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "description" : "integer string",
+              "example" : "1",
+              "format" : "integer"
             }
           }
         }
@@ -27,23 +32,44 @@
     },
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PostSyncDutiesResponse"
+              "$ref" : "#/components/schemas/GetSyncCommitteeDutiesResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "400" : {
-        "description" : "Bad Request"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

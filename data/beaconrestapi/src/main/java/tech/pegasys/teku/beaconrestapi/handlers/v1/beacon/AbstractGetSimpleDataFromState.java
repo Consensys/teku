@@ -18,14 +18,14 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
-public abstract class AbstractGetSimpleDataFromState extends MigratingEndpointAdapter {
+public abstract class AbstractGetSimpleDataFromState extends RestApiEndpoint {
 
   private final ChainDataProvider chainDataProvider;
 

@@ -14,32 +14,21 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INVALID_BODY_SUPPLIED;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.teku.api.schema.LogLevel;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class PutLogLevel extends MigratingEndpointAdapter {
+public class PutLogLevel extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/admin/log_level";
 
   public PutLogLevel() {
@@ -54,31 +43,6 @@ public class PutLogLevel extends MigratingEndpointAdapter {
             .requestBodyType(LogLevel.getJsonTypeDefinition())
             .response(SC_NO_CONTENT, "The LogLevel was accepted and applied")
             .build());
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.PUT,
-      summary = "Changes the log level without restarting.",
-      tags = {TAG_TEKU},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {@OpenApiContent(from = tech.pegasys.teku.api.schema.LogLevel.class)},
-              description =
-                  "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n"
-                      + "  \"log_filter\": [(String; Optional)]\n}\n```"),
-      description =
-          "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_NO_CONTENT,
-            description = "The LogLevel was accepted and applied"),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

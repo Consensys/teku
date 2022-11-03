@@ -1,5 +1,8 @@
 {
+  "title" : "GetForkScheduleResponse",
+  "description" : "Retrieve all forks, past present and future, of which this node is aware.",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "type" : "array",

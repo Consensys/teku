@@ -1,5 +1,7 @@
 {
+  "title" : "GetStateResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "$ref" : "#/components/schemas/BeaconStatePhase0"
