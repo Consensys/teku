@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +67,8 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 public class ValidatorClientService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final Duration DOPPELGANGER_DETECTION_CHECK_DELAY = Duration.ofSeconds(12);
+  private static final Duration DOPPELGANGER_DETECTION_TIMEOUT = Duration.ofMinutes(20);
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
@@ -233,7 +236,9 @@ public class ValidatorClientService extends Service {
             validatorIndexProvider,
             spec,
             timeProvider,
-            genesisDataProvider);
+            genesisDataProvider,
+            DOPPELGANGER_DETECTION_CHECK_DELAY,
+            DOPPELGANGER_DETECTION_TIMEOUT);
     maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetectionService);
   }
 

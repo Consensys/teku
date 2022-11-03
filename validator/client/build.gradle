@@ -44,5 +44,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
   testImplementation testFixtures(project(':infrastructure:restapi'))
+  testImplementation 'io.github.hakky54:logcaptor'
 
 }
