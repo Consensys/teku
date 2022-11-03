@@ -95,6 +95,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -110,6 +111,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
@@ -143,6 +145,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public final class DataStructureUtil {
+
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
@@ -1517,14 +1520,22 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
-  public BlsToExecutionChange randomBlsToExecutionChange() {
-    final UInt64 validatorIndex = randomUInt64();
-    final BLSPublicKey fromBlsPubkey = randomPublicKey();
-    final Bytes20 toExecutionAddress = randomBytes20();
+  public Withdrawal randomWithdrawal() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getWithdrawalSchema()
+        .create(randomUInt256(), randomUInt64(), randomBytes20(), randomUInt64());
+  }
 
+  public BlsToExecutionChange randomBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
-        .create(validatorIndex, fromBlsPubkey, toExecutionAddress);
+        .create(randomUInt64(), randomPublicKey(), randomBytes20());
+  }
+
+  public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBlsToExecutionChangeSchema()
+        .create(randomBlsToExecutionChange(), randomSignature());
   }
 
   private int randomInt(final int bound) {
