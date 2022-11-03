@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -97,8 +96,8 @@ public class BeaconStateSchemaBellatrix
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
-  public ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchema)
+  public ExecutionPayloadHeaderSchemaBellatrix getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaBellatrix)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 

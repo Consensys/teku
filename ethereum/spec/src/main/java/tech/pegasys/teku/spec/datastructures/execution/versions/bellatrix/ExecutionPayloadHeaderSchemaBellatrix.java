@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -170,5 +171,10 @@ public class ExecutionPayloadHeaderSchemaBellatrix
 
   private SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadHeaderSchemaBellatrix> toVersionBellatrix() {
+    return Optional.of(this);
   }
 }

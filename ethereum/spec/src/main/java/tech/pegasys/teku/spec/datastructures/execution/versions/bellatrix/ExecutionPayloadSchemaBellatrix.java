@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -150,6 +151,11 @@ public class ExecutionPayloadSchemaBellatrix
   @Override
   public ExecutionPayloadBellatrix createFromBackingNode(TreeNode node) {
     return new ExecutionPayloadBellatrix(this, node);
+  }
+
+  @Override
+  public Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
+    return Optional.of(this);
   }
 
   @SuppressWarnings("unchecked")

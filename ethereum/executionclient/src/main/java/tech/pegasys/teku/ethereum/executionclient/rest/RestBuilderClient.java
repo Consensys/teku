@@ -121,6 +121,7 @@ public class RestBuilderClient implements BuilderClient {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public SafeFuture<Response<ExecutionPayload>> getPayload(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
 
@@ -138,8 +139,12 @@ public class RestBuilderClient implements BuilderClient {
             cachedBuilderApiExecutionPayloadResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
+                  @SuppressWarnings("rawtypes")
                   final ExecutionPayloadSchema executionPayloadSchema =
-                      schemaDefinitionsBellatrix.getExecutionPayloadSchema();
+                      schemaDefinitionsBellatrix
+                          .getExecutionPayloadSchema()
+                          .toVersionBellatrix()
+                          .orElseThrow();
                   return BuilderApiResponse.createTypeDefinition(
                       executionPayloadSchema.getJsonTypeDefinition());
                 });

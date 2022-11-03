@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 
 public class ExecutionPayloadHeaderCapellaImpl
     extends Container15<
@@ -113,10 +112,11 @@ public class ExecutionPayloadHeaderCapellaImpl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchemaBellatrix getSchema() {
-    return (ExecutionPayloadHeaderSchemaBellatrix) super.getSchema();
+  public ExecutionPayloadHeaderSchemaCapellaImpl getSchema() {
+    return (ExecutionPayloadHeaderSchemaCapellaImpl) super.getSchema();
   }
 
+  @Override
   public boolean isHeaderOfDefaultPayload() {
     return equals(getSchema().getHeaderOfDefaultPayload());
   }
@@ -186,6 +186,7 @@ public class ExecutionPayloadHeaderCapellaImpl
     return getField12().get();
   }
 
+  @Override
   public Bytes32 getTransactionsRoot() {
     return getField13().get();
   }

@@ -285,7 +285,8 @@ class FuzzUtilTest {
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    ExecutionPayloadFuzzInput input = new ExecutionPayloadFuzzInput(spec, preState, data);
+    ExecutionPayloadFuzzInput input =
+        new ExecutionPayloadFuzzInput(spec, preState, data.toVersionBellatrix().orElseThrow());
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzExecutionPayload(rawInput).map(Bytes::wrap);
 

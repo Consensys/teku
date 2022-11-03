@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszContainerSchema<T> {
 
@@ -24,4 +26,8 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszC
   TransactionSchema getTransactionSchema();
 
   long getBlindedNodeGeneralizedIndex();
+
+  default Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
+    return Optional.empty();
+  }
 }

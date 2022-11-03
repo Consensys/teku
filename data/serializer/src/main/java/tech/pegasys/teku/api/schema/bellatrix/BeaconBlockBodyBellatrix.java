@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
@@ -85,8 +85,11 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(
       final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
-    final ExecutionPayloadSchema executionPayloadSchema =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema();
+    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadSchema()
+            .toVersionBellatrix()
+            .orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,
@@ -95,7 +98,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
           builder.executionPayload(
               () ->
                   SafeFuture.completedFuture(
-                      executionPayloadSchema.create(
+                      executionPayloadSchemaBellatrix.create(
                           executionPayload.parentHash,
                           executionPayload.feeRecipient,
                           executionPayload.stateRoot,

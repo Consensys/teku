@@ -487,7 +487,10 @@ public final class DataStructureUtil {
   public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getBuilderBidSchema()
-        .create(randomExecutionPayloadHeader(), randomUInt256(), builderPublicKey);
+        .create(
+            randomExecutionPayloadHeader().toVersionBellatrix().orElseThrow(),
+            randomUInt256(),
+            builderPublicKey);
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {

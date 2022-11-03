@@ -27,7 +27,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -117,6 +117,31 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       BeaconStateBellatrix instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
+              beaconStateBellatrix.setCurrentSyncCommittee(
+                  current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+              beaconStateBellatrix.setNextSyncCommittee(
+                  next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+
+              final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
+                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                      .getLastExecutionPayloadHeaderSchema();
+              beaconStateBellatrix.setLatestExecutionPayloadHeader(
+                  executionPayloadHeaderSchema.create(
+                      latestExecutionPayloadHeader.parentHash,
+                      latestExecutionPayloadHeader.feeRecipient,
+                      latestExecutionPayloadHeader.stateRoot,
+                      latestExecutionPayloadHeader.receiptsRoot,
+                      latestExecutionPayloadHeader.logsBloom,
+                      latestExecutionPayloadHeader.prevRandao,
+                      latestExecutionPayloadHeader.blockNumber,
+                      latestExecutionPayloadHeader.gasLimit,
+                      latestExecutionPayloadHeader.gasUsed,
+                      latestExecutionPayloadHeader.timestamp,
+                      latestExecutionPayloadHeader.extraData,
+                      latestExecutionPayloadHeader.baseFeePerGas,
+                      latestExecutionPayloadHeader.blockHash,
+                      latestExecutionPayloadHeader.transactionsRoot));
+            });
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
             instance.latestExecutionPayloadHeader.parentHash,

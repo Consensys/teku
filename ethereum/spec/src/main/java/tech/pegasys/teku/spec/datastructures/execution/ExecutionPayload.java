@@ -23,6 +23,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 
 public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer {
 
+  @Override
+  ExecutionPayloadSchema<?> getSchema();
+
   SszList<Transaction> getTransactions();
 
   default Optional<SszList<Withdrawal>> getOptionalWithdrawals() {

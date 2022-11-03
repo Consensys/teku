@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
@@ -94,8 +94,11 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
-    final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
+    final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadHeaderSchema()
+            .toVersionBellatrix()
+            .orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,
