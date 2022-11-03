@@ -1,0 +1,69 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getStateRandao",
+    "summary" : "Get chain genesis details",
+    "description" : "Fetch the RANDAO mix for the requested epoch from the state identified by `state_id`.\n\nIf an epoch is not specified then the RANDAO mix for the state's current epoch will be returned.\n\nBy adjusting the `state_id` parameter you can query for any historic value of the RANDAO mix. Ordinarily states from the same epoch will mutate the RANDAO mix for that epoch as blocks are applied.",
+    "parameters" : [ {
+      "name" : "state_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
+      }
+    }, {
+      "name" : "epoch",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateRandaoResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
