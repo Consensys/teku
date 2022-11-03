@@ -180,8 +180,8 @@ public class BeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema) getFieldSchema9();
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema<?>) getFieldSchema9();
   }
 
   @SuppressWarnings("unchecked")
