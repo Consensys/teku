@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.SECP256K1.SecretKey;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
@@ -58,7 +60,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private final AsyncRunner asyncRunner;
-  private final Bytes localNodePrivateKey;
+  private final SecretKey localNodePrivateKey;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
   private final NodeRecordConverter nodeRecordConverter;
 
@@ -78,7 +80,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final DiscoverySystemBuilder discoverySystemBuilder,
       final NodeRecordConverter nodeRecordConverter) {
     this.asyncRunner = asyncRunner;
-    this.localNodePrivateKey = privateKey;
+    this.localNodePrivateKey = SecretKey.fromBytes(Bytes32.wrap(privateKey));
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
     final String listenAddress = p2pConfig.getNetworkInterface();
@@ -95,7 +97,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
             .map(NodeRecordFactory.DEFAULT::fromEnr)
             .collect(toList());
     final NodeRecordBuilder nodeRecordBuilder =
-        new NodeRecordBuilder().privateKey(privateKey).seq(seqNo);
+        new NodeRecordBuilder().secretKey(localNodePrivateKey).seq(seqNo);
     if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
       nodeRecordBuilder.address(advertisedAddress, advertisedUdpPort, advertisedTcpPort);
     }
@@ -103,7 +105,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.discoverySystem =
         discoverySystemBuilder
             .listen(listenAddress, listenUdpPort)
-            .privateKey(privateKey)
+            .secretKey(localNodePrivateKey)
             .bootnodes(bootnodes)
             .localNodeRecord(localNodeRecord)
             .newAddressHandler(maybeUpdateNodeRecordHandler)
