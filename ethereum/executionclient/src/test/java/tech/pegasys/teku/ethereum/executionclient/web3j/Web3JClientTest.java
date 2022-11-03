@@ -157,6 +157,7 @@ public class Web3JClientTest {
     verify(eventLog).executionClientRequestFailed(error, false);
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
+    verify(eventLog).executionClientRecovered();
   }
 
   @ParameterizedTest

@@ -152,6 +152,10 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void executionClientRecovered() {
+    info("Execution Client is responding to requests again after a previous failure", Color.GREEN);
+  }
+
   public void builderIsNotAvailable(final String errorMessage) {
     final String builderIsNotAvailableEventLog =
         String.format(
