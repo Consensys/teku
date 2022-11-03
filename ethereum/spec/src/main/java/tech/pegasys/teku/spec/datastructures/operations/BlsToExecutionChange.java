@@ -25,14 +25,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 public class BlsToExecutionChange
     extends Container3<BlsToExecutionChange, SszUInt64, SszPublicKey, SszByteVector> {
 
-  public static final BlsToExecutionChangeSchema SSZ_SCHEMA = new BlsToExecutionChangeSchema();
-
-  public BlsToExecutionChange(
+  BlsToExecutionChange(
+      final BlsToExecutionChangeSchema schema,
       final UInt64 validatorIndex,
       final BLSPublicKey fromBlsPubkey,
       final Bytes20 toExecutionAddress) {
     super(
-        SSZ_SCHEMA,
+        schema,
         SszUInt64.of(validatorIndex),
         new SszPublicKey(fromBlsPubkey),
         SszByteVector.fromBytes(toExecutionAddress.getWrappedBytes()));

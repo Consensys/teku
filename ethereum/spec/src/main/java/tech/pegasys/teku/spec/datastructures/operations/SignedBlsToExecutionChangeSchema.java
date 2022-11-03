@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -24,8 +25,13 @@ public class SignedBlsToExecutionChangeSchema
   public SignedBlsToExecutionChangeSchema() {
     super(
         "SignedBLSToExecutionChange",
-        namedSchema("message", BlsToExecutionChange.SSZ_SCHEMA),
+        namedSchema("message", new BlsToExecutionChangeSchema()),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
+  }
+
+  public SignedBlsToExecutionChange create(
+      final BlsToExecutionChange message, final BLSSignature signature) {
+    return new SignedBlsToExecutionChange(this, message, signature);
   }
 
   @Override

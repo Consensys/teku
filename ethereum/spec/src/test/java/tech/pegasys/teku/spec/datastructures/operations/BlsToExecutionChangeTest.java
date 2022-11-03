@@ -20,13 +20,17 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BlsToExecutionChangeTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+      new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
+
+  private final BlsToExecutionChangeSchema blsToExecutionChangeSchema =
+      new BlsToExecutionChangeSchema();
 
   private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();
   private final BLSPublicKey fromBlsPubkey = dataStructureUtil.randomPublicKey();
@@ -35,9 +39,9 @@ class BlsToExecutionChangeTest {
   @Test
   public void objectEquality() {
     final BlsToExecutionChange blsToExecutionChange1 =
-        new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
+        blsToExecutionChangeSchema.create(validatorIndex, fromBlsPubkey, toExecutionAddress);
     final BlsToExecutionChange blsToExecutionChange2 =
-        new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
+        blsToExecutionChangeSchema.create(validatorIndex, fromBlsPubkey, toExecutionAddress);
 
     assertThat(blsToExecutionChange1).isEqualTo(blsToExecutionChange2);
   }
@@ -45,7 +49,7 @@ class BlsToExecutionChangeTest {
   @Test
   public void objectAccessorMethods() {
     final BlsToExecutionChange blsToExecutionChange =
-        new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
+        blsToExecutionChangeSchema.create(validatorIndex, fromBlsPubkey, toExecutionAddress);
 
     assertThat(blsToExecutionChange.getValidatorIndex()).isEqualTo(validatorIndex);
     assertThat(blsToExecutionChange.getFromBlsPubkey()).isEqualTo(fromBlsPubkey);
@@ -55,11 +59,11 @@ class BlsToExecutionChangeTest {
   @Test
   public void roundTripSSZ() {
     final BlsToExecutionChange blsToExecutionChange =
-        new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
+        blsToExecutionChangeSchema.create(validatorIndex, fromBlsPubkey, toExecutionAddress);
 
     final Bytes sszWithdrawalBytes = blsToExecutionChange.sszSerialize();
     final BlsToExecutionChange deserializedObject =
-        BlsToExecutionChange.SSZ_SCHEMA.sszDeserialize(sszWithdrawalBytes);
+        blsToExecutionChangeSchema.sszDeserialize(sszWithdrawalBytes);
 
     assertThat(blsToExecutionChange).isEqualTo(deserializedObject);
   }

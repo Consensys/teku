@@ -18,13 +18,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBlsToExecutionChangeTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+      new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
+
+  private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
+      new SignedBlsToExecutionChangeSchema();
 
   private final BlsToExecutionChange message = dataStructureUtil.randomBlsToExecutionChange();
 
@@ -33,9 +37,9 @@ class SignedBlsToExecutionChangeTest {
   @Test
   public void objectEquality() {
     final SignedBlsToExecutionChange signedBlsToExecutionChange1 =
-        new SignedBlsToExecutionChange(message, signature);
+        signedBlsToExecutionChangeSchema.create(message, signature);
     final SignedBlsToExecutionChange signedBlsToExecutionChange2 =
-        new SignedBlsToExecutionChange(message, signature);
+        signedBlsToExecutionChangeSchema.create(message, signature);
 
     assertThat(signedBlsToExecutionChange1).isEqualTo(signedBlsToExecutionChange2);
   }
@@ -43,7 +47,7 @@ class SignedBlsToExecutionChangeTest {
   @Test
   public void objectAccessorMethods() {
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        new SignedBlsToExecutionChange(message, signature);
+        signedBlsToExecutionChangeSchema.create(message, signature);
 
     assertThat(signedBlsToExecutionChange.getMessage()).isEqualTo(message);
     assertThat(signedBlsToExecutionChange.getSignature()).isEqualTo(signature);
@@ -52,11 +56,11 @@ class SignedBlsToExecutionChangeTest {
   @Test
   public void roundTripSSZ() {
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        new SignedBlsToExecutionChange(message, signature);
+        signedBlsToExecutionChangeSchema.create(message, signature);
 
     final Bytes sszWithdrawalBytes = signedBlsToExecutionChange.sszSerialize();
     final SignedBlsToExecutionChange deserializedObject =
-        SignedBlsToExecutionChange.SSZ_SCHEMA.sszDeserialize(sszWithdrawalBytes);
+        signedBlsToExecutionChangeSchema.sszDeserialize(sszWithdrawalBytes);
 
     assertThat(signedBlsToExecutionChange).isEqualTo(deserializedObject);
   }

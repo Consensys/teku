@@ -20,13 +20,15 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class WithdrawalTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+      new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
+  private final WithdrawalSchema withdrawalSchema = new WithdrawalSchema();
 
   private final UInt256 index = dataStructureUtil.randomUInt256();
   private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();
@@ -35,15 +37,15 @@ class WithdrawalTest {
 
   @Test
   public void objectEquality() {
-    final Withdrawal withdrawal1 = new Withdrawal(index, validatorIndex, address, amount);
-    final Withdrawal withdrawal2 = new Withdrawal(index, validatorIndex, address, amount);
+    final Withdrawal withdrawal1 = withdrawalSchema.create(index, validatorIndex, address, amount);
+    final Withdrawal withdrawal2 = withdrawalSchema.create(index, validatorIndex, address, amount);
 
     assertThat(withdrawal1).isEqualTo(withdrawal2);
   }
 
   @Test
   public void objectAccessorMethods() {
-    final Withdrawal withdrawal = new Withdrawal(index, validatorIndex, address, amount);
+    final Withdrawal withdrawal = withdrawalSchema.create(index, validatorIndex, address, amount);
 
     assertThat(withdrawal.getIndex()).isEqualTo(index);
     assertThat(withdrawal.getValidatorIndex()).isEqualTo(validatorIndex);
@@ -53,10 +55,10 @@ class WithdrawalTest {
 
   @Test
   public void roundTripSSZ() {
-    final Withdrawal withdrawal = new Withdrawal(index, validatorIndex, address, amount);
+    final Withdrawal withdrawal = withdrawalSchema.create(index, validatorIndex, address, amount);
 
     final Bytes sszWithdrawalBytes = withdrawal.sszSerialize();
-    final Withdrawal deserializedObject = Withdrawal.SSZ_SCHEMA.sszDeserialize(sszWithdrawalBytes);
+    final Withdrawal deserializedObject = withdrawalSchema.sszDeserialize(sszWithdrawalBytes);
 
     assertThat(withdrawal).isEqualTo(deserializedObject);
   }

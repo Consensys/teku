@@ -140,6 +140,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
@@ -1521,7 +1522,9 @@ public final class DataStructureUtil {
     final BLSPublicKey fromBlsPubkey = randomPublicKey();
     final Bytes20 toExecutionAddress = randomBytes20();
 
-    return new BlsToExecutionChange(validatorIndex, fromBlsPubkey, toExecutionAddress);
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(validatorIndex, fromBlsPubkey, toExecutionAddress);
   }
 
   private int randomInt(final int bound) {

@@ -22,12 +22,11 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 public class SignedBlsToExecutionChange
     extends Container2<SignedBlsToExecutionChange, BlsToExecutionChange, SszSignature> {
 
-  public static final SignedBlsToExecutionChangeSchema SSZ_SCHEMA =
-      new SignedBlsToExecutionChangeSchema();
-
-  public SignedBlsToExecutionChange(
-      final BlsToExecutionChange message, final BLSSignature signature) {
-    super(SSZ_SCHEMA, message, new SszSignature(signature));
+  SignedBlsToExecutionChange(
+      final SignedBlsToExecutionChangeSchema schema,
+      final BlsToExecutionChange message,
+      final BLSSignature signature) {
+    super(schema, message, new SszSignature(signature));
   }
 
   SignedBlsToExecutionChange(

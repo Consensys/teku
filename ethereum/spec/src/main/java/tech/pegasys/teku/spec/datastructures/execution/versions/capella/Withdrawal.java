@@ -25,15 +25,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Withdrawal
     extends Container4<Withdrawal, SszUInt256, SszUInt64, SszByteVector, SszUInt64> {
 
-  public static final WithdrawalSchema SSZ_SCHEMA = new WithdrawalSchema();
-
-  public Withdrawal(
+  Withdrawal(
+      final WithdrawalSchema schema,
       final UInt256 index,
       final UInt64 validatorIndex,
       final Bytes20 address,
       final UInt64 amount) {
     super(
-        SSZ_SCHEMA,
+        schema,
         SszUInt256.of(index),
         SszUInt64.of(validatorIndex),
         SszByteVector.fromBytes(address.getWrappedBytes()),
