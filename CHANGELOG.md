@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
   (Refer to https://github.com/ConsenSys/teku/pull/6325#issue-1409631918 for more information).  
 
 ### Additions and Improvements
+ - Improved discv5 compliance
  - Added `/eth/v1/beacon/states/{state_id}/randao` to beacon-api.
 
 ### Bug Fixes
