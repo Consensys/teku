@@ -19,9 +19,6 @@ import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.asse
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlsToExecutionChangePropertyTest {
 
@@ -39,13 +36,5 @@ public class BlsToExecutionChangePropertyTest {
           final BlsToExecutionChange blsToExecutionChange,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(blsToExecutionChange, seed);
-  }
-
-  public static class BlsToExecutionChangeSupplier
-      extends DataStructureUtilSupplier<BlsToExecutionChange> {
-
-    public BlsToExecutionChangeSupplier() {
-      super(DataStructureUtil::randomBlsToExecutionChange, SpecMilestone.CAPELLA);
-    }
   }
 }

@@ -19,9 +19,6 @@ import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.asse
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class WithdrawalPropertyTest {
 
@@ -36,12 +33,5 @@ public class WithdrawalPropertyTest {
       @ForAll(supplier = WithdrawalSupplier.class) final Withdrawal withdrawal,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(withdrawal, seed);
-  }
-
-  public static class WithdrawalSupplier extends DataStructureUtilSupplier<Withdrawal> {
-
-    public WithdrawalSupplier() {
-      super(DataStructureUtil::randomWithdrawal, SpecMilestone.CAPELLA);
-    }
   }
 }
