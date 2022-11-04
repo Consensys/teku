@@ -89,14 +89,17 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         maxWithdrawalsPerPayload);
   }
 
+  @Override
   public UInt64 getMaxPartialWithdrawalsPerEpoch() {
     return maxPartialWithdrawalsPerEpoch;
   }
 
+  @Override
   public UInt64 getWithdrawalQueueLimit() {
     return withdrawalQueueLimit;
   }
 
+  @Override
   public UInt64 getMaxBlsToExecutionChanges() {
     return maxBlsToExecutionChanges;
   }
