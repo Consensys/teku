@@ -79,10 +79,10 @@ public class Eth1DepositManager {
         .thenCompose(
             depositSnapshotLoadingResult -> {
               if (depositSnapshotLoadingResult.getDepositTreeSnapshot().isEmpty()) {
-                LOG.trace("No deposit tree snapshot loaded, processing full replay of deposits");
+                LOG.debug("No deposit tree snapshot loaded, processing full replay of deposits");
                 return eth1DepositStorageChannel.replayDepositEvents();
               } else {
-                LOG.trace(
+                LOG.debug(
                     "Finalized deposit tree snapshot loaded: {}",
                     depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
                 eth1EventsPublisher.onInitialDepositTreeSnapshot(
@@ -118,7 +118,7 @@ public class Eth1DepositManager {
       return SafeFuture.completedFuture(depositSnapshotResult);
     }
 
-    LOG.trace(
+    LOG.debug(
         "Deposit tree snapshot from file is not provided, trying to load it from the database");
     return depositSnapshotStorageLoader.loadDepositSnapshot();
   }

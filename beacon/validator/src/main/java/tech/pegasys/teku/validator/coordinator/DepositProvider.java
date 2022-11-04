@@ -138,7 +138,7 @@ public class DepositProvider
                 .getEth1DataAndHeight(finalizedState.getEth1Data())
                 .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
         if (heightOptional.isEmpty()) {
-          LOG.warn("Eth1Data height not found in cache. Skipping DepositTree pruning");
+          LOG.debug("Eth1Data height not found in cache. Skipping DepositTree pruning");
           return;
         }
         depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
@@ -146,7 +146,7 @@ public class DepositProvider
             .getSnapshot()
             .ifPresent(
                 depositTreeSnapshot -> {
-                  LOG.trace("Storing DepositTreeSnapshot: {}", depositTreeSnapshot);
+                  LOG.debug("Storing DepositTreeSnapshot: {}", depositTreeSnapshot);
                   storageUpdateChannel
                       .onFinalizedDepositSnapshot(depositTreeSnapshot)
                       .thenCompose(storeResult -> eth1DepositStorageChannel.removeDepositEvents())

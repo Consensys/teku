@@ -109,6 +109,8 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     if (!depositSnapshotStorageEnabled) {
       return false;
     }
+    LOG.debug("Pruning deposit events in database");
+    boolean depositsRemoved = false;
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
       Iterator<DepositsFromBlockEvent> eventIterator = eventStream.iterator();
       while (eventIterator.hasNext()) {
@@ -117,9 +119,13 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
           blockNumbers.add(eventIterator.next().getBlockNumber());
         }
         if (!blockNumbers.isEmpty()) {
+          depositsRemoved = true;
           database.removeDepositsFromBlockEvents(blockNumbers);
         }
       }
+    }
+    if (depositsRemoved) {
+      LOG.info("Deposit events were successfully pruned in database");
     }
     return true;
   }
