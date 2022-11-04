@@ -154,7 +154,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             .equals(SLOT_IN_THE_EPOCH_TO_RUN_REGISTRATION.minus(1));
     if (slotIsApplicable && registrationInProgress.get()) {
       LOG.warn(
-          "Validator(s) registration for epoch {} is still in progress. Will skip registration for the current epoch {}.",
+          "Validator registration(s) for epoch {} is still in progress. Will skip registration for the current epoch {}.",
           lastRunEpoch.get(),
           currentEpoch);
       return false;

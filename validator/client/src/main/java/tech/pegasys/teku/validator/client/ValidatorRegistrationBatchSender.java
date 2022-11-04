@@ -51,7 +51,7 @@ public class ValidatorRegistrationBatchSender {
         Lists.partition(validatorRegistrations, batchSize);
 
     LOG.debug(
-        "Going to send {} validator(s) registrations to the Beacon Node in {} batch(es)",
+        "Going to send {} validator registration(s) to the Beacon Node in {} batch(es)",
         validatorRegistrations.size(),
         batchedRegistrations.size());
 
