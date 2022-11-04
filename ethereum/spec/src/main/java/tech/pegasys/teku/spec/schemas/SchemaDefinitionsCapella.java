@@ -13,12 +13,48 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
+
+  private final WithdrawalSchema withdrawalSchema;
+
+  private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
+
+  private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
+
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
+    this.withdrawalSchema = new WithdrawalSchema();
+    this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
+    this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
+  }
+
+  public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
+    checkArgument(
+        schemaDefinitions instanceof SchemaDefinitionsCapella,
+        "Expected definitions of type %s by got %s",
+        SchemaDefinitionsCapella.class,
+        schemaDefinitions.getClass());
+    return (SchemaDefinitionsCapella) schemaDefinitions;
+  }
+
+  public WithdrawalSchema getWithdrawalSchema() {
+    return withdrawalSchema;
+  }
+
+  public BlsToExecutionChangeSchema getBlsToExecutionChangeSchema() {
+    return blsToExecutionChangeSchema;
+  }
+
+  public SignedBlsToExecutionChangeSchema getSignedBlsToExecutionChangeSchema() {
+    return signedBlsToExecutionChangeSchema;
   }
 
   public Optional<SchemaDefinitionsCapella> toVersionCapella() {
