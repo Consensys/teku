@@ -92,7 +92,7 @@ public class ExecutionPayloadSchemaCapella
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(
-                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())));
+                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload().longValue())));
 
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
@@ -117,7 +117,6 @@ public class ExecutionPayloadSchemaCapella
     return new ExecutionPayloadCapellaImpl(this, node);
   }
 
-  @SuppressWarnings("unchecked")
   private SszListSchema<Transaction, ?> getTransactionsSchema() {
     return (SszListSchema<Transaction, ?>) getFieldSchema13();
   }

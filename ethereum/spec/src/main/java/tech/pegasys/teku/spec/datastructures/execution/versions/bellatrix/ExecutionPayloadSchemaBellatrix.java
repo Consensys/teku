@@ -158,12 +158,10 @@ public class ExecutionPayloadSchemaBellatrix
     return Optional.of(this);
   }
 
-  @SuppressWarnings("unchecked")
   private SszListSchema<Transaction, ?> getTransactionsSchema() {
     return (SszListSchema<Transaction, ?>) getFieldSchema13();
   }
 
-  @SuppressWarnings("unchecked")
   private SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
   }

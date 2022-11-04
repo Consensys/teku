@@ -36,5 +36,5 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
   @Override
   Optional<SpecConfigCapella> toVersionCapella();
 
-  int getMaxWithdrawalsPerPayload();
+  UInt64 getMaxWithdrawalsPerPayload();
 }
