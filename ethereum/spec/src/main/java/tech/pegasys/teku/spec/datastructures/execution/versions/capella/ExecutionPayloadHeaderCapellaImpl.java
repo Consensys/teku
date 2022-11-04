@@ -198,6 +198,6 @@ public class ExecutionPayloadHeaderCapellaImpl
 
   @Override
   public Bytes32 getWithdrawalsRoot() {
-    return null;
+    return getField14().get();
   }
 }

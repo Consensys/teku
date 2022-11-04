@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -392,9 +393,14 @@ class RestBuilderClientTest {
   }
 
   private void verifyExecutionPayloadResponse(ExecutionPayload actual) {
-    DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>> responseTypeDefinition =
-        BuilderApiResponse.createTypeDefinition(
-            schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
+    DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayloadBellatrix>>
+        responseTypeDefinition =
+            BuilderApiResponse.createTypeDefinition(
+                schemaDefinitionsBellatrix
+                    .getExecutionPayloadSchema()
+                    .toVersionBellatrix()
+                    .orElseThrow()
+                    .getJsonTypeDefinition());
     try {
       ExecutionPayload expected =
           JsonUtil.parse(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE, responseTypeDefinition).getData();
