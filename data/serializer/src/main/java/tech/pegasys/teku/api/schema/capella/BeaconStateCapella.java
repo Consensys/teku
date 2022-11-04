@@ -11,35 +11,34 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.bellatrix;
+package tech.pegasys.teku.api.schema.capella;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
-import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 
-public class BeaconStateBellatrix extends BeaconStateAltair {
-  @JsonProperty("latest_execution_payload_header")
-  public final ExecutionPayloadHeader latestExecutionPayloadHeader;
+public class BeaconStateCapella extends BeaconStateBellatrix {
+  @JsonProperty("latest_withdrawal_validator_index")
+  @Schema(type = "string", example = EXAMPLE_UINT64)
+  public final UInt64 latestWithdrawalValidatorIndex;
 
-  @JsonCreator
-  public BeaconStateBellatrix(
+  public BeaconStateCapella(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
       @JsonProperty("slot") final UInt64 slot,
@@ -65,7 +64,9 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
+          final ExecutionPayloadHeader latestExecutionPayloadHeader,
+      @JsonProperty("latest_withdrawal_validator_index")
+          final UInt64 latestWithdrawalValidatorIndex) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -90,77 +91,36 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
         finalizedCheckpoint,
         inactivityScores,
         currentSyncCommittee,
-        nextSyncCommittee);
-    this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
+        nextSyncCommittee,
+        latestExecutionPayloadHeader);
+    this.latestWithdrawalValidatorIndex = latestWithdrawalValidatorIndex;
+  }
+
+  public BeaconStateCapella(BeaconState beaconState) {
+    super(beaconState);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
+            .BeaconStateCapella
+        capella = beaconState.toVersionCapella().orElseThrow();
+    this.latestWithdrawalValidatorIndex = capella.getLatestWithdrawalValidatorIndex();
   }
 
   @Override
   protected void applyAdditionalFields(MutableBeaconState state) {
     state
-        .toMutableVersionBellatrix()
+        .toMutableVersionCapella()
         .ifPresent(
-            beaconStateBellatrix -> {
+            mutableBeaconStateCapella -> {
               applyBellatrixFields(
-                  beaconStateBellatrix,
-                  BeaconStateSchemaBellatrix.required(state.getBeaconStateSchema())
+                  mutableBeaconStateCapella,
+                  BeaconStateSchemaCapella.required(state.getBeaconStateSchema())
                       .getCurrentSyncCommitteeSchema(),
-                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                  BeaconStateSchemaCapella.required(
+                          mutableBeaconStateCapella.getBeaconStateSchema())
                       .getLastExecutionPayloadHeaderSchema(),
                   this);
+
+              mutableBeaconStateCapella.setLatestWithdrawalValidatorIndex(
+                  this.latestWithdrawalValidatorIndex);
             });
-  }
-
-  public static void applyBellatrixFields(
-      MutableBeaconStateBellatrix state,
-      SyncCommitteeSchema syncCommitteeSchema,
-      ExecutionPayloadHeaderSchema executionPayloadHeaderSchema,
-      BeaconStateBellatrix instance) {
-    BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
-
-    state.setLatestExecutionPayloadHeader(
-        executionPayloadHeaderSchema.create(
-            instance.latestExecutionPayloadHeader.parentHash,
-            instance.latestExecutionPayloadHeader.feeRecipient,
-            instance.latestExecutionPayloadHeader.stateRoot,
-            instance.latestExecutionPayloadHeader.receiptsRoot,
-            instance.latestExecutionPayloadHeader.logsBloom,
-            instance.latestExecutionPayloadHeader.prevRandao,
-            instance.latestExecutionPayloadHeader.blockNumber,
-            instance.latestExecutionPayloadHeader.gasLimit,
-            instance.latestExecutionPayloadHeader.gasUsed,
-            instance.latestExecutionPayloadHeader.timestamp,
-            instance.latestExecutionPayloadHeader.extraData,
-            instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.blockHash,
-            instance.latestExecutionPayloadHeader.transactionsRoot));
-  }
-
-  public BeaconStateBellatrix(BeaconState beaconState) {
-    super(beaconState);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix
-            .BeaconStateBellatrix
-        bellatrix = beaconState.toVersionBellatrix().orElseThrow();
-    this.latestExecutionPayloadHeader =
-        new ExecutionPayloadHeader(bellatrix.getLatestExecutionPayloadHeader());
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof BeaconStateBellatrix)) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    BeaconStateBellatrix that = (BeaconStateBellatrix) o;
-    return Objects.equals(latestExecutionPayloadHeader, that.latestExecutionPayloadHeader);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), latestExecutionPayloadHeader);
   }
 }

@@ -88,8 +88,6 @@ public class SpecConfigCapellaTest {
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomUInt64());
   }
 }

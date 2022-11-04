@@ -876,10 +876,6 @@ public class SpecConfigBuilder {
     private Bytes4 capellaForkVersion;
     private UInt64 capellaForkEpoch;
 
-    private UInt64 maxPartialWithdrawalsPerEpoch;
-
-    private UInt64 withdrawalQueueLimit;
-
     private UInt64 maxBlsToExecutionChanges;
 
     private UInt64 maxWithdrawalsPerPayload;
@@ -891,8 +887,6 @@ public class SpecConfigBuilder {
           specConfig,
           capellaForkVersion,
           capellaForkEpoch,
-          maxPartialWithdrawalsPerEpoch,
-          withdrawalQueueLimit,
           maxBlsToExecutionChanges,
           maxWithdrawalsPerPayload);
     }
@@ -913,19 +907,6 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public CapellaBuilder maxPartialWithdrawalsPerEpoch(
-        final UInt64 maxPartialWithdrawalsPerEpoch) {
-      checkNotNull(maxPartialWithdrawalsPerEpoch);
-      this.maxPartialWithdrawalsPerEpoch = maxPartialWithdrawalsPerEpoch;
-      return this;
-    }
-
-    public CapellaBuilder withdrawalQueueLimit(final UInt64 withdrawalQueueLimit) {
-      checkNotNull(withdrawalQueueLimit);
-      this.withdrawalQueueLimit = withdrawalQueueLimit;
-      return this;
-    }
-
     public CapellaBuilder maxBlsToExecutionChanges(final UInt64 maxBlsToExecutionChanges) {
       checkNotNull(maxBlsToExecutionChanges);
       this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
@@ -941,8 +922,6 @@ public class SpecConfigBuilder {
     public void validate() {
       validateConstant("capellaForkVersion", capellaForkVersion);
       validateConstant("capellaForkEpoch", capellaForkEpoch);
-      validateConstant("maxPartialWithdrawalsPerEpoch", maxPartialWithdrawalsPerEpoch);
-      validateConstant("withdrawalQueueLimit", withdrawalQueueLimit);
       validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
       validateConstant("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
     }

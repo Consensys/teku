@@ -20,9 +20,14 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
+  private final BeaconStateSchemaCapella beaconStateSchema;
   private final WithdrawalSchema withdrawalSchema;
 
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
@@ -31,6 +36,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
+    this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.withdrawalSchema = new WithdrawalSchema();
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
@@ -43,6 +49,12 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         SchemaDefinitionsCapella.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsCapella) schemaDefinitions;
+  }
+
+  @Override
+  public BeaconStateSchema<? extends BeaconStateCapella, ? extends MutableBeaconStateCapella>
+      getBeaconStateSchema() {
+    return beaconStateSchema;
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
