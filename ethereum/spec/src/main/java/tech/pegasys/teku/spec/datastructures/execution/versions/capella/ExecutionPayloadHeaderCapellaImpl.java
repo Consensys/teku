@@ -71,7 +71,7 @@ public class ExecutionPayloadHeaderCapellaImpl
   }
 
   public ExecutionPayloadHeaderCapellaImpl(
-      ExecutionPayloadHeaderSchemaCapellaImpl schema,
+      ExecutionPayloadHeaderSchemaCapella schema,
       SszBytes32 parentHash,
       SszByteVector feeRecipient,
       SszBytes32 stateRoot,
@@ -112,8 +112,8 @@ public class ExecutionPayloadHeaderCapellaImpl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchemaCapellaImpl getSchema() {
-    return (ExecutionPayloadHeaderSchemaCapellaImpl) super.getSchema();
+  public ExecutionPayloadHeaderSchemaCapella getSchema() {
+    return (ExecutionPayloadHeaderSchemaCapella) super.getSchema();
   }
 
   @Override
