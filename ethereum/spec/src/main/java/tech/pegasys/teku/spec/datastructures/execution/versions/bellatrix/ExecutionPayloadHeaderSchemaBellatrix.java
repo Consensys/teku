@@ -169,12 +169,12 @@ public class ExecutionPayloadHeaderSchemaBellatrix
     return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT));
   }
 
-  private SszByteListSchema<?> getExtraDataSchema() {
-    return (SszByteListSchema<?>) getFieldSchema10();
-  }
-
   @Override
   public Optional<ExecutionPayloadHeaderSchemaBellatrix> toVersionBellatrix() {
     return Optional.of(this);
+  }
+
+  private SszByteListSchema<?> getExtraDataSchema() {
+    return (SszByteListSchema<?>) getFieldSchema10();
   }
 }

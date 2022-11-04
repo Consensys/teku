@@ -117,6 +117,7 @@ public class ExecutionPayloadSchemaCapella
     return new ExecutionPayloadCapellaImpl(this, node);
   }
 
+  @SuppressWarnings("unchecked")
   private SszListSchema<Transaction, ?> getTransactionsSchema() {
     return (SszListSchema<Transaction, ?>) getFieldSchema13();
   }
