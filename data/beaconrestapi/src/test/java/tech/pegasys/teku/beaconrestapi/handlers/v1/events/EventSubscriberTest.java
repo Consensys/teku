@@ -23,15 +23,13 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,11 +45,10 @@ public class EventSubscriberTest {
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse res = mock(HttpServletResponse.class);
   private final Runnable onCloseCallback = mock(Runnable.class);
-  private final ServletResponse servletResponse = mock(ServletResponse.class);
   private final TestServletOutputStream outputStream = new TestServletOutputStream();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1000);
 
-  private final Context context = new Context(req, res, Collections.emptyMap());
+  private final Context context = new StubContext(req, res);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final List<EventType> allEventTypes =
       Arrays.stream(EventType.values()).collect(Collectors.toList());
@@ -61,8 +58,8 @@ public class EventSubscriberTest {
   @BeforeEach
   public void setup() throws IOException {
     when(req.getAsyncContext()).thenReturn(asyncContext);
-    when(asyncContext.getResponse()).thenReturn(servletResponse);
-    when(servletResponse.getOutputStream()).thenReturn(outputStream);
+    when(asyncContext.getResponse()).thenReturn(res);
+    when(res.getOutputStream()).thenReturn(outputStream);
     sseClient = new SseClient(context);
   }
 

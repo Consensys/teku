@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.concurrent.ExecutionException;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
@@ -79,7 +78,7 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   void metadata_shouldHandle404() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, HttpServletResponse.SC_NOT_FOUND);
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
   }
 
   @Test

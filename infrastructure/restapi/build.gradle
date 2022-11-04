@@ -5,6 +5,8 @@ publishing {
 }
 
 dependencies {
+  api 'commons-io:commons-io'
+
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
@@ -14,8 +16,8 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
-  implementation 'commons-io:commons-io'
   implementation 'io.javalin:javalin'
+  implementation 'io.javalin:javalin-rendering'
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.webjars:swagger-ui'
   implementation 'org.thymeleaf:thymeleaf'

@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import io.javalin.plugin.rendering.JavalinRenderer;
-import io.javalin.plugin.rendering.template.JavalinThymeleaf;
+import io.javalin.rendering.template.JavalinThymeleaf;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -23,14 +22,13 @@ import org.thymeleaf.templateresolver.ITemplateResolver;
 /** ThymeLeaf templates configuration for Javalin */
 public class ThymeleafConfigurator {
   public static void enableThymeleafTemplates(final String templatePath) {
-    JavalinRenderer.register(JavalinThymeleaf.INSTANCE);
     TemplateEngine templateEngine = new TemplateEngine();
     templateEngine.addTemplateResolver(templateResolver(TemplateMode.HTML, templatePath, ".html"));
-    JavalinThymeleaf.configure(templateEngine);
+    JavalinThymeleaf.init(templateEngine);
   }
 
   private static ITemplateResolver templateResolver(
-      TemplateMode templateMode, String prefix, String suffix) {
+      final TemplateMode templateMode, final String prefix, final String suffix) {
     ClassLoaderTemplateResolver templateResolver =
         new ClassLoaderTemplateResolver(Thread.currentThread().getContextClassLoader());
     templateResolver.setTemplateMode(templateMode);

@@ -19,8 +19,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.Header;
 import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
 import java.io.ByteArrayInputStream;
@@ -49,7 +49,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
     return metadata.getRequestBody(
-        context.bodyAsInputStream(), Optional.ofNullable(context.header("Content-Type")));
+        context.bodyInputStream(), Optional.ofNullable(context.header("Content-Type")));
   }
 
   public JavalinRestApiRequest(final Context context, final EndpointMetadata metadata) {
@@ -67,21 +67,22 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @Override
   public void respondAsync(final SafeFuture<AsyncApiResponse> futureResponse) {
     context.future(
-        futureResponse
-            .thenApply(
-                result -> {
-                  try {
-                    respond(
-                        result.getResponseCode(),
-                        result.getResponseBody(),
-                        getResponseOutputStream());
-                  } catch (JsonProcessingException e) {
-                    LOG.trace("Failed to generate API response", e);
-                    context.status(SC_INTERNAL_SERVER_ERROR);
-                  }
-                  return Bytes.EMPTY.toArrayUnsafe();
-                })
-            .thenApply(ByteArrayInputStream::new));
+        () ->
+            futureResponse
+                .thenApply(
+                    result -> {
+                      try {
+                        respond(
+                            result.getResponseCode(),
+                            result.getResponseBody(),
+                            getResponseOutputStream());
+                      } catch (JsonProcessingException e) {
+                        LOG.trace("Failed to generate API response", e);
+                        context.status(SC_INTERNAL_SERVER_ERROR);
+                      }
+                      return Bytes.EMPTY.toArrayUnsafe();
+                    })
+                .thenApply(ByteArrayInputStream::new));
   }
 
   @Override
@@ -99,7 +100,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
 
   private OutputStream getResponseOutputStream() {
     try {
-      return context.res.getOutputStream();
+      return context.res().getOutputStream();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -159,7 +160,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> String getResponseContentType(final int statusCode) {
+  public String getResponseContentType(final int statusCode) {
     return metadata.getContentType(statusCode, Optional.ofNullable(context.header(HEADER_ACCEPT)));
   }
 

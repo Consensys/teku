@@ -85,7 +85,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    app._conf.accessManager(new AuthorizationManager(path));
+    app.updateConfig(config -> config.accessManager(new AuthorizationManager(path)));
   }
 
   @Override

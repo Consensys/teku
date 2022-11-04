@@ -20,8 +20,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
-import io.javalin.core.JavalinConfig;
-import io.javalin.jetty.JettyUtil;
+import io.javalin.config.JavalinConfig;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,11 +128,11 @@ public class RestApiBuilder {
     final Javalin app =
         Javalin.create(
             config -> {
-              config.defaultContentType = "application/json";
+              config.http.defaultContentType = "application/json";
               config.showJavalinBanner = false;
               configureCors(config);
               swaggerBuilder.configureUI(config);
-              config.server(this::createJettyServer);
+              config.jetty.server(this::createJettyServer);
             });
 
     if (!hostAllowlist.isEmpty()) {
@@ -176,9 +176,10 @@ public class RestApiBuilder {
   private void configureCors(final JavalinConfig config) {
     if (!corsAllowedOrigins.isEmpty()) {
       if (corsAllowedOrigins.contains("*")) {
-        config.enableCorsForAllOrigins();
+        config.plugins.enableCors(cors -> cors.add(CorsPluginConfig::anyHost));
       } else {
-        config.enableCorsForOrigin(corsAllowedOrigins.toArray(new String[0]));
+        config.plugins.enableCors(
+            cors -> corsAllowedOrigins.forEach(origin -> cors.add(it -> it.allowHost(origin))));
       }
     }
   }
@@ -207,12 +208,13 @@ public class RestApiBuilder {
             }
           }
         });
-    JettyUtil.INSTANCE.setLogIfNotStarted(false);
+    // TODO: Suppress this nuisance message again.
+    //    JettyUtil.INSTANCE.setLogIfNotStarted(false);
     return server;
   }
 
-  private SslContextFactory getSslContextFactory() {
-    SslContextFactory sslContextFactory = new SslContextFactory.Server();
+  private SslContextFactory.Server getSslContextFactory() {
+    SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
     maybeKeystorePath.ifPresent(
         keystorePath -> sslContextFactory.setKeyStorePath(keystorePath.toString()));
     maybePasswordPath.ifPresentOrElse(

@@ -32,13 +32,9 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.0'
 
-    dependencySet(group: 'io.javalin', version: '4.6.7') {
+    dependencySet(group: 'io.javalin', version: '5.1.3') {
       entry 'javalin'
-      entry('javalin-openapi') {
-        exclude 'org.webjars.npm:redoc'
-        exclude 'javax.mail:mailapi'
-        exclude 'org.apache.httpcomponents:httpclient'
-      }
+      entry 'javalin-rendering'
     }
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
@@ -62,7 +58,7 @@ dependencyManagement {
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder
     dependency 'org.webjars:swagger-ui:4.10.3'
-    dependency 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
+    dependency 'org.thymeleaf:thymeleaf:3.1.0.M1'
     dependency 'io.github.classgraph:classgraph:4.8.149'
     dependency 'com.github.oshi:oshi-core-java11:6.3.1'
 

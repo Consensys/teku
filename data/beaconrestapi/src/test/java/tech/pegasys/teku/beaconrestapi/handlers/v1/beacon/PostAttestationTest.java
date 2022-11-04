@@ -14,12 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -96,8 +95,7 @@ public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
         new ErrorListBadRequest(
             "Some items failed to publish, refer to errors for details", errors);
 
-    final String data =
-        getResponseStringFromMetadata(handler, HttpStatusCodes.SC_BAD_REQUEST, responseData);
+    final String data = getResponseStringFromMetadata(handler, SC_BAD_REQUEST, responseData);
     final String expected =
         Resources.toString(
             Resources.getResource(PostAttestationTest.class, "postAttestation.json"), UTF_8);
