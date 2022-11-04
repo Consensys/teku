@@ -16,12 +16,16 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefinition<T> {
   final Class<T> itemType;
   private final Function<T, String> serializer;
+
+  private Set<T> excludedEnumerations = new HashSet<>();
 
   public EnumTypeDefinition(final Class<T> itemType) {
     this(itemType, Objects::toString);
@@ -30,6 +34,15 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   public EnumTypeDefinition(final Class<T> itemType, final Function<T, String> serializer) {
     this.itemType = itemType;
     this.serializer = serializer;
+  }
+
+  public EnumTypeDefinition(
+      final Class<T> itemType,
+      final Function<T, String> serializer,
+      final Set<T> excludedEnumerations) {
+    this.itemType = itemType;
+    this.serializer = serializer;
+    this.excludedEnumerations.addAll(excludedEnumerations);
   }
 
   @Override
@@ -43,6 +56,9 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     gen.writeArrayFieldStart("enum");
 
     for (T value : itemType.getEnumConstants()) {
+      if (excludedEnumerations.contains(value)) {
+        continue;
+      }
       gen.writeString(serializeToString(value));
     }
     gen.writeEndArray();
@@ -50,6 +66,9 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
 
   @Override
   public void serialize(final T value, final JsonGenerator gen) throws IOException {
+    if (excludedEnumerations.contains(value)) {
+      throw new IllegalArgumentException("Unknown enum value: " + value);
+    }
     gen.writeString(serializeToString(value));
   }
 

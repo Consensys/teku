@@ -1,22 +1,39 @@
 {
   "get" : {
     "tags" : [ "Node", "Validator Required Api" ],
+    "operationId" : "getNodeSyncingStatus",
     "summary" : "Get node syncing status",
     "description" : "Requests the beacon node to describe if it's currently syncing or not, and if it is, what block it is up to.",
-    "operationId" : "getEthV1NodeSyncing",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/SyncingResponse"
+              "$ref" : "#/components/schemas/GetSyncingStatusResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

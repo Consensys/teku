@@ -1,10 +1,22 @@
 {
+  "title" : "GetPeerScoresResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/PeerScore"
+        "type" : "object",
+        "required" : [ "peer_id", "gossip_score" ],
+        "properties" : {
+          "peer_id" : {
+            "type" : "string"
+          },
+          "gossip_score" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
       }
     }
   }

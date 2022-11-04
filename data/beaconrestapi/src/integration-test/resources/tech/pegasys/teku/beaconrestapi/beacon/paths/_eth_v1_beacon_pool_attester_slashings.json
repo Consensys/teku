@@ -1,30 +1,47 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "summary" : "Get AttesterSlashings",
+    "operationId" : "getAttesterSlashings",
+    "summary" : "Get Attester Slashings",
     "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
-    "operationId" : "getEthV1BeaconPoolAttester_slashings",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetAttesterSlashingsResponse"
+              "$ref" : "#/components/schemas/GetPoolAttesterSlashingsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   },
   "post" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "postAttesterSlashing",
     "summary" : "Submit attester slashing object",
     "description" : "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-    "operationId" : "postEthV1BeaconPoolAttester_slashings",
     "requestBody" : {
       "content" : {
         "application/json" : {
@@ -36,13 +53,28 @@
     },
     "responses" : {
       "200" : {
-        "description" : "Attester Slashing has been successfully validated, added to the pool, and broadcast."
+        "description" : "Success",
+        "content" : { }
       },
       "400" : {
-        "description" : "Invalid attester slashing, it will never pass validation so it's rejected"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

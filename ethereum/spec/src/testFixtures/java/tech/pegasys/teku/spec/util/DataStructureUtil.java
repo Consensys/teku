@@ -97,12 +97,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -111,6 +113,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
@@ -141,8 +144,10 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public final class DataStructureUtil {
+
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
@@ -1381,6 +1386,7 @@ public final class DataStructureUtil {
       case ALTAIR:
         return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
@@ -1530,6 +1536,24 @@ public final class DataStructureUtil {
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());
+  }
+
+  public Withdrawal randomWithdrawal() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getWithdrawalSchema()
+        .create(randomUInt256(), randomUInt64(), randomBytes20(), randomUInt64());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(randomUInt64(), randomPublicKey(), randomBytes20());
+  }
+
+  public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBlsToExecutionChangeSchema()
+        .create(randomBlsToExecutionChange(), randomSignature());
   }
 
   private int randomInt(final int bound) {

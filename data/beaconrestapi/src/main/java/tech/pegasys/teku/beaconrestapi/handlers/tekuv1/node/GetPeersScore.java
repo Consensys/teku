@@ -15,8 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_DOUBLE_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
@@ -24,24 +22,18 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.response.v1.teku.GetPeerScoresResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
-public class GetPeersScore extends MigratingEndpointAdapter {
+public class GetPeersScore extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/nodes/peer_scores";
   private final NetworkDataProvider network;
 
@@ -71,23 +63,6 @@ public class GetPeersScore extends MigratingEndpointAdapter {
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .build());
     this.network = network;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get peer scores",
-      tags = {TAG_TEKU},
-      description = "Retrieves data about the node's network peers.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetPeerScoresResponse.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

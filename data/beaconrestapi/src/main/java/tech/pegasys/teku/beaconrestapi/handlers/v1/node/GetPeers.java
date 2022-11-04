@@ -14,8 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
@@ -23,11 +21,6 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,16 +28,15 @@ import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.response.v1.node.Direction;
-import tech.pegasys.teku.api.response.v1.node.PeersResponse;
 import tech.pegasys.teku.api.response.v1.node.State;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-public class GetPeers extends MigratingEndpointAdapter {
+public class GetPeers extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers";
 
   private static final DeserializableTypeDefinition<State> STATE_TYPE =
@@ -123,21 +115,6 @@ public class GetPeers extends MigratingEndpointAdapter {
             .build());
 
     this.network = network;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get node peers",
-      description = "Retrieves data about the node's network peers.",
-      tags = {TAG_NODE},
-      responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = PeersResponse.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

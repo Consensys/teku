@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -55,9 +56,9 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   // Getting a NullPointerException from this? Call setHandler as the first thing you do. :)
   protected StubRestApiRequest request;
-  protected MigratingEndpointAdapter handler;
+  protected RestApiEndpoint handler;
 
-  protected void setHandler(final MigratingEndpointAdapter handler) {
+  protected void setHandler(final RestApiEndpoint handler) {
     this.handler = handler;
     this.request = new StubRestApiRequest(handler.getMetadata());
   }

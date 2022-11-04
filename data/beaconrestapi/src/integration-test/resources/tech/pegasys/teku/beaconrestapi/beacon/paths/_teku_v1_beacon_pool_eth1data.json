@@ -1,12 +1,12 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getEth1Data",
     "summary" : "Get new Eth1Data",
     "description" : "Eth1Data that would be used in a new block created based on the current head.",
-    "operationId" : "getTekuV1BeaconPoolEth1data",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -16,10 +16,34 @@
         }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

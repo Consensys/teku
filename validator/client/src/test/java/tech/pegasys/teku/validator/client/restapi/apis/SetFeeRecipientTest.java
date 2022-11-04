@@ -32,11 +32,11 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 public class SetFeeRecipientTest {
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
-  private final SetFeeRecipient handler = new SetFeeRecipient(Optional.of(beaconProposerPreparer));
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
+  private final SetFeeRecipient handler = new SetFeeRecipient(Optional.of(proposerConfigManager));
 
   private final StubRestApiRequest request = new StubRestApiRequest(handler.getMetadata());
 

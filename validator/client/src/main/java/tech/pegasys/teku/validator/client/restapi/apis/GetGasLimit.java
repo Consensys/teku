@@ -30,13 +30,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class GetGasLimit extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/gas_limit";
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
   private static final SerializableTypeDefinition<GetGasLimit.GetGasLimitResponse> GAS_LIMIT_DATA =
       SerializableTypeDefinition.object(GetGasLimit.GetGasLimitResponse.class)
@@ -52,7 +52,7 @@ public class GetGasLimit extends RestApiEndpoint {
           .withField("data", GAS_LIMIT_DATA, Function.identity())
           .build();
 
-  public GetGasLimit(Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public GetGasLimit(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("GetGasLimit")
@@ -68,23 +68,23 @@ public class GetGasLimit extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    Optional<UInt64> maybeGasLimit =
-        this.beaconProposerPreparer.map(
-            preparer ->
-                preparer.getGasLimit(publicKey).isPresent()
-                    ? preparer.getGasLimit(publicKey).get()
-                    : null);
-    if (maybeGasLimit.isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Gas limit not found");
       return;
     }
-    request.respondOk(new GetGasLimitResponse(maybeGasLimit.get(), publicKey));
+    request.respondOk(new GetGasLimitResponse(manager.getGasLimit(publicKey), publicKey));
   }
 
   static class GetGasLimitResponse {

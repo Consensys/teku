@@ -1,3 +1,0 @@
-# Only applicable to Jetty 10+, not Jetty 9.4 used in Teku.
-# CVE at https://github.com/advisories/GHSA-8mpp-f3f7-xc28 has been updated
-CVE-2022-2191

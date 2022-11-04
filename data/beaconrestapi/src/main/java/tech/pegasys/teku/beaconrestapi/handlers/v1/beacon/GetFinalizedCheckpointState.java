@@ -17,35 +17,23 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseTyp
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
+public class GetFinalizedCheckpointState extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_state";
   private final ChainDataProvider chainDataProvider;
@@ -73,26 +61,6 @@ public class GetFinalizedCheckpointState extends MigratingEndpointAdapter {
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get finalized checkpoint state",
-      tags = {TAG_EXPERIMENTAL},
-      description = "Returns the latest finalized BeaconState.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = {@OpenApiContent(type = OCTET_STREAM)}),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
-      })
-  @Override
-  public void handle(@NotNull Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

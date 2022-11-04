@@ -1,5 +1,7 @@
 {
+  "title" : "ProposerSlashing",
   "type" : "object",
+  "required" : [ "signed_header_1", "signed_header_2" ],
   "properties" : {
     "signed_header_1" : {
       "$ref" : "#/components/schemas/SignedBeaconBlockHeader"

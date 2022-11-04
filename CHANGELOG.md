@@ -18,7 +18,14 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- The logic with which the default configuration is applied when using `validators-proposer-config` has been updated.
+  The logic is now more intuitive but a given proposer config file may result in a different configuration compared with the previous Teku version.
+  (Refer to https://github.com/ConsenSys/teku/pull/6325#issue-1409631918 for more information).  
 
 ### Additions and Improvements
+ - Improved discv5 compliance
+ - Changed the builder `is online\is offline` logs to `is available\is not available`
+ - Added `/eth/v1/beacon/states/{state_id}/randao` to beacon-api.
 
 ### Bug Fixes
+ - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint

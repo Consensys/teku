@@ -35,13 +35,26 @@ public class ValidatorClientOptions {
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Send subnet subscriptions to beacon nodes which are used as failovers",
+      description =
+          "Send subnet subscriptions to the configured failover beacon nodes in addition to the primary node",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
+
+  @Option(
+      names = {"--Xfailovers-publish-signed-duties-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Publish signed duties (blocks, attestations, aggregations, ...) to the configured failover beacon nodes in addition to the primary node",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean failoversPublishSignedDutiesEnabled =
+      ValidatorConfig.DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
 
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
@@ -62,6 +75,7 @@ public class ValidatorClientOptions {
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
+                .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
 

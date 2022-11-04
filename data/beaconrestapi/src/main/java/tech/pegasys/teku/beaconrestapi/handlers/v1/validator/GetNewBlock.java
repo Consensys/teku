@@ -18,37 +18,22 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETE
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -56,7 +41,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlock extends MigratingEndpointAdapter {
+public class GetNewBlock extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/blocks/{slot}";
   protected final ValidatorDataProvider provider;
 
@@ -82,38 +67,6 @@ public class GetNewBlock extends MigratingEndpointAdapter {
             .withChainDataResponses()
             .build());
     this.provider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      deprecated = true,
-      method = HttpMethod.GET,
-      summary = "Produce unsigned block",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      description =
-          "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\n"
-              + "__NOTE__: deprecated, switch to using `/eth/v2/validator/blocks/{slot}` for multiple milestone support.",
-      pathParams = {
-        @OpenApiParam(name = SLOT, description = SLOT_PATH_DESCRIPTION),
-      },
-      queryParams = {
-        @OpenApiParam(
-            name = RANDAO_REVEAL,
-            description = "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
-            required = true),
-        @OpenApiParam(name = GRAFFITI, description = "`Bytes32 Hex` Graffiti.")
-      },
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetNewBlockResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

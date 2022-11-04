@@ -14,8 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
@@ -23,28 +21,22 @@ import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefi
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
-public class GetIdentity extends MigratingEndpointAdapter {
+public class GetIdentity extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/identity";
 
   private static final SerializableTypeDefinition<MetadataMessage> METADATA_TYPE =
@@ -128,24 +120,6 @@ public class GetIdentity extends MigratingEndpointAdapter {
             .response(SC_OK, "Request successful", IDENTITY_RESPONSE_TYPE)
             .build());
     this.network = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get node identity",
-      description = "Retrieves data about the node's network presence.",
-      tags = {TAG_NODE},
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = IdentityResponse.class),
-            description = "The identifying information of the node."),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

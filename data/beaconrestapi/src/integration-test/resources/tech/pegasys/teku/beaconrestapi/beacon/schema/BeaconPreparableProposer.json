@@ -1,16 +1,20 @@
 {
+  "title" : "BeaconPreparableProposer",
+  "description" : "The fee recipient that should be used by an associated validator index.",
   "type" : "object",
+  "required" : [ "validator_index", "fee_recipient" ],
   "properties" : {
     "validator_index" : {
       "type" : "string",
-      "format" : "uint64",
-      "example" : "1"
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
     },
     "fee_recipient" : {
-      "pattern" : "^0x[a-fA-F0-9]{40}$",
       "type" : "string",
-      "description" : "An address on the execution (Ethereum 1) network.",
-      "example" : "0xabcf8e0d4e9587369b2301d0790347320302cc09"
+      "description" : "Hex encoded deposit contract address with 0x prefix",
+      "example" : "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
+      "format" : "byte"
     }
   }
 }

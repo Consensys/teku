@@ -17,46 +17,29 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 
-public class GetStateValidator extends MigratingEndpointAdapter {
+public class GetStateValidator extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators/{validator_id}";
 
   private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
@@ -101,31 +84,6 @@ public class GetStateValidator extends MigratingEndpointAdapter {
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = provider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get validator from state",
-      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      description =
-          "Returns validator specified by state and id or public key along with status and balance.",
-      pathParams = {
-        @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),
-        @OpenApiParam(name = PARAM_VALIDATOR_ID, description = PARAM_VALIDATOR_DESCRIPTION)
-      },
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetStateValidatorResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

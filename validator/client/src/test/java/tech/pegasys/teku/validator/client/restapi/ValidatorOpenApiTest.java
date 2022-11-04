@@ -29,12 +29,12 @@ import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
   private JsonNode jsonNode;
@@ -51,7 +51,7 @@ class ValidatorOpenApiTest {
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
     final RestApi restApi =
         ValidatorRestApi.create(
-            config, Optional.of(beaconProposerPreparer), keyManager, dataDirLayout);
+            config, Optional.of(proposerConfigManager), keyManager, dataDirLayout);
     final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());

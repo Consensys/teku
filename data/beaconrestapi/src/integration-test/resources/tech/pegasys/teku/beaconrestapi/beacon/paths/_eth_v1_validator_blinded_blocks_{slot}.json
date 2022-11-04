@@ -1,36 +1,42 @@
 {
   "get" : {
     "tags" : [ "Validator", "Validator Required Api"],
+    "operationId" : "getNewBlindedBlock",
     "summary" : "Produce unsigned blinded block",
     "description" : "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. A blinded block is a block with only a transactions root, rather than a full transactions list.\n\nMetadata in the response indicates the type of block produced, and the supported types of block will be added to as forks progress.\n\nPre-Bellatrix, this endpoint will return a `BeaconBlock`.",
-    "operationId" : "getEthV1ValidatorBlinded_blocksWithSlot",
     "parameters" : [ {
       "name" : "slot",
-      "in" : "path",
-      "description" : "The slot for which the block should be proposed.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "The slot for which the block should be proposed.",
+        "example" : "1",
+        "format" : "uint64"
       }
     }, {
       "name" : "randao_reveal",
-      "in" : "query",
-      "description" : "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
       "required" : true,
+      "in" : "query",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
+        "example" : "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505",
+        "format" : "byte"
       }
     }, {
       "name" : "graffiti",
       "in" : "query",
-      "description" : "`Bytes32 Hex` Graffiti.",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`Bytes32 Hex` Graffiti.",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+        "format" : "byte"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -39,19 +45,31 @@
           },
           "application/octet-stream" : {
             "schema" : {
-              "$ref" : "#/components/schemas/Unit"
+              "type" : "string",
+              "format" : "binary"
             }
           }
         }
       },
       "400" : {
-        "description" : "Invalid parameter supplied"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

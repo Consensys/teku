@@ -24,9 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockSerializerPropertyTest {
@@ -35,14 +33,12 @@ public class DepositsFromBlockSerializerPropertyTest {
   @Property(tries = 100)
   public boolean roundTrip(
       @ForAll final int seed,
-      @ForAll final SpecMilestone milestone,
-      @ForAll final Eth2Network network,
+      @ForAll(supplier = SpecSupplier.class) Spec spec,
       @ForAll final long blockNumber,
       @ForAll @Size(32) final byte[] blockHash,
       @ForAll final long blockTimestamp,
       @ForAll @LongRange(min = 0, max = Long.MAX_VALUE - MAX_DEPOSITS) final long startIndex,
       @ForAll @LongRange(min = 1, max = MAX_DEPOSITS) final long depositCount) {
-    final Spec spec = TestSpecFactory.create(milestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final DepositsFromBlockEvent value =
         DepositsFromBlockEvent.create(

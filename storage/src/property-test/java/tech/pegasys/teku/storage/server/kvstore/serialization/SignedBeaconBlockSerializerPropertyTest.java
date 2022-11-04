@@ -19,20 +19,16 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.Positive;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBeaconBlockSerializerPropertyTest {
   @Property
   public boolean roundTrip(
       @ForAll final int seed,
-      @ForAll final SpecMilestone milestone,
-      @ForAll final Eth2Network network,
+      @ForAll(supplier = SpecSupplier.class) Spec spec,
       @ForAll @Positive final long slotNum) {
-    final Spec spec = TestSpecFactory.create(milestone, network);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final KvStoreSerializer<SignedBeaconBlock> serializer = createSignedBlockSerializer(spec);
     final SignedBeaconBlock value = dataStructureUtil.randomSignedBeaconBlock(slotNum);

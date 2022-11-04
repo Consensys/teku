@@ -8,7 +8,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.15.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.16') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -18,21 +18,21 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.0'
 
     dependency 'com.google.guava:guava:31.1-jre'
-    dependency 'com.google.code.gson:gson:2.9.0'
+    dependency 'com.google.code.gson:gson:2.10'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.3'
 
     dependency 'com.launchdarkly:okhttp-eventsource:2.7.1'
 
-    dependency 'com.squareup.okhttp3:okhttp:4.9.2'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
+    dependency 'com.squareup.okhttp3:okhttp:4.9.3'
+    dependency 'com.squareup.okhttp3:mockwebserver:4.9.3'
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'info.picocli:picocli:4.6.3'
+    dependency 'info.picocli:picocli:4.7.0'
 
-    dependencySet(group: 'io.javalin', version: '4.6.6') {
+    dependencySet(group: 'io.javalin', version: '4.6.7') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -54,7 +54,7 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.14.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.3') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.4') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -64,7 +64,7 @@ dependencyManagement {
     dependency 'org.webjars:swagger-ui:4.10.3'
     dependency 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.149'
-    dependency 'com.github.oshi:oshi-core-java11:6.2.2'
+    dependency 'com.github.oshi:oshi-core-java11:6.3.1'
 
     dependencySet(group: 'io.netty', version: '4.1.71.Final') {
       entry('netty-all') {
@@ -79,13 +79,13 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.4.23'
+    dependency 'io.projectreactor:reactor-core:3.4.24'
 
     dependency 'it.unimi.dsi:fastutil:8.5.9'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '2.2.0') {
+    dependencySet(group: 'org.apache.tuweni', version: '2.3.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-junit'
@@ -121,7 +121,7 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '4.8.0') {
+    dependencySet(group: 'org.mockito', version: '4.8.1') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -135,7 +135,7 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:6.29.5'
+    dependency 'org.rocksdb:rocksdbjni:7.7.3'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
@@ -150,22 +150,22 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.7.4') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.7.7') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
     }
-    dependency 'org.hyperledger.besu:plugin-api:22.7.4'
+    dependency 'org.hyperledger.besu:plugin-api:22.7.7'
 
-    dependencySet(group: 'org.testcontainers', version: '1.17.3') {
+    dependencySet(group: 'org.testcontainers', version: '1.17.5') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:22.2.0') {
+    dependency('tech.pegasys.discovery:discovery:22.11.2') {
       exclude 'org.apache.tuweni:bytes'
       exclude 'org.apache.tuweni:crypto'
       exclude 'org.apache.tuweni:units'

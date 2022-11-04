@@ -16,31 +16,21 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.response.v1.teku.GetEth1DataCacheResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 
-public class GetEth1DataCache extends MigratingEndpointAdapter {
+public class GetEth1DataCache extends RestApiEndpoint {
 
   public static final String ROUTE = "/teku/v1/beacon/pool/eth1cache";
 
@@ -67,25 +57,6 @@ public class GetEth1DataCache extends MigratingEndpointAdapter {
             .withNotFoundResponse()
             .build());
     this.eth1DataProvider = eth1DataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get cached eth1 blocks",
-      description =
-          "Get all of the eth1 blocks currently cached by the beacon node, that could be considered for inclusion during block production.",
-      tags = {TAG_TEKU},
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetEth1DataCacheResponse.class)),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(@NotNull Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

@@ -15,18 +15,10 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v2.debug.GetChainHeadsResponseV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -58,22 +50,5 @@ public class GetChainHeadsV2 extends GetChainHeads {
             .tags(TAG_DEBUG)
             .response(SC_OK, "Success", responseType(CHAIN_HEAD_TYPE_V2))
             .build());
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get fork choice leaves",
-      tags = {TAG_DEBUG},
-      description = "Retrieves all possible chain heads (leaves of fork choice tree).",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetChainHeadsResponseV2.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 }

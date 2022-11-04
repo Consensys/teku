@@ -1,20 +1,27 @@
 {
+  "title" : "PendingAttestation",
   "type" : "object",
+  "required" : [ "aggregation_bits", "data", "inclusion_delay", "proposer_index" ],
   "properties" : {
     "aggregation_bits" : {
       "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "SSZ hexadecimal",
-      "format" : "byte"
+      "format" : "bytes"
     },
     "data" : {
       "$ref" : "#/components/schemas/AttestationData"
     },
     "inclusion_delay" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     },
     "proposer_index" : {
       "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
       "format" : "uint64"
     }
   }

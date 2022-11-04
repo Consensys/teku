@@ -15,9 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
@@ -25,27 +22,21 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 
-public class GetGenesis extends MigratingEndpointAdapter {
+public class GetGenesis extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/genesis";
   private final ChainDataProvider chainDataProvider;
 
@@ -79,26 +70,6 @@ public class GetGenesis extends MigratingEndpointAdapter {
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
             .build());
     this.chainDataProvider = chainDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get chain genesis details",
-      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      description = "Retrieve details of the chain's genesis which can be used to identify chain.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetGenesisResponse.class)),
-        @OpenApiResponse(
-            status = RES_NOT_FOUND,
-            description = "Chain genesis info is not yet known"),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   private Optional<GenesisData> getGenesisData() {

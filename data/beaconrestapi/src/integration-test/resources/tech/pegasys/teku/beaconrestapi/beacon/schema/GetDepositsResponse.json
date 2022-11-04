@@ -1,10 +1,24 @@
 {
+  "title" : "GetDepositsResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/DepositWithIndex"
+        "type" : "object",
+        "required" : [ "index", "data" ],
+        "properties" : {
+          "index" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/DepositData"
+          }
+        }
       }
     }
   }

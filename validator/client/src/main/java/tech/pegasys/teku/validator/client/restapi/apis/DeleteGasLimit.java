@@ -25,15 +25,15 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 public class DeleteGasLimit extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/gas_limit";
 
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
-  public DeleteGasLimit(Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public DeleteGasLimit(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.delete(ROUTE)
             .operationId("DeleteGasLimit")
@@ -49,17 +49,23 @@ public class DeleteGasLimit extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    if (beaconProposerPreparer.orElseThrow().getGasLimit(publicKey).isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Gas limit not found");
       return;
     }
-    if (!beaconProposerPreparer.orElseThrow().deleteGasLimit(publicKey)) {
+    if (!manager.deleteGasLimit(publicKey)) {
       request.respondError(SC_FORBIDDEN, "Gas limit for public key could not be removed.");
       return;
     }

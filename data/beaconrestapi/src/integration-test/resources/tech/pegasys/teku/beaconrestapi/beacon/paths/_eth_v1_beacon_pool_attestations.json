@@ -1,48 +1,66 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "getAttestations",
     "summary" : "Get attestations",
     "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
-    "operationId" : "getEthV1BeaconPoolAttestations",
     "parameters" : [ {
       "name" : "slot",
       "in" : "query",
-      "description" : "`UInt64` Slot to query in the canonical chain.",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`UInt64` Slot to query in the canonical chain.",
+        "example" : "1",
+        "format" : "uint64"
       }
     }, {
       "name" : "committee_index",
       "in" : "query",
-      "description" : "`uint64` Committee index to query.",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetAttestationsResponse"
+              "$ref" : "#/components/schemas/GetPoolAttestationsResponse"
             }
           }
         }
       },
       "400" : {
-        "description" : "Bad Request"
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   },
   "post" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "postAttestation",
     "summary" : "Submit signed attestations",
     "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
-    "operationId" : "postEthV1BeaconPoolAttestations",
     "requestBody" : {
       "content" : {
         "application/json" : {
@@ -57,20 +75,28 @@
     },
     "responses" : {
       "200" : {
-        "description" : "The Attestation was accepted, validated, and submitted"
+        "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
       },
       "400" : {
-        "description" : "Errors with one or more sync committee messages",
+        "description" : "Errors with one or more attestations",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PostDataFailureResponse"
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

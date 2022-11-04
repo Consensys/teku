@@ -1,21 +1,22 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getEth1VotingSummary",
     "summary" : "Get Eth1 voting summary",
     "description" : "Returns information about the current state of voting for Eth1Data from the specified state.",
-    "operationId" : "getTekuV1BeaconStateWithState_idEth1voting",
     "parameters" : [ {
       "name" : "state_id",
-      "in" : "path",
-      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -25,10 +26,34 @@
         }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

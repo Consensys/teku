@@ -1,18 +1,22 @@
 {
+  "title" : "Attestation",
   "type" : "object",
+  "required" : [ "aggregation_bits", "data", "signature" ],
   "properties" : {
     "aggregation_bits" : {
       "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "SSZ hexadecimal",
-      "format" : "byte"
+      "format" : "bytes"
     },
     "data" : {
       "$ref" : "#/components/schemas/AttestationData"
     },
     "signature" : {
       "type" : "string",
-      "description" : "Bytes96 hexadecimal",
-      "format" : "byte"
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "SSZ hexadecimal",
+      "format" : "bytes"
     }
   }
 }

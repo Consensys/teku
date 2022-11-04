@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.util.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlindedBeaconBlockBodySupplier extends DataStructureUtilSupplier<BeaconBlockBody> {

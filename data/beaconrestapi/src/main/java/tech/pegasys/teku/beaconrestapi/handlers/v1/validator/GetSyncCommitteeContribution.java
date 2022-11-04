@@ -17,35 +17,21 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BEACON_BLOCK_RO
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SUBCOMMITTEE_INDEX_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -55,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-public class GetSyncCommitteeContribution extends MigratingEndpointAdapter {
+public class GetSyncCommitteeContribution extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_contribution";
   private final ValidatorDataProvider provider;
 
@@ -83,44 +69,6 @@ public class GetSyncCommitteeContribution extends MigratingEndpointAdapter {
             .withChainDataResponses()
             .build());
     this.provider = validatorDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Produce a sync committee contribution",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      queryParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description =
-                "`uint64` The slot for which a sync committee contribution should be created.",
-            required = true),
-        @OpenApiParam(
-            name = SUBCOMMITTEE_INDEX,
-            description = "`uint64` The subcommittee index for which to produce the contribution.",
-            required = true),
-        @OpenApiParam(
-            name = BEACON_BLOCK_ROOT,
-            description = "`bytes32` The block root for which to produce the contribution.",
-            required = true)
-      },
-      description =
-          "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeMessage` "
-              + "values known to this node matching the specified slot, subcommittee index and beacon block root.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetSyncCommitteeContributionResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid request syntax."),
-        @OpenApiResponse(
-            status = RES_NOT_FOUND,
-            description = "No matching sync committee messages were found"),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

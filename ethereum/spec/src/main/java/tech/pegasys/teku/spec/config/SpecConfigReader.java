@@ -57,8 +57,6 @@ public class SpecConfigReader {
           // Unsupported, upcoming fork-related keys
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
-          "CAPELLA_FORK_EPOCH",
-          "CAPELLA_FORK_VERSION",
           // Old merge config item which is no longer used, ignore for backwards compatibility
           "TRANSITION_TOTAL_DIFFICULTY");
   private static final ImmutableSet<String> CONSTANT_KEYS =
@@ -164,6 +162,16 @@ public class SpecConfigReader {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(setter, configBuilder::bellatrixBuilder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
+            });
+
+    // Process capella config
+    streamConfigSetters(SpecConfigBuilder.CapellaBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::capellaBuilder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

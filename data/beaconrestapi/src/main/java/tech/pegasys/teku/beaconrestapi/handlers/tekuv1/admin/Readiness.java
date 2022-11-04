@@ -17,31 +17,21 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.TARGET_PEER_COUNT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class Readiness extends MigratingEndpointAdapter {
+public class Readiness extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/admin/readiness";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
@@ -77,29 +67,6 @@ public class Readiness extends MigratingEndpointAdapter {
     this.chainDataProvider = chainDataProvider;
     this.networkDataProvider = networkDataProvider;
     this.executionClientDataProvider = executionClientDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get node readiness",
-      description = "Returns 200 if the node is ready to accept traffic",
-      tags = {TAG_TEKU},
-      queryParams = {
-        @OpenApiParam(name = TARGET_PEER_COUNT, description = TARGET_PEER_COUNT_DESCRIPTION),
-      },
-      responses = {
-        @OpenApiResponse(status = RES_OK, description = "Node is ready"),
-        @OpenApiResponse(
-            status = RES_BAD_REQUEST,
-            description = "Cannot parse " + TARGET_PEER_COUNT + " parameter passed in request"),
-        @OpenApiResponse(
-            status = RES_SERVICE_UNAVAILABLE,
-            description = "Node not initialized or having issues")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

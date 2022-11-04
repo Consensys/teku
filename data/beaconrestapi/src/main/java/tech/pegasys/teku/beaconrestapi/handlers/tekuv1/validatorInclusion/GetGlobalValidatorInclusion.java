@@ -14,13 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
-import static tech.pegasys.teku.infrastructure.http.ContentTypes.JSON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -28,26 +22,20 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.MoreObjects;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
-public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
+public class GetGlobalValidatorInclusion extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/validator_inclusion/{epoch}/global";
 
   private final ChainDataProvider chainDataProvider;
@@ -76,29 +64,6 @@ public class GetGlobalValidatorInclusion extends MigratingEndpointAdapter {
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get Global Validator Inclusion",
-      tags = {TAG_TEKU, TAG_EXPERIMENTAL},
-      description = "Returns a global count of votes for a given epoch.",
-      pathParams = {@OpenApiParam(name = "epoch", description = "Epoch to get data for")},
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = {@OpenApiContent(type = JSON, from = GetGlobalValidatorResponse.class)}),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(
-            status = RES_SERVICE_UNAVAILABLE,
-            description = "Beacon node is currently syncing.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

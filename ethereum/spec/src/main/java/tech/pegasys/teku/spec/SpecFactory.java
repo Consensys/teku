@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec;
 
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 public class SpecFactory {
@@ -45,9 +47,16 @@ public class SpecFactory {
             .toVersionBellatrix()
             .map(SpecConfigBellatrix::getBellatrixForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 capellaForkEpoch =
+        config
+            .toVersionCapella()
+            .map(SpecConfigCapella::getCapellaForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
     final SpecMilestone highestMilestoneSupported;
 
-    if (!bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    if (!capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = CAPELLA;
+    } else if (!bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = BELLATRIX;
     } else if (!altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ALTAIR;

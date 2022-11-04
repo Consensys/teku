@@ -1,5 +1,7 @@
 {
+  "title" : "GetDepositSnapshotResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "$ref" : "#/components/schemas/DepositTreeSnapshot"

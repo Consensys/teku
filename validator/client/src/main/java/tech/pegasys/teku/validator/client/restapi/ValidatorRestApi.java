@@ -27,8 +27,8 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
@@ -50,7 +50,7 @@ public class ValidatorRestApi {
 
   public static RestApi create(
       final ValidatorRestApiConfig config,
-      final Optional<BeaconProposerPreparer> beaconProposerPreparer,
+      final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
       final DataDirLayout dataDirLayout) {
     final Path slashingProtectionPath =
@@ -90,12 +90,12 @@ public class ValidatorRestApi {
         .endpoint(new GetRemoteKeys(keyManager))
         .endpoint(new PostRemoteKeys(keyManager))
         .endpoint(new DeleteRemoteKeys(keyManager))
-        .endpoint(new GetFeeRecipient(beaconProposerPreparer))
-        .endpoint(new GetGasLimit(beaconProposerPreparer))
-        .endpoint(new SetFeeRecipient(beaconProposerPreparer))
-        .endpoint(new SetGasLimit(beaconProposerPreparer))
-        .endpoint(new DeleteFeeRecipient(beaconProposerPreparer))
-        .endpoint(new DeleteGasLimit(beaconProposerPreparer))
+        .endpoint(new GetFeeRecipient(proposerConfigManager))
+        .endpoint(new GetGasLimit(proposerConfigManager))
+        .endpoint(new SetFeeRecipient(proposerConfigManager))
+        .endpoint(new SetGasLimit(proposerConfigManager))
+        .endpoint(new DeleteFeeRecipient(proposerConfigManager))
+        .endpoint(new DeleteGasLimit(proposerConfigManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

@@ -1,8 +1,10 @@
 {
+  "title" : "GetBlockResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/SignedBeaconBlock"
+      "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
     }
   }
 }
