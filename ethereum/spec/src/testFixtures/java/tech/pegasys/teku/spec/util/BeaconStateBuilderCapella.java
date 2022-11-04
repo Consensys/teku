@@ -110,6 +110,9 @@ public class BeaconStateBuilderCapella
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
     latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
 
-    this.latestWithdrawalValidatorIndex = dataStructureUtil.randomUInt64(defaultValidatorCount);
+    this.latestWithdrawalValidatorIndex =
+        defaultValidatorCount > 0
+            ? dataStructureUtil.randomUInt64(defaultValidatorCount)
+            : UInt64.ZERO;
   }
 }
