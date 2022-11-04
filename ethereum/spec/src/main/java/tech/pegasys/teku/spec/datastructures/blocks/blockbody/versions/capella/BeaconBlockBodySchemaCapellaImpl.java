@@ -31,7 +31,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -56,7 +59,7 @@ public class BeaconBlockBodySchemaCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload,
+    ExecutionPayloadCapellaImpl,
         SszList<SignedBlsToExecutionChange>>
     implements BeaconBlockBodySchemaCapella<BeaconBlockBodyCapellaImpl> {
 
@@ -188,6 +191,11 @@ public class BeaconBlockBodySchemaCapellaImpl
   @Override
   public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
     return (SszListSchema<SignedBlsToExecutionChange, ?>) getFieldSchema10();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
+    return Optional.of(this);
   }
 
   @Override

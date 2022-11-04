@@ -37,21 +37,25 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestBuilderClient implements BuilderClient {
 
   private final Map<
-          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>>
+          SpecMilestone,
+          DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayloadBellatrix>>>
       cachedBuilderApiExecutionPayloadResponseType = new ConcurrentHashMap<>();
 
   private final Map<
-          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>>
+          SpecMilestone,
+          DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidBellatrix>>>
       cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
   private final RestClient restClient;
@@ -98,14 +102,14 @@ public class RestBuilderClient implements BuilderClient {
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
 
-    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
+    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidBellatrix>>
         responseTypeDefinition =
             cachedBuilderApiSignedBuilderBidResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
                   final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
                       getSchemaDefinitionsBellatrix(milestone);
-                  final SignedBuilderBidSchema signedBuilderBidSchema =
+                  final SignedBuilderBidSchemaBellatrix signedBuilderBidSchema =
                       schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
                   return BuilderApiResponse.createTypeDefinition(
                       signedBuilderBidSchema.getJsonTypeDefinition());
@@ -115,13 +119,12 @@ public class RestBuilderClient implements BuilderClient {
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(response -> Response.unwrap(response, this::extractSignedBuilderBid))
         .thenApply(Response::convertToOptional)
         .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public SafeFuture<Response<ExecutionPayload>> getPayload(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
 
@@ -134,17 +137,13 @@ public class RestBuilderClient implements BuilderClient {
     final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
         schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
 
-    final DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>
+    final DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayloadBellatrix>>
         responseTypeDefinition =
             cachedBuilderApiExecutionPayloadResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
-                  @SuppressWarnings("rawtypes")
-                  final ExecutionPayloadSchema executionPayloadSchema =
-                      schemaDefinitionsBellatrix
-                          .getExecutionPayloadSchema()
-                          .toVersionBellatrix()
-                          .orElseThrow();
+                  final ExecutionPayloadSchemaBellatrix executionPayloadSchema =
+                      schemaDefinitionsBellatrix.getExecutionPayloadSchema();
                   return BuilderApiResponse.createTypeDefinition(
                       executionPayloadSchema.getJsonTypeDefinition());
                 });
@@ -155,8 +154,18 @@ public class RestBuilderClient implements BuilderClient {
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(response -> Response.unwrap(response, this::extractExecutionPayload))
         .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
+  }
+
+  private <T extends SignedBuilderBid> SignedBuilderBid extractSignedBuilderBid(
+      final BuilderApiResponse<T> builderApiResponse) {
+    return builderApiResponse.getData();
+  }
+
+  private <T extends ExecutionPayload> ExecutionPayload extractExecutionPayload(
+      final BuilderApiResponse<T> builderApiResponse) {
+    return builderApiResponse.getData();
   }
 
   private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {

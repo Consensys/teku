@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -42,8 +42,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
   private final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema;
-  private final BuilderBidSchema builderBidSchema;
-  private final SignedBuilderBidSchema signedBuilderBidSchema;
+  private final BuilderBidSchemaBellatrix builderBidSchema;
+  private final SignedBuilderBidSchemaBellatrix signedBuilderBidSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -62,8 +62,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
     this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchemaBellatrix(specConfig);
-    this.builderBidSchema = new BuilderBidSchema(executionPayloadHeaderSchema);
-    this.signedBuilderBidSchema = new SignedBuilderBidSchema(builderBidSchema);
+    this.builderBidSchema = new BuilderBidSchemaBellatrix(executionPayloadHeaderSchema);
+    this.signedBuilderBidSchema = new SignedBuilderBidSchemaBellatrix(builderBidSchema);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -119,11 +119,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return executionPayloadHeaderSchema;
   }
 
-  public BuilderBidSchema getBuilderBidSchema() {
+  public BuilderBidSchemaBellatrix getBuilderBidSchema() {
     return builderBidSchema;
   }
 
-  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
+  public SignedBuilderBidSchemaBellatrix getSignedBuilderBidSchema() {
     return signedBuilderBidSchema;
   }
 

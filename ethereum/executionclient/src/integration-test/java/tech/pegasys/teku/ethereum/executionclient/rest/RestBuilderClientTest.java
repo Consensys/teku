@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -370,9 +371,10 @@ class RestBuilderClientTest {
   }
 
   private void verifySignedBuilderBidResponse(SignedBuilderBid actual) {
-    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>> responseTypeDefinition =
-        BuilderApiResponse.createTypeDefinition(
-            schemaDefinitionsBellatrix.getSignedBuilderBidSchema().getJsonTypeDefinition());
+    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidBellatrix>>
+        responseTypeDefinition =
+            BuilderApiResponse.createTypeDefinition(
+                schemaDefinitionsBellatrix.getSignedBuilderBidSchema().getJsonTypeDefinition());
     try {
       SignedBuilderBid expected =
           JsonUtil.parse(EXECUTION_PAYLOAD_HEADER_RESPONSE, responseTypeDefinition).getData();
@@ -396,11 +398,7 @@ class RestBuilderClientTest {
     DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayloadBellatrix>>
         responseTypeDefinition =
             BuilderApiResponse.createTypeDefinition(
-                schemaDefinitionsBellatrix
-                    .getExecutionPayloadSchema()
-                    .toVersionBellatrix()
-                    .orElseThrow()
-                    .getJsonTypeDefinition());
+                schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
     try {
       ExecutionPayload expected =
           JsonUtil.parse(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE, responseTypeDefinition).getData();
