@@ -22,12 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class SpecConfigLoader {
+  private static final List<String> AVAILABLE_PRESETS =
+      List.of("phase0", "altair", "bellatrix", "capella");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
@@ -85,28 +86,16 @@ public class SpecConfigLoader {
       final boolean ignoreUnknownConfigItems,
       final String preset)
       throws IOException {
-    try (final InputStream phase0Input = loadPhase0Preset(source, preset)) {
-      reader.readAndApply(phase0Input, ignoreUnknownConfigItems);
-    }
-
-    try (final InputStream altairInput = loadAltairPreset(preset).orElse(null)) {
-      // Altair is optional
-      if (altairInput != null) {
-        reader.readAndApply(altairInput, ignoreUnknownConfigItems);
-      }
-    }
-
-    try (final InputStream bellatrixInput = loadBellatrixPreset(preset).orElse(null)) {
-      // Bellatrix is optional
-      if (bellatrixInput != null) {
-        reader.readAndApply(bellatrixInput, ignoreUnknownConfigItems);
-      }
-    }
-
-    try (final InputStream capellaInput = loadCapellaPreset(preset).orElse(null)) {
-      // capella is optional
-      if (capellaInput != null) {
-        reader.readAndApply(capellaInput, ignoreUnknownConfigItems);
+    for (String resource : AVAILABLE_PRESETS) {
+      try (final InputStream inputStream = loadPreset(preset, resource).orElse(null)) {
+        if (inputStream != null) {
+          reader.readAndApply(inputStream, ignoreUnknownConfigItems);
+        } else if (resource.equals("phase0")) {
+          throw new FileNotFoundException(
+              String.format(
+                  "Could not load spec config preset '%s' specified in config '%s'",
+                  preset, source));
+        }
       }
     }
   }
@@ -117,31 +106,12 @@ public class SpecConfigLoader {
         .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));
   }
 
-  private static InputStream loadPhase0Preset(final String source, final String preset)
+  private static Optional<InputStream> loadPreset(final String preset, final String resource)
       throws IOException {
     return getPresetLoader()
-        .load(PRESET_PATH + preset + "/phase0.yaml", PRESET_PATH + preset + "/phase0.yml")
-        .orElseThrow(
-            () ->
-                new FileNotFoundException(
-                    String.format(
-                        "Could not load spec config preset '%s' specified in config '%s'",
-                        preset, source)));
-  }
-
-  private static Optional<InputStream> loadAltairPreset(final String preset) throws IOException {
-    return getPresetLoader()
-        .load(PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
-  }
-
-  private static Optional<InputStream> loadBellatrixPreset(final String preset) throws IOException {
-    return getPresetLoader()
-        .load(PRESET_PATH + preset + "/bellatrix.yaml", PRESET_PATH + preset + "/bellatrix.yml");
-  }
-
-  private static Optional<InputStream> loadCapellaPreset(final String preset) throws IOException {
-    return getPresetLoader()
-        .load(PRESET_PATH + preset + "/capella.yaml", PRESET_PATH + preset + "/capella.yml");
+        .load(
+            PRESET_PATH + preset + "/" + resource + ".yaml",
+            PRESET_PATH + preset + "/" + resource + ".yml");
   }
 
   private static ResourceLoader getConfigLoader() {
@@ -169,11 +139,7 @@ public class SpecConfigLoader {
     return Arrays.stream(Eth2Presets.values())
         .map(Eth2Presets::presetName)
         .flatMap(
-            s ->
-                Stream.of(
-                    PRESET_PATH + s + "/phase0.yaml",
-                    PRESET_PATH + s + "/altair.yaml",
-                    PRESET_PATH + s + "/bellatrix.yaml"))
+            s -> AVAILABLE_PRESETS.stream().map(preset -> PRESET_PATH + s + "/" + preset + ".yaml"))
         .collect(Collectors.toList());
   }
 }

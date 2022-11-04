@@ -395,7 +395,7 @@ public class Spec {
   }
 
   public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).beaconStateAccessors().getRandaoMix(state, epoch);
+    return atState(state).beaconStateAccessors().getRandaoMix(state, epoch);
   }
 
   public boolean verifyProposerSlashingSignature(

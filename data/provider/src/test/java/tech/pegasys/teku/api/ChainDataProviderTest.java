@@ -29,14 +29,19 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
@@ -501,6 +506,43 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(1)).get();
     assertThat(finalizedBlockRoot).isEmpty();
+  }
+
+  @ParameterizedTest(name = "given slot={0} when epoch={1} then randao={2}")
+  @MethodSource("getRandaoIndexCases")
+  void getRandaoIndex(
+      final int stateSlot, final int queryEpoch, final Optional<Bytes32> maybeRandao) {
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        data.randomBeaconState(UInt64.valueOf(stateSlot));
+    final UInt64 epoch = UInt64.valueOf(queryEpoch);
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThat(provider.getRandaoAtEpochFromState(state, Optional.of(epoch)))
+        .isEqualTo(maybeRandao);
+  }
+
+  public static Stream<Arguments> getRandaoIndexCases() {
+    final int epochsPerHistoricalVector = 64;
+    final int slotsPerEpoch = 8;
+    final int currentEpoch = 2048;
+    final int stateSlot = currentEpoch * slotsPerEpoch; // first slot of epoch 100
+    ArrayList<Arguments> args = new ArrayList<>();
+    args.add(Arguments.of(stateSlot, currentEpoch - epochsPerHistoricalVector, Optional.empty()));
+    args.add(Arguments.of(stateSlot, currentEpoch + 1, Optional.empty()));
+    final Optional<Bytes32> randao =
+        Optional.of(
+            Bytes32.fromHexString(
+                "0xcc9b03923c85d9ce8eba32968977d98d668788d1c2f0e4f3a79facfcd8247794"));
+    final Optional<Bytes32> randao2 =
+        Optional.of(
+            Bytes32.fromHexString(
+                "0x933815925ca23b00aef1fc130edd9b26547e8b1b9f966ac51e1ce2a3480251f4"));
+    args.add(Arguments.of(stateSlot, currentEpoch - epochsPerHistoricalVector + 1, randao2));
+    args.add(Arguments.of(stateSlot, currentEpoch, randao));
+    args.add(Arguments.of(7, 0, randao));
+    args.add(Arguments.of(9, 0, randao));
+    args.add(Arguments.of(9, 1, randao2));
+    return args.stream();
   }
 
   private ChainDataProvider setupAltairState() {

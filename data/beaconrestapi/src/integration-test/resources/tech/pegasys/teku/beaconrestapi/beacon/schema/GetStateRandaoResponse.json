@@ -1,0 +1,13 @@
+{
+  "title": "GetStateRandaoResponse",
+  "description": "RANDAO mix for state with given 'stateId'.",
+  "type": "object",
+  "required": [
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "$ref": "#/components/schemas/Randao"
+    }
+  }
+}

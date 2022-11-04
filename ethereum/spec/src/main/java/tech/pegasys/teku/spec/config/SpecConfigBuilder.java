@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
@@ -239,7 +238,7 @@ public class SpecConfigBuilder {
     bellatrixBuilder
         .filter(BellatrixBuilder::isBellatrixIncluded)
         .ifPresent(BellatrixBuilder::validate);
-    capellaBuilder.ifPresent(CapellaBuilder::validate);
+    capellaBuilder.filter(CapellaBuilder::isCapellaIncluded).ifPresent(CapellaBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -875,12 +874,27 @@ public class SpecConfigBuilder {
 
   public class CapellaBuilder {
     private Bytes4 capellaForkVersion;
-    private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
+    private UInt64 capellaForkEpoch;
+
+    private UInt64 maxPartialWithdrawalsPerEpoch;
+
+    private UInt64 withdrawalQueueLimit;
+
+    private UInt64 maxBlsToExecutionChanges;
+
+    private UInt64 maxWithdrawalsPerPayload;
 
     private CapellaBuilder() {}
 
     SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
-      return new SpecConfigCapellaImpl(specConfig, capellaForkVersion, capellaForkEpoch);
+      return new SpecConfigCapellaImpl(
+          specConfig,
+          capellaForkVersion,
+          capellaForkEpoch,
+          maxPartialWithdrawalsPerEpoch,
+          withdrawalQueueLimit,
+          maxBlsToExecutionChanges,
+          maxWithdrawalsPerPayload);
     }
 
     public boolean isCapellaIncluded() {
@@ -899,9 +913,38 @@ public class SpecConfigBuilder {
       return this;
     }
 
+    public CapellaBuilder maxPartialWithdrawalsPerEpoch(
+        final UInt64 maxPartialWithdrawalsPerEpoch) {
+      checkNotNull(maxPartialWithdrawalsPerEpoch);
+      this.maxPartialWithdrawalsPerEpoch = maxPartialWithdrawalsPerEpoch;
+      return this;
+    }
+
+    public CapellaBuilder withdrawalQueueLimit(final UInt64 withdrawalQueueLimit) {
+      checkNotNull(withdrawalQueueLimit);
+      this.withdrawalQueueLimit = withdrawalQueueLimit;
+      return this;
+    }
+
+    public CapellaBuilder maxBlsToExecutionChanges(final UInt64 maxBlsToExecutionChanges) {
+      checkNotNull(maxBlsToExecutionChanges);
+      this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
+      return this;
+    }
+
+    public CapellaBuilder maxWithdrawalsPerPayload(final UInt64 maxWithdrawalsPerPayload) {
+      checkNotNull(maxWithdrawalsPerPayload);
+      this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
+      return this;
+    }
+
     public void validate() {
       validateConstant("capellaForkVersion", capellaForkVersion);
       validateConstant("capellaForkEpoch", capellaForkEpoch);
+      validateConstant("maxPartialWithdrawalsPerEpoch", maxPartialWithdrawalsPerEpoch);
+      validateConstant("withdrawalQueueLimit", withdrawalQueueLimit);
+      validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
+      validateConstant("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
     }
   }
 }
