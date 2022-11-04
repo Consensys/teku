@@ -25,6 +25,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
  - Improved discv5 compliance
  - Changed the builder `is online\is offline` logs to `is available\is not available`
+ - Updated REST API to use Javalin 5
 
 ### Bug Fixes
  - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
