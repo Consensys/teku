@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_R
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.plugin.bundled.CorsPluginConfig;
+import io.javalin.util.JavalinLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -208,6 +209,7 @@ public class RestApiBuilder {
             }
           }
         });
+    JavalinLogger.startupInfo = false;
     // TODO: Suppress this nuisance message again.
     //    JettyUtil.INSTANCE.setLogIfNotStarted(false);
     return server;
