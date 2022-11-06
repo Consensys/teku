@@ -243,7 +243,7 @@ public class ValidatorLogger {
       final int successfullySentRegistrations, final int totalRegistrations) {
     final String infoString =
         String.format(
-            "%s%s out of %s validator(s) registrations were successfully sent to the builder network via the Beacon Node.",
+            "%s%s out of %s validator registration(s) were successfully sent to the builder network via the Beacon Node.",
             PREFIX, successfullySentRegistrations, totalRegistrations);
     log.info(ColorConsolePrinter.print(infoString, Color.GREEN));
   }
