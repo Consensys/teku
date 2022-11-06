@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -117,6 +118,13 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   public BeaconBlockBodyBuilder executionPayloadHeader(
       Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
     // No execution payload in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder blsToExecutionChanges(
+      final Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+    // No BlsToExecutionChange in phase 0
     return this;
   }
 

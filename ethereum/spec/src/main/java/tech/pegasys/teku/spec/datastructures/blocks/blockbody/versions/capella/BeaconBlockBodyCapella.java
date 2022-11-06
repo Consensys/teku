@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 
 public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
   static BeaconBlockBodyCapella required(final BeaconBlockBody body) {
@@ -26,11 +28,13 @@ public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
                     "Expected capella block body but got " + body.getClass().getSimpleName()));
   }
 
+  SszList<BlsToExecutionChange> getBlsToExecutionChanges();
+
+  @Override
+  BeaconBlockBodySchemaCapella<?> getSchema();
+
   @Override
   default Optional<BeaconBlockBodyCapella> toVersionCapella() {
     return Optional.of(this);
   }
-
-  // TODO CAPELLA
-  // public List<BlsToExecutionChanges> getBlsToExecutionChanges();
 }
