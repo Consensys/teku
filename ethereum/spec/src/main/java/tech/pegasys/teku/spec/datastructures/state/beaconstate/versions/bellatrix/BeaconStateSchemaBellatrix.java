@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 public class BeaconStateSchemaBellatrix
     extends AbstractBeaconStateSchema<BeaconStateBellatrix, MutableBeaconStateBellatrix> {
 
-  public static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
+  private static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
 
   @VisibleForTesting
   BeaconStateSchemaBellatrix(final SpecConfig specConfig) {

@@ -35,8 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  private static final int LATEST_WITHDRAWAL_VALIDATOR_INDEX =
-      BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX + 1;
+  private static final int LATEST_WITHDRAWAL_VALIDATOR_INDEX = 25;
 
   @VisibleForTesting
   BeaconStateSchemaCapella(final SpecConfig specConfig) {
