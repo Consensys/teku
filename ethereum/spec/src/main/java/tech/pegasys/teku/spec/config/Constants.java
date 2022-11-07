@@ -28,6 +28,10 @@ public class Constants {
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
+  // EIP-4844 Blobs
+  public static final int MAX_REQUEST_BLOBS_SIDECARS = 128;
+  public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
+
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
