@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -49,14 +52,14 @@ public class DoppelgangerDetectionService extends Service {
   private long startTime;
 
   public DoppelgangerDetectionService(
-      final AsyncRunner asyncRunner,
-      final ValidatorApiChannel validatorApiChannel,
-      final ValidatorIndexProvider validatorIndexProvider,
-      final Spec spec,
-      final TimeProvider timeProvider,
-      final GenesisDataProvider genesisDataProvider,
-      final Duration checkDelay,
-      final Duration timeout) {
+          final AsyncRunner asyncRunner,
+          final ValidatorApiChannel validatorApiChannel,
+          final ValidatorIndexProvider validatorIndexProvider,
+          final Spec spec,
+          final TimeProvider timeProvider,
+          final GenesisDataProvider genesisDataProvider,
+          final Duration checkDelay,
+          final Duration timeout) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -70,13 +73,17 @@ public class DoppelgangerDetectionService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    LOGGER.info("Starting doppelganger detection service.");
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
             this::checkValidatorsDoppelganger,
             checkDelay,
             checkDelay,
-            throwable -> LOGGER.error("Error while checking validators doppelgangers.", throwable));
+            throwable ->
+                LOGGER.error(
+                    "Error while checking validators doppelganger. The check could not be performed correctly.",
+                    throwable));
     while (true) {
       if (doppelgangerCheckFinished.get()) {
         return SafeFuture.COMPLETE;
@@ -86,7 +93,6 @@ public class DoppelgangerDetectionService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    LOGGER.info("No validator doppelganger detected. Stopping doppelganger detection service.");
     return SafeFuture.fromRunnable(
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
   }
@@ -94,7 +100,8 @@ public class DoppelgangerDetectionService extends Service {
   private SafeFuture<?> checkValidatorsDoppelganger() {
     Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
     if (duration.compareTo(timeout) > 0) {
-      LOGGER.info("Doppelganger Detection Service max allowed duration exceeded.");
+      LOGGER.info(
+          "Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the doppelganger detection from running correctly. Please check the logs and consider performing a new doppelganger check.");
       return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
     }
 
@@ -111,6 +118,8 @@ public class DoppelgangerDetectionService extends Service {
               }
 
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
+                LOGGER.info(
+                    "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
                 return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
               }
 
@@ -136,23 +145,17 @@ public class DoppelgangerDetectionService extends Service {
                               .exceptionally(
                                   throwable -> {
                                     LOGGER.error(
-                                        "Unable to check validators doppelganger: {}",
+                                        "Unable to check validators doppelganger. Unable to get validators liveness: {}",
                                         throwable.getMessage());
                                     return false;
                                   })
-                              .thenApply(
-                                  doppelgangerDetected -> {
-                                    if (doppelgangerDetected) {
-                                      LOGGER.fatal(
-                                          "Doppelganger detected. Shutting down Validator Client.");
-                                      System.exit(1);
-                                    }
-                                    return null;
-                                  }));
+                              .thenApply(doppelgangerDetected -> null));
             })
         .exceptionally(
             throwable -> {
-              LOGGER.error("Unable to check validators doppelganger: {}", throwable.getMessage());
+              LOGGER.error(
+                  "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: {}",
+                  throwable.getMessage());
               return null;
             });
   }
@@ -168,12 +171,40 @@ public class DoppelgangerDetectionService extends Service {
                       validatorIndices.contains(validatorLivenessAtEpoch.getIndex()))
               .collect(Collectors.toList());
       if (!doppelgangers.isEmpty()) {
-        LOGGER.fatal(
-            "Doppelganger detected. Validators indices: {}",
-            doppelgangers.stream()
-                .map(validatorLivenessAtEpoch -> validatorLivenessAtEpoch.getIndex().toString())
-                .collect(Collectors.joining(",")));
-        return true;
+        LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");
+        this.validatorIndexProvider
+            .getValidatorIndicesByPublicKey()
+            .thenCompose(
+                blsPublicKeyIntegerMap -> {
+                  Map<String, Integer> doppelgangerPubKeys =
+                      blsPublicKeyIntegerMap.entrySet().stream()
+                          .filter(
+                              blsPublicKeyIntegerEntry ->
+                                  doppelgangers.stream()
+                                      .anyMatch(
+                                          validatorLivenessAtEpoch ->
+                                              validatorLivenessAtEpoch
+                                                  .getIndex()
+                                                  .equals(
+                                                      UInt64.valueOf(
+                                                          blsPublicKeyIntegerEntry.getValue()))))
+                          .collect(
+                              Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+                  STATUS_LOG.validatorsDoppelgangerDetected(doppelgangerPubKeys);
+                  return null;
+                })
+            .exceptionally(
+                error -> {
+                  LOGGER.error(
+                      "Unable to get doppelgangers public keys. Only indices are available: {}",
+                      error.getMessage());
+                  STATUS_LOG.validatorsDoppelgangerDetected(
+                      doppelgangers.stream()
+                          .map(ValidatorLivenessAtEpoch::getIndex)
+                          .collect(Collectors.toList()));
+                  return null;
+                }).ifExceptionGetsHereRaiseABug();
+        System.exit(1);
       }
     }
     return false;

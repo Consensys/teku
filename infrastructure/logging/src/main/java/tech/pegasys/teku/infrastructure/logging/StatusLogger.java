@@ -19,6 +19,8 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -155,6 +157,36 @@ public class StatusLogger {
       log.debug("validators: {}", () -> String.join(", ", validators));
     } else {
       log.info("Loaded {} Validators: {}", validators::size, () -> String.join(", ", validators));
+    }
+  }
+
+  public void validatorsDoppelgangerDetected(final Map<String, Integer> doppelgangerPubKeys) {
+    if (doppelgangerPubKeys.size() > 100) {
+      log.fatal("Detected {} validators doppelganger", doppelgangerPubKeys.size());
+      log.fatal(
+          "Validators doppelganger public keys: {}",
+          () -> String.join(", ", doppelgangerPubKeys.keySet()));
+    } else {
+      log.fatal(
+          "Detected {} validators doppelganger. Public keys: {}",
+          doppelgangerPubKeys::size,
+          () -> String.join(", ", doppelgangerPubKeys.keySet()));
+    }
+  }
+
+  public void validatorsDoppelgangerDetected(final List<UInt64> doppelgangerIndices) {
+    if (doppelgangerIndices.size() > 100) {
+      log.fatal("Detected {} validators doppelganger", doppelgangerIndices.size());
+      log.fatal(
+          "Validators doppelganger indices: {}",
+          () ->
+              doppelgangerIndices.stream().map(UInt64::toString).collect(Collectors.joining(", ")));
+    } else {
+      log.fatal(
+          "Detected {} validators doppelganger. Indices: {}",
+          doppelgangerIndices::size,
+          () ->
+              doppelgangerIndices.stream().map(UInt64::toString).collect(Collectors.joining(", ")));
     }
   }
 

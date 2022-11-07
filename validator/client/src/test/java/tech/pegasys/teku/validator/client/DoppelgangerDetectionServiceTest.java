@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import nl.altindag.log.LogCaptor;
+import nl.altindag.log.model.LogEvent;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -79,10 +80,13 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofMinutes(20));
     assertThat(doppelgangerDetectionService.start()).isCompleted();
-    assertThat(logCaptor.getLogEvents()).isNotEmpty();
-    assertThat(logCaptor.getLogEvents().get(0).getLevel()).isEqualTo("INFO");
-    assertThat(logCaptor.getLogEvents().get(0).getMessage())
-        .isEqualTo("No validator doppelganger detected. Stopping doppelganger detection service.");
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(2);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(1),
+        "INFO",
+        "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
   }
 
   @Test
@@ -116,23 +120,23 @@ public class DoppelgangerDetectionServiceTest {
     assertThat(doppelgangerDetectionService.start()).isCompleted();
     assertThat(logCaptor.getLogEvents()).isNotEmpty();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(6);
-    assertThat(logCaptor.getLogEvents().get(0).getLevel()).isEqualTo("ERROR");
-    assertThat(logCaptor.getLogEvents().get(0).getMessage())
-        .contains("Unable to check validators doppelganger: java.lang.Exception: Dummy Exception");
-    assertThat(logCaptor.getLogEvents().get(1).getLevel()).isEqualTo("ERROR");
-    assertThat(logCaptor.getLogEvents().get(1).getMessage())
-        .contains("Unable to check validators doppelganger: java.lang.Exception: Dummy Exception");
-    assertThat(logCaptor.getLogEvents().get(2).getLevel()).isEqualTo("ERROR");
-    assertThat(logCaptor.getLogEvents().get(2).getMessage())
-        .contains("Unable to check validators doppelganger: java.lang.Exception: Dummy Exception");
-    assertThat(logCaptor.getLogEvents().get(3).getLevel()).isEqualTo("ERROR");
-    assertThat(logCaptor.getLogEvents().get(3).getMessage())
-        .contains("Unable to check validators doppelganger: java.lang.Exception: Dummy Exception");
-    assertThat(logCaptor.getLogEvents().get(4).getLevel()).isEqualTo("INFO");
-    assertThat(logCaptor.getLogEvents().get(4).getMessage())
-        .contains("Doppelganger Detection Service max allowed duration exceeded.");
-    assertThat(logCaptor.getLogEvents().get(5).getLevel()).isEqualTo("INFO");
-    assertThat(logCaptor.getLogEvents().get(5).getMessage())
-        .contains("No validator doppelganger detected. Stopping doppelganger detection service.");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    final String expectedErrorLog =
+        "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Dummy Exception";
+    expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
+    expectLogMessage(logCaptor.getLogEvents().get(2), "ERROR", expectedErrorLog);
+    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
+    expectLogMessage(logCaptor.getLogEvents().get(4), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(5),
+        "INFO",
+        "Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the doppelganger detection from running correctly. Please check the logs and consider performing a new doppelganger check.");
+  }
+
+  private void expectLogMessage(
+      LogEvent logEvent, String expectedLevel, String expectedLogMessage) {
+    assertThat(logEvent.getLevel()).isEqualTo(expectedLevel);
+    assertThat(logEvent.getMessage()).isEqualTo(expectedLogMessage);
   }
 }
