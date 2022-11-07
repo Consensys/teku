@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 
 @SuppressWarnings("JavaCase")
 public class BeaconStateAltair extends BeaconState implements State {
@@ -129,26 +130,33 @@ public class BeaconStateAltair extends BeaconState implements State {
               final SyncCommitteeSchema syncCommitteeSchema =
                   BeaconStateSchemaAltair.required(beaconStateAltair.getBeaconStateSchema())
                       .getCurrentSyncCommitteeSchema();
-              final SszList<SszByte> previousEpochParticipation =
-                  beaconStateAltair
-                      .getPreviousEpochParticipation()
-                      .getSchema()
-                      .sszDeserialize(Bytes.wrap(this.previous_epoch_participation));
-              final SszList<SszByte> currentEpochParticipation =
-                  beaconStateAltair
-                      .getCurrentEpochParticipation()
-                      .getSchema()
-                      .sszDeserialize(Bytes.wrap(this.current_epoch_participation));
-
-              beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
-              beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateAltair.getInactivityScores().setAllElements(inactivity_scores);
-
-              beaconStateAltair.setCurrentSyncCommittee(
-                  current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
-              beaconStateAltair.setNextSyncCommittee(
-                  next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+              applyAltairFields(beaconStateAltair, syncCommitteeSchema, this);
             });
+  }
+
+  public static void applyAltairFields(
+      MutableBeaconStateAltair state,
+      SyncCommitteeSchema syncCommitteeSchema,
+      BeaconStateAltair instance) {
+    final SszList<SszByte> previousEpochParticipation =
+        state
+            .getPreviousEpochParticipation()
+            .getSchema()
+            .sszDeserialize(Bytes.wrap(instance.previous_epoch_participation));
+    final SszList<SszByte> currentEpochParticipation =
+        state
+            .getCurrentEpochParticipation()
+            .getSchema()
+            .sszDeserialize(Bytes.wrap(instance.current_epoch_participation));
+
+    state.setPreviousEpochParticipation(previousEpochParticipation);
+    state.setCurrentEpochParticipation(currentEpochParticipation);
+    state.getInactivityScores().setAllElements(instance.inactivity_scores);
+
+    state.setCurrentSyncCommittee(
+        instance.current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+    state.setNextSyncCommittee(
+        instance.next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
   }
 
   @Override

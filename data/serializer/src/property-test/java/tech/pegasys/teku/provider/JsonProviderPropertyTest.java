@@ -52,6 +52,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -84,8 +85,7 @@ public class JsonProviderPropertyTest {
           SpecMilestone.PHASE0, BeaconStatePhase0.class,
           SpecMilestone.ALTAIR, BeaconStateAltair.class,
           SpecMilestone.BELLATRIX, BeaconStateBellatrix.class,
-          // TODO CAPELLA
-          SpecMilestone.CAPELLA, BeaconStateBellatrix.class);
+          SpecMilestone.CAPELLA, BeaconStateCapella.class);
 
   @Property
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {

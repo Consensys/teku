@@ -14,7 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 
 public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, BeaconStateCapella {
@@ -29,6 +32,12 @@ public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, 
 
   @Override
   BeaconStateCapella commitChanges();
+
+  default void setLatestWithdrawalValidatorIndex(UInt64 latestWithdrawalValidatorIndex) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.LATEST_WITHDRAWAL_VALIDATOR_INDEX);
+    set(fieldIndex, SszUInt64.of(latestWithdrawalValidatorIndex));
+  }
 
   @Override
   default Optional<MutableBeaconStateCapella> toMutableVersionCapella() {
