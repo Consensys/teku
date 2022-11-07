@@ -160,7 +160,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   private DatabaseVersion parseDatabaseVersion() {
     if (createDbVersion == null) {
-      return dataStorageFrequency == 1
+      return dataStorageFrequency == 1 && DatabaseVersion.isLevelDbSupported()
           ? DatabaseVersion.LEVELDB_TREE
           : DatabaseVersion.DEFAULT_VERSION;
     }
