@@ -1550,7 +1550,7 @@ public final class DataStructureUtil {
             .getBeaconBlockBodySchema()
             .toVersionCapella()
             .orElseThrow()
-            .getBlsToExecutionChanges();
+            .getBlsToExecutionChangesSchema();
     final int maxBlsToExecutionChanges =
         spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
 

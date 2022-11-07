@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 public interface BeaconBlockBodySchemaCapella<T extends BeaconBlockBodyCapella>
     extends BeaconBlockBodySchemaBellatrix<T> {
 
-  SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChanges();
+  SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChangesSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaCapella<?>> toVersionCapella() {

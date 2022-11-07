@@ -51,13 +51,23 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
+    this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
+    this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
+    this.withdrawalSchema = new WithdrawalSchema();
+
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaCapellaImpl.create(
-            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyCapella");
+            specConfig,
+            getAttesterSlashingSchema(),
+            blsToExecutionChangeSchema,
+            "BeaconBlockBodyCapella");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaCapellaImpl.create(
-            specConfig, getAttesterSlashingSchema(), "BlindedBlockBodyCapella");
+            specConfig,
+            getAttesterSlashingSchema(),
+            blsToExecutionChangeSchema,
+            "BlindedBlockBodyCapella");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockCapella");
@@ -65,10 +75,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockCapella");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
-
-    this.withdrawalSchema = new WithdrawalSchema();
-    this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
-    this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {

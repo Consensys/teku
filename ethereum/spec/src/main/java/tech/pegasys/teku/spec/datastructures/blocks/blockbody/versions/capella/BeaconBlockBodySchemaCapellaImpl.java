@@ -91,6 +91,7 @@ public class BeaconBlockBodySchemaCapellaImpl
   public static BeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
+      final BlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final String containerName) {
     return new BeaconBlockBodySchemaCapellaImpl(
         containerName,
@@ -122,7 +123,7 @@ public class BeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                new BlsToExecutionChangeSchema(), specConfig.getMaxBlsToExecutionChanges())));
+                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
   }
 
   @Override
@@ -185,13 +186,8 @@ public class BeaconBlockBodySchemaCapellaImpl
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChanges() {
+  public SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
     return (SszListSchema<BlsToExecutionChange, ?>) getFieldSchema10();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodySchemaCapella<?>> toVersionCapella() {
-    return Optional.of(this);
   }
 
   @Override

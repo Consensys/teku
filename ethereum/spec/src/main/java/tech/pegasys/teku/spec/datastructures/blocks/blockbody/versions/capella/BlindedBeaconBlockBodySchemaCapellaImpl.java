@@ -91,6 +91,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   public static BlindedBeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
+      final BlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaCapellaImpl(
         containerName,
@@ -123,7 +124,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                new BlsToExecutionChangeSchema(), specConfig.getMaxBlsToExecutionChanges())));
+                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
   }
 
   @Override
