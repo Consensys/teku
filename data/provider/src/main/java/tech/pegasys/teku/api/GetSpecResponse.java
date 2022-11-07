@@ -67,6 +67,10 @@ public class GetSpecResponse {
                     "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE", targetAggregators));
     getSyncCommitteeSubnetCount()
         .ifPresent(subnetCount -> configAttributes.put("SYNC_COMMITTEE_SUBNET_COUNT", subnetCount));
+    getDomainBlobsSidecar()
+      .ifPresent(
+        blobs ->
+          configAttributes.put("DOMAIN_BLOBS_SIDECAR", blobs.toHexString()));
 
     return configAttributes;
   }
@@ -142,5 +146,13 @@ public class GetSpecResponse {
 
   private <T> Optional<T> getLegacyAltairConstant(T value) {
     return specConfig.toVersionAltair().isPresent() ? Optional.of(value) : Optional.empty();
+  }
+
+  private Optional<Bytes4> getDomainBlobsSidecar() {
+    return getLegacyEIP4844Constant(Domain.BLOBS_SIDECAR);
+  }
+
+  private <T> Optional<T> getLegacyEIP4844Constant(T value) {
+    return specConfig.toVersionEIP4844().isPresent() ? Optional.of(value) : Optional.empty();
   }
 }

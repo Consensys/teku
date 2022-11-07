@@ -154,4 +154,8 @@ public interface SpecConfig {
   default Optional<SpecConfigCapella> toVersionCapella() {
     return Optional.empty();
   }
+
+  default Optional<SpecConfigEIP4844> toVersionEIP4844() {
+    return Optional.empty();
+  }
 }
