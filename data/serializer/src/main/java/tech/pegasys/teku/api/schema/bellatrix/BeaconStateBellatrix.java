@@ -113,35 +113,10 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
   public static void applyBellatrixFields(
       MutableBeaconStateBellatrix state,
       SyncCommitteeSchema syncCommitteeSchema,
-      ExecutionPayloadHeaderSchema executionPayloadHeaderSchema,
+      ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema,
       BeaconStateBellatrix instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
-              beaconStateBellatrix.setCurrentSyncCommittee(
-                  current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
-              beaconStateBellatrix.setNextSyncCommittee(
-                  next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
-
-              final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
-                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
-                      .getLastExecutionPayloadHeaderSchema();
-              beaconStateBellatrix.setLatestExecutionPayloadHeader(
-                  executionPayloadHeaderSchema.create(
-                      latestExecutionPayloadHeader.parentHash,
-                      latestExecutionPayloadHeader.feeRecipient,
-                      latestExecutionPayloadHeader.stateRoot,
-                      latestExecutionPayloadHeader.receiptsRoot,
-                      latestExecutionPayloadHeader.logsBloom,
-                      latestExecutionPayloadHeader.prevRandao,
-                      latestExecutionPayloadHeader.blockNumber,
-                      latestExecutionPayloadHeader.gasLimit,
-                      latestExecutionPayloadHeader.gasUsed,
-                      latestExecutionPayloadHeader.timestamp,
-                      latestExecutionPayloadHeader.extraData,
-                      latestExecutionPayloadHeader.baseFeePerGas,
-                      latestExecutionPayloadHeader.blockHash,
-                      latestExecutionPayloadHeader.transactionsRoot));
-            });
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
             instance.latestExecutionPayloadHeader.parentHash,
