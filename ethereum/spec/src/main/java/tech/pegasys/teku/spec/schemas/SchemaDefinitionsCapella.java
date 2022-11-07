@@ -134,6 +134,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     return signedBlsToExecutionChangeSchema;
   }
 
+  @Override
   public Optional<SchemaDefinitionsCapella> toVersionCapella() {
     return Optional.of(this);
   }

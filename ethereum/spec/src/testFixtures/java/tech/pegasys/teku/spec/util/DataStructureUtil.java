@@ -950,7 +950,8 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader())))
+                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader()))
+                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
         .join();
   }
 
