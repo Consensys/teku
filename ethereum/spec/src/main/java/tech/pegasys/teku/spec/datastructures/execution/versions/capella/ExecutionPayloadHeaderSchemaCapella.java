@@ -29,6 +29,9 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -40,6 +43,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -93,6 +97,41 @@ public class ExecutionPayloadHeaderSchemaCapella
         createFromExecutionPayloadHeader(defaultExecutionPayload);
 
     this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
+  }
+
+  public ExecutionPayloadHeaderCapellaImpl create(
+      Bytes32 parentHash,
+      Bytes20 feeRecipient,
+      Bytes32 stateRoot,
+      Bytes32 receiptsRoot,
+      Bytes logsBloom,
+      Bytes32 prevRandao,
+      UInt64 blockNumber,
+      UInt64 gasLimit,
+      UInt64 gasUsed,
+      UInt64 timestamp,
+      Bytes extraData,
+      UInt256 baseFeePerGas,
+      Bytes32 blockHash,
+      Bytes32 transactionsRoot,
+      Bytes32 withdrawalsRoot) {
+    return new ExecutionPayloadHeaderCapellaImpl(
+        this,
+        SszBytes32.of(parentHash),
+        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
+        SszBytes32.of(stateRoot),
+        SszBytes32.of(receiptsRoot),
+        SszByteVector.fromBytes(logsBloom),
+        SszBytes32.of(prevRandao),
+        SszUInt64.of(blockNumber),
+        SszUInt64.of(gasLimit),
+        SszUInt64.of(gasUsed),
+        SszUInt64.of(timestamp),
+        getExtraDataSchema().fromBytes(extraData),
+        SszUInt256.of(baseFeePerGas),
+        SszBytes32.of(blockHash),
+        SszBytes32.of(transactionsRoot),
+        SszBytes32.of(withdrawalsRoot));
   }
 
   public ExecutionPayloadHeaderCapellaImpl createFromExecutionPayloadHeader(

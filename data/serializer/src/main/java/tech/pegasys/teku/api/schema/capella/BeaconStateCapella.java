@@ -24,13 +24,17 @@ import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 
 public class BeaconStateCapella extends BeaconStateBellatrix {
@@ -110,7 +114,7 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
         .toMutableVersionCapella()
         .ifPresent(
             mutableBeaconStateCapella -> {
-              applyBellatrixFields(
+              applyCapellaFields(
                   mutableBeaconStateCapella,
                   BeaconStateSchemaCapella.required(state.getBeaconStateSchema())
                       .getCurrentSyncCommitteeSchema(),
@@ -122,5 +126,31 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
               mutableBeaconStateCapella.setLatestWithdrawalValidatorIndex(
                   this.latestWithdrawalValidatorIndex);
             });
+  }
+
+  public static void applyCapellaFields(
+      MutableBeaconStateBellatrix state,
+      SyncCommitteeSchema syncCommitteeSchema,
+      ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
+      BeaconStateBellatrix instance) {
+    BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
+
+    state.setLatestExecutionPayloadHeader(
+        executionPayloadHeaderSchema.create(
+            instance.latestExecutionPayloadHeader.parentHash,
+            instance.latestExecutionPayloadHeader.feeRecipient,
+            instance.latestExecutionPayloadHeader.stateRoot,
+            instance.latestExecutionPayloadHeader.receiptsRoot,
+            instance.latestExecutionPayloadHeader.logsBloom,
+            instance.latestExecutionPayloadHeader.prevRandao,
+            instance.latestExecutionPayloadHeader.blockNumber,
+            instance.latestExecutionPayloadHeader.gasLimit,
+            instance.latestExecutionPayloadHeader.gasUsed,
+            instance.latestExecutionPayloadHeader.timestamp,
+            instance.latestExecutionPayloadHeader.extraData,
+            instance.latestExecutionPayloadHeader.baseFeePerGas,
+            instance.latestExecutionPayloadHeader.blockHash,
+            instance.latestExecutionPayloadHeader.transactionsRoot,
+            null));
   }
 }
