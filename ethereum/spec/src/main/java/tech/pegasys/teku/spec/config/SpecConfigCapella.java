@@ -36,10 +36,6 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
   @Override
   Optional<SpecConfigCapella> toVersionCapella();
 
-  UInt64 getMaxPartialWithdrawalsPerEpoch();
-
-  UInt64 getWithdrawalQueueLimit();
-
   UInt64 getMaxBlsToExecutionChanges();
 
   UInt64 getMaxWithdrawalsPerPayload();

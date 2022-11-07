@@ -24,27 +24,18 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   private final Bytes4 capellaForkVersion;
   private final UInt64 capellaForkEpoch;
 
-  private final UInt64 maxPartialWithdrawalsPerEpoch;
-
-  private final UInt64 withdrawalQueueLimit;
-
   private final UInt64 maxBlsToExecutionChanges;
-
   private final UInt64 maxWithdrawalsPerPayload;
 
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
       final Bytes4 capellaForkVersion,
       final UInt64 capellaForkEpoch,
-      final UInt64 maxPartialWithdrawalsPerEpoch,
-      final UInt64 withdrawalQueueLimit,
       final UInt64 maxBlsToExecutionChanges,
       final UInt64 maxWithdrawalsPerPayload) {
     super(specConfig);
     this.capellaForkVersion = capellaForkVersion;
     this.capellaForkEpoch = capellaForkEpoch;
-    this.maxPartialWithdrawalsPerEpoch = maxPartialWithdrawalsPerEpoch;
-    this.withdrawalQueueLimit = withdrawalQueueLimit;
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
   }
@@ -71,8 +62,6 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
     return Objects.equals(specConfig, that.specConfig)
         && Objects.equals(capellaForkVersion, that.capellaForkVersion)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
-        && Objects.equals(maxPartialWithdrawalsPerEpoch, that.maxPartialWithdrawalsPerEpoch)
-        && Objects.equals(withdrawalQueueLimit, that.withdrawalQueueLimit)
         && Objects.equals(maxBlsToExecutionChanges, that.maxBlsToExecutionChanges)
         && Objects.equals(maxWithdrawalsPerPayload, that.maxWithdrawalsPerPayload);
   }
@@ -83,20 +72,8 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         specConfig,
         capellaForkVersion,
         capellaForkEpoch,
-        maxPartialWithdrawalsPerEpoch,
-        withdrawalQueueLimit,
         maxBlsToExecutionChanges,
         maxWithdrawalsPerPayload);
-  }
-
-  @Override
-  public UInt64 getMaxPartialWithdrawalsPerEpoch() {
-    return maxPartialWithdrawalsPerEpoch;
-  }
-
-  @Override
-  public UInt64 getWithdrawalQueueLimit() {
-    return withdrawalQueueLimit;
   }
 
   @Override
