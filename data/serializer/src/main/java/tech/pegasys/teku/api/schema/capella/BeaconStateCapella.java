@@ -106,6 +106,8 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
             .BeaconStateCapella
         capella = beaconState.toVersionCapella().orElseThrow();
+    this.latestExecutionPayloadHeader =
+        new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
     this.latestWithdrawalValidatorIndex = capella.getLatestWithdrawalValidatorIndex();
   }
 

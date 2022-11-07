@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 public class BeaconStateBellatrix extends BeaconStateAltair {
 
   @JsonProperty("latest_execution_payload_header")
-  public final ExecutionPayloadHeader latestExecutionPayloadHeader;
+  public ExecutionPayloadHeader latestExecutionPayloadHeader;
 
   @JsonCreator
   public BeaconStateBellatrix(

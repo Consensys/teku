@@ -459,7 +459,7 @@ public final class DataStructureUtil {
         new SszPublicKey(randomPublicKey()));
   }
 
-  public ExecutionPayloadHeader randomExecutionPayloadHeader() {
+  public ExecutionPayloadHeader randomExecutionPayloadHeaderBellatrix() {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
@@ -512,7 +512,7 @@ public final class DataStructureUtil {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getBuilderBidSchema()
         .create(
-            randomExecutionPayloadHeader().toVersionBellatrix().orElseThrow(),
+            randomExecutionPayloadHeaderBellatrix().toVersionBellatrix().orElseThrow(),
             randomUInt256(),
             builderPublicKey);
   }
@@ -979,7 +979,7 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader()))
+                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeaderBellatrix()))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }

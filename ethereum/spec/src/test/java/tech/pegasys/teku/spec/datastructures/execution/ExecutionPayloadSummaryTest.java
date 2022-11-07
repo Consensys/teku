@@ -61,7 +61,7 @@ class ExecutionPayloadSummaryTest {
 
   @Test
   void shouldIdentifyNonDefaultPayloadHeader() {
-    final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeader();
+    final ExecutionPayloadHeader header = dataStructureUtil.randomExecutionPayloadHeaderBellatrix();
     final ExecutionPayloadSummary summary = header;
     assertThat(header.isDefault()).isFalse();
     assertThat(header.isDefaultPayload()).isFalse();

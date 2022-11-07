@@ -69,6 +69,27 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
     this.withdrawalsRoot = withdrawalsRoot;
   }
 
+  public ExecutionPayloadHeaderCapella(
+      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
+          executionPayloadHeader) {
+    super(
+        executionPayloadHeader.getParentHash(),
+        executionPayloadHeader.getFeeRecipient(),
+        executionPayloadHeader.getStateRoot(),
+        executionPayloadHeader.getReceiptsRoot(),
+        executionPayloadHeader.getLogsBloom(),
+        executionPayloadHeader.getPrevRandao(),
+        executionPayloadHeader.getBlockNumber(),
+        executionPayloadHeader.getGasLimit(),
+        executionPayloadHeader.getGasUsed(),
+        executionPayloadHeader.getTimestamp(),
+        executionPayloadHeader.getExtraData(),
+        executionPayloadHeader.getBaseFeePerGas(),
+        executionPayloadHeader.getBlockHash(),
+        executionPayloadHeader.getTransactionsRoot());
+    this.withdrawalsRoot = executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow();
+  }
+
   @Override
   public Optional<ExecutionPayloadHeaderCapella> toVersionCapella() {
     return Optional.of(this);
