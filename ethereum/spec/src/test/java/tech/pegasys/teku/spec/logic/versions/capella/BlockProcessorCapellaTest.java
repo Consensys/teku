@@ -33,7 +33,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   }
 
   @Test
-  void shouldIgnoreBellatrixBlock() {
+  void shouldRejectBellatrixBlock() {
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
     BeaconState preState = createBeaconState();
     final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());

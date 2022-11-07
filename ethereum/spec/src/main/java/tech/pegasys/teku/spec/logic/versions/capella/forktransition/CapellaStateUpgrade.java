@@ -65,7 +65,7 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
 
               state.setLatestExecutionPayloadHeader(
                   schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
-              state.setLatestWithdrawalValidatorIndex(UInt64.valueOf(state.getValidators().size()));
+              state.setLatestWithdrawalValidatorIndex(UInt64.ZERO);
             });
   }
 }
