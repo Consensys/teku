@@ -32,12 +32,4 @@ public interface SpecConfigEip4844 extends SpecConfigCapella {
 
   @Override
   Optional<SpecConfigEip4844> toVersionEip4844();
-
-  default Bytes getBlobTxType() {
-    return BLOB_TX_TYPE;
-  }
-
-  default Bytes getVersionedHashVersionKzg() {
-    return VERSIONED_HASH_VERSION_KZG;
-  }
 }
