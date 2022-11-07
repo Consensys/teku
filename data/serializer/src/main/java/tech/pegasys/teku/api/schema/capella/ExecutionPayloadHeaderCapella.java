@@ -27,6 +27,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatrix {
 
@@ -69,9 +70,7 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
     this.withdrawalsRoot = withdrawalsRoot;
   }
 
-  public ExecutionPayloadHeaderCapella(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
-          executionPayloadHeader) {
+  public ExecutionPayloadHeaderCapella(ExecutionPayloadHeader executionPayloadHeader) {
     super(
         executionPayloadHeader.getParentHash(),
         executionPayloadHeader.getFeeRecipient(),
