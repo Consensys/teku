@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -39,6 +44,14 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
           executionPayload = dataStructureUtil.randomExecutionPayload();
           blsToExecutionChanges = dataStructureUtil.randomBlsToExecutionChangesList();
         });
+  }
+
+  @Test
+  void equalsReturnsFalseWhenBlsToExecutionChangesIsDifferent() {
+    blsToExecutionChanges = dataStructureUtil.randomBlsToExecutionChangesList();
+    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
+
+    assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
