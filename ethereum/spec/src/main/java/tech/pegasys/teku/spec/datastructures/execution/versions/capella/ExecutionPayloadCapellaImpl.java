@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public class ExecutionPayloadCapellaImpl
     extends Container15<
@@ -79,8 +78,8 @@ public class ExecutionPayloadCapellaImpl
   }
 
   @Override
-  public ExecutionPayloadSchemaBellatrix getSchema() {
-    return (ExecutionPayloadSchemaBellatrix) super.getSchema();
+  public ExecutionPayloadSchemaCapella getSchema() {
+    return (ExecutionPayloadSchemaCapella) super.getSchema();
   }
 
   @Override

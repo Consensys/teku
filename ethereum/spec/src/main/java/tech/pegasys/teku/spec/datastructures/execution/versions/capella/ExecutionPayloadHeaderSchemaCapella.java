@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaCapella
@@ -90,11 +89,11 @@ public class ExecutionPayloadHeaderSchemaCapella
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
-    final ExecutionPayloadHeaderCapellaImpl defaultExecutionPayload =
-        new ExecutionPayloadHeaderSchemaCapella(specConfig).getDefault();
+    final ExecutionPayloadCapellaImpl defaultExecutionPayload =
+        new ExecutionPayloadSchemaCapella(specConfig).getDefault();
 
     this.executionPayloadHeaderOfDefaultPayload =
-        createFromExecutionPayloadHeader(defaultExecutionPayload);
+        createFromExecutionPayload(defaultExecutionPayload);
 
     this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
@@ -134,25 +133,25 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszBytes32.of(withdrawalsRoot));
   }
 
-  public ExecutionPayloadHeaderCapellaImpl createFromExecutionPayloadHeader(
-      final ExecutionPayloadHeader executionPayloadHeader) {
+  public ExecutionPayloadHeaderCapellaImpl createFromExecutionPayload(
+      final ExecutionPayloadCapellaImpl executionPayload) {
     return new ExecutionPayloadHeaderCapellaImpl(
         this,
-        SszBytes32.of(executionPayloadHeader.getParentHash()),
-        SszByteVector.fromBytes(executionPayloadHeader.getFeeRecipient().getWrappedBytes()),
-        SszBytes32.of(executionPayloadHeader.getStateRoot()),
-        SszBytes32.of(executionPayloadHeader.getReceiptsRoot()),
-        SszByteVector.fromBytes(executionPayloadHeader.getLogsBloom()),
-        SszBytes32.of(executionPayloadHeader.getPrevRandao()),
-        SszUInt64.of(executionPayloadHeader.getBlockNumber()),
-        SszUInt64.of(executionPayloadHeader.getGasLimit()),
-        SszUInt64.of(executionPayloadHeader.getGasUsed()),
-        SszUInt64.of(executionPayloadHeader.getTimestamp()),
-        getExtraDataSchema().fromBytes(executionPayloadHeader.getExtraData()),
-        SszUInt256.of(executionPayloadHeader.getBaseFeePerGas()),
-        SszBytes32.of(executionPayloadHeader.getBlockHash()),
-        SszBytes32.of(executionPayloadHeader.getTransactionsRoot()),
-        SszBytes32.of(executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow()));
+        SszBytes32.of(executionPayload.getParentHash()),
+        SszByteVector.fromBytes(executionPayload.getFeeRecipient().getWrappedBytes()),
+        SszBytes32.of(executionPayload.getStateRoot()),
+        SszBytes32.of(executionPayload.getReceiptsRoot()),
+        SszByteVector.fromBytes(executionPayload.getLogsBloom()),
+        SszBytes32.of(executionPayload.getPrevRandao()),
+        SszUInt64.of(executionPayload.getBlockNumber()),
+        SszUInt64.of(executionPayload.getGasLimit()),
+        SszUInt64.of(executionPayload.getGasUsed()),
+        SszUInt64.of(executionPayload.getTimestamp()),
+        getExtraDataSchema().fromBytes(executionPayload.getExtraData()),
+        SszUInt256.of(executionPayload.getBaseFeePerGas()),
+        SszBytes32.of(executionPayload.getBlockHash()),
+        SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
   }
 
   private SszByteListSchema<?> getExtraDataSchema() {

@@ -29,14 +29,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
+public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon {
 
   @JsonProperty("transactions_root")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 transactionsRoot;
 
   @JsonCreator
-  public ExecutionPayloadHeader(
+  public ExecutionPayloadHeaderBellatrix(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
@@ -68,7 +68,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
     this.transactionsRoot = transactionsRoot;
   }
 
-  public ExecutionPayloadHeader(
+  public ExecutionPayloadHeaderBellatrix(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
           executionPayloadHeader) {
     super(
@@ -88,7 +88,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
     this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
   }
 
-  public ExecutionPayloadHeader(
+  public ExecutionPayloadHeaderBellatrix(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(
         executionPayload.getParentHash(),
@@ -151,7 +151,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
     if (!super.equals(o)) {
       return false;
     }
-    final ExecutionPayloadHeader that = (ExecutionPayloadHeader) o;
+    final ExecutionPayloadHeaderBellatrix that = (ExecutionPayloadHeaderBellatrix) o;
     return Objects.equals(transactionsRoot, that.transactionsRoot);
   }
 

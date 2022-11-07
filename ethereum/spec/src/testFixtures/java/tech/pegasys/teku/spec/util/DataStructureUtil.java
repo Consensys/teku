@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -476,6 +477,29 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
             randomUInt256(),
+            randomBytes32(),
+            randomBytes32());
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeaderCapella() {
+    final SpecConfigCapella specConfigCapella =
+        SpecConfigCapella.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getExecutionPayloadHeaderSchemaCapella()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
             randomBytes32(),
             randomBytes32());
   }

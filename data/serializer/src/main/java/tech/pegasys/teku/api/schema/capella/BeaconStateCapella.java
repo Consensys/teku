@@ -27,17 +27,20 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
-import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 
 public class BeaconStateCapella extends BeaconStateBellatrix {
+
+  @JsonProperty("latest_execution_payload_header")
+  public final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader;
+
   @JsonProperty("latest_withdrawal_validator_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
   public final UInt64 latestWithdrawalValidatorIndex;
@@ -68,7 +71,7 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeader latestExecutionPayloadHeader,
+          final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader,
       @JsonProperty("latest_withdrawal_validator_index")
           final UInt64 latestWithdrawalValidatorIndex) {
     super(
@@ -97,6 +100,7 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
         currentSyncCommittee,
         nextSyncCommittee,
         latestExecutionPayloadHeader);
+    this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
     this.latestWithdrawalValidatorIndex = latestWithdrawalValidatorIndex;
   }
 
@@ -105,6 +109,8 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
             .BeaconStateCapella
         capella = beaconState.toVersionCapella().orElseThrow();
+    this.latestExecutionPayloadHeader =
+        new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
     this.latestWithdrawalValidatorIndex = capella.getLatestWithdrawalValidatorIndex();
   }
 
@@ -116,7 +122,8 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
             mutableBeaconStateCapella -> {
               applyCapellaFields(
                   mutableBeaconStateCapella,
-                  BeaconStateSchemaCapella.required(state.getBeaconStateSchema())
+                  BeaconStateSchemaCapella.required(
+                          mutableBeaconStateCapella.getBeaconStateSchema())
                       .getCurrentSyncCommitteeSchema(),
                   BeaconStateSchemaCapella.required(
                           mutableBeaconStateCapella.getBeaconStateSchema())
@@ -129,10 +136,10 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
   }
 
   public static void applyCapellaFields(
-      MutableBeaconStateBellatrix state,
+      MutableBeaconStateCapella state,
       SyncCommitteeSchema syncCommitteeSchema,
       ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
-      BeaconStateBellatrix instance) {
+      BeaconStateCapella instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
     state.setLatestExecutionPayloadHeader(
@@ -151,6 +158,6 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
             instance.latestExecutionPayloadHeader.baseFeePerGas,
             instance.latestExecutionPayloadHeader.blockHash,
             instance.latestExecutionPayloadHeader.transactionsRoot,
-            null));
+            instance.latestExecutionPayloadHeader.withdrawalsRoot));
   }
 }
