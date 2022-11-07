@@ -155,7 +155,7 @@ public interface SpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigEIP4844> toVersionEIP4844() {
+  default Optional<SpecConfigEip4844> toVersionEip4844() {
     return Optional.empty();
   }
 }

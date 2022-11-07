@@ -16,13 +16,13 @@ package tech.pegasys.teku.spec.config;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
-public interface SpecConfigEIP4844 extends SpecConfigCapella {
+public interface SpecConfigEip4844 extends SpecConfigCapella {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
 
-  static SpecConfigEIP4844 required(SpecConfig specConfig) {
+  static SpecConfigEip4844 required(SpecConfig specConfig) {
     return specConfig
-        .toVersionEIP4844()
+        .toVersionEip4844()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
@@ -31,7 +31,7 @@ public interface SpecConfigEIP4844 extends SpecConfigCapella {
   }
 
   @Override
-  Optional<SpecConfigEIP4844> toVersionEIP4844();
+  Optional<SpecConfigEip4844> toVersionEip4844();
 
   default Bytes getBlobTxType() {
     return BLOB_TX_TYPE;

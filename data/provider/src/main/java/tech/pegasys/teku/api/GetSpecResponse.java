@@ -151,6 +151,6 @@ public class GetSpecResponse {
   }
 
   private <T> Optional<T> getLegacyEIP4844Constant(T value) {
-    return specConfig.toVersionEIP4844().isPresent() ? Optional.of(value) : Optional.empty();
+    return specConfig.toVersionEip4844().isPresent() ? Optional.of(value) : Optional.empty();
   }
 }
