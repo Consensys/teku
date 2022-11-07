@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.bellatrix;
+package tech.pegasys.teku.spec.logic.versions.capella;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -23,18 +23,18 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.BlockProcessorBellatrixTest;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
+public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   @Override
   protected Spec createSpec() {
-    return TestSpecFactory.createMainnetBellatrix();
+    return TestSpecFactory.createMainnetCapella();
   }
 
   @Test
-  void shouldRejectAltairBlock() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+  void shouldRejectBellatrixBlock() {
+    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
     BeaconState preState = createBeaconState();
     final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());
     assertThatThrownBy(

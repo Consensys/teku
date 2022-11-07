@@ -30,11 +30,11 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.forktransition.BellatrixStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateAccessorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
@@ -53,7 +53,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final SpecConfigBellatrix specConfig,
       final Predicates predicates,
       final MiscHelpersBellatrix miscHelpers,
-      final BeaconStateAccessorsBellatrix beaconStateAccessors,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
@@ -96,8 +96,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     // Helpers
     final Predicates predicates = new Predicates();
     final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
-    final BeaconStateAccessorsBellatrix beaconStateAccessors =
-        new BeaconStateAccessorsBellatrix(config, predicates, miscHelpers);
+    final BeaconStateAccessorsAltair beaconStateAccessors =
+        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
         new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
