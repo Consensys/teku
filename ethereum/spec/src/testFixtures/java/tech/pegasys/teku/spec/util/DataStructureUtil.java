@@ -1368,8 +1368,9 @@ public final class DataStructureUtil {
       case ALTAIR:
         return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
+      case CAPELLA:
+        return stateBuilderCapella(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
     }
@@ -1401,6 +1402,16 @@ public final class DataStructureUtil {
   public BeaconStateBuilderBellatrix stateBuilderBellatrix(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderBellatrix.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella() {
+    return stateBuilderCapella(10, 10);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderCapella.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 

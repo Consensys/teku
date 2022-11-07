@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWAL_VALIDATOR_INDEX;
+
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 
@@ -31,10 +35,17 @@ public interface BeaconStateCapella extends BeaconStateBellatrix {
   static void describeCustomCapellaFields(
       MoreObjects.ToStringHelper stringBuilder, BeaconStateCapella state) {
     BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, state);
+    stringBuilder.add(
+        "latest_withdrawal_validator_index", state.getLatestWithdrawalValidatorIndex());
   }
 
   @Override
   default Optional<BeaconStateCapella> toVersionCapella() {
     return Optional.of(this);
+  }
+
+  default UInt64 getLatestWithdrawalValidatorIndex() {
+    final int index = getSchema().getFieldIndex(LATEST_WITHDRAWAL_VALIDATOR_INDEX);
+    return ((SszUInt64) get(index)).get();
   }
 }

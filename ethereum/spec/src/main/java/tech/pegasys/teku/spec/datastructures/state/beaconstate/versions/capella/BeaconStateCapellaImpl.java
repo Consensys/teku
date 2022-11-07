@@ -25,15 +25,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 
 public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconStateCapella>
     implements BeaconStateCapella, BeaconStateCache, ValidatorStatsAltair {
 
   BeaconStateCapellaImpl(
-      final BeaconStateSchema<BeaconStateBellatrix, MutableBeaconStateBellatrix> schema) {
+      final BeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> schema) {
     super(schema);
   }
 

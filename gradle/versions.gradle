@@ -99,6 +99,7 @@ dependencyManagement {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
+      entry 'log4j-slf4j2-impl'
     }
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
