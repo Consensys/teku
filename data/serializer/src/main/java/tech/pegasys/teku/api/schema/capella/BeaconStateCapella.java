@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.api.schema.Eth1Data;
+import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
@@ -37,9 +38,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 
 public class BeaconStateCapella extends BeaconStateBellatrix {
-
-  @JsonProperty("latest_execution_payload_header")
-  public final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader;
 
   @JsonProperty("latest_withdrawal_validator_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
@@ -71,7 +69,7 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader,
+          final ExecutionPayloadHeader latestExecutionPayloadHeader,
       @JsonProperty("latest_withdrawal_validator_index")
           final UInt64 latestWithdrawalValidatorIndex) {
     super(
@@ -100,7 +98,6 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
         currentSyncCommittee,
         nextSyncCommittee,
         latestExecutionPayloadHeader);
-    this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
     this.latestWithdrawalValidatorIndex = latestWithdrawalValidatorIndex;
   }
 
@@ -109,8 +106,6 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
             .BeaconStateCapella
         capella = beaconState.toVersionCapella().orElseThrow();
-    this.latestExecutionPayloadHeader =
-        new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
     this.latestWithdrawalValidatorIndex = capella.getLatestWithdrawalValidatorIndex();
   }
 
@@ -142,22 +137,25 @@ public class BeaconStateCapella extends BeaconStateBellatrix {
       BeaconStateCapella instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
+    final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader =
+        instance.latestExecutionPayloadHeader.toVersionCapella().orElseThrow();
+
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
-            instance.latestExecutionPayloadHeader.parentHash,
-            instance.latestExecutionPayloadHeader.feeRecipient,
-            instance.latestExecutionPayloadHeader.stateRoot,
-            instance.latestExecutionPayloadHeader.receiptsRoot,
-            instance.latestExecutionPayloadHeader.logsBloom,
-            instance.latestExecutionPayloadHeader.prevRandao,
-            instance.latestExecutionPayloadHeader.blockNumber,
-            instance.latestExecutionPayloadHeader.gasLimit,
-            instance.latestExecutionPayloadHeader.gasUsed,
-            instance.latestExecutionPayloadHeader.timestamp,
-            instance.latestExecutionPayloadHeader.extraData,
-            instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.blockHash,
-            instance.latestExecutionPayloadHeader.transactionsRoot,
-            instance.latestExecutionPayloadHeader.withdrawalsRoot));
+            latestExecutionPayloadHeader.parentHash,
+            latestExecutionPayloadHeader.feeRecipient,
+            latestExecutionPayloadHeader.stateRoot,
+            latestExecutionPayloadHeader.receiptsRoot,
+            latestExecutionPayloadHeader.logsBloom,
+            latestExecutionPayloadHeader.prevRandao,
+            latestExecutionPayloadHeader.blockNumber,
+            latestExecutionPayloadHeader.gasLimit,
+            latestExecutionPayloadHeader.gasUsed,
+            latestExecutionPayloadHeader.timestamp,
+            latestExecutionPayloadHeader.extraData,
+            latestExecutionPayloadHeader.baseFeePerGas,
+            latestExecutionPayloadHeader.blockHash,
+            latestExecutionPayloadHeader.transactionsRoot,
+            latestExecutionPayloadHeader.withdrawalsRoot));
   }
 }

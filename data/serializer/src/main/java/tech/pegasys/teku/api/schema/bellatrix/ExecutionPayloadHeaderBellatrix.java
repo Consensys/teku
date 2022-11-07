@@ -24,12 +24,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon {
+public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
+    implements ExecutionPayloadHeader {
 
   @JsonProperty("transactions_root")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
@@ -107,37 +107,9 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon {
     this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
   }
 
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader>
-      asInternalExecutionPayloadHeader(final Spec spec, final UInt64 slot) {
-
-    final Optional<SchemaDefinitionsBellatrix> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
-
-    if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-bellatrix slot %s", slot);
-      throw new IllegalArgumentException(message);
-    }
-
-    return maybeSchema.map(
-        schema ->
-            schema
-                .getExecutionPayloadHeaderSchema()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    blockHash,
-                    transactionsRoot));
+  @Override
+  public Optional<ExecutionPayloadHeaderBellatrix> toVersionBellatrix() {
+    return Optional.of(this);
   }
 
   @Override

@@ -15,10 +15,12 @@ package tech.pegasys.teku.api.schema.capella;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -32,22 +34,23 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 withdrawalsRoot;
 
+  @JsonCreator
   public ExecutionPayloadHeaderCapella(
-      Bytes32 parentHash,
-      Bytes20 feeRecipient,
-      Bytes32 stateRoot,
-      Bytes32 receiptsRoot,
-      Bytes logsBloom,
-      Bytes32 prevRandao,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      Bytes32 blockHash,
-      Bytes32 transactionsRoot,
-      Bytes32 withdrawalsRoot) {
+      @JsonProperty("parent_hash") Bytes32 parentHash,
+      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
+      @JsonProperty("state_root") Bytes32 stateRoot,
+      @JsonProperty("receipts_root") Bytes32 receiptsRoot,
+      @JsonProperty("logs_bloom") Bytes logsBloom,
+      @JsonProperty("prev_randao") Bytes32 prevRandao,
+      @JsonProperty("block_number") UInt64 blockNumber,
+      @JsonProperty("gas_limit") UInt64 gasLimit,
+      @JsonProperty("gas_used") UInt64 gasUsed,
+      @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("extra_data") Bytes extraData,
+      @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
+      @JsonProperty("block_hash") Bytes32 blockHash,
+      @JsonProperty("transactions_root") Bytes32 transactionsRoot,
+      @JsonProperty("withdrawals_root") Bytes32 withdrawalsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -85,6 +88,11 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
         executionPayloadHeader.getBlockHash(),
         executionPayloadHeader.getTransactionsRoot());
     this.withdrawalsRoot = executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadHeaderCapella> toVersionCapella() {
+    return Optional.of(this);
   }
 
   @Override
