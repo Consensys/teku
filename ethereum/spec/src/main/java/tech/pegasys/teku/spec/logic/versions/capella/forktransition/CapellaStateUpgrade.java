@@ -21,19 +21,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.capella.helpers.BeaconStateAccessorsCapella;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateAccessorsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
 
   private final SpecConfigCapella specConfig;
   private final SchemaDefinitionsCapella schemaDefinitions;
-  private final BeaconStateAccessorsCapella beaconStateAccessors;
+  private final BeaconStateAccessorsBellatrix beaconStateAccessors;
 
   public CapellaStateUpgrade(
       final SpecConfigCapella specConfig,
       final SchemaDefinitionsCapella schemaDefinitions,
-      final BeaconStateAccessorsCapella beaconStateAccessors) {
+      final BeaconStateAccessorsBellatrix beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
