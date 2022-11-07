@@ -52,14 +52,14 @@ public class DoppelgangerDetectionService extends Service {
   private long startTime;
 
   public DoppelgangerDetectionService(
-          final AsyncRunner asyncRunner,
-          final ValidatorApiChannel validatorApiChannel,
-          final ValidatorIndexProvider validatorIndexProvider,
-          final Spec spec,
-          final TimeProvider timeProvider,
-          final GenesisDataProvider genesisDataProvider,
-          final Duration checkDelay,
-          final Duration timeout) {
+      final AsyncRunner asyncRunner,
+      final ValidatorApiChannel validatorApiChannel,
+      final ValidatorIndexProvider validatorIndexProvider,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final GenesisDataProvider genesisDataProvider,
+      final Duration checkDelay,
+      final Duration timeout) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -174,9 +174,9 @@ public class DoppelgangerDetectionService extends Service {
         LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");
         this.validatorIndexProvider
             .getValidatorIndicesByPublicKey()
-            .thenCompose(
+            .thenApply(
                 blsPublicKeyIntegerMap -> {
-                  Map<String, Integer> doppelgangerPubKeys =
+                  Map<Integer, String> doppelgangerPubKeys =
                       blsPublicKeyIntegerMap.entrySet().stream()
                           .filter(
                               blsPublicKeyIntegerEntry ->
@@ -189,7 +189,7 @@ public class DoppelgangerDetectionService extends Service {
                                                       UInt64.valueOf(
                                                           blsPublicKeyIntegerEntry.getValue()))))
                           .collect(
-                              Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+                              Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
                   STATUS_LOG.validatorsDoppelgangerDetected(doppelgangerPubKeys);
                   return null;
                 })
@@ -200,10 +200,10 @@ public class DoppelgangerDetectionService extends Service {
                       error.getMessage());
                   STATUS_LOG.validatorsDoppelgangerDetected(
                       doppelgangers.stream()
-                          .map(ValidatorLivenessAtEpoch::getIndex)
-                          .collect(Collectors.toList()));
+                          .collect(Collectors.toMap(e -> e.getIndex().intValue(), e -> "")));
                   return null;
-                }).ifExceptionGetsHereRaiseABug();
+                })
+            .ifExceptionGetsHereRaiseABug();
         System.exit(1);
       }
     }

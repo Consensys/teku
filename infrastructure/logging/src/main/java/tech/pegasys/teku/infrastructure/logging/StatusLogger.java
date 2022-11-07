@@ -20,7 +20,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -160,33 +160,26 @@ public class StatusLogger {
     }
   }
 
-  public void validatorsDoppelgangerDetected(final Map<String, Integer> doppelgangerPubKeys) {
-    if (doppelgangerPubKeys.size() > 100) {
-      log.fatal("Detected {} validators doppelganger", doppelgangerPubKeys.size());
-      log.fatal(
-          "Validators doppelganger public keys: {}",
-          () -> String.join(", ", doppelgangerPubKeys.keySet()));
-    } else {
-      log.fatal(
-          "Detected {} validators doppelganger. Public keys: {}",
-          doppelgangerPubKeys::size,
-          () -> String.join(", ", doppelgangerPubKeys.keySet()));
+  public void validatorsDoppelgangerDetected(final Map<Integer, String> doppelgangersInfo) {
+    StringBuilder doppelgangersLogInfo = new StringBuilder("\n");
+    for (Map.Entry<Integer, String> doppelgangerInfo : doppelgangersInfo.entrySet()) {
+      doppelgangersLogInfo.append(
+          StringUtils.isBlank(doppelgangerInfo.getValue())
+              ? "Index: " + doppelgangerInfo.getKey() + "\n"
+              : "Index: "
+                  + doppelgangerInfo.getKey()
+                  + ", Public key: "
+                  + doppelgangerInfo.getValue()
+                  + "\n");
     }
-  }
-
-  public void validatorsDoppelgangerDetected(final List<UInt64> doppelgangerIndices) {
-    if (doppelgangerIndices.size() > 100) {
-      log.fatal("Detected {} validators doppelganger", doppelgangerIndices.size());
-      log.fatal(
-          "Validators doppelganger indices: {}",
-          () ->
-              doppelgangerIndices.stream().map(UInt64::toString).collect(Collectors.joining(", ")));
+    if (doppelgangersInfo.size() > 100) {
+      log.fatal("Detected {} validators doppelganger", doppelgangersInfo.size());
+      log.fatal("Validators doppelganger: {}", doppelgangersLogInfo.toString());
     } else {
       log.fatal(
-          "Detected {} validators doppelganger. Indices: {}",
-          doppelgangerIndices::size,
-          () ->
-              doppelgangerIndices.stream().map(UInt64::toString).collect(Collectors.joining(", ")));
+          "Detected {} validators doppelganger. {}",
+          doppelgangersInfo.size(),
+          doppelgangersLogInfo.toString());
     }
   }
 
