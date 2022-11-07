@@ -173,11 +173,11 @@ public class StatusLogger {
                   + "\n");
     }
     if (doppelgangersInfo.size() > 100) {
-      log.fatal("Detected {} validators doppelganger", doppelgangersInfo.size());
+      log.fatal("Detected {} validators doppelganger.", doppelgangersInfo.size());
       log.fatal("Validators doppelganger: {}", doppelgangersLogInfo.toString());
     } else {
       log.fatal(
-          "Detected {} validators doppelganger. {}",
+          "Detected {} validators doppelganger: {}",
           doppelgangersInfo.size(),
           doppelgangersLogInfo.toString());
     }

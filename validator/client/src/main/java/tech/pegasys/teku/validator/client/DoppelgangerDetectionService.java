@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,6 +50,7 @@ public class DoppelgangerDetectionService extends Service {
   private Optional<UInt64> epochAtStart = Optional.empty();
   private volatile Cancellable doppelgangerDetectionTask;
   private final AtomicBoolean doppelgangerCheckFinished;
+  private final Consumer<Void> doppelgangerDetectionAction;
   private long startTime;
 
   public DoppelgangerDetectionService(
@@ -59,7 +61,8 @@ public class DoppelgangerDetectionService extends Service {
       final TimeProvider timeProvider,
       final GenesisDataProvider genesisDataProvider,
       final Duration checkDelay,
-      final Duration timeout) {
+      final Duration timeout,
+      final Consumer<Void> doppelgangerDetectionAction) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -69,6 +72,7 @@ public class DoppelgangerDetectionService extends Service {
     this.doppelgangerCheckFinished = new AtomicBoolean(false);
     this.checkDelay = checkDelay;
     this.timeout = timeout;
+    this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
   @Override
@@ -179,15 +183,14 @@ public class DoppelgangerDetectionService extends Service {
                   Map<Integer, String> doppelgangerPubKeys =
                       blsPublicKeyIntegerMap.entrySet().stream()
                           .filter(
-                              blsPublicKeyIntegerEntry ->
+                              pubKeyIndexEntry ->
                                   doppelgangers.stream()
                                       .anyMatch(
                                           validatorLivenessAtEpoch ->
                                               validatorLivenessAtEpoch
                                                   .getIndex()
                                                   .equals(
-                                                      UInt64.valueOf(
-                                                          blsPublicKeyIntegerEntry.getValue()))))
+                                                      UInt64.valueOf(pubKeyIndexEntry.getValue()))))
                           .collect(
                               Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
                   STATUS_LOG.validatorsDoppelgangerDetected(doppelgangerPubKeys);
@@ -204,7 +207,8 @@ public class DoppelgangerDetectionService extends Service {
                   return null;
                 })
             .ifExceptionGetsHereRaiseABug();
-        System.exit(1);
+        doppelgangerDetectionAction.accept(null);
+        stop().thenRun(() -> doppelgangerCheckFinished.set(true)).ifExceptionGetsHereRaiseABug();
       }
     }
     return false;

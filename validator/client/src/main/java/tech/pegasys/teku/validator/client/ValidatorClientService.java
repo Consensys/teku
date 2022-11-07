@@ -238,7 +238,8 @@ public class ValidatorClientService extends Service {
             timeProvider,
             genesisDataProvider,
             DOPPELGANGER_DETECTION_CHECK_DELAY,
-            DOPPELGANGER_DETECTION_TIMEOUT);
+            DOPPELGANGER_DETECTION_TIMEOUT,
+            __ -> System.exit(1));
     maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetectionService);
   }
 
