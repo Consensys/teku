@@ -983,7 +983,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum)))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
+                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
         .join();
   }
 

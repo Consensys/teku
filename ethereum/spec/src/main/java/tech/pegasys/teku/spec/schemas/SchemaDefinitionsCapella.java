@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
@@ -36,6 +38,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaCapella<?> blindedBeaconBlockBodySchema;
 
+  private final BeaconBlockSchema beaconBlockSchema;
+  private final BeaconBlockSchema blindedBeaconBlockSchema;
+  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
+  private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
+
   private final WithdrawalSchema withdrawalSchema;
 
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
@@ -51,6 +58,13 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaCapellaImpl.create(
             specConfig, getAttesterSlashingSchema(), "BlindedBlockBodyCapella");
+    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
+    this.blindedBeaconBlockSchema =
+        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockCapella");
+    this.signedBeaconBlockSchema =
+        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockCapella");
+    this.signedBlindedBeaconBlockSchema =
+        new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
 
     this.withdrawalSchema = new WithdrawalSchema();
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
@@ -72,6 +86,36 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     return beaconStateSchema;
   }
 
+  @Override
+  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
+    return beaconBlockBodySchema;
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
+    return blindedBeaconBlockBodySchema;
+  }
+
+  @Override
+  public BeaconBlockSchema getBeaconBlockSchema() {
+    return beaconBlockSchema;
+  }
+
+  @Override
+  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
+    return blindedBeaconBlockSchema;
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
+    return signedBeaconBlockSchema;
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
+    return signedBlindedBeaconBlockSchema;
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return withdrawalSchema;
   }
@@ -82,16 +126,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public SignedBlsToExecutionChangeSchema getSignedBlsToExecutionChangeSchema() {
     return signedBlsToExecutionChangeSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return blindedBeaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
   }
 
   public Optional<SchemaDefinitionsCapella> toVersionCapella() {
