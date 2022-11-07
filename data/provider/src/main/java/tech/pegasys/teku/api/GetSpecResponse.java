@@ -68,9 +68,7 @@ public class GetSpecResponse {
     getSyncCommitteeSubnetCount()
         .ifPresent(subnetCount -> configAttributes.put("SYNC_COMMITTEE_SUBNET_COUNT", subnetCount));
     getDomainBlobsSidecar()
-      .ifPresent(
-        blobs ->
-          configAttributes.put("DOMAIN_BLOBS_SIDECAR", blobs.toHexString()));
+        .ifPresent(blobs -> configAttributes.put("DOMAIN_BLOBS_SIDECAR", blobs.toHexString()));
 
     return configAttributes;
   }

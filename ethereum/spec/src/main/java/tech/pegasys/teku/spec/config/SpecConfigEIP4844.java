@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.spec.config;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 
 public interface SpecConfigEIP4844 extends SpecConfigCapella {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
