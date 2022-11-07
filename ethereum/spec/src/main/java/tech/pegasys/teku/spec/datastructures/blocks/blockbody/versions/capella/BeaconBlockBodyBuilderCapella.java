@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -44,9 +46,10 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
     return this;
   }
 
+  @Override
   public BeaconBlockBodyBuilder blsToExecutionChanges(
-      final SszList<BlsToExecutionChange> blsToExecutionChanges) {
-    this.blsToExecutionChanges = blsToExecutionChanges;
+      final Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+    this.blsToExecutionChanges = blsToExecutionChanges.get();
     return this;
   }
 
@@ -58,6 +61,7 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
   @Override
   protected void validate() {
     super.validate();
+    checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
   @Override

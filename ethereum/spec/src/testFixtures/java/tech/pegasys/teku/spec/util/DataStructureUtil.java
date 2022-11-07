@@ -1543,6 +1543,20 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomPublicKey(), randomBytes20());
   }
 
+  public SszList<BlsToExecutionChange> randomBlsToExecutionChangesList() {
+    final SszListSchema<BlsToExecutionChange, ?> blsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionCapella()
+            .orElseThrow()
+            .getBlsToExecutionChanges();
+    final int maxBlsToExecutionChanges =
+        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
+
+    return randomSszList(
+        blsToExecutionChangeSchema, maxBlsToExecutionChanges, this::randomBlsToExecutionChange);
+  }
+
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getSignedBlsToExecutionChangeSchema()
