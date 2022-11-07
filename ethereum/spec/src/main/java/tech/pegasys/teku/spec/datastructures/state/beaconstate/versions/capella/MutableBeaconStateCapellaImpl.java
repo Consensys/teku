@@ -49,11 +49,6 @@ public class MutableBeaconStateCapellaImpl
     BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(
-      MoreObjects.ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
-    stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
-  }
-
   @Override
   public BeaconStateCapella commitChanges() {
     return (BeaconStateCapella) super.commitChanges();
