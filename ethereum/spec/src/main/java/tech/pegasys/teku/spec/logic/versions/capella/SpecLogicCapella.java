@@ -29,42 +29,39 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.forktransition.BellatrixStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateAccessorsBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.BeaconStateAccessorsCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.BeaconStateMutatorsCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.util.BlindBlockUtilCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
   private final SpecConfigCapella specConfig;
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
 
-  private final Optional<BellatrixTransitionHelpers> bellatrixTransitionHelpers;
-
   private SpecLogicCapella(
       final SpecConfigCapella specConfig,
       final Predicates predicates,
-      final MiscHelpersBellatrix miscHelpers,
-      final BeaconStateAccessorsBellatrix beaconStateAccessors,
-      final BeaconStateMutatorsBellatrix beaconStateMutators,
+      final MiscHelpersCapella miscHelpers,
+      final BeaconStateAccessorsCapella beaconStateAccessors,
+      final BeaconStateMutatorsCapella beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorBellatrix epochProcessor,
-      final BlockProcessorBellatrix blockProcessor,
+      final EpochProcessorCapella epochProcessor,
+      final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final BellatrixStateUpgrade stateUpgrade,
-      final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
+      final CapellaStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -84,18 +81,17 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.specConfig = specConfig;
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
-    this.bellatrixTransitionHelpers = Optional.of(bellatrixTransitionHelpers);
   }
 
   public static SpecLogicCapella create(
       final SpecConfigCapella config, final SchemaDefinitionsCapella schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
-    final BeaconStateAccessorsBellatrix beaconStateAccessors =
-        new BeaconStateAccessorsBellatrix(config, predicates, miscHelpers);
-    final BeaconStateMutatorsBellatrix beaconStateMutators =
-        new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
+    final MiscHelpersCapella miscHelpers = new MiscHelpersCapella(config);
+    final BeaconStateAccessorsCapella beaconStateAccessors =
+        new BeaconStateAccessorsCapella(config, predicates, miscHelpers);
+    final BeaconStateMutatorsCapella beaconStateMutators =
+        new BeaconStateMutatorsCapella(config, miscHelpers, beaconStateAccessors);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
@@ -120,8 +116,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorBellatrix epochProcessor =
-        new EpochProcessorBellatrix(
+    final EpochProcessorCapella epochProcessor =
+        new EpochProcessorCapella(
             config,
             miscHelpers,
             beaconStateAccessors,
@@ -133,8 +129,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
-    final BlockProcessorBellatrix blockProcessor =
-        new BlockProcessorBellatrix(
+    final BlockProcessorCapella blockProcessor =
+        new BlockProcessorCapella(
             config,
             predicates,
             miscHelpers,
@@ -153,14 +149,11 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
+    final BlindBlockUtilCapella blindBlockUtil = new BlindBlockUtilCapella(schemaDefinitions);
 
     // State upgrade
-    final BellatrixStateUpgrade stateUpgrade =
-        new BellatrixStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
-
-    final BellatrixTransitionHelpers bellatrixTransitionHelpers =
-        new BellatrixTransitionHelpers(config, miscHelpers);
+    final CapellaStateUpgrade stateUpgrade =
+        new CapellaStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     return new SpecLogicCapella(
         config,
@@ -180,8 +173,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
-        stateUpgrade,
-        bellatrixTransitionHelpers);
+        stateUpgrade);
   }
 
   @Override
@@ -191,10 +183,6 @@ public class SpecLogicCapella extends AbstractSpecLogic {
 
   public SpecConfigCapella getSpecConfig() {
     return specConfig;
-  }
-
-  public Optional<BellatrixTransitionHelpers> getTransitionHelpers() {
-    return bellatrixTransitionHelpers;
   }
 
   @Override
