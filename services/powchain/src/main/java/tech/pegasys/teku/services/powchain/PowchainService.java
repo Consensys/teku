@@ -71,8 +71,7 @@ public class PowchainService extends Service {
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final boolean asyncStorage) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
@@ -170,14 +169,8 @@ public class PowchainService extends Service {
         powConfig.getDepositContractDeployBlock();
     final DepositSnapshotFileLoader depositSnapshotFileLoader =
         new DepositSnapshotFileLoader(powConfig.getDepositSnapshotPath());
-    final StorageQueryChannel storageQueryChannel;
-    if (asyncStorage) {
-      storageQueryChannel =
-          serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
-    } else {
-      storageQueryChannel =
-          serviceConfig.getEventChannels().getPublisher(StorageQueryChannel.class, asyncRunner);
-    }
+    final StorageQueryChannel storageQueryChannel =
+        serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
     final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
         new DepositSnapshotStorageLoader(
             powConfig.isDepositSnapshotStorageEnabled(), storageQueryChannel);
