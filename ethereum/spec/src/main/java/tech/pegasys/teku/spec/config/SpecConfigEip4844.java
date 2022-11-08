@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigEip4844 extends SpecConfigCapella {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
@@ -29,6 +31,14 @@ public interface SpecConfigEip4844 extends SpecConfigCapella {
                     "Expected EIP-4844 spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
+
+  Bytes4 getEip4844ForkVersion();
+
+  UInt64 getEip4844ForkEpoch();
+
+  int getFieldElementsPerBlob();
+
+  int getMaxBlobsPerBlock();
 
   @Override
   Optional<SpecConfigEip4844> toVersionEip4844();

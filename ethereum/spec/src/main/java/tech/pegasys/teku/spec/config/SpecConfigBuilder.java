@@ -110,7 +110,11 @@ public class SpecConfigBuilder {
   // Bellatrix
   private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
 
+  // Capella
   private Optional<CapellaBuilder> capellaBuilder = Optional.empty();
+
+  // EIP-4844
+  private Optional<Eip4844Builder> eip4844Builder = Optional.empty();
 
   public SpecConfig build() {
     validate();
@@ -176,8 +180,13 @@ public class SpecConfigBuilder {
         bellatrixConfig = Optional.of(bellatrixBuilder.get().build(altairConfig));
         config = bellatrixConfig.get();
       }
+      Optional<SpecConfigCapella> capellaConfig = Optional.empty();
       if (capellaBuilder.isPresent() && capellaBuilder.get().isCapellaIncluded()) {
-        config = capellaBuilder.get().build(bellatrixConfig.orElseThrow());
+        capellaConfig = Optional.of(capellaBuilder.get().build(bellatrixConfig.orElseThrow()));
+        config = capellaConfig.get();
+      }
+      if (eip4844Builder.isPresent() && eip4844Builder.get().isEip4844Included()) {
+        config = eip4844Builder.get().build(capellaConfig.orElseThrow());
       }
     }
     return config;
@@ -239,6 +248,7 @@ public class SpecConfigBuilder {
         .filter(BellatrixBuilder::isBellatrixIncluded)
         .ifPresent(BellatrixBuilder::validate);
     capellaBuilder.filter(CapellaBuilder::isCapellaIncluded).ifPresent(CapellaBuilder::validate);
+    eip4844Builder.filter(Eip4844Builder::isEip4844Included).ifPresent(Eip4844Builder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -872,6 +882,14 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder eip4844Builder(final Consumer<Eip4844Builder> consumer) {
+    if (eip4844Builder.isEmpty()) {
+      eip4844Builder = Optional.of(new Eip4844Builder());
+    }
+    consumer.accept(eip4844Builder.get());
+    return this;
+  }
+
   public class CapellaBuilder {
     private Bytes4 capellaForkVersion;
     private UInt64 capellaForkEpoch;
@@ -922,6 +940,54 @@ public class SpecConfigBuilder {
       validateConstant("capellaForkEpoch", capellaForkEpoch);
       validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
       validateConstant("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
+    }
+  }
+
+  public class Eip4844Builder {
+    private Bytes4 eip4844ForkVersion;
+    private UInt64 eip4844ForkEpoch;
+
+    private int fieldElementsPerBlob;
+    private int maxBlobsPerBlock;
+
+    private Eip4844Builder() {}
+
+    SpecConfigEip4844 build(final SpecConfigCapella specConfig) {
+      return new SpecConfigEip4844Impl(
+          specConfig, eip4844ForkVersion, eip4844ForkEpoch, fieldElementsPerBlob, maxBlobsPerBlock);
+    }
+
+    public boolean isEip4844Included() {
+      return eip4844ForkEpoch != null;
+    }
+
+    public Eip4844Builder eip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
+      checkNotNull(eip4844ForkEpoch);
+      this.eip4844ForkEpoch = eip4844ForkEpoch;
+      return this;
+    }
+
+    public Eip4844Builder eip4844ForkVersion(final Bytes4 eip4844ForkVersion) {
+      checkNotNull(eip4844ForkVersion);
+      this.eip4844ForkVersion = eip4844ForkVersion;
+      return this;
+    }
+
+    public Eip4844Builder fieldElementsPerBlob(final int fieldElementsPerBlob) {
+      this.fieldElementsPerBlob = fieldElementsPerBlob;
+      return this;
+    }
+
+    public Eip4844Builder maxBlobsPerBlock(final int maxBlobsPerBlock) {
+      this.maxBlobsPerBlock = maxBlobsPerBlock;
+      return this;
+    }
+
+    public void validate() {
+      validateConstant("eip4844ForkEpoch", eip4844ForkEpoch);
+      validateConstant("eip4844ForkVersion", eip4844ForkVersion);
+      validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
+      validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
     }
   }
 }
