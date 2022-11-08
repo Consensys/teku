@@ -11,20 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.operations.versions.phase0;
+package tech.pegasys.teku.infrastructure.ssz;
 
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
-public interface AttestationPhase0 extends Attestation {
+public interface SimpleTypeSchema extends SszSchema<SimpleType> {
+  SimpleType create(SszUInt64 field1);
 
-  @Override
-  default UInt64 getFirstCommitteeIndex() {
-    return getData().getIndex();
-  }
+  SszPrimitiveSchema<UInt64, SszUInt64> getField1Schema();
 
-  @Override
-  default boolean requiresCommitteeBits() {
-    return false;
+  default boolean asd() {
+    return true;
   }
 }

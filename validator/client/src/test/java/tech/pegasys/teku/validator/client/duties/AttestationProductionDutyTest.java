@@ -541,7 +541,11 @@ class AttestationProductionDutyTest {
 
     if (spec.atSlot(attestationData.getSlot()).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
       committeeBits =
-          () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndex);
+          () ->
+              attestationSchema
+                  .getCommitteeBitsSchemaOptional()
+                  .orElseThrow()
+                  .ofBits(committeeIndex);
     } else {
       committeeBits = () -> null;
     }

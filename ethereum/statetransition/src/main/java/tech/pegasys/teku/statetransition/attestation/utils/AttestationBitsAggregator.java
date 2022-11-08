@@ -37,7 +37,7 @@ public interface AttestationBitsAggregator {
   static AttestationBitsAggregator of(final ValidatableAttestation attestation) {
     return attestation
         .getAttestation()
-        .getCommitteeBits()
+        .getCommitteeBitsOptional()
         .map(
             committeeBits ->
                 (AttestationBitsAggregator)
@@ -54,7 +54,7 @@ public interface AttestationBitsAggregator {
   static AttestationBitsAggregator of(
       final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
     return attestation
-        .getCommitteeBits()
+        .getCommitteeBitsOptional()
         .<AttestationBitsAggregator>map(
             committeeBits ->
                 new AttestationBitsAggregatorElectra(

@@ -659,6 +659,9 @@ class AggregateAttestationValidatorTest {
   private Supplier<SszBitvector> getCommitteeBitsSupplier(
       final AttestationSchema<?> attestationSchema, final UInt64 committeeIndex) {
     return () ->
-        attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndex.intValue());
+        attestationSchema
+            .getCommitteeBitsSchemaOptional()
+            .orElseThrow()
+            .ofBits(committeeIndex.intValue());
   }
 }

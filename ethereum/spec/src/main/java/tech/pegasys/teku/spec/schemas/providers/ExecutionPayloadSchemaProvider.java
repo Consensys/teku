@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.schemas.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
-import java.util.EnumSet;
 import java.util.Set;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -60,6 +59,6 @@ public class ExecutionPayloadSchemaProvider
 
   @Override
   public Set<SpecMilestone> getSupportedMilestones() {
-    return EnumSet.of(BELLATRIX, CAPELLA, DENEB, ELECTRA);
+    return FROM_BELLATRIX;
   }
 }

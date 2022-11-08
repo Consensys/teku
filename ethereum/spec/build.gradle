@@ -12,6 +12,8 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'org.javassist:javassist'
+    implementation 'org.apache.commons:commons-text'
     implementation project(':ethereum:performance-trackers')
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
@@ -25,12 +27,14 @@ dependencies {
     implementation project(':infrastructure:kzg')
     implementation project(':infrastructure:logging')
     implementation project(':infrastructure:ssz')
+    implementation project(':infrastructure:ssz:generator')
     implementation project(':infrastructure:time')
 
     testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':infrastructure:ssz')
+    testFixturesApi project(':infrastructure:ssz:generator')
     testFixturesApi project(':infrastructure:unsigned')
 
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -65,6 +69,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testImplementation 'org.mockito:mockito-core'
+    testImplementation project(':infrastructure:ssz:generator')
     testImplementation testFixtures(project(':ethereum:statetransition'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))

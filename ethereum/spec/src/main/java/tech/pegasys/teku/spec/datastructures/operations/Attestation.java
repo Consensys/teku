@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 /**
  * Interface used to represent different types of attestations ({@link AttestationPhase0} and {@link
@@ -34,9 +36,13 @@ public interface Attestation extends SszContainer {
   @Override
   AttestationSchema<? extends Attestation> getSchema();
 
-  UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec);
+  default UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
+    return getData().getEarliestSlotForForkChoice(spec);
+  }
 
-  Collection<Bytes32> getDependentBlockRoots();
+  default Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
+  }
 
   AttestationData getData();
 
@@ -44,16 +50,19 @@ public interface Attestation extends SszContainer {
 
   UInt64 getFirstCommitteeIndex();
 
-  default Optional<SszBitvector> getCommitteeBits() {
+  SszSignature getSignature();
+
+  default SszBitvector getCommitteeBits() {
+    throw new RuntimeException("not supported");
+  }
+
+  default Optional<SszBitvector> getCommitteeBitsOptional() {
     return Optional.empty();
   }
 
-  default SszBitvector getCommitteeBitsRequired() {
-    return getCommitteeBits()
-        .orElseThrow(() -> new IllegalArgumentException("Missing committee bits"));
+  default BLSSignature getAggregateSignature() {
+    return getSignature().getSignature();
   }
-
-  BLSSignature getAggregateSignature();
 
   default Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.empty();

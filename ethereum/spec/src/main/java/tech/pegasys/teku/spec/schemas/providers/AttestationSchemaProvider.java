@@ -18,12 +18,23 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTESTATION_SCHEMA;
 
 import java.util.Set;
+import tech.pegasys.teku.infrastructure.ssz.SszTypeGenerator;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.AbstractSchemaProvider;
 import tech.pegasys.teku.spec.schemas.SchemaRegistry;
 
@@ -41,15 +52,53 @@ public class AttestationSchemaProvider
       final SpecMilestone effectiveMilestone,
       final SpecConfig specConfig) {
     return switch (effectiveMilestone) {
-      case PHASE0 ->
-          new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
-              .castTypeToAttestationSchema();
-      case ELECTRA ->
-          new AttestationElectraSchema(
-                  (long) specConfig.getMaxValidatorsPerCommittee()
-                      * specConfig.getMaxCommitteesPerSlot(),
-                  specConfig.getMaxCommitteesPerSlot())
-              .castTypeToAttestationSchema();
+      case PHASE0 -> {
+        final SszTypeGenerator<AttestationPhase0, AttestationPhase0Schema> sszTypeGenerator =
+            new SszTypeGenerator<>(
+                AttestationPhase0.class,
+                AttestationPhase0Schema.class,
+                NamedSchema.of(
+                    "aggregation_bits",
+                    SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee()),
+                    SszBitlist.class),
+                NamedSchema.of("data", AttestationData.SSZ_SCHEMA, AttestationData.class),
+                NamedSchema.of("signature", SszSignatureSchema.INSTANCE, SszSignature.class));
+        try {
+          yield sszTypeGenerator.defineType().castTypeToAttestationSchema();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+      //          new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
+      //              .castTypeToAttestationSchema();
+      case ELECTRA -> {
+        final SszTypeGenerator<AttestationElectra, AttestationElectraSchema> sszTypeGenerator =
+            new SszTypeGenerator<>(
+                AttestationElectra.class,
+                AttestationElectraSchema.class,
+                NamedSchema.of(
+                    "aggregation_bits",
+                    SszBitlistSchema.create(
+                        (long) specConfig.getMaxValidatorsPerCommittee()
+                            * specConfig.getMaxCommitteesPerSlot()),
+                    SszBitlist.class),
+                NamedSchema.of("data", AttestationData.SSZ_SCHEMA, AttestationData.class),
+                NamedSchema.of("signature", SszSignatureSchema.INSTANCE, SszSignature.class),
+                NamedSchema.of(
+                    "committee_bits",
+                    SszBitvectorSchema.create(specConfig.getMaxCommitteesPerSlot()),
+                    SszBitvector.class));
+        try {
+          yield sszTypeGenerator.defineType().castTypeToAttestationSchema();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+      //          new AttestationElectraSchema(
+      //                  (long) specConfig.getMaxValidatorsPerCommittee()
+      //                      * specConfig.getMaxCommitteesPerSlot(),
+      //                  specConfig.getMaxCommitteesPerSlot())
+      //              .castTypeToAttestationSchema();
       default ->
           throw new IllegalArgumentException(
               "It is not supposed to create a specific version for " + effectiveMilestone);
