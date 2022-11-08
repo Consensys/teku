@@ -461,6 +461,18 @@ public final class DataStructureUtil {
         new SszPublicKey(randomPublicKey()));
   }
 
+  public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
+    final SpecMilestone milestone = specVersion.getMilestone();
+    if (milestone.equals(SpecMilestone.BELLATRIX)) {
+      return randomExecutionPayloadHeaderBellatrix();
+    } else if (milestone.equals(SpecMilestone.CAPELLA)) {
+      return randomExecutionPayloadHeaderCapella();
+    } else {
+      throw new IllegalArgumentException(
+          "There is no configured execution payload header for " + milestone);
+    }
+  }
+
   public ExecutionPayloadHeader randomExecutionPayloadHeaderBellatrix() {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
@@ -1027,7 +1039,9 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeaderBellatrix()))
+                        () ->
+                            SafeFuture.completedFuture(
+                                randomExecutionPayloadHeader(spec.atSlot(slotNum))))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
