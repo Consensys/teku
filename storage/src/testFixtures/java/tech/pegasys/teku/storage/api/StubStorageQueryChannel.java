@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -112,6 +113,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
   public SafeFuture<Optional<Checkpoint>> getAnchor() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 }

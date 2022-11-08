@@ -17,7 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container10;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -27,11 +27,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyCapellaImpl
-    extends Container10<
+    extends Container11<
         BeaconBlockBodyCapellaImpl,
         SszSignature,
         Eth1Data,
@@ -42,7 +43,8 @@ public class BeaconBlockBodyCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload>
+        ExecutionPayload,
+        SszList<SignedBlsToExecutionChange>>
     implements BeaconBlockBodyCapella {
 
   BeaconBlockBodyCapellaImpl(
@@ -56,7 +58,8 @@ public class BeaconBlockBodyCapellaImpl
       SszList<Deposit> deposits,
       SszList<SignedVoluntaryExit> voluntaryExits,
       SyncAggregate syncAggregate,
-      ExecutionPayload executionPayload) {
+      ExecutionPayload executionPayload,
+      SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
         type,
         randaoReveal,
@@ -68,7 +71,8 @@ public class BeaconBlockBodyCapellaImpl
         deposits,
         voluntaryExits,
         syncAggregate,
-        executionPayload);
+        executionPayload,
+        blsToExecutionChanges);
   }
 
   BeaconBlockBodyCapellaImpl(BeaconBlockBodySchemaCapellaImpl type) {
@@ -137,6 +141,11 @@ public class BeaconBlockBodyCapellaImpl
   @Override
   public ExecutionPayload getExecutionPayload() {
     return getField9();
+  }
+
+  @Override
+  public SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
+    return getField10();
   }
 
   @Override

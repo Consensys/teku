@@ -80,6 +80,11 @@ public interface SchemaDefinitions {
     return Optional.empty();
   }
 
+  @NonSchema
+  default Optional<SchemaDefinitionsCapella> toVersionCapella() {
+    return Optional.empty();
+  }
+
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)
   @interface NonSchema {}

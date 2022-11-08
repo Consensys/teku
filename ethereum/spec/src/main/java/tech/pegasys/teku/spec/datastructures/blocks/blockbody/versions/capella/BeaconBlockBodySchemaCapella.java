@@ -14,10 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public interface BeaconBlockBodySchemaCapella<T extends BeaconBlockBodyCapella>
     extends BeaconBlockBodySchemaBellatrix<T> {
+
+  SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaCapella<?>> toVersionCapella() {

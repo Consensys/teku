@@ -138,16 +138,6 @@ public class Eth2NetworkOptions {
       hidden = true)
   private ProgressiveBalancesMode progressiveBalancesMode = null;
 
-  @Option(
-      names = {"--Xfork-choice-before-proposing-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Whether to enable run fork choice before creating block proposals.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private Boolean forkChoiceBeforeProposingEnabled = null;
-
   // can be removed after investigating the consequences of not doing it anymore
   @Option(
       names = {"--Xfork-choice-update-head-on-block-import-enabled"},
@@ -205,9 +195,6 @@ public class Eth2NetworkOptions {
     }
     if (terminalBlockHashEpochOverride != null) {
       builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
-    }
-    if (forkChoiceBeforeProposingEnabled != null) {
-      builder.forkChoiceBeforeProposingEnabled(forkChoiceBeforeProposingEnabled);
     }
     if (progressiveBalancesMode != null) {
       builder.progressiveBalancesEnabled(progressiveBalancesMode);

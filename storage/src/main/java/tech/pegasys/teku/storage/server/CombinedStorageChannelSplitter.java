@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -80,6 +81,12 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<Void> onWeakSubjectivityUpdate(
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return updateDelegate.onWeakSubjectivityUpdate(weakSubjectivityUpdate);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedDepositSnapshot(
+      final DepositTreeSnapshot depositTreeSnapshot) {
+    return updateDelegate.onFinalizedDepositSnapshot(depositTreeSnapshot);
   }
 
   @Override
@@ -170,5 +177,10 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Optional<Checkpoint>> getAnchor() {
     return asyncRunner.runAsync(queryDelegate::getAnchor);
+  }
+
+  @Override
+  public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
+    return asyncRunner.runAsync(queryDelegate::getFinalizedDepositSnapshot);
   }
 }

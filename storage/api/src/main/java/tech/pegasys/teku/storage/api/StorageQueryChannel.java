@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -71,4 +72,6 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot);
 
   SafeFuture<Optional<Checkpoint>> getAnchor();
+
+  SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot();
 }

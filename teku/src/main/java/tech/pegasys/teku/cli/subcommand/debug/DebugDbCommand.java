@@ -93,7 +93,8 @@ public class DebugDbCommand implements Runnable {
       throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
         final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      final DepositStorage depositStorage = DepositStorage.create(eth1EventsChannel, database);
+      final DepositStorage depositStorage =
+          DepositStorage.create(eth1EventsChannel, database, false);
       depositStorage.replayDepositEvents().join();
     }
     return 0;

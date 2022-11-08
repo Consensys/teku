@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -950,7 +952,8 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader())))
+                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader()))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -983,7 +986,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum)))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1015,7 +1019,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec()))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1048,7 +1053,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
-                                    spec.getGenesisSpec()))))
+                                    spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1183,6 +1189,22 @@ public final class DataStructureUtil {
     }
 
     return deposits;
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot() {
+    return randomDepositTreeSnapshot(randomLong(), randomUInt64());
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot(
+      final long depositsCount, final UInt64 blockHeight) {
+    return new DepositTreeSnapshot(
+        Stream.generate(this::randomBytes32)
+            .limit(DEPOSIT_CONTRACT_TREE_DEPTH)
+            .collect(Collectors.toList()),
+        Bytes32.random(),
+        depositsCount,
+        Bytes32.random(),
+        blockHeight);
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit() {
@@ -1541,6 +1563,22 @@ public final class DataStructureUtil {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
         .create(randomUInt64(), randomPublicKey(), randomBytes20());
+  }
+
+  public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
+    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionCapella()
+            .orElseThrow()
+            .getBlsToExecutionChangesSchema();
+    final int maxBlsToExecutionChanges =
+        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
+
+    return randomSszList(
+        signedBlsToExecutionChangeSchema,
+        maxBlsToExecutionChanges,
+        this::randomSignedBlsToExecutionChange);
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {

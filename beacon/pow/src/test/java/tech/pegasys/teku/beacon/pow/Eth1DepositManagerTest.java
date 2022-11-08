@@ -20,12 +20,10 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +33,6 @@ import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
-import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
@@ -69,8 +66,10 @@ class Eth1DepositManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
       mock(ValidatingEth1EventsPublisher.class);
-  private final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel =
-      mock(Eth1SnapshotLoaderChannel.class);
+  private final DepositSnapshotFileLoader depositSnapshotFileLoader =
+      mock(DepositSnapshotFileLoader.class);
+  private final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
+      mock(DepositSnapshotStorageLoader.class);
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
   private final DepositProcessingController depositProcessingController =
@@ -95,7 +94,8 @@ class Eth1DepositManagerTest {
           asyncRunner,
           eth1EventsChannel,
           eth1DepositStorageChannel,
-          eth1SnapshotLoaderChannel,
+          depositSnapshotFileLoader,
+          depositSnapshotStorageLoader,
           depositProcessingController,
           minimumGenesisTimeBlockFinder,
           Optional.empty(),
@@ -103,7 +103,9 @@ class Eth1DepositManagerTest {
 
   @BeforeEach
   public void setup() {
-    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.EMPTY);
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
     Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
   }
@@ -380,29 +382,58 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldStartFromSnapshotWhenLoaded() {
+  void shouldStartFromSnapshotFileWhenProvided() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
-    final DepositTreeSnapshot depositTreeSnapshot =
-        new DepositTreeSnapshot(
-            List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
-            dataStructureUtil.randomBytes32(),
-            deposits.longValue(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
-    final ReplayDepositsResult replayDepositsResult =
-        ReplayDepositsResult.create(lastBlockNumber, Optional.of(BigInteger.valueOf(99)), true);
 
-    when(eth1SnapshotLoaderChannel.loadDepositSnapshot())
+    // DepositTreeSnapshot from file will be used to start from
+    final DepositTreeSnapshot depositTreeSnapshotFromFile =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            deposits.longValue(), UInt64.valueOf(lastBlockNumber));
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    // This one will be ignored
+    final DepositTreeSnapshot depositTreeSnapshotFromDb =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            deposits.plus(50).longValue(), UInt64.valueOf(lastBlockNumber).plus(500));
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
-                new LoadDepositSnapshotResult(
-                    Optional.of(depositTreeSnapshot), replayDepositsResult)));
-    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+                LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromDb))));
 
     manager.start();
     notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
-    verifyNoInteractions(eth1DepositStorageChannel);
+    verify(eth1DepositStorageChannel, never()).replayDepositEvents();
+    verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldStartFromStorageSnapshotWhenProvided() {
+    final UInt64 deposits = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
+
+    // DepositTreeSnapshot from file will be used to start from
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    // This one will be ignored
+    final DepositTreeSnapshot depositTreeSnapshotFromDb =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            deposits.longValue(), UInt64.valueOf(lastBlockNumber));
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromDb))));
+
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(eth1DepositStorageChannel, never()).replayDepositEvents();
     verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
     inOrder
         .verify(depositProcessingController)
