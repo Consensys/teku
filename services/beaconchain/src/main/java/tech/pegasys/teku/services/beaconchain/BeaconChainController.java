@@ -693,16 +693,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignatureVerificationService() {
     final P2PConfig p2PConfig = beaconConfig.p2pConfig();
     signatureVerificationService =
-        p2PConfig.batchVerifyAttestationSignatures()
-            ? new AggregatingSignatureVerificationService(
-                metricsSystem,
-                asyncRunnerFactory,
-                beaconAsyncRunner,
-                p2PConfig.getBatchVerifyMaxThreads(),
-                p2PConfig.getBatchVerifyQueueCapacity(),
-                p2PConfig.getBatchVerifyMaxBatchSize(),
-                p2PConfig.isBatchVerifyStrictThreadLimitEnabled())
-            : SignatureVerificationService.createSimple();
+        new AggregatingSignatureVerificationService(
+            metricsSystem,
+            asyncRunnerFactory,
+            beaconAsyncRunner,
+            p2PConfig.getBatchVerifyMaxThreads(),
+            p2PConfig.getBatchVerifyQueueCapacity(),
+            p2PConfig.getBatchVerifyMaxBatchSize(),
+            p2PConfig.isBatchVerifyStrictThreadLimitEnabled());
   }
 
   protected void initAttestationManager() {
