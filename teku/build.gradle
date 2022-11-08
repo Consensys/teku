@@ -49,6 +49,7 @@ dependencies {
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
+  implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu.internal:metrics-core'

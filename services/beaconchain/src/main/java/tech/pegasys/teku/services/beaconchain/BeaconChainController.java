@@ -107,7 +107,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
-import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
@@ -335,17 +334,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
     timerService = new TimerService(this::onTick);
 
-    if (storeConfig.isAsyncStorageEnabled()) {
-      final CombinedStorageChannel combinedStorageChannel =
-          eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
-      storageQueryChannel = combinedStorageChannel;
-      storageUpdateChannel = combinedStorageChannel;
-    } else {
-      storageQueryChannel =
-          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
-      storageUpdateChannel =
-          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
-    }
+    final CombinedStorageChannel combinedStorageChannel =
+        eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
+    storageQueryChannel = combinedStorageChannel;
+    storageUpdateChannel = combinedStorageChannel;
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -563,10 +555,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
-    forkChoiceTrigger =
-        beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
-            ? new PreProposalForkChoiceTrigger(forkChoice)
-            : new ForkChoiceTrigger(forkChoice);
+    forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
 
   public void initMetrics() {
@@ -703,16 +692,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignatureVerificationService() {
     final P2PConfig p2PConfig = beaconConfig.p2pConfig();
     signatureVerificationService =
-        p2PConfig.batchVerifyAttestationSignatures()
-            ? new AggregatingSignatureVerificationService(
-                metricsSystem,
-                asyncRunnerFactory,
-                beaconAsyncRunner,
-                p2PConfig.getBatchVerifyMaxThreads(),
-                p2PConfig.getBatchVerifyQueueCapacity(),
-                p2PConfig.getBatchVerifyMaxBatchSize(),
-                p2PConfig.isBatchVerifyStrictThreadLimitEnabled())
-            : SignatureVerificationService.createSimple();
+        new AggregatingSignatureVerificationService(
+            metricsSystem,
+            asyncRunnerFactory,
+            beaconAsyncRunner,
+            p2PConfig.getBatchVerifyMaxThreads(),
+            p2PConfig.getBatchVerifyQueueCapacity(),
+            p2PConfig.getBatchVerifyMaxBatchSize(),
+            p2PConfig.isBatchVerifyStrictThreadLimitEnabled());
   }
 
   protected void initAttestationManager() {

@@ -19,9 +19,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class ForkChoiceTrigger {
 
   private final ForkChoiceRatchet forkChoiceRatchet;
+  private final ForkChoice forkChoice;
 
   public ForkChoiceTrigger(final ForkChoice forkChoice) {
-    forkChoiceRatchet = new ForkChoiceRatchet(forkChoice);
+    this.forkChoiceRatchet = new ForkChoiceRatchet(forkChoice);
+    this.forkChoice = forkChoice;
   }
 
   public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
@@ -33,7 +35,7 @@ public class ForkChoiceTrigger {
   }
 
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
-    return SafeFuture.COMPLETE;
+    return forkChoice.prepareForBlockProduction(slot);
   }
 
   public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {

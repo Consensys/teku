@@ -952,7 +952,8 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader())))
+                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader()))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -985,7 +986,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum)))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1017,7 +1019,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec()))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1050,7 +1053,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
-                                    spec.getGenesisSpec()))))
+                                    spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1386,8 +1390,9 @@ public final class DataStructureUtil {
       case ALTAIR:
         return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
+      case CAPELLA:
+        return stateBuilderCapella(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
     }
@@ -1419,6 +1424,16 @@ public final class DataStructureUtil {
   public BeaconStateBuilderBellatrix stateBuilderBellatrix(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderBellatrix.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella() {
+    return stateBuilderCapella(10, 10);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderCapella.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
@@ -1548,6 +1563,22 @@ public final class DataStructureUtil {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
         .create(randomUInt64(), randomPublicKey(), randomBytes20());
+  }
+
+  public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
+    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionCapella()
+            .orElseThrow()
+            .getBlsToExecutionChangesSchema();
+    final int maxBlsToExecutionChanges =
+        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
+
+    return randomSszList(
+        signedBlsToExecutionChangeSchema,
+        maxBlsToExecutionChanges,
+        this::randomSignedBlsToExecutionChange);
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {

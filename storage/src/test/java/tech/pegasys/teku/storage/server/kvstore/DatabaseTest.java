@@ -58,7 +58,6 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -129,7 +128,7 @@ public class DatabaseTest {
 
   private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
       throws IOException {
-    final StoreConfig config = StoreConfig.builder().asyncStorageEnabled(false).build();
+    final StoreConfig config = StoreConfig.builder().build();
     createStorageSystem(context, storageMode, config, false);
 
     // Initialize genesis store
@@ -1110,11 +1109,9 @@ public class DatabaseTest {
     // Sanity check
     assertThatSafeFuture(store.retrieveBlockState(newValue.getRoot()))
         .isCompletedWithEmptyOptional();
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putBlockAndState(newValue, spec.calculateBlockCheckpoints(newValue.getState()));
 
-    final SafeFuture<Void> result = transaction.commit();
-    assertThatThrownBy(result::get).hasCauseInstanceOf(ShuttingDownException.class);
+    assertThatThrownBy(() -> database.storeInitialAnchor(genesisAnchor))
+        .isInstanceOf(ShuttingDownException.class);
   }
 
   @TestTemplate

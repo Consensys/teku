@@ -103,6 +103,7 @@ dependencyManagement {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
+      entry 'log4j-slf4j2-impl'
     }
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
@@ -165,7 +166,7 @@ dependencyManagement {
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:22.11.2') {
+    dependency('tech.pegasys.discovery:discovery:22.11.3') {
       exclude 'org.apache.tuweni:bytes'
       exclude 'org.apache.tuweni:crypto'
       exclude 'org.apache.tuweni:units'

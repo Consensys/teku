@@ -26,8 +26,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
@@ -90,20 +88,13 @@ public class StorageService extends Service implements StorageServiceFacade {
                   new AsyncRunnerEventThread(
                       "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
 
-          if (config.isAsyncStorageEnabled()) {
-            eventChannels.subscribe(
-                CombinedStorageChannel.class,
-                new CombinedStorageChannelSplitter(
-                    serviceConfig.createAsyncRunner(
-                        "storage_query", STORAGE_QUERY_CHANNEL_PARALLELISM),
-                    new RetryingStorageUpdateChannel(chainStorage, serviceConfig.getTimeProvider()),
-                    chainStorage));
-          } else {
-            eventChannels
-                .subscribe(StorageUpdateChannel.class, chainStorage)
-                .subscribeMultithreaded(
-                    StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
-          }
+          eventChannels.subscribe(
+              CombinedStorageChannel.class,
+              new CombinedStorageChannelSplitter(
+                  serviceConfig.createAsyncRunner(
+                      "storage_query", STORAGE_QUERY_CHANNEL_PARALLELISM),
+                  new RetryingStorageUpdateChannel(chainStorage, serviceConfig.getTimeProvider()),
+                  chainStorage));
 
           eventChannels
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)

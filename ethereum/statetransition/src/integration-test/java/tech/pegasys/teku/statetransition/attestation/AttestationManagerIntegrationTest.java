@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -86,7 +87,7 @@ class AttestationManagerIntegrationTest {
           mock(SettableLabelledGauge.class),
           "attestations");
   private final SignatureVerificationService signatureVerificationService =
-      SignatureVerificationService.createSimple();
+      new SimpleSignatureVerificationService();
   private final AttestationValidator attestationValidator =
       new AttestationValidator(spec, recentChainData, signatureVerificationService);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);

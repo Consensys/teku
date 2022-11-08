@@ -32,7 +32,6 @@ public class P2PConfig {
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
-  public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
@@ -48,7 +47,6 @@ public class P2PConfig {
   private final boolean subscribeAllSubnetsEnabled;
   private final int peerRateLimit;
   private final int peerRequestLimit;
-  private final boolean batchVerifyAttestationSignatures;
   private final int batchVerifyMaxThreads;
   private final int batchVerifyQueueCapacity;
   private final int batchVerifyMaxBatchSize;
@@ -64,7 +62,6 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit,
-      final boolean batchVerifyAttestationSignatures,
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
       final int batchVerifyMaxBatchSize,
@@ -78,7 +75,6 @@ public class P2PConfig {
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
     this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
     this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
@@ -125,10 +121,6 @@ public class P2PConfig {
     return peerRequestLimit;
   }
 
-  public boolean batchVerifyAttestationSignatures() {
-    return batchVerifyAttestationSignatures;
-  }
-
   public int getBatchVerifyMaxThreads() {
     return batchVerifyMaxThreads;
   }
@@ -156,7 +148,6 @@ public class P2PConfig {
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-    private Boolean batchVerifyAttestationSignatures = DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
     private int batchVerifyQueueCapacity = DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY;
     private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
@@ -193,7 +184,6 @@ public class P2PConfig {
           subscribeAllSubnetsEnabled,
           peerRateLimit,
           peerRequestLimit,
-          batchVerifyAttestationSignatures,
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity,
           batchVerifyMaxBatchSize,
@@ -259,13 +249,6 @@ public class P2PConfig {
             String.format("Invalid peerRequestLimit: %d", peerRequestLimit));
       }
       this.peerRequestLimit = peerRequestLimit;
-      return this;
-    }
-
-    public Builder batchVerifyAttestationSignatures(
-        final Boolean batchVerifyAttestationSignatures) {
-      checkNotNull(batchVerifyAttestationSignatures);
-      this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
       return this;
     }
 
