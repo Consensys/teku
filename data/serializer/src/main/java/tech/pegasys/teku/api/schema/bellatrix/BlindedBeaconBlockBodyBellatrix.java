@@ -18,14 +18,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
-import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
@@ -39,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.Execut
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
-  public final ExecutionPayloadHeader executionPayloadHeader;
+  public final ExecutionPayloadHeaderBellatrix executionPayloadHeader;
 
   @JsonCreator
   public BlindedBeaconBlockBodyBellatrix(
@@ -53,7 +51,7 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
       @JsonProperty("execution_payload_header")
-          final ExecutionPayloadHeader executionPayloadHeader) {
+          final ExecutionPayloadHeaderBellatrix executionPayloadHeader) {
     super(
         randaoReveal,
         eth1Data,
@@ -73,19 +71,10 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   public BlindedBeaconBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
               .BlindedBeaconBlockBodyBellatrix
-          blockBody,
-      final Optional<ExecutionPayloadHeader> executionPayloadHeaderOverride) {
+          blockBody) {
     super(blockBody);
     this.executionPayloadHeader =
-        executionPayloadHeaderOverride.orElse(
-            new ExecutionPayloadHeaderBellatrix(blockBody.getExecutionPayloadHeader()));
-  }
-
-  public BlindedBeaconBlockBodyBellatrix(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
-              .BlindedBeaconBlockBodyBellatrix
-          blockBody) {
-    this(blockBody, Optional.empty());
+        new ExecutionPayloadHeaderBellatrix(blockBody.getExecutionPayloadHeader());
   }
 
   public BlindedBeaconBlockBodyBellatrix(final BeaconBlockBodyBellatrix blockBody) {
@@ -107,14 +96,12 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
+
     final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
         getBeaconBlockBodySchema(spec)
             .getExecutionPayloadHeaderSchema()
             .toVersionBellatrix()
             .orElseThrow();
-
-    final ExecutionPayloadHeaderBellatrix executionPayloadHeaderBellatrix =
-        executionPayloadHeader.toVersionBellatrix().orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,
@@ -123,19 +110,19 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
                 () ->
                     SafeFuture.completedFuture(
                         executionPayloadHeaderSchema.create(
-                            executionPayloadHeaderBellatrix.parentHash,
-                            executionPayloadHeaderBellatrix.feeRecipient,
-                            executionPayloadHeaderBellatrix.stateRoot,
-                            executionPayloadHeaderBellatrix.receiptsRoot,
-                            executionPayloadHeaderBellatrix.logsBloom,
-                            executionPayloadHeaderBellatrix.prevRandao,
-                            executionPayloadHeaderBellatrix.blockNumber,
-                            executionPayloadHeaderBellatrix.gasLimit,
-                            executionPayloadHeaderBellatrix.gasUsed,
-                            executionPayloadHeaderBellatrix.timestamp,
-                            executionPayloadHeaderBellatrix.extraData,
-                            executionPayloadHeaderBellatrix.baseFeePerGas,
-                            executionPayloadHeaderBellatrix.blockHash,
-                            executionPayloadHeaderBellatrix.transactionsRoot))));
+                            executionPayloadHeader.parentHash,
+                            executionPayloadHeader.feeRecipient,
+                            executionPayloadHeader.stateRoot,
+                            executionPayloadHeader.receiptsRoot,
+                            executionPayloadHeader.logsBloom,
+                            executionPayloadHeader.prevRandao,
+                            executionPayloadHeader.blockNumber,
+                            executionPayloadHeader.gasLimit,
+                            executionPayloadHeader.gasUsed,
+                            executionPayloadHeader.timestamp,
+                            executionPayloadHeader.extraData,
+                            executionPayloadHeader.baseFeePerGas,
+                            executionPayloadHeader.blockHash,
+                            executionPayloadHeader.transactionsRoot))));
   }
 }

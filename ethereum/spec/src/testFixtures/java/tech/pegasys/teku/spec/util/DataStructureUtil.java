@@ -469,7 +469,7 @@ public final class DataStructureUtil {
       return randomExecutionPayloadHeaderCapella();
     } else {
       throw new IllegalArgumentException(
-          "There is no configured execution payload header for " + milestone);
+          "There is no random execution payload header configured for " + milestone);
     }
   }
 
@@ -598,7 +598,7 @@ public final class DataStructureUtil {
             randomUInt256(),
             randomBytes32(),
             randomExecutionPayloadTransactions(),
-            randomWithdrawals());
+            randomExecutionPayloadWithdrawals());
   }
 
   public ExecutionPayload randomExecutionPayload() {
@@ -643,7 +643,7 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<Bytes> randomWithdrawals() {
+  public List<Bytes> randomExecutionPayloadWithdrawals() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWALS))
         .mapToObj(__ -> randomWithdrawal().sszSerialize())
         .collect(toList());

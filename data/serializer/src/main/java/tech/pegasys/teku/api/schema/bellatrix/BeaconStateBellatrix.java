@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.api.schema.Eth1Data;
-import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
@@ -38,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 public class BeaconStateBellatrix extends BeaconStateAltair {
 
   @JsonProperty("latest_execution_payload_header")
-  public ExecutionPayloadHeader latestExecutionPayloadHeader;
+  public ExecutionPayloadHeaderBellatrix latestExecutionPayloadHeader;
 
   @JsonCreator
   public BeaconStateBellatrix(
@@ -67,7 +66,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
+          final ExecutionPayloadHeaderBellatrix latestExecutionPayloadHeader) {
     super(
         genesisTime,
         genesisValidatorsRoot,
