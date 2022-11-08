@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -44,9 +44,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class BeaconBlockBodySchemaCapellaImpl
+public class BlindedBeaconBlockBodySchemaCapellaImpl
     extends ContainerSchema11<
-        BeaconBlockBodyCapellaImpl,
+        BlindedBeaconBlockBodyCapellaImpl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -56,44 +56,44 @@ public class BeaconBlockBodySchemaCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload,
+        ExecutionPayloadHeader,
         SszList<BlsToExecutionChange>>
-    implements BeaconBlockBodySchemaCapella<BeaconBlockBodyCapellaImpl> {
+    implements BlindedBeaconBlockBodySchemaCapella<BlindedBeaconBlockBodyCapellaImpl> {
 
-  protected BeaconBlockBodySchemaCapellaImpl(
+  private BlindedBeaconBlockBodySchemaCapellaImpl(
       final String containerName,
-      final NamedSchema<SszSignature> randaoRevealSchema,
-      final NamedSchema<Eth1Data> eth1DataSchema,
-      final NamedSchema<SszBytes32> graffitiSchema,
-      final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      final NamedSchema<SszList<Attestation>> attestationsSchema,
-      final NamedSchema<SszList<Deposit>> depositsSchema,
-      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
-      final NamedSchema<SyncAggregate> syncAggregateSchema,
-      final NamedSchema<ExecutionPayload> executionPayloadSchema,
-      final NamedSchema<SszList<BlsToExecutionChange>> blsToExecutionChange) {
+      NamedSchema<SszSignature> randaoReveal,
+      NamedSchema<Eth1Data> eth1Data,
+      NamedSchema<SszBytes32> graffiti,
+      NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
+      NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
+      NamedSchema<SszList<Attestation>> attestations,
+      NamedSchema<SszList<Deposit>> deposits,
+      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
+      NamedSchema<SyncAggregate> syncAggregate,
+      NamedSchema<ExecutionPayloadHeader> executionPayloadHeader,
+      NamedSchema<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
     super(
         containerName,
-        randaoRevealSchema,
-        eth1DataSchema,
-        graffitiSchema,
-        proposerSlashingsSchema,
-        attesterSlashingsSchema,
-        attestationsSchema,
-        depositsSchema,
-        voluntaryExitsSchema,
-        syncAggregateSchema,
-        executionPayloadSchema,
-        blsToExecutionChange);
+        randaoReveal,
+        eth1Data,
+        graffiti,
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        executionPayloadHeader,
+        blsToExecutionChanges);
   }
 
-  public static BeaconBlockBodySchemaCapellaImpl create(
+  public static BlindedBeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final BlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final String containerName) {
-    return new BeaconBlockBodySchemaCapellaImpl(
+    return new BlindedBeaconBlockBodySchemaCapellaImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
@@ -119,7 +119,8 @@ public class BeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchema(specConfig)),
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD_HEADER, new ExecutionPayloadHeaderSchema(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
@@ -127,16 +128,17 @@ public class BeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public SafeFuture<? extends BeaconBlockBody> createBlockBody(
+  public SafeFuture<BeaconBlockBody> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderCapella builder = new BeaconBlockBodyBuilderCapella().schema(this);
+    final BeaconBlockBodyBuilderCapella builder =
+        new BeaconBlockBodyBuilderCapella().blindedSchema(this);
     builderConsumer.accept(builder);
     return builder.build();
   }
 
   @Override
-  public BeaconBlockBody createEmpty() {
-    return new BeaconBlockBodyCapellaImpl(this);
+  public BlindedBeaconBlockBodyCapellaImpl createEmpty() {
+    return new BlindedBeaconBlockBodyCapellaImpl(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -175,26 +177,31 @@ public class BeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public BeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBodyCapellaImpl(this, node);
+  public BlindedBeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
+    return new BlindedBeaconBlockBodyCapellaImpl(this, node);
   }
 
   @Override
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema) getFieldSchema9();
+  public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchema) getFieldSchema9();
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
+  public SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChanges() {
     return (SszListSchema<BlsToExecutionChange, ?>) getFieldSchema10();
+  }
+
+  @Override
+  public Optional<BlindedBeaconBlockBodySchemaCapella<?>> toBlindedVersionCapella() {
+    return Optional.of(this);
   }
 
   @Override
   public Optional<Long> getBlindedNodeGeneralizedIndex() {
     final long childGeneralizedIndex =
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
-    final long relativeIndex = getExecutionPayloadSchema().getBlindedNodeGeneralizedIndex();
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
+    final long relativeIndex = getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndex();
     return Optional.of(GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
   }
 }

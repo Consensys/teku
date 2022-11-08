@@ -20,13 +20,11 @@ dependencies {
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')
 
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
-  implementation 'org.apache.tuweni:tuweni-ssz'
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
