@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
+import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
@@ -69,11 +71,21 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   public BeaconBlockBodyBellatrix(
       tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
               .BeaconBlockBodyBellatrix
-          message) {
+          message,
+      Optional<ExecutionPayload> executionPayloadOverride) {
     super(message);
     checkNotNull(
         message.getExecutionPayload(), "Execution Payload is required for bellatrix blocks");
-    this.executionPayload = new ExecutionPayload(message.getExecutionPayload());
+    this.executionPayload =
+        executionPayloadOverride.orElse(
+            new ExecutionPayloadBellatrix(message.getExecutionPayload()));
+  }
+
+  public BeaconBlockBodyBellatrix(
+      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
+              .BeaconBlockBodyBellatrix
+          message) {
+    this(message, Optional.empty());
   }
 
   @Override
@@ -82,37 +94,50 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
         spec.getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  @Override
   public BeaconBlockBody asInternalBeaconBlockBody(
-      final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
-    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
-        getBeaconBlockBodySchema(spec)
-            .getExecutionPayloadSchema()
-            .toVersionBellatrix()
-            .orElseThrow();
+      final SpecVersion spec,
+      Consumer<BeaconBlockBodyBuilder> builderRef,
+      Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
+          executionPayloadOverride) {
+
+    final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload blockExecutionPayload =
+        executionPayloadOverride.orElseGet(
+            () -> {
+              final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
+                  getBeaconBlockBodySchema(spec)
+                      .getExecutionPayloadSchema()
+                      .toVersionBellatrix()
+                      .orElseThrow();
+              final ExecutionPayloadBellatrix executionPayloadBellatrix =
+                  executionPayload.toVersionBellatrix().orElseThrow();
+              return executionPayloadSchemaBellatrix.create(
+                  executionPayloadBellatrix.parentHash,
+                  executionPayloadBellatrix.feeRecipient,
+                  executionPayloadBellatrix.stateRoot,
+                  executionPayloadBellatrix.receiptsRoot,
+                  executionPayloadBellatrix.logsBloom,
+                  executionPayloadBellatrix.prevRandao,
+                  executionPayloadBellatrix.blockNumber,
+                  executionPayloadBellatrix.gasLimit,
+                  executionPayloadBellatrix.gasUsed,
+                  executionPayloadBellatrix.timestamp,
+                  executionPayloadBellatrix.extraData,
+                  executionPayloadBellatrix.baseFeePerGas,
+                  executionPayloadBellatrix.blockHash,
+                  executionPayloadBellatrix.transactions);
+            });
 
     return super.asInternalBeaconBlockBody(
         spec,
         (builder) -> {
           builderRef.accept(builder);
-          builder.executionPayload(
-              () ->
-                  SafeFuture.completedFuture(
-                      executionPayloadSchemaBellatrix.create(
-                          executionPayload.parentHash,
-                          executionPayload.feeRecipient,
-                          executionPayload.stateRoot,
-                          executionPayload.receiptsRoot,
-                          executionPayload.logsBloom,
-                          executionPayload.prevRandao,
-                          executionPayload.blockNumber,
-                          executionPayload.gasLimit,
-                          executionPayload.gasUsed,
-                          executionPayload.timestamp,
-                          executionPayload.extraData,
-                          executionPayload.baseFeePerGas,
-                          executionPayload.blockHash,
-                          executionPayload.transactions)));
+          builder.executionPayload(() -> SafeFuture.completedFuture(blockExecutionPayload));
         });
+  }
+
+  @Override
+  public BeaconBlockBody asInternalBeaconBlockBody(
+      final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
+    return asInternalBeaconBlockBody(spec, builderRef, Optional.empty());
   }
 }

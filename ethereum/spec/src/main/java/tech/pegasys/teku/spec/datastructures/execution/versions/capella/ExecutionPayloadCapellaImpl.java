@@ -49,7 +49,7 @@ public class ExecutionPayloadCapellaImpl
         SszList<Withdrawal>>
     implements ExecutionPayloadCapella {
 
-  protected ExecutionPayloadCapellaImpl(
+  public ExecutionPayloadCapellaImpl(
       ContainerSchema15<
               ExecutionPayloadCapellaImpl,
               SszBytes32,
@@ -70,6 +70,42 @@ public class ExecutionPayloadCapellaImpl
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public ExecutionPayloadCapellaImpl(
+      ExecutionPayloadSchemaCapella schema,
+      SszBytes32 parentHash,
+      SszByteVector feeRecipient,
+      SszBytes32 stateRoot,
+      SszBytes32 receiptsRoot,
+      SszByteVector logsBloom,
+      SszBytes32 random,
+      SszUInt64 blockNumber,
+      SszUInt64 gasLimit,
+      SszUInt64 gasUsed,
+      SszUInt64 timestamp,
+      SszByteList extraData,
+      SszUInt256 baseFeePerGas,
+      SszBytes32 blockHash,
+      SszList<Transaction> transactions,
+      SszList<Withdrawal> withdrawals) {
+    super(
+        schema,
+        parentHash,
+        feeRecipient,
+        stateRoot,
+        receiptsRoot,
+        logsBloom,
+        random,
+        blockNumber,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData,
+        baseFeePerGas,
+        blockHash,
+        transactions,
+        withdrawals);
   }
 
   @Override

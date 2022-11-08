@@ -11,33 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.bellatrix;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+package tech.pegasys.teku.api.schema.capella;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
+import tech.pegasys.teku.api.schema.ExecutionPayload;
+import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
-public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
-    implements ExecutionPayloadHeader {
+public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implements ExecutionPayload {
 
-  @JsonProperty("transactions_root")
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 transactionsRoot;
+  @ArraySchema(schema = @Schema(type = "string", format = "byte"))
+  public final List<Bytes> withdrawals;
 
   @JsonCreator
-  public ExecutionPayloadHeaderBellatrix(
+  public ExecutionPayloadCapella(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
@@ -51,7 +54,8 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
       @JsonProperty("extra_data") Bytes extraData,
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash,
-      @JsonProperty("transactions_root") Bytes32 transactionsRoot) {
+      @JsonProperty("transactions") List<Bytes> transactions,
+      @JsonProperty("withdrawals") List<Bytes> withdrawals) {
     super(
         parentHash,
         feeRecipient,
@@ -65,50 +69,57 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
         timestamp,
         extraData,
         baseFeePerGas,
-        blockHash);
-    this.transactionsRoot = transactionsRoot;
+        blockHash,
+        transactions);
+    this.withdrawals = withdrawals != null ? withdrawals : Collections.emptyList();
   }
 
-  public ExecutionPayloadHeaderBellatrix(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
-          executionPayloadHeader) {
-    super(
-        executionPayloadHeader.getParentHash(),
-        executionPayloadHeader.getFeeRecipient(),
-        executionPayloadHeader.getStateRoot(),
-        executionPayloadHeader.getReceiptsRoot(),
-        executionPayloadHeader.getLogsBloom(),
-        executionPayloadHeader.getPrevRandao(),
-        executionPayloadHeader.getBlockNumber(),
-        executionPayloadHeader.getGasLimit(),
-        executionPayloadHeader.getGasUsed(),
-        executionPayloadHeader.getTimestamp(),
-        executionPayloadHeader.getExtraData(),
-        executionPayloadHeader.getBaseFeePerGas(),
-        executionPayloadHeader.getBlockHash());
-    this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
-  }
-
-  public ExecutionPayloadHeaderBellatrix(ExecutionPayload executionPayload) {
-    super(
-        executionPayload.getParentHash(),
-        executionPayload.getFeeRecipient(),
-        executionPayload.getStateRoot(),
-        executionPayload.getReceiptsRoot(),
-        executionPayload.getLogsBloom(),
-        executionPayload.getPrevRandao(),
-        executionPayload.getBlockNumber(),
-        executionPayload.getGasLimit(),
-        executionPayload.getGasUsed(),
-        executionPayload.getTimestamp(),
-        executionPayload.getExtraData(),
-        executionPayload.getBaseFeePerGas(),
-        executionPayload.getBlockHash());
-    this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
+  public ExecutionPayloadCapella(
+      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
+    super(executionPayload);
+    this.withdrawals =
+        executionPayload.getOptionalWithdrawals().orElseThrow().stream()
+            .map(Withdrawal::sszSerialize)
+            .collect(Collectors.toList());
   }
 
   @Override
-  public Optional<ExecutionPayloadHeaderBellatrix> toVersionBellatrix() {
+  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
+      asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
+
+    final Optional<SchemaDefinitionsCapella> maybeSchema =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionCapella();
+
+    if (maybeSchema.isEmpty()) {
+      final String message =
+          String.format("Could not create execution payload at non-bellatrix slot %s", slot);
+      throw new IllegalArgumentException(message);
+    }
+
+    return maybeSchema.map(
+        schema ->
+            schema
+                .getExecutionPayloadSchemaCapella()
+                .create(
+                    parentHash,
+                    feeRecipient,
+                    stateRoot,
+                    receiptsRoot,
+                    logsBloom,
+                    prevRandao,
+                    blockNumber,
+                    gasLimit,
+                    gasUsed,
+                    timestamp,
+                    extraData,
+                    baseFeePerGas,
+                    blockHash,
+                    transactions,
+                    withdrawals));
+  }
+
+  @Override
+  public Optional<ExecutionPayloadCapella> toVersionCapella() {
     return Optional.of(this);
   }
 
@@ -123,13 +134,13 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
     if (!super.equals(o)) {
       return false;
     }
-    final ExecutionPayloadHeaderBellatrix that = (ExecutionPayloadHeaderBellatrix) o;
-    return Objects.equals(transactionsRoot, that.transactionsRoot);
+    final ExecutionPayloadCapella that = (ExecutionPayloadCapella) o;
+    return Objects.equals(withdrawals, that.withdrawals);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), transactionsRoot);
+    return Objects.hash(super.hashCode(), withdrawals);
   }
 
   @Override
@@ -148,7 +159,8 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
         .add("blockHash", blockHash)
-        .add("transactionsRoot", transactionsRoot)
+        .add("transactions", transactions)
+        .add("withdrawals", withdrawals)
         .toString();
   }
 }

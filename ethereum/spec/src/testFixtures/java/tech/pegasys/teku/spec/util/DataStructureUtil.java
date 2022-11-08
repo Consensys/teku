@@ -526,10 +526,25 @@ public final class DataStructureUtil {
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(SpecVersion specVersion) {
     final BeaconBlockBodySchema<?> schema =
         specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
-    return schema.toVersionBellatrix().map(__ -> randomExecutionPayload(specVersion)).orElse(null);
+    final SpecMilestone milestone = specVersion.getMilestone();
+    if (milestone.equals(SpecMilestone.BELLATRIX)) {
+      return schema
+          .toVersionBellatrix()
+          .map(__ -> randomExecutionPayloadBellatrix(specVersion))
+          .orElse(null);
+    } else if (milestone.equals(SpecMilestone.CAPELLA)) {
+      System.out.println("HEYYYYYYYYYYYY");
+      return schema
+          .toVersionCapella()
+          .map(__ -> randomExecutionPayloadCapella(specVersion))
+          .orElse(null);
+    } else {
+      throw new IllegalArgumentException(
+          "There is no random execution payload configured for " + milestone);
+    }
   }
 
-  public ExecutionPayload randomExecutionPayload(SpecVersion specVersion) {
+  public ExecutionPayload randomExecutionPayloadBellatrix(SpecVersion specVersion) {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(specVersion.getConfig());
     return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
@@ -551,8 +566,30 @@ public final class DataStructureUtil {
             randomExecutionPayloadTransactions());
   }
 
+  public ExecutionPayload randomExecutionPayloadCapella(SpecVersion specVersion) {
+    final SpecConfigCapella specConfigCapella = SpecConfigCapella.required(specVersion.getConfig());
+    return SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
+        .getExecutionPayloadSchemaCapella()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions(),
+            randomWithdrawals());
+  }
+
   public ExecutionPayload randomExecutionPayload() {
-    return randomExecutionPayload(spec.getGenesisSpec());
+    return randomExecutionPayloadBellatrix(spec.getGenesisSpec());
   }
 
   public ExecutionPayload emptyExecutionPayload() {
@@ -586,6 +623,12 @@ public final class DataStructureUtil {
   public List<Bytes> randomExecutionPayloadTransactions() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_TRANSACTIONS))
         .mapToObj(__ -> randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE)))
+        .collect(toList());
+  }
+
+  public List<Bytes> randomWithdrawals() {
+    return IntStream.rangeClosed(0, randomInt(10))
+        .mapToObj(__ -> randomWithdrawal().sszSerialize())
         .collect(toList());
   }
 

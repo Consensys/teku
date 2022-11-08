@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -29,10 +30,12 @@ import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 
 public class BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatrix {
 
@@ -73,7 +76,9 @@ public class BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatr
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
               .BlindedBeaconBlockBodyCapella
           blockBody) {
-    super(blockBody);
+    super(
+        blockBody,
+        Optional.of(new ExecutionPayloadHeaderCapella(blockBody.getExecutionPayloadHeader())));
     this.blsToExecutionChanges =
         blockBody.getBlsToExecutionChanges().stream()
             .map(SignedBlsToExecutionChange::new)
@@ -94,17 +99,46 @@ public class BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatr
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
+    final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadHeaderSchema()
+            .toVersionCapella()
+            .orElseThrow();
+
+    final ExecutionPayloadHeaderCapella executionPayloadHeaderCapella =
+        executionPayloadHeader.toVersionCapella().orElseThrow();
+
     final SszListSchema<
             tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
         blsToExecutionChangesSchema = getBeaconBlockBodySchema(spec).getBlsToExecutionChanges();
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) ->
-            builder.blsToExecutionChanges(
-                () ->
-                    this.blsToExecutionChanges.stream()
-                        .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
-                        .collect(blsToExecutionChangesSchema.collector())));
+        (builder) -> {
+          builder.executionPayloadHeader(
+              () ->
+                  SafeFuture.completedFuture(
+                      executionPayloadHeaderSchema.create(
+                          executionPayloadHeaderCapella.parentHash,
+                          executionPayloadHeaderCapella.feeRecipient,
+                          executionPayloadHeaderCapella.stateRoot,
+                          executionPayloadHeaderCapella.receiptsRoot,
+                          executionPayloadHeaderCapella.logsBloom,
+                          executionPayloadHeaderCapella.prevRandao,
+                          executionPayloadHeaderCapella.blockNumber,
+                          executionPayloadHeaderCapella.gasLimit,
+                          executionPayloadHeaderCapella.gasUsed,
+                          executionPayloadHeaderCapella.timestamp,
+                          executionPayloadHeaderCapella.extraData,
+                          executionPayloadHeaderCapella.baseFeePerGas,
+                          executionPayloadHeaderCapella.blockHash,
+                          executionPayloadHeaderCapella.transactionsRoot,
+                          executionPayloadHeaderCapella.withdrawalsRoot)));
+          builder.blsToExecutionChanges(
+              () ->
+                  this.blsToExecutionChanges.stream()
+                      .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                      .collect(blsToExecutionChangesSchema.collector()));
+        });
   }
 }

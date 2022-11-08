@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -175,5 +176,10 @@ public class ExecutionPayloadHeaderSchemaCapella
   @Override
   public ExecutionPayloadHeaderCapellaImpl createFromBackingNode(TreeNode node) {
     return new ExecutionPayloadHeaderCapellaImpl(this, node);
+  }
+
+  @Override
+  public Optional<ExecutionPayloadHeaderSchemaCapella> toVersionCapella() {
+    return Optional.of(this);
   }
 }
