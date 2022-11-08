@@ -63,9 +63,9 @@ public class DoppelgangerDetectionServiceTest {
   @Test
   public void shouldNotDetectDoppelganger() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
-    when(timeProvider.getTimeInMillis())
-        .thenReturn(UInt64.valueOf(1000))
-        .thenReturn(UInt64.valueOf(2000));
+    when(timeProvider.getTimeInSeconds())
+        .thenReturn(UInt64.valueOf(10))
+        .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
@@ -86,7 +86,7 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofMinutes(20),
+            Duration.ofMinutes(2),
             __ -> {});
     assertThat(doppelgangerDetectionService.start()).isCompleted();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(2);
@@ -147,9 +147,9 @@ public class DoppelgangerDetectionServiceTest {
   @Test
   public void shouldDetectDoppelgangerAndReturnIndicesOnly() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
-    when(timeProvider.getTimeInMillis())
-        .thenReturn(UInt64.valueOf(1000))
-        .thenReturn(UInt64.valueOf(2000));
+    when(timeProvider.getTimeInSeconds())
+        .thenReturn(UInt64.valueOf(10))
+        .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
@@ -195,9 +195,9 @@ public class DoppelgangerDetectionServiceTest {
   @Test
   public void shouldDetectDoppelgangerAndReturnIndicesAndPublicKeys() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
-    when(timeProvider.getTimeInMillis())
-        .thenReturn(UInt64.valueOf(1000))
-        .thenReturn(UInt64.valueOf(2000));
+    when(timeProvider.getTimeInSeconds())
+        .thenReturn(UInt64.valueOf(10))
+        .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))

@@ -115,7 +115,7 @@ public class DoppelgangerDetectionService extends Service {
             genesisTime -> {
               final UInt64 currentEpoch =
                   spec.computeEpochAtSlot(
-                      spec.getCurrentSlot(timeProvider.getTimeInMillis(), genesisTime));
+                      spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime));
 
               if (epochAtStart.isEmpty()) {
                 epochAtStart = Optional.of(currentEpoch);
