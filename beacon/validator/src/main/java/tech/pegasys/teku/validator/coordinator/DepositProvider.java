@@ -150,14 +150,11 @@ public class DepositProvider
                   storageUpdateChannel
                       .onFinalizedDepositSnapshot(depositTreeSnapshot)
                       .thenCompose(storeResult -> eth1DepositStorageChannel.removeDepositEvents())
-                      .exceptionally(
-                          throwable -> {
-                            LOG.error(
-                                "Failed to store snapshot and remove old deposit events",
-                                throwable);
-                            return null;
-                          })
-                      .ifExceptionGetsHereRaiseABug();
+                      .finish(
+                          throwable ->
+                              LOG.error(
+                                  "Failed to store snapshot and remove old deposit events",
+                                  throwable));
                 });
       }
     }
