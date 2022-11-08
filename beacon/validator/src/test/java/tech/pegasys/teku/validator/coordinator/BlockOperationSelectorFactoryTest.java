@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -469,6 +470,13 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder executionPayloadHeader(
         Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
       this.executionPayloadHeader = safeJoin(executionPayloadHeaderSupplier.get());
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder blsToExecutionChanges(
+        Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+      // do nothing
       return this;
     }
 

@@ -15,16 +15,15 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 
-public interface BeaconBlockBodySchemaCapella<T extends BeaconBlockBodyCapella>
-    extends BeaconBlockBodySchemaBellatrix<T> {
+public interface BlindedBeaconBlockBodySchemaCapella<T extends BlindedBeaconBlockBodyCapella>
+    extends BlindedBeaconBlockBodySchemaBellatrix<T> {
 
-  SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChangesSchema();
+  SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChanges();
 
-  @Override
-  default Optional<BeaconBlockBodySchemaCapella<?>> toVersionCapella() {
+  default Optional<BlindedBeaconBlockBodySchemaCapella<?>> toBlindedVersionCapella() {
     return Optional.of(this);
   }
 }

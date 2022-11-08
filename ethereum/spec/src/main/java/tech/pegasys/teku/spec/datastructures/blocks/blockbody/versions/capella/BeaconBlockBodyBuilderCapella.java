@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -19,49 +19,37 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
-  private BeaconBlockBodySchemaBellatrixImpl schema;
-  private BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
-  protected Optional<Boolean> blinded = Optional.empty();
-  protected SafeFuture<ExecutionPayload> executionPayload;
-  protected SafeFuture<ExecutionPayloadHeader> executionPayloadHeader;
+class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
-  public BeaconBlockBodyBuilderBellatrix schema(final BeaconBlockBodySchemaBellatrixImpl schema) {
+  private BeaconBlockBodySchemaCapellaImpl schema;
+  private BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema;
+  private SszList<BlsToExecutionChange> blsToExecutionChanges;
+
+  public BeaconBlockBodyBuilderCapella schema(final BeaconBlockBodySchemaCapellaImpl schema) {
     this.schema = schema;
     this.blinded = Optional.of(false);
     return this;
   }
 
-  public BeaconBlockBodyBuilderBellatrix blindedSchema(
-      final BlindedBeaconBlockBodySchemaBellatrixImpl schema) {
-    this.blindedSchema = schema;
+  public BeaconBlockBodyBuilderCapella blindedSchema(
+      final BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema) {
+    this.blindedSchema = blindedSchema;
     this.blinded = Optional.of(true);
     return this;
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
-    if (!isBlinded()) {
-      this.executionPayload = executionPayloadSupplier.get();
-    }
-    return this;
-  }
-
-  @Override
-  public BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
-    if (isBlinded()) {
-      this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
-    }
+  public BeaconBlockBodyBuilder blsToExecutionChanges(
+      final Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+    this.blsToExecutionChanges = blsToExecutionChanges.get();
     return this;
   }
 
@@ -73,11 +61,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   @Override
   protected void validate() {
     super.validate();
-    if (isBlinded()) {
-      checkNotNull(executionPayloadHeader, "executionPayloadHeader must be specified");
-    } else {
-      checkNotNull(executionPayload, "executionPayload must be specified");
-    }
+    checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
   @Override
@@ -94,7 +78,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
     if (isBlinded()) {
       return executionPayloadHeader.thenApply(
           header ->
-              new BlindedBeaconBlockBodyBellatrixImpl(
+              new BlindedBeaconBlockBodyCapellaImpl(
                   blindedSchema,
                   new SszSignature(randaoReveal),
                   eth1Data,
@@ -105,11 +89,12 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
                   deposits,
                   voluntaryExits,
                   syncAggregate,
-                  header));
+                  header,
+                  blsToExecutionChanges));
     }
     return executionPayload.thenApply(
         payload ->
-            new BeaconBlockBodyBellatrixImpl(
+            new BeaconBlockBodyCapellaImpl(
                 schema,
                 new SszSignature(randaoReveal),
                 eth1Data,
@@ -120,6 +105,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
                 deposits,
                 voluntaryExits,
                 syncAggregate,
-                payload));
+                payload,
+                blsToExecutionChanges));
   }
 }

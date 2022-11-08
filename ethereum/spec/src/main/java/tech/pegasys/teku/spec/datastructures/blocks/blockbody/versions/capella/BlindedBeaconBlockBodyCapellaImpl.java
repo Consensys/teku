@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
-import java.util.Optional;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -21,8 +22,9 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -31,9 +33,9 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyCapellaImpl
+class BlindedBeaconBlockBodyCapellaImpl
     extends Container11<
-        BeaconBlockBodyCapellaImpl,
+        BlindedBeaconBlockBodyCapellaImpl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -43,23 +45,32 @@ public class BeaconBlockBodyCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload,
+        ExecutionPayloadHeader,
         SszList<BlsToExecutionChange>>
-    implements BeaconBlockBodyCapella {
+    implements BlindedBeaconBlockBodyCapella {
 
-  BeaconBlockBodyCapellaImpl(
-      BeaconBlockBodySchemaCapellaImpl type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits,
-      SyncAggregate syncAggregate,
-      ExecutionPayload executionPayload,
-      SszList<BlsToExecutionChange> blsToExecutionChanges) {
+  BlindedBeaconBlockBodyCapellaImpl(BlindedBeaconBlockBodySchemaCapellaImpl type) {
+    super(type);
+  }
+
+  BlindedBeaconBlockBodyCapellaImpl(
+      BlindedBeaconBlockBodySchemaCapellaImpl type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  BlindedBeaconBlockBodyCapellaImpl(
+      final BlindedBeaconBlockBodySchemaCapellaImpl type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits,
+      final SyncAggregate syncAggregate,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final SszList<BlsToExecutionChange> blsToExecutionChanges) {
     super(
         type,
         randaoReveal,
@@ -71,16 +82,16 @@ public class BeaconBlockBodyCapellaImpl
         deposits,
         voluntaryExits,
         syncAggregate,
-        executionPayload,
+        executionPayloadHeader,
         blsToExecutionChanges);
   }
 
-  BeaconBlockBodyCapellaImpl(BeaconBlockBodySchemaCapellaImpl type) {
-    super(type);
-  }
-
-  BeaconBlockBodyCapellaImpl(BeaconBlockBodySchemaCapellaImpl type, TreeNode backingNode) {
-    super(type, backingNode);
+  public static BlindedBeaconBlockBodyCapellaImpl required(final BeaconBlockBody body) {
+    checkArgument(
+        body instanceof BlindedBeaconBlockBodyCapellaImpl,
+        "Expected Capella blinded block body but got %s",
+        body.getClass());
+    return (BlindedBeaconBlockBodyCapellaImpl) body;
   }
 
   @Override
@@ -139,7 +150,7 @@ public class BeaconBlockBodyCapellaImpl
   }
 
   @Override
-  public ExecutionPayload getExecutionPayload() {
+  public ExecutionPayloadHeader getExecutionPayloadHeader() {
     return getField9();
   }
 
@@ -149,12 +160,7 @@ public class BeaconBlockBodyCapellaImpl
   }
 
   @Override
-  public Optional<BeaconBlockBodyCapella> toVersionCapella() {
-    return Optional.of(this);
-  }
-
-  @Override
-  public BeaconBlockBodySchemaCapellaImpl getSchema() {
-    return (BeaconBlockBodySchemaCapellaImpl) super.getSchema();
+  public BlindedBeaconBlockBodySchemaCapellaImpl getSchema() {
+    return (BlindedBeaconBlockBodySchemaCapellaImpl) super.getSchema();
   }
 }
