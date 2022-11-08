@@ -152,6 +152,8 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
+  private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
+
   private final Spec spec;
 
   private int seed;
@@ -592,6 +594,10 @@ public final class DataStructureUtil {
     return randomExecutionPayloadBellatrix(spec.getGenesisSpec());
   }
 
+  public ExecutionPayload randomExecutionPayloadCapella() {
+    return randomExecutionPayloadCapella(spec.getGenesisSpec());
+  }
+
   public ExecutionPayload emptyExecutionPayload() {
     return getBellatrixSchemaDefinitions(UInt64.ZERO)
         .getExecutionPayloadSchema()
@@ -627,7 +633,7 @@ public final class DataStructureUtil {
   }
 
   public List<Bytes> randomWithdrawals() {
-    return IntStream.rangeClosed(0, randomInt(10))
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWALS))
         .mapToObj(__ -> randomWithdrawal().sszSerialize())
         .collect(toList());
   }
