@@ -250,13 +250,8 @@ class StoreTest extends AbstractStoreTest {
     assertThatThrownBy(result::get).hasCauseInstanceOf(InvalidCheckpointException.class);
   }
 
-  public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
-    final StoreConfig configWithAsyncIoDisabled =
-        StoreConfig.builder().asyncStorageEnabled(false).build();
-    final UpdatableStore store =
-        withInterleavedTransaction
-            ? createGenesisStore(configWithAsyncIoDisabled)
-            : createGenesisStore();
+  private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
+    final UpdatableStore store = createGenesisStore();
     final UInt64 epoch3 = UInt64.valueOf(4);
     final UInt64 epoch3Slot = spec.computeStartSlotAtEpoch(epoch3);
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
@@ -285,8 +280,8 @@ class StoreTest extends AbstractStoreTest {
     tx.setJustifiedCheckpoint(checkpoint2);
     tx.setBestJustifiedCheckpoint(checkpoint3);
     // Update time
-    UInt64 updatedTimeMillis = initialTimeMillis.plus(1300);
-    tx.setTimeMillis(updatedTimeMillis);
+    UInt64 firstUpdateTimeMillis = initialTimeMillis.plus(1300);
+    tx.setTimeMillis(firstUpdateTimeMillis);
     UInt64 updatedGenesisTime = genesisTime.plus(UInt64.ONE);
     tx.setGenesisTime(updatedGenesisTime);
 
@@ -316,20 +311,22 @@ class StoreTest extends AbstractStoreTest {
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
     assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
     // Check time
-    assertThat(tx.getTimeSeconds()).isEqualTo(millisToSeconds(updatedTimeMillis));
-    assertThat(tx.getTimeMillis()).isEqualTo(updatedTimeMillis);
+    assertThat(tx.getTimeSeconds()).isEqualTo(millisToSeconds(firstUpdateTimeMillis));
+    assertThat(tx.getTimeMillis()).isEqualTo(firstUpdateTimeMillis);
     assertThat(tx.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
     // Commit transaction
     final SafeFuture<Void> txResult = tx.commit();
 
+    final UInt64 expectedTimeMillis;
     final SafeFuture<Void> txResult2;
     if (withInterleavedTransaction) {
-      UInt64 timeMillis = store.getTimeMillis().plus(1300);
+      expectedTimeMillis = firstUpdateTimeMillis.plus(1500);
       StoreTransaction tx2 = store.startTransaction(updateChannel);
-      tx2.setTimeMillis(timeMillis);
+      tx2.setTimeMillis(expectedTimeMillis);
       txResult2 = tx2.commit();
     } else {
+      expectedTimeMillis = firstUpdateTimeMillis;
       txResult2 = SafeFuture.COMPLETE;
     }
 
@@ -356,8 +353,8 @@ class StoreTest extends AbstractStoreTest {
     assertThat(finalizedCheckpointState).isCompleted();
     assertThat(finalizedCheckpointState.join().getCheckpoint()).isEqualTo(checkpoint1);
     // Check time
-    assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(updatedTimeMillis));
-    assertThat(store.getTimeMillis()).isEqualTo(updatedTimeMillis);
+    assertThat(store.getTimeMillis()).isEqualTo(expectedTimeMillis);
+    assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(expectedTimeMillis));
     assertThat(store.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
     // Check store was pruned as expected
