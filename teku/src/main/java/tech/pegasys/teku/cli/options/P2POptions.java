@@ -179,17 +179,6 @@ public class P2POptions {
   private boolean gossipScoringEnabled = P2PConfig.DEFAULT_GOSSIP_SCORING_ENABLED;
 
   @Option(
-      names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "If true, turn on batch verification for gossiped attestation signatures",
-      fallbackValue = "true",
-      hidden = true,
-      arity = "0..1")
-  private boolean batchVerifyAttestationSignatures =
-      P2PConfig.DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
-
-  @Option(
       names = {"--Xpeer-rate-limit"},
       paramLabel = "<NUMBER>",
       description =
@@ -266,7 +255,6 @@ public class P2POptions {
         .p2p(
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
-                    .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
                     .batchVerifyMaxThreads(batchVerifyMaxThreads)
                     .batchVerifyQueueCapacity(batchVerifyQueueCapacity)
                     .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
