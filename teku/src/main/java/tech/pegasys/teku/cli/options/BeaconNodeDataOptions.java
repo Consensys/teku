@@ -147,11 +147,13 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
   private DatabaseVersion parseDatabaseVersion() {
     if (createDbVersion == null) {
-      if (!DatabaseVersion.isLevelDbSupported()) {
+      if (dataStorageFrequency == 1 && !DatabaseVersion.isLevelDbSupported()) {
         throw new InvalidConfigurationException(
             "Native LevelDB support is required for archive frequency 1");
       }
-      return DatabaseVersion.LEVELDB_TREE;
+      return dataStorageFrequency == 1
+          ? DatabaseVersion.LEVELDB_TREE
+          : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
   }
