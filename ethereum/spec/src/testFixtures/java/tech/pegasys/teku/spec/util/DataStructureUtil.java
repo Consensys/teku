@@ -1017,7 +1017,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec()))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
         .join();
   }
 
@@ -1050,7 +1051,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
-                                    spec.getGenesisSpec()))))
+                                    spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
         .join();
   }
 
