@@ -30,11 +30,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -59,7 +58,7 @@ public class BeaconBlockBodySchemaCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-    ExecutionPayloadCapellaImpl,
+        ExecutionPayloadCapellaImpl,
         SszList<SignedBlsToExecutionChange>>
     implements BeaconBlockBodySchemaCapella<BeaconBlockBodyCapellaImpl> {
 
@@ -74,7 +73,7 @@ public class BeaconBlockBodySchemaCapellaImpl
       final NamedSchema<SszList<Deposit>> depositsSchema,
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
-      final NamedSchema<ExecutionPayload> executionPayloadSchema,
+      final NamedSchema<ExecutionPayloadCapellaImpl> executionPayloadSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange) {
     super(
         containerName,
@@ -122,11 +121,12 @@ public class BeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchema(specConfig)),
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaCapella(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
+                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges().longValue())));
   }
 
   @Override

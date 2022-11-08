@@ -1599,8 +1599,12 @@ public final class DataStructureUtil {
             .toVersionCapella()
             .orElseThrow()
             .getBlsToExecutionChangesSchema();
-    final int maxBlsToExecutionChanges =
-        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
+    final long maxBlsToExecutionChanges =
+        spec.getGenesisSpecConfig()
+            .toVersionCapella()
+            .orElseThrow()
+            .getMaxBlsToExecutionChanges()
+            .longValue();
 
     return randomSszList(
         signedBlsToExecutionChangeSchema,

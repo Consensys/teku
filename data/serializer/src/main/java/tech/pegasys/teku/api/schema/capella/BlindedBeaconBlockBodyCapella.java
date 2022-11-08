@@ -29,7 +29,6 @@ import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.bellatrix.BlindedBeaconBlockBodyBellatrix;
-import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -50,7 +49,8 @@ public class BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatr
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload_header") final ExecutionPayloadHeader executionPayloadHeader,
+      @JsonProperty("execution_payload_header")
+          final ExecutionPayloadHeaderCapella executionPayloadHeader,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
@@ -65,7 +65,7 @@ public class BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatr
         syncAggregate,
         executionPayloadHeader);
     checkNotNull(
-        blsToExecutionChanges, "Execution Payload Header is required for capella blinded blocks");
+        blsToExecutionChanges, "bls_to_execution_changes is required for capella blinded blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
   }
 
