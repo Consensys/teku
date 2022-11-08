@@ -1587,6 +1587,16 @@ public final class DataStructureUtil {
         .create(randomBlsToExecutionChange(), randomSignature());
   }
 
+  public Bytes32 randomBlsWithdrawalCredentials() {
+    return Bytes32.wrap(
+        Bytes.concatenate(Bytes.fromHexString("0x00"), randomBytes32().slice(0, 31)));
+  }
+
+  public Bytes32 randomEth1WithdrawalCredentials() {
+    return Bytes32.wrap(
+        Bytes.concatenate(Bytes.fromHexString("0x01"), randomBytes32().slice(0, 31)));
+  }
+
   private int randomInt(final int bound) {
     return new Random(nextSeed()).nextInt(bound);
   }
