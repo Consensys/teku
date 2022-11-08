@@ -36,10 +36,10 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -57,7 +57,7 @@ public class BeaconBlockBodySchemaCapellaImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         ExecutionPayload,
-        SszList<BlsToExecutionChange>>
+        SszList<SignedBlsToExecutionChange>>
     implements BeaconBlockBodySchemaCapella<BeaconBlockBodyCapellaImpl> {
 
   protected BeaconBlockBodySchemaCapellaImpl(
@@ -72,7 +72,7 @@ public class BeaconBlockBodySchemaCapellaImpl
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
       final NamedSchema<ExecutionPayload> executionPayloadSchema,
-      final NamedSchema<SszList<BlsToExecutionChange>> blsToExecutionChange) {
+      final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange) {
     super(
         containerName,
         randaoRevealSchema,
@@ -91,7 +91,7 @@ public class BeaconBlockBodySchemaCapellaImpl
   public static BeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
-      final BlsToExecutionChangeSchema blsToExecutionChangeSchema,
+      final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final String containerName) {
     return new BeaconBlockBodySchemaCapellaImpl(
         containerName,
@@ -186,8 +186,8 @@ public class BeaconBlockBodySchemaCapellaImpl
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<BlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
-    return (SszListSchema<BlsToExecutionChange, ?>) getFieldSchema10();
+  public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
+    return (SszListSchema<SignedBlsToExecutionChange, ?>) getFieldSchema10();
   }
 
   @Override

@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
   static BeaconBlockBodyCapella required(final BeaconBlockBody body) {
@@ -28,7 +28,7 @@ public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
                     "Expected capella block body but got " + body.getClass().getSimpleName()));
   }
 
-  SszList<BlsToExecutionChange> getBlsToExecutionChanges();
+  SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges();
 
   @Override
   BeaconBlockBodySchemaCapella<?> getSchema();
