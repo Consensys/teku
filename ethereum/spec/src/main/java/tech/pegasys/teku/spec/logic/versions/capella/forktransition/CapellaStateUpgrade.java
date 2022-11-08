@@ -11,27 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.bellatrix.forktransition;
+package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
-public class BellatrixStateUpgrade implements StateUpgrade<BeaconStateBellatrix> {
-  final SpecConfigBellatrix specConfig;
-  final SchemaDefinitionsBellatrix schemaDefinitions;
-  final BeaconStateAccessorsAltair beaconStateAccessors;
+public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
 
-  public BellatrixStateUpgrade(
-      final SpecConfigBellatrix specConfig,
-      final SchemaDefinitionsBellatrix schemaDefinitions,
+  private final SpecConfigCapella specConfig;
+  private final SchemaDefinitionsCapella schemaDefinitions;
+  private final BeaconStateAccessorsAltair beaconStateAccessors;
+
+  public CapellaStateUpgrade(
+      final SpecConfigCapella specConfig,
+      final SchemaDefinitionsCapella schemaDefinitions,
       final BeaconStateAccessorsAltair beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
@@ -39,31 +40,32 @@ public class BellatrixStateUpgrade implements StateUpgrade<BeaconStateBellatrix>
   }
 
   @Override
-  public BeaconStateBellatrix upgrade(final BeaconState preState) {
+  public BeaconStateCapella upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
-    BeaconStateAltair preStateAltair = BeaconStateAltair.required(preState);
-
+    BeaconStateBellatrix preStateBellatrix = BeaconStateBellatrix.required(preState);
     return schemaDefinitions
         .getBeaconStateSchema()
         .createEmpty()
-        .updatedBellatrix(
+        .updatedCapella(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateAltair.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(preStateAltair.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateAltair.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateAltair.getNextSyncCommittee());
-              state.setInactivityScores(preStateAltair.getInactivityScores());
+              state.setCurrentEpochParticipation(preStateBellatrix.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(
+                  preStateBellatrix.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateBellatrix.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateBellatrix.getNextSyncCommittee());
+              state.setInactivityScores(preStateBellatrix.getInactivityScores());
 
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrentVersion(),
-                      specConfig.getBellatrixForkVersion(),
+                      specConfig.getCapellaForkVersion(),
                       epoch));
 
               state.setLatestExecutionPayloadHeader(
                   schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
+              state.setLatestWithdrawalValidatorIndex(UInt64.ZERO);
             });
   }
 }
