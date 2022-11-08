@@ -24,14 +24,14 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
   private BeaconBlockBodySchemaCapellaImpl schema;
   private BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema;
-  private SszList<BlsToExecutionChange> blsToExecutionChanges;
+  private SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   public BeaconBlockBodyBuilderCapella schema(final BeaconBlockBodySchemaCapellaImpl schema) {
     this.schema = schema;
@@ -48,7 +48,7 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
   @Override
   public BeaconBlockBodyBuilder blsToExecutionChanges(
-      final Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+      final Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
     this.blsToExecutionChanges = blsToExecutionChanges.get();
     return this;
   }

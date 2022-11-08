@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 
 public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
 
-  public final List<BlsToExecutionChange> blsToExecutionChanges;
+  public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonCreator
   public BeaconBlockBodyCapella(
@@ -52,7 +52,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
       @JsonProperty("execution_payload") final ExecutionPayload executionPayload,
       @JsonProperty("bls_to_execution_changes")
-          final List<BlsToExecutionChange> blsToExecutionChanges) {
+          final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
         randaoReveal,
         eth1Data,
@@ -76,7 +76,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
         message.getBlsToExecutionChanges(), "BlsToExecutionChange is required for capella blocks");
     this.blsToExecutionChanges =
         message.getBlsToExecutionChanges().stream()
-            .map(BlsToExecutionChange::new)
+            .map(SignedBlsToExecutionChange::new)
             .collect(Collectors.toList());
   }
 
@@ -87,7 +87,8 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
-    final SszListSchema<tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange, ?>
+    final SszListSchema<
+            tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
         blsToExecutionChangesSchema =
             getBeaconBlockBodySchema(spec).getBlsToExecutionChangesSchema();
 
@@ -97,7 +98,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
             builder.blsToExecutionChanges(
                 () ->
                     this.blsToExecutionChanges.stream()
-                        .map(b -> b.asInternalBlsToExecutionChange(spec))
+                        .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                         .collect(blsToExecutionChangesSchema.collector())));
   }
 }

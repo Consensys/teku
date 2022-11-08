@@ -951,7 +951,7 @@ public final class DataStructureUtil {
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
                         () -> SafeFuture.completedFuture(randomExecutionPayloadHeader()))
-                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -985,7 +985,7 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
-                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1018,7 +1018,7 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
-                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1052,7 +1052,7 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
                                     spec.getGenesisSpec())))
-                    .blsToExecutionChanges(this::randomBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1547,8 +1547,8 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomPublicKey(), randomBytes20());
   }
 
-  public SszList<BlsToExecutionChange> randomBlsToExecutionChangesList() {
-    final SszListSchema<BlsToExecutionChange, ?> blsToExecutionChangeSchema =
+  public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
+    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
         SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
             .getBeaconBlockBodySchema()
             .toVersionCapella()
@@ -1558,7 +1558,9 @@ public final class DataStructureUtil {
         spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
 
     return randomSszList(
-        blsToExecutionChangeSchema, maxBlsToExecutionChanges, this::randomBlsToExecutionChange);
+        signedBlsToExecutionChangeSchema,
+        maxBlsToExecutionChanges,
+        this::randomSignedBlsToExecutionChange);
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
