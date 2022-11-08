@@ -27,9 +27,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -46,7 +46,7 @@ class BlindedBeaconBlockBodyCapellaImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         ExecutionPayloadHeader,
-        SszList<BlsToExecutionChange>>
+        SszList<SignedBlsToExecutionChange>>
     implements BlindedBeaconBlockBodyCapella {
 
   BlindedBeaconBlockBodyCapellaImpl(BlindedBeaconBlockBodySchemaCapellaImpl type) {
@@ -70,7 +70,7 @@ class BlindedBeaconBlockBodyCapellaImpl
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
       final ExecutionPayloadHeader executionPayloadHeader,
-      final SszList<BlsToExecutionChange> blsToExecutionChanges) {
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
         type,
         randaoReveal,
@@ -155,7 +155,7 @@ class BlindedBeaconBlockBodyCapellaImpl
   }
 
   @Override
-  public SszList<BlsToExecutionChange> getBlsToExecutionChanges() {
+  public SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
     return getField10();
   }
 
