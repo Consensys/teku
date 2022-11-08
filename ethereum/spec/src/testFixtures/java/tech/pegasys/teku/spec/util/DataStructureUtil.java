@@ -535,7 +535,6 @@ public final class DataStructureUtil {
           .map(__ -> randomExecutionPayloadBellatrix(specVersion))
           .orElse(null);
     } else if (milestone.equals(SpecMilestone.CAPELLA)) {
-      System.out.println("HEYYYYYYYYYYYY");
       return schema
           .toVersionCapella()
           .map(__ -> randomExecutionPayloadCapella(specVersion))
