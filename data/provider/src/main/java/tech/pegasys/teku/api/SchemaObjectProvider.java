@@ -26,6 +26,11 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
+import tech.pegasys.teku.api.schema.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.api.schema.capella.BeaconBlockCapella;
+import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
+import tech.pegasys.teku.api.schema.capella.BlindedBeaconBlockBodyCapella;
+import tech.pegasys.teku.api.schema.capella.BlindedBlockCapella;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -88,13 +93,19 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         return new BlindedBlockBellatrix(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
             getBlindedBlockBodyBellatrix(block.getBody()));
+      case CAPELLA:
+        return new BlindedBlockCapella(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBlindedBlockBodyCapella(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -119,13 +130,19 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         return new BeaconBlockBellatrix(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
             getBeaconBlockBodyBellatrix(block.getBody()));
+      case CAPELLA:
+        return new BeaconBlockCapella(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyCapella(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -145,11 +162,25 @@ public class SchemaObjectProvider {
             .BeaconBlockBodyBellatrix.required(body));
   }
 
+  private BeaconBlockBodyCapella getBeaconBlockBodyCapella(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyCapella(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
+            .BeaconBlockBodyCapella.required(body));
+  }
+
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyBellatrix(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
             .BlindedBeaconBlockBodyBellatrix.required(body));
+  }
+
+  private BlindedBeaconBlockBodyCapella getBlindedBlockBodyCapella(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyCapella(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
+            .BlindedBeaconBlockBodyCapella.required(body));
   }
 
   public BeaconState getBeaconState(
@@ -161,8 +192,9 @@ public class SchemaObjectProvider {
       case ALTAIR:
         return new BeaconStateAltair(state);
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         return new BeaconStateBellatrix(state);
+      case CAPELLA:
+        return new BeaconStateCapella(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }
