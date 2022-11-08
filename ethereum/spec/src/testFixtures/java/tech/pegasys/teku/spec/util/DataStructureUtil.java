@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -1187,6 +1189,22 @@ public final class DataStructureUtil {
     }
 
     return deposits;
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot() {
+    return randomDepositTreeSnapshot(randomLong(), randomUInt64());
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot(
+      final long depositsCount, final UInt64 blockHeight) {
+    return new DepositTreeSnapshot(
+        Stream.generate(this::randomBytes32)
+            .limit(DEPOSIT_CONTRACT_TREE_DEPTH)
+            .collect(Collectors.toList()),
+        Bytes32.random(),
+        depositsCount,
+        Bytes32.random(),
+        blockHeight);
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit() {

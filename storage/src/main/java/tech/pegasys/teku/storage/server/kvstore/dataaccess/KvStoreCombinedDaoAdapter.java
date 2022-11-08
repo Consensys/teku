@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -359,6 +360,11 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return hotDao.getFinalizedDepositSnapshot();
+  }
+
+  @Override
   public void close() throws Exception {
     hotDao.close();
     hotDao.close();
@@ -629,6 +635,16 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       hotUpdater.addDepositsFromBlockEvent(event);
+    }
+
+    @Override
+    public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
+      hotUpdater.removeDepositsFromBlockEvent(blockNumber);
+    }
+
+    @Override
+    public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
+      hotUpdater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
     }
 
     @Override

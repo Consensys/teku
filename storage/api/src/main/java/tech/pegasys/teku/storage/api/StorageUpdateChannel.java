@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.api;
 
 import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -30,6 +31,8 @@ public interface StorageUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
 
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
+
+  SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 
   void onChainInitialized(AnchorPoint initialAnchor);
 }
