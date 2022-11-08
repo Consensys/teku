@@ -334,17 +334,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
     timerService = new TimerService(this::onTick);
 
-    if (storeConfig.isAsyncStorageEnabled()) {
-      final CombinedStorageChannel combinedStorageChannel =
-          eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
-      storageQueryChannel = combinedStorageChannel;
-      storageUpdateChannel = combinedStorageChannel;
-    } else {
-      storageQueryChannel =
-          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
-      storageUpdateChannel =
-          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
-    }
+    final CombinedStorageChannel combinedStorageChannel =
+        eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
+    storageQueryChannel = combinedStorageChannel;
+    storageUpdateChannel = combinedStorageChannel;
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
