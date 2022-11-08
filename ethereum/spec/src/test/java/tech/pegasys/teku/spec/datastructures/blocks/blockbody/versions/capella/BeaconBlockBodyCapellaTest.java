@@ -27,13 +27,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyCapella> {
 
   protected SyncAggregate syncAggregate;
   protected ExecutionPayload executionPayload;
-  protected SszList<BlsToExecutionChange> blsToExecutionChanges;
+  protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @BeforeEach
   void setup() {
@@ -42,13 +42,13 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
         () -> {
           syncAggregate = dataStructureUtil.randomSyncAggregate();
           executionPayload = dataStructureUtil.randomExecutionPayload();
-          blsToExecutionChanges = dataStructureUtil.randomBlsToExecutionChangesList();
+          blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
         });
   }
 
   @Test
   void equalsReturnsFalseWhenBlsToExecutionChangesIsDifferent() {
-    blsToExecutionChanges = dataStructureUtil.randomBlsToExecutionChangesList();
+    blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
     BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);

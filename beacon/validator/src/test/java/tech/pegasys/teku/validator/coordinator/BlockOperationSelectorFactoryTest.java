@@ -48,9 +48,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -475,7 +475,7 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBodyBuilder blsToExecutionChanges(
-        Supplier<SszList<BlsToExecutionChange>> blsToExecutionChanges) {
+        Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
       // do nothing
       return this;
     }

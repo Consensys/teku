@@ -46,7 +46,6 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
-  public static final boolean DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
       ProgressiveBalancesMode.USED;
 
@@ -66,7 +65,6 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
-  private final boolean forkChoiceBeforeProposingEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -82,7 +80,6 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
-      final boolean forkChoiceBeforeProposingEnabled,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
@@ -97,7 +94,6 @@ public class Eth2NetworkConfiguration {
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
-    this.forkChoiceBeforeProposingEnabled = forkChoiceBeforeProposingEnabled;
     this.altairForkEpoch = altairForkEpoch;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.eth1DepositContractAddress =
@@ -172,10 +168,6 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
-  public boolean isForkChoiceBeforeProposingEnabled() {
-    return forkChoiceBeforeProposingEnabled;
-  }
-
   public Optional<UInt64> getAltairForkEpoch() {
     return altairForkEpoch;
   }
@@ -211,7 +203,6 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
-    private boolean forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
     private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
@@ -269,7 +260,6 @@ public class Eth2NetworkConfiguration {
           discoveryBootnodes,
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
-          forkChoiceBeforeProposingEnabled,
           forkChoiceUpdateHeadOnBlockImportEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
@@ -364,12 +354,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder forkChoiceBeforeProposingEnabled(
-        final boolean forkChoiceBeforeProposingEnabled) {
-      this.forkChoiceBeforeProposingEnabled = forkChoiceBeforeProposingEnabled;
-      return this;
-    }
-
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
       this.altairForkEpoch = Optional.of(altairForkEpoch);
       return this;
@@ -445,7 +429,6 @@ public class Eth2NetworkConfiguration {
       discoveryBootnodes = new ArrayList<>();
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
-      forkChoiceBeforeProposingEnabled = DEFAULT_FORK_CHOICE_BEFORE_PROPOSING_ENABLED;
       progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
       return this;
     }
@@ -568,7 +551,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyKilnNetworkDefaults() {
       return applyTestnetDefaults()
-          .forkChoiceBeforeProposingEnabled(true)
           .constants(KILN.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)

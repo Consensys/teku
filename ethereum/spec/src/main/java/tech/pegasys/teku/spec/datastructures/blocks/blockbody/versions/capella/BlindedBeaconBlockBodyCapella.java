@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public interface BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBellatrix {
   static BlindedBeaconBlockBodyCapella required(final BeaconBlockBody body) {
@@ -34,7 +34,7 @@ public interface BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBel
     return Optional.of(this);
   }
 
-  SszList<BlsToExecutionChange> getBlsToExecutionChanges();
+  SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges();
 
   @Override
   BlindedBeaconBlockBodySchemaCapella<?> getSchema();
