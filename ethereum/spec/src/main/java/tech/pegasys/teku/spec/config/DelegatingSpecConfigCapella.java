@@ -42,12 +42,12 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   }
 
   @Override
-  public int getMaxWithdrawalsPerPayload() {
+  public UInt64 getMaxWithdrawalsPerPayload() {
     return specConfigCapella.getMaxWithdrawalsPerPayload();
   }
 
   @Override
-  public int getMaxBlsToExecutionChanges() {
+  public UInt64 getMaxBlsToExecutionChanges() {
     return specConfigCapella.getMaxBlsToExecutionChanges();
   }
 }

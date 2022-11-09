@@ -974,8 +974,8 @@ public class SpecConfigBuilder {
     private Bytes4 eip4844ForkVersion;
     private UInt64 eip4844ForkEpoch;
 
-    private int fieldElementsPerBlob;
-    private int maxBlobsPerBlock;
+    private UInt64 fieldElementsPerBlob;
+    private UInt64 maxBlobsPerBlock;
 
     private Eip4844Builder() {}
 
@@ -1002,12 +1002,12 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public Eip4844Builder fieldElementsPerBlob(final int fieldElementsPerBlob) {
+    public Eip4844Builder fieldElementsPerBlob(final UInt64 fieldElementsPerBlob) {
       this.fieldElementsPerBlob = fieldElementsPerBlob;
       return this;
     }
 
-    public Eip4844Builder maxBlobsPerBlock(final int maxBlobsPerBlock) {
+    public Eip4844Builder maxBlobsPerBlock(final UInt64 maxBlobsPerBlock) {
       this.maxBlobsPerBlock = maxBlobsPerBlock;
       return this;
     }

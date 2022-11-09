@@ -36,9 +36,9 @@ public interface SpecConfigEip4844 extends SpecConfigCapella {
 
   UInt64 getEip4844ForkEpoch();
 
-  int getFieldElementsPerBlob();
+  UInt64 getFieldElementsPerBlob();
 
-  int getMaxBlobsPerBlock();
+  UInt64 getMaxBlobsPerBlock();
 
   @Override
   Optional<SpecConfigEip4844> toVersionEip4844();
