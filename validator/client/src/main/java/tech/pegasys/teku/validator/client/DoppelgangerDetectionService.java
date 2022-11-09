@@ -160,7 +160,15 @@ public class DoppelgangerDetectionService extends Service {
                                         throwable.getMessage());
                                     return false;
                                   })
-                              .thenApply(doppelgangerDetected -> null));
+                              .thenApply(doppelgangerDetected -> null))
+                  .exceptionally(
+                      throwable -> {
+                        LOGGER.error(
+                            "Unable to check validators doppelganger. Unable to get validators indices: {}",
+                            throwable.getMessage());
+                        return null;
+                      })
+                  .thenApply(o -> null);
             })
         .exceptionally(
             throwable -> {
