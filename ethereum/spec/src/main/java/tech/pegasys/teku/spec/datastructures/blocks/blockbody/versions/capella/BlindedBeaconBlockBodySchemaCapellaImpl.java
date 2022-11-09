@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -56,7 +56,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadHeader,
+        ExecutionPayloadHeaderCapellaImpl,
         SszList<SignedBlsToExecutionChange>>
     implements BlindedBeaconBlockBodySchemaCapella<BlindedBeaconBlockBodyCapellaImpl> {
 
@@ -71,7 +71,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
       NamedSchema<SszList<Deposit>> deposits,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
       NamedSchema<SyncAggregate> syncAggregate,
-      NamedSchema<ExecutionPayloadHeader> executionPayloadHeader,
+      NamedSchema<ExecutionPayloadHeaderCapellaImpl> executionPayloadHeader,
       NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
     super(
         containerName,
@@ -120,11 +120,13 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD_HEADER, new ExecutionPayloadHeaderSchema(specConfig)),
+            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
+            new ExecutionPayloadHeaderSchemaCapella(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
+                signedBlsToExecutionChangeSchema,
+                specConfig.getMaxBlsToExecutionChanges().longValue())));
   }
 
   @Override
@@ -182,8 +184,8 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchema) getFieldSchema9();
+  public ExecutionPayloadHeaderSchemaCapella getExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaCapella) getFieldSchema9();
   }
 
   @SuppressWarnings("unchecked")

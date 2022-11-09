@@ -26,19 +26,20 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class ExecutionPayload extends ExecutionPayloadCommon {
+public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements ExecutionPayload {
 
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
   public final List<Bytes> transactions;
 
   @JsonCreator
-  public ExecutionPayload(
+  public ExecutionPayloadBellatrix(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
@@ -70,7 +71,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
     this.transactions = transactions != null ? transactions : Collections.emptyList();
   }
 
-  public ExecutionPayload(
+  public ExecutionPayloadBellatrix(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(
         executionPayload.getParentHash(),
@@ -126,6 +127,11 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
   }
 
   @Override
+  public Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
+    return Optional.of(this);
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -136,7 +142,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
     if (!super.equals(o)) {
       return false;
     }
-    final ExecutionPayload that = (ExecutionPayload) o;
+    final ExecutionPayloadBellatrix that = (ExecutionPayloadBellatrix) o;
     return Objects.equals(transactions, that.transactions);
   }
 
