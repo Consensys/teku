@@ -116,13 +116,6 @@ public class OperationSignatureVerifier {
       final SignedBlsToExecutionChange signedBlsToExecutionChange,
       final BLSSignatureVerifier signatureVerifier) {
     final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
-    final int validatorIndex = addressChange.getValidatorIndex().intValue();
-    if (state.getValidators().size() <= validatorIndex || validatorIndex < 0) {
-      return false;
-    }
-    if (beaconStateAccessors.validateWithdrawalCredentials(state, addressChange)) {
-      return false;
-    }
 
     final Bytes32 domain =
         beaconStateAccessors.getDomain(

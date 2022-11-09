@@ -19,13 +19,13 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
   // Constants
-  private static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
   private static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   private static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   private static final int JUSTIFICATION_BITS_LENGTH = 4;
@@ -320,7 +320,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   @Override
   public Bytes getBlsWithdrawalPrefix() {
-    return BLS_WITHDRAWAL_PREFIX;
+    return WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX;
   }
 
   @Override

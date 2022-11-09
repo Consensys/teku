@@ -164,18 +164,6 @@ public class Validator
     return getField7().get();
   }
 
-  public Validator withWithdrawalCredentials(Bytes32 withdrawalCredentials) {
-    return new Validator(
-        getPubkeyBytes(),
-        withdrawalCredentials,
-        getEffectiveBalance(),
-        isSlashed(),
-        getActivationEligibilityEpoch(),
-        getActivationEpoch(),
-        getExitEpoch(),
-        getWithdrawableEpoch());
-  }
-
   public Validator withEffectiveBalance(UInt64 effectiveBalance) {
     return new Validator(
         getPubkeyBytes(),

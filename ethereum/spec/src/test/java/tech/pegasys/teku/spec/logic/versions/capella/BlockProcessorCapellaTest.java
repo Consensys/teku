@@ -49,10 +49,11 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   @Test
   void shouldCreateExpectedWithdrawalAddress() {
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
-    Bytes20 b = data.randomBytes20();
-    Bytes32 bytes32 = BlockProcessorCapella.withdrawalAddressFromEth1Address(b);
+    Bytes20 eth1Address = data.randomBytes20();
+
+    Bytes32 bytes32 = BlockProcessorCapella.getWithdrawalAddressFromEth1Address(eth1Address);
     // ends with eth1 address
-    assertThat(bytes32.toHexString()).endsWith(b.toUnprefixedHexString());
+    assertThat(bytes32.toHexString()).endsWith(eth1Address.toUnprefixedHexString());
     // starts with 0x01 (eth1 prefix) and 0x00 x 11 (buffer)
     assertThat(bytes32.toHexString()).startsWith("0x010000000000000000000000");
   }
