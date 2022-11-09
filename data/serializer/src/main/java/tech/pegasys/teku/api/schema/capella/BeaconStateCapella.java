@@ -141,25 +141,22 @@ public class BeaconStateCapella extends BeaconStateAltair {
 
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
-    final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader =
-        instance.latestExecutionPayloadHeader.toVersionCapella().orElseThrow();
-
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
-            latestExecutionPayloadHeader.parentHash,
-            latestExecutionPayloadHeader.feeRecipient,
-            latestExecutionPayloadHeader.stateRoot,
-            latestExecutionPayloadHeader.receiptsRoot,
-            latestExecutionPayloadHeader.logsBloom,
-            latestExecutionPayloadHeader.prevRandao,
-            latestExecutionPayloadHeader.blockNumber,
-            latestExecutionPayloadHeader.gasLimit,
-            latestExecutionPayloadHeader.gasUsed,
-            latestExecutionPayloadHeader.timestamp,
-            latestExecutionPayloadHeader.extraData,
-            latestExecutionPayloadHeader.baseFeePerGas,
-            latestExecutionPayloadHeader.blockHash,
-            latestExecutionPayloadHeader.transactionsRoot,
-            latestExecutionPayloadHeader.withdrawalsRoot));
+            instance.latestExecutionPayloadHeader.parentHash,
+            instance.latestExecutionPayloadHeader.feeRecipient,
+            instance.latestExecutionPayloadHeader.stateRoot,
+            instance.latestExecutionPayloadHeader.receiptsRoot,
+            instance.latestExecutionPayloadHeader.logsBloom,
+            instance.latestExecutionPayloadHeader.prevRandao,
+            instance.latestExecutionPayloadHeader.blockNumber,
+            instance.latestExecutionPayloadHeader.gasLimit,
+            instance.latestExecutionPayloadHeader.gasUsed,
+            instance.latestExecutionPayloadHeader.timestamp,
+            instance.latestExecutionPayloadHeader.extraData,
+            instance.latestExecutionPayloadHeader.baseFeePerGas,
+            instance.latestExecutionPayloadHeader.blockHash,
+            instance.latestExecutionPayloadHeader.transactionsRoot,
+            instance.latestExecutionPayloadHeader.withdrawalsRoot));
   }
 }

@@ -100,15 +100,14 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
     state
         .toMutableVersionBellatrix()
         .ifPresent(
-            beaconStateBellatrix -> {
-              applyBellatrixFields(
-                  beaconStateBellatrix,
-                  BeaconStateSchemaBellatrix.required(state.getBeaconStateSchema())
-                      .getCurrentSyncCommitteeSchema(),
-                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
-                      .getLastExecutionPayloadHeaderSchema(),
-                  this);
-            });
+            beaconStateBellatrix ->
+                applyBellatrixFields(
+                    beaconStateBellatrix,
+                    BeaconStateSchemaBellatrix.required(state.getBeaconStateSchema())
+                        .getCurrentSyncCommitteeSchema(),
+                    BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                        .getLastExecutionPayloadHeaderSchema(),
+                    this));
   }
 
   public static void applyBellatrixFields(
@@ -118,25 +117,22 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       BeaconStateBellatrix instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
-    final ExecutionPayloadHeaderBellatrix latestExecutionPayloadHeader =
-        instance.latestExecutionPayloadHeader.toVersionBellatrix().orElseThrow();
-
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
-            latestExecutionPayloadHeader.parentHash,
-            latestExecutionPayloadHeader.feeRecipient,
-            latestExecutionPayloadHeader.stateRoot,
-            latestExecutionPayloadHeader.receiptsRoot,
-            latestExecutionPayloadHeader.logsBloom,
-            latestExecutionPayloadHeader.prevRandao,
-            latestExecutionPayloadHeader.blockNumber,
-            latestExecutionPayloadHeader.gasLimit,
-            latestExecutionPayloadHeader.gasUsed,
-            latestExecutionPayloadHeader.timestamp,
-            latestExecutionPayloadHeader.extraData,
-            latestExecutionPayloadHeader.baseFeePerGas,
-            latestExecutionPayloadHeader.blockHash,
-            latestExecutionPayloadHeader.transactionsRoot));
+            instance.latestExecutionPayloadHeader.parentHash,
+            instance.latestExecutionPayloadHeader.feeRecipient,
+            instance.latestExecutionPayloadHeader.stateRoot,
+            instance.latestExecutionPayloadHeader.receiptsRoot,
+            instance.latestExecutionPayloadHeader.logsBloom,
+            instance.latestExecutionPayloadHeader.prevRandao,
+            instance.latestExecutionPayloadHeader.blockNumber,
+            instance.latestExecutionPayloadHeader.gasLimit,
+            instance.latestExecutionPayloadHeader.gasUsed,
+            instance.latestExecutionPayloadHeader.timestamp,
+            instance.latestExecutionPayloadHeader.extraData,
+            instance.latestExecutionPayloadHeader.baseFeePerGas,
+            instance.latestExecutionPayloadHeader.blockHash,
+            instance.latestExecutionPayloadHeader.transactionsRoot));
   }
 
   public BeaconStateBellatrix(BeaconState beaconState) {
