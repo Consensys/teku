@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,7 +44,7 @@ public class BeaconBlockBodyCapellaImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload,
+        ExecutionPayloadCapellaImpl,
         SszList<SignedBlsToExecutionChange>>
     implements BeaconBlockBodyCapella {
 
@@ -58,7 +59,7 @@ public class BeaconBlockBodyCapellaImpl
       SszList<Deposit> deposits,
       SszList<SignedVoluntaryExit> voluntaryExits,
       SyncAggregate syncAggregate,
-      ExecutionPayload executionPayload,
+      ExecutionPayloadCapellaImpl executionPayload,
       SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
         type,

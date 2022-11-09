@@ -29,6 +29,7 @@ public class ExecutionPayloadFuzzInputTest
   protected ExecutionPayloadFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    return new ExecutionPayloadFuzzInput(spec, state, executionPayload);
+    return new ExecutionPayloadFuzzInput(
+        spec, state, executionPayload.toVersionBellatrix().orElseThrow());
   }
 }

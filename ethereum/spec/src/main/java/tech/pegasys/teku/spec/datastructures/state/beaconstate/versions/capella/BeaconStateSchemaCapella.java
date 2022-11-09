@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -26,12 +27,13 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
@@ -43,14 +45,19 @@ public class BeaconStateSchemaCapella
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+    final SszField latestExecutionPayloadHeaderField =
+        new SszField(
+            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+            () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
     final SszField latestWithdrawalValidatorIndexField =
         new SszField(
             LATEST_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.LATEST_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     return Stream.concat(
-            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(),
-            Stream.of(latestWithdrawalValidatorIndexField))
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
+            Stream.of(latestExecutionPayloadHeaderField, latestWithdrawalValidatorIndexField))
         .collect(Collectors.toList());
   }
 
@@ -81,8 +88,8 @@ public class BeaconStateSchemaCapella
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
-  public ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchema)
+  public ExecutionPayloadHeaderSchemaCapella getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaCapella)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 

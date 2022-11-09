@@ -1,7 +1,7 @@
 {
-  "title" : "ExecutionPayload",
+  "title" : "ExecutionPayloadHeaderBellatrix",
   "type" : "object",
-  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "block_hash", "transactions" ],
+  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "block_hash", "transactions_root" ],
   "properties" : {
     "parent_hash" : {
       "type" : "string",
@@ -81,14 +81,11 @@
       "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
     },
-    "transactions" : {
-      "type" : "array",
-      "items" : {
-        "type" : "string",
-        "pattern" : "^0x[a-fA-F0-9]{2,}$",
-        "description" : "SSZ encoded byte list",
-        "format" : "bytes"
-      }
+    "transactions_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
     }
   }
 }
