@@ -68,7 +68,7 @@ public class ValidatorClientService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration DOPPELGANGER_DETECTION_CHECK_DELAY = Duration.ofSeconds(12);
-  private static final Duration DOPPELGANGER_DETECTION_TIMEOUT = Duration.ofMinutes(13);
+  private static final Duration DOPPELGANGER_DETECTION_TIMEOUT = Duration.ofMinutes(15);
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
