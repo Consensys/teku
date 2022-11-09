@@ -87,7 +87,7 @@ public class SpecConfigCapellaTest {
         bellatrixConfig,
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomPositiveInt(),
-        dataStructureUtil.randomPositiveInt());
+        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomUInt64());
   }
 }

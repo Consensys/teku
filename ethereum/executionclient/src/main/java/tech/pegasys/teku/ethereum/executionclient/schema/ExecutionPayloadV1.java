@@ -69,22 +69,25 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
   }
 
   public ExecutionPayload asInternalExecutionPayload(
-      ExecutionPayloadSchema executionPayloadSchema) {
-    return executionPayloadSchema.create(
-        parentHash,
-        feeRecipient,
-        stateRoot,
-        receiptsRoot,
-        logsBloom,
-        prevRandao,
-        blockNumber,
-        gasLimit,
-        gasUsed,
-        timestamp,
-        extraData,
-        baseFeePerGas,
-        blockHash,
-        transactions);
+      ExecutionPayloadSchema<?> executionPayloadSchema) {
+    return executionPayloadSchema
+        .toVersionBellatrix()
+        .orElseThrow()
+        .create(
+            parentHash,
+            feeRecipient,
+            stateRoot,
+            receiptsRoot,
+            logsBloom,
+            prevRandao,
+            blockNumber,
+            gasLimit,
+            gasUsed,
+            timestamp,
+            extraData,
+            baseFeePerGas,
+            blockHash,
+            transactions);
   }
 
   public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {

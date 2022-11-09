@@ -122,6 +122,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private synchronized void startup() {
     state.set(State.RUNNING);
+    processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
+    eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
     if (isCloseToInSync()) {
       startGossip();
     }
@@ -142,10 +144,18 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
-    processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
-    eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
 
     setTopicScoringParams();
+  }
+
+  private synchronized void stopGossip() {
+    if (gossipStarted.compareAndSet(true, false)) {
+      LOG.warn("Stopping eth2 gossip while node is syncing");
+      gossipUpdateTask.cancel();
+      gossipForkManager.stopGossip();
+      attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+      syncCommitteeSubnetService.unsubscribe(discoveryNetworkSyncCommitteeSubnetsSubscription);
+    }
   }
 
   @Override
@@ -156,10 +166,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (isInSync || isCloseToInSync()) {
       startGossip();
     } else {
-      if (gossipStarted.compareAndSet(true, false)) {
-        LOG.warn("Stopping eth2 gossip while node is syncing");
-        gossipForkManager.stopGossip();
-      }
+      stopGossip();
     }
     gossipForkManager.onOptimisticHeadChanged(isOptimistic);
   }
@@ -220,12 +227,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       return SafeFuture.COMPLETE;
     }
 
-    if (gossipStarted.get()) {
-      gossipUpdateTask.cancel();
-      gossipForkManager.stopGossip();
-      attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
-      syncCommitteeSubnetService.unsubscribe(discoveryNetworkSyncCommitteeSubnetsSubscription);
-    }
+    stopGossip();
 
     return peerManager
         .sendGoodbyeToPeers()

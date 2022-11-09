@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -45,7 +46,7 @@ class BlindedBeaconBlockBodyBellatrixImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadHeader>
+        ExecutionPayloadHeaderBellatrix>
     implements BlindedBeaconBlockBodyBellatrix {
 
   BlindedBeaconBlockBodyBellatrixImpl(BlindedBeaconBlockBodySchemaBellatrixImpl type) {
@@ -68,7 +69,7 @@ class BlindedBeaconBlockBodyBellatrixImpl
       SszList<Deposit> deposits,
       SszList<SignedVoluntaryExit> voluntaryExits,
       SyncAggregate syncAggregate,
-      ExecutionPayloadHeader executionPayloadHeader) {
+      ExecutionPayloadHeaderBellatrix executionPayloadHeader) {
     super(
         type,
         randaoReveal,

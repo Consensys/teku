@@ -919,9 +919,8 @@ public class SpecConfigBuilder {
     private Bytes4 capellaForkVersion;
     private UInt64 capellaForkEpoch;
 
-    private int maxBlsToExecutionChanges;
-
-    private int maxWithdrawalsPerPayload;
+    private UInt64 maxBlsToExecutionChanges;
+    private UInt64 maxWithdrawalsPerPayload;
 
     private CapellaBuilder() {}
 
@@ -952,12 +951,12 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public CapellaBuilder maxBlsToExecutionChanges(final int maxBlsToExecutionChanges) {
+    public CapellaBuilder maxBlsToExecutionChanges(final UInt64 maxBlsToExecutionChanges) {
       this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
       return this;
     }
 
-    public CapellaBuilder maxWithdrawalsPerPayload(final int maxWithdrawalsPerPayload) {
+    public CapellaBuilder maxWithdrawalsPerPayload(final UInt64 maxWithdrawalsPerPayload) {
       this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
       return this;
     }

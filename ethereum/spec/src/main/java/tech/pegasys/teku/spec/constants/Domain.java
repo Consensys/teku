@@ -30,4 +30,7 @@ public class Domain {
   public static final Bytes4 SYNC_COMMITTEE = Bytes4.fromHexString("0x07000000");
   public static final Bytes4 SYNC_COMMITTEE_SELECTION_PROOF = Bytes4.fromHexString("0x08000000");
   public static final Bytes4 CONTRIBUTION_AND_PROOF = Bytes4.fromHexString("0x09000000");
+
+  // Capella
+  public static final Bytes4 DOMAIN_BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
 }

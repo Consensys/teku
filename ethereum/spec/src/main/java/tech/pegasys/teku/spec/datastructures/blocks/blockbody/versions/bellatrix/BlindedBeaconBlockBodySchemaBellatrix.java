@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 public interface BlindedBeaconBlockBodySchemaBellatrix<T extends BlindedBeaconBlockBodyBellatrix>
     extends BeaconBlockBodySchemaAltair<T> {
 
-  ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema();
+  ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema();
 
   @Override
   default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
