@@ -114,6 +114,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         MutableBeaconStateCapella.required(state),
         BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
   }
+
   // process_bls_to_execution_change
   public void processBlsToExecutionChangesNoValidation(
       final MutableBeaconStateCapella state,
