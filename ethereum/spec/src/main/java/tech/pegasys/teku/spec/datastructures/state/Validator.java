@@ -235,4 +235,16 @@ public class Validator
         getExitEpoch(),
         withdrawableEpoch);
   }
+
+  public Validator withWithdrawalCredentials(final Bytes32 withdrawalCredentials) {
+    return new Validator(
+        getPubkeyBytes(),
+        withdrawalCredentials,
+        getEffectiveBalance(),
+        isSlashed(),
+        getActivationEligibilityEpoch(),
+        getActivationEpoch(),
+        getExitEpoch(),
+        getWithdrawableEpoch());
+  }
 }

@@ -32,11 +32,11 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
@@ -46,7 +46,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   private SpecLogicCapella(
       final SpecConfigCapella specConfig,
       final Predicates predicates,
-      final MiscHelpersBellatrix miscHelpers,
+      final MiscHelpersCapella miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -87,7 +87,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final SpecConfigCapella config, final SchemaDefinitionsCapella schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
+    final MiscHelpersCapella miscHelpers = new MiscHelpersCapella(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
