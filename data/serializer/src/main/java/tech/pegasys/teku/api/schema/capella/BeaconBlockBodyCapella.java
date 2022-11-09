@@ -27,15 +27,19 @@ import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBodyBellatrix;
-import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayload;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 
-public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
+public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
+
+  @JsonProperty("execution_payload")
+  public final ExecutionPayloadCapella executionPayload;
 
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
@@ -50,7 +54,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload") final ExecutionPayload executionPayload,
+      @JsonProperty("execution_payload") final ExecutionPayloadCapella executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
     super(
@@ -62,8 +66,9 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
         attestations,
         deposits,
         voluntaryExits,
-        syncAggregate,
-        executionPayload);
+        syncAggregate);
+    checkNotNull(executionPayload, "Execution Payload is required for capella blocks");
+    this.executionPayload = executionPayload;
     checkNotNull(blsToExecutionChanges, "BlsToExecutionChange is required for capella blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
   }
@@ -72,6 +77,8 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
       tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella
           message) {
     super(message);
+    checkNotNull(message.getExecutionPayload(), "Execution Payload is required for capella blocks");
+    this.executionPayload = new ExecutionPayloadCapella(message.getExecutionPayload());
     checkNotNull(
         message.getBlsToExecutionChanges(), "BlsToExecutionChange is required for capella blocks");
     this.blsToExecutionChanges =
@@ -87,6 +94,10 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
+
+    final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema().toVersionCapella().orElseThrow();
+
     final SszListSchema<
             tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
         blsToExecutionChangesSchema =
@@ -94,11 +105,31 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) ->
-            builder.blsToExecutionChanges(
-                () ->
-                    this.blsToExecutionChanges.stream()
-                        .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
-                        .collect(blsToExecutionChangesSchema.collector())));
+        (builder) -> {
+          builder.executionPayload(
+              () ->
+                  SafeFuture.completedFuture(
+                      executionPayloadSchemaCapella.create(
+                          executionPayload.parentHash,
+                          executionPayload.feeRecipient,
+                          executionPayload.stateRoot,
+                          executionPayload.receiptsRoot,
+                          executionPayload.logsBloom,
+                          executionPayload.prevRandao,
+                          executionPayload.blockNumber,
+                          executionPayload.gasLimit,
+                          executionPayload.gasUsed,
+                          executionPayload.timestamp,
+                          executionPayload.extraData,
+                          executionPayload.baseFeePerGas,
+                          executionPayload.blockHash,
+                          executionPayload.transactions,
+                          executionPayload.withdrawals)));
+          builder.blsToExecutionChanges(
+              () ->
+                  this.blsToExecutionChanges.stream()
+                      .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                      .collect(blsToExecutionChangesSchema.collector()));
+        });
   }
 }

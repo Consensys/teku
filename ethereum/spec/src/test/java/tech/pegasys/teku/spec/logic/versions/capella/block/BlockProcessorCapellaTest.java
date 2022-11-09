@@ -11,13 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.capella;
+package tech.pegasys.teku.spec.logic.versions.capella.block;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,5 +43,17 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
     assertThatThrownBy(
             () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
         .isInstanceOf(StateTransitionException.class);
+  }
+
+  @Test
+  void shouldCreateExpectedWithdrawalAddress() {
+    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
+    Bytes20 eth1Address = data.randomBytes20();
+
+    Bytes32 bytes32 = BlockProcessorCapella.getWithdrawalAddressFromEth1Address(eth1Address);
+    // ends with eth1 address
+    assertThat(bytes32.toHexString()).endsWith(eth1Address.toUnprefixedHexString());
+    // starts with 0x01 (eth1 prefix) and 0x00 x 11 (buffer)
+    assertThat(bytes32.toHexString()).startsWith("0x010000000000000000000000");
   }
 }
