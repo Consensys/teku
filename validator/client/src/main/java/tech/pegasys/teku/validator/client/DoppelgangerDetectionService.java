@@ -152,7 +152,9 @@ public class DoppelgangerDetectionService extends Service {
                                           validatorIndices
                                               .intStream()
                                               .mapToObj(UInt64::valueOf)
-                                              .collect(Collectors.toList())))
+                                              .collect(Collectors.toList()),
+                                          currentEpoch,
+                                          currentSlot))
                               .exceptionally(
                                   throwable -> {
                                     LOGGER.error(
@@ -181,7 +183,9 @@ public class DoppelgangerDetectionService extends Service {
 
   private boolean doppelgangerDetected(
       final Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
-      final List<UInt64> validatorIndices) {
+      final List<UInt64> validatorIndices,
+      final UInt64 epoch,
+      final UInt64 slot) {
     if (validatorLivenessAtEpoches.isPresent()) {
       List<ValidatorLivenessAtEpoch> doppelgangers =
           validatorLivenessAtEpoches.get().stream()
@@ -225,6 +229,8 @@ public class DoppelgangerDetectionService extends Service {
             .ifExceptionGetsHereRaiseABug();
         doppelgangerDetectionAction.accept(null);
         stop().thenRun(() -> doppelgangerCheckFinished.set(true)).ifExceptionGetsHereRaiseABug();
+      } else {
+        LOGGER.info("No validators doppelganger detected for epoch {}, slot {}", epoch, slot);
       }
     }
     return false;

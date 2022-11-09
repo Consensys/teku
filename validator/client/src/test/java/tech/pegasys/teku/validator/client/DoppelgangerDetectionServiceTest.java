@@ -91,12 +91,13 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofMinutes(2),
             __ -> {});
     assertThat(doppelgangerDetectionService.start()).isCompleted();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
     expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    expectLogMessage(logCaptor.getLogEvents().get(3), "INFO", noDoppelgangerLog(0, 1));
     expectLogMessage(
-        logCaptor.getLogEvents().get(3),
+        logCaptor.getLogEvents().get(4),
         "INFO",
         "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
   }
@@ -321,5 +322,9 @@ public class DoppelgangerDetectionServiceTest {
   private String performingDoppelgangerCheckLog(int epoch, int slot) {
     return String.format(
         "Performing a validators doppelganger check. Epoch %d, Slot %d.", epoch, slot);
+  }
+
+  private String noDoppelgangerLog(int epoch, int slot) {
+    return String.format("No validators doppelganger detected for epoch %d, slot %d", epoch, slot);
   }
 }
