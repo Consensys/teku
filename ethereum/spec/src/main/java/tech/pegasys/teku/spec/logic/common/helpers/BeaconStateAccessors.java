@@ -101,7 +101,7 @@ public abstract class BeaconStateAccessors {
         state.getValidators().get(validatorIndex).getWithdrawalCredentials();
     if (withdrawalCredentials.get(0) != config.getBlsWithdrawalPrefix().get(0)
         || withdrawalCredentials.slice(1, 31)
-            != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed().slice(1))) {
+            != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1)) {
       return false;
     }
     return true;
