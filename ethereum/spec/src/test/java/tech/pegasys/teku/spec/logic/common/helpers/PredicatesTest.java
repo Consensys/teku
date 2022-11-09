@@ -107,7 +107,21 @@ public class PredicatesTest {
             UInt64.ONE,
             false),
         Arguments.of(
+            "Eligible validator with withdrawable epoch as the current epoch",
+            eth1WithdrawalsCredentials,
+            UInt64.ONE, // withdrawable epoch
+            UInt64.ONE,
+            UInt64.ONE,
+            true),
+        Arguments.of(
             "Ineligible validator with withdrawable epoch in the future",
+            eth1WithdrawalsCredentials,
+            UInt64.valueOf(2), // withdrawable epoch
+            UInt64.ONE,
+            UInt64.ONE,
+            false),
+        Arguments.of(
+            "Ineligible validator with withdrawable epoch in the far future",
             eth1WithdrawalsCredentials,
             UInt64.MAX_VALUE, // withdrawable epoch
             UInt64.ONE,
