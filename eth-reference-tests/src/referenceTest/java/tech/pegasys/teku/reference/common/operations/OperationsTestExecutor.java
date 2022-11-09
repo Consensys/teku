@@ -356,6 +356,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case ATTESTATION:
       case SYNC_AGGREGATE:
       case EXECUTION_PAYLOAD:
+      case BLS_TO_EXECUTION_CHANGE:
         // Not yet testing inclusion rules
         break;
     }
