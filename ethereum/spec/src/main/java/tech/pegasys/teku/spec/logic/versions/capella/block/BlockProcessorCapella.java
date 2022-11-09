@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.capella.block;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
 
 import javax.annotation.CheckReturnValue;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -131,7 +133,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     }
   }
 
-  public static Bytes32 getWithdrawalAddressFromEth1Address(final Bytes20 toExecutionAddress) {
+  @VisibleForTesting
+  static Bytes32 getWithdrawalAddressFromEth1Address(final Bytes20 toExecutionAddress) {
     return Bytes32.wrap(
         Bytes.concatenate(ETH1_WITHDRAWAL_KEY_PREFIX, toExecutionAddress.getWrappedBytes()));
   }
