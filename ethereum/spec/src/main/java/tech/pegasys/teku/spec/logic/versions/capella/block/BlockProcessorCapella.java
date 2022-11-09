@@ -15,9 +15,8 @@ package tech.pegasys.teku.spec.logic.versions.capella.block;
 
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
 
-import javax.annotation.CheckReturnValue;
-
 import com.google.common.annotations.VisibleForTesting;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -152,7 +151,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final Bytes32 withdrawalCredentials =
           genericState.getValidators().get(validatorIndex).getWithdrawalCredentials();
       if (withdrawalCredentials.get(0) != WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0)) {
-        return BlockValidationResult.failed("Not using BLS withdrawal credentials for validator " + validatorIndex);
+        return BlockValidationResult.failed(
+            "Not using BLS withdrawal credentials for validator " + validatorIndex);
       }
       if (withdrawalCredentials.slice(1)
           != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1)) {
