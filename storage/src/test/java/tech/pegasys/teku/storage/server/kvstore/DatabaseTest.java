@@ -55,6 +55,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -1684,6 +1685,16 @@ public class DatabaseTest {
         .containsExactlyInAnyOrder(
             Map.entry(state1.hashTreeRoot(), ONE),
             Map.entry(state2.hashTreeRoot(), UInt64.valueOf(2)));
+  }
+
+  @TestTemplate
+  public void updateDepositSnapshot_setValue(final DatabaseContext context) throws IOException {
+    initialize(context);
+    final DepositTreeSnapshot depositTreeSnapshot = dataStructureUtil.randomDepositTreeSnapshot();
+    assertThat(database.getFinalizedDepositSnapshot().isEmpty()).isTrue();
+
+    database.setFinalizedDepositSnapshot(depositTreeSnapshot);
+    assertThat(database.getFinalizedDepositSnapshot()).contains(depositTreeSnapshot);
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

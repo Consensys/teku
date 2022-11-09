@@ -47,7 +47,9 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DepositProvider
@@ -59,6 +61,8 @@ public class DepositProvider
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
+  private final StorageUpdateChannel storageUpdateChannel;
+  private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private DepositTree depositMerkleTree;
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
@@ -73,12 +77,16 @@ public class DepositProvider
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
+      final StorageUpdateChannel storageUpdateChannel,
+      final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final Spec spec,
       final EventLogger eventLogger,
       final boolean useMissingDepositEventLogging) {
     this.eventLogger = eventLogger;
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
+    this.storageUpdateChannel = storageUpdateChannel;
+    this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.spec = spec;
     depositUtil = new DepositUtil(spec);
     depositMerkleTree = new DepositTree();
@@ -130,10 +138,24 @@ public class DepositProvider
                 .getEth1DataAndHeight(finalizedState.getEth1Data())
                 .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
         if (heightOptional.isEmpty()) {
-          LOG.warn("Eth1Data height not found in cache. Skipping DepositTree pruning");
+          LOG.debug("Eth1Data height not found in cache. Skipping DepositTree pruning");
           return;
         }
         depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
+        depositMerkleTree
+            .getSnapshot()
+            .ifPresent(
+                depositTreeSnapshot -> {
+                  LOG.debug("Storing DepositTreeSnapshot: {}", depositTreeSnapshot);
+                  storageUpdateChannel
+                      .onFinalizedDepositSnapshot(depositTreeSnapshot)
+                      .thenCompose(storeResult -> eth1DepositStorageChannel.removeDepositEvents())
+                      .finish(
+                          throwable ->
+                              LOG.error(
+                                  "Failed to store snapshot and remove old deposit events",
+                                  throwable));
+                });
       }
     }
   }

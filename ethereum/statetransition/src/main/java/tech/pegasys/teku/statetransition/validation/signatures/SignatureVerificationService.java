@@ -17,9 +17,4 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public abstract class SignatureVerificationService extends Service
-    implements AsyncBLSSignatureVerifier {
-
-  public static SignatureVerificationService createSimple() {
-    return new SimpleSignatureVerificationService();
-  }
-}
+    implements AsyncBLSSignatureVerifier {}

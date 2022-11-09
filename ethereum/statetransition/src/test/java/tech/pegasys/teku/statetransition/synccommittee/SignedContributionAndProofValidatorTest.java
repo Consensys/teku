@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -56,7 +56,7 @@ class SignedContributionAndProofValidatorTest {
           storageSystem.recentChainData(),
           syncCommitteeStateUtils,
           timeProvider,
-          SignatureVerificationService.createSimple());
+          new SimpleSignatureVerificationService());
 
   @BeforeEach
   void setUp() {

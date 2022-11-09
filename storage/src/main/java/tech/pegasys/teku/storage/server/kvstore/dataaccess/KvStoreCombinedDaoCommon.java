@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -85,6 +86,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
   @MustBeClosed
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
 
+  Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
+
   interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 
   interface HotUpdaterCommon extends AutoCloseable {
@@ -119,6 +122,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
     void deleteHotState(Bytes32 blockRoot);
 
+    void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
+
     void commit();
 
     void cancel();
@@ -129,6 +134,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
     void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
     void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+
+    void removeDepositsFromBlockEvent(UInt64 blockNumber);
   }
 
   interface FinalizedUpdaterCommon extends AutoCloseable {

@@ -132,6 +132,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -582,6 +583,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             recentChainData,
             eth1DataCache,
+            storageUpdateChannel,
+            eventChannels.getPublisher(Eth1DepositStorageChannel.class, beaconAsyncRunner),
             spec,
             EVENT_LOG,
             beaconConfig.powchainConfig().useMissingDepositEventLogging());
@@ -689,16 +692,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignatureVerificationService() {
     final P2PConfig p2PConfig = beaconConfig.p2pConfig();
     signatureVerificationService =
-        p2PConfig.batchVerifyAttestationSignatures()
-            ? new AggregatingSignatureVerificationService(
-                metricsSystem,
-                asyncRunnerFactory,
-                beaconAsyncRunner,
-                p2PConfig.getBatchVerifyMaxThreads(),
-                p2PConfig.getBatchVerifyQueueCapacity(),
-                p2PConfig.getBatchVerifyMaxBatchSize(),
-                p2PConfig.isBatchVerifyStrictThreadLimitEnabled())
-            : SignatureVerificationService.createSimple();
+        new AggregatingSignatureVerificationService(
+            metricsSystem,
+            asyncRunnerFactory,
+            beaconAsyncRunner,
+            p2PConfig.getBatchVerifyMaxThreads(),
+            p2PConfig.getBatchVerifyQueueCapacity(),
+            p2PConfig.getBatchVerifyMaxBatchSize(),
+            p2PConfig.isBatchVerifyStrictThreadLimitEnabled());
   }
 
   protected void initAttestationManager() {

@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -146,6 +147,8 @@ public interface Database extends AutoCloseable {
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
+  void removeDepositsFromBlockEvents(List<UInt64> blockNumbers);
+
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
   Map<String, Long> getColumnCounts();
@@ -160,4 +163,8 @@ public interface Database extends AutoCloseable {
   Optional<Checkpoint> getJustifiedCheckpoint();
 
   void deleteHotBlocks(Set<Bytes32> blockRootsToDelete);
+
+  Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
+
+  void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 }

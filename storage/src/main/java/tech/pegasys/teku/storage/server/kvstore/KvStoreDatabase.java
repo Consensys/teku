@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -511,6 +512,14 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {
+    try (final HotUpdaterCommon updater = hotUpdater()) {
+      blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {
     try (final HotUpdaterCommon hotUpdater = hotUpdater()) {
       hotUpdater.addVotes(votes);
@@ -526,6 +535,19 @@ public abstract class KvStoreDatabase<
   @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return dao.getJustifiedCheckpoint();
+  }
+
+  @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return dao.getFinalizedDepositSnapshot();
+  }
+
+  @Override
+  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {
+    try (final HotUpdaterT updater = hotUpdater()) {
+      updater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
+      updater.commit();
+    }
   }
 
   @Override

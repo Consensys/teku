@@ -15,6 +15,9 @@ package tech.pegasys.teku.storage.server;
 
 import com.google.common.base.Suppliers;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -32,26 +35,36 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1L);
+  private static final int DEPOSIT_REMOVAL_CHUNK = 1000;
 
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
   private volatile Optional<BigInteger> lastReplayedBlock = Optional.empty();
-  private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
+  private final Supplier<SafeFuture<ReplayDepositsResult>> replayDepositsResult;
+  private final Supplier<SafeFuture<Boolean>> removeDepositsResult;
+  private final boolean depositSnapshotStorageEnabled;
 
-  private DepositStorage(final Eth1EventsChannel eth1EventsChannel, final Database database) {
+  private DepositStorage(
+      final Eth1EventsChannel eth1EventsChannel,
+      final Database database,
+      final boolean depositSnapshotStorageEnabled) {
     this.eth1EventsChannel = eth1EventsChannel;
     this.database = database;
-    this.replayResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
+    this.replayDepositsResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
+    this.removeDepositsResult = Suppliers.memoize(() -> SafeFuture.of(this::removeDeposits));
+    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
   }
 
   public static DepositStorage create(
-      final Eth1EventsChannel eth1EventsChannel, final Database database) {
-    return new DepositStorage(eth1EventsChannel, database);
+      final Eth1EventsChannel eth1EventsChannel,
+      final Database database,
+      final boolean depositSnapshotStorageEnabled) {
+    return new DepositStorage(eth1EventsChannel, database, depositSnapshotStorageEnabled);
   }
 
   @Override
   public SafeFuture<ReplayDepositsResult> replayDepositEvents() {
-    return replayResult.get();
+    return replayDepositsResult.get();
   }
 
   private ReplayDepositsResult replayDeposits() {
@@ -72,6 +85,9 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
 
   @Override
   public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
+    if (depositSnapshotStorageEnabled) {
+      return;
+    }
     if (shouldProcessEvent(event.getBlockNumber().bigIntegerValue())) {
       database.addDepositsFromBlockEvent(event);
     }
@@ -82,6 +98,36 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     if (shouldProcessEvent(event.getBlockNumber().bigIntegerValue())) {
       database.addMinGenesisTimeBlock(event);
     }
+  }
+
+  @Override
+  public SafeFuture<Boolean> removeDepositEvents() {
+    return removeDepositsResult.get();
+  }
+
+  private boolean removeDeposits() {
+    if (!depositSnapshotStorageEnabled) {
+      return false;
+    }
+    LOG.debug("Pruning deposit events in database");
+    boolean depositsRemoved = false;
+    try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
+      Iterator<DepositsFromBlockEvent> eventIterator = eventStream.iterator();
+      while (eventIterator.hasNext()) {
+        final List<UInt64> blockNumbers = new ArrayList<>();
+        for (int i = 0; i < DEPOSIT_REMOVAL_CHUNK && eventIterator.hasNext(); ++i) {
+          blockNumbers.add(eventIterator.next().getBlockNumber());
+        }
+        if (!blockNumbers.isEmpty()) {
+          depositsRemoved = true;
+          database.removeDepositsFromBlockEvents(blockNumbers);
+        }
+      }
+    }
+    if (depositsRemoved) {
+      LOG.info("Deposit events were successfully pruned in database");
+    }
+    return true;
   }
 
   private static class DepositSequencer {
