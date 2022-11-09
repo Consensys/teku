@@ -145,7 +145,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
       final int validatorIndex = addressChange.getValidatorIndex().intValue();
-      if (genericState.getValidators().size() < validatorIndex) {
+      if (genericState.getValidators().size() <= validatorIndex) {
         return BlockValidationResult.failed("Validator index invalid: " + validatorIndex);
       }
       final Bytes32 withdrawalCredentials =
