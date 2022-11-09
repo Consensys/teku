@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.helpers;
 
-import org.apache.tuweni.bytes.Bytes;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
+
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 
 public class MiscHelpersCapella extends MiscHelpersBellatrix {
-
-  public static final Bytes ETH1_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x01");
 
   public MiscHelpersCapella(final SpecConfig specConfig) {
     super(specConfig);
@@ -35,7 +34,7 @@ public class MiscHelpersCapella extends MiscHelpersBellatrix {
    * @return true if the validator has an "eth1" withdrawal credential, false otherwise
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
-    return validator.getWithdrawalCredentials().slice(0, 1).equals(ETH1_WITHDRAWAL_PREFIX);
+    return validator.getWithdrawalCredentials().slice(0, 1).equals(ETH1_ADDRESS_WITHDRAWAL_PREFIX);
   }
 
   /**
