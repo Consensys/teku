@@ -114,6 +114,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         MutableBeaconStateCapella.required(state),
         BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
   }
+
   // process_bls_to_execution_change
   public void processBlsToExecutionChangesNoValidation(
       final MutableBeaconStateCapella state,
@@ -145,7 +146,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
       final int validatorIndex = addressChange.getValidatorIndex().intValue();
-      if (genericState.getValidators().size() < validatorIndex) {
+      if (genericState.getValidators().size() <= validatorIndex) {
         return BlockValidationResult.failed("Validator index invalid: " + validatorIndex);
       }
       final Bytes32 withdrawalCredentials =
