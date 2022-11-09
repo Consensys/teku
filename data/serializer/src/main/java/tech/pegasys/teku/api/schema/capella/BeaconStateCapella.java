@@ -117,20 +117,16 @@ public class BeaconStateCapella extends BeaconStateAltair {
     state
         .toMutableVersionCapella()
         .ifPresent(
-            mutableBeaconStateCapella -> {
-              applyCapellaFields(
-                  mutableBeaconStateCapella,
-                  BeaconStateSchemaCapella.required(
-                          mutableBeaconStateCapella.getBeaconStateSchema())
-                      .getCurrentSyncCommitteeSchema(),
-                  BeaconStateSchemaCapella.required(
-                          mutableBeaconStateCapella.getBeaconStateSchema())
-                      .getLastExecutionPayloadHeaderSchema(),
-                  this);
-
-              mutableBeaconStateCapella.setLatestWithdrawalValidatorIndex(
-                  this.latestWithdrawalValidatorIndex);
-            });
+            mutableBeaconStateCapella ->
+                applyCapellaFields(
+                    mutableBeaconStateCapella,
+                    BeaconStateSchemaCapella.required(
+                            mutableBeaconStateCapella.getBeaconStateSchema())
+                        .getCurrentSyncCommitteeSchema(),
+                    BeaconStateSchemaCapella.required(
+                            mutableBeaconStateCapella.getBeaconStateSchema())
+                        .getLastExecutionPayloadHeaderSchema(),
+                    this));
   }
 
   public static void applyCapellaFields(
@@ -158,5 +154,7 @@ public class BeaconStateCapella extends BeaconStateAltair {
             instance.latestExecutionPayloadHeader.blockHash,
             instance.latestExecutionPayloadHeader.transactionsRoot,
             instance.latestExecutionPayloadHeader.withdrawalsRoot));
+
+    state.setLatestWithdrawalValidatorIndex(instance.latestWithdrawalValidatorIndex);
   }
 }
