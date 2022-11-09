@@ -50,6 +50,11 @@ public class LightClientBootstrap
       return new LightClientBootstrap(this, beaconBlockHeader, syncCommittee, syncCommitteeBranch);
     }
 
+    @SuppressWarnings("unchecked")
+    public SszBytes32VectorSchema<SszBytes32Vector> getSyncCommitteeBranchSchema() {
+      return (SszBytes32VectorSchema<SszBytes32Vector>) getChildSchema(2);
+    }
+
     @Override
     public LightClientBootstrap createFromBackingNode(TreeNode node) {
       return new LightClientBootstrap(this, node);
