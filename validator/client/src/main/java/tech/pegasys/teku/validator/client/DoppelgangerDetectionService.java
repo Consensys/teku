@@ -77,7 +77,7 @@ public class DoppelgangerDetectionService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    LOGGER.info("Starting doppelganger detection service.");
+    LOGGER.info("Starting doppelganger detection service...");
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
@@ -105,7 +105,7 @@ public class DoppelgangerDetectionService extends Service {
     Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
     if (duration.compareTo(timeout) > 0) {
       LOGGER.info(
-          "Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the doppelganger detection from running correctly. Please check the logs and consider performing a new doppelganger check.");
+          "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
       return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
     }
 
@@ -113,12 +113,14 @@ public class DoppelgangerDetectionService extends Service {
         .getGenesisTime()
         .thenCompose(
             genesisTime -> {
-              final UInt64 currentEpoch =
-                  spec.computeEpochAtSlot(
-                      spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime));
+              final UInt64 currentSlot =
+                  spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+              final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
               if (epochAtStart.isEmpty()) {
                 epochAtStart = Optional.of(currentEpoch);
+                LOGGER.info(
+                    "Validators doppelganger check started at epoch {}", epochAtStart.get());
               }
 
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
@@ -126,6 +128,11 @@ public class DoppelgangerDetectionService extends Service {
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
                 return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
               }
+
+              LOGGER.info(
+                  "Performing a validators doppelganger check. Epoch {}, Slot {}.",
+                  currentEpoch,
+                  currentSlot);
 
               return validatorIndexProvider
                   .getValidatorIndices()

@@ -55,6 +55,9 @@ public class DoppelgangerDetectionServiceTest {
   private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetectionService.class);
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
+  private final String doppelgangerServiceStartingMessage =
+      "Starting doppelganger detection service...";
+
   @BeforeEach
   public void setup() throws IOException {
     System.setOut(new PrintStream(stdOut));
@@ -89,11 +92,18 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofMinutes(2),
             __ -> {});
     assertThat(doppelgangerDetectionService.start()).isCompleted();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(2);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartingMessage);
     expectLogMessage(
         logCaptor.getLogEvents().get(1),
+        "INFO",
+        "Validators doppelganger check started at epoch 0");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(2),
+        "INFO",
+        "Performing a validators doppelganger check. Epoch 0, Slot 1.");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(3),
         "INFO",
         "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
   }
@@ -130,8 +140,7 @@ public class DoppelgangerDetectionServiceTest {
     assertThat(doppelgangerDetectionService.start()).isCompleted();
     assertThat(logCaptor.getLogEvents()).isNotEmpty();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(6);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartingMessage);
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception";
     expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
@@ -141,7 +150,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(
         logCaptor.getLogEvents().get(5),
         "INFO",
-        "Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the doppelganger detection from running correctly. Please check the logs and consider performing a new doppelganger check.");
+        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
   }
 
   @Test
@@ -176,15 +185,22 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofMinutes(20),
             __ -> System.out.println(doppelgangerDetectedMessage));
     assertThat(doppelgangerDetectionService.start()).isCompleted();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(3);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartingMessage);
     expectLogMessage(
         logCaptor.getLogEvents().get(1),
+        "INFO",
+        "Validators doppelganger check started at epoch 0");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(2),
+        "INFO",
+        "Performing a validators doppelganger check. Epoch 0, Slot 1.");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(3),
         "ERROR",
         "Doppelganger detected. Shutting down Validator Client.");
     expectLogMessage(
-        logCaptor.getLogEvents().get(2),
+        logCaptor.getLogEvents().get(4),
         "ERROR",
         "Unable to get doppelgangers public keys. Only indices are available: java.lang.Exception: Validators Public Keys Exception");
     assertThat(stdOut.toString(UTF_8))
@@ -235,11 +251,18 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofMinutes(20),
             __ -> System.out.println(doppelgangerDetectedMessage));
     assertThat(doppelgangerDetectionService.start()).isCompleted();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(2);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(0), "INFO", "Starting doppelganger detection service.");
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartingMessage);
     expectLogMessage(
         logCaptor.getLogEvents().get(1),
+        "INFO",
+        "Validators doppelganger check started at epoch 0");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(2),
+        "INFO",
+        "Performing a validators doppelganger check. Epoch 0, Slot 1.");
+    expectLogMessage(
+        logCaptor.getLogEvents().get(3),
         "ERROR",
         "Doppelganger detected. Shutting down Validator Client.");
     assertThat(stdOut.toString(UTF_8))
