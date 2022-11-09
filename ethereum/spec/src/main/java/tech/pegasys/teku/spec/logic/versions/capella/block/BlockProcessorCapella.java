@@ -152,7 +152,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final Bytes32 withdrawalCredentials =
           genericState.getValidators().get(validatorIndex).getWithdrawalCredentials();
       if (withdrawalCredentials.get(0) != WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0)) {
-        return BlockValidationResult.failed("Validator is not a bls key: " + validatorIndex);
+        return BlockValidationResult.failed("Not using BLS withdrawal credentials for validator " + validatorIndex);
       }
       if (withdrawalCredentials.slice(1)
           != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1)) {
