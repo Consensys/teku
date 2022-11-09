@@ -15,9 +15,13 @@ package tech.pegasys.teku.spec.logic.versions.capella.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -28,146 +32,148 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersCapellaTest {
 
-  private SpecConfigCapella specConfigCapella;
-  private DataStructureUtil dataStructureUtil;
+  private static final Spec SPEC = TestSpecFactory.createMainnet(SpecMilestone.CAPELLA);
+  private static final SpecConfigCapella SPEC_CONFIG_CAPELLA =
+      SPEC.getGenesisSpecConfig().toVersionCapella().orElseThrow();
+  private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
+  static final Bytes32 ETH_1_WITHDRAWAL_CREDENTIALS =
+      DATA_STRUCTURE_UTIL.randomEth1WithdrawalCredentials();
+  static final Bytes32 BLS_WITHDRAWAL_CREDENTIALS =
+      DATA_STRUCTURE_UTIL.randomBlsWithdrawalCredentials();
+
   private MiscHelpersCapella miscHelpersCapella;
-  private Bytes32 eth1WithdrawalsCredentials;
-  private Bytes32 blsWithdrawalsCredentials;
 
   @BeforeEach
   public void before() {
-    final Spec spec = TestSpecFactory.createMainnet(SpecMilestone.CAPELLA);
-    this.specConfigCapella = spec.getGenesisSpecConfig().toVersionCapella().orElseThrow();
-    this.dataStructureUtil = new DataStructureUtil(spec);
-    this.miscHelpersCapella = new MiscHelpersCapella(specConfigCapella);
-    this.eth1WithdrawalsCredentials = dataStructureUtil.randomEth1WithdrawalCredentials();
-    this.blsWithdrawalsCredentials = dataStructureUtil.randomBlsWithdrawalCredentials();
-  }
-
-  @Test
-  public void isFullyWithdrawableValidatorShouldReturnTrueForEligibleValidator() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withWithdrawableEpoch(UInt64.ZERO);
-
-    final UInt64 balance = UInt64.ONE;
-    final UInt64 epoch = UInt64.ONE;
-
-    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch)).isTrue();
-  }
-
-  @Test
-  public void isFullyWithdrawableValidatorShouldReturnFalseForNonEth1Credentials() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(blsWithdrawalsCredentials)
-            .withWithdrawableEpoch(UInt64.ZERO);
-
-    final UInt64 balance = UInt64.ONE;
-    final UInt64 epoch = UInt64.ONE;
-
-    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch))
-        .isFalse();
-  }
-
-  @Test
-  public void isFullyWithdrawableValidatorShouldReturnFalseForZeroBalance() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withWithdrawableEpoch(UInt64.ZERO);
-
-    final UInt64 balance = UInt64.ZERO;
-    final UInt64 epoch = UInt64.ONE;
-
-    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch))
-        .isFalse();
-  }
-
-  @Test
-  public void isFullyWithdrawableValidatorShouldReturnFalseForWithdrawableEpochInTheFuture() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withWithdrawableEpoch(UInt64.MAX_VALUE);
-
-    final UInt64 balance = UInt64.ZERO;
-    final UInt64 epoch = UInt64.ONE;
-
-    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch))
-        .isFalse();
-  }
-
-  @Test
-  public void isPartiallyWithdrawableValidatorShouldReturnTrueForEligibleValidator() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withEffectiveBalance(specConfigCapella.getMaxEffectiveBalance());
-
-    final UInt64 balance = specConfigCapella.getMaxEffectiveBalance().plus(UInt64.ONE);
-
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance)).isTrue();
-  }
-
-  @Test
-  public void isPartiallyWithdrawableValidatorShouldReturnFalseForNonEth1Credentials() {
-    final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(blsWithdrawalsCredentials)
-            .withEffectiveBalance(specConfigCapella.getMaxEffectiveBalance());
-
-    final UInt64 balance = specConfigCapella.getMaxEffectiveBalance().plus(UInt64.ONE);
-
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance)).isFalse();
+    this.miscHelpersCapella = new MiscHelpersCapella(SPEC_CONFIG_CAPELLA);
   }
 
   @Test
   public void
-      isPartiallyWithdrawableValidatorShouldReturnFalseForEffectiveBalanceLessThanMaxEffectiveBalance() {
+      hasEth1WithdrawalCredentialShouldReturnTrueForValidatorWithEth1WithdrawalCredentials() {
     final Validator validator =
-        dataStructureUtil
+        DATA_STRUCTURE_UTIL
             .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withEffectiveBalance(specConfigCapella.getMaxEffectiveBalance().minus(UInt64.ONE));
+            .withWithdrawalCredentials(ETH_1_WITHDRAWAL_CREDENTIALS);
 
-    final UInt64 balance = specConfigCapella.getMaxEffectiveBalance().plus(UInt64.ONE);
-
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance)).isFalse();
+    assertThat(miscHelpersCapella.hasEth1WithdrawalCredential(validator)).isTrue();
   }
 
   @Test
   public void
-      isPartiallyWithdrawableValidatorShouldReturnFalseForBalanceLowerThanMaxEffectiveBalance() {
+      hasEth1WithdrawalCredentialShouldReturnFalseForValidatorWithBls1WithdrawalCredentials() {
     final Validator validator =
-        dataStructureUtil
-            .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withEffectiveBalance(specConfigCapella.getMaxEffectiveBalance());
+        DATA_STRUCTURE_UTIL.randomValidator().withWithdrawalCredentials(BLS_WITHDRAWAL_CREDENTIALS);
 
-    final UInt64 balance = specConfigCapella.getMaxEffectiveBalance().minus(UInt64.ONE);
-
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance)).isFalse();
+    assertThat(miscHelpersCapella.hasEth1WithdrawalCredential(validator)).isFalse();
   }
 
-  @Test
-  public void
-      isPartiallyWithdrawableValidatorShouldReturnFalseForBalanceEqualToMaxEffectiveBalance() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("isFullyWithdrawableValidatorArgs")
+  public void isFullyWithdrawableValidator(
+      final String description,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 withdrawableEpoch,
+      final UInt64 balance,
+      final UInt64 epoch,
+      boolean expectedValue) {
+
     final Validator validator =
-        dataStructureUtil
+        DATA_STRUCTURE_UTIL
             .randomValidator()
-            .withWithdrawalCredentials(eth1WithdrawalsCredentials)
-            .withEffectiveBalance(specConfigCapella.getMaxEffectiveBalance());
+            .withWithdrawalCredentials(withdrawalCredentials)
+            .withWithdrawableEpoch(withdrawableEpoch);
 
-    final UInt64 balance = specConfigCapella.getMaxEffectiveBalance();
+    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch))
+        .isEqualTo(expectedValue);
+  }
 
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance)).isFalse();
+  private static Stream<Arguments> isFullyWithdrawableValidatorArgs() {
+    final Bytes32 eth1WithdrawalsCredentials =
+        DATA_STRUCTURE_UTIL.randomEth1WithdrawalCredentials();
+    final Bytes32 blsWithdrawalsCredentials = DATA_STRUCTURE_UTIL.randomBlsWithdrawalCredentials();
+
+    return Stream.of(
+        Arguments.of(
+            "Eligible validator", // description
+            eth1WithdrawalsCredentials, // withdrawal credentials
+            UInt64.ZERO, // withdrawable epoch
+            UInt64.ONE, // balance
+            UInt64.ONE, // epoch
+            true), // expected result from isFullyWithdrawableValidator
+        Arguments.of(
+            "Ineligible validator without Eth1 credentials",
+            blsWithdrawalsCredentials, // withdrawal credentials
+            UInt64.ZERO,
+            UInt64.ONE,
+            UInt64.ONE,
+            false),
+        Arguments.of(
+            "Ineligible validator with withdrawable epoch in the future",
+            eth1WithdrawalsCredentials,
+            UInt64.MAX_VALUE, // withdrawable epoch
+            UInt64.ONE,
+            UInt64.ONE,
+            false),
+        Arguments.of(
+            "Ineligible validator with zero balance",
+            eth1WithdrawalsCredentials,
+            UInt64.ZERO,
+            UInt64.ZERO, // balance
+            UInt64.ONE,
+            false));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("isPartiallyWithdrawableValidatorArgs")
+  public void isPartiallyWithdrawableValidator(
+      final String description,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 effectiveBalance,
+      final UInt64 balance,
+      boolean expectedValue) {
+
+    final Validator validator =
+        DATA_STRUCTURE_UTIL
+            .randomValidator()
+            .withWithdrawalCredentials(withdrawalCredentials)
+            .withEffectiveBalance(effectiveBalance);
+
+    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance))
+        .isEqualTo(expectedValue);
+  }
+
+  private static Stream<Arguments> isPartiallyWithdrawableValidatorArgs() {
+    return Stream.of(
+        Arguments.of(
+            "Eligible validator", // description
+            ETH_1_WITHDRAWAL_CREDENTIALS, // withdrawalCredentials
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance(), // effective balance
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance().plus(UInt64.ONE), // balance
+            true), // expected result from isPartiallyWithdrawable
+        Arguments.of(
+            "Ineligible validator without Eth1 credentials",
+            BLS_WITHDRAWAL_CREDENTIALS, // withdrawal credentials
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance(),
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance().plus(UInt64.ONE),
+            false),
+        Arguments.of(
+            "Ineligible validator with effective balance different to MAX_EFFECTIVE_BALANCE",
+            ETH_1_WITHDRAWAL_CREDENTIALS,
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance().minus(UInt64.ONE), // effective balance
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance().plus(UInt64.ONE),
+            false),
+        Arguments.of(
+            "Ineligible validator with balance less than MAX_EFFECTIVE_BALANCE",
+            ETH_1_WITHDRAWAL_CREDENTIALS,
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance(),
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance().minus(UInt64.ONE), // balance
+            false),
+        Arguments.of(
+            "Ineligible validator with balance equals to MAX_EFFECTIVE_BALANCE",
+            ETH_1_WITHDRAWAL_CREDENTIALS,
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance(),
+            SPEC_CONFIG_CAPELLA.getMaxEffectiveBalance(), // balance
+            false));
   }
 }
