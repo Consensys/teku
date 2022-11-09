@@ -172,7 +172,8 @@ public class DoppelgangerDetectionService extends Service {
           validatorLivenessAtEpoches.get().stream()
               .filter(
                   validatorLivenessAtEpoch ->
-                      validatorIndices.contains(validatorLivenessAtEpoch.getIndex()))
+                      validatorIndices.contains(validatorLivenessAtEpoch.getIndex())
+                          && validatorLivenessAtEpoch.isLive())
               .collect(Collectors.toList());
       if (!doppelgangers.isEmpty()) {
         LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");

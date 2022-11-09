@@ -208,6 +208,8 @@ public class DoppelgangerDetectionServiceTest {
                         new ValidatorLivenessAtEpoch(
                             UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
                         new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
+                        new ValidatorLivenessAtEpoch(
                             UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
     BLSPublicKey pubKey1 = dataStructureUtil.randomPublicKey();
     BLSPublicKey pubKey3 = dataStructureUtil.randomPublicKey();
@@ -216,6 +218,7 @@ public class DoppelgangerDetectionServiceTest {
             SafeFuture.completedFuture(
                 Map.ofEntries(
                     Map.entry(pubKey1, 1),
+                    Map.entry(dataStructureUtil.randomPublicKey(), 2),
                     Map.entry(pubKey3, 3),
                     Map.entry(dataStructureUtil.randomPublicKey(), 5),
                     Map.entry(dataStructureUtil.randomPublicKey(), 7))));
