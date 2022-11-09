@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.capella.helpers;
+package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class MiscHelpersCapellaTest {
-
+public class PredicatesTest {
+  private Predicates predicates;
   private static final Spec SPEC = TestSpecFactory.createMainnet(SpecMilestone.CAPELLA);
   private static final SpecConfigCapella SPEC_CONFIG_CAPELLA =
       SPEC.getGenesisSpecConfig().toVersionCapella().orElseThrow();
@@ -41,11 +41,9 @@ class MiscHelpersCapellaTest {
   static final Bytes32 BLS_WITHDRAWAL_CREDENTIALS =
       DATA_STRUCTURE_UTIL.randomBlsWithdrawalCredentials();
 
-  private MiscHelpersCapella miscHelpersCapella;
-
   @BeforeEach
   public void before() {
-    this.miscHelpersCapella = new MiscHelpersCapella(SPEC_CONFIG_CAPELLA);
+    this.predicates = new Predicates(SPEC_CONFIG_CAPELLA);
   }
 
   @Test
@@ -56,7 +54,7 @@ class MiscHelpersCapellaTest {
             .randomValidator()
             .withWithdrawalCredentials(ETH_1_WITHDRAWAL_CREDENTIALS);
 
-    assertThat(miscHelpersCapella.hasEth1WithdrawalCredential(validator)).isTrue();
+    assertThat(predicates.hasEth1WithdrawalCredential(validator)).isTrue();
   }
 
   @Test
@@ -65,7 +63,7 @@ class MiscHelpersCapellaTest {
     final Validator validator =
         DATA_STRUCTURE_UTIL.randomValidator().withWithdrawalCredentials(BLS_WITHDRAWAL_CREDENTIALS);
 
-    assertThat(miscHelpersCapella.hasEth1WithdrawalCredential(validator)).isFalse();
+    assertThat(predicates.hasEth1WithdrawalCredential(validator)).isFalse();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -84,7 +82,7 @@ class MiscHelpersCapellaTest {
             .withWithdrawalCredentials(withdrawalCredentials)
             .withWithdrawableEpoch(withdrawableEpoch);
 
-    assertThat(miscHelpersCapella.isFullyWithdrawableValidator(validator, balance, epoch))
+    assertThat(predicates.isFullyWithdrawableValidator(validator, balance, epoch))
         .isEqualTo(expectedValue);
   }
 
@@ -139,7 +137,7 @@ class MiscHelpersCapellaTest {
             .withWithdrawalCredentials(withdrawalCredentials)
             .withEffectiveBalance(effectiveBalance);
 
-    assertThat(miscHelpersCapella.isPartiallyWithdrawableValidator(validator, balance))
+    assertThat(predicates.isPartiallyWithdrawableValidator(validator, balance))
         .isEqualTo(expectedValue);
   }
 
