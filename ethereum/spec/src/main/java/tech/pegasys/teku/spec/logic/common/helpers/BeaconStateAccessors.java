@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -88,6 +89,22 @@ public abstract class BeaconStateAccessors {
                       .invalidateWithNewValue(pubKey, i.intValue());
                   return pubKey;
                 }));
+  }
+
+  public boolean validateWithdrawalCredentials(
+      BeaconState state, BlsToExecutionChange addressChange) {
+    final int validatorIndex = addressChange.getValidatorIndex().intValue();
+    if (state.getValidators().size() <= validatorIndex || validatorIndex < 0) {
+      return false;
+    }
+    final Bytes32 withdrawalCredentials =
+        state.getValidators().get(validatorIndex).getWithdrawalCredentials();
+    if (withdrawalCredentials.get(0) != config.getBlsWithdrawalPrefix().get(0)
+        || withdrawalCredentials.slice(1, 31)
+            != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed().slice(1))) {
+      return false;
+    }
+    return true;
   }
 
   /**

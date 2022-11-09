@@ -191,7 +191,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    * @return A block validation result
    */
   @CheckReturnValue
-  private BlockValidationResult validateBlock(
+  protected BlockValidationResult validateBlock(
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BeaconState postState,

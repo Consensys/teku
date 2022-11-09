@@ -13,17 +13,21 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.BlockProcessorBellatrixTest;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
@@ -40,5 +44,16 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
     assertThatThrownBy(
             () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
         .isInstanceOf(StateTransitionException.class);
+  }
+
+  @Test
+  void shouldCreateExpectedWithdrawalAddress() {
+    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
+    Bytes20 b = data.randomBytes20();
+    Bytes32 bytes32 = BlockProcessorCapella.withdrawalAddressFromEth1Address(b);
+    // ends with eth1 address
+    assertThat(bytes32.toHexString()).endsWith(b.toUnprefixedHexString());
+    // starts with 0x01 (eth1 prefix) and 0x00 x 11 (buffer)
+    assertThat(bytes32.toHexString()).startsWith("0x010000000000000000000000");
   }
 }
