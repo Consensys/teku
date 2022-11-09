@@ -123,7 +123,7 @@ public class DoppelgangerDetectionService extends Service {
                     "Validators doppelganger check started at epoch {}", epochAtStart.get());
               }
 
-              if (currentEpoch.minus(epochAtStart.get()).isGreaterThan(2)) {
+              if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
                 LOGGER.info(
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
                 return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
