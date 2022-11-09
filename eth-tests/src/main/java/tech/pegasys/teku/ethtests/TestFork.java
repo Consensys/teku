@@ -17,6 +17,5 @@ public class TestFork {
   public static final String PHASE0 = "phase0";
   public static final String ALTAIR = "altair";
   public static final String BELLATRIX = "bellatrix";
-
   public static final String CAPELLA = "capella";
 }

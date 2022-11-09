@@ -105,7 +105,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/bls_to_execution_change",
               new OperationsTestExecutor<>(
-                  "address_change.ssz_snappy", Operation.EXECUTION_PAYLOAD))
+                  "address_change.ssz_snappy", Operation.BLS_TO_EXECUTION_CHANGE))
           .build();
 
   private final String dataFileName;
