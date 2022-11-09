@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
@@ -53,7 +53,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public BlockProcessorCapella(
       final SpecConfigBellatrix specConfig,
       final Predicates predicates,
-      final MiscHelpersBellatrix miscHelpers,
+      final MiscHelpersCapella miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
