@@ -19,7 +19,9 @@ import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -172,24 +174,32 @@ public class SpecConfigBuilder {
             depositContractAddress,
             progressiveBalancesMode);
 
-    if (altairBuilder.isPresent()) {
-      final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
-      Optional<SpecConfigBellatrix> bellatrixConfig = Optional.empty();
-      config = altairConfig;
-      if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixIncluded()) {
-        bellatrixConfig = Optional.of(bellatrixBuilder.get().build(altairConfig));
-        config = bellatrixConfig.get();
-      }
-      Optional<SpecConfigCapella> capellaConfig = Optional.empty();
-      if (capellaBuilder.isPresent() && capellaBuilder.get().isCapellaIncluded()) {
-        capellaConfig = Optional.of(capellaBuilder.get().build(bellatrixConfig.orElseThrow()));
-        config = capellaConfig.get();
-      }
-      if (eip4844Builder.isPresent() && eip4844Builder.get().isEip4844Included()) {
-        config = eip4844Builder.get().build(capellaConfig.orElseThrow());
-      }
+    for (ForkBuilder<SpecConfig, SpecConfig> forkBuilder : getActiveBuilders()) {
+      config = forkBuilder.build(config);
     }
+
     return config;
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<ForkBuilder<SpecConfig, SpecConfig>> getActiveBuilders() {
+    final List<Optional<?>> supportedBuilders =
+        List.of(altairBuilder, bellatrixBuilder, capellaBuilder, eip4844Builder);
+    List<ForkBuilder<SpecConfig, SpecConfig>> activeBuilders = new ArrayList<>();
+    // Forks are consecutive. Once we couldn't go with the next fork, we could skip remaining
+    for (Optional<?> builderOptional : supportedBuilders) {
+      if (builderOptional.isEmpty()) {
+        break;
+      }
+      ForkBuilder<SpecConfig, SpecConfig> currentBuilder =
+          (ForkBuilder<SpecConfig, SpecConfig>) builderOptional.get();
+      if (!currentBuilder.isForkIncluded()) {
+        break;
+      }
+      activeBuilders.add(currentBuilder);
+    }
+
+    return activeBuilders;
   }
 
   private void validate() {
@@ -243,12 +253,9 @@ public class SpecConfigBuilder {
     validateConstant("depositNetworkId", depositNetworkId);
     validateConstant("depositContractAddress", depositContractAddress);
 
-    altairBuilder.ifPresent(AltairBuilder::validate);
-    bellatrixBuilder
-        .filter(BellatrixBuilder::isBellatrixIncluded)
-        .ifPresent(BellatrixBuilder::validate);
-    capellaBuilder.filter(CapellaBuilder::isCapellaIncluded).ifPresent(CapellaBuilder::validate);
-    eip4844Builder.filter(Eip4844Builder::isEip4844Included).ifPresent(Eip4844Builder::validate);
+    for (ForkBuilder<?, ?> forkBuilder : getActiveBuilders()) {
+      forkBuilder.validate();
+    }
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -588,7 +595,15 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public class AltairBuilder {
+  public interface ForkBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
+    ForkType build(ParentType specConfig);
+
+    boolean isForkIncluded();
+
+    void validate();
+  }
+
+  public class AltairBuilder implements ForkBuilder<SpecConfig, SpecConfigAltair> {
     // Updated penalties
     private UInt64 inactivityPenaltyQuotientAltair;
     private Integer minSlashingPenaltyQuotientAltair;
@@ -612,7 +627,8 @@ public class SpecConfigBuilder {
 
     private AltairBuilder() {}
 
-    SpecConfigAltair build(final SpecConfig specConfig) {
+    @Override
+    public SpecConfigAltair build(final SpecConfig specConfig) {
       return new SpecConfigAltairImpl(
           specConfig,
           inactivityPenaltyQuotientAltair,
@@ -628,7 +644,13 @@ public class SpecConfigBuilder {
           updateTimeout);
     }
 
-    void validate() {
+    @Override
+    public boolean isForkIncluded() {
+      return true;
+    }
+
+    @Override
+    public void validate() {
       validateConstant("inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
       validateConstant("minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
       validateConstant(
@@ -726,7 +748,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public class BellatrixBuilder {
+  public class BellatrixBuilder implements ForkBuilder<SpecConfigAltair, SpecConfigBellatrix> {
     // Fork
     private Bytes4 bellatrixForkVersion;
     private UInt64 bellatrixForkEpoch;
@@ -748,11 +770,13 @@ public class SpecConfigBuilder {
 
     private BellatrixBuilder() {}
 
-    public boolean isBellatrixIncluded() {
+    @Override
+    public boolean isForkIncluded() {
       return bellatrixForkEpoch != null;
     }
 
-    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
+    @Override
+    public SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
       return new SpecConfigBellatrixImpl(
           specConfig,
           bellatrixForkVersion,
@@ -770,7 +794,8 @@ public class SpecConfigBuilder {
           safeSlotsToImportOptimistically);
     }
 
-    void validate() {
+    @Override
+    public void validate() {
       validateConstant("bellatrixForkVersion", bellatrixForkVersion);
       validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
       validateConstant("inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
@@ -890,7 +915,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public class CapellaBuilder {
+  public class CapellaBuilder implements ForkBuilder<SpecConfigBellatrix, SpecConfigCapella> {
     private Bytes4 capellaForkVersion;
     private UInt64 capellaForkEpoch;
 
@@ -900,7 +925,8 @@ public class SpecConfigBuilder {
 
     private CapellaBuilder() {}
 
-    SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
+    @Override
+    public SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
       return new SpecConfigCapellaImpl(
           specConfig,
           capellaForkVersion,
@@ -909,7 +935,8 @@ public class SpecConfigBuilder {
           maxWithdrawalsPerPayload);
     }
 
-    public boolean isCapellaIncluded() {
+    @Override
+    public boolean isForkIncluded() {
       return capellaForkEpoch != null;
     }
 
@@ -935,6 +962,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
+    @Override
     public void validate() {
       validateConstant("capellaForkVersion", capellaForkVersion);
       validateConstant("capellaForkEpoch", capellaForkEpoch);
@@ -943,7 +971,7 @@ public class SpecConfigBuilder {
     }
   }
 
-  public class Eip4844Builder {
+  public class Eip4844Builder implements ForkBuilder<SpecConfigCapella, SpecConfigEip4844> {
     private Bytes4 eip4844ForkVersion;
     private UInt64 eip4844ForkEpoch;
 
@@ -952,12 +980,14 @@ public class SpecConfigBuilder {
 
     private Eip4844Builder() {}
 
-    SpecConfigEip4844 build(final SpecConfigCapella specConfig) {
+    @Override
+    public SpecConfigEip4844 build(final SpecConfigCapella specConfig) {
       return new SpecConfigEip4844Impl(
           specConfig, eip4844ForkVersion, eip4844ForkEpoch, fieldElementsPerBlob, maxBlobsPerBlock);
     }
 
-    public boolean isEip4844Included() {
+    @Override
+    public boolean isForkIncluded() {
       return eip4844ForkEpoch != null;
     }
 
@@ -983,6 +1013,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
+    @Override
     public void validate() {
       validateConstant("eip4844ForkEpoch", eip4844ForkEpoch);
       validateConstant("eip4844ForkVersion", eip4844ForkVersion);
