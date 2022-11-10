@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -176,5 +177,11 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   @Override
   public boolean isOptimistic() {
     return true;
+  }
+
+  @Override
+  public void processBlsToExecutionChange(
+      final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange) {
+    throw new UnsupportedOperationException("No BlsToExecutionChange in Bellatrix.");
   }
 }
