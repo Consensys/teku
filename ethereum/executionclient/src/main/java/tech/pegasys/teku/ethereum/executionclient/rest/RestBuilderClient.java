@@ -37,9 +37,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidBellatrix;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -53,8 +52,7 @@ public class RestBuilderClient implements BuilderClient {
       cachedBuilderApiExecutionPayloadResponseType = new ConcurrentHashMap<>();
 
   private final Map<
-          SpecMilestone,
-          DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidBellatrix>>>
+          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>>
       cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
   private final RestClient restClient;
@@ -101,14 +99,14 @@ public class RestBuilderClient implements BuilderClient {
 
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
 
-    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBidBellatrix>>
+    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
         responseTypeDefinition =
             cachedBuilderApiSignedBuilderBidResponseType.computeIfAbsent(
                 milestone,
                 __ -> {
                   final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
                       getSchemaDefinitionsBellatrix(milestone);
-                  final SignedBuilderBidSchemaBellatrix signedBuilderBidSchema =
+                  final SignedBuilderBidSchema signedBuilderBidSchema =
                       schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
                   return BuilderApiResponse.createTypeDefinition(
                       signedBuilderBidSchema.getJsonTypeDefinition());

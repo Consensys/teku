@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
@@ -43,18 +43,22 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
   private final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema;
-  private final BuilderBidSchemaBellatrix builderBidSchema;
-  private final SignedBuilderBidSchemaBellatrix signedBuilderBidSchema;
+  private final BuilderBidSchema builderBidSchema;
+  private final SignedBuilderBidSchema signedBuilderBidSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
+    this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(
             specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyBellatrix");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaBellatrixImpl.create(
-            specConfig, getAttesterSlashingSchema(), "BlindedBlockBodyBellatrix");
+            specConfig,
+            getAttesterSlashingSchema(),
+            "BlindedBlockBodyBellatrix",
+            executionPayloadHeaderSchema);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockBellatrix");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockBellatrix");
@@ -62,9 +66,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockBellatrix");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
-    this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchemaBellatrix(specConfig);
-    this.builderBidSchema = new BuilderBidSchemaBellatrix(executionPayloadHeaderSchema);
-    this.signedBuilderBidSchema = new SignedBuilderBidSchemaBellatrix(builderBidSchema);
+    this.builderBidSchema =
+        new BuilderBidSchema(
+            "BuilderBidBellatrix", blindedBeaconBlockBodySchema.getExecutionPayloadHeaderSchema());
+    this.signedBuilderBidSchema =
+        new SignedBuilderBidSchema("SignedBuilderBidBellatrix", builderBidSchema);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -120,11 +126,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return executionPayloadHeaderSchema;
   }
 
-  public BuilderBidSchemaBellatrix getBuilderBidSchema() {
+  public BuilderBidSchema getBuilderBidSchema() {
     return builderBidSchema;
   }
 
-  public SignedBuilderBidSchemaBellatrix getSignedBuilderBidSchema() {
+  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchema;
   }
 

@@ -89,13 +89,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -476,25 +477,52 @@ public final class DataStructureUtil {
   public ExecutionPayloadHeader randomExecutionPayloadHeaderBellatrix() {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
-        .getExecutionPayloadHeaderSchema()
+    final ExecutionPayloadHeaderSchema<?> schema =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema();
+    return schema
         .toVersionBellatrix()
-        .orElseThrow()
-        .create(
-            randomBytes32(),
-            randomBytes20(),
-            randomBytes32(),
-            randomBytes32(),
-            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
-            randomBytes32(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
-            randomUInt256(),
-            randomBytes32(),
-            randomBytes32());
+        .map(
+            schemaBellatrix ->
+                (ExecutionPayloadHeader)
+                    schemaBellatrix.create(
+                        randomBytes32(),
+                        randomBytes20(),
+                        randomBytes32(),
+                        randomBytes32(),
+                        randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+                        randomBytes32(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+                        randomUInt256(),
+                        randomBytes32(),
+                        randomBytes32()))
+        .or(
+            () ->
+                schema
+                    .toVersionCapella()
+                    .map(
+                        schemaCapella ->
+                            schemaCapella.create(
+                                randomBytes32(),
+                                randomBytes20(),
+                                randomBytes32(),
+                                randomBytes32(),
+                                randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+                                randomBytes32(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+                                randomUInt256(),
+                                randomBytes32(),
+                                randomBytes32(),
+                                randomBytes32())))
+        .orElseThrow();
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeaderCapella() {
@@ -522,17 +550,15 @@ public final class DataStructureUtil {
             randomBytes32());
   }
 
-  public BuilderBidBellatrix randomBuilderBid() {
+  public BuilderBid randomBuilderBid() {
     return randomBuilderBid(randomPublicKey());
   }
 
-  public BuilderBidBellatrix randomBuilderBid(final BLSPublicKey builderPublicKey) {
+  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getBuilderBidSchema()
         .create(
-            randomExecutionPayloadHeaderBellatrix().toVersionBellatrix().orElseThrow(),
-            randomUInt256(),
-            builderPublicKey);
+            randomExecutionPayloadHeader(spec.getGenesisSpec()), randomUInt256(), builderPublicKey);
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
