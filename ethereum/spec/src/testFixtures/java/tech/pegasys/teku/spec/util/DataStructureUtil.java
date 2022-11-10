@@ -1645,7 +1645,7 @@ public final class DataStructureUtil {
   public Withdrawal randomWithdrawal() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
-        .create(randomUInt256(), randomUInt64(), randomBytes20(), randomUInt64());
+        .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
   }
 
   public BlsToExecutionChange randomBlsToExecutionChange() {
