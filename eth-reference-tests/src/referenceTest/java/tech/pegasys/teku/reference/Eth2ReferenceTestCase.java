@@ -70,6 +70,13 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .build();
 
+  private static final ImmutableMap<String, TestExecutor> CAPELLA_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
@@ -78,12 +85,19 @@ public abstract class Eth2ReferenceTestCase {
     TestExecutor testExecutor = null;
 
     // Look for fork-specific tests first
-    if (testDefinition.getFork().equals(TestFork.PHASE0)) {
-      testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
-    } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
-      testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-    } else if (testDefinition.getFork().equals(TestFork.BELLATRIX)) {
-      testExecutor = BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
+    switch (testDefinition.getFork()) {
+      case TestFork.PHASE0:
+        testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
+        break;
+      case TestFork.ALTAIR:
+        testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+        break;
+      case TestFork.BELLATRIX:
+        testExecutor = BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
+        break;
+      case TestFork.CAPELLA:
+        testExecutor = CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
+        break;
     }
 
     // Look for a common test type if no specific override present

@@ -13,37 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class BuilderBidSchema
-    extends ContainerSchema3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
-  public BuilderBidSchema(final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
-    super(
-        "BuilderBid",
-        namedSchema("header", executionPayloadHeaderSchema),
-        namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
-  }
-
-  public BuilderBid create(
-      final ExecutionPayloadHeader executionPayloadHeader,
-      final UInt256 value,
-      final BLSPublicKey publicKey) {
-    return new BuilderBid(
-        this, executionPayloadHeader, SszUInt256.of(value), new SszPublicKey(publicKey));
-  }
+public interface BuilderBidSchema<T extends BuilderBid> extends SszContainerSchema<T> {
 
   @Override
-  public BuilderBid createFromBackingNode(TreeNode node) {
-    return new BuilderBid(this, node);
-  }
+  T createFromBackingNode(TreeNode node);
 }

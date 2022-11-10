@@ -94,7 +94,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
   public static SpecLogicBellatrix create(
       final SpecConfigBellatrix config, final SchemaDefinitionsBellatrix schemaDefinitions) {
     // Helpers
-    final Predicates predicates = new Predicates();
+    final Predicates predicates = new Predicates(config);
     final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);

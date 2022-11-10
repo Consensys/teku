@@ -52,7 +52,7 @@
       "$ref" : "#/components/schemas/SyncAggregate"
     },
     "execution_payload" : {
-      "$ref" : "#/components/schemas/ExecutionPayload"
+      "$ref" : "#/components/schemas/ExecutionPayloadBellatrix"
     }
   }
 }

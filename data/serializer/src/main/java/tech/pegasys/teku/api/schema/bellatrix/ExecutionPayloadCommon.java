@@ -134,23 +134,6 @@ public abstract class ExecutionPayloadCommon {
     this.blockHash = blockHash;
   }
 
-  public ExecutionPayloadCommon(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.parentHash = executionPayload.getParentHash();
-    this.feeRecipient = executionPayload.getFeeRecipient();
-    this.stateRoot = executionPayload.getStateRoot();
-    this.receiptsRoot = executionPayload.getReceiptsRoot();
-    this.logsBloom = executionPayload.getLogsBloom();
-    this.prevRandao = executionPayload.getPrevRandao();
-    this.blockNumber = executionPayload.getBlockNumber();
-    this.gasLimit = executionPayload.getGasLimit();
-    this.gasUsed = executionPayload.getGasUsed();
-    this.timestamp = executionPayload.getTimestamp();
-    this.extraData = executionPayload.getExtraData();
-    this.baseFeePerGas = executionPayload.getBaseFeePerGas();
-    this.blockHash = executionPayload.getBlockHash();
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

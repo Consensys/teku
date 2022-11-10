@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -89,7 +91,7 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
                   deposits,
                   voluntaryExits,
                   syncAggregate,
-                  header,
+                  (ExecutionPayloadHeaderCapellaImpl) header.toVersionCapella().orElseThrow(),
                   blsToExecutionChanges));
     }
     return executionPayload.thenApply(
@@ -105,7 +107,7 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
                 deposits,
                 voluntaryExits,
                 syncAggregate,
-                payload,
+                (ExecutionPayloadCapellaImpl) payload.toVersionCapella().orElseThrow(),
                 blsToExecutionChanges));
   }
 }

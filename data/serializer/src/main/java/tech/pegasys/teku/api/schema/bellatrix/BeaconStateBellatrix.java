@@ -27,7 +27,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -35,8 +35,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 
 public class BeaconStateBellatrix extends BeaconStateAltair {
+
   @JsonProperty("latest_execution_payload_header")
-  public final ExecutionPayloadHeader latestExecutionPayloadHeader;
+  public ExecutionPayloadHeaderBellatrix latestExecutionPayloadHeader;
 
   @JsonCreator
   public BeaconStateBellatrix(
@@ -65,7 +66,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
+          final ExecutionPayloadHeaderBellatrix latestExecutionPayloadHeader) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -99,21 +100,20 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
     state
         .toMutableVersionBellatrix()
         .ifPresent(
-            beaconStateBellatrix -> {
-              applyBellatrixFields(
-                  beaconStateBellatrix,
-                  BeaconStateSchemaBellatrix.required(state.getBeaconStateSchema())
-                      .getCurrentSyncCommitteeSchema(),
-                  BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
-                      .getLastExecutionPayloadHeaderSchema(),
-                  this);
-            });
+            beaconStateBellatrix ->
+                applyBellatrixFields(
+                    beaconStateBellatrix,
+                    BeaconStateSchemaBellatrix.required(state.getBeaconStateSchema())
+                        .getCurrentSyncCommitteeSchema(),
+                    BeaconStateSchemaBellatrix.required(beaconStateBellatrix.getBeaconStateSchema())
+                        .getLastExecutionPayloadHeaderSchema(),
+                    this));
   }
 
   public static void applyBellatrixFields(
       MutableBeaconStateBellatrix state,
       SyncCommitteeSchema syncCommitteeSchema,
-      ExecutionPayloadHeaderSchema executionPayloadHeaderSchema,
+      ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema,
       BeaconStateBellatrix instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
@@ -141,7 +141,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
             .BeaconStateBellatrix
         bellatrix = beaconState.toVersionBellatrix().orElseThrow();
     this.latestExecutionPayloadHeader =
-        new ExecutionPayloadHeader(bellatrix.getLatestExecutionPayloadHeader());
+        new ExecutionPayloadHeaderBellatrix(bellatrix.getLatestExecutionPayloadHeader());
   }
 
   @Override

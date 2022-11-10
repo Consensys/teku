@@ -30,8 +30,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -54,7 +55,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayload>
+        ExecutionPayloadBellatrix>
     implements BeaconBlockBodySchemaBellatrix<BeaconBlockBodyBellatrixImpl> {
 
   private BeaconBlockBodySchemaBellatrixImpl(
@@ -68,7 +69,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
       NamedSchema<SszList<Deposit>> depositsSchema,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       NamedSchema<SyncAggregate> syncAggregateSchema,
-      NamedSchema<ExecutionPayload> executionPayloadSchema) {
+      NamedSchema<ExecutionPayloadBellatrix> executionPayloadSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -87,6 +88,8 @@ public class BeaconBlockBodySchemaBellatrixImpl
       final SpecConfigBellatrix specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final String containerName) {
+    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
+        new ExecutionPayloadSchemaBellatrix(specConfig);
     return new BeaconBlockBodySchemaBellatrixImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -113,7 +116,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchema(specConfig)));
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, executionPayloadSchemaBellatrix));
   }
 
   @Override
@@ -171,8 +174,8 @@ public class BeaconBlockBodySchemaBellatrixImpl
   }
 
   @Override
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema) getFieldSchema9();
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema<?>) getFieldSchema9();
   }
 
   @Override

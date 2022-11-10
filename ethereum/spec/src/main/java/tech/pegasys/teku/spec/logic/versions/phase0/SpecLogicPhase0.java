@@ -76,7 +76,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   public static SpecLogicPhase0 create(
       final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
     // Helpers
-    final Predicates predicates = new Predicates();
+    final Predicates predicates = new Predicates(config);
     final MiscHelpers miscHelpers = new MiscHelpers(config);
     final BeaconStateAccessors beaconStateAccessors =
         new BeaconStateAccessorsPhase0(config, predicates, miscHelpers);
