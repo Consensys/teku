@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StorageConfiguration {
 
@@ -39,7 +38,6 @@ public class StorageConfiguration {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
-  private final boolean asyncStorageEnabled;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -51,7 +49,6 @@ public class StorageConfiguration {
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
-      final boolean asyncStorageEnabled,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -62,7 +59,6 @@ public class StorageConfiguration {
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.blockMigrationBatchSize = blockMigrationBatchSize;
     this.blockMigrationBatchDelay = blockMigrationBatchDelay;
-    this.asyncStorageEnabled = asyncStorageEnabled;
     this.spec = spec;
   }
 
@@ -106,10 +102,6 @@ public class StorageConfiguration {
     return blockMigrationBatchDelay;
   }
 
-  public boolean isAsyncStorageEnabled() {
-    return asyncStorageEnabled;
-  }
-
   public Spec getSpec() {
     return spec;
   }
@@ -126,7 +118,6 @@ public class StorageConfiguration {
     private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
     private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
     private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
-    private boolean asyncStorageEnabled = StoreConfig.DEFAULT_ASYNC_STORAGE_ENABLED;
 
     private Builder() {}
 
@@ -180,11 +171,6 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder asyncStorageEnabled(final boolean asyncStorageEnabled) {
-      this.asyncStorageEnabled = asyncStorageEnabled;
-      return this;
-    }
-
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -196,7 +182,6 @@ public class StorageConfiguration {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
-          asyncStorageEnabled,
           spec);
     }
 

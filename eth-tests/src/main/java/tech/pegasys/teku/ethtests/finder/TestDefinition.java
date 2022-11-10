@@ -83,6 +83,9 @@ public class TestDefinition {
       case TestFork.BELLATRIX:
         highestSupportedMilestone = SpecMilestone.BELLATRIX;
         break;
+      case TestFork.CAPELLA:
+        highestSupportedMilestone = SpecMilestone.CAPELLA;
+        break;
       default:
         throw new IllegalArgumentException("Unknown fork: " + fork);
     }

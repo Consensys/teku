@@ -62,14 +62,14 @@ public class DepositTreeSnapshot
     }
   }
 
-  private static final DepositTreeSnapshotSchema SCHEMA = new DepositTreeSnapshotSchema();
+  public static final DepositTreeSnapshotSchema SSZ_SCHEMA = new DepositTreeSnapshotSchema();
 
   public static DeserializableTypeDefinition<DepositTreeSnapshot> getJsonTypeDefinition() {
-    return SCHEMA.getJsonTypeDefinition();
+    return SSZ_SCHEMA.getJsonTypeDefinition();
   }
 
   public static DepositTreeSnapshot fromBytes(final Bytes bytes) {
-    return SCHEMA.sszDeserialize(bytes);
+    return SSZ_SCHEMA.sszDeserialize(bytes);
   }
 
   public DepositTreeSnapshot(
@@ -79,8 +79,8 @@ public class DepositTreeSnapshot
       final Bytes32 executionBlockHash,
       final UInt64 executionBlockHeight) {
     super(
-        SCHEMA,
-        finalized.stream().map(SszBytes32::of).collect(SCHEMA.getFinalizedSchema().collector()),
+        SSZ_SCHEMA,
+        finalized.stream().map(SszBytes32::of).collect(SSZ_SCHEMA.getFinalizedSchema().collector()),
         SszBytes32.of(depositRoot),
         SszUInt64.of(UInt64.valueOf(depositCount)),
         SszBytes32.of(executionBlockHash),

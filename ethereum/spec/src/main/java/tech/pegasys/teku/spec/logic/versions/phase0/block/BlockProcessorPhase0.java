@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -122,5 +123,11 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public boolean isOptimistic() {
     return false;
+  }
+
+  @Override
+  public void processBlsToExecutionChange(
+      final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange) {
+    throw new UnsupportedOperationException("No BlsToExecutionChange in phase0");
   }
 }

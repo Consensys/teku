@@ -392,9 +392,10 @@ class RestBuilderClientTest {
   }
 
   private void verifyExecutionPayloadResponse(ExecutionPayload actual) {
-    DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>> responseTypeDefinition =
-        BuilderApiResponse.createTypeDefinition(
-            schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
+    DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>
+        responseTypeDefinition =
+            BuilderApiResponse.createTypeDefinition(
+                schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
     try {
       ExecutionPayload expected =
           JsonUtil.parse(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE, responseTypeDefinition).getData();

@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -54,7 +54,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadHeader>
+        ExecutionPayloadHeaderBellatrix>
     implements BlindedBeaconBlockBodySchemaBellatrix<BlindedBeaconBlockBodyBellatrixImpl> {
 
   private BlindedBeaconBlockBodySchemaBellatrixImpl(
@@ -68,7 +68,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
       NamedSchema<SszList<Deposit>> depositsSchema,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       NamedSchema<SyncAggregate> syncAggregateSchema,
-      NamedSchema<ExecutionPayloadHeader> executionPayloadHeaderSchema) {
+      NamedSchema<ExecutionPayloadHeaderBellatrix> executionPayloadHeaderSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -86,7 +86,8 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   public static BlindedBeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
-      final String containerName) {
+      final String containerName,
+      final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema) {
     return new BlindedBeaconBlockBodySchemaBellatrixImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -113,9 +114,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchema(specConfig)));
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD_HEADER, executionPayloadHeaderSchema));
   }
 
   @Override
@@ -173,8 +172,8 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchema) getFieldSchema9();
+  public ExecutionPayloadHeaderSchemaBellatrix getExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaBellatrix) getFieldSchema9();
   }
 
   @Override

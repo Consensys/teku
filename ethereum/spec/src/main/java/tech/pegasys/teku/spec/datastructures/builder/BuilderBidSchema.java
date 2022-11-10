@@ -17,7 +17,9 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -25,11 +27,17 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
 public class BuilderBidSchema
-    extends ContainerSchema3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
-  public BuilderBidSchema(final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema) {
+    extends ContainerSchema3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey>
+    implements SszContainerSchema<BuilderBid> {
+
+  public BuilderBidSchema(
+      final String schemaName,
+      final ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>
+          executionPayloadHeaderSchema) {
     super(
-        "BuilderBid",
-        namedSchema("header", executionPayloadHeaderSchema),
+        schemaName,
+        namedSchema(
+            "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }

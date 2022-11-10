@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
@@ -56,5 +57,10 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
       throw InvalidDepositEventsException.expectedDepositAtIndex(
           expectedFirstDepositIndex, event.getFirstDepositIndex());
     }
+  }
+
+  @Override
+  public void onInitialDepositTreeSnapshot(DepositTreeSnapshot depositTreeSnapshot) {
+    delegate.onInitialDepositTreeSnapshot(depositTreeSnapshot);
   }
 }

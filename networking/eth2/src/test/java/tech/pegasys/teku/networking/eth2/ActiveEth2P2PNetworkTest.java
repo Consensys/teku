@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -227,6 +229,30 @@ public class ActiveEth2P2PNetworkTest {
 
     network.onSyncStateChanged(true, false);
     verify(gossipForkManager, times(2)).onOptimisticHeadChanged(false);
+  }
+
+  @Test
+  void onSyncStateChanged_shouldNotResultInMultipleSubscriptions() {
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+
+    assertThat(network.start()).isCompleted();
+    // Won't start gossip as chain head is too old
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    network.onSyncStateChanged(true, false);
+    verify(gossipForkManager).configureGossipForEpoch(any());
+    assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
+    verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
+
+    network.onSyncStateChanged(false, false);
+    verify(gossipForkManager).stopGossip();
+
+    network.onSyncStateChanged(true, false);
+    verify(gossipForkManager, times(2)).configureGossipForEpoch(any());
+    // Can't unsubscribe from these so should only subscribe once
+    assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
+    verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
   }
 
   @SuppressWarnings("unchecked")

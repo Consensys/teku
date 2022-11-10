@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -520,6 +521,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .flatMap(this::getFinalizedBlockAtSlot);
   }
 
+  @Override
+  public Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot() {
+    return db.get(schema.getVariableFinalizedDepositSnapshot());
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined>
       implements CombinedUpdaterBlinded, CombinedUpdaterUnblinded, CombinedUpdaterCommon {
     private final KvStoreTransaction transaction;
@@ -650,6 +656,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
+      transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
+    }
+
+    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();
@@ -771,6 +782,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       } else {
         transaction.delete(schema.getOptimisticTransitionBlockSlot());
       }
+    }
+
+    @Override
+    public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
+      transaction.put(schema.getVariableFinalizedDepositSnapshot(), finalizedDepositSnapshot);
     }
   }
 }

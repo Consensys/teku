@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -78,6 +79,8 @@ public interface SchemaCombined extends Schema {
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
 
   KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
+
+  KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 

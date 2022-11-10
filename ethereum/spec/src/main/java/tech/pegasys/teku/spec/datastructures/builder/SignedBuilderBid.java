@@ -14,11 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.builder;
 
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, SszSignature> {
+public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, SszSignature>
+    implements SszContainer {
 
   SignedBuilderBid(SignedBuilderBidSchema type, TreeNode backingNode) {
     super(type, backingNode);

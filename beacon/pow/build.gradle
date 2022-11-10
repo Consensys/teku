@@ -11,6 +11,8 @@ dependencies {
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:serviceutils')
+  implementation project(':infrastructure:http')
+  implementation project(':infrastructure:io')
   implementation project(':storage:api')
 
   api 'org.web3j:core'

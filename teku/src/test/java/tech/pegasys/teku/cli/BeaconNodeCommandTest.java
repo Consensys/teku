@@ -514,12 +514,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
                     .maxKnownNodeCacheSize(100_000))
         .data(b -> b.dataBasePath(dataPath))
-        .p2p(
-            b ->
-                b.targetSubnetSubscriberCount(2)
-                    .peerRateLimit(500)
-                    .peerRequestLimit(50)
-                    .batchVerifyAttestationSignatures(true))
+        .p2p(b -> b.targetSubnetSubscriberCount(2).peerRateLimit(500).peerRequestLimit(50))
         .discovery(
             d ->
                 d.isDiscoveryEnabled(false)

@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.teku.ethereum.pow.api.Eth1SnapshotLoaderChannel;
+import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,7 +42,8 @@ public class Eth1DepositManager {
   private final AsyncRunner asyncRunner;
   private final ValidatingEth1EventsPublisher eth1EventsPublisher;
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
-  private final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel;
+  private final DepositSnapshotFileLoader depositSnapshotFileLoader;
+  private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -54,7 +55,8 @@ public class Eth1DepositManager {
       final AsyncRunner asyncRunner,
       final ValidatingEth1EventsPublisher eth1EventsPublisher,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
-      final Eth1SnapshotLoaderChannel eth1SnapshotLoaderChannel,
+      final DepositSnapshotFileLoader depositSnapshotFileLoader,
+      final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -64,7 +66,8 @@ public class Eth1DepositManager {
     this.asyncRunner = asyncRunner;
     this.eth1EventsPublisher = eth1EventsPublisher;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
-    this.eth1SnapshotLoaderChannel = eth1SnapshotLoaderChannel;
+    this.depositSnapshotFileLoader = depositSnapshotFileLoader;
+    this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -72,16 +75,20 @@ public class Eth1DepositManager {
   }
 
   public void start() {
-    eth1SnapshotLoaderChannel
-        .loadDepositSnapshot()
+    loadDepositSnapshot()
         .thenCompose(
-            loadSnapshotResult -> {
-              if (loadSnapshotResult.getDepositTreeSnapshot().isEmpty()) {
+            depositSnapshotLoadingResult -> {
+              if (depositSnapshotLoadingResult.getDepositTreeSnapshot().isEmpty()) {
+                LOG.debug("No deposit tree snapshot loaded, processing full replay of deposits");
                 return eth1DepositStorageChannel.replayDepositEvents();
               } else {
+                LOG.debug(
+                    "Finalized deposit tree snapshot loaded: {}",
+                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
                 eth1EventsPublisher.onInitialDepositTreeSnapshot(
-                    loadSnapshotResult.getDepositTreeSnapshot().get());
-                return SafeFuture.completedFuture(loadSnapshotResult.getReplayDepositsResult());
+                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
+                return SafeFuture.completedFuture(
+                    depositSnapshotLoadingResult.getReplayDepositsResult());
               }
             })
         .thenCompose(
@@ -101,6 +108,19 @@ public class Eth1DepositManager {
               throw new FatalServiceFailureException(getClass(), err);
             })
         .ifExceptionGetsHereRaiseABug();
+  }
+
+  private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
+    // If DepositTreeSnapshot is loaded from file, we prefer it
+    final LoadDepositSnapshotResult depositSnapshotResult =
+        depositSnapshotFileLoader.loadDepositSnapshot();
+    if (depositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
+      return SafeFuture.completedFuture(depositSnapshotResult);
+    }
+
+    LOG.debug(
+        "Deposit tree snapshot from file is not provided, trying to load it from the database");
+    return depositSnapshotStorageLoader.loadDepositSnapshot();
   }
 
   public void stop() {

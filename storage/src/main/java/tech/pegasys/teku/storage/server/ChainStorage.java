@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.exception.StorageException;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -141,6 +142,12 @@ public class ChainStorage
   public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.fromRunnable(
         () -> database.updateWeakSubjectivityState(weakSubjectivityUpdate));
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedDepositSnapshot(
+      final DepositTreeSnapshot depositTreeSnapshot) {
+    return SafeFuture.fromRunnable(() -> database.setFinalizedDepositSnapshot(depositTreeSnapshot));
   }
 
   @Override
@@ -289,5 +296,10 @@ public class ChainStorage
   @Override
   public void onVotesUpdated(final Map<UInt64, VoteTracker> votes) {
     database.storeVotes(votes);
+  }
+
+  @Override
+  public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
+    return SafeFuture.of(database::getFinalizedDepositSnapshot);
   }
 }

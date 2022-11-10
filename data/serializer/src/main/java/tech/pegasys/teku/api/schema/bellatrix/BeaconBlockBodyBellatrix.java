@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -31,12 +32,13 @@ import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
-  public final ExecutionPayload executionPayload;
+  public final ExecutionPayloadBellatrix executionPayload;
 
   @JsonCreator
   public BeaconBlockBodyBellatrix(
@@ -49,7 +51,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload") final ExecutionPayload executionPayload) {
+      @JsonProperty("execution_payload") final ExecutionPayloadBellatrix executionPayload) {
     super(
         randaoReveal,
         eth1Data,
@@ -71,7 +73,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
     super(message);
     checkNotNull(
         message.getExecutionPayload(), "Execution Payload is required for bellatrix blocks");
-    this.executionPayload = new ExecutionPayload(message.getExecutionPayload());
+    this.executionPayload = new ExecutionPayloadBellatrix(message.getExecutionPayload());
   }
 
   @Override
@@ -81,30 +83,37 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   @Override
-  public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
-    final ExecutionPayloadSchema executionPayloadSchema =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema();
+  public BeaconBlockBody asInternalBeaconBlockBody(
+      final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
+
+    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadSchema()
+            .toVersionBellatrix()
+            .orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) ->
-            builder.executionPayload(
-                () ->
-                    SafeFuture.completedFuture(
-                        executionPayloadSchema.create(
-                            executionPayload.parentHash,
-                            executionPayload.feeRecipient,
-                            executionPayload.stateRoot,
-                            executionPayload.receiptsRoot,
-                            executionPayload.logsBloom,
-                            executionPayload.prevRandao,
-                            executionPayload.blockNumber,
-                            executionPayload.gasLimit,
-                            executionPayload.gasUsed,
-                            executionPayload.timestamp,
-                            executionPayload.extraData,
-                            executionPayload.baseFeePerGas,
-                            executionPayload.blockHash,
-                            executionPayload.transactions))));
+        (builder) -> {
+          builderRef.accept(builder);
+          builder.executionPayload(
+              () ->
+                  SafeFuture.completedFuture(
+                      executionPayloadSchemaBellatrix.create(
+                          executionPayload.parentHash,
+                          executionPayload.feeRecipient,
+                          executionPayload.stateRoot,
+                          executionPayload.receiptsRoot,
+                          executionPayload.logsBloom,
+                          executionPayload.prevRandao,
+                          executionPayload.blockNumber,
+                          executionPayload.gasLimit,
+                          executionPayload.gasUsed,
+                          executionPayload.timestamp,
+                          executionPayload.extraData,
+                          executionPayload.baseFeePerGas,
+                          executionPayload.blockHash,
+                          executionPayload.transactions)));
+        });
   }
 }

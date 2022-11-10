@@ -22,7 +22,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -106,5 +108,23 @@ public class OperationSignatureVerifier {
             Domain.VOLUNTARY_EXIT, exit.getEpoch(), fork, state.getGenesisValidatorsRoot());
     final Bytes signingRoot = miscHelpers.computeSigningRoot(exit, domain);
     return signatureVerifier.verify(maybePublicKey.get(), signingRoot, signedExit.getSignature());
+  }
+
+  public boolean verifyBlsToExecutionChangeSignature(
+      final Fork fork,
+      final BeaconState state,
+      final SignedBlsToExecutionChange signedBlsToExecutionChange,
+      final BLSSignatureVerifier signatureVerifier) {
+    final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
+
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(
+            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE,
+            miscHelpers.computeEpochAtSlot(state.getSlot()),
+            fork,
+            state.getGenesisValidatorsRoot());
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(addressChange, domain);
+    return signatureVerifier.verify(
+        addressChange.getFromBlsPubkey(), signingRoot, signedBlsToExecutionChange.getSignature());
   }
 }

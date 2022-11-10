@@ -333,7 +333,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void createAttestationData_WhenNone_ReturnsEmpty() {
-    when(apiClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
+    when(typeDefClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
 
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
 
@@ -343,11 +343,9 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void createAttestationData_WhenFound_ReturnsAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.AttestationData schemaAttestationData =
-        new tech.pegasys.teku.api.schema.AttestationData(attestation.getData());
 
-    when(apiClient.createAttestationData(eq(UInt64.ONE), eq(0)))
-        .thenReturn(Optional.of(schemaAttestationData));
+    when(typeDefClient.createAttestationData(UInt64.ONE, 0))
+        .thenReturn(Optional.of(attestation.getData()));
 
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
 

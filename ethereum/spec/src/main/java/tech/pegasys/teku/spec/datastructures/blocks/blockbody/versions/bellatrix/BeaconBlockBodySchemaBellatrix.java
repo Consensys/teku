@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 public interface BeaconBlockBodySchemaBellatrix<T extends BeaconBlockBodyBellatrix>
     extends BeaconBlockBodySchemaAltair<T> {
 
-  ExecutionPayloadSchema getExecutionPayloadSchema();
+  ExecutionPayloadSchema<?> getExecutionPayloadSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
