@@ -321,7 +321,7 @@ public class DoppelgangerDetectionServiceTest {
 
   private String performingDoppelgangerCheckLog(int epoch, int slot) {
     return String.format(
-        "Performing a validators doppelganger check for epoch %d, slot %d.", epoch, slot);
+        "Performing a validators doppelganger check for epoch %d, slot %d", epoch, slot);
   }
 
   private String noDoppelgangerLog(int epoch, int slot) {

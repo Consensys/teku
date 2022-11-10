@@ -130,7 +130,7 @@ public class DoppelgangerDetectionService extends Service {
               }
 
               LOGGER.info(
-                  "Performing a validators doppelganger check for epoch {}, slot {}.",
+                  "Performing a validators doppelganger check for epoch {}, slot {}",
                   currentEpoch,
                   currentSlot);
 
