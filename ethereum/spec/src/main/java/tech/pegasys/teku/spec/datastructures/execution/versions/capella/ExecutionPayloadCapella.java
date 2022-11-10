@@ -19,6 +19,16 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface ExecutionPayloadCapella extends ExecutionPayload {
 
+  static ExecutionPayloadCapella required(final ExecutionPayload payload) {
+    return payload
+        .toVersionCapella()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected capella execution payload but got "
+                        + payload.getClass().getSimpleName()));
+  }
+
   SszList<Withdrawal> getWithdrawals();
 
   @Override

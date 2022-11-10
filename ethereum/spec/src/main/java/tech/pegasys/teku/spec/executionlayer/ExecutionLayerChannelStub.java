@@ -211,6 +211,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         schemaDefinitionsBellatrix
             .get()
             .getExecutionPayloadSchema()
+            .toVersionBellatrix()
+            .orElseThrow()
             .create(
                 headAndAttrs.head,
                 payloadAttributes.getFeeRecipient(),

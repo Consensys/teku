@@ -109,6 +109,8 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
         schema ->
             schema
                 .getExecutionPayloadSchema()
+                .toVersionBellatrix()
+                .orElseThrow()
                 .create(
                     parentHash,
                     feeRecipient,
