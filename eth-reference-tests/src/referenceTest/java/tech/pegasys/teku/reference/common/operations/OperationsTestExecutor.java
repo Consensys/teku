@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -64,7 +66,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     VOLUNTARY_EXIT,
     ATTESTATION,
     SYNC_AGGREGATE,
-    EXECUTION_PAYLOAD
+    EXECUTION_PAYLOAD,
+    BLS_TO_EXECUTION_CHANGE
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -99,6 +102,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/execution_payload",
               new OperationsTestExecutor<>(
                   "execution_payload.ssz_snappy", Operation.EXECUTION_PAYLOAD))
+          .put(
+              "operations/bls_to_execution_change",
+              new OperationsTestExecutor<>(
+                  "address_change.ssz_snappy", Operation.BLS_TO_EXECUTION_CHANGE))
           .build();
 
   private final String dataFileName;
@@ -289,6 +296,19 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             Optional.of(
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
+      case BLS_TO_EXECUTION_CHANGE:
+        final SchemaDefinitionsCapella schemaDefinitionsCapella =
+            testDefinition.getSpec().getGenesisSchemaDefinitions().toVersionCapella().orElseThrow();
+        final SignedBlsToExecutionChange blsToExecutionChange =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                schemaDefinitionsCapella.getSignedBlsToExecutionChangeSchema());
+        processor.processBlsToExecutionChange(state, blsToExecutionChange);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "Operation " + operation + " not implemented in OperationTestExecutor");
     }
   }
 
@@ -336,6 +356,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case ATTESTATION:
       case SYNC_AGGREGATE:
       case EXECUTION_PAYLOAD:
+      case BLS_TO_EXECUTION_CHANGE:
         // Not yet testing inclusion rules
         break;
     }

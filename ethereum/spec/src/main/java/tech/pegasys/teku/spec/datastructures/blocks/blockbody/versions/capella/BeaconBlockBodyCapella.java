@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
@@ -32,6 +33,9 @@ public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
 
   @Override
   BeaconBlockBodySchemaCapella<?> getSchema();
+
+  @Override
+  ExecutionPayloadCapella getExecutionPayload();
 
   @Override
   default Optional<BeaconBlockBodyCapella> toVersionCapella() {

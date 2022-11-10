@@ -24,6 +24,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
@@ -54,16 +58,19 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
 
   private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
+  private final BuilderBidSchema builderBidSchemaCapella;
+  private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
 
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
-    this.executionPayloadHeaderSchemaCapella = new ExecutionPayloadHeaderSchemaCapella(specConfig);
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
     this.withdrawalSchema = new WithdrawalSchema();
 
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
+    this.executionPayloadHeaderSchemaCapella =
+        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
@@ -83,6 +90,10 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockCapella");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
+    this.builderBidSchemaCapella =
+        new BuilderBidSchema("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
+    this.signedBuilderBidSchemaCapella =
+        new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
@@ -130,11 +141,13 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     return signedBlindedBeaconBlockSchema;
   }
 
-  public ExecutionPayloadSchemaCapella getExecutionPayloadSchemaCapella() {
+  @Override
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     return executionPayloadSchemaCapella;
   }
 
-  public ExecutionPayloadHeaderSchemaCapella getExecutionPayloadHeaderSchemaCapella() {
+  @Override
+  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchemaCapella;
   }
 
@@ -148,6 +161,16 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public SignedBlsToExecutionChangeSchema getSignedBlsToExecutionChangeSchema() {
     return signedBlsToExecutionChangeSchema;
+  }
+
+  @Override
+  public BuilderBidSchema getBuilderBidSchema() {
+    return builderBidSchemaCapella;
+  }
+
+  @Override
+  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
+    return signedBuilderBidSchemaCapella;
   }
 
   @Override

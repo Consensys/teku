@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,7 +29,7 @@ class WithdrawalTest {
       new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
   private final WithdrawalSchema withdrawalSchema = new WithdrawalSchema();
 
-  private final UInt256 index = dataStructureUtil.randomUInt256();
+  private final UInt64 index = dataStructureUtil.randomUInt64();
   private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();
   private final Bytes20 address = dataStructureUtil.randomBytes20();
   private final UInt64 amount = dataStructureUtil.randomUInt64();

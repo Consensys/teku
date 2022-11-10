@@ -86,7 +86,8 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   public static BlindedBeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
-      final String containerName) {
+      final String containerName,
+      final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema) {
     return new BlindedBeaconBlockBodySchemaBellatrixImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -113,9 +114,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaBellatrix(specConfig)));
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD_HEADER, executionPayloadHeaderSchema));
   }
 
   @Override
