@@ -98,9 +98,6 @@ public abstract class Eth2ReferenceTestCase {
       case TestFork.CAPELLA:
         testExecutor = CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
         break;
-      default:
-        throw new UnsupportedOperationException(
-            "Fork " + testDefinition.getFork() + " not implemented");
     }
 
     // Look for a common test type if no specific override present
