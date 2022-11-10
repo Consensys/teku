@@ -16,14 +16,14 @@ package tech.pegasys.teku.api.schema.capella;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 
-public class BlindedBlockCapella extends BlindedBlockBellatrix {
+public class BlindedBlockCapella extends BeaconBlockAltair {
 
   public BlindedBlockCapella(BeaconBlock message) {
     super(

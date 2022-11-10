@@ -34,11 +34,11 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
-  public final ExecutionPayload executionPayload;
+  public final ExecutionPayloadBellatrix executionPayload;
 
   @JsonCreator
   public BeaconBlockBodyBellatrix(
@@ -51,7 +51,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload") final ExecutionPayload executionPayload) {
+      @JsonProperty("execution_payload") final ExecutionPayloadBellatrix executionPayload) {
     super(
         randaoReveal,
         eth1Data,
@@ -73,7 +73,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
     super(message);
     checkNotNull(
         message.getExecutionPayload(), "Execution Payload is required for bellatrix blocks");
-    this.executionPayload = new ExecutionPayload(message.getExecutionPayload());
+    this.executionPayload = new ExecutionPayloadBellatrix(message.getExecutionPayload());
   }
 
   @Override
@@ -85,8 +85,12 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(
       final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
-    final ExecutionPayloadSchema executionPayloadSchema =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema();
+
+    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadSchema()
+            .toVersionBellatrix()
+            .orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,
@@ -95,7 +99,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
           builder.executionPayload(
               () ->
                   SafeFuture.completedFuture(
-                      executionPayloadSchema.create(
+                      executionPayloadSchemaBellatrix.create(
                           executionPayload.parentHash,
                           executionPayload.feeRecipient,
                           executionPayload.stateRoot,

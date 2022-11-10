@@ -86,7 +86,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   public static SpecLogicCapella create(
       final SpecConfigCapella config, final SchemaDefinitionsCapella schemaDefinitions) {
     // Helpers
-    final Predicates predicates = new Predicates();
+    final Predicates predicates = new Predicates(config);
     final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);

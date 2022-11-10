@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.BadRequest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -107,16 +107,6 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     final BadRequest body = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
     assertThat(body.getCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(body.getMessage()).startsWith("Epoch 1024000 is too far ahead ");
-  }
-
-  public void queryFiltersOutResults(final String queryParam, final String queryParamValue)
-      throws IOException {
-    final Response response = get("head", Map.of("index", "1024000"));
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateCommitteesResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
-    final List<EpochCommitteeResponse> data = body.data;
-    assertThat(data).isEmpty();
   }
 
   public Response get(final String stateIdString, final Map<String, String> query)

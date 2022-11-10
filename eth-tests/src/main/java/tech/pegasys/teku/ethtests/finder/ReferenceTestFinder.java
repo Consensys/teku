@@ -29,7 +29,7 @@ public class ReferenceTestFinder {
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "eth2.0-spec-tests", "tests");
   private static final List<String> SUPPORTED_FORKS =
-      List.of(TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX);
+      List.of(TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX, TestFork.CAPELLA);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {

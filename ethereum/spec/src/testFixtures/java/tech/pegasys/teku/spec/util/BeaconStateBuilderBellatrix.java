@@ -98,7 +98,7 @@ public class BeaconStateBuilderBellatrix
             schema.getInactivityScoresSchema(), defaultItemsInSSZLists);
     currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
-    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
+    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeaderBellatrix();
   }
 
   public BeaconStateBuilderBellatrix previousEpochAttestations(final SszList<SszByte> value) {

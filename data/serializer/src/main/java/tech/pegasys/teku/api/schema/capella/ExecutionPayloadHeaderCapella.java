@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.bellatrix;
+package tech.pegasys.teku.api.schema.capella;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
@@ -24,19 +24,19 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
-public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
+public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatrix {
 
-  @JsonProperty("transactions_root")
+  @JsonProperty("withdrawals_root")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 transactionsRoot;
+  public final Bytes32 withdrawalsRoot;
 
   @JsonCreator
-  public ExecutionPayloadHeader(
+  public ExecutionPayloadHeaderCapella(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
@@ -50,7 +50,8 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
       @JsonProperty("extra_data") Bytes extraData,
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash,
-      @JsonProperty("transactions_root") Bytes32 transactionsRoot) {
+      @JsonProperty("transactions_root") Bytes32 transactionsRoot,
+      @JsonProperty("withdrawals_root") Bytes32 withdrawalsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -64,13 +65,12 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
         timestamp,
         extraData,
         baseFeePerGas,
-        blockHash);
-    this.transactionsRoot = transactionsRoot;
+        blockHash,
+        transactionsRoot);
+    this.withdrawalsRoot = withdrawalsRoot;
   }
 
-  public ExecutionPayloadHeader(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
-          executionPayloadHeader) {
+  public ExecutionPayloadHeaderCapella(ExecutionPayloadHeader executionPayloadHeader) {
     super(
         executionPayloadHeader.getParentHash(),
         executionPayloadHeader.getFeeRecipient(),
@@ -84,60 +84,14 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
         executionPayloadHeader.getTimestamp(),
         executionPayloadHeader.getExtraData(),
         executionPayloadHeader.getBaseFeePerGas(),
-        executionPayloadHeader.getBlockHash());
-    this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
+        executionPayloadHeader.getBlockHash(),
+        executionPayloadHeader.getTransactionsRoot());
+    this.withdrawalsRoot = executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow();
   }
 
-  public ExecutionPayloadHeader(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    super(
-        executionPayload.getParentHash(),
-        executionPayload.getFeeRecipient(),
-        executionPayload.getStateRoot(),
-        executionPayload.getReceiptsRoot(),
-        executionPayload.getLogsBloom(),
-        executionPayload.getPrevRandao(),
-        executionPayload.getBlockNumber(),
-        executionPayload.getGasLimit(),
-        executionPayload.getGasUsed(),
-        executionPayload.getTimestamp(),
-        executionPayload.getExtraData(),
-        executionPayload.getBaseFeePerGas(),
-        executionPayload.getBlockHash());
-    this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
-  }
-
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader>
-      asInternalExecutionPayloadHeader(final Spec spec, final UInt64 slot) {
-
-    final Optional<SchemaDefinitionsBellatrix> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
-
-    if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-bellatrix slot %s", slot);
-      throw new IllegalArgumentException(message);
-    }
-
-    return maybeSchema.map(
-        schema ->
-            schema
-                .getExecutionPayloadHeaderSchema()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    blockHash,
-                    transactionsRoot));
+  @Override
+  public Optional<ExecutionPayloadHeaderCapella> toVersionCapella() {
+    return Optional.of(this);
   }
 
   @Override
@@ -151,13 +105,13 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
     if (!super.equals(o)) {
       return false;
     }
-    final ExecutionPayloadHeader that = (ExecutionPayloadHeader) o;
-    return Objects.equals(transactionsRoot, that.transactionsRoot);
+    final ExecutionPayloadHeaderCapella that = (ExecutionPayloadHeaderCapella) o;
+    return Objects.equals(withdrawalsRoot, that.withdrawalsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), transactionsRoot);
+    return Objects.hash(super.hashCode(), withdrawalsRoot);
   }
 
   @Override
@@ -177,6 +131,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
         .add("baseFeePerGas", baseFeePerGas)
         .add("blockHash", blockHash)
         .add("transactionsRoot", transactionsRoot)
+        .add("withdrawalsRoot", withdrawalsRoot)
         .toString();
   }
 }
