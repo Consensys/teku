@@ -602,7 +602,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder withNotImplementedResponse() {
-      response(SC_NOT_IMPLEMENTED, "Not Implemented", HTTP_ERROR_RESPONSE_TYPE);
+      response(SC_NOT_IMPLEMENTED, "Not implemented", HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
 
