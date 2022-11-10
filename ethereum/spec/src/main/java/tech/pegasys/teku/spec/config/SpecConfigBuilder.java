@@ -625,6 +625,9 @@ public class SpecConfigBuilder {
     private Integer minSyncCommitteeParticipants;
     private Integer updateTimeout;
 
+    // Light client
+    private Integer syncCommitteeBranchLength;
+
     private AltairBuilder() {}
 
     @Override
@@ -641,7 +644,8 @@ public class SpecConfigBuilder {
           altairForkVersion,
           altairForkEpoch,
           minSyncCommitteeParticipants,
-          updateTimeout);
+          updateTimeout,
+          syncCommitteeBranchLength);
     }
 
     @Override
@@ -662,6 +666,7 @@ public class SpecConfigBuilder {
       validateConstant("altairForkVersion", altairForkVersion);
       validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+      validateConstant("syncCommitteeBranchLength", syncCommitteeBranchLength);
       if (updateTimeout == null) {
         // Config item was added after launch so provide a default to preserve compatibility
         updateTimeout = epochsPerSyncCommitteePeriod * slotsPerEpoch;
@@ -735,6 +740,12 @@ public class SpecConfigBuilder {
     public AltairBuilder updateTimeout(final Integer updateTimeout) {
       checkNotNull(updateTimeout);
       this.updateTimeout = updateTimeout;
+      return this;
+    }
+
+    public AltairBuilder syncCommitteeBranchLength(final Integer syncCommitteeBranchLength) {
+      checkNotNull(syncCommitteeBranchLength);
+      this.syncCommitteeBranchLength = syncCommitteeBranchLength;
       return this;
     }
   }

@@ -25,9 +25,6 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 public class LightClientBootstrap
     extends Container3<LightClientBootstrap, BeaconBlockHeader, SyncCommittee, SszBytes32Vector> {
 
-  // TODO: Lift into SpecConfigAltair
-  public static final int SYNC_COMMITTEE_BRANCH_LENGTH = 5;
-
   public static class LightClientBootstrapSchema
       extends ContainerSchema3<
           LightClientBootstrap, BeaconBlockHeader, SyncCommittee, SszBytes32Vector> {
@@ -40,7 +37,7 @@ public class LightClientBootstrap
               "current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
           namedSchema(
               "current_sync_committee_branch",
-              SszBytes32VectorSchema.create(SYNC_COMMITTEE_BRANCH_LENGTH)));
+              SszBytes32VectorSchema.create(specConfigAltair.getSyncCommitteeBranchLength())));
     }
 
     public LightClientBootstrap create(
