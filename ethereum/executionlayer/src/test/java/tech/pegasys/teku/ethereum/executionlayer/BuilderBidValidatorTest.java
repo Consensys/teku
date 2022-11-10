@@ -236,6 +236,8 @@ public class BuilderBidValidatorTest {
       SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
+        .toVersionBellatrix()
+        .orElseThrow()
         .create(
             Bytes32.random(),
             Bytes20.ZERO,

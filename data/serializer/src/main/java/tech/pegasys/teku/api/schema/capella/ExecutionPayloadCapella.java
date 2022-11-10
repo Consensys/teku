@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema.capella;
 
+import static java.util.stream.Collectors.toList;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -22,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -31,13 +32,13 @@ import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implements ExecutionPayload {
 
+  @JsonProperty("withdrawals")
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
-  public final List<Bytes> withdrawals;
+  public final List<Withdrawal> withdrawals;
 
   @JsonCreator
   public ExecutionPayloadCapella(
@@ -55,7 +56,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
-      @JsonProperty("withdrawals") List<Bytes> withdrawals) {
+      @JsonProperty("withdrawals") List<Withdrawal> withdrawals) {
     super(
         parentHash,
         feeRecipient,
@@ -79,8 +80,8 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
     super(executionPayload);
     this.withdrawals =
         executionPayload.getOptionalWithdrawals().orElseThrow().stream()
-            .map(Withdrawal::sszSerialize)
-            .collect(Collectors.toList());
+            .map(Withdrawal::new)
+            .collect(toList());
   }
 
   @Override
@@ -97,9 +98,11 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
     }
 
     return maybeSchema.map(
-        schema ->
-            schema
-                .getExecutionPayloadSchemaCapella()
+        schemaDefinitionsCapella ->
+            schemaDefinitionsCapella
+                .getExecutionPayloadSchema()
+                .toVersionCapella()
+                .orElseThrow()
                 .create(
                     parentHash,
                     feeRecipient,
@@ -115,7 +118,12 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
                     baseFeePerGas,
                     blockHash,
                     transactions,
-                    withdrawals));
+                    withdrawals.stream()
+                        .map(
+                            withdrawal ->
+                                withdrawal.asInternalWithdrawal(
+                                    schemaDefinitionsCapella.getWithdrawalSchema()))
+                        .collect(toList())));
   }
 
   @Override

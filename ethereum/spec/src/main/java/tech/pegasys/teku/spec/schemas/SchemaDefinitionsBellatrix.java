@@ -26,8 +26,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.SignedBuilderBidSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -111,11 +112,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return signedBlindedBeaconBlockSchema;
   }
 
-  public ExecutionPayloadSchemaBellatrix getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchemaBellatrix) beaconBlockBodySchema.getExecutionPayloadSchema();
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
+    return beaconBlockBodySchema.getExecutionPayloadSchema();
   }
 
-  public ExecutionPayloadHeaderSchemaBellatrix getExecutionPayloadHeaderSchema() {
+  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchema;
   }
 

@@ -100,7 +100,6 @@ public class ExecutionPayloadSchemaCapella
             WITHDRAWALS,
             SszListSchema.create(
                 new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload().longValue())));
-
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -119,7 +118,7 @@ public class ExecutionPayloadSchemaCapella
       UInt256 baseFeePerGas,
       Bytes32 blockHash,
       List<Bytes> transactions,
-      List<Bytes> withdrawals) {
+      List<Withdrawal> withdrawals) {
     return new ExecutionPayloadCapellaImpl(
         this,
         SszBytes32.of(parentHash),
@@ -138,9 +137,7 @@ public class ExecutionPayloadSchemaCapella
         transactions.stream()
             .map(getTransactionSchema()::fromBytes)
             .collect(getTransactionsSchema().collector()),
-        withdrawals.stream()
-            .map(getWithdrawalSchema()::sszDeserialize)
-            .collect(getWithdrawalsSchema().collector()));
+        withdrawals.stream().collect(getWithdrawalsSchema().collector()));
   }
 
   @Override
@@ -153,7 +150,7 @@ public class ExecutionPayloadSchemaCapella
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 
-  private WithdrawalSchema getWithdrawalSchema() {
+  public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
 
@@ -178,7 +175,7 @@ public class ExecutionPayloadSchemaCapella
   }
 
   @SuppressWarnings("unchecked")
-  private SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
+  public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getFieldSchema14();
   }
 

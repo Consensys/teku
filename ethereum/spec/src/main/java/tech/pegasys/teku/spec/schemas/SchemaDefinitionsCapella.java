@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
@@ -130,11 +132,13 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     return signedBlindedBeaconBlockSchema;
   }
 
-  public ExecutionPayloadSchemaCapella getExecutionPayloadSchemaCapella() {
+  @Override
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     return executionPayloadSchemaCapella;
   }
 
-  public ExecutionPayloadHeaderSchemaCapella getExecutionPayloadHeaderSchemaCapella() {
+  @Override
+  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchemaCapella;
   }
 
