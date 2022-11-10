@@ -14,28 +14,23 @@
 package tech.pegasys.teku.validator.remote.typedef;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
-import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
@@ -44,36 +39,21 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
-@TestSpecContext(
-    milestone = SpecMilestone.BELLATRIX,
-    network = {Eth2Network.MAINNET})
-class OkHttpValidatorTypeDefClientTest {
-
-  private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
-  private static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
-
-  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
-
-  private DataStructureUtil dataStructureUtil;
-  private Spec spec;
-  private SpecMilestone specMilestone;
+@TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
+class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClientWithPreferredSsz;
-
   private RegisterValidatorsRequest sszRegisterValidatorsRequest;
 
-  private final MockWebServer mockWebServer = new MockWebServer();
-  private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
-
   @BeforeEach
+  @Override
   public void beforeEach(SpecContext specContext) throws Exception {
-    mockWebServer.start();
+    super.beforeEach(specContext);
     okHttpValidatorTypeDefClient =
         new OkHttpValidatorTypeDefClient(
             okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
@@ -82,24 +62,20 @@ class OkHttpValidatorTypeDefClientTest {
             okHttpClient, mockWebServer.url("/"), specContext.getSpec(), true);
     sszRegisterValidatorsRequest =
         new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
-    dataStructureUtil = specContext.getDataStructureUtil();
-    spec = specContext.getSpec();
-    specMilestone = specContext.getSpecMilestone();
-  }
-
-  @AfterEach
-  public void afterEach() throws Exception {
-    mockWebServer.shutdown();
   }
 
   @TestTemplate
   void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
       throws JsonProcessingException, InterruptedException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX);
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final tech.pegasys.teku.api.schema.BeaconBlock blockResponse =
+        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock).getMessage();
     final GetNewBlockResponseV2 beaconNodeResponse =
-        new GetNewBlockResponseV2(specMilestone, new BeaconBlockBellatrix(beaconBlock));
+        new GetNewBlockResponseV2(specMilestone, blockResponse);
 
     mockWebServer.enqueue(
         new MockResponse()
@@ -113,7 +89,7 @@ class OkHttpValidatorTypeDefClientTest {
             Optional.empty(),
             true);
 
-    assertThat(producedBlock).hasValue(beaconBlock);
+    assertThat(producedBlock).hasValue(signedBeaconBlock.getMessage());
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 

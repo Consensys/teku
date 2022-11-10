@@ -25,8 +25,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SignedBlsToExecutionChange {
 
+  @JsonProperty("message")
   public final BlsToExecutionChange message;
 
+  @JsonProperty("signature")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
