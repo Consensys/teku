@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.remote.apiclient;
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
@@ -71,7 +70,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
@@ -80,7 +78,6 @@ import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -204,17 +201,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(apiMethod, beaconBlock, createHandler())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
-  }
-
-  @Override
-  public Optional<AttestationData> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
-    final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
-    queryParams.put("committee_index", String.valueOf(committeeIndex));
-
-    return get(GET_ATTESTATION_DATA, queryParams, createHandler(GetAttestationDataResponse.class))
-        .map(response -> response.data);
   }
 
   @Override

@@ -27,8 +27,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
@@ -48,6 +50,7 @@ public class OkHttpValidatorTypeDefClient {
   private final GetGenesisRequest getGenesisRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
+  private final CreateAttestationDataRequest createAttestationDataRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -64,6 +67,8 @@ public class OkHttpValidatorTypeDefClient {
         new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
+    this.createAttestationDataRequest =
+        new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -99,5 +104,10 @@ public class OkHttpValidatorTypeDefClient {
   public void registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     registerValidatorsRequest.registerValidators(validatorRegistrations);
+  }
+
+  public Optional<AttestationData> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
   }
 }

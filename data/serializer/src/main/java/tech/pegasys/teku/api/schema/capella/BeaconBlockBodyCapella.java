@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 
 public class BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
-
+  @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonCreator
