@@ -206,6 +206,7 @@ public class Eth2NetworkConfiguration {
     private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
+    private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -243,6 +244,9 @@ public class Eth2NetworkConfiguration {
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
+                  builder.capellaBuilder(
+                      capellaBuilder ->
+                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                 });
       }
       // if the deposit contract was not set, default from constants
@@ -361,6 +365,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
       this.bellatrixForkEpoch = Optional.of(bellatrixForkEpoch);
+      return this;
+    }
+
+    public Builder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+      this.capellaForkEpoch = Optional.of(capellaForkEpoch);
       return this;
     }
 
