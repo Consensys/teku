@@ -31,7 +31,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 public class BeaconStateBuilderCapella
     extends AbstractBeaconStateBuilder<
         BeaconStateCapella, MutableBeaconStateCapella, BeaconStateBuilderCapella> {
-  private UInt64 latestWithdrawalValidatorIndex;
+  private UInt64 nextWithdrawalIndex;
+  private UInt64 nextWithdrawalValidatorIndex;
 
   private SszList<SszByte> previousEpochParticipation;
   private SszList<SszByte> currentEpochParticipation;
@@ -61,7 +62,8 @@ public class BeaconStateBuilderCapella
     state.setCurrentSyncCommittee(currentSyncCommittee);
     state.setNextSyncCommittee(nextSyncCommittee);
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
-    state.setNextWithdrawalValidatorIndex(latestWithdrawalValidatorIndex);
+    state.setNextWithdrawalIndex(nextWithdrawalIndex);
+    state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
   }
 
   public static BeaconStateBuilderCapella create(
@@ -76,10 +78,16 @@ public class BeaconStateBuilderCapella
         defaultItemsInSSZLists);
   }
 
-  public BeaconStateBuilderCapella latestWithdrawalValidatorIndex(
-      final UInt64 latestWithdrawalValidatorIndex) {
-    checkNotNull(latestWithdrawalValidatorIndex);
-    this.latestWithdrawalValidatorIndex = latestWithdrawalValidatorIndex;
+  public BeaconStateBuilderCapella nextWithdrawalIndex(final UInt64 nextWithdrawalIndex) {
+    checkNotNull(nextWithdrawalIndex);
+    this.nextWithdrawalIndex = nextWithdrawalIndex;
+    return this;
+  }
+
+  public BeaconStateBuilderCapella nextWithdrawalValidatorIndex(
+      final UInt64 nextWithdrawalValidatorIndex) {
+    checkNotNull(nextWithdrawalValidatorIndex);
+    this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
     return this;
   }
 
@@ -110,7 +118,8 @@ public class BeaconStateBuilderCapella
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
     latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeaderCapella();
 
-    this.latestWithdrawalValidatorIndex =
+    this.nextWithdrawalIndex = UInt64.ZERO;
+    this.nextWithdrawalValidatorIndex =
         defaultValidatorCount > 0
             ? dataStructureUtil.randomUInt64(defaultValidatorCount)
             : UInt64.ZERO;

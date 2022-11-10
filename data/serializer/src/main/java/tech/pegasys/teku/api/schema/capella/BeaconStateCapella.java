@@ -40,9 +40,13 @@ public class BeaconStateCapella extends BeaconStateAltair {
   @JsonProperty("latest_execution_payload_header")
   public ExecutionPayloadHeaderCapella latestExecutionPayloadHeader;
 
-  @JsonProperty("latest_withdrawal_validator_index")
+  @JsonProperty("next_withdrawal_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
-  public final UInt64 latestWithdrawalValidatorIndex;
+  public final UInt64 nextWithdrawalIndex;
+
+  @JsonProperty("next_withdrawal_validator_index")
+  @Schema(type = "string", example = EXAMPLE_UINT64)
+  public final UInt64 nextWithdrawalValidatorIndex;
 
   public BeaconStateCapella(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
@@ -71,8 +75,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
           final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader,
-      @JsonProperty("latest_withdrawal_validator_index")
-          final UInt64 latestWithdrawalValidatorIndex) {
+      @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
+      @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -99,7 +103,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
         currentSyncCommittee,
         nextSyncCommittee);
     this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
-    this.latestWithdrawalValidatorIndex = latestWithdrawalValidatorIndex;
+    this.nextWithdrawalIndex = nextWithdrawalIndex;
+    this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
   }
 
   public BeaconStateCapella(BeaconState beaconState) {
@@ -109,7 +114,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
         capella = beaconState.toVersionCapella().orElseThrow();
     this.latestExecutionPayloadHeader =
         new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
-    this.latestWithdrawalValidatorIndex = capella.getNextWithdrawalValidatorIndex();
+    this.nextWithdrawalIndex = capella.getNextWithdrawalIndex();
+    this.nextWithdrawalValidatorIndex = capella.getNextWithdrawalValidatorIndex();
   }
 
   @Override
@@ -155,6 +161,7 @@ public class BeaconStateCapella extends BeaconStateAltair {
             instance.latestExecutionPayloadHeader.transactionsRoot,
             instance.latestExecutionPayloadHeader.withdrawalsRoot));
 
-    state.setNextWithdrawalValidatorIndex(instance.latestWithdrawalValidatorIndex);
+    state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
+    state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);
   }
 }
