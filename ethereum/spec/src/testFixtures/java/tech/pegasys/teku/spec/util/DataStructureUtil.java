@@ -69,6 +69,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -138,6 +140,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -227,6 +231,11 @@ public final class DataStructureUtil {
   public Bytes32 randomBytes32() {
     final Random random = new Random(nextSeed());
     return Bytes32.random(random);
+  }
+
+  public Bytes48 randomBytes48() {
+    final Random random = new Random(nextSeed());
+    return Bytes48.random(random);
   }
 
   public Bytes8 randomBytes8() {
@@ -347,6 +356,22 @@ public final class DataStructureUtil {
 
   public SszPublicKey randomSszPublicKey() {
     return new SszPublicKey(randomPublicKey());
+  }
+
+  public KZGCommitment randomKZGCommitment() {
+    return KZGCommitment.fromBytesCompressed(randomBytes48());
+  }
+
+  public SszKZGCommitment randomSszKZGCommitment() {
+    return new SszKZGCommitment(randomKZGCommitment());
+  }
+
+  public KZGProof randomKZGProof() {
+    return KZGProof.fromBytesCompressed(randomBytes48());
+  }
+
+  public SszKZGProof randomSszKZGProof() {
+    return new SszKZGProof(randomKZGProof());
   }
 
   public Bytes48 randomPublicKeyBytes() {

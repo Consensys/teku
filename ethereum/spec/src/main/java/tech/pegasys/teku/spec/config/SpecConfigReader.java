@@ -175,6 +175,16 @@ public class SpecConfigReader {
               unprocessedConfig.remove(constantKey);
             });
 
+    // Process EIP-4844 config
+    streamConfigSetters(SpecConfigBuilder.Eip4844Builder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::eip4844Builder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
+            });
+
     // Check any constants that have been configured and then ignore
     final Set<String> configuredConstants =
         Sets.intersection(CONSTANT_KEYS, unprocessedConfig.keySet());
