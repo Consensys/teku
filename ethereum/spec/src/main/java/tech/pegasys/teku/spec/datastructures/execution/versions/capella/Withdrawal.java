@@ -13,27 +13,25 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Withdrawal
-    extends Container4<Withdrawal, SszUInt256, SszUInt64, SszByteVector, SszUInt64> {
+    extends Container4<Withdrawal, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
 
   Withdrawal(
       final WithdrawalSchema schema,
-      final UInt256 index,
+      final UInt64 index,
       final UInt64 validatorIndex,
       final Bytes20 address,
       final UInt64 amount) {
     super(
         schema,
-        SszUInt256.of(index),
+        SszUInt64.of(index),
         SszUInt64.of(validatorIndex),
         SszByteVector.fromBytes(address.getWrappedBytes()),
         SszUInt64.of(amount));
@@ -43,7 +41,7 @@ public class Withdrawal
     super(type, backingNode);
   }
 
-  public UInt256 getIndex() {
+  public UInt64 getIndex() {
     return getField0().get();
   }
 

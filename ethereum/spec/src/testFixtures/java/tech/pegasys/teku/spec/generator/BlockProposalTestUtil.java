@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -193,7 +193,7 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
-    final ExecutionPayloadSchemaBellatrix schema =
+    final ExecutionPayloadSchema<?> schema =
         SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
     if (terminalBlock.isEmpty() && !isMergeTransitionComplete(state)) {
@@ -208,21 +208,54 @@ public class BlockProposalTestUtil {
     Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
     UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
-    return schema.create(
-        parentHash,
-        Bytes20.ZERO,
-        dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomBytes256(),
-        specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch),
-        newSlot,
-        UInt64.valueOf(30_000_000L),
-        UInt64.valueOf(30_000_000L),
-        specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
-        dataStructureUtil.randomBytes32(),
-        UInt256.ONE,
-        dataStructureUtil.randomBytes32(),
-        transactions.orElse(Collections.emptyList()));
+    // Bellatrix version
+    return schema
+        .toVersionBellatrix()
+        .map(
+            schemaBellatrix ->
+                schemaBellatrix.create(
+                    parentHash,
+                    Bytes20.ZERO,
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomBytes256(),
+                    specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch),
+                    newSlot,
+                    UInt64.valueOf(30_000_000L),
+                    UInt64.valueOf(30_000_000L),
+                    specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
+                    dataStructureUtil.randomBytes32(),
+                    UInt256.ONE,
+                    dataStructureUtil.randomBytes32(),
+                    transactions.orElse(Collections.emptyList())))
+        // Capella version
+        .or(
+            () ->
+                schema
+                    .toVersionCapella()
+                    .map(
+                        schemaCapella ->
+                            schemaCapella.create(
+                                parentHash,
+                                Bytes20.ZERO,
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomBytes256(),
+                                specVersion
+                                    .beaconStateAccessors()
+                                    .getRandaoMix(state, currentEpoch),
+                                newSlot,
+                                UInt64.valueOf(30_000_000L),
+                                UInt64.valueOf(30_000_000L),
+                                specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
+                                dataStructureUtil.randomBytes32(),
+                                UInt256.ONE,
+                                dataStructureUtil.randomBytes32(),
+                                transactions.orElse(Collections.emptyList()),
+                                List.of(
+                                    dataStructureUtil.randomWithdrawal(),
+                                    dataStructureUtil.randomWithdrawal()))))
+        .orElseThrow();
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {

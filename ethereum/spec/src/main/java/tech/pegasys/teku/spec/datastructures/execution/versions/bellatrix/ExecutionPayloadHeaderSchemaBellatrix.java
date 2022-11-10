@@ -130,6 +130,7 @@ public class ExecutionPayloadHeaderSchemaBellatrix
         SszBytes32.of(transactionsRoot));
   }
 
+  @Override
   public ExecutionPayloadHeaderBellatrix createFromExecutionPayload(
       final ExecutionPayload executionPayload) {
     return new ExecutionPayloadHeaderBellatrix(
@@ -155,6 +156,7 @@ public class ExecutionPayloadHeaderSchemaBellatrix
     return defaultExecutionPayloadHeader;
   }
 
+  @Override
   public ExecutionPayloadHeaderBellatrix getHeaderOfDefaultPayload() {
     return executionPayloadHeaderOfDefaultPayload;
   }

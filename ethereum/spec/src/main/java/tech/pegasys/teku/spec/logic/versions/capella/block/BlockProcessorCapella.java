@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
-import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
@@ -58,7 +58,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public BlockProcessorCapella(
       final SpecConfigBellatrix specConfig,
       final Predicates predicates,
-      final MiscHelpersCapella miscHelpers,
+      final MiscHelpersBellatrix miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
@@ -114,6 +114,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         MutableBeaconStateCapella.required(state),
         BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
   }
+
   // process_bls_to_execution_change
   public void processBlsToExecutionChangesNoValidation(
       final MutableBeaconStateCapella state,
@@ -145,7 +146,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
       final int validatorIndex = addressChange.getValidatorIndex().intValue();
-      if (genericState.getValidators().size() < validatorIndex) {
+      if (genericState.getValidators().size() <= validatorIndex) {
         return BlockValidationResult.failed("Validator index invalid: " + validatorIndex);
       }
       final Bytes32 withdrawalCredentials =

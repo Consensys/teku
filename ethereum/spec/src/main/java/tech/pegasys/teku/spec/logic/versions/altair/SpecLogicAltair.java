@@ -88,7 +88,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   public static SpecLogicAltair create(
       final SpecConfigAltair config, final SchemaDefinitionsAltair schemaDefinitions) {
     // Helpers
-    final Predicates predicates = new Predicates();
+    final Predicates predicates = new Predicates(config);
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
