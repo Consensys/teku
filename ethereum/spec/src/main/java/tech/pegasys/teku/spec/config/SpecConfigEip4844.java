@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface SpecConfigEip4844 extends SpecConfigCapella {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
+  UInt64 BYTES_PER_FIELD_ELEMENT = UInt64.valueOf(32);
 
   static SpecConfigEip4844 required(final SpecConfig specConfig) {
     return specConfig
