@@ -39,9 +39,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -170,8 +170,7 @@ public class BuilderBidValidatorTest {
 
   private void prepareValidSignedBuilderBid() {
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
-    final BuilderBidBellatrix builderBid =
-        dataStructureUtil.randomBuilderBid(keyPair.getPublicKey());
+    final BuilderBid builderBid = dataStructureUtil.randomBuilderBid(keyPair.getPublicKey());
 
     final Bytes signingRoot =
         spec.computeBuilderApplicationSigningRoot(state.getSlot(), builderBid);
@@ -236,6 +235,8 @@ public class BuilderBidValidatorTest {
       SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
+        .toVersionBellatrix()
+        .orElseThrow()
         .create(
             Bytes32.random(),
             Bytes20.ZERO,

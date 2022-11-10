@@ -22,8 +22,12 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
     extends SszContainerSchema<T> {
 
+  ExecutionPayloadHeader getHeaderOfDefaultPayload();
+
   @Override
   T createFromBackingNode(TreeNode node);
+
+  T createFromExecutionPayload(ExecutionPayload payload);
 
   long getBlindedNodeGeneralizedIndex();
 

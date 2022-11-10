@@ -15,13 +15,32 @@ package tech.pegasys.teku.spec.datastructures.builder;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public interface SignedBuilderBid extends SszContainer {
+public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, SszSignature>
+    implements SszContainer {
+
+  SignedBuilderBid(SignedBuilderBidSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  SignedBuilderBid(
+      final SignedBuilderBidSchema type, final BuilderBid message, final BLSSignature signature) {
+    super(type, message, new SszSignature(signature));
+  }
 
   @Override
-  SignedBuilderBidSchema<?> getSchema();
+  public SignedBuilderBidSchema getSchema() {
+    return (SignedBuilderBidSchema) super.getSchema();
+  }
 
-  BuilderBid getMessage();
+  public BuilderBid getMessage() {
+    return getField0();
+  }
 
-  BLSSignature getSignature();
+  public BLSSignature getSignature() {
+    return getField1().getSignature();
+  }
 }

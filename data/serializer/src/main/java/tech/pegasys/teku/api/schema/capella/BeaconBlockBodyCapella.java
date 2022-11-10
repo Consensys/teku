@@ -14,11 +14,11 @@
 package tech.pegasys.teku.api.schema.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -85,7 +85,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges =
         message.getBlsToExecutionChanges().stream()
             .map(SignedBlsToExecutionChange::new)
-            .collect(Collectors.toList());
+            .collect(toList());
   }
 
   @Override
@@ -125,7 +125,12 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
                           executionPayload.baseFeePerGas,
                           executionPayload.blockHash,
                           executionPayload.transactions,
-                          executionPayload.withdrawals)));
+                          executionPayload.withdrawals.stream()
+                              .map(
+                                  withdrawal ->
+                                      withdrawal.asInternalWithdrawal(
+                                          executionPayloadSchemaCapella.getWithdrawalSchema()))
+                              .collect(toList()))));
           builder.blsToExecutionChanges(
               () ->
                   this.blsToExecutionChanges.stream()
