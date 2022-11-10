@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.B
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -148,6 +149,23 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsBellatrix.required(schemas).getExecutionPayloadSchema()))
           .put("ssz_static/PowBlock", IGNORE_TESTS)
+
+          // Capella Types
+          .put(
+              "ssz_static/SignedBLSToExecutionChange",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsCapella.required(schemas)
+                          .getSignedBlsToExecutionChangeSchema()))
+          .put(
+              "ssz_static/BLSToExecutionChange",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsCapella.required(schemas).getBlsToExecutionChangeSchema()))
+          .put(
+              "ssz_static/Withdrawal",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsCapella.required(schemas).getWithdrawalSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
