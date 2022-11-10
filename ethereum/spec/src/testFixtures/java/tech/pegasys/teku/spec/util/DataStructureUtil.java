@@ -636,7 +636,18 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayload randomExecutionPayload() {
-    return randomExecutionPayloadBellatrix(spec.getGenesisSpec());
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    switch (specVersion.getMilestone()) {
+      case BELLATRIX:
+        return randomExecutionPayloadBellatrix(specVersion);
+
+      case CAPELLA:
+        return randomExecutionPayloadCapella(specVersion);
+
+      default:
+        throw new UnsupportedOperationException(
+            "Can't create ExecutionPayload for milestone: " + specVersion.getMilestone());
+    }
   }
 
   public ExecutionPayload randomExecutionPayloadCapella() {
