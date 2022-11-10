@@ -49,12 +49,10 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -368,64 +366,6 @@ class OkHttpValidatorRestApiClientTest {
         .isInstanceOf(RuntimeException.class)
         .hasMessageMatching(
             "Unexpected response from Beacon Node API \\(url = .*, status = 500, message = Server Error\\)");
-  }
-
-  @Test
-  public void createAttestationData_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.createAttestationData(slot, committeeIndex);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_ATTESTATION_DATA.getPath(emptyMap()));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
-    assertThat(request.getRequestUrl().queryParameter("committee_index"))
-        .isEqualTo(String.valueOf(committeeIndex));
-  }
-
-  @Test
-  public void createAttestationData_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(() -> apiClient.createAttestationData(slot, committeeIndex))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void createAttestationData_WhenNotFound_ThrowsError() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-
-    assertThatThrownBy(() -> apiClient.createAttestationData(slot, committeeIndex))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createAttestationData_WhenSuccessWithNonData_ReturnsAttestationData() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-    final AttestationData expectedAttestationData = schemaObjects.attestation().data;
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(asJson(new GetAttestationDataResponse(expectedAttestationData))));
-    Optional<AttestationData> attestationData =
-        apiClient.createAttestationData(slot, committeeIndex);
-    assertThat(attestationData).isPresent();
-    assertThat(attestationData.get()).usingRecursiveComparison().isEqualTo(expectedAttestationData);
   }
 
   @Test

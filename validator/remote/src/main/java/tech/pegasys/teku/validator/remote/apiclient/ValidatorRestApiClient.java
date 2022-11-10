@@ -26,7 +26,6 @@ import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -57,8 +56,6 @@ public interface ValidatorRestApiClient {
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
 
   SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
-
-  Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 

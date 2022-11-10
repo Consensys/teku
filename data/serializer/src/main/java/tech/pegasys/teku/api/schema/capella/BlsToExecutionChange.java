@@ -31,9 +31,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlsToExecutionChange {
 
+  @JsonProperty("validator_index")
   @Schema(type = "string", format = "uint64")
   public final UInt64 validatorIndex;
 
+  @JsonProperty("from_bls_pubkey")
   @Schema(
       type = "string",
       pattern = PATTERN_PUBKEY,
@@ -41,6 +43,7 @@ public class BlsToExecutionChange {
       description = DESCRIPTION_BYTES48)
   public final BLSPubKey fromBlsPubkey;
 
+  @JsonProperty("to_execution_address")
   @Schema(
       type = "string",
       format = "byte",
