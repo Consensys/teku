@@ -56,4 +56,11 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
     // starts with 0x01 (eth1 prefix) and 0x00 x 11 (buffer)
     assertThat(bytes32.toHexString()).startsWith("0x010000000000000000000000");
   }
+
+  @Test
+  void shouldIncrementIndexCorrectly() {
+    assertThat(BlockProcessorCapella.incrementValidatorIndex(9, 10)).isEqualTo(0);
+    assertThat(BlockProcessorCapella.incrementValidatorIndex(8, 10)).isEqualTo(9);
+    assertThat(BlockProcessorCapella.incrementValidatorIndex(0, 10)).isEqualTo(1);
+  }
 }

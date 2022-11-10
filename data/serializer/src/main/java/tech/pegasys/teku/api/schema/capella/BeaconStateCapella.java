@@ -109,7 +109,7 @@ public class BeaconStateCapella extends BeaconStateAltair {
         capella = beaconState.toVersionCapella().orElseThrow();
     this.latestExecutionPayloadHeader =
         new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
-    this.latestWithdrawalValidatorIndex = capella.getLatestWithdrawalValidatorIndex();
+    this.latestWithdrawalValidatorIndex = capella.getNextWithdrawalValidatorIndex();
   }
 
   @Override
@@ -155,6 +155,6 @@ public class BeaconStateCapella extends BeaconStateAltair {
             instance.latestExecutionPayloadHeader.transactionsRoot,
             instance.latestExecutionPayloadHeader.withdrawalsRoot));
 
-    state.setLatestWithdrawalValidatorIndex(instance.latestWithdrawalValidatorIndex);
+    state.setNextWithdrawalValidatorIndex(instance.latestWithdrawalValidatorIndex);
   }
 }

@@ -61,7 +61,7 @@ public class BeaconStateBuilderCapella
     state.setCurrentSyncCommittee(currentSyncCommittee);
     state.setNextSyncCommittee(nextSyncCommittee);
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
-    state.setLatestWithdrawalValidatorIndex(latestWithdrawalValidatorIndex);
+    state.setNextWithdrawalValidatorIndex(latestWithdrawalValidatorIndex);
   }
 
   public static BeaconStateBuilderCapella create(

@@ -25,14 +25,14 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   private final UInt64 capellaForkEpoch;
 
   private final UInt64 maxBlsToExecutionChanges;
-  private final UInt64 maxWithdrawalsPerPayload;
+  private final int maxWithdrawalsPerPayload;
 
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
       final Bytes4 capellaForkVersion,
       final UInt64 capellaForkEpoch,
       final UInt64 maxBlsToExecutionChanges,
-      final UInt64 maxWithdrawalsPerPayload) {
+      final int maxWithdrawalsPerPayload) {
     super(specConfig);
     this.capellaForkVersion = capellaForkVersion;
     this.capellaForkEpoch = capellaForkEpoch;
@@ -63,7 +63,7 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         && Objects.equals(capellaForkVersion, that.capellaForkVersion)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(maxBlsToExecutionChanges, that.maxBlsToExecutionChanges)
-        && Objects.equals(maxWithdrawalsPerPayload, that.maxWithdrawalsPerPayload);
+        && maxWithdrawalsPerPayload == that.maxWithdrawalsPerPayload;
   }
 
   @Override
@@ -82,7 +82,7 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   }
 
   @Override
-  public UInt64 getMaxWithdrawalsPerPayload() {
+  public int getMaxWithdrawalsPerPayload() {
     return maxWithdrawalsPerPayload;
   }
 
