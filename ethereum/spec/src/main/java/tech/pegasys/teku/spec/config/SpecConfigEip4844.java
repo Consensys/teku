@@ -22,7 +22,7 @@ public interface SpecConfigEip4844 extends SpecConfigCapella {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
 
-  static SpecConfigEip4844 required(SpecConfig specConfig) {
+  static SpecConfigEip4844 required(final SpecConfig specConfig) {
     return specConfig
         .toVersionEip4844()
         .orElseThrow(

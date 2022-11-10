@@ -185,13 +185,13 @@ public class SpecConfigBuilder {
   private List<ForkBuilder<SpecConfig, SpecConfig>> getActiveBuilders() {
     final List<Optional<?>> supportedBuilders =
         List.of(altairBuilder, bellatrixBuilder, capellaBuilder, eip4844Builder);
-    List<ForkBuilder<SpecConfig, SpecConfig>> activeBuilders = new ArrayList<>();
+    final List<ForkBuilder<SpecConfig, SpecConfig>> activeBuilders = new ArrayList<>();
     // Forks are consecutive. Once we couldn't go with the next fork, we could skip remaining
     for (Optional<?> builderOptional : supportedBuilders) {
       if (builderOptional.isEmpty()) {
         break;
       }
-      ForkBuilder<SpecConfig, SpecConfig> currentBuilder =
+      final ForkBuilder<SpecConfig, SpecConfig> currentBuilder =
           (ForkBuilder<SpecConfig, SpecConfig>) builderOptional.get();
       if (!currentBuilder.isForkIncluded()) {
         break;
