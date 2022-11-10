@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -104,13 +105,17 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void dataStorageCreateDbVersion_shouldOverrideIfFrequencyIsLow() {
-    final StorageConfiguration config =
-        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1")
-            .storageConfiguration();
-    final DatabaseVersion expectedDefault =
-        DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB_TREE : DatabaseVersion.V5;
-    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(expectedDefault);
+  public void dataStorageCreateDbVersion_shouldOverrideIfFrequencyIsLowAndSupported() {
+    final Supplier<TekuConfiguration> tekuConfigurationSupplier =
+        () -> getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1");
+    if (DatabaseVersion.isLevelDbSupported()) {
+      final StorageConfiguration config = tekuConfigurationSupplier.get().storageConfiguration();
+      assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.LEVELDB_TREE);
+    } else {
+      assertThatThrownBy(tekuConfigurationSupplier::get)
+          .isInstanceOf(AssertionError.class)
+          .hasMessageContaining("Native LevelDB support is required");
+    }
   }
 
   @Test
