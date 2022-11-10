@@ -18,7 +18,6 @@ import static java.util.Collections.emptyMap;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
 import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.ReadyState;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -160,7 +159,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   private void switchToFailoverEventStream(final RemoteValidatorApiChannel beaconNodeApi) {
-    if (alreadyFailedOver(beaconNodeApi)) {
+    if (currentEventStreamHasSameEndpoint(beaconNodeApi)) {
       return;
     }
     eventSource.close();
@@ -176,11 +175,6 @@ public class EventSourceBeaconChainEventAdapter
     currentBeaconNodeUsedForEventStreaming = primaryBeaconNodeApi;
     validatorLogger.switchingBackToPrimaryBeaconNodeForEventStreaming();
     eventSource.start();
-  }
-
-  private boolean alreadyFailedOver(final RemoteValidatorApiChannel beaconNodeApi) {
-    return currentEventStreamHasSameEndpoint(beaconNodeApi)
-        || eventSource.getState().equals(ReadyState.OPEN);
   }
 
   private boolean currentEventStreamHasSameEndpoint(final RemoteValidatorApiChannel beaconNodeApi) {

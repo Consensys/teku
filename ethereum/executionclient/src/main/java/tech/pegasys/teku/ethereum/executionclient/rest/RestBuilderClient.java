@@ -47,7 +47,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class RestBuilderClient implements BuilderClient {
 
   private final Map<
-          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>>
+          SpecMilestone,
+          DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>>
       cachedBuilderApiExecutionPayloadResponseType = new ConcurrentHashMap<>();
 
   private final Map<
@@ -115,7 +116,7 @@ public class RestBuilderClient implements BuilderClient {
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(response -> Response.unwrap(response, this::extractSignedBuilderBid))
         .thenApply(Response::convertToOptional)
         .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
@@ -133,16 +134,12 @@ public class RestBuilderClient implements BuilderClient {
     final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
         schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
 
-    final DeserializableTypeDefinition<BuilderApiResponse<ExecutionPayload>>
+    final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>
         responseTypeDefinition =
             cachedBuilderApiExecutionPayloadResponseType.computeIfAbsent(
                 milestone,
-                __ -> {
-                  final ExecutionPayloadSchema executionPayloadSchema =
-                      schemaDefinitionsBellatrix.getExecutionPayloadSchema();
-                  return BuilderApiResponse.createTypeDefinition(
-                      executionPayloadSchema.getJsonTypeDefinition());
-                });
+                __ ->
+                    payloadTypeDefinition(schemaDefinitionsBellatrix.getExecutionPayloadSchema()));
 
     return restClient
         .postAsync(
@@ -150,8 +147,25 @@ public class RestBuilderClient implements BuilderClient {
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, BuilderApiResponse::getData))
+        .thenApply(response -> Response.unwrap(response, this::extractExecutionPayload))
         .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
+  }
+
+  private <T extends ExecutionPayload>
+      DeserializableTypeDefinition<BuilderApiResponse<T>> payloadTypeDefinition(
+          final ExecutionPayloadSchema<T> schema) {
+    final DeserializableTypeDefinition<T> typeDefinition = schema.getJsonTypeDefinition();
+    return BuilderApiResponse.createTypeDefinition(typeDefinition);
+  }
+
+  private <T extends SignedBuilderBid> SignedBuilderBid extractSignedBuilderBid(
+      final BuilderApiResponse<T> builderApiResponse) {
+    return builderApiResponse.getData();
+  }
+
+  private <T extends ExecutionPayload> ExecutionPayload extractExecutionPayload(
+      final BuilderApiResponse<T> builderApiResponse) {
+    return builderApiResponse.getData();
   }
 
   private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {

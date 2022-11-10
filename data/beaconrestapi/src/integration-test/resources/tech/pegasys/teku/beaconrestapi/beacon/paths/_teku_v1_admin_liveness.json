@@ -1,19 +1,44 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
-    "summary" : "Returns 200 if the node is up even if it is syncing.",
-    "operationId" : "getTekuV1AdminLiveness",
+    "operationId" : "GetLiveness",
+    "summary" : "Get node liveness",
+    "description" : "Returns 200 if the node is up even if it is syncing.",
     "parameters" : [ {
       "name" : "failOnRejectedCount",
       "in" : "query",
-      "description" : "If set, the node will return 503 if any rejected execution exceptions have been found recently.",
       "schema" : {
-        "type" : "string"
+        "type" : "boolean"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK"
+        "description" : "Node is ready",
+        "content" : { }
+      },
+      "503" : {
+        "description" : "Node is having issues that it may not recover from. Only occurs if failOnRejectedCount is set",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.builder;
 
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -22,7 +23,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBid
-    extends Container3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey> {
+    extends Container3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey>
+    implements SszContainer {
 
   protected BuilderBid(BuilderBidSchema schema, TreeNode backingNode) {
     super(schema, backingNode);

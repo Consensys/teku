@@ -1,16 +1,22 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "registerValidator",
     "summary" : "Register validators with builder",
-    "description" : "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\nNote that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\nAlso note that only registrations for active or pending validators will be sent to the builder network. Registrations for unknown or exited validators will be filtered out and not sent to the builder network.",
-    "operationId" : "postEthV1ValidatorRegister_validator",
+    "description" : "Prepares the beacon node for engaging with external builders. The information must be sent by the beacon node to the builder network. It is expected that the validator client will send this information periodically to ensure the beacon node has correct and timely registration information to provide to builders. The validator client should not sign blinded beacon blocks that do not adhere to their latest fee recipient and gas limit preferences.",
     "requestBody" : {
       "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
         "application/json" : {
           "schema" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/PostRegisterValidatorRequest"
+              "$ref" : "#/components/schemas/SignedValidatorRegistration"
             }
           }
         }
@@ -18,13 +24,28 @@
     },
     "responses" : {
       "200" : {
-        "description" : "Preparation information has been received."
+        "description" : "Registration information has been received.",
+        "content" : { }
       },
       "400" : {
-        "description" : "Invalid parameter supplied."
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Beacon node internal error."
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

@@ -308,6 +308,32 @@ public class ChainDataProvider {
         stateIdParam, state -> getFilteredValidatorList(state, validators, statusFilter));
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<Optional<Bytes32>>>> getRandaoAtEpoch(
+      final String stateIdParam, final Optional<UInt64> epoch) {
+    return fromState(stateIdParam, state -> getRandaoAtEpochFromState(state, epoch));
+  }
+
+  @VisibleForTesting
+  Optional<Bytes32> getRandaoAtEpochFromState(
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
+      final Optional<UInt64> maybeEpoch) {
+    final UInt64 stateEpoch = spec.computeEpochAtSlot(state.getSlot());
+    final int epochsPerHistoricalVector =
+        spec.atEpoch(stateEpoch).getConfig().getEpochsPerHistoricalVector();
+    final UInt64 epoch = maybeEpoch.orElseGet(() -> spec.computeEpochAtSlot(state.getSlot()));
+    if (epoch.isGreaterThan(stateEpoch)) {
+      return Optional.empty();
+    } else if (epoch.isLessThan(stateEpoch)
+        && stateEpoch.minusMinZero(epochsPerHistoricalVector).isGreaterThan(0)
+        && stateEpoch.minusMinZero(epochsPerHistoricalVector).isGreaterThanOrEqualTo(epoch)) {
+      // ignoring the first period of epoch=0 to epochsPerHistoricalVector,
+      // return empty if the epoch is not within `epochsPerHistoricalVector` of the state epoch
+      return Optional.empty();
+    }
+    return Optional.of(
+        spec.atSlot(state.getSlot()).beaconStateAccessors().getRandaoMix(state, epoch));
+  }
+
   @VisibleForTesting
   List<StateValidatorData> getFilteredValidatorList(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,

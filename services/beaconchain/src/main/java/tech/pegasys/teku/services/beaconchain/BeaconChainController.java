@@ -45,7 +45,6 @@ import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
-import tech.pegasys.teku.beaconrestapi.ReflectionBasedBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
@@ -101,7 +100,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
-import tech.pegasys.teku.statetransition.forkchoice.ActivePandaPrinter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -109,7 +107,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
-import tech.pegasys.teku.statetransition.forkchoice.PreProposalForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
@@ -135,6 +132,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -172,6 +170,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
+
   private static final Logger LOG = LogManager.getLogger();
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
@@ -335,17 +334,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
     timerService = new TimerService(this::onTick);
 
-    if (storeConfig.isAsyncStorageEnabled()) {
-      final CombinedStorageChannel combinedStorageChannel =
-          eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
-      storageQueryChannel = combinedStorageChannel;
-      storageUpdateChannel = combinedStorageChannel;
-    } else {
-      storageQueryChannel =
-          eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
-      storageUpdateChannel =
-          eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
-    }
+    final CombinedStorageChannel combinedStorageChannel =
+        eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
+    storageQueryChannel = combinedStorageChannel;
+    storageUpdateChannel = combinedStorageChannel;
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -562,12 +554,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
-            new ActivePandaPrinter(keyValueStore, STATUS_LOG),
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled());
-    forkChoiceTrigger =
-        beaconConfig.eth2NetworkConfig().isForkChoiceBeforeProposingEnabled()
-            ? new PreProposalForkChoiceTrigger(forkChoice)
-            : new ForkChoiceTrigger(forkChoice);
+    forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
 
   public void initMetrics() {
@@ -595,6 +583,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             recentChainData,
             eth1DataCache,
+            storageUpdateChannel,
+            eventChannels.getPublisher(Eth1DepositStorageChannel.class, beaconAsyncRunner),
             spec,
             EVENT_LOG,
             beaconConfig.powchainConfig().useMissingDepositEventLogging());
@@ -702,16 +692,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignatureVerificationService() {
     final P2PConfig p2PConfig = beaconConfig.p2pConfig();
     signatureVerificationService =
-        p2PConfig.batchVerifyAttestationSignatures()
-            ? new AggregatingSignatureVerificationService(
-                metricsSystem,
-                asyncRunnerFactory,
-                beaconAsyncRunner,
-                p2PConfig.getBatchVerifyMaxThreads(),
-                p2PConfig.getBatchVerifyQueueCapacity(),
-                p2PConfig.getBatchVerifyMaxBatchSize(),
-                p2PConfig.isBatchVerifyStrictThreadLimitEnabled())
-            : SignatureVerificationService.createSimple();
+        new AggregatingSignatureVerificationService(
+            metricsSystem,
+            asyncRunnerFactory,
+            beaconAsyncRunner,
+            p2PConfig.getBatchVerifyMaxThreads(),
+            p2PConfig.getBatchVerifyQueueCapacity(),
+            p2PConfig.getBatchVerifyMaxBatchSize(),
+            p2PConfig.isBatchVerifyStrictThreadLimitEnabled());
   }
 
   protected void initAttestationManager() {
@@ -867,9 +855,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ExecutionClientDataProvider();
     eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
 
-    final BeaconRestApi api =
-        beaconConfig.beaconRestApiConfig().isEnableMigratedRestApi()
-            ? new JsonTypeDefinitionBeaconRestApi(
+    beaconRestAPI =
+        Optional.of(
+            new JsonTypeDefinitionBeaconRestApi(
                 dataProvider,
                 eth1DataProvider,
                 beaconConfig.beaconRestApiConfig(),
@@ -877,17 +865,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventAsyncRunner,
                 timeProvider,
                 executionClientDataProvider,
-                spec)
-            : new ReflectionBasedBeaconRestApi(
-                dataProvider,
-                eth1DataProvider,
-                beaconConfig.beaconRestApiConfig(),
-                eventChannels,
-                eventAsyncRunner,
-                timeProvider,
-                executionClientDataProvider,
-                spec);
-    beaconRestAPI = Optional.of(api);
+                spec));
 
     if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
       final int initialValidatorsCount =
@@ -1071,7 +1049,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       setupInteropState();
     } else if (!beaconConfig.powchainConfig().isEnabled()) {
       throw new InvalidConfigurationException(
-          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
+          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state"
+              + ".");
     }
   }
 

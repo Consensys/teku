@@ -1,25 +1,55 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getProtoArray",
     "summary" : "Get current fork choice data",
     "description" : "Get the raw data stored in the fork choice protoarray to aid debugging. This API is considered unstable and the returned data format may change in the future.",
-    "operationId" : "getTekuV1DebugBeaconProtoarray",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetProtoArrayResponse"
+              "type" : "array",
+              "items" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
-      },
-      "503" : {
-        "description" : "Beacon node is currently syncing and not serving requests"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

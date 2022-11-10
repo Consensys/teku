@@ -36,7 +36,7 @@ class BatchingVoteUpdateChannelTest {
   private final VoteUpdateChannel delegate = mock(VoteUpdateChannel.class);
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private final EventThread eventThread =
-      new AsyncRunnerEventThread("batch-test", asyncRunnerFactory);
+      new AsyncRunnerEventThread("batch_test", asyncRunnerFactory);
   private StubAsyncRunner stubAsyncRunner;
 
   private final BatchingVoteUpdateChannel channel =

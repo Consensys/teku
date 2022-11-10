@@ -35,16 +35,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 public class GetGasLimitTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
 
-  private final GetGasLimit handler = new GetGasLimit(Optional.of(beaconProposerPreparer));
+  private final GetGasLimit handler = new GetGasLimit(Optional.of(proposerConfigManager));
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
@@ -83,7 +83,8 @@ public class GetGasLimitTest {
 
   @Test
   void shouldRespondOk() throws JsonProcessingException {
-    when(this.beaconProposerPreparer.getGasLimit(any())).thenReturn(Optional.of(gasLimit));
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
+    when(this.proposerConfigManager.getGasLimit(any())).thenReturn(gasLimit);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())

@@ -25,13 +25,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 public class DeleteFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
-  public DeleteFeeRecipient(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public DeleteFeeRecipient(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.delete(ROUTE)
             .operationId("DeleteFeeRecipient")
@@ -47,17 +47,23 @@ public class DeleteFeeRecipient extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-    if (beaconProposerPreparer.orElseThrow().getFeeRecipient(publicKey).isEmpty()) {
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
+    if (!manager.isOwnedValidator(publicKey)) {
       request.respondError(SC_NOT_FOUND, "Fee recipient not found");
       return;
     }
-    if (!beaconProposerPreparer.orElseThrow().deleteFeeRecipient(publicKey)) {
+    if (!manager.deleteFeeRecipient(publicKey)) {
       request.respondError(SC_FORBIDDEN, "Fee recipient for public key could not be removed.");
       return;
     }

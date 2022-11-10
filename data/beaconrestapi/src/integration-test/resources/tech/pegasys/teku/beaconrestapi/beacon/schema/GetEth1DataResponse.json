@@ -1,5 +1,7 @@
 {
+  "title" : "GetEth1DataResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "$ref" : "#/components/schemas/Eth1Data"

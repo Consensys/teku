@@ -1,12 +1,22 @@
 {
+  "title" : "GetNewBlindedBlockResponse",
   "type" : "object",
+  "required" : [ "data", "version" ],
   "properties" : {
+    "data" : {
+      "title" : "BlindedBlock",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BeaconBlockPhase0"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockAltair"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockBellatrix"
+      } ]
+    },
     "version" : {
       "type" : "string",
       "enum" : [ "phase0", "altair", "bellatrix" ]
-    },
-    "data" : {
-      "$ref" : "#/components/schemas/UnsignedBlindedBlock"
     }
   }
 }

@@ -32,12 +32,12 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 
 class DeleteFeeRecipientTest {
-  private final BeaconProposerPreparer beaconProposerPreparer = mock(BeaconProposerPreparer.class);
+  private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
   private final DeleteFeeRecipient handler =
-      new DeleteFeeRecipient(Optional.of(beaconProposerPreparer));
+      new DeleteFeeRecipient(Optional.of(proposerConfigManager));
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
@@ -49,25 +49,27 @@ class DeleteFeeRecipientTest {
 
   @Test
   void shouldReturnFailureWhenKeyNotFound() throws JsonProcessingException {
-    when(beaconProposerPreparer.getFeeRecipient(any())).thenReturn(Optional.empty());
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(false);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
   void shouldReturnForbiddenWhenDeleteFails() throws JsonProcessingException {
-    when(beaconProposerPreparer.getFeeRecipient(any()))
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
+    when(proposerConfigManager.getFeeRecipient(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
-    when(beaconProposerPreparer.deleteFeeRecipient(any())).thenReturn(false);
+    when(proposerConfigManager.deleteFeeRecipient(any())).thenReturn(false);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
   void shouldReturnSuccessWhenDeleteSucceeds() throws JsonProcessingException {
-    when(beaconProposerPreparer.getFeeRecipient(any()))
+    when(proposerConfigManager.isOwnedValidator(any())).thenReturn(true);
+    when(proposerConfigManager.getFeeRecipient(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
-    when(beaconProposerPreparer.deleteFeeRecipient(any())).thenReturn(true);
+    when(proposerConfigManager.deleteFeeRecipient(any())).thenReturn(true);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
   }

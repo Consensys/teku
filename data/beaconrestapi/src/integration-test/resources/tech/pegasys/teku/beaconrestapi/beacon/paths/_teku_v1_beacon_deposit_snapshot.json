@@ -1,12 +1,12 @@
 {
   "get" : {
     "tags" : [ "Teku" ],
+    "operationId" : "getDepositSnapshot",
     "summary" : "Get finalized DepositTreeSnapshot",
     "description" : "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See EIP-4881 for details.",
-    "operationId" : "getTekuV1BeaconDeposit_snapshot",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -15,16 +15,41 @@
           },
           "application/octet-stream" : {
             "schema" : {
-              "$ref" : "#/components/schemas/Unit"
+              "type" : "string",
+              "format" : "binary"
             }
           }
         }
       },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

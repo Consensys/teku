@@ -111,7 +111,11 @@ public class RestApiConstants {
           + "  exited_unslashed, "
           + "  exited_slashed, "
           + "  withdrawal_possible, "
-          + "  withdrawal_done";
+          + "  withdrawal_done, "
+          + "  active, "
+          + "  pending, "
+          + "  exited, "
+          + "  withdrawal";
 
   public static final String SYNCING_STATUS = "syncing_status";
   public static final String SYNCING_STATUS_DESCRIPTION =

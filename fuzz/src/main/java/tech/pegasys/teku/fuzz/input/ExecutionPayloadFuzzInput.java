@@ -20,34 +20,34 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionPayloadFuzzInput
-    extends Container2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayload> {
+    extends Container2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix> {
 
-  public static ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayload>
+  public static ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix>
       createSchema(final SpecVersion spec) {
     BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema =
         (BeaconBlockBodySchemaBellatrix<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        beaconBlockBodySchema.getExecutionPayloadSchema(),
+        beaconBlockBodySchema.getExecutionPayloadSchema().toVersionBellatrix().orElseThrow(),
         ExecutionPayloadFuzzInput::new);
   }
 
   public ExecutionPayloadFuzzInput(
-      ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayload> type,
+      ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ExecutionPayloadFuzzInput(
-      final Spec spec, final BeaconState state, final ExecutionPayload executionPayload) {
+      final Spec spec, final BeaconState state, final ExecutionPayloadBellatrix executionPayload) {
     super(createSchema(spec.atSlot(state.getSlot())), state, executionPayload);
   }
 
-  public ExecutionPayload getExecutionPayload() {
+  public ExecutionPayloadBellatrix getExecutionPayload() {
     return getField1();
   }
 

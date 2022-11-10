@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -230,10 +231,12 @@ public class BuilderBidValidatorTest {
             dataStructureUtil.randomSignature());
   }
 
-  private ExecutionPayloadHeader createExecutionPayloadHeaderWithGasLimit(
+  private ExecutionPayloadHeaderBellatrix createExecutionPayloadHeaderWithGasLimit(
       SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
+        .toVersionBellatrix()
+        .orElseThrow()
         .create(
             Bytes32.random(),
             Bytes20.ZERO,

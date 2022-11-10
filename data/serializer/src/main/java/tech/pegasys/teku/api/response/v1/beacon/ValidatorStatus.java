@@ -18,13 +18,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @SuppressWarnings("JavaCase")
 @Schema(description = "[Validator status specification](https://hackmd.io/ofFJ5gOmQpu1jjHilHbdQQ)")
 public enum ValidatorStatus {
-  pending_initialized,
-  pending_queued,
-  active_ongoing,
-  active_exiting,
-  active_slashed,
-  exited_unslashed,
-  exited_slashed,
-  withdrawal_possible,
-  withdrawal_done
+  pending_initialized(false),
+  pending_queued(false),
+  active_ongoing(false),
+  active_exiting(false),
+  active_slashed(false),
+  exited_unslashed(true),
+  exited_slashed(true),
+  withdrawal_possible(true),
+  withdrawal_done(true);
+
+  private final boolean hasExited;
+
+  ValidatorStatus(final boolean hasExited) {
+    this.hasExited = hasExited;
+  }
+
+  public boolean hasExited() {
+    return hasExited;
+  }
 }

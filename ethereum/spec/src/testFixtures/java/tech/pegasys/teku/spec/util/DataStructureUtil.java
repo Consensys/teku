@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -67,11 +69,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -93,14 +98,17 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -109,6 +117,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
@@ -131,6 +140,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -139,10 +150,14 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public final class DataStructureUtil {
+
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
+
+  private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
 
   private final Spec spec;
 
@@ -216,6 +231,11 @@ public final class DataStructureUtil {
   public Bytes32 randomBytes32() {
     final Random random = new Random(nextSeed());
     return Bytes32.random(random);
+  }
+
+  public Bytes48 randomBytes48() {
+    final Random random = new Random(nextSeed());
+    return Bytes48.random(random);
   }
 
   public Bytes8 randomBytes8() {
@@ -338,6 +358,22 @@ public final class DataStructureUtil {
     return new SszPublicKey(randomPublicKey());
   }
 
+  public KZGCommitment randomKZGCommitment() {
+    return KZGCommitment.fromBytesCompressed(randomBytes48());
+  }
+
+  public SszKZGCommitment randomSszKZGCommitment() {
+    return new SszKZGCommitment(randomKZGCommitment());
+  }
+
+  public KZGProof randomKZGProof() {
+    return KZGProof.fromBytesCompressed(randomBytes48());
+  }
+
+  public SszKZGProof randomSszKZGProof() {
+    return new SszKZGProof(randomKZGProof());
+  }
+
   public Bytes48 randomPublicKeyBytes() {
     return pubKeyGenerator.get().toBytesCompressed();
   }
@@ -451,24 +487,90 @@ public final class DataStructureUtil {
         new SszPublicKey(randomPublicKey()));
   }
 
-  public ExecutionPayloadHeader randomExecutionPayloadHeader() {
+  public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
+    final SpecMilestone milestone = specVersion.getMilestone();
+    if (milestone.equals(SpecMilestone.BELLATRIX)) {
+      return randomExecutionPayloadHeaderBellatrix();
+    } else if (milestone.equals(SpecMilestone.CAPELLA)) {
+      return randomExecutionPayloadHeaderCapella();
+    } else {
+      throw new IllegalArgumentException(
+          "There is no random execution payload header configured for " + milestone);
+    }
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeaderBellatrix() {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+    final ExecutionPayloadHeaderSchema<?> schema =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema();
+    return schema
+        .toVersionBellatrix()
+        .map(
+            schemaBellatrix ->
+                (ExecutionPayloadHeader)
+                    schemaBellatrix.create(
+                        randomBytes32(),
+                        randomBytes20(),
+                        randomBytes32(),
+                        randomBytes32(),
+                        randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+                        randomBytes32(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomUInt64(),
+                        randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+                        randomUInt256(),
+                        randomBytes32(),
+                        randomBytes32()))
+        .or(
+            () ->
+                schema
+                    .toVersionCapella()
+                    .map(
+                        schemaCapella ->
+                            schemaCapella.create(
+                                randomBytes32(),
+                                randomBytes20(),
+                                randomBytes32(),
+                                randomBytes32(),
+                                randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+                                randomBytes32(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomUInt64(),
+                                randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+                                randomUInt256(),
+                                randomBytes32(),
+                                randomBytes32(),
+                                randomBytes32())))
+        .orElseThrow();
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeaderCapella() {
+    final SpecConfigCapella specConfigCapella =
+        SpecConfigCapella.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getExecutionPayloadHeaderSchema()
+        .toVersionCapella()
+        .orElseThrow()
         .create(
             randomBytes32(),
             randomBytes20(),
             randomBytes32(),
             randomBytes32(),
-            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
             randomBytes32(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
-            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
             randomUInt256(),
+            randomBytes32(),
             randomBytes32(),
             randomBytes32());
   }
@@ -480,7 +582,8 @@ public final class DataStructureUtil {
   public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getBuilderBidSchema()
-        .create(randomExecutionPayloadHeader(), randomUInt256(), builderPublicKey);
+        .create(
+            randomExecutionPayloadHeader(spec.getGenesisSpec()), randomUInt256(), builderPublicKey);
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
@@ -492,14 +595,30 @@ public final class DataStructureUtil {
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(SpecVersion specVersion) {
     final BeaconBlockBodySchema<?> schema =
         specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
-    return schema.toVersionBellatrix().map(__ -> randomExecutionPayload(specVersion)).orElse(null);
+    final SpecMilestone milestone = specVersion.getMilestone();
+    if (milestone.equals(SpecMilestone.BELLATRIX)) {
+      return schema
+          .toVersionBellatrix()
+          .map(__ -> randomExecutionPayloadBellatrix(specVersion))
+          .orElse(null);
+    } else if (milestone.equals(SpecMilestone.CAPELLA)) {
+      return schema
+          .toVersionCapella()
+          .map(__ -> randomExecutionPayloadCapella(specVersion))
+          .orElse(null);
+    } else {
+      throw new IllegalArgumentException(
+          "There is no random execution payload configured for " + milestone);
+    }
   }
 
-  public ExecutionPayload randomExecutionPayload(SpecVersion specVersion) {
+  public ExecutionPayload randomExecutionPayloadBellatrix(SpecVersion specVersion) {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(specVersion.getConfig());
     return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
         .getExecutionPayloadSchema()
+        .toVersionBellatrix()
+        .orElseThrow()
         .create(
             randomBytes32(),
             randomBytes20(),
@@ -517,28 +636,47 @@ public final class DataStructureUtil {
             randomExecutionPayloadTransactions());
   }
 
-  public ExecutionPayload randomExecutionPayload() {
-    return randomExecutionPayload(spec.getGenesisSpec());
+  public ExecutionPayload randomExecutionPayloadCapella(SpecVersion specVersion) {
+    final SpecConfigCapella specConfigCapella = SpecConfigCapella.required(specVersion.getConfig());
+    return SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
+        .getExecutionPayloadSchema()
+        .toVersionCapella()
+        .orElseThrow()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions(),
+            randomExecutionPayloadWithdrawals());
   }
 
-  public ExecutionPayload emptyExecutionPayload() {
-    return getBellatrixSchemaDefinitions(UInt64.ZERO)
-        .getExecutionPayloadSchema()
-        .create(
-            Bytes32.ZERO,
-            Bytes20.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes.EMPTY,
-            Bytes32.ZERO,
-            UInt64.ZERO,
-            UInt64.ZERO,
-            UInt64.ZERO,
-            UInt64.ZERO,
-            Bytes.EMPTY,
-            UInt256.ZERO,
-            Bytes32.ZERO,
-            List.of());
+  public ExecutionPayload randomExecutionPayload() {
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    switch (specVersion.getMilestone()) {
+      case BELLATRIX:
+        return randomExecutionPayloadBellatrix(specVersion);
+
+      case CAPELLA:
+        return randomExecutionPayloadCapella(specVersion);
+
+      default:
+        throw new UnsupportedOperationException(
+            "Can't create ExecutionPayload for milestone: " + specVersion.getMilestone());
+    }
+  }
+
+  public ExecutionPayload randomExecutionPayloadCapella() {
+    return randomExecutionPayloadCapella(spec.getGenesisSpec());
   }
 
   public Transaction randomExecutionPayloadTransaction() {
@@ -552,6 +690,12 @@ public final class DataStructureUtil {
   public List<Bytes> randomExecutionPayloadTransactions() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_TRANSACTIONS))
         .mapToObj(__ -> randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE)))
+        .collect(toList());
+  }
+
+  public List<Withdrawal> randomExecutionPayloadWithdrawals() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWALS))
+        .mapToObj(__ -> randomWithdrawal())
         .collect(toList());
   }
 
@@ -945,7 +1089,10 @@ public final class DataStructureUtil {
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
                     .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayloadHeader(
-                        () -> SafeFuture.completedFuture(randomExecutionPayloadHeader())))
+                        () ->
+                            SafeFuture.completedFuture(
+                                randomExecutionPayloadHeader(spec.atSlot(slotNum))))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -978,7 +1125,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum)))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1010,7 +1158,8 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec()))))
+                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1043,7 +1192,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
-                                    spec.getGenesisSpec()))))
+                                    spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
         .join();
   }
 
@@ -1178,6 +1328,22 @@ public final class DataStructureUtil {
     }
 
     return deposits;
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot() {
+    return randomDepositTreeSnapshot(randomLong(), randomUInt64());
+  }
+
+  public DepositTreeSnapshot randomDepositTreeSnapshot(
+      final long depositsCount, final UInt64 blockHeight) {
+    return new DepositTreeSnapshot(
+        Stream.generate(this::randomBytes32)
+            .limit(DEPOSIT_CONTRACT_TREE_DEPTH)
+            .collect(Collectors.toList()),
+        Bytes32.random(),
+        depositsCount,
+        Bytes32.random(),
+        blockHeight);
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit() {
@@ -1364,6 +1530,8 @@ public final class DataStructureUtil {
         return stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX:
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
+      case CAPELLA:
+        return stateBuilderCapella(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
     }
@@ -1395,6 +1563,16 @@ public final class DataStructureUtil {
   public BeaconStateBuilderBellatrix stateBuilderBellatrix(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderBellatrix.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella() {
+    return stateBuilderCapella(10, 10);
+  }
+
+  public BeaconStateBuilderCapella stateBuilderCapella(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderCapella.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
@@ -1512,6 +1690,58 @@ public final class DataStructureUtil {
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());
+  }
+
+  public Withdrawal randomWithdrawal() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getWithdrawalSchema()
+        .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(randomUInt64(), randomPublicKey(), randomBytes20());
+  }
+
+  public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
+    final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionCapella()
+            .orElseThrow()
+            .getBlsToExecutionChangesSchema();
+    final long maxBlsToExecutionChanges =
+        spec.getGenesisSpecConfig()
+            .toVersionCapella()
+            .orElseThrow()
+            .getMaxBlsToExecutionChanges()
+            .longValue();
+
+    return randomSszList(
+        signedBlsToExecutionChangeSchema,
+        maxBlsToExecutionChanges,
+        this::randomSignedBlsToExecutionChange);
+  }
+
+  public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBlsToExecutionChangeSchema()
+        .create(randomBlsToExecutionChange(), randomSignature());
+  }
+
+  public Bytes32 randomBlsWithdrawalCredentials() {
+    return Bytes32.wrap(
+        Bytes.concatenate(
+            Bytes.fromHexString("0x000000000000000000000000"),
+            randomEth1Address().getWrappedBytes()));
+  }
+
+  public Bytes32 randomEth1WithdrawalCredentials() {
+    return Bytes32.wrap(
+        Bytes.concatenate(
+            Bytes.fromHexString("0x010000000000000000000000"),
+            randomEth1Address().getWrappedBytes()));
   }
 
   private int randomInt(final int bound) {

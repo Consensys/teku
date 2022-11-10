@@ -57,7 +57,18 @@ public class DepositOptions {
           "Deposit tree snapshot. This value should be a file or URL pointing to a SSZ-encoded finalized deposit tree snapshot.",
       hidden = true,
       arity = "1")
-  private String depositSnapshot;
+  private String depositSnapshotPath;
+
+  @Option(
+      names = {"--Xdeposit-snapshot-storage-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable loading of finalized deposit tree snapshot from storage",
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean depositSnapshotStorageEnabled =
+      PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
@@ -65,6 +76,7 @@ public class DepositOptions {
             b.eth1Endpoints(eth1Endpoints)
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
                 .useMissingDepositEventLogging(useMissingDepositEventLogging)
-                .depositSnapshot(depositSnapshot));
+                .depositSnapshotPath(depositSnapshotPath)
+                .depositSnapshotStorageEnabled(depositSnapshotStorageEnabled));
   }
 }

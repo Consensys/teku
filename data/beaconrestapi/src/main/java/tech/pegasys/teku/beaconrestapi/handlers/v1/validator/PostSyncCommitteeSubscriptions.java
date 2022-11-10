@@ -14,21 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -37,15 +28,15 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 
-public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
+public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_subscriptions";
   private final ValidatorDataProvider provider;
 
@@ -88,32 +79,6 @@ public class PostSyncCommitteeSubscriptions extends MigratingEndpointAdapter {
             .response(SC_OK, "Successful response")
             .build());
     this.provider = validatorDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.POST,
-      summary = "Subscribe to a Sync committee subnet",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(
-              content = {
-                @OpenApiContent(
-                    from =
-                        tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription[].class)
-              }),
-      description =
-          "Subscribe to a number of sync committee subnets\n\n"
-              + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"
-              + "Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.",
-      responses = {
-        @OpenApiResponse(status = RES_OK),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid request syntax."),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

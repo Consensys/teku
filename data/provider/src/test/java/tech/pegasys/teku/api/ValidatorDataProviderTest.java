@@ -224,6 +224,7 @@ public class ValidatorDataProviderTest {
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
         break;
       case BELLATRIX:
+      case CAPELLA: // TODO CAPELLA
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockBellatrix.class);
         break;
     }

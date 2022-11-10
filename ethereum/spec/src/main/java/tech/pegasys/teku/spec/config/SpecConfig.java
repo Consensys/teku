@@ -150,4 +150,12 @@ public interface SpecConfig {
   default Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.empty();
   }
+
+  default Optional<SpecConfigCapella> toVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigEip4844> toVersionEip4844() {
+    return Optional.empty();
+  }
 }

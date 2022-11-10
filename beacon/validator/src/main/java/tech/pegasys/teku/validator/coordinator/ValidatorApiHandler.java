@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -28,7 +29,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -494,10 +494,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
             })
         .exceptionally(
-            error ->
-                InternalValidationResult.reject(
-                    "Failed to send signed attestation for slot %s, block %s",
-                    attestation.getData().getSlot(), attestation.getData().getBeaconBlockRoot()));
+            error -> {
+              LOG.error(
+                  "Failed to send signed attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error);
+              return InternalValidationResult.reject(
+                  "Failed to send signed attestation for slot %s, block %s: %s",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  getMessageOrSimpleName(error));
+            });
   }
 
   private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
@@ -821,7 +829,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       signedValidatorRegistration.getMessage().getPublicKey();
                   final boolean unknownOrHasExited =
                       Optional.ofNullable(validatorStatuses.get(validatorIdentifier))
-                          .map(this::validatorHasExited)
+                          .map(ValidatorStatus::hasExited)
                           .orElse(true);
                   if (unknownOrHasExited) {
                     LOG.debug(
@@ -835,11 +843,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return validatorRegistrations;
     }
     return validatorRegistrations.getSchema().createFromElements(applicableValidatorRegistrations);
-  }
-
-  private boolean validatorHasExited(final ValidatorStatus validatorStatus) {
-    return Objects.equals(validatorStatus, ValidatorStatus.exited_slashed)
-        || Objects.equals(validatorStatus, ValidatorStatus.exited_unslashed);
   }
 
   private static <A, B, R> Optional<R> combine(

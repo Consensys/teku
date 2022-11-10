@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.pow.api.schema;
 
+import java.math.BigInteger;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 
@@ -29,6 +30,20 @@ public class LoadDepositSnapshotResult {
       final ReplayDepositsResult replayDepositsResult) {
     this.depositTreeSnapshot = depositTreeSnapshot;
     this.replayDepositsResult = replayDepositsResult;
+  }
+
+  public static LoadDepositSnapshotResult create(
+      final Optional<DepositTreeSnapshot> depositTreeSnapshot) {
+    if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDepositCount() == 0) {
+      return LoadDepositSnapshotResult.EMPTY;
+    } else {
+      return new LoadDepositSnapshotResult(
+          depositTreeSnapshot,
+          ReplayDepositsResult.create(
+              depositTreeSnapshot.get().getExecutionBlockHeight().bigIntegerValue(),
+              BigInteger.valueOf(depositTreeSnapshot.get().getDepositCount() - 1),
+              true));
+    }
   }
 
   public Optional<DepositTreeSnapshot> getDepositTreeSnapshot() {

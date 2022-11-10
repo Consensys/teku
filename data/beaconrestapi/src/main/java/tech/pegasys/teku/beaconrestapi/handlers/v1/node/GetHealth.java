@@ -18,30 +18,20 @@ import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SYNCING_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_PARTIAL_CONTENT;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-public class GetHealth extends MigratingEndpointAdapter {
+public class GetHealth extends RestApiEndpoint {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/node/health";
   private final SyncDataProvider syncProvider;
@@ -66,29 +56,6 @@ public class GetHealth extends MigratingEndpointAdapter {
             .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get node health",
-      description = "Returns node health status in http status codes. Useful for load balancers.",
-      tags = {TAG_NODE},
-      queryParams = {
-        @OpenApiParam(name = SYNCING_STATUS, description = SYNCING_STATUS_DESCRIPTION)
-      },
-      responses = {
-        @OpenApiResponse(status = RES_OK, description = "Node is ready"),
-        @OpenApiResponse(
-            status = RES_PARTIAL_CONTENT,
-            description = "Node is syncing but can serve incomplete data"),
-        @OpenApiResponse(
-            status = RES_SERVICE_UNAVAILABLE,
-            description = "Node not initialized or having issues")
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

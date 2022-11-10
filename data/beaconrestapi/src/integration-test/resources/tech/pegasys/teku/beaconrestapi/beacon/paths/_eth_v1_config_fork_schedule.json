@@ -1,12 +1,12 @@
 {
   "get" : {
     "tags" : [ "Config" ],
+    "operationId" : "getScheduledForks",
     "summary" : "Get scheduled forks",
     "description" : "Retrieve all scheduled upcoming forks this node is aware of.",
-    "operationId" : "getEthV1ConfigFork_schedule",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Success",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -15,8 +15,25 @@
           }
         }
       },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

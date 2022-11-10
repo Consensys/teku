@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
 import java.net.URI;
@@ -36,13 +35,26 @@ public class ValidatorClientOptions {
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Send subnet subscriptions to beacon nodes which are used as failovers",
+      description =
+          "Send subnet subscriptions to the configured failover beacon nodes in addition to the primary node",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean failoversSendSubnetSubscriptionsEnabled =
       ValidatorConfig.DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
+
+  @Option(
+      names = {"--Xfailovers-publish-signed-duties-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Publish signed duties (blocks, attestations, aggregations, ...) to the configured failover beacon nodes in addition to the primary node",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean failoversPublishSignedDutiesEnabled =
+      ValidatorConfig.DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
 
   @Option(
       names = {"--Xbeacon-node-ssz-blocks-enabled"},
@@ -54,16 +66,6 @@ public class ValidatorClientOptions {
       fallbackValue = "true")
   private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
-  @Option(
-      names = {"--Xdoppelganger-detection-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable validators doppelganger detection",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
-
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
 
@@ -72,8 +74,8 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
-                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
+                .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
 

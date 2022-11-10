@@ -1,10 +1,30 @@
 {
+  "title" : "PostValidatorLivenessResponse",
   "type" : "object",
+  "required" : [ "data" ],
   "properties" : {
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/ValidatorLivenessAtEpoch"
+        "type" : "object",
+        "required" : [ "index", "epoch", "is_live" ],
+        "properties" : {
+          "index" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          },
+          "epoch" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          },
+          "is_live" : {
+            "type" : "boolean"
+          }
+        }
       }
     }
   }

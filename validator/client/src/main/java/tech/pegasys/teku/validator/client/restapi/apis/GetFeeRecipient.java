@@ -29,12 +29,12 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.BeaconProposerPreparer;
+import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class GetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";
-  private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
+  private final Optional<ProposerConfigManager> proposerConfigManager;
 
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> FEE_RECIPIENT_DATA =
       SerializableTypeDefinition.object(GetFeeRecipientResponse.class)
@@ -49,7 +49,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
           .withField("data", FEE_RECIPIENT_DATA, Function.identity())
           .build();
 
-  public GetFeeRecipient(final Optional<BeaconProposerPreparer> beaconProposerPreparer) {
+  public GetFeeRecipient(final Optional<ProposerConfigManager> proposerConfigManager) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("GetFeeRecipient")
@@ -65,16 +65,20 @@ public class GetFeeRecipient extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.beaconProposerPreparer = beaconProposerPreparer;
+    this.proposerConfigManager = proposerConfigManager;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
+    final ProposerConfigManager manager =
+        proposerConfigManager.orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Bellatrix is not currently scheduled on this network, unable to set fee recipient."));
+
     final Optional<Eth1Address> maybeFeeRecipient =
-        beaconProposerPreparer.isPresent()
-            ? beaconProposerPreparer.get().getFeeRecipient(publicKey)
-            : Optional.empty();
+        manager.isOwnedValidator(publicKey) ? manager.getFeeRecipient(publicKey) : Optional.empty();
     if (maybeFeeRecipient.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Fee recipient not found");
       return;

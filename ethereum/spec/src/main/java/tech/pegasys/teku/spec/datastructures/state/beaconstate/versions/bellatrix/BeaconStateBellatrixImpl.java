@@ -59,10 +59,6 @@ class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBel
 
   @Override
   protected void describeCustomFields(ToStringHelper stringBuilder) {
-    describeCustomFields(stringBuilder, this);
-  }
-
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
-    stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
+    BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
   }
 }

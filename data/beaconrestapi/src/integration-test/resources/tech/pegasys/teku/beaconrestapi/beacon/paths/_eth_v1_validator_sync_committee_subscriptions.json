@@ -1,16 +1,16 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "postSyncCommitteeSubscriptions",
     "summary" : "Subscribe to a Sync committee subnet",
     "description" : "Subscribe to a number of sync committee subnets\n\nSync committees are not present in phase0, but are required for Altair networks.\n\nSubscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.",
-    "operationId" : "postEthV1ValidatorSync_committee_subscriptions",
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/SyncCommitteeSubnetSubscription"
+              "$ref" : "#/components/schemas/PostSyncCommitteeData"
             }
           }
         }
@@ -18,13 +18,28 @@
     },
     "responses" : {
       "200" : {
-        "description" : "OK"
+        "description" : "Successful response",
+        "content" : { }
       },
       "400" : {
-        "description" : "Invalid request syntax."
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Beacon node internal error."
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

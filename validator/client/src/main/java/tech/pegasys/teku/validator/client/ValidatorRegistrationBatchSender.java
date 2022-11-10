@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +51,7 @@ public class ValidatorRegistrationBatchSender {
         Lists.partition(validatorRegistrations, batchSize);
 
     LOG.debug(
-        "Going to send {} validator(s) registrations to the Beacon Node in {} batch(es)",
+        "Going to send {} validator registration(s) to the Beacon Node in {} batch(es)",
         validatorRegistrations.size(),
         batchedRegistrations.size());
 
@@ -81,10 +83,8 @@ public class ValidatorRegistrationBatchSender {
             })
         .alwaysRun(
             () ->
-                LOG.info(
-                    "{} out of {} validator(s) registrations were successfully sent to the builder network via the Beacon Node.",
-                    successfullySentRegistrations.get(),
-                    validatorRegistrations.size()));
+                VALIDATOR_LOGGER.validatorRegistrationsSentToTheBuilderNetwork(
+                    successfullySentRegistrations.get(), validatorRegistrations.size()));
   }
 
   private SafeFuture<Void> sendBatch(

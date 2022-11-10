@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 public class BeaconStateSchemaBellatrix
     extends AbstractBeaconStateSchema<BeaconStateBellatrix, MutableBeaconStateBellatrix> {
 
-  private static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
+  public static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
 
   @VisibleForTesting
   BeaconStateSchemaBellatrix(final SpecConfig specConfig) {
@@ -47,12 +47,14 @@ public class BeaconStateSchemaBellatrix
     return new BeaconStateSchemaBellatrix(specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchema(SpecConfigBellatrix.required(specConfig)));
+            () ->
+                new ExecutionPayloadHeaderSchemaBellatrix(
+                    SpecConfigBellatrix.required(specConfig)));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))
@@ -94,8 +96,8 @@ public class BeaconStateSchemaBellatrix
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
-  public ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchema)
+  public ExecutionPayloadHeaderSchemaBellatrix getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaBellatrix)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 

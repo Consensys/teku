@@ -15,29 +15,21 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Objects;
 import java.util.function.Function;
 import tech.pegasys.teku.api.ConfigProvider;
-import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
-import tech.pegasys.teku.beaconrestapi.MigratingEndpointAdapter;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetDepositContract extends MigratingEndpointAdapter {
+public class GetDepositContract extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
   private final Eth1Address depositContractAddress;
   private final ConfigProvider configProvider;
@@ -69,23 +61,6 @@ public class GetDepositContract extends MigratingEndpointAdapter {
             .build());
     this.configProvider = configProvider;
     this.depositContractAddress = depositContractAddress;
-  }
-
-  @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get deposit contract address",
-      tags = {TAG_CONFIG},
-      description = "Retrieve deposit contract address and genesis fork version.",
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetDepositContractResponse.class)),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    adapt(ctx);
   }
 
   @Override

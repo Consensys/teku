@@ -107,6 +107,8 @@ public class ChainUpdater {
         Optional.of(
             SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
                 .getExecutionPayloadHeaderSchema()
+                .toVersionBellatrix()
+                .orElseThrow()
                 .create(
                     Bytes32.random(),
                     Bytes20.ZERO,

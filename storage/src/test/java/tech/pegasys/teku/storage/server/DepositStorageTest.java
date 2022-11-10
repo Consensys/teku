@@ -68,7 +68,7 @@ public class DepositStorageTest {
     database = storageSystem.database();
     eventsChannel = storageSystem.eth1EventsChannel();
 
-    depositStorage = storageSystem.createDepositStorage();
+    depositStorage = storageSystem.createDepositStorage(false);
   }
 
   @AfterEach
@@ -366,6 +366,47 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedDepositIndex())
         .hasValue(block99.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldNotRemoveDepositsWhenDepositSnapshotStorageNotEnabled(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
+    database.addDepositsFromBlockEvent(block99);
+    database.addDepositsFromBlockEvent(block100);
+    database.addDepositsFromBlockEvent(block101);
+
+    SafeFuture<Boolean> removeFuture = depositStorage.removeDepositEvents();
+    assertThat(removeFuture).isCompleted();
+    assertThat(removeFuture.get()).isFalse();
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future).isCompleted();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block99, block100, block101);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldRemoveDepositsWhenDepositSnapshotStorageEnabled(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
+    depositStorage = storageSystem.createDepositStorage(true);
+    database.addDepositsFromBlockEvent(block99);
+    database.addDepositsFromBlockEvent(block100);
+    database.addDepositsFromBlockEvent(block101);
+
+    SafeFuture<Boolean> removeFuture = depositStorage.removeDepositEvents();
+    assertThat(removeFuture).isCompleted();
+    assertThat(removeFuture.get()).isTrue();
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future).isCompleted();
+    assertThat(eventsChannel.getOrderedList()).isEmpty();
   }
 
   private static class UnsafeDepositsFromBlockEvent extends DepositsFromBlockEvent {

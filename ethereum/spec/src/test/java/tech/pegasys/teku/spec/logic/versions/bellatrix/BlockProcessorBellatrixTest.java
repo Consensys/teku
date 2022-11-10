@@ -33,7 +33,7 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
   }
 
   @Test
-  void shouldIgnoreAltairBlock() {
+  void shouldRejectAltairBlock() {
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     BeaconState preState = createBeaconState();
     final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());

@@ -1,31 +1,33 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
+    "operationId" : "getStateValidatorBalances",
     "summary" : "Get validator balances from state",
     "description" : "Returns filterable list of validator balances.",
-    "operationId" : "getEthV1BeaconStatesWithState_idValidator_balances",
     "parameters" : [ {
       "name" : "state_id",
-      "in" : "path",
-      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
       "required" : true,
+      "in" : "path",
       "schema" : {
-        "type" : "string"
+        "type" : "string",
+        "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+        "example" : "head"
       }
     }, {
       "name" : "id",
       "in" : "query",
-      "description" : "Either hex encoded public key (with 0x prefix) or validator index",
       "schema" : {
         "type" : "array",
         "items" : {
-          "type" : "string"
-        }
+          "type" : "string",
+          "description" : "Either hex encoded public key (with 0x prefix) or validator index"
+        },
+        "minItems" : "1"
       }
     } ],
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -34,14 +36,35 @@
           }
         }
       },
-      "400" : {
-        "description" : "Bad Request"
-      },
       "404" : {
-        "description" : "Not Found"
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

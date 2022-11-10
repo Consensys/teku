@@ -1,22 +1,39 @@
 {
   "get" : {
     "tags" : [ "Node" ],
+    "operationId" : "getNodePeers",
     "summary" : "Get node peers",
     "description" : "Retrieves data about the node's network peers.",
-    "operationId" : "getEthV1NodePeers",
     "responses" : {
       "200" : {
-        "description" : "OK",
+        "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/PeersResponse"
+              "$ref" : "#/components/schemas/GetPeersResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
       "500" : {
-        "description" : "Server Error"
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }

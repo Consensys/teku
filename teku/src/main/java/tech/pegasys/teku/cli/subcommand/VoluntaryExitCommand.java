@@ -250,7 +250,7 @@ public class VoluntaryExitCommand implements Runnable {
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
-    final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
+    final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary_exits", 8);
 
     apiClient =
         config

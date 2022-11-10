@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -93,6 +94,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableAnchorCheckpoint();
   }
 
+  public KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
+    return delegate.getVariableFinalizedDepositSnapshot();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
@@ -106,14 +111,24 @@ public class SchemaHotAdapter implements Schema {
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
-        "GENESIS_TIME", getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
+        "GENESIS_TIME",
+        getVariableGenesisTime(),
+        "JUSTIFIED_CHECKPOINT",
+        getVariableJustifiedCheckpoint(),
+        "BEST_JUSTIFIED_CHECKPOINT",
+        getVariableBestJustifiedCheckpoint(),
+        "FINALIZED_CHECKPOINT",
+        getVariableFinalizedCheckpoint(),
+        "LATEST_FINALIZED_STATE",
+        getVariableLatestFinalizedState(),
+        "MIN_GENESIS_TIME_BLOCK",
+        getVariableMinGenesisTimeBlock(),
+        "WEAK_SUBJECTIVITY_CHECKPOINT",
+        getVariableWeakSubjectivityCheckpoint(),
+        "ANCHOR_CHECKPOINT",
+        getVariableAnchorCheckpoint(),
+        "FINALIZED_DEPOSIT_SNAPSHOT",
+        getVariableFinalizedDepositSnapshot());
   }
 
   @Override

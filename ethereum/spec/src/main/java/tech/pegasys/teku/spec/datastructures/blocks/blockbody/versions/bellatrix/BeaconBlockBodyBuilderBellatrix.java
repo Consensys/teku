@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
+public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   private BeaconBlockBodySchemaBellatrixImpl schema;
   private BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
   protected Optional<Boolean> blinded = Optional.empty();
@@ -105,7 +105,7 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
                   deposits,
                   voluntaryExits,
                   syncAggregate,
-                  header));
+                  header.toVersionBellatrix().orElseThrow()));
     }
     return executionPayload.thenApply(
         payload ->
@@ -120,6 +120,6 @@ class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
                 deposits,
                 voluntaryExits,
                 syncAggregate,
-                payload));
+                payload.toVersionBellatrix().orElseThrow()));
   }
 }

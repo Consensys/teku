@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -41,19 +42,23 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final BeaconBlockSchema blindedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
-  private final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema;
+  private final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema;
   private final BuilderBidSchema builderBidSchema;
   private final SignedBuilderBidSchema signedBuilderBidSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
+    this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(
             specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyBellatrix");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaBellatrixImpl.create(
-            specConfig, getAttesterSlashingSchema(), "BlindedBlockBodyBellatrix");
+            specConfig,
+            getAttesterSlashingSchema(),
+            "BlindedBlockBodyBellatrix",
+            executionPayloadHeaderSchema);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockBellatrix");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockBellatrix");
@@ -61,9 +66,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockBellatrix");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
-    this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
-    this.builderBidSchema = new BuilderBidSchema(executionPayloadHeaderSchema);
-    this.signedBuilderBidSchema = new SignedBuilderBidSchema(builderBidSchema);
+    this.builderBidSchema =
+        new BuilderBidSchema(
+            "BuilderBidBellatrix", blindedBeaconBlockBodySchema.getExecutionPayloadHeaderSchema());
+    this.signedBuilderBidSchema =
+        new SignedBuilderBidSchema("SignedBuilderBidBellatrix", builderBidSchema);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
@@ -111,11 +118,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return signedBlindedBeaconBlockSchema;
   }
 
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     return beaconBlockBodySchema.getExecutionPayloadSchema();
   }
 
-  public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {
+  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchema;
   }
 

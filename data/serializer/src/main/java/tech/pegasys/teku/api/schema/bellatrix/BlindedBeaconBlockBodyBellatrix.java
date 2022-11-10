@@ -33,11 +33,11 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
-  public final ExecutionPayloadHeader executionPayloadHeader;
+  public final ExecutionPayloadHeaderBellatrix executionPayloadHeader;
 
   @JsonCreator
   public BlindedBeaconBlockBodyBellatrix(
@@ -51,7 +51,7 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
       @JsonProperty("execution_payload_header")
-          final ExecutionPayloadHeader executionPayloadHeader) {
+          final ExecutionPayloadHeaderBellatrix executionPayloadHeader) {
     super(
         randaoReveal,
         eth1Data,
@@ -73,12 +73,14 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
               .BlindedBeaconBlockBodyBellatrix
           blockBody) {
     super(blockBody);
-    this.executionPayloadHeader = new ExecutionPayloadHeader(blockBody.getExecutionPayloadHeader());
+    this.executionPayloadHeader =
+        new ExecutionPayloadHeaderBellatrix(blockBody.getExecutionPayloadHeader());
   }
 
   public BlindedBeaconBlockBodyBellatrix(final BeaconBlockBodyBellatrix blockBody) {
     super(blockBody);
-    this.executionPayloadHeader = new ExecutionPayloadHeader(blockBody.getExecutionPayload());
+    this.executionPayloadHeader =
+        new ExecutionPayloadHeaderBellatrix(blockBody.getExecutionPayload());
   }
 
   @Override
@@ -94,8 +96,12 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
-    final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
+
+    final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec)
+            .getExecutionPayloadHeaderSchema()
+            .toVersionBellatrix()
+            .orElseThrow();
 
     return super.asInternalBeaconBlockBody(
         spec,

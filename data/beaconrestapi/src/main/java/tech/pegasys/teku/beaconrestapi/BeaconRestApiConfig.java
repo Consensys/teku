@@ -31,14 +31,12 @@ public class BeaconRestApiConfig {
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
   public static final int DEFAULT_SUBSCRIBE_THREADS_COUNT = 1;
-  public static final boolean DEFAULT_ENABLE_MIGRATED_BEACON_REST_API = false;
 
   // Beacon REST API
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
   private final boolean beaconLivenessTrackingEnabled;
-  private final boolean enableMigratedRestApi;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
@@ -58,8 +56,7 @@ public class BeaconRestApiConfig {
       final int maxUrlLength,
       final int maxPendingEvents,
       final int validatorThreads,
-      final boolean beaconLivenessTrackingEnabled,
-      final boolean enableMigratedRestApi) {
+      final boolean beaconLivenessTrackingEnabled) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -71,7 +68,6 @@ public class BeaconRestApiConfig {
     this.maxPendingEvents = maxPendingEvents;
     this.validatorThreads = validatorThreads;
     this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
-    this.enableMigratedRestApi = enableMigratedRestApi;
   }
 
   public int getRestApiPort() {
@@ -88,10 +84,6 @@ public class BeaconRestApiConfig {
 
   public boolean isBeaconLivenessTrackingEnabled() {
     return beaconLivenessTrackingEnabled;
-  }
-
-  public boolean isEnableMigratedRestApi() {
-    return enableMigratedRestApi;
   }
 
   public String getRestApiInterface() {
@@ -138,8 +130,6 @@ public class BeaconRestApiConfig {
     private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
     private int maxUrlLength = DEFAULT_MAX_URL_LENGTH;
     private int validatorThreads = DEFAULT_SUBSCRIBE_THREADS_COUNT;
-    private boolean enableMigratedRestApi = DEFAULT_ENABLE_MIGRATED_BEACON_REST_API;
-
     private Eth1Address eth1DepositContractAddress;
 
     private BeaconRestApiConfigBuilder() {}
@@ -210,11 +200,6 @@ public class BeaconRestApiConfig {
       return this;
     }
 
-    public BeaconRestApiConfigBuilder enableMigratedRestApi(final boolean enableMigratedRestApi) {
-      this.enableMigratedRestApi = enableMigratedRestApi;
-      return this;
-    }
-
     public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
       if (validatorThreads < 0) {
         throw new InvalidConfigurationException(
@@ -236,8 +221,7 @@ public class BeaconRestApiConfig {
           maxUrlLength,
           maxPendingEvents,
           validatorThreads,
-          beaconLivenessTrackingEnabled,
-          enableMigratedRestApi);
+          beaconLivenessTrackingEnabled);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
