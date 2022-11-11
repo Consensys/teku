@@ -627,6 +627,7 @@ public class SpecConfigBuilder {
 
     // Light client
     private Integer syncCommitteeBranchLength;
+    private static final int SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT = 5;
 
     private AltairBuilder() {}
 
@@ -666,10 +667,12 @@ public class SpecConfigBuilder {
       validateConstant("altairForkVersion", altairForkVersion);
       validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
-      validateConstant("syncCommitteeBranchLength", syncCommitteeBranchLength);
+      // Config items were added after launch so provide defaults to preserve compatibility
       if (updateTimeout == null) {
-        // Config item was added after launch so provide a default to preserve compatibility
         updateTimeout = epochsPerSyncCommitteePeriod * slotsPerEpoch;
+      }
+      if (syncCommitteeBranchLength == null) {
+        syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
       }
     }
 
