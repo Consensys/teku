@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -224,8 +225,10 @@ public class ValidatorDataProviderTest {
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
         break;
       case BELLATRIX:
-      case CAPELLA: // TODO CAPELLA
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockBellatrix.class);
+        break;
+      case CAPELLA:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockCapella.class);
         break;
     }
   }
