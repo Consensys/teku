@@ -100,14 +100,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
 
   @Override
-  public void processExecutionPayload(
+  public void executionProcessing(
       final MutableBeaconState genericState,
       final ExecutionPayloadHeader executionPayloadHeader,
       final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     processWithdrawals(genericState, maybeExecutionPayload);
-    super.processExecutionPayload(
+    super.executionProcessing(
         genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
   }
 
