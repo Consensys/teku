@@ -113,21 +113,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
   @Override
   @CheckReturnValue
-  protected BlockValidationResult verifyBlockSignatures(
+  protected BlockValidationResult validateBlockPreProcessing(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier) {
-    return BlockValidationResult.allOf(
-        () ->
-            super.verifyBlockSignatures(
-                preState, block, indexedAttestationCache, signatureVerifier),
-        () ->
-            verifyBlsToExecutionChanges(
-                preState,
-                BeaconBlockBodyCapella.required(block.getMessage().getBody())
-                    .getBlsToExecutionChanges(),
-                signatureVerifier));
+    return verifyBlsToExecutionChangesPreProcessing(
+        preState,
+        BeaconBlockBodyCapella.required(block.getMessage().getBody()).getBlsToExecutionChanges(),
+        signatureVerifier);
   }
 
   @Override
@@ -148,13 +141,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState state,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException {
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state), blsToExecutionChanges);
     final BlockValidationResult result =
-        verifyBlsToExecutionChanges(state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
+        verifyBlsToExecutionChangesPreProcessing(
+            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
+    processBlsToExecutionChangesNoValidation(
+        MutableBeaconStateCapella.required(state), blsToExecutionChanges);
   }
 
   // process_bls_to_execution_change
@@ -275,7 +269,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     return (validatorIndex + 1) % validatorCount;
   }
 
-  private BlockValidationResult verifyBlsToExecutionChanges(
+  private BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
       final BLSSignatureVerifier signatureVerifier) {
@@ -294,8 +288,9 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                 + " Credentials: "
                 + withdrawalCredentials);
       }
-      if (withdrawalCredentials.slice(1)
-          != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1)) {
+      if (!withdrawalCredentials
+          .slice(1)
+          .equals(Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1))) {
         return BlockValidationResult.failed(
             "Validator "
                 + validatorIndex
