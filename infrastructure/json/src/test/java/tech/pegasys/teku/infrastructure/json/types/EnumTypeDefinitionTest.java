@@ -51,7 +51,6 @@ public class EnumTypeDefinitionTest {
         DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString, Set.of(YesNo.YES));
     assertThatThrownBy(() -> JsonUtil.parse("\"yes\"", definition))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThat(JsonUtil.serialize(YesNo.NO, definition)).isEqualTo("\"no\"");
     assertThat(JsonUtil.parse("\"no\"", definition)).isEqualTo(YesNo.NO);
   }
 
