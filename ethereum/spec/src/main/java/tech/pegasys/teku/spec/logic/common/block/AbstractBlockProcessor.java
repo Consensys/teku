@@ -152,6 +152,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     try {
+      final BlockValidationResult preValidationResult =
+          validateBlockPreProcessing(blockSlotState, signedBlock, signatureVerifier);
+      if (!preValidationResult.isValid()) {
+        throw new BlockProcessingException(preValidationResult.getFailureReason());
+      }
+
       // Process_block
       BeaconState postState =
           processUnsignedBlock(
@@ -162,7 +168,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               payloadExecutor);
 
       BlockValidationResult blockValidationResult =
-          validateBlock(
+          validateBlockPostProcessing(
               blockSlotState, signedBlock, postState, indexedAttestationCache, signatureVerifier);
 
       if (!blockValidationResult.isValid()) {
@@ -180,6 +186,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  @CheckReturnValue
+  protected BlockValidationResult validateBlockPreProcessing(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier) {
+    return BlockValidationResult.SUCCESSFUL;
+  }
+
   /**
    * Validate the given block. Checks signatures in the block and verifies stateRoot matches
    * postState
@@ -191,7 +205,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    * @return A block validation result
    */
   @CheckReturnValue
-  private BlockValidationResult validateBlock(
+  private BlockValidationResult validateBlockPostProcessing(
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BeaconState postState,
