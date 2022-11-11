@@ -41,6 +41,7 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
   public final ExecutionPayloadHeaderCapella executionPayloadHeader;
 
+  @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonCreator
