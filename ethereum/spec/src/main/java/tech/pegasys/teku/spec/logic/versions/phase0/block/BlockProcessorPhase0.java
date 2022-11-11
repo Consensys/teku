@@ -130,7 +130,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   public void processBlsToExecutionChanges(
       final MutableBeaconState state,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
-    throw new UnsupportedOperationException("No BlsToExecutionChange in phase0");
+    throw new UnsupportedOperationException("No BlsToExecutionChanges in phase0");
   }
 
   @Override
