@@ -920,7 +920,7 @@ public class SpecConfigBuilder {
     private UInt64 capellaForkEpoch;
 
     private UInt64 maxBlsToExecutionChanges;
-    private UInt64 maxWithdrawalsPerPayload;
+    private int maxWithdrawalsPerPayload;
 
     private CapellaBuilder() {}
 
@@ -956,7 +956,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public CapellaBuilder maxWithdrawalsPerPayload(final UInt64 maxWithdrawalsPerPayload) {
+    public CapellaBuilder maxWithdrawalsPerPayload(final int maxWithdrawalsPerPayload) {
       this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
       return this;
     }

@@ -33,10 +33,15 @@ public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, 
   @Override
   BeaconStateCapella commitChanges();
 
-  default void setLatestWithdrawalValidatorIndex(UInt64 latestWithdrawalValidatorIndex) {
+  default void setNextWithdrawalIndex(UInt64 nextWithdrawalIndex) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_WITHDRAWAL_INDEX);
+    set(fieldIndex, SszUInt64.of(nextWithdrawalIndex));
+  }
+
+  default void setNextWithdrawalValidatorIndex(UInt64 nextWithdrawalValidatorIndex) {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.LATEST_WITHDRAWAL_VALIDATOR_INDEX);
-    set(fieldIndex, SszUInt64.of(latestWithdrawalValidatorIndex));
+        getSchema().getFieldIndex(BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX);
+    set(fieldIndex, SszUInt64.of(nextWithdrawalValidatorIndex));
   }
 
   @Override

@@ -105,14 +105,28 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(
-          state, executionPayloadHeader, blockBody.getOptionalExecutionPayload(), payloadExecutor);
+      final BeaconBlockBody blockBody1 = block.getBody();
+      executionProcessing(
+          genericState,
+          executionPayloadHeader,
+          blockBody1.getOptionalExecutionPayload(),
+          payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
     processSyncAggregate(
         state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
+  }
+
+  public void executionProcessing(
+      final MutableBeaconState genericState,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    processExecutionPayload(
+        genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
   }
 
   @Override

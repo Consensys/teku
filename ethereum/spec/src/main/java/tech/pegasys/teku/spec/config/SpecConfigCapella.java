@@ -38,5 +38,5 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
 
   UInt64 getMaxBlsToExecutionChanges();
 
-  UInt64 getMaxWithdrawalsPerPayload();
+  int getMaxWithdrawalsPerPayload();
 }
