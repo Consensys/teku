@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -294,9 +295,18 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processBlsToExecutionChange(
-      final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange) {
+  public void processBlsToExecutionChanges(
+      final MutableBeaconState state,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
+      throws BlockProcessingException {
     throw new UnsupportedOperationException("No BlsToExecutionChange in Altair.");
+  }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state, final ExecutionPayload payload)
+      throws BlockProcessingException {
+
+    throw new UnsupportedOperationException("No withdrawals in Altair");
   }
 
   public static boolean eth2FastAggregateVerify(
