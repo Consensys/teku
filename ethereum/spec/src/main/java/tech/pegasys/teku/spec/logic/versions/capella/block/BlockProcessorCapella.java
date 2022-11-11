@@ -143,6 +143,20 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
   }
 
+  @Override
+  public void processBlsToExecutionChanges(
+      final MutableBeaconState state,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
+      throws BlockProcessingException {
+    processBlsToExecutionChangesNoValidation(
+        MutableBeaconStateCapella.required(state), blsToExecutionChanges);
+    final BlockValidationResult result =
+        verifyBlsToExecutionChanges(state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
+    if (!result.isValid()) {
+      throw new BlockProcessingException(result.getFailureReason());
+    }
+  }
+
   // process_bls_to_execution_change
   public void processBlsToExecutionChangesNoValidation(
       final MutableBeaconStateCapella state,
@@ -161,17 +175,24 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     }
   }
 
-  // process_withdrawals
   public void processWithdrawals(
       final MutableBeaconState genericState, final Optional<ExecutionPayload> maybePayload)
       throws BlockProcessingException {
+    final ExecutionPayload payload =
+        maybePayload.orElseThrow(
+            () ->
+                new BlockProcessingException(
+                    "ExecutionPayload was not found during block processing."));
+    processWithdrawals(genericState, payload);
+  }
+
+  @Override
+  public void processWithdrawals(
+      final MutableBeaconState genericState, final ExecutionPayload payload)
+      throws BlockProcessingException {
     final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
     final ExecutionPayloadCapella executionPayloadCapella =
-        ExecutionPayloadCapella.required(
-            maybePayload.orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "ExecutionPayload was not found during block processing.")));
+        ExecutionPayloadCapella.required(payload);
     final SszList<Withdrawal> payloadWithdrawals = executionPayloadCapella.getWithdrawals();
     final List<Withdrawal> expectedWithdrawals = getExpectedWithdrawals(state);
     if (expectedWithdrawals.size() != payloadWithdrawals.size()) {
@@ -203,6 +224,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       state.setNextWithdrawalValidatorIndex(UInt64.valueOf(nextWithdrawalValidatorIndex));
     }
   }
+  // process_withdrawals
 
   // get_expected_withdrawals
   private List<Withdrawal> getExpectedWithdrawals(final BeaconStateCapella preState) {
@@ -267,7 +289,10 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
           genericState.getValidators().get(validatorIndex).getWithdrawalCredentials();
       if (withdrawalCredentials.get(0) != WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0)) {
         return BlockValidationResult.failed(
-            "Not using BLS withdrawal credentials for validator " + validatorIndex);
+            "Not using BLS withdrawal credentials for validator "
+                + validatorIndex
+                + " Credentials: "
+                + withdrawalCredentials);
       }
       if (withdrawalCredentials.slice(1)
           != Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1)) {

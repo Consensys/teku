@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -194,8 +195,16 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   }
 
   @Override
-  public void processBlsToExecutionChange(
-      final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange) {
+  public void processBlsToExecutionChanges(
+      final MutableBeaconState state,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
+      throws BlockProcessingException {
     throw new UnsupportedOperationException("No BlsToExecutionChange in Bellatrix.");
+  }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state, final ExecutionPayload payload)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No withdrawals in Bellatrix");
   }
 }

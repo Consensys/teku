@@ -137,6 +137,10 @@ public interface BlockProcessor {
 
   boolean isOptimistic();
 
-  void processBlsToExecutionChange(
-      MutableBeaconState state, SignedBlsToExecutionChange blsToExecutionChange);
+  void processBlsToExecutionChanges(
+      MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
+      throws BlockProcessingException;
+
+  void processWithdrawals(MutableBeaconState state, ExecutionPayload payload)
+      throws BlockProcessingException;
 }
