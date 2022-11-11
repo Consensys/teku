@@ -222,6 +222,7 @@ public class Eth2P2PNetworkBuilder {
             gossipedSignedContributionAndProofProcessor,
             gossipedSyncCommitteeMessageProcessor);
       case BELLATRIX:
+      case CAPELLA: // FIXME add real Capella version of GossipForkSubscriptions
         return new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
             spec,
