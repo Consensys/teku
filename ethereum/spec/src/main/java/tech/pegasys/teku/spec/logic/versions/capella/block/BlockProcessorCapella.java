@@ -28,10 +28,8 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
@@ -61,7 +59,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
@@ -73,7 +70,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   private final SpecConfigCapella specConfigCapella;
 
   public BlockProcessorCapella(
-      final SpecConfigBellatrix specConfig,
+      final SpecConfigCapella specConfig,
       final Predicates predicates,
       final MiscHelpersBellatrix miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
@@ -84,7 +81,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitionsCapella schemaDefinitions) {
     super(
         specConfig,
         predicates,
@@ -98,23 +95,20 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsBellatrix.required(schemaDefinitions));
-    schemaDefinitionsCapella = SchemaDefinitionsCapella.required(schemaDefinitions);
-    this.specConfigCapella = SpecConfigCapella.required(specConfig);
+    schemaDefinitionsCapella = schemaDefinitions;
+    this.specConfigCapella = specConfig;
   }
 
   @Override
-  protected void maybeProcessExecutionPayload(
-      final MutableBeaconState state,
-      final BeaconBlock block,
+  public void processExecutionPayload(
+      final MutableBeaconState genericState,
       final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    final BeaconBlockBody blockBody = block.getBody();
-    if (isExecutionEnabled(state, block)) {
-      processWithdrawals(state, blockBody.getOptionalExecutionPayload());
-      processExecutionPayload(
-          state, executionPayloadHeader, blockBody.getOptionalExecutionPayload(), payloadExecutor);
-    }
+    processWithdrawals(genericState, maybeExecutionPayload);
+    super.processExecutionPayload(
+        genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
   }
 
   @Override
@@ -172,7 +166,6 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState genericState, final Optional<ExecutionPayload> maybePayload)
       throws BlockProcessingException {
     final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
-    final List<Withdrawal> expectedWithdrawals = getExpectedWithdrawals(state);
     final ExecutionPayloadCapella executionPayloadCapella =
         ExecutionPayloadCapella.required(
             maybePayload.orElseThrow(
@@ -180,6 +173,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                     new BlockProcessingException(
                         "ExecutionPayload was not found during block processing.")));
     final SszList<Withdrawal> payloadWithdrawals = executionPayloadCapella.getWithdrawals();
+    final List<Withdrawal> expectedWithdrawals = getExpectedWithdrawals(state);
     if (expectedWithdrawals.size() != payloadWithdrawals.size()) {
       throw new BlockProcessingException(
           "Expected "
