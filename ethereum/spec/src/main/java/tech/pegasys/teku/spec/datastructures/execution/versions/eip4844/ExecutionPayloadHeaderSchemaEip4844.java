@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOBS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -28,7 +29,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
-import static tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadSchemaEip4844.FIELD_EXCESS_BLOBS;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -89,7 +89,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(FIELD_EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));

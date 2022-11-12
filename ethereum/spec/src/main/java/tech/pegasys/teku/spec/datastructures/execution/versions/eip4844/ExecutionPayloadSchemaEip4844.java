@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOBS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
@@ -78,8 +78,6 @@ public class ExecutionPayloadSchemaEip4844
         SszList<Withdrawal>>
     implements ExecutionPayloadSchema<ExecutionPayloadEip4844Impl> {
 
-  static final SszFieldName FIELD_EXCESS_BLOBS = () -> "excess_blobs";
-
   private final ExecutionPayloadEip4844Impl defaultExecutionPayload;
 
   public ExecutionPayloadSchemaEip4844(final SpecConfigEip4844 specConfig) {
@@ -97,7 +95,7 @@ public class ExecutionPayloadSchemaEip4844
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(FIELD_EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             TRANSACTIONS,
