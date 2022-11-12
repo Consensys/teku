@@ -163,7 +163,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
   }
 
   private SszByteListSchema<?> getExtraDataSchema() {
-    return (SszByteListSchema<?>) getFieldSchema10();
+    return (SszByteListSchema<?>) getChildSchema(getFieldIndex(EXTRA_DATA));
   }
 
   @Override
