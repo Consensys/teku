@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -37,15 +38,22 @@ public class BlobsSidecar
   public static class BlobsSidecarSchema
       extends ContainerSchema4<BlobsSidecar, SszBytes32, SszUInt64, SszList<Blob>, SszKZGProof> {
 
+    final static SszFieldName FIELD_BLOBS = () -> "blobs";
+
     BlobsSidecarSchema(final SpecConfigEip4844 specConfig, final BlobSchema blobSchema) {
       super(
           "BlobsSidecar",
           namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("beacon_block_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema(
-              "blobs",
+              FIELD_BLOBS,
               SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock().longValue())),
           namedSchema("kzg_aggregated_proof", SszKZGProofSchema.INSTANCE));
+    }
+
+    @SuppressWarnings("unchecked")
+    public SszListSchema<Blob, ?> getBlobsSchema() {
+      return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
     }
 
     @Override
@@ -73,7 +81,7 @@ public class BlobsSidecar
         schema,
         SszBytes32.of(beaconBlockRoot),
         SszUInt64.of(beaconBlockSlot),
-        ((SszListSchema<Blob, SszList<Blob>>) schema.getFieldSchema2()).createFromElements(blobs),
+        schema.getBlobsSchema().createFromElements(blobs),
         new SszKZGProof(kzgAggregatedProof));
   }
 
