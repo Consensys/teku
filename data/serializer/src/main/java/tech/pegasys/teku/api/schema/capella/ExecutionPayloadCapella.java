@@ -79,7 +79,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
     this.withdrawals =
-        executionPayload.getOptionalWithdrawals().orElseThrow().stream()
+        executionPayload.toVersionCapella().orElseThrow().getWithdrawals().stream()
             .map(Withdrawal::new)
             .collect(toList());
   }

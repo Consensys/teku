@@ -22,11 +22,6 @@ public interface ExecutionPayloadHeaderCapella extends ExecutionPayloadHeader {
   Bytes32 getWithdrawalsRoot();
 
   @Override
-  default Optional<Bytes32> getOptionalWithdrawalsRoot() {
-    return Optional.of(getWithdrawalsRoot());
-  }
-
-  @Override
   default Optional<ExecutionPayloadHeaderCapella> toVersionCapella() {
     return Optional.of(this);
   }
