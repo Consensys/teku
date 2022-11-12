@@ -35,7 +35,7 @@ public class SignedBeaconBlockAndBlobsSidecar
     }
 
     @Override
-    public SignedBeaconBlockAndBlobsSidecar createFromBackingNode(TreeNode node) {
+    public SignedBeaconBlockAndBlobsSidecar createFromBackingNode(final TreeNode node) {
       return new SignedBeaconBlockAndBlobsSidecar(this, node);
     }
   }
@@ -47,12 +47,12 @@ public class SignedBeaconBlockAndBlobsSidecar
   }
 
   private SignedBeaconBlockAndBlobsSidecar(
-      SignedBeaconBlockAndBlobsSidecarSchema type, TreeNode backingNode) {
+      final SignedBeaconBlockAndBlobsSidecarSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedBeaconBlockAndBlobsSidecar(
-      SignedBeaconBlockAndBlobsSidecarSchema schema,
+      final SignedBeaconBlockAndBlobsSidecarSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
       final BlobsSidecar blobsSidecar) {
     super(schema, signedBeaconBlock, blobsSidecar);

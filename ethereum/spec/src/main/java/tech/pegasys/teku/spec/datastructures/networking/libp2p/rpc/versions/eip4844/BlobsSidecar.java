@@ -38,7 +38,7 @@ public class BlobsSidecar
   public static class BlobsSidecarSchema
       extends ContainerSchema4<BlobsSidecar, SszBytes32, SszUInt64, SszList<Blob>, SszKZGProof> {
 
-    final static SszFieldName FIELD_BLOBS = () -> "blobs";
+    static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
     BlobsSidecarSchema(final SpecConfigEip4844 specConfig, final BlobSchema blobSchema) {
       super(
@@ -57,7 +57,7 @@ public class BlobsSidecar
     }
 
     @Override
-    public BlobsSidecar createFromBackingNode(TreeNode node) {
+    public BlobsSidecar createFromBackingNode(final TreeNode node) {
       return new BlobsSidecar(this, node);
     }
   }
@@ -67,12 +67,12 @@ public class BlobsSidecar
     return new BlobsSidecarSchema(specConfig, blobSchema);
   }
 
-  private BlobsSidecar(BlobsSidecarSchema type, TreeNode backingNode) {
+  private BlobsSidecar(final BlobsSidecarSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BlobsSidecar(
-      BlobsSidecarSchema schema,
+      final BlobsSidecarSchema schema,
       final Bytes32 beaconBlockRoot,
       final UInt64 beaconBlockSlot,
       final List<Blob> blobs,
