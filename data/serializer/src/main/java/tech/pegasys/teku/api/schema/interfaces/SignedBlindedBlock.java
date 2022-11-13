@@ -16,12 +16,14 @@ package tech.pegasys.teku.api.schema.interfaces;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
 @Schema(
     oneOf = {
       SignedBeaconBlockPhase0.class,
       SignedBeaconBlockAltair.class,
-      SignedBlindedBeaconBlockBellatrix.class
+      SignedBlindedBeaconBlockBellatrix.class,
+      SignedBlindedBeaconBlockCapella.class
     })
 public interface SignedBlindedBlock {}
