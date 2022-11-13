@@ -56,5 +56,5 @@ public interface GossipForkSubscriptions {
 
   void unsubscribeFromSyncCommitteeSubnet(int subnetId);
 
-  void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message);
+  void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message);
 }

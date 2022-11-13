@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 public class SignedBlsToExecutionChangeValidator
     implements OperationValidator<SignedBlsToExecutionChange> {
 
-  // FIXME Implement validation logic
+  // FIXME Implement validation logic (#6358)
 
   @Override
   public SafeFuture<InternalValidationResult> validateFully(
