@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -261,6 +262,11 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
     // Does not apply to this fork.
+  }
+
+  @Override
+  public void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {
+    // Does not apply to this fork
   }
 
   protected int getMessageMaxSize() {

@@ -80,10 +80,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -125,6 +127,7 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -209,6 +212,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  protected volatile OperationPool<SignedBlsToExecutionChange> signedBlsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
@@ -387,6 +391,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
+    initSignedBlsToExecutionChangePool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -500,6 +505,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
+  }
+
+  protected void initSignedBlsToExecutionChangePool() {
+    LOG.debug("BeaconChainController.initSignedBlsToExecutionChangePool()");
+    final SignedBlsToExecutionChangeValidator validator = new SignedBlsToExecutionChangeValidator();
+
+    signedBlsToExecutionChangePool =
+        new OperationPool<>(
+            "SignedBlsToExecutionChangePool",
+            metricsSystem,
+            beaconBlockSchemaSupplier
+                .andThen(BeaconBlockBodySchema::toVersionCapella)
+                .andThen(Optional::orElseThrow)
+                .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
+            validator);
   }
 
   protected void initDataProvider() {
@@ -794,6 +814,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
+            .gossipedSignedBlsToExecutionChangeProcessor(signedBlsToExecutionChangePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(storageQueryChannel)
@@ -815,6 +836,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
     voluntaryExitPool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
+    signedBlsToExecutionChangePool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
