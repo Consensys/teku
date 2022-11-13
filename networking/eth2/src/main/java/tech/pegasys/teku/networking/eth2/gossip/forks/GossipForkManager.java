@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -200,6 +201,14 @@ public class GossipForkManager {
         message,
         "voluntary exit",
         GossipForkSubscriptions::publishVoluntaryExit);
+  }
+
+  public void publishSignedBlsToExecutionChanges(final SignedBlsToExecutionChange message) {
+    publishMessage(
+        spec.computeStartSlotAtEpoch(currentEpoch.orElseThrow()),
+        message,
+        "signed bls to execution change",
+        GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
   }
 
   private <T> void publishMessage(
