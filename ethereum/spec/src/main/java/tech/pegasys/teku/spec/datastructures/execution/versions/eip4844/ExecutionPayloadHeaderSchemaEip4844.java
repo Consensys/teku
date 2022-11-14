@@ -140,28 +140,6 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszBytes32.of(withdrawalsRoot));
   }
 
-  public ExecutionPayloadHeaderEip4844Impl createFromExecutionPayload(
-      final ExecutionPayloadEip4844Impl executionPayload) {
-    return new ExecutionPayloadHeaderEip4844Impl(
-        this,
-        SszBytes32.of(executionPayload.getParentHash()),
-        SszByteVector.fromBytes(executionPayload.getFeeRecipient().getWrappedBytes()),
-        SszBytes32.of(executionPayload.getStateRoot()),
-        SszBytes32.of(executionPayload.getReceiptsRoot()),
-        SszByteVector.fromBytes(executionPayload.getLogsBloom()),
-        SszBytes32.of(executionPayload.getPrevRandao()),
-        SszUInt64.of(executionPayload.getBlockNumber()),
-        SszUInt64.of(executionPayload.getGasLimit()),
-        SszUInt64.of(executionPayload.getGasUsed()),
-        SszUInt64.of(executionPayload.getTimestamp()),
-        getExtraDataSchema().fromBytes(executionPayload.getExtraData()),
-        SszUInt256.of(executionPayload.getBaseFeePerGas()),
-        SszUInt64.of(executionPayload.getExcessBlobs()),
-        SszBytes32.of(executionPayload.getBlockHash()),
-        SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
-  }
-
   private SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getChildSchema(getFieldIndex(EXTRA_DATA));
   }
