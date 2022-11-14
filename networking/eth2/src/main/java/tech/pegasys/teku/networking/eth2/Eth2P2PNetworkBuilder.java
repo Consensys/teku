@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -94,6 +96,8 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
   protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  protected OperationProcessor<SignedBlsToExecutionChange>
+      gossipedSignedBlsToExecutionChangeProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected StorageQueryChannel historicalChainData;
   protected MetricsSystem metricsSystem;
@@ -238,6 +242,24 @@ public class Eth2P2PNetworkBuilder {
             gossipedVoluntaryExitConsumer,
             gossipedSignedContributionAndProofProcessor,
             gossipedSyncCommitteeMessageProcessor);
+      case CAPELLA:
+        return new GossipForkSubscriptionsCapella(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            gossipedProposerSlashingConsumer,
+            gossipedVoluntaryExitConsumer,
+            gossipedSignedContributionAndProofProcessor,
+            gossipedSyncCommitteeMessageProcessor,
+            gossipedSignedBlsToExecutionChangeProcessor);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
@@ -332,6 +354,8 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull(
         "gossipedSignedContributionAndProofProcessor", gossipedSignedContributionAndProofProcessor);
     assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
+    assertNotNull(
+        "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -430,6 +454,14 @@ public class Eth2P2PNetworkBuilder {
           gossipedSyncCommitteeMessageProcessor) {
     checkNotNull(gossipedSyncCommitteeMessageProcessor);
     this.gossipedSyncCommitteeMessageProcessor = gossipedSyncCommitteeMessageProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedSignedBlsToExecutionChangeProcessor(
+      final OperationProcessor<SignedBlsToExecutionChange>
+          gossipedSignedBlsToExecutionChangeProcessor) {
+    checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
+    this.gossipedSignedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
     return this;
   }
 

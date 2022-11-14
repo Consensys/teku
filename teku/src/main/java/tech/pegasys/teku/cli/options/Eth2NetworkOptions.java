@@ -79,6 +79,14 @@ public class Eth2NetworkOptions {
   private UInt64 bellatrixForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-capella-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the capella fork activation epoch.",
+      arity = "1")
+  private UInt64 capellaForkEpoch;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -186,6 +194,9 @@ public class Eth2NetworkOptions {
     }
     if (bellatrixForkEpoch != null) {
       builder.bellatrixForkEpoch(bellatrixForkEpoch);
+    }
+    if (capellaForkEpoch != null) {
+      builder.capellaForkEpoch(capellaForkEpoch);
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);

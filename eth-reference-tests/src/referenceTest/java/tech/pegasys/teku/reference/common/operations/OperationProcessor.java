@@ -60,5 +60,7 @@ public interface OperationProcessor {
   void processBlsToExecutionChange(
       MutableBeaconState state, SignedBlsToExecutionChange blsToExecutionChange)
       throws BlockProcessingException;
-  ;
+
+  void processWithdrawals(MutableBeaconState state, ExecutionPayload payload)
+      throws BlockProcessingException;
 }

@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -50,4 +51,6 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
   void publishAttesterSlashing(AttesterSlashing attesterSlashing);
 
   void publishVoluntaryExit(SignedVoluntaryExit signedVoluntaryExit);
+
+  void publishSignedBlsToExecutionChange(SignedBlsToExecutionChange signedBlsToExecutionChange);
 }

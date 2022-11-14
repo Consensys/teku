@@ -625,6 +625,10 @@ public class SpecConfigBuilder {
     private Integer minSyncCommitteeParticipants;
     private Integer updateTimeout;
 
+    // Light client
+    private Integer syncCommitteeBranchLength;
+    private static final int SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT = 5;
+
     private AltairBuilder() {}
 
     @Override
@@ -641,7 +645,8 @@ public class SpecConfigBuilder {
           altairForkVersion,
           altairForkEpoch,
           minSyncCommitteeParticipants,
-          updateTimeout);
+          updateTimeout,
+          syncCommitteeBranchLength);
     }
 
     @Override
@@ -662,9 +667,12 @@ public class SpecConfigBuilder {
       validateConstant("altairForkVersion", altairForkVersion);
       validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+      // Config items were added after launch so provide defaults to preserve compatibility
       if (updateTimeout == null) {
-        // Config item was added after launch so provide a default to preserve compatibility
         updateTimeout = epochsPerSyncCommitteePeriod * slotsPerEpoch;
+      }
+      if (syncCommitteeBranchLength == null) {
+        syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
       }
     }
 
@@ -735,6 +743,12 @@ public class SpecConfigBuilder {
     public AltairBuilder updateTimeout(final Integer updateTimeout) {
       checkNotNull(updateTimeout);
       this.updateTimeout = updateTimeout;
+      return this;
+    }
+
+    public AltairBuilder syncCommitteeBranchLength(final Integer syncCommitteeBranchLength) {
+      checkNotNull(syncCommitteeBranchLength);
+      this.syncCommitteeBranchLength = syncCommitteeBranchLength;
       return this;
     }
   }
@@ -920,7 +934,7 @@ public class SpecConfigBuilder {
     private UInt64 capellaForkEpoch;
 
     private UInt64 maxBlsToExecutionChanges;
-    private UInt64 maxWithdrawalsPerPayload;
+    private int maxWithdrawalsPerPayload;
 
     private CapellaBuilder() {}
 
@@ -956,7 +970,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public CapellaBuilder maxWithdrawalsPerPayload(final UInt64 maxWithdrawalsPerPayload) {
+    public CapellaBuilder maxWithdrawalsPerPayload(final int maxWithdrawalsPerPayload) {
       this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
       return this;
     }

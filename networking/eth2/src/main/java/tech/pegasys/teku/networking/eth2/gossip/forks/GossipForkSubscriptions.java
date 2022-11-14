@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -54,4 +55,6 @@ public interface GossipForkSubscriptions {
   void subscribeToSyncCommitteeSubnet(int subnetId);
 
   void unsubscribeFromSyncCommitteeSubnet(int subnetId);
+
+  void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message);
 }

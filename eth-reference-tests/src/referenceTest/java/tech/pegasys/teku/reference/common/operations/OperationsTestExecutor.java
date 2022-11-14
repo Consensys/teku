@@ -67,7 +67,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     ATTESTATION,
     SYNC_AGGREGATE,
     EXECUTION_PAYLOAD,
-    BLS_TO_EXECUTION_CHANGE
+    BLS_TO_EXECUTION_CHANGE,
+    WITHDRAWAL
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -106,6 +107,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/bls_to_execution_change",
               new OperationsTestExecutor<>(
                   "address_change.ssz_snappy", Operation.BLS_TO_EXECUTION_CHANGE))
+          .put(
+              "operations/withdrawals",
+              new OperationsTestExecutor<>("execution_payload.ssz_snappy", Operation.WITHDRAWAL))
           .build();
 
   private final String dataFileName;
@@ -297,19 +301,42 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
       case BLS_TO_EXECUTION_CHANGE:
-        final SchemaDefinitionsCapella schemaDefinitionsCapella =
-            testDefinition.getSpec().getGenesisSchemaDefinitions().toVersionCapella().orElseThrow();
-        final SignedBlsToExecutionChange blsToExecutionChange =
-            loadSsz(
-                testDefinition,
-                dataFileName,
-                schemaDefinitionsCapella.getSignedBlsToExecutionChangeSchema());
-        processor.processBlsToExecutionChange(state, blsToExecutionChange);
+        processBlsToExecutionChange(testDefinition, state, processor);
+        break;
+      case WITHDRAWAL:
+        processWithdrawal(testDefinition, state, processor);
         break;
       default:
         throw new UnsupportedOperationException(
             "Operation " + operation + " not implemented in OperationTestExecutor");
     }
+  }
+
+  private void processWithdrawal(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
+    final ExecutionPayload executionPayload =
+        loadSsz(testDefinition, dataFileName, schemaDefinitionsCapella.getExecutionPayloadSchema());
+    processor.processWithdrawals(state, executionPayload);
+  }
+
+  private void processBlsToExecutionChange(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
+    final SignedBlsToExecutionChange blsToExecutionChange =
+        loadSsz(
+            testDefinition,
+            dataFileName,
+            schemaDefinitionsCapella.getSignedBlsToExecutionChangeSchema());
+    processor.processBlsToExecutionChange(state, blsToExecutionChange);
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
@@ -357,6 +384,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case SYNC_AGGREGATE:
       case EXECUTION_PAYLOAD:
       case BLS_TO_EXECUTION_CHANGE:
+      case WITHDRAWAL:
         // Not yet testing inclusion rules
         break;
     }
