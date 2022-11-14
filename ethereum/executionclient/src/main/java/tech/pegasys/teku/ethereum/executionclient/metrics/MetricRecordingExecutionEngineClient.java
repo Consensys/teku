@@ -20,9 +20,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -43,6 +45,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String FORKCHOICE_UPDATED_METHOD = "forkchoice_updated";
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_METHOD =
       "forkchoice_updated_with_attributes";
+  public static final String GET_PAYLOAD_V2_METHOD = "get_payloadV2";
+  public static final String NEW_PAYLOAD_V2_METHOD = "new_payloadV2";
+  public static final String FORKCHOICE_UPDATED_V2_METHOD = "forkchoice_updatedV2";
+  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD =
+      "forkchoice_updated_with_attributesV2";
 
   private final ExecutionEngineClient delegate;
 
@@ -73,25 +80,47 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(final Bytes8 payloadId) {
-    return countRequest(() -> delegate.getPayload(payloadId), GET_PAYLOAD_METHOD);
+  public SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(final Bytes8 payloadId) {
+    return countRequest(() -> delegate.getPayloadV1(payloadId), GET_PAYLOAD_METHOD);
   }
 
   @Override
-  public SafeFuture<Response<PayloadStatusV1>> newPayload(
+  public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
+    return countRequest(() -> delegate.getPayloadV2(payloadId), GET_PAYLOAD_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(
       final ExecutionPayloadV1 executionPayload) {
-    return countRequest(() -> delegate.newPayload(executionPayload), NEW_PAYLOAD_METHOD);
+    return countRequest(() -> delegate.newPayloadV1(executionPayload), NEW_PAYLOAD_METHOD);
   }
 
   @Override
-  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
+      final ExecutionPayloadV2 executionPayload) {
+    return countRequest(() -> delegate.newPayloadV2(executionPayload), NEW_PAYLOAD_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV1> payloadAttributes) {
     return countRequest(
-        () -> delegate.forkChoiceUpdated(forkChoiceState, payloadAttributes),
+        () -> delegate.forkChoiceUpdatedV1(forkChoiceState, payloadAttributes),
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_METHOD
             : FORKCHOICE_UPDATED_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV2> payloadAttributes) {
+    return countRequest(
+        () -> delegate.forkChoiceUpdatedV2(forkChoiceState, payloadAttributes),
+        payloadAttributes.isPresent()
+            ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD
+            : FORKCHOICE_UPDATED_V2_METHOD);
   }
 
   @Override

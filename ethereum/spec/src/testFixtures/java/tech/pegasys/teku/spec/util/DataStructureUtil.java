@@ -1451,7 +1451,8 @@ public final class DataStructureUtil {
         randomEth1Address(),
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
-            : Optional.empty());
+            : Optional.empty(),
+        randomWithdrawalList());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {
@@ -1708,6 +1709,20 @@ public final class DataStructureUtil {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
         .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
+  }
+
+  public Optional<List<Withdrawal>> randomWithdrawalList() {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final List<Withdrawal> withdrawals = new ArrayList<>();
+      final int max =
+          SpecConfigCapella.required(spec.getGenesisSpecConfig()).getMaxWithdrawalsPerPayload();
+      for (int i = 0; i < max; i++) {
+        withdrawals.add(randomWithdrawal());
+      }
+      return Optional.of(withdrawals);
+    } else {
+      return Optional.empty();
+    }
   }
 
   public BlsToExecutionChange randomBlsToExecutionChange() {
