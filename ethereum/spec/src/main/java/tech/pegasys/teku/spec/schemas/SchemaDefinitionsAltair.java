@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
@@ -41,6 +42,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
   private final MetadataMessageSchemaAltair metadataMessageSchema;
+  private final LightClientBootstrapSchema lightClientBootstrapSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     super(specConfig);
@@ -57,6 +59,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
     this.metadataMessageSchema = new MetadataMessageSchemaAltair();
+    this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
   }
 
   public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
@@ -132,5 +135,9 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
 
   public SyncAggregatorSelectionDataSchema getSyncAggregatorSelectionDataSchema() {
     return SyncAggregatorSelectionDataSchema.INSTANCE;
+  }
+
+  public LightClientBootstrapSchema getLightClientBootstrapSchema() {
+    return lightClientBootstrapSchema;
   }
 }

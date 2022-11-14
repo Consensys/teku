@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -105,14 +106,28 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(
-          state, executionPayloadHeader, blockBody.getOptionalExecutionPayload(), payloadExecutor);
+      final BeaconBlockBody blockBody1 = block.getBody();
+      executionProcessing(
+          genericState,
+          executionPayloadHeader,
+          blockBody1.getOptionalExecutionPayload(),
+          payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
     processSyncAggregate(
         state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
+  }
+
+  public void executionProcessing(
+      final MutableBeaconState genericState,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    processExecutionPayload(
+        genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
   }
 
   @Override
@@ -180,8 +195,16 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   }
 
   @Override
-  public void processBlsToExecutionChange(
-      final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange) {
-    throw new UnsupportedOperationException("No BlsToExecutionChange in Bellatrix.");
+  public void processBlsToExecutionChanges(
+      final MutableBeaconState state,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No BlsToExecutionChanges in Bellatrix.");
+  }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state, final ExecutionPayload payload)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No withdrawals in Bellatrix");
   }
 }

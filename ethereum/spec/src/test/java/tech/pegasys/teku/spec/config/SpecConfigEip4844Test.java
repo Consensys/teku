@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -68,7 +67,7 @@ public class SpecConfigEip4844Test {
                     b.capellaBuilder(
                         cb ->
                             cb.maxWithdrawalsPerPayload(
-                                capellaA.getMaxWithdrawalsPerPayload().plus(UInt64.valueOf(4)))))
+                                capellaA.getMaxWithdrawalsPerPayload() + 4)))
             .toVersionCapella()
             .orElseThrow();
 

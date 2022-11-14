@@ -66,7 +66,8 @@ public enum BeaconStateFields implements SszFieldName {
   // Bellatrix fields
   LATEST_EXECUTION_PAYLOAD_HEADER,
   // Capella fields
-  LATEST_WITHDRAWAL_VALIDATOR_INDEX;
+  NEXT_WITHDRAWAL_INDEX,
+  NEXT_WITHDRAWAL_VALIDATOR_INDEX;
 
   private final String sszFieldName;
 

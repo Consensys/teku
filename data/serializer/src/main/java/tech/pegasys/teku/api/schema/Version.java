@@ -19,10 +19,13 @@ import tech.pegasys.teku.spec.SpecMilestone;
 public enum Version {
   phase0,
   altair,
-  bellatrix;
+  bellatrix,
+  capella;
 
   public static Version fromMilestone(final SpecMilestone milestone) {
     switch (milestone) {
+      case CAPELLA:
+        return capella;
       case BELLATRIX:
         return bellatrix;
       case ALTAIR:

@@ -41,6 +41,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
   public final ExecutionPayloadCapella executionPayload;
 
+  @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonCreator
@@ -69,7 +70,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
         syncAggregate);
     checkNotNull(executionPayload, "Execution Payload is required for capella blocks");
     this.executionPayload = executionPayload;
-    checkNotNull(blsToExecutionChanges, "BlsToExecutionChange is required for capella blocks");
+    checkNotNull(blsToExecutionChanges, "BlsToExecutionChanges is required for capella blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
   }
 
@@ -80,7 +81,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
     checkNotNull(message.getExecutionPayload(), "Execution Payload is required for capella blocks");
     this.executionPayload = new ExecutionPayloadCapella(message.getExecutionPayload());
     checkNotNull(
-        message.getBlsToExecutionChanges(), "BlsToExecutionChange is required for capella blocks");
+        message.getBlsToExecutionChanges(), "BlsToExecutionChanges is required for capella blocks");
     this.blsToExecutionChanges =
         message.getBlsToExecutionChanges().stream()
             .map(SignedBlsToExecutionChange::new)

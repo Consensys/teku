@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
   (Refer to https://github.com/ConsenSys/teku/pull/6325#issue-1409631918 for more information).  
 
 ### Additions and Improvements
+ - Updated protobuf used by libp2p library to resolve a potential DoS vector
  - Improved discv5 compliance
  - Changed the builder `is online\is offline` logs to `is available\is not available`
  - Added `/eth/v1/beacon/states/{state_id}/randao` to beacon-api.
@@ -30,3 +31,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
  - Fixed issue which could lead to duplicate processing of some events when gossip is stopped and restarted.
+ - Fixed issue which could cause sync committee duties to be calculated too early, potentially causing duties to be missed if the scheduling was changed by a reorg.

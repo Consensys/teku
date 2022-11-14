@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
@@ -333,6 +334,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @Override
   public void publishVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit) {
     gossipForkManager.publishVoluntaryExit(signedVoluntaryExit);
+  }
+
+  @Override
+  public void publishSignedBlsToExecutionChange(
+      final SignedBlsToExecutionChange signedBlsToExecutionChange) {
+    gossipForkManager.publishSignedBlsToExecutionChanges(signedBlsToExecutionChange);
   }
 
   @VisibleForTesting

@@ -13,13 +13,24 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public interface BeaconBlockBodySchemaCapella<T extends BeaconBlockBodyCapella>
     extends BeaconBlockBodySchemaBellatrix<T> {
+
+  static BeaconBlockBodySchemaCapella<?> required(final BeaconBlockBodySchema<?> schema) {
+    checkArgument(
+        schema instanceof BeaconBlockBodySchemaCapella,
+        "Expected a BeaconBlockBodySchemaCapella but was %s",
+        schema.getClass());
+    return (BeaconBlockBodySchemaCapella<?>) schema;
+  }
 
   SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema();
 

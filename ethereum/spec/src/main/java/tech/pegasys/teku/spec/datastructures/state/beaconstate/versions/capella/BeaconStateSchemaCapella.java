@@ -37,7 +37,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  private static final int LATEST_WITHDRAWAL_VALIDATOR_INDEX = 25;
+  private static final int NEXT_WITHDRAWAL_INDEX = 25;
+  private static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
 
   @VisibleForTesting
   BeaconStateSchemaCapella(final SpecConfig specConfig) {
@@ -50,14 +51,22 @@ public class BeaconStateSchemaCapella
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
-    final SszField latestWithdrawalValidatorIndexField =
+    final SszField nextWithdrawalIndexField =
         new SszField(
-            LATEST_WITHDRAWAL_VALIDATOR_INDEX,
-            BeaconStateFields.LATEST_WITHDRAWAL_VALIDATOR_INDEX,
+            NEXT_WITHDRAWAL_INDEX,
+            BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField nextWithdrawalValidatorIndexField =
+        new SszField(
+            NEXT_WITHDRAWAL_VALIDATOR_INDEX,
+            BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(latestExecutionPayloadHeaderField, latestWithdrawalValidatorIndexField))
+            Stream.of(
+                latestExecutionPayloadHeaderField,
+                nextWithdrawalIndexField,
+                nextWithdrawalValidatorIndexField))
         .collect(Collectors.toList());
   }
 

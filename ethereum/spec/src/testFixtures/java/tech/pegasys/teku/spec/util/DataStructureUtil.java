@@ -103,6 +103,8 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -1690,6 +1692,16 @@ public final class DataStructureUtil {
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());
+  }
+
+  public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
+    LightClientBootstrapSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
+
+    return schema.create(
+        randomBeaconBlockHeader(),
+        randomSyncCommittee(),
+        randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32));
   }
 
   public Withdrawal randomWithdrawal() {

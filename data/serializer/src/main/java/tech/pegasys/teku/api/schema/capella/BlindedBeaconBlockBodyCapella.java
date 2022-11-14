@@ -41,6 +41,7 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
   public final ExecutionPayloadHeaderCapella executionPayloadHeader;
 
+  @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonCreator
@@ -87,7 +88,6 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
         blockBody.getBlsToExecutionChanges().stream()
             .map(SignedBlsToExecutionChange::new)
             .collect(Collectors.toList());
-    ;
   }
 
   @Override
