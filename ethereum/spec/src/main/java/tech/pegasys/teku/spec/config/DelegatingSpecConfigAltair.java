@@ -82,6 +82,11 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   }
 
   @Override
+  public int getSyncCommitteeBranchLength() {
+    return specConfigAltair.getSyncCommitteeBranchLength();
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
