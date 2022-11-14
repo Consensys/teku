@@ -27,7 +27,8 @@ public enum SpecMilestone {
   PHASE0,
   ALTAIR,
   BELLATRIX,
-  CAPELLA;
+  CAPELLA,
+  EIP4844;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.capella;
 
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -40,11 +42,12 @@ import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaState
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
-  private final SpecConfigCapella specConfig;
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
 
+  private final Function<BeaconState, AttestationWorthinessChecker>
+      attestationWorthinessCheckerCreator;
+
   private SpecLogicCapella(
-      final SpecConfigCapella specConfig,
       final Predicates predicates,
       final MiscHelpersBellatrix miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
@@ -61,7 +64,9 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final CapellaStateUpgrade stateUpgrade) {
+      final CapellaStateUpgrade stateUpgrade,
+      final Function<BeaconState, AttestationWorthinessChecker>
+          attestationWorthinessCheckerCreator) {
     super(
         predicates,
         miscHelpers,
@@ -79,8 +84,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         blockProposalUtil,
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
-    this.specConfig = specConfig;
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.attestationWorthinessCheckerCreator = attestationWorthinessCheckerCreator;
   }
 
   public static SpecLogicCapella create(
@@ -151,12 +156,15 @@ public class SpecLogicCapella extends AbstractSpecLogic {
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
+    final Function<BeaconState, AttestationWorthinessChecker> attestationWorthinessCheckerCreator =
+        SpecLogicAltair.attestationWorthinessCheckerCreator(
+            miscHelpers, config, beaconStateAccessors);
+
     // State upgrade
     final CapellaStateUpgrade stateUpgrade =
         new CapellaStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     return new SpecLogicCapella(
-        config,
         predicates,
         miscHelpers,
         beaconStateAccessors,
@@ -173,7 +181,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
-        stateUpgrade);
+        stateUpgrade,
+        attestationWorthinessCheckerCreator);
   }
 
   @Override
@@ -181,13 +190,9 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     return syncCommitteeUtil;
   }
 
-  public SpecConfigCapella getSpecConfig() {
-    return specConfig;
-  }
-
   @Override
   public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return null;
+    return attestationWorthinessCheckerCreator.apply(state);
   }
 
   @Override

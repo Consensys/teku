@@ -80,7 +80,7 @@ public class SpecFactoryTest {
   @ParameterizedTest
   @EnumSource(
       value = SpecMilestone.class,
-      names = {"BELLATRIX", "CAPELLA"},
+      names = {"EIP4844"},
       mode = EnumSource.Mode.EXCLUDE)
   public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMainnet(milestone);
