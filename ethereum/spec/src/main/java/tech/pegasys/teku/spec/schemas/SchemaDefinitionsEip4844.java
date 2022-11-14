@@ -24,10 +24,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844Impl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BlindedBeaconBlockBodySchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BlindedBeaconBlockBodySchemaEip4844Impl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -53,6 +56,10 @@ public class SchemaDefinitionsEip4844 extends SchemaDefinitionsCapella {
 
   private final BuilderBidSchema builderBidSchemaEip4844;
   private final SignedBuilderBidSchema signedBuilderBidSchemaEip4844;
+
+  private final BlobSchema blobSchema;
+  private final BlobsSidecarSchema blobsSidecarSchema;
+  private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
 
   public SchemaDefinitionsEip4844(final SpecConfigEip4844 specConfig) {
     super(specConfig.toVersionEip4844().orElseThrow());
@@ -86,6 +93,11 @@ public class SchemaDefinitionsEip4844 extends SchemaDefinitionsCapella {
         new BuilderBidSchema("BuilderBidEip4844", executionPayloadHeaderSchemaEip4844);
     this.signedBuilderBidSchemaEip4844 =
         new SignedBuilderBidSchema("SignedBuilderBidEip4844", builderBidSchemaEip4844);
+
+    this.blobSchema = new BlobSchema(specConfig);
+    this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
+    this.signedBeaconBlockAndBlobsSidecarSchema =
+        SignedBeaconBlockAndBlobsSidecarSchema.create(signedBeaconBlockSchema, blobsSidecarSchema);
   }
 
   public static SchemaDefinitionsEip4844 required(final SchemaDefinitions schemaDefinitions) {
@@ -151,6 +163,18 @@ public class SchemaDefinitionsEip4844 extends SchemaDefinitionsCapella {
   @Override
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchemaEip4844;
+  }
+
+  public BlobSchema getBlobSchema() {
+    return blobSchema;
+  }
+
+  public BlobsSidecarSchema getBlobsSidecarSchema() {
+    return blobsSidecarSchema;
+  }
+
+  public SignedBeaconBlockAndBlobsSidecarSchema getSignedBeaconBlockAndBlobsSidecarSchema() {
+    return signedBeaconBlockAndBlobsSidecarSchema;
   }
 
   @Override
