@@ -25,7 +25,7 @@ import org.thymeleaf.templateresolver.ITemplateResolver;
  * singleton so only the first call to this class will have any effect.
  */
 class ThymeleafConfigurator {
-  private static final AtomicBoolean REGISTERED = new AtomicBoolean();
+  private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
 
   public static void enableThymeleafTemplates(final String templatePath) {
     if (!REGISTERED.compareAndSet(false, true)) {
