@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 
 public enum SpecMilestone {
   PHASE0,
@@ -84,6 +85,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
+      case EIP4844:
+        return specConfig.toVersionEip4844().map(SpecConfigEip4844::getEip4844ForkVersion);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }
@@ -101,6 +104,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
+      case EIP4844:
+        return specConfig.toVersionEip4844().map(SpecConfigEip4844::getEip4844ForkEpoch);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }

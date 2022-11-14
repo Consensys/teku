@@ -78,10 +78,7 @@ public class SpecFactoryTest {
   }
 
   @ParameterizedTest
-  @EnumSource(
-      value = SpecMilestone.class,
-      names = {"EIP4844"},
-      mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(value = SpecMilestone.class)
   public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMainnet(milestone);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
