@@ -88,7 +88,6 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
         blockBody.getBlsToExecutionChanges().stream()
             .map(SignedBlsToExecutionChange::new)
             .collect(Collectors.toList());
-    ;
   }
 
   @Override

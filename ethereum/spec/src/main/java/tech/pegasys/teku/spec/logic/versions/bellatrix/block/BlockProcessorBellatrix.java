@@ -199,7 +199,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState state,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException {
-    throw new UnsupportedOperationException("No BlsToExecutionChange in Bellatrix.");
+    throw new UnsupportedOperationException("No BlsToExecutionChanges in Bellatrix.");
   }
 
   @Override
