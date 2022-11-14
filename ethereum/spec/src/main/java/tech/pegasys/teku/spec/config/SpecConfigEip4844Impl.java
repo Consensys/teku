@@ -24,15 +24,15 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
   private final Bytes4 eip4844ForkVersion;
   private final UInt64 eip4844ForkEpoch;
 
-  private final UInt64 fieldElementsPerBlob;
-  private final UInt64 maxBlobsPerBlock;
+  private final int fieldElementsPerBlob;
+  private final int maxBlobsPerBlock;
 
   public SpecConfigEip4844Impl(
       final SpecConfigCapella specConfig,
       final Bytes4 eip4844ForkVersion,
       final UInt64 eip4844ForkEpoch,
-      final UInt64 fieldElementsPerBlob,
-      final UInt64 maxBlobsPerBlock) {
+      final int fieldElementsPerBlob,
+      final int maxBlobsPerBlock) {
     super(specConfig);
     this.eip4844ForkVersion = eip4844ForkVersion;
     this.eip4844ForkEpoch = eip4844ForkEpoch;
@@ -62,8 +62,8 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
     return Objects.equals(specConfig, that.specConfig)
         && Objects.equals(eip4844ForkVersion, that.eip4844ForkVersion)
         && Objects.equals(eip4844ForkEpoch, that.eip4844ForkEpoch)
-        && Objects.equals(fieldElementsPerBlob, that.fieldElementsPerBlob)
-        && Objects.equals(maxBlobsPerBlock, that.maxBlobsPerBlock);
+        && fieldElementsPerBlob == that.fieldElementsPerBlob
+        && maxBlobsPerBlock == that.maxBlobsPerBlock;
   }
 
   @Override
@@ -73,12 +73,12 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
   }
 
   @Override
-  public UInt64 getFieldElementsPerBlob() {
+  public int getFieldElementsPerBlob() {
     return fieldElementsPerBlob;
   }
 
   @Override
-  public UInt64 getMaxBlobsPerBlock() {
+  public int getMaxBlobsPerBlock() {
     return maxBlobsPerBlock;
   }
 

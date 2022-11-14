@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -23,39 +23,35 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844Impl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderEip4844Impl;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
+public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella {
 
-  private BeaconBlockBodySchemaCapellaImpl schema;
-  private BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema;
-  private SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
+  private BeaconBlockBodySchemaEip4844Impl schema;
+  private BlindedBeaconBlockBodySchemaEip4844Impl blindedSchema;
+  private SszList<SszKZGCommitment> blobKzgCommitments;
 
-  public BeaconBlockBodyBuilderCapella schema(final BeaconBlockBodySchemaCapellaImpl schema) {
+  public BeaconBlockBodyBuilderEip4844 schema(final BeaconBlockBodySchemaEip4844Impl schema) {
     this.schema = schema;
     this.blinded = Optional.of(false);
     return this;
   }
 
-  public BeaconBlockBodyBuilderCapella blindedSchema(
-      final BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema) {
+  public BeaconBlockBodyBuilderEip4844 blindedSchema(
+      final BlindedBeaconBlockBodySchemaEip4844Impl blindedSchema) {
     this.blindedSchema = blindedSchema;
     this.blinded = Optional.of(true);
     return this;
   }
 
-  protected SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
-    return blsToExecutionChanges;
-  }
-
   @Override
-  public BeaconBlockBodyBuilder blsToExecutionChanges(
-      final Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
-    this.blsToExecutionChanges = blsToExecutionChanges.get();
+  public BeaconBlockBodyBuilder blobKzgCommitments(
+      final Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    this.blobKzgCommitments = blobKzgCommitments.get();
     return this;
   }
 
@@ -67,7 +63,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
+    checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
   }
 
   @Override
@@ -84,7 +80,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     if (isBlinded()) {
       return executionPayloadHeader.thenApply(
           header ->
-              new BlindedBeaconBlockBodyCapellaImpl(
+              new BlindedBeaconBlockBodyEip4844Impl(
                   blindedSchema,
                   new SszSignature(randaoReveal),
                   eth1Data,
@@ -95,12 +91,13 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
                   deposits,
                   voluntaryExits,
                   syncAggregate,
-                  (ExecutionPayloadHeaderCapellaImpl) header.toVersionCapella().orElseThrow(),
-                  blsToExecutionChanges));
+                  (ExecutionPayloadHeaderEip4844Impl) header.toVersionEip4844().orElseThrow(),
+                  getBlsToExecutionChanges(),
+                  blobKzgCommitments));
     }
     return executionPayload.thenApply(
         payload ->
-            new BeaconBlockBodyCapellaImpl(
+            new BeaconBlockBodyEip4844Impl(
                 schema,
                 new SszSignature(randaoReveal),
                 eth1Data,
@@ -111,7 +108,8 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
                 deposits,
                 voluntaryExits,
                 syncAggregate,
-                (ExecutionPayloadCapellaImpl) payload.toVersionCapella().orElseThrow(),
-                blsToExecutionChanges));
+                (ExecutionPayloadEip4844Impl) payload.toVersionEip4844().orElseThrow(),
+                getBlsToExecutionChanges(),
+                blobKzgCommitments));
   }
 }

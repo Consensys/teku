@@ -11,36 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 
-public interface SpecConfigEip4844 extends SpecConfigCapella {
-  Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x05");
-  Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
-  UInt64 BYTES_PER_FIELD_ELEMENT = UInt64.valueOf(32);
+public interface ExecutionPayloadEip4844 extends ExecutionPayload, ExecutionPayloadCapella {
 
-  static SpecConfigEip4844 required(final SpecConfig specConfig) {
-    return specConfig
+  static ExecutionPayloadEip4844 required(final ExecutionPayload payload) {
+    return payload
         .toVersionEip4844()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected EIP-4844 spec config but got: "
-                        + specConfig.getClass().getSimpleName()));
+                    "Expected EIP-4844 execution payload but got "
+                        + payload.getClass().getSimpleName()));
   }
 
-  Bytes4 getEip4844ForkVersion();
-
-  UInt64 getEip4844ForkEpoch();
-
-  int getFieldElementsPerBlob();
-
-  int getMaxBlobsPerBlock();
+  UInt64 getExcessBlobs();
 
   @Override
-  Optional<SpecConfigEip4844> toVersionEip4844();
+  default Optional<ExecutionPayloadEip4844> toVersionEip4844() {
+    return Optional.of(this);
+  }
 }
