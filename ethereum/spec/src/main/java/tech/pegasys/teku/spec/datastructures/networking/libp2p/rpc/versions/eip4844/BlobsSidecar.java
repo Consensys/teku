@@ -46,8 +46,7 @@ public class BlobsSidecar
           namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("beacon_block_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema(
-              FIELD_BLOBS,
-              SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock().longValue())),
+              FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())),
           namedSchema("kzg_aggregated_proof", SszKZGProofSchema.INSTANCE));
     }
 
