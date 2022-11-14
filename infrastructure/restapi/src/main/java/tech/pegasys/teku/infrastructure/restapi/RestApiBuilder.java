@@ -210,8 +210,6 @@ public class RestApiBuilder {
           }
         });
     JavalinLogger.startupInfo = false;
-    // TODO: Suppress this nuisance message again.
-    //    JettyUtil.INSTANCE.setLogIfNotStarted(false);
     return server;
   }
 

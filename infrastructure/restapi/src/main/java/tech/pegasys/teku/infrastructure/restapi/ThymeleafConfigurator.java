@@ -14,14 +14,23 @@
 package tech.pegasys.teku.infrastructure.restapi;
 
 import io.javalin.rendering.template.JavalinThymeleaf;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
 
-/** ThymeLeaf templates configuration for Javalin */
-public class ThymeleafConfigurator {
+/**
+ * ThymeLeaf templates configuration for Javalin. Note that Javalin renderers are configured using a
+ * singleton so only the first call to this class will have any effect.
+ */
+class ThymeleafConfigurator {
+  private static final AtomicBoolean REGISTERED = new AtomicBoolean();
+
   public static void enableThymeleafTemplates(final String templatePath) {
+    if (!REGISTERED.compareAndSet(false, true)) {
+      return;
+    }
     TemplateEngine templateEngine = new TemplateEngine();
     templateEngine.addTemplateResolver(templateResolver(TemplateMode.HTML, templatePath, ".html"));
     JavalinThymeleaf.init(templateEngine);
