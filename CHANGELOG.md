@@ -1,6 +1,7 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+- The `--Xmetrics-block-timing-tracking-enabled` option has been renamed to `--metrics-block-timing-tracking-enabled` and enabled by default. The `--X` version will be removed in a future release. 
 - The `validator_beacon_node_published_attestation_total`, `validator_beacon_node_published_aggregate_total`,
   `validator_beacon_node_send_sync_committee_messages_total`, `validator_beacon_node_send_sync_committee_contributions_total`
   and `validator_beacon_node_published_block_total` metrics have been deprecated in favour of the new `validator_beacon_node_requests_total` metric.
@@ -10,7 +11,7 @@
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The commandline option `--network` of the `validator-client` subcommand has been undeprecated and can be used to select a network for standalone validator clients. When set to `auto`, it automatically
-  fetches network configuration information from the configured beacon node endpoint.  
+  fetches network configuration information from the configured beacon node endpoint.
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -26,6 +27,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Improved discv5 compliance
  - Changed the builder `is online\is offline` logs to `is available\is not available`
  - Added `/eth/v1/beacon/states/{state_id}/randao` to beacon-api.
+ - Block timing tracking is now enabled by default. The `--Xmetrics-block-timing-tracking-enabled` option has been renamed to `--metrics-block-timing-tracking-enabled`.
 
 ### Bug Fixes
  - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
