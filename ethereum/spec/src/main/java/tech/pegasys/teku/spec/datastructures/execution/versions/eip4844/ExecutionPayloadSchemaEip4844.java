@@ -104,7 +104,7 @@ public class ExecutionPayloadSchemaEip4844
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(
-                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload().longValue())));
+                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
