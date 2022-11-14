@@ -24,6 +24,10 @@ public interface ExecutionPayloadHeader extends ExecutionPayloadSummary, SszCont
 
   Bytes32 getTransactionsRoot();
 
+  default Optional<Bytes32> getOptionalWithdrawalsRoot() {
+    return Optional.empty();
+  }
+
   boolean isHeaderOfDefaultPayload();
 
   default Optional<ExecutionPayloadHeaderBellatrix> toVersionBellatrix() {

@@ -32,6 +32,11 @@ public interface ExecutionPayloadCapella extends ExecutionPayload {
   SszList<Withdrawal> getWithdrawals();
 
   @Override
+  default Optional<SszList<Withdrawal>> getOptionalWithdrawals() {
+    return Optional.of(getWithdrawals());
+  }
+
+  @Override
   default Optional<ExecutionPayloadCapella> toVersionCapella() {
     return Optional.of(this);
   }

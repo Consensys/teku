@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844;
 
 public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer {
@@ -27,6 +28,10 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer 
   ExecutionPayloadSchema<?> getSchema();
 
   SszList<Transaction> getTransactions();
+
+  default Optional<SszList<Withdrawal>> getOptionalWithdrawals() {
+    return Optional.empty();
+  }
 
   TreeNode getUnblindedNode();
 

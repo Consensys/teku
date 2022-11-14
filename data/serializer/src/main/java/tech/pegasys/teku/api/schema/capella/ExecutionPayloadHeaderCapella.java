@@ -86,8 +86,7 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
         executionPayloadHeader.getBaseFeePerGas(),
         executionPayloadHeader.getBlockHash(),
         executionPayloadHeader.getTransactionsRoot());
-    this.withdrawalsRoot =
-        executionPayloadHeader.toVersionCapella().orElseThrow().getWithdrawalsRoot();
+    this.withdrawalsRoot = executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow();
   }
 
   @Override
