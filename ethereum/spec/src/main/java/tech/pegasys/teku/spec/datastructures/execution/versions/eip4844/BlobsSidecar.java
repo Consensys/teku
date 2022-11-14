@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.versions.eip4844;
+package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,8 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
