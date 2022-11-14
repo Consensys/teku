@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
@@ -125,6 +126,13 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   public BeaconBlockBodyBuilder blsToExecutionChanges(
       final Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
     // No BlsToExecutionChange in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder blobKzgCommitments(
+      Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    // No BlobKzgCommitments in phase 0
     return this;
   }
 

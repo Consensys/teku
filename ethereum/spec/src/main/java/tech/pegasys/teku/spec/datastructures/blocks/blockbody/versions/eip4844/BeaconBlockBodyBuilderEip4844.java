@@ -48,6 +48,7 @@ public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella
     return this;
   }
 
+  @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
       final Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments.get();

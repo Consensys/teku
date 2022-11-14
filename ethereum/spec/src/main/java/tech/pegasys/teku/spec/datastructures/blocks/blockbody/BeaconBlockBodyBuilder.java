@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodyBuilder {
 
@@ -61,6 +62,9 @@ public interface BeaconBlockBodyBuilder {
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
   BeaconBlockBodyBuilder blsToExecutionChanges(
       Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges);
+
+  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
+  BeaconBlockBodyBuilder blobKzgCommitments(Supplier<SszList<SszKZGCommitment>> blobKzgCommitments);
 
   default Boolean isBlinded() {
     return false;
