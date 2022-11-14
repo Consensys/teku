@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadSchemaEip4844;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszContainerSchema<T> {
 
@@ -33,6 +34,10 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszC
   }
 
   default Optional<ExecutionPayloadSchemaCapella> toVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadSchemaEip4844> toVersionEip4844() {
     return Optional.empty();
   }
 }
