@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 public interface BlindedBeaconBlockBodySchemaEip4844<T extends BlindedBeaconBlockBodyEip4844>
     extends BlindedBeaconBlockBodySchemaCapella<T> {
 
-  SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitments();
+  SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema();
 
   default Optional<BlindedBeaconBlockBodySchemaEip4844<?>> toBlindedVersionEip4844() {
     return Optional.of(this);

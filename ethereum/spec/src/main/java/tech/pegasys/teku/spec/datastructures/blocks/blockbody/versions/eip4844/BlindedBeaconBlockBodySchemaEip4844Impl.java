@@ -211,7 +211,7 @@ public class BlindedBeaconBlockBodySchemaEip4844Impl
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitments() {
+  public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
   }
