@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -155,11 +157,16 @@ public class DoppelgangerDetectionService extends Service {
                                               .collect(Collectors.toList()),
                                           currentEpoch,
                                           currentSlot))
+                              .orTimeout(checkDelay)
                               .exceptionally(
                                   throwable -> {
+                                    String errorMessage =
+                                        ExceptionUtil.hasCause(throwable, TimeoutException.class)
+                                            ? "Request timeout"
+                                            : throwable.getMessage();
                                     LOGGER.error(
                                         "Unable to check validators doppelganger. Unable to get validators liveness: {}",
-                                        throwable.getMessage());
+                                        errorMessage);
                                     return false;
                                   })
                               .thenApply(doppelgangerDetected -> null))

@@ -214,7 +214,7 @@ public class DoppelgangerDetectionServiceTest {
   }
 
   @Test
-  public void shouldTimeoutDueToGenesisDataProvider() {
+  public void shouldTimeoutDueToGenesisDataProviderException() {
     when(genesisDataProvider.getGenesisTime())
         .thenReturn(SafeFuture.failedFuture(new Exception("Genesis Time Exception")));
     DoppelgangerDetectionService doppelgangerDetectionService =
@@ -242,7 +242,7 @@ public class DoppelgangerDetectionServiceTest {
   }
 
   @Test
-  public void shouldTimeoutDueToValidatorIndexProvider() {
+  public void shouldTimeoutDueToValidatorIndexProviderException() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
@@ -275,7 +275,7 @@ public class DoppelgangerDetectionServiceTest {
   }
 
   @Test
-  public void shouldTimeoutDueToValidatorApiChannel() {
+  public void shouldTimeoutDueToValidatorApiChannelException() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
@@ -305,6 +305,39 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
     expectLogMessage(
         logCaptor.getLogEvents().get(6),
+        "INFO",
+        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+  }
+
+  @Test
+  public void shouldTimeoutDueToValidatorApiChannelTimeout() {
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
+    when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
+    when(validatorIndexProvider.getValidatorIndices())
+        .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
+    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+        .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
+    DoppelgangerDetectionService doppelgangerDetectionService =
+        new DoppelgangerDetectionService(
+            asyncRunner,
+            validatorApiChannel,
+            validatorIndexProvider,
+            spec,
+            timeProvider,
+            genesisDataProvider,
+            Duration.ofSeconds(2),
+            Duration.ofSeconds(6),
+            __ -> {});
+    assertThat(doppelgangerDetectionService.start()).isCompleted();
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
+    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
+    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    final String expectedErrorLog =
+        "Unable to check validators doppelganger. Unable to get validators liveness: Request timeout";
+    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(4),
         "INFO",
         "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
   }
