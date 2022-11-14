@@ -20,7 +20,9 @@ import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
@@ -567,6 +569,10 @@ public class EndpointMetadata {
       return response(SC_NOT_FOUND, "Not found", HTTP_ERROR_RESPONSE_TYPE);
     }
 
+    public EndpointMetaDataBuilder withNotAcceptedResponse() {
+      return response(SC_NOT_ACCEPTABLE, "Not acceptable", HTTP_ERROR_RESPONSE_TYPE);
+    }
+
     public EndpointMetaDataBuilder withServiceUnavailableResponse() {
       response(
           SC_SERVICE_UNAVAILABLE,
@@ -592,6 +598,11 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder withInternalErrorResponse() {
       response(SC_INTERNAL_SERVER_ERROR, "Internal server error", HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
+    public EndpointMetaDataBuilder withNotImplementedResponse() {
+      response(SC_NOT_IMPLEMENTED, "Not implemented", HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
 

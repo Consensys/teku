@@ -1,0 +1,14 @@
+{
+  "title" : "GetLightClientBootstrapResponse",
+  "type" : "object",
+  "required" : [ "version", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix" ]
+    },
+    "data" : {
+      "$ref": "#/components/schemas/LightClientBootstrap"
+    }
+  }
+}

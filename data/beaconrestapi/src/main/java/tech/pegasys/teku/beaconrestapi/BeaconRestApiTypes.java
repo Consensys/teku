@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
@@ -91,6 +92,10 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<String> PARAMETER_BLOCK_ID =
       new ParameterMetadata<>(PARAM_BLOCK_ID, CoreTypes.string(PARAM_BLOCK_ID_DESCRIPTION, "head"));
+
+  public static final ParameterMetadata<Bytes32> BLOCK_ROOT_PARAMETER =
+      new ParameterMetadata<>(
+          BLOCK_ROOT, BYTES32_TYPE.withDescription("Block root. Hex encoded with 0x prefix."));
 
   public static final ParameterMetadata<UInt64> SLOT_PARAMETER =
       new ParameterMetadata<>(
