@@ -30,3 +30,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
  - Fixed issue which could lead to duplicate processing of some events when gossip is stopped and restarted.
+ - Fixed issue which could cause sync committee duties to be calculated too early, potentially causing duties to be missed if the scheduling was changed by a reorg.

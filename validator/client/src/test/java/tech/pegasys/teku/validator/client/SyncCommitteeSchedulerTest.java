@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -141,7 +142,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldCalculateNextSyncPeriodDutiesRandomNumberOfEpochsPriorToStart() {
-    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(4);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(4);
@@ -155,10 +156,10 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldNotSelectNewRandomNumberEachSlot() {
-    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(4);
 
     scheduler.onSlot(UInt64.ONE);
-    verify(earlySubscribeRandomSource).randomEpochCount(epochsPerSyncCommitteePeriod);
+    verify(earlySubscribeRandomSource).randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT);
 
     // Already picked a random epoch to subscribe, so don't pick again
     scheduler.onSlot(UInt64.valueOf(2));
@@ -167,7 +168,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldNotRecalculateDutiesEverySlot() {
-    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(4);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(4);
@@ -188,7 +189,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldSwitchToNextCommitteePeriodWhenLastSlotOfSyncCommitteePeriodReached() {
-    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(5);
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(5);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(5);
@@ -222,7 +223,7 @@ class SyncCommitteeSchedulerTest {
    */
   @Test
   void shouldUseNextPeriodForDutiesWhenOnSlotNotYetCalled() {
-    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(5);
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(5);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(5);
