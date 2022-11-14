@@ -45,7 +45,6 @@ public class MutableBeaconStateCapellaImpl
 
   @Override
   protected void addCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
-    BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
     BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
   }
 
