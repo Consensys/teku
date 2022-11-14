@@ -13,13 +13,24 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodySchemaEip4844<T extends BeaconBlockBodyEip4844>
     extends BeaconBlockBodySchemaCapella<T> {
+
+  static BeaconBlockBodySchemaEip4844<?> required(final BeaconBlockBodySchema<?> schema) {
+    checkArgument(
+        schema instanceof BeaconBlockBodySchemaEip4844,
+        "Expected a BeaconBlockBodySchemaEip4844 but was %s",
+        schema.getClass());
+    return (BeaconBlockBodySchemaEip4844<?>) schema;
+  }
 
   SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema();
 
