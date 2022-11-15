@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class BeaconStateSchemaEip4844
     extends AbstractBeaconStateSchema<BeaconStateEip4844, MutableBeaconStateEip4844> {
@@ -49,7 +49,7 @@ public class BeaconStateSchemaEip4844
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchemaEip4844(SpecConfigEip4844.required(specConfig)));
     return Stream.concat(
-            BeaconStateSchemaCapella.getUniqueFields(specConfig).stream(),
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))
         .collect(Collectors.toList());
   }

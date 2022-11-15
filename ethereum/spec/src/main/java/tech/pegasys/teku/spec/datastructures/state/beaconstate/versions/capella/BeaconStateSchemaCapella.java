@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
@@ -45,7 +45,7 @@ public class BeaconStateSchemaCapella
     super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
@@ -62,7 +62,7 @@ public class BeaconStateSchemaCapella
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     return Stream.concat(
-            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(),
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
                 latestExecutionPayloadHeaderField,
                 nextWithdrawalIndexField,
