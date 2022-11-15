@@ -74,18 +74,31 @@ public class JsonProviderPropertyTest {
   private static final Map<SpecMilestone, Class<? extends SignedBeaconBlock>>
       SIGNED_BEACON_BLOCK_CLASS_MAP =
           Map.of(
-              SpecMilestone.PHASE0, SignedBeaconBlockPhase0.class,
-              SpecMilestone.ALTAIR, SignedBeaconBlockAltair.class,
-              SpecMilestone.BELLATRIX, SignedBeaconBlockBellatrix.class,
-              // TODO CAPELLA
-              SpecMilestone.CAPELLA, SignedBeaconBlockBellatrix.class);
+              SpecMilestone.PHASE0,
+              SignedBeaconBlockPhase0.class,
+              SpecMilestone.ALTAIR,
+              SignedBeaconBlockAltair.class,
+              SpecMilestone.BELLATRIX,
+              SignedBeaconBlockBellatrix.class,
+              // TODO CAPELLA and EIP4844
+              SpecMilestone.CAPELLA,
+              SignedBeaconBlockBellatrix.class,
+              SpecMilestone.EIP4844,
+              SignedBeaconBlockBellatrix.class);
 
   private static final Map<SpecMilestone, Class<? extends BeaconState>> BEACON_STATE_CLASS_MAP =
       Map.of(
-          SpecMilestone.PHASE0, BeaconStatePhase0.class,
-          SpecMilestone.ALTAIR, BeaconStateAltair.class,
-          SpecMilestone.BELLATRIX, BeaconStateBellatrix.class,
-          SpecMilestone.CAPELLA, BeaconStateCapella.class);
+          SpecMilestone.PHASE0,
+          BeaconStatePhase0.class,
+          SpecMilestone.ALTAIR,
+          BeaconStateAltair.class,
+          SpecMilestone.BELLATRIX,
+          BeaconStateBellatrix.class,
+          SpecMilestone.CAPELLA,
+          BeaconStateCapella.class,
+          // TODO EIP4844
+          SpecMilestone.EIP4844,
+          BeaconStateCapella.class);
 
   @Property
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {

@@ -608,6 +608,12 @@ public final class DataStructureUtil {
           .toVersionCapella()
           .map(__ -> randomExecutionPayloadCapella(specVersion))
           .orElse(null);
+    } else if (milestone.equals(SpecMilestone.EIP4844)) {
+      // TODO update with randomExecutionPayloadEip4844
+      return schema
+          .toVersionCapella()
+          .map(__ -> randomExecutionPayloadCapella(specVersion))
+          .orElse(null);
     } else {
       throw new IllegalArgumentException(
           "There is no random execution payload configured for " + milestone);
@@ -1534,6 +1540,9 @@ public final class DataStructureUtil {
       case BELLATRIX:
         return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA:
+        return stateBuilderCapella(validatorCount, numItemsInSszLists);
+      case EIP4844:
+        // TODO migrate to stateBuilderEip4844 when available
         return stateBuilderCapella(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
