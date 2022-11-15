@@ -225,7 +225,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         payloadBuildingAttributes);
 
     return executionEngineClient
-        .forkChoiceUpdated(
+        .forkChoiceUpdatedV1(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
             PayloadAttributesV1.fromInternalPayloadBuildingAttributes(payloadBuildingAttributes))
         .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
@@ -262,7 +262,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     }
 
     return executionEngineClient
-        .getPayload(executionPayloadContext.getPayloadId())
+        .getPayloadV1(executionPayloadContext.getPayloadId())
         .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenCombine(
             SafeFuture.of(
@@ -284,7 +284,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     LOG.trace("calling engineNewPayload(executionPayload={})", executionPayload);
 
     return executionEngineClient
-        .newPayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
+        .newPayloadV1(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
         .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class PayloadBuildingAttributes {
   private final UInt64 timestamp;
@@ -28,15 +30,19 @@ public class PayloadBuildingAttributes {
   private final Eth1Address feeRecipient;
   private final Optional<SignedValidatorRegistration> validatorRegistration;
 
+  private final Optional<List<Withdrawal>> maybeWithdrawals;
+
   public PayloadBuildingAttributes(
       final UInt64 timestamp,
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
-      final Optional<SignedValidatorRegistration> validatorRegistration) {
+      final Optional<SignedValidatorRegistration> validatorRegistration,
+      final Optional<List<Withdrawal>> maybeWithdrawals) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
     this.validatorRegistration = validatorRegistration;
+    this.maybeWithdrawals = maybeWithdrawals;
   }
 
   public UInt64 getTimestamp() {
@@ -65,6 +71,10 @@ public class PayloadBuildingAttributes {
         signedValidatorRegistration -> signedValidatorRegistration.getMessage().getGasLimit());
   }
 
+  public Optional<List<Withdrawal>> getWithdrawals() {
+    return maybeWithdrawals;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -77,7 +87,8 @@ public class PayloadBuildingAttributes {
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient)
-        && Objects.equals(validatorRegistration, that.validatorRegistration);
+        && Objects.equals(validatorRegistration, that.validatorRegistration)
+        && Objects.equals(maybeWithdrawals, that.maybeWithdrawals);
   }
 
   @Override
@@ -92,6 +103,7 @@ public class PayloadBuildingAttributes {
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
         .add("validatorRegistration", validatorRegistration)
+        .add("withdrawals", maybeWithdrawals)
         .toString();
   }
 }
