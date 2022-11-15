@@ -90,7 +90,7 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     }
 
     @Override
-    public void addReconstructedFinalizedState( // TODO repetition
+    public void addReconstructedFinalizedState(
         KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state) {
       if (!loadedLastReconstructedStoreState) {
         lastReconstructedStateStoredSlot =
@@ -119,7 +119,7 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
       lastStateStoredSlot = Optional.of(state.getSlot());
     }
 
-    private void addReconstructedFinalizedState( // TODO repetition
+    private void addReconstructedFinalizedState(
         final KvStoreTransaction transaction,
         final SchemaFinalizedSnapshotState schema,
         final BeaconState state) {
