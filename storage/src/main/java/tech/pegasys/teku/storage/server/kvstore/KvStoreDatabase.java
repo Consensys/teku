@@ -337,41 +337,31 @@ public abstract class KvStoreDatabase<
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
-
-      final Optional<BeaconState> maybeLastState =
-          getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
-      maybeLastState.ifPresentOrElse(
-          lastState -> {
-            final StateRootRecorder recorder =
-                new StateRootRecorder(
-                    lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
-            recorder.acceptNextState(state);
-          },
-          () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
-
-      updater.commit();
+      handleAddFinalizedStateRoot(state, updater);
     }
   }
 
   @Override
-  public void storeReconstructedFinalizedState(
-      BeaconState state, Bytes32 blockRoot) { // TODO repetition
+  public void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot) {
     try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       updater.addReconstructedFinalizedState(blockRoot, state);
-
-      final Optional<BeaconState> maybeLastState =
-          getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
-      maybeLastState.ifPresentOrElse(
-          lastState -> {
-            final StateRootRecorder recorder =
-                new StateRootRecorder(
-                    lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
-            recorder.acceptNextState(state);
-          },
-          () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
-
-      updater.commit();
+      handleAddFinalizedStateRoot(state, updater);
     }
+  }
+
+  private void handleAddFinalizedStateRoot(BeaconState state, FinalizedUpdaterCommon updater) {
+    final Optional<BeaconState> maybeLastState =
+        getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
+    maybeLastState.ifPresentOrElse(
+        lastState -> {
+          final StateRootRecorder recorder =
+              new StateRootRecorder(
+                  lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
+          recorder.acceptNextState(state);
+        },
+        () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
+
+    updater.commit();
   }
 
   @Override
