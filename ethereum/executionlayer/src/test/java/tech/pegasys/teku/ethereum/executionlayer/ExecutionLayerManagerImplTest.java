@@ -561,7 +561,7 @@ class ExecutionLayerManagerImplTest {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-    when(executionEngineClient.getPayload(executionPayloadContext.getPayloadId()))
+    when(executionEngineClient.getPayloadV1(executionPayloadContext.getPayloadId()))
         .thenReturn(
             SafeFuture.completedFuture(
                 new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
@@ -623,7 +623,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   private void verifyEngineCalled(final ExecutionPayloadContext executionPayloadContext) {
-    verify(executionEngineClient).getPayload(executionPayloadContext.getPayloadId());
+    verify(executionEngineClient).getPayloadV1(executionPayloadContext.getPayloadId());
   }
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {

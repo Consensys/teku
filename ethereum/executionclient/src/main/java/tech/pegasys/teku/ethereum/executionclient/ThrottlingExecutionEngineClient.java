@@ -17,9 +17,11 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -57,22 +59,41 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(final Bytes8 payloadId) {
-    return taskQueue.queueTask(() -> delegate.getPayload(payloadId));
+  public SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(final Bytes8 payloadId) {
+    return taskQueue.queueTask(() -> delegate.getPayloadV1(payloadId));
   }
 
   @Override
-  public SafeFuture<Response<PayloadStatusV1>> newPayload(
+  public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
+    return taskQueue.queueTask(() -> delegate.getPayloadV2(payloadId));
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(
       final ExecutionPayloadV1 executionPayload) {
-    return taskQueue.queueTask(() -> delegate.newPayload(executionPayload));
+    return taskQueue.queueTask(() -> delegate.newPayloadV1(executionPayload));
   }
 
   @Override
-  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
+      final ExecutionPayloadV2 executionPayload) {
+    return taskQueue.queueTask(() -> delegate.newPayloadV2(executionPayload));
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV1> payloadAttributes) {
     return taskQueue.queueTask(
-        () -> delegate.forkChoiceUpdated(forkChoiceState, payloadAttributes));
+        () -> delegate.forkChoiceUpdatedV1(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV2> payloadAttributes) {
+    return taskQueue.queueTask(
+        () -> delegate.forkChoiceUpdatedV2(forkChoiceState, payloadAttributes));
   }
 
   @Override
