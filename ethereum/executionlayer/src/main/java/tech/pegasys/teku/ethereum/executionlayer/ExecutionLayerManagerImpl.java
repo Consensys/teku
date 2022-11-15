@@ -41,9 +41,11 @@ import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecuti
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -73,6 +75,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
@@ -223,6 +226,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadBuildingAttributes);
+    if (spec.atSlot(forkChoiceState.getHeadBlockSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return executionEngineClient
+          .forkChoiceUpdatedV2(
+              ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
+              PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
+                  payloadBuildingAttributes))
+          .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
+          .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
+          .thenPeek(
+              forkChoiceUpdatedResult ->
+                  LOG.trace(
+                      "engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
+                      forkChoiceState,
+                      payloadBuildingAttributes,
+                      forkChoiceUpdatedResult));
+    }
 
     return executionEngineClient
         .forkChoiceUpdatedV1(
@@ -260,6 +281,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return executionEngineClient
+          .getPayloadV2(executionPayloadContext.getPayloadId())
+          .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
+          .thenCombine(
+              SafeFuture.of(
+                  () ->
+                      SchemaDefinitionsCapella.required(spec.atSlot(slot).getSchemaDefinitions())
+                          .getExecutionPayloadSchema()),
+              ExecutionPayloadV2::asInternalExecutionPayload)
+          .thenPeek(
+              executionPayload ->
+                  LOG.trace(
+                      "engineGetPayloadV2(payloadId={}, slot={}) -> {}",
+                      executionPayloadContext.getPayloadId(),
+                      slot,
+                      executionPayload));
+    }
 
     return executionEngineClient
         .getPayloadV1(executionPayloadContext.getPayloadId())
@@ -273,7 +312,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenPeek(
             executionPayload ->
                 LOG.trace(
-                    "engineGetPayload(payloadId={}, slot={}) -> {}",
+                    "engineGetPayloadV1(payloadId={}, slot={}) -> {}",
                     executionPayloadContext.getPayloadId(),
                     slot,
                     executionPayload));
@@ -283,6 +322,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     LOG.trace("calling engineNewPayload(executionPayload={})", executionPayload);
 
+    if (executionPayload.getOptionalWithdrawals().isPresent()) {
+      return executionEngineClient
+          .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))
+          .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
+          .thenApply(PayloadStatusV1::asInternalExecutionPayload)
+          .thenPeek(
+              payloadStatus ->
+                  LOG.trace(
+                      "engineNewPayloadV2(executionPayload={}) -> {}",
+                      executionPayload,
+                      payloadStatus))
+          .exceptionally(PayloadStatus::failedExecution);
+    }
+
     return executionEngineClient
         .newPayloadV1(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
         .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
@@ -290,7 +343,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         .thenPeek(
             payloadStatus ->
                 LOG.trace(
-                    "engineNewPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
+                    "engineNewPayloadV1(executionPayload={}) -> {}",
+                    executionPayload,
+                    payloadStatus))
         .exceptionally(PayloadStatus::failedExecution);
   }
 

@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FallbackReason;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -56,9 +58,9 @@ class ExecutionLayerManagerImplTest {
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private Spec spec = TestSpecFactory.createMinimalBellatrix();
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
@@ -144,6 +146,26 @@ class ExecutionLayerManagerImplTest {
   public void engineGetPayload_shouldReturnPayloadViaEngine() {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+
+    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
+        .isCompletedWithValue(payload);
+
+    // we expect no calls to builder
+    verifyNoInteractions(builderClient);
+
+    verifySourceCounter(Source.LOCAL_EL, FallbackReason.NONE);
+  }
+
+  @Test
+  public void engineGetPayloadV2_shouldReturnPayloadViaEngine() {
+    spec = TestSpecFactory.createMinimalCapella();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    executionLayerManager = createExecutionLayerChannelImpl(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
@@ -561,10 +583,17 @@ class ExecutionLayerManagerImplTest {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-    when(executionEngineClient.getPayloadV1(executionPayloadContext.getPayloadId()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      when(executionEngineClient.getPayloadV2(executionPayloadContext.getPayloadId()))
+          .thenReturn(
+              SafeFuture.completedFuture(
+                  new Response<>(ExecutionPayloadV2.fromInternalExecutionPayload(payload))));
+    } else {
+      when(executionEngineClient.getPayloadV1(executionPayloadContext.getPayloadId()))
+          .thenReturn(
+              SafeFuture.completedFuture(
+                  new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
+    }
 
     return payload;
   }
