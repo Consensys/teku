@@ -62,6 +62,9 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     private Optional<UInt64> lastStateStoredSlot = Optional.empty();
     private boolean loadedLastStoreState = false;
 
+    private Optional<UInt64> lastReconstructedStateStoredSlot = Optional.empty();
+    private boolean loadedLastReconstructedStoreState = false;
+
     private FinalizedStateSnapshotUpdater(final UInt64 stateStorageFrequency) {
       this.stateStorageFrequency = stateStorageFrequency;
     }
@@ -89,14 +92,14 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     @Override
     public void addReconstructedFinalizedState( // TODO repetition
         KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state) {
-      if (!loadedLastStoreState) {
-        lastStateStoredSlot =
+      if (!loadedLastReconstructedStoreState) {
+        lastReconstructedStateStoredSlot =
             db.getFloorEntry(schema.getColumnFinalizedStatesBySlot(), state.getSlot())
                 .map(ColumnEntry::getKey);
-        loadedLastStoreState = true;
+        loadedLastReconstructedStoreState = true;
       }
-      if (lastStateStoredSlot.isPresent()) {
-        UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
+      if (lastReconstructedStateStoredSlot.isPresent()) {
+        UInt64 nextStorageSlot = lastReconstructedStateStoredSlot.get().plus(stateStorageFrequency);
         if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
           addFinalizedState(transaction, schema, state);
         }
