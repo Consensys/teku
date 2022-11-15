@@ -146,7 +146,7 @@ public class V4FinalizedStateTreeStorageLogic
         KvStoreTransaction transaction,
         SchemaCombinedTreeState schema,
         BeaconState state) {
-      addFinalizedState(db, transaction, schema, state); // TODO clean?
+      addFinalizedState(db, transaction, schema, state);
     }
 
     @Override
