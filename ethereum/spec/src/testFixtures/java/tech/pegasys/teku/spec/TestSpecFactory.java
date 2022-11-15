@@ -102,6 +102,11 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
+  public static Spec createMinimalEip4844() {
+    final SpecConfigEip4844 specConfig = getEip4844SpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.EIP4844);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *
@@ -174,6 +179,10 @@ public class TestSpecFactory {
 
   public static Spec createCapella(final SpecConfig config) {
     return create(config, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createEip4844(final SpecConfig config) {
+    return create(config, SpecMilestone.EIP4844);
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {

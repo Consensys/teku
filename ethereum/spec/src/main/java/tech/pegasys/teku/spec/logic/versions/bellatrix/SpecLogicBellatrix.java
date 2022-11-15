@@ -14,14 +14,11 @@
 package tech.pegasys.teku.spec.logic.versions.bellatrix;
 
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
@@ -29,9 +26,9 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.forktransition.BellatrixStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -43,9 +40,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SpecLogicBellatrix extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
-
-  private final Function<BeaconState, AttestationWorthinessChecker>
-      attestationWorthinessCheckerCreator;
 
   private final Optional<BellatrixTransitionHelpers> bellatrixTransitionHelpers;
 
@@ -67,7 +61,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BellatrixStateUpgrade stateUpgrade,
-      final Function<BeaconState, AttestationWorthinessChecker> attestationWorthinessCheckerCreator,
       final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
     super(
         predicates,
@@ -87,7 +80,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
-    this.attestationWorthinessCheckerCreator = attestationWorthinessCheckerCreator;
     this.bellatrixTransitionHelpers = Optional.of(bellatrixTransitionHelpers);
   }
 
@@ -112,7 +104,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
@@ -159,10 +151,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
-    final Function<BeaconState, AttestationWorthinessChecker> attestationWorthinessCheckerCreator =
-        SpecLogicAltair.attestationWorthinessCheckerCreator(
-            miscHelpers, config, beaconStateAccessors);
-
     // State upgrade
     final BellatrixStateUpgrade stateUpgrade =
         new BellatrixStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
@@ -188,18 +176,12 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         blindBlockUtil,
         syncCommitteeUtil,
         stateUpgrade,
-        attestationWorthinessCheckerCreator,
         bellatrixTransitionHelpers);
   }
 
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
-  }
-
-  @Override
-  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return attestationWorthinessCheckerCreator.apply(state);
   }
 
   @Override

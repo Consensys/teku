@@ -14,20 +14,12 @@
 package tech.pegasys.teku.spec.logic.versions.altair;
 
 import java.util.Optional;
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -39,16 +31,14 @@ import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUp
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
-  private final Function<BeaconState, AttestationWorthinessChecker>
-      attestationWorthinessCheckerCreator;
 
   private SpecLogicAltair(
       final Predicates predicates,
@@ -66,9 +56,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final AltairStateUpgrade stateUpgrade,
-      final Function<BeaconState, AttestationWorthinessChecker>
-          attestationWorthinessCheckerCreator) {
+      final AltairStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -87,7 +75,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         Optional.empty(),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
-    this.attestationWorthinessCheckerCreator = attestationWorthinessCheckerCreator;
   }
 
   public static SpecLogicAltair create(
@@ -111,7 +98,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
@@ -155,10 +142,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    final Function<BeaconState, AttestationWorthinessChecker> attestationWorthinessCheckerCreator =
-        SpecLogicAltair.attestationWorthinessCheckerCreator(
-            miscHelpers, config, beaconStateAccessors);
-
     // State upgrade
     final AltairStateUpgrade stateUpgrade =
         new AltairStateUpgrade(
@@ -180,8 +163,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         syncCommitteeUtil,
-        stateUpgrade,
-        attestationWorthinessCheckerCreator);
+        stateUpgrade);
   }
 
   @Override
@@ -190,34 +172,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   @Override
-  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return attestationWorthinessCheckerCreator.apply(state);
-  }
-
-  @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
-  }
-
-  public static Function<BeaconState, AttestationWorthinessChecker>
-      attestationWorthinessCheckerCreator(
-          final MiscHelpers miscHelpers,
-          final SpecConfig specConfig,
-          final BeaconStateAccessors beaconStateAccessors) {
-    return (state) -> {
-      final UInt64 currentSlot = state.getSlot();
-      final UInt64 startSlot =
-          miscHelpers.computeStartSlotAtEpoch(miscHelpers.computeEpochAtSlot(currentSlot));
-
-      final Bytes32 expectedAttestationTarget =
-          startSlot.compareTo(currentSlot) == 0 || currentSlot.compareTo(startSlot) <= 0
-              ? state.getLatestBlockHeader().getRoot()
-              : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
-
-      final UInt64 oldestWorthySlotForSourceReward =
-          state.getSlot().minusMinZero(specConfig.getSquareRootSlotsPerEpoch());
-      return new AttestationWorthinessCheckerAltair(
-          expectedAttestationTarget, oldestWorthySlotForSourceReward);
-    };
   }
 }

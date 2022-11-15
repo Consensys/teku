@@ -750,7 +750,7 @@ public class Spec {
   }
 
   public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return atState(state).createAttestationWorthinessChecker(state);
+    return atState(state).getAttestationUtil().createAttestationWorthinessChecker(state);
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
