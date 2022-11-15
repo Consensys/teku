@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -91,7 +92,7 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   static SpecVersion createEip4844(final SpecConfigEip4844 specConfig) {
-    final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(specConfig);
+    final SchemaDefinitionsEip4844 schemaDefinitions = new SchemaDefinitionsEip4844(specConfig);
     final SpecLogicEip4844 specLogic = SpecLogicEip4844.create(specConfig, schemaDefinitions);
     return new SpecVersion(SpecMilestone.EIP4844, specConfig, schemaDefinitions, specLogic);
   }

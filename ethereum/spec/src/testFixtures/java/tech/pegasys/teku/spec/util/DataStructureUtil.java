@@ -77,6 +77,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -153,6 +154,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public final class DataStructureUtil {
 
@@ -495,6 +497,8 @@ public final class DataStructureUtil {
       return randomExecutionPayloadHeaderBellatrix();
     } else if (milestone.equals(SpecMilestone.CAPELLA)) {
       return randomExecutionPayloadHeaderCapella();
+    } else if (milestone.equals(SpecMilestone.EIP4844)) {
+      return randomExecutionPayloadHeaderEip4844();
     } else {
       throw new IllegalArgumentException(
           "There is no random execution payload header configured for " + milestone);
@@ -577,6 +581,32 @@ public final class DataStructureUtil {
             randomBytes32());
   }
 
+  public ExecutionPayloadHeader randomExecutionPayloadHeaderEip4844() {
+    final SpecConfigEip4844 specConfigCapella =
+        SpecConfigEip4844.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        .getExecutionPayloadHeaderSchema()
+        .toVersionEip4844()
+        .orElseThrow()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomUInt64(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes32());
+  }
+
   public BuilderBid randomBuilderBid() {
     return randomBuilderBid(randomPublicKey());
   }
@@ -609,10 +639,9 @@ public final class DataStructureUtil {
           .map(__ -> randomExecutionPayloadCapella(specVersion))
           .orElse(null);
     } else if (milestone.equals(SpecMilestone.EIP4844)) {
-      // TODO update with randomExecutionPayloadEip4844
       return schema
-          .toVersionCapella()
-          .map(__ -> randomExecutionPayloadCapella(specVersion))
+          .toVersionEip4844()
+          .map(__ -> randomExecutionPayloadEip4844(specVersion))
           .orElse(null);
     } else {
       throw new IllegalArgumentException(
@@ -663,6 +692,31 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
             randomUInt256(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions(),
+            randomExecutionPayloadWithdrawals());
+  }
+
+  public ExecutionPayload randomExecutionPayloadEip4844(SpecVersion specVersion) {
+    final SpecConfigEip4844 specConfigEip4844 = SpecConfigEip4844.required(specVersion.getConfig());
+    return SchemaDefinitionsEip4844.required(specVersion.getSchemaDefinitions())
+        .getExecutionPayloadSchema()
+        .toVersionEip4844()
+        .orElseThrow()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigEip4844.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomUInt64(),
             randomBytes32(),
             randomExecutionPayloadTransactions(),
             randomExecutionPayloadWithdrawals());
@@ -1542,8 +1596,7 @@ public final class DataStructureUtil {
       case CAPELLA:
         return stateBuilderCapella(validatorCount, numItemsInSszLists);
       case EIP4844:
-        // TODO migrate to stateBuilderEip4844 when available
-        return stateBuilderCapella(validatorCount, numItemsInSszLists);
+        return stateBuilderEip4844(validatorCount, numItemsInSszLists);
       default:
         throw new IllegalArgumentException("Unsupported milestone: " + milestone);
     }
@@ -1585,6 +1638,16 @@ public final class DataStructureUtil {
   public BeaconStateBuilderCapella stateBuilderCapella(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderCapella.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderEip4844 stateBuilderEip4844() {
+    return stateBuilderEip4844(10, 10);
+  }
+
+  public BeaconStateBuilderEip4844 stateBuilderEip4844(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderEip4844.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 

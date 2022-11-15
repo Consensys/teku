@@ -25,22 +25,27 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<T> {
   private final Function<DataStructureUtil, T> accessor;
   private final SpecMilestone minimumSpecMilestone;
+  private final SpecMilestone maximumSpecMilestone;
 
   protected DataStructureUtilSupplier(final Function<DataStructureUtil, T> accessor) {
     this.accessor = accessor;
     this.minimumSpecMilestone = SpecMilestone.PHASE0;
+    this.maximumSpecMilestone = SpecMilestone.CAPELLA;
   }
 
   protected DataStructureUtilSupplier(
-      final Function<DataStructureUtil, T> accessor, final SpecMilestone minimumSpecMilestone) {
+      final Function<DataStructureUtil, T> accessor,
+      final SpecMilestone minimumSpecMilestone,
+      final SpecMilestone maximumSpecMilestone) {
     this.accessor = accessor;
     this.minimumSpecMilestone = minimumSpecMilestone;
+    this.maximumSpecMilestone = maximumSpecMilestone;
   }
 
   @Override
   public Arbitrary<T> get() {
     Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<Spec> spec = new SpecSupplier(minimumSpecMilestone).get();
+    Arbitrary<Spec> spec = new SpecSupplier(minimumSpecMilestone, maximumSpecMilestone).get();
     Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
     return dsu.map(accessor);
   }
