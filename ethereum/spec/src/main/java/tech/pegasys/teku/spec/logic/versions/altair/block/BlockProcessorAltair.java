@@ -299,7 +299,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState state,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException {
-    throw new UnsupportedOperationException("No BlsToExecutionChange in Altair.");
+    throw new UnsupportedOperationException("No BlsToExecutionChanges in Altair.");
   }
 
   @Override

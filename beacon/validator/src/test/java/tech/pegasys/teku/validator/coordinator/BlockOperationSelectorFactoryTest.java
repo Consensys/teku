@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
@@ -476,6 +477,13 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder blsToExecutionChanges(
         Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
+      // do nothing
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder blobKzgCommitments(
+        Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
       // do nothing
       return this;
     }

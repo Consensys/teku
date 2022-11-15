@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -67,7 +67,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeUtils.get();
     final UInt64 dutiesEpoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
-    final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getSpecConfig(dutiesEpoch));
     if (currentSyncCommitteePeriod.isEmpty()) {
       final SyncCommitteePeriod committeePeriod =
           createSyncCommitteePeriod(
@@ -82,7 +81,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       final UInt64 firstEpochOfNextSyncCommitteePeriod =
           syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(dutiesEpoch);
       final int subscribeEpochsPriorToNextSyncPeriod =
-          earlySubscribeRandomSource.randomEpochCount(specConfig.getEpochsPerSyncCommitteePeriod());
+          earlySubscribeRandomSource.randomEpochCount(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
       nextSyncCommitteePeriod =
           Optional.of(
               createSyncCommitteePeriod(

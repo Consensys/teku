@@ -25,7 +25,7 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   final Class<T> itemType;
   private final Function<T, String> serializer;
 
-  private Set<T> excludedEnumerations = new HashSet<>();
+  private final Set<T> excludedEnumerations = new HashSet<>();
 
   public EnumTypeDefinition(final Class<T> itemType) {
     this(itemType, Objects::toString);
@@ -80,6 +80,9 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   @Override
   public T deserializeFromString(final String value) {
     for (T t : itemType.getEnumConstants()) {
+      if (excludedEnumerations.contains(t)) {
+        continue;
+      }
       if (t.toString().equalsIgnoreCase(value)) {
         return t;
       }

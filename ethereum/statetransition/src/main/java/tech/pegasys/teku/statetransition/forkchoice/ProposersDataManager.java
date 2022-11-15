@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,8 +34,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -225,9 +228,17 @@ public class ProposersDataManager implements SlotEventsChannel {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
+    Optional<List<Withdrawal>> maybeWithdrawals = Optional.empty();
+    if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      maybeWithdrawals = Optional.of(List.of());
+    }
     return Optional.of(
         new PayloadBuildingAttributes(
-            timestamp, random, getFeeRecipient(proposerInfo, blockSlot), validatorRegistration));
+            timestamp,
+            random,
+            getFeeRecipient(proposerInfo, blockSlot),
+            validatorRegistration,
+            maybeWithdrawals));
   }
 
   // this function MUST return a fee recipient.
