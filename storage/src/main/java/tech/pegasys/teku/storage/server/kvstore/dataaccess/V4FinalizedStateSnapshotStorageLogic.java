@@ -87,6 +87,25 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     }
 
     @Override
+    public void addReconstructedFinalizedState( // TODO repetition
+        KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state) {
+      if (!loadedLastStoreState) {
+        lastStateStoredSlot =
+            db.getFloorEntry(schema.getColumnFinalizedStatesBySlot(), state.getSlot())
+                .map(ColumnEntry::getKey);
+        loadedLastStoreState = true;
+      }
+      if (lastStateStoredSlot.isPresent()) {
+        UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
+        if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
+          addFinalizedState(transaction, schema, state);
+        }
+      } else {
+        addFinalizedState(transaction, schema, state);
+      }
+    }
+
+    @Override
     public void commit() {}
 
     private void addFinalizedState(

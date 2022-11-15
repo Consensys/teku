@@ -141,6 +141,15 @@ public class V4FinalizedStateTreeStorageLogic
     }
 
     @Override
+    public void addReconstructedFinalizedState(
+        KvStoreAccessor db,
+        KvStoreTransaction transaction,
+        SchemaCombinedTreeState schema,
+        BeaconState state) {
+      addFinalizedState(db, transaction, schema, state); // TODO clean?
+    }
+
+    @Override
     public void commit() {
       if (nodeStore != null) {
         knownStoredBranchesCache.addAll(nodeStore.getStoredBranchRoots());

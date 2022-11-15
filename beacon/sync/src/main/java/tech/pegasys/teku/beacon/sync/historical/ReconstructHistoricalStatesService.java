@@ -136,7 +136,8 @@ public class ReconstructHistoricalStatesService extends Service {
 
               final SignedBeaconBlock block = maybeBlock.get();
               context.currentState = spec.replayValidatedBlock(context.currentState, block);
-              return storageUpdateChannel.onFinalizedState(context.currentState, block.getRoot());
+              return storageUpdateChannel.onReconstructedFinalizedState(
+                  context.currentState, block.getRoot());
             })
         .thenRun(context::incrementSlot)
         .thenCompose(__ -> applyNextBlock(context));

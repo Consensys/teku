@@ -93,6 +93,13 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onReconstructedFinalizedState(
+      BeaconState finalizedState, Bytes32 blockRoot) {
+    return this.retry(
+        __ -> delegate.onReconstructedFinalizedState(finalizedState, blockRoot), null);
+  }
+
+  @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return retry(delegate::onWeakSubjectivityUpdate, weakSubjectivityUpdate);

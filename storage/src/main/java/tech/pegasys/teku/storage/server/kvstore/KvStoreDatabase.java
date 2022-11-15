@@ -354,6 +354,27 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public void storeReconstructedFinalizedState(
+      BeaconState state, Bytes32 blockRoot) { // TODO repetition
+    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
+      updater.addReconstructedFinalizedState(blockRoot, state);
+
+      final Optional<BeaconState> maybeLastState =
+          getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
+      maybeLastState.ifPresentOrElse(
+          lastState -> {
+            final StateRootRecorder recorder =
+                new StateRootRecorder(
+                    lastState.getSlot().increment(), updater::addFinalizedStateRoot, spec);
+            recorder.acceptNextState(state);
+          },
+          () -> updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot()));
+
+      updater.commit();
+    }
+  }
+
+  @Override
   public Optional<OnDiskStoreData> createMemoryStore() {
     return createMemoryStore(() -> Instant.now().getEpochSecond());
   }
