@@ -81,6 +81,7 @@ public class SpecConfigAltairTest {
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt());
   }
 }

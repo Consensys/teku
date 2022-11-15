@@ -38,7 +38,7 @@ public class MetricsConfig {
       Arrays.asList("127.0.0.1", "localhost");
   public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
-  public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = false;
+  public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
 
   private final boolean metricsEnabled;

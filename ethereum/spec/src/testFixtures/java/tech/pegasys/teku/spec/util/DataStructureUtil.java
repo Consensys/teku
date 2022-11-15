@@ -103,6 +103,8 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -1449,7 +1451,8 @@ public final class DataStructureUtil {
         randomEth1Address(),
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
-            : Optional.empty());
+            : Optional.empty(),
+        randomWithdrawalList());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {
@@ -1692,10 +1695,34 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
+  public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
+    LightClientBootstrapSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
+
+    return schema.create(
+        randomBeaconBlockHeader(),
+        randomSyncCommittee(),
+        randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32));
+  }
+
   public Withdrawal randomWithdrawal() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
         .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
+  }
+
+  public Optional<List<Withdrawal>> randomWithdrawalList() {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final List<Withdrawal> withdrawals = new ArrayList<>();
+      final int max =
+          SpecConfigCapella.required(spec.getGenesisSpecConfig()).getMaxWithdrawalsPerPayload();
+      for (int i = 0; i < max; i++) {
+        withdrawals.add(randomWithdrawal());
+      }
+      return Optional.of(withdrawals);
+    } else {
+      return Optional.empty();
+    }
   }
 
   public BlsToExecutionChange randomBlsToExecutionChange() {

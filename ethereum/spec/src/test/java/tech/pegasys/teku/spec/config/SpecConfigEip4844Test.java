@@ -86,7 +86,7 @@ public class SpecConfigEip4844Test {
         capellaConfig,
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomUInt64());
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt());
   }
 }

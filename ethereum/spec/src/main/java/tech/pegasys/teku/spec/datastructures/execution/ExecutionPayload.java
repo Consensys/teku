@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844;
 
 public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer {
 
@@ -39,6 +40,10 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer 
   }
 
   default Optional<ExecutionPayloadCapella> toVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadEip4844> toVersionEip4844() {
     return Optional.empty();
   }
 }

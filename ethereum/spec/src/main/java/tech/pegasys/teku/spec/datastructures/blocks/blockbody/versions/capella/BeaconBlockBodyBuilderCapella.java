@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
+public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
   private BeaconBlockBodySchemaCapellaImpl schema;
   private BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema;
@@ -46,6 +46,10 @@ class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
     this.blindedSchema = blindedSchema;
     this.blinded = Optional.of(true);
     return this;
+  }
+
+  protected SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
+    return blsToExecutionChanges;
   }
 
   @Override
