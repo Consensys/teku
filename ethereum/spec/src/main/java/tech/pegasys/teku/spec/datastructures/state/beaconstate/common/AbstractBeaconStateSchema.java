@@ -15,8 +15,10 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
@@ -44,9 +46,33 @@ public abstract class AbstractBeaconStateSchema<
   }
 
   private static List<SszField> combineFields(List<SszField> fieldsA, List<SszField> fieldsB) {
-    return Stream.concat(fieldsA.stream(), fieldsB.stream())
-        .sorted(Comparator.comparing(SszField::getIndex))
-        .collect(Collectors.toList());
+    List<SszField> list =
+        Stream.concat(fieldsA.stream(), fieldsB.stream())
+            .sorted(
+                Comparator.comparing(SszField::getIndex)
+                    .thenComparing(SszField::isOverridesOtherField))
+            .collect(Collectors.toList());
+    List<SszField> result = new ArrayList<>();
+    Optional<SszField> previous = Optional.empty();
+    for (SszField sszField : list) {
+      if (previous.isPresent()) {
+        if (sszField.isOverridesOtherField()) {
+          if (!previous.get().getName().equals(sszField.getName())
+              || previous.get().getIndex() != sszField.getIndex()) {
+            throw new RuntimeException(
+                String.format(
+                    "Field override configured by field %s but replacement %s doesn't look like a correct override",
+                    sszField, previous.get()));
+          }
+        } else {
+          result.add(previous.get());
+        }
+      }
+      previous = Optional.of(sszField);
+    }
+    result.add(previous.orElseThrow());
+
+    return result;
   }
 
   private void validateFields(final List<SszField> fields) {

@@ -21,13 +21,14 @@ public class SszField {
   private final int index;
   private final String name;
   private final Supplier<SszSchema<?>> viewType;
+  private final boolean overridesOtherField;
 
   public SszField(int index, SszSchema<?> sszSchema) {
     this(index, () -> sszSchema);
   }
 
   public SszField(int index, Supplier<SszSchema<?>> viewType) {
-    this(index, "field-" + index, viewType);
+    this(index, "field-" + index, viewType, false);
   }
 
   public SszField(int index, SszFieldName name, SszSchema<?> sszSchema) {
@@ -35,17 +36,24 @@ public class SszField {
   }
 
   public SszField(int index, String name, SszSchema<?> sszSchema) {
-    this(index, name, () -> sszSchema);
+    this(index, name, () -> sszSchema, false);
   }
 
   public SszField(int index, SszFieldName name, Supplier<SszSchema<?>> viewType) {
-    this(index, name.getSszFieldName(), viewType);
+    this(index, name.getSszFieldName(), viewType, false);
   }
 
-  public SszField(int index, String name, Supplier<SszSchema<?>> viewType) {
+  public static SszField createOverrideField(
+      int index, SszFieldName name, Supplier<SszSchema<?>> viewType) {
+    return new SszField(index, name.getSszFieldName(), viewType, true);
+  }
+
+  public SszField(
+      int index, String name, Supplier<SszSchema<?>> viewType, boolean overridesOtherField) {
     this.index = index;
     this.name = name;
     this.viewType = viewType;
+    this.overridesOtherField = overridesOtherField;
   }
 
   public int getIndex() {
@@ -58,5 +66,9 @@ public class SszField {
 
   public Supplier<SszSchema<?>> getSchema() {
     return viewType;
+  }
+
+  public boolean isOverridesOtherField() {
+    return overridesOtherField;
   }
 }

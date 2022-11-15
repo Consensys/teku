@@ -139,7 +139,10 @@ public abstract class AbstractBeaconStateSchemaTest<
   public void shouldValidateInvariantFields() {
     final SszField randomField =
         new SszField(
-            2, "random", () -> SszVectorSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 10));
+            2,
+            "random",
+            () -> SszVectorSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 10),
+            false);
     assertThatThrownBy(
             () ->
                 createSchema(
