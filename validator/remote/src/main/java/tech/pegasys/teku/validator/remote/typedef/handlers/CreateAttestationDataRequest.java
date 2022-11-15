@@ -18,11 +18,11 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import tech.pegasys.teku.ethereum.json.types.ApiTypesHelper;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
-import tech.pegasys.teku.validator.remote.typedef.ValidatorClientTypeDefinitions;
 
 public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
 
@@ -38,7 +38,6 @@ public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
     return get(
         ValidatorApiMethod.GET_ATTESTATION_DATA,
         queryParams,
-        new ResponseHandler<>(
-            ValidatorClientTypeDefinitions.withDataWrapper(AttestationData.SSZ_SCHEMA)));
+        new ResponseHandler<>(ApiTypesHelper.withDataWrapper(AttestationData.SSZ_SCHEMA)));
   }
 }

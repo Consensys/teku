@@ -11,19 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote.typedef;
+package tech.pegasys.teku.ethereum.json.types;
 
+import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
-public class ValidatorClientTypeDefinitions {
+public class ApiTypesHelper {
   public static <T extends SszData, S extends SszSchema<T>>
       DeserializableTypeDefinition<T> withDataWrapper(final S schema) {
-    final DeserializableTypeDefinition<T> jsonTypeDefinition = schema.getJsonTypeDefinition();
-    return DeserializableTypeDefinition.<T, ResponseDataWrapper<T>>object()
-        .withField("data", jsonTypeDefinition, Function.identity(), ResponseDataWrapper::setData)
+    return withDataWrapper(schema.getName(), schema.getJsonTypeDefinition());
+  }
+
+  public static <T> DeserializableTypeDefinition<T> withDataWrapper(
+      final String name, final DeserializableTypeDefinition<T> dataContentType) {
+    return withDataWrapper(Optional.of(name), dataContentType);
+  }
+
+  private static <T> DeserializableTypeDefinition<T> withDataWrapper(
+      final Optional<String> name, final DeserializableTypeDefinition<T> dataContentType) {
+    final DeserializableObjectTypeDefinitionBuilder<T, ResponseDataWrapper<T>> builder =
+        DeserializableTypeDefinition.object();
+    name.ifPresent(builder::name);
+    return builder
+        .withField("data", dataContentType, Function.identity(), ResponseDataWrapper::setData)
         .initializer(ResponseDataWrapper::new)
         .finisher(ResponseDataWrapper::getData)
         .build();
