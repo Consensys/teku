@@ -101,10 +101,10 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
       if (lastReconstructedStateStoredSlot.isPresent()) {
         UInt64 nextStorageSlot = lastReconstructedStateStoredSlot.get().plus(stateStorageFrequency);
         if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
-          addFinalizedState(transaction, schema, state);
+          addReconstructedFinalizedState(transaction, schema, state);
         }
       } else {
-        addFinalizedState(transaction, schema, state);
+        addReconstructedFinalizedState(transaction, schema, state);
       }
     }
 
@@ -117,6 +117,14 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
         final BeaconState state) {
       transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
       lastStateStoredSlot = Optional.of(state.getSlot());
+    }
+
+    private void addReconstructedFinalizedState( // TODO repetition
+        final KvStoreTransaction transaction,
+        final SchemaFinalizedSnapshotState schema,
+        final BeaconState state) {
+      transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
+      lastReconstructedStateStoredSlot = Optional.of(state.getSlot());
     }
   }
 }
