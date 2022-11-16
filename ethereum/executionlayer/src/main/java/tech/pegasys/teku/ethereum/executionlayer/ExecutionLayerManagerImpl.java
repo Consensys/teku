@@ -95,13 +95,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
-      final ExecutionEngineClient executionEngineClient,
+      final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
       final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker) {
-
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -120,10 +119,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             fallbackReason ->
                 executionPayloadSourceCounter.labels(
                     Source.BUILDER_LOCAL_EL_FALLBACK.toString(), fallbackReason));
-    ExecutionClientHandler executionClientHandler =
-        spec.isMilestoneSupported(SpecMilestone.CAPELLA)
-            ? new CapellaExecutionClientHandler(spec, executionEngineClient)
-            : new BellatrixExecutionClientHandler(spec, executionEngineClient);
 
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
@@ -133,6 +128,29 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBidValidator,
         builderCircuitBreaker,
         executionPayloadSourceCounter);
+  }
+
+  public static ExecutionLayerManagerImpl create(
+      final EventLogger eventLogger,
+      final ExecutionEngineClient executionEngineClient,
+      final Optional<BuilderClient> builderClient,
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
+    final ExecutionClientHandler executionClientHandler =
+        spec.isMilestoneSupported(SpecMilestone.CAPELLA)
+            ? new CapellaExecutionClientHandler(spec, executionEngineClient)
+            : new BellatrixExecutionClientHandler(spec, executionEngineClient);
+
+    return create(
+        eventLogger,
+        executionClientHandler,
+        builderClient,
+        spec,
+        metricsSystem,
+        builderBidValidator,
+        builderCircuitBreaker);
   }
 
   public static ExecutionEngineClient createEngineClient(

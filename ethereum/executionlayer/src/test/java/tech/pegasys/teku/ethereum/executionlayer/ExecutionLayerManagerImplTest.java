@@ -29,9 +29,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FallbackReason;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
@@ -41,7 +38,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -53,8 +49,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
 
-  private final ExecutionEngineClient executionEngineClient =
-      Mockito.mock(ExecutionEngineClient.class);
+  private final ExecutionClientHandler executionClientHandler = mock(ExecutionClientHandler.class);
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
@@ -148,7 +143,7 @@ class ExecutionLayerManagerImplTest {
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
         .isCompletedWithValue(payload);
@@ -168,7 +163,7 @@ class ExecutionLayerManagerImplTest {
     executionLayerManager = createExecutionLayerChannelImpl(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
         .isCompletedWithValue(payload);
@@ -190,7 +185,7 @@ class ExecutionLayerManagerImplTest {
 
     final ExecutionPayloadHeader header =
         prepareBuilderGetHeaderResponse(executionPayloadContext, false);
-    prepareEngineGetPayloadResponse(executionPayloadContext);
+    prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     // we expect result from the builder
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
@@ -198,7 +193,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -211,7 +206,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
-    verifyNoMoreInteractions(executionEngineClient);
+    verifyNoMoreInteractions(executionClientHandler);
 
     verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
   }
@@ -226,7 +221,7 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     prepareBuilderGetHeaderFailure(executionPayloadContext);
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -242,7 +237,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -253,7 +248,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect no additional calls
     verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
+    verifyNoMoreInteractions(executionClientHandler);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, FallbackReason.BUILDER_ERROR);
   }
@@ -270,7 +265,7 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     prepareBuilderGetHeaderResponse(executionPayloadContext, false);
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -296,7 +291,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -326,7 +321,7 @@ class ExecutionLayerManagerImplTest {
 
     prepareBuilderGetHeaderResponse(executionPayloadContext, true);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -354,7 +349,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconStatePreMerge(slot);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -382,7 +377,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -412,7 +407,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -442,7 +437,7 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext);
+    final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -471,12 +466,12 @@ class ExecutionLayerManagerImplTest {
               final ExecutionPayloadContext executionPayloadContext =
                   dataStructureUtil.randomPayloadExecutionContext(slot, false);
               final BeaconState state = dataStructureUtil.randomBeaconState(slot);
-              prepareEngineGetPayloadResponse(executionPayloadContext);
+              prepareEngineGetPayloadResponse(executionPayloadContext, slot);
               assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
                   .isCompleted();
             });
 
-    reset(executionEngineClient);
+    reset(executionClientHandler);
 
     // this trigger onSlot at slot 5, which cleans cache up to slot 3
     setBuilderOffline(UInt64.valueOf(5));
@@ -496,7 +491,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect both builder and local engine have been called
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
-    verifyNoMoreInteractions(executionEngineClient);
+    verifyNoMoreInteractions(executionClientHandler);
   }
 
   private ExecutionPayloadHeader prepareBuilderGetHeaderResponse(
@@ -537,7 +532,7 @@ class ExecutionLayerManagerImplTest {
       // we expect only local engine have been called
       verifyNoInteractions(builderClient);
     }
-    verifyEngineCalled(executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -548,7 +543,7 @@ class ExecutionLayerManagerImplTest {
 
     // we expect no additional calls
     verifyNoMoreInteractions(builderClient);
-    verifyNoMoreInteractions(executionEngineClient);
+    verifyNoMoreInteractions(executionClientHandler);
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, fallbackReason);
   }
@@ -579,22 +574,12 @@ class ExecutionLayerManagerImplTest {
   }
 
   private ExecutionPayload prepareEngineGetPayloadResponse(
-      final ExecutionPayloadContext executionPayloadContext) {
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
 
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      when(executionEngineClient.getPayloadV2(executionPayloadContext.getPayloadId()))
-          .thenReturn(
-              SafeFuture.completedFuture(
-                  new Response<>(ExecutionPayloadV2.fromInternalExecutionPayload(payload))));
-    } else {
-      when(executionEngineClient.getPayloadV1(executionPayloadContext.getPayloadId()))
-          .thenReturn(
-              SafeFuture.completedFuture(
-                  new Response<>(ExecutionPayloadV1.fromInternalExecutionPayload(payload))));
-    }
-
+    when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
+        .thenReturn(SafeFuture.completedFuture(payload));
     return payload;
   }
 
@@ -603,7 +588,7 @@ class ExecutionLayerManagerImplTest {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);
     return ExecutionLayerManagerImpl.create(
         eventLogger,
-        executionEngineClient,
+        executionClientHandler,
         builderEnabled ? Optional.of(builderClient) : Optional.empty(),
         spec,
         stubMetricsSystem,
@@ -651,8 +636,9 @@ class ExecutionLayerManagerImplTest {
             executionPayloadContext.getParentHash());
   }
 
-  private void verifyEngineCalled(final ExecutionPayloadContext executionPayloadContext) {
-    verify(executionEngineClient).getPayloadV1(executionPayloadContext.getPayloadId());
+  private void verifyEngineCalled(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    verify(executionClientHandler).engineGetPayload(executionPayloadContext, slot);
   }
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
