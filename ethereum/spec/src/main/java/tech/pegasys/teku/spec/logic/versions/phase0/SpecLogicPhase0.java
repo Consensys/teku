@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -23,7 +22,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -35,6 +33,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicPhase0 extends AbstractSpecLogic {
@@ -94,7 +93,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilPhase0(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
@@ -149,11 +148,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return Optional.empty();
-  }
-
-  @Override
-  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return AttestationWorthinessChecker.NOOP;
   }
 
   @Override
