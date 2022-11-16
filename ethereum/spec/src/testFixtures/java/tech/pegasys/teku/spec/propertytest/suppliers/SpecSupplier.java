@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.propertytest.suppliers;
 
+import java.util.Optional;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
@@ -23,6 +24,9 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecSupplier implements ArbitrarySupplier<Spec> {
+  // TODO set this to Optional.empty() when all milestones support property tests
+  public static final Optional<SpecMilestone> EXCLUDE_MILESTONES_FROM =
+      Optional.of(SpecMilestone.EIP4844);
 
   private final SpecMilestone minimumSpecMilestone;
 
@@ -39,7 +43,9 @@ public class SpecSupplier implements ArbitrarySupplier<Spec> {
   public Arbitrary<Spec> get() {
     Arbitrary<SpecMilestone> milestone =
         Arbitraries.of(SpecMilestone.class)
-            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
+            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone))
+            .filter(
+                m -> EXCLUDE_MILESTONES_FROM.map(e -> !m.isGreaterThanOrEqualTo(e)).orElse(true));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
     return Combinators.combine(milestone, network)
         .as(TestSpecFactory::create)

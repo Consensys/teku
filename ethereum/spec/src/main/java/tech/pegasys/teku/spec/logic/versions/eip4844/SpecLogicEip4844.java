@@ -11,52 +11,54 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.altair;
+package tech.pegasys.teku.spec.logic.versions.eip4844;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaStateUpgrade;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
-public class SpecLogicAltair extends AbstractSpecLogic {
+public class SpecLogicEip4844 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
 
-  private SpecLogicAltair(
+  private SpecLogicEip4844(
       final Predicates predicates,
-      final MiscHelpersAltair miscHelpers,
+      final MiscHelpersBellatrix miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final BeaconStateMutators beaconStateMutators,
+      final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorAltair epochProcessor,
-      final BlockProcessorAltair blockProcessor,
+      final EpochProcessorBellatrix epochProcessor,
+      final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
+      final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final AltairStateUpgrade stateUpgrade) {
+      final CapellaStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -72,20 +74,20 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
-        Optional.empty(),
+        Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
   }
 
-  public static SpecLogicAltair create(
-      final SpecConfigAltair config, final SchemaDefinitionsAltair schemaDefinitions) {
+  public static SpecLogicEip4844 create(
+      final SpecConfigEip4844 config, final SchemaDefinitionsCapella schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
-    final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
+    final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
-    final BeaconStateMutatorsAltair beaconStateMutators =
-        new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
+    final BeaconStateMutatorsBellatrix beaconStateMutators =
+        new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
@@ -110,8 +112,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorAltair epochProcessor =
-        new EpochProcessorAltair(
+    final EpochProcessorBellatrix epochProcessor =
+        new EpochProcessorBellatrix(
             config,
             miscHelpers,
             beaconStateAccessors,
@@ -123,8 +125,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
-    final BlockProcessorAltair blockProcessor =
-        new BlockProcessorAltair(
+    final BlockProcessorCapella blockProcessor =
+        new BlockProcessorCapella(
             config,
             predicates,
             miscHelpers,
@@ -135,19 +137,21 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            operationValidator);
+            operationValidator,
+            schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    // State upgrade
-    final AltairStateUpgrade stateUpgrade =
-        new AltairStateUpgrade(
-            config, schemaDefinitions, beaconStateAccessors, attestationUtil, miscHelpers);
+    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
-    return new SpecLogicAltair(
+    // State upgrade
+    final CapellaStateUpgrade stateUpgrade =
+        new CapellaStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+
+    return new SpecLogicEip4844(
         predicates,
         miscHelpers,
         beaconStateAccessors,
@@ -162,6 +166,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
+        blindBlockUtil,
         syncCommitteeUtil,
         stateUpgrade);
   }
