@@ -160,7 +160,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszUInt64.ZERO,
         SszBytes32.of(executionPayloadHeaderCapella.getBlockHash()),
         SszBytes32.of(executionPayloadHeaderCapella.getTransactionsRoot()),
-        SszBytes32.of(Bytes32.ZERO));
+        SszBytes32.of(executionPayloadHeaderCapella.getWithdrawalsRoot()));
   }
 
   private SszByteListSchema<?> getExtraDataSchema() {
