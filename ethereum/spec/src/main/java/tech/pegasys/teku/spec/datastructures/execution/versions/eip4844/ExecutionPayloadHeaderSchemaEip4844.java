@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 
 public class ExecutionPayloadHeaderSchemaEip4844
     extends ContainerSchema16<
@@ -138,6 +139,28 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot));
+  }
+
+  public ExecutionPayloadHeaderEip4844Impl createFromExecutionPayloadHeaderCapella(
+      final ExecutionPayloadHeaderCapella executionPayloadHeaderCapella) {
+    return new ExecutionPayloadHeaderEip4844Impl(
+        this,
+        SszBytes32.of(executionPayloadHeaderCapella.getParentHash()),
+        SszByteVector.fromBytes(executionPayloadHeaderCapella.getFeeRecipient().getWrappedBytes()),
+        SszBytes32.of(executionPayloadHeaderCapella.getStateRoot()),
+        SszBytes32.of(executionPayloadHeaderCapella.getReceiptsRoot()),
+        SszByteVector.fromBytes(executionPayloadHeaderCapella.getLogsBloom()),
+        SszBytes32.of(executionPayloadHeaderCapella.getPrevRandao()),
+        SszUInt64.of(executionPayloadHeaderCapella.getBlockNumber()),
+        SszUInt64.of(executionPayloadHeaderCapella.getGasLimit()),
+        SszUInt64.of(executionPayloadHeaderCapella.getGasUsed()),
+        SszUInt64.of(executionPayloadHeaderCapella.getTimestamp()),
+        getExtraDataSchema().fromBytes(executionPayloadHeaderCapella.getExtraData()),
+        SszUInt256.of(executionPayloadHeaderCapella.getBaseFeePerGas()),
+        SszUInt64.ZERO,
+        SszBytes32.of(executionPayloadHeaderCapella.getBlockHash()),
+        SszBytes32.of(executionPayloadHeaderCapella.getTransactionsRoot()),
+        SszBytes32.of(Bytes32.ZERO));
   }
 
   private SszByteListSchema<?> getExtraDataSchema() {

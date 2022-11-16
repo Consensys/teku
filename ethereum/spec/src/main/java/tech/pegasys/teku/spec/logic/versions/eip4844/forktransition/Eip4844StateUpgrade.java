@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderEip4844;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -62,9 +63,22 @@ public class Eip4844StateUpgrade implements StateUpgrade<BeaconStateEip4844> {
                       specConfig.getEip4844ForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(
-                  schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
-              state.setNextWithdrawalValidatorIndex(UInt64.ZERO);
+              final ExecutionPayloadHeaderEip4844 upgradedExecutionPayloadHeader =
+                  schemaDefinitions
+                      .getExecutionPayloadHeaderSchema()
+                      .toVersionEip4844()
+                      .orElseThrow()
+                      .createFromExecutionPayloadHeaderCapella(
+                          preStateCapella
+                              .getLatestExecutionPayloadHeader()
+                              .toVersionCapella()
+                              .orElseThrow());
+
+              state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
+
+              state.setNextWithdrawalValidatorIndex(
+                  preStateCapella.getNextWithdrawalValidatorIndex());
+              state.setNextWithdrawalIndex(preStateCapella.getNextWithdrawalIndex());
             });
   }
 }
