@@ -54,8 +54,9 @@ public class DoppelgangerDetectionServiceTest {
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetectionService.class);
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
-
   private final String doppelgangerServiceStartLog = "Starting doppelganger detection service...";
+  private final String doppelgangerTimeoutLog =
+      "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.";
 
   @BeforeEach
   public void setup() throws IOException {
@@ -235,10 +236,7 @@ public class DoppelgangerDetectionServiceTest {
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception";
     expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(2), "ERROR", expectedErrorLog);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(3),
-        "INFO",
-        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+    expectLogMessage(logCaptor.getLogEvents().get(3), "INFO", doppelgangerTimeoutLog);
   }
 
   @Test
@@ -268,10 +266,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", performingDoppelgangerCheckLog(0, 1));
     expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(6),
-        "INFO",
-        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+    expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
   }
 
   @Test
@@ -303,10 +298,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", performingDoppelgangerCheckLog(0, 1));
     expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(6),
-        "INFO",
-        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+    expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
   }
 
   @Test
@@ -336,10 +328,59 @@ public class DoppelgangerDetectionServiceTest {
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get validators liveness: Request timeout";
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
-    expectLogMessage(
-        logCaptor.getLogEvents().get(4),
-        "INFO",
-        "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
+  }
+
+  @Test
+  public void shouldTimeoutDueToValidatorIndexProviderTimeout() {
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
+    when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
+    when(validatorIndexProvider.getValidatorIndices())
+        .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
+    DoppelgangerDetectionService doppelgangerDetectionService =
+        new DoppelgangerDetectionService(
+            asyncRunner,
+            validatorApiChannel,
+            validatorIndexProvider,
+            spec,
+            timeProvider,
+            genesisDataProvider,
+            Duration.ofSeconds(2),
+            Duration.ofSeconds(6),
+            __ -> {});
+    assertThat(doppelgangerDetectionService.start()).isCompleted();
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
+    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
+    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    final String expectedErrorLog =
+        "Unable to check validators doppelganger. Unable to get validators indices: Request timeout";
+    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
+    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
+  }
+
+  @Test
+  public void shouldTimeoutDueToGenesisDataProviderTimeout() {
+    when(genesisDataProvider.getGenesisTime())
+        .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
+    DoppelgangerDetectionService doppelgangerDetectionService =
+        new DoppelgangerDetectionService(
+            asyncRunner,
+            validatorApiChannel,
+            validatorIndexProvider,
+            spec,
+            timeProvider,
+            genesisDataProvider,
+            Duration.ofSeconds(2),
+            Duration.ofSeconds(6),
+            __ -> {});
+    assertThat(doppelgangerDetectionService.start()).isCompleted();
+    assertThat(logCaptor.getLogEvents().size()).isEqualTo(3);
+    expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
+    final String expectedErrorLog =
+        "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: Request timeout";
+    expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
+    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", doppelgangerTimeoutLog);
   }
 
   private void expectLogMessage(

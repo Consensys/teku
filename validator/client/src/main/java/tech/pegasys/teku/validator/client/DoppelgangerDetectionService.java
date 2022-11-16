@@ -160,30 +160,28 @@ public class DoppelgangerDetectionService extends Service {
                               .orTimeout(checkDelay)
                               .exceptionally(
                                   throwable -> {
-                                    String errorMessage =
-                                        ExceptionUtil.hasCause(throwable, TimeoutException.class)
-                                            ? "Request timeout"
-                                            : throwable.getMessage();
                                     LOGGER.error(
                                         "Unable to check validators doppelganger. Unable to get validators liveness: {}",
-                                        errorMessage);
+                                        extractErrorMessage(throwable));
                                     return false;
                                   })
                               .thenApply(doppelgangerDetected -> null))
+                  .orTimeout(checkDelay)
                   .exceptionally(
                       throwable -> {
                         LOGGER.error(
                             "Unable to check validators doppelganger. Unable to get validators indices: {}",
-                            throwable.getMessage());
+                            extractErrorMessage(throwable));
                         return null;
                       })
                   .thenApply(o -> null);
             })
+        .orTimeout(checkDelay)
         .exceptionally(
             throwable -> {
               LOGGER.error(
                   "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: {}",
-                  throwable.getMessage());
+                  extractErrorMessage(throwable));
               return null;
             });
   }
@@ -241,5 +239,11 @@ public class DoppelgangerDetectionService extends Service {
       }
     }
     return false;
+  }
+
+  private String extractErrorMessage(Throwable throwable) {
+    return ExceptionUtil.hasCause(throwable, TimeoutException.class)
+        ? "Request timeout"
+        : throwable.getMessage();
   }
 }
