@@ -35,6 +35,9 @@ public interface V4FinalizedStateStorageLogic<S> {
     void addFinalizedState(
         KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state);
 
+    void addReconstructedFinalizedState(
+        KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state);
+
     void commit();
   }
 }

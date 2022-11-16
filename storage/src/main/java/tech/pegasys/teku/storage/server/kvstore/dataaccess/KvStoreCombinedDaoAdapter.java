@@ -618,6 +618,11 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+      finalizedUpdater.addReconstructedFinalizedState(blockRoot, state);
+    }
+
+    @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       finalizedUpdater.addFinalizedStateRoot(stateRoot, slot);
     }
