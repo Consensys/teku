@@ -35,8 +35,8 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellat
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
-import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaStateUpgrade;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.logic.versions.eip4844.forktransition.Eip4844StateUpgrade;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class SpecLogicEip4844 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
@@ -58,7 +58,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final CapellaStateUpgrade stateUpgrade) {
+      final Eip4844StateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -80,7 +80,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
   }
 
   public static SpecLogicEip4844 create(
-      final SpecConfigEip4844 config, final SchemaDefinitionsCapella schemaDefinitions) {
+      final SpecConfigEip4844 config, final SchemaDefinitionsEip4844 schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
@@ -148,8 +148,8 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
-    final CapellaStateUpgrade stateUpgrade =
-        new CapellaStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+    final Eip4844StateUpgrade stateUpgrade =
+        new Eip4844StateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     return new SpecLogicEip4844(
         predicates,
