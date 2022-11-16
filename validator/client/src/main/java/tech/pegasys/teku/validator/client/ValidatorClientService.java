@@ -449,28 +449,23 @@ public class ValidatorClientService extends Service {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
-              if (maybeDoppelgangerDetectionService.isPresent()) {
-                return maybeDoppelgangerDetectionService
-                    .get()
-                    .start()
-                    .thenCompose(___ -> subscribeToEvents());
-              } else {
-                return subscribeToEvents();
-              }
+              return maybeDoppelgangerDetectionService
+                  .map(service -> service.start().toVoid())
+                  .orElse(SafeFuture.COMPLETE);
+            })
+        .thenCompose(
+            __ -> {
+              eventChannels.subscribe(
+                  ValidatorTimingChannel.class,
+                  new ValidatorTimingActions(
+                      validatorStatusLogger,
+                      validatorIndexProvider,
+                      validatorTimingChannels,
+                      spec,
+                      metricsSystem));
+              validatorStatusLogger.printInitialValidatorStatuses().ifExceptionGetsHereRaiseABug();
+              return beaconNodeApi.subscribeToEvents();
             });
-  }
-
-  private SafeFuture<Void> subscribeToEvents() {
-    eventChannels.subscribe(
-        ValidatorTimingChannel.class,
-        new ValidatorTimingActions(
-            validatorStatusLogger,
-            validatorIndexProvider,
-            validatorTimingChannels,
-            spec,
-            metricsSystem));
-    validatorStatusLogger.printInitialValidatorStatuses().ifExceptionGetsHereRaiseABug();
-    return beaconNodeApi.subscribeToEvents();
   }
 
   @Override
