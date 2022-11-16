@@ -110,7 +110,7 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).intValue()))
         .onReconstructedFinalizedState(any(), any());
   }
 
@@ -124,7 +124,7 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(2).intValue()))
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
         .onReconstructedFinalizedState(any(), any());
   }
 
@@ -145,7 +145,7 @@ public class ReconstructHistoricalStatesServiceTest {
   @Test
   void shouldHandleShutdown(@TempDir final Path tempDir) throws IOException {
     when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
-        .thenThrow(new RejectedExecutionException());
+        .thenReturn(SafeFuture.failedFuture(new RejectedExecutionException()));
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 

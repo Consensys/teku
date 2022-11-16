@@ -22,6 +22,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
@@ -100,7 +102,11 @@ public class ReconstructHistoricalStatesService extends Service {
 
   public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
     Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
-    applyNextBlock(context)
+
+    final Bytes32 genesisBlockRoot = BeaconBlockHeader.fromState(genesisState).getRoot();
+    storageUpdateChannel
+        .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
+        .thenComposeChecked(__ -> applyNextBlock(context))
         .finish(
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
