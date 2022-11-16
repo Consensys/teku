@@ -30,8 +30,7 @@ class ResponseUnwrapper {
     if (response.isFailure()) {
       final String errorMessage =
           String.format(
-              "Invalid remote response from the %s: %s",
-              executionType, response.getErrorMessage());
+              "Invalid remote response from the %s: %s", executionType, response.getErrorMessage());
       throw new InvalidRemoteResponseException(errorMessage);
     }
     return response.getPayload();

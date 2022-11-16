@@ -37,8 +37,7 @@ public interface ExecutionClientHandler {
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
   SafeFuture<ExecutionPayload> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot);
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
 
   SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
 

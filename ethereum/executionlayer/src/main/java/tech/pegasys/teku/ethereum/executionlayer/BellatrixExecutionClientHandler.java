@@ -91,8 +91,7 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayloadV1(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),

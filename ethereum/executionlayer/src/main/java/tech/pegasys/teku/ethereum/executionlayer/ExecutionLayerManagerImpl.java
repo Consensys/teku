@@ -210,7 +210,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadBuildingAttributes);
-    return executionClientHandler.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
+    return executionClientHandler.engineForkChoiceUpdated(
+        forkChoiceState, payloadBuildingAttributes);
   }
 
   @Override
