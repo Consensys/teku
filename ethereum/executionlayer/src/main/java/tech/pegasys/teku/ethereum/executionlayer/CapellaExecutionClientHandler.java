@@ -44,8 +44,7 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
-      final boolean isFallbackCall) {
+      final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayloadV2(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),

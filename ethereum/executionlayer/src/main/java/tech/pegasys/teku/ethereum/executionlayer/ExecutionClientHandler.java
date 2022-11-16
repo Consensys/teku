@@ -38,8 +38,7 @@ public interface ExecutionClientHandler {
 
   SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
-      final boolean isFallbackCall);
+      final UInt64 slot);
 
   SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
 

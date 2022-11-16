@@ -233,7 +233,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
-    return executionClientHandler.engineGetPayload(executionPayloadContext, slot, isFallbackCall);
+    return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
   @Override
