@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip4844;
 
 import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -22,38 +22,39 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMu
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 
-public class MutableBeaconStateCapellaImpl
-    extends AbstractMutableBeaconState<BeaconStateCapellaImpl>
-    implements MutableBeaconStateCapella, BeaconStateCache, ValidatorStatsAltair {
+public class MutableBeaconStateEip4844Impl
+    extends AbstractMutableBeaconState<BeaconStateEip4844Impl>
+    implements MutableBeaconStateEip4844, BeaconStateCache, ValidatorStatsAltair {
 
-  MutableBeaconStateCapellaImpl(BeaconStateCapellaImpl backingImmutableView) {
+  MutableBeaconStateEip4844Impl(final BeaconStateEip4844Impl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStateCapellaImpl(BeaconStateCapellaImpl backingImmutableView, boolean builder) {
+  MutableBeaconStateEip4844Impl(
+      final BeaconStateEip4844Impl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
   }
 
   @Override
-  protected BeaconStateCapellaImpl createImmutableBeaconState(
+  protected BeaconStateEip4844Impl createImmutableBeaconState(
       final TreeNode backingNode,
       final IntCache<SszData> viewCache,
       final TransitionCaches transitionCache) {
-    return new BeaconStateCapellaImpl(getSchema(), backingNode, viewCache, transitionCache);
+    return new BeaconStateEip4844Impl(getSchema(), backingNode, viewCache, transitionCache);
   }
 
   @Override
   protected void addCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
-    BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
+    BeaconStateEip4844.describeCustomEip4844Fields(stringBuilder, this);
   }
 
   @Override
-  public BeaconStateCapella commitChanges() {
-    return (BeaconStateCapella) super.commitChanges();
+  public BeaconStateEip4844 commitChanges() {
+    return (BeaconStateEip4844) super.commitChanges();
   }
 
   @Override
-  public MutableBeaconStateCapella createWritableCopy() {
-    return (MutableBeaconStateCapella) super.createWritableCopy();
+  public MutableBeaconStateEip4844 createWritableCopy() {
+    return (MutableBeaconStateEip4844) super.createWritableCopy();
   }
 }

@@ -67,7 +67,10 @@ public class Response<T> {
   }
 
   public String getErrorMessage() {
-    return errorMessage;
+    if (errorMessage != null) {
+      return errorMessage.strip();
+    }
+    return null;
   }
 
   public boolean isSuccess() {

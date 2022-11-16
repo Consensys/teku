@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip4844.MutableBeaconStateEip4844;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
@@ -211,6 +212,10 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   default Optional<MutableBeaconStateCapella> toMutableVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<MutableBeaconStateEip4844> toMutableVersionEip4844() {
     return Optional.empty();
   }
 }

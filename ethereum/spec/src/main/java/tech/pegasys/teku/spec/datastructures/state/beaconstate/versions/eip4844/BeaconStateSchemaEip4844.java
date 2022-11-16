@@ -11,10 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip4844;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_VALIDATOR_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -27,22 +29,20 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
-public class BeaconStateSchemaCapella
-    extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  public static final int NEXT_WITHDRAWAL_INDEX = 25;
-  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
+public class BeaconStateSchemaEip4844
+    extends AbstractBeaconStateSchema<BeaconStateEip4844, MutableBeaconStateEip4844> {
 
   @VisibleForTesting
-  BeaconStateSchemaCapella(final SpecConfig specConfig) {
-    super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaEip4844(final SpecConfig specConfig) {
+    super("BeaconStateEip4844", getUniqueFields(specConfig), specConfig);
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
@@ -50,7 +50,7 @@ public class BeaconStateSchemaCapella
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
+            () -> new ExecutionPayloadHeaderSchemaEip4844(SpecConfigEip4844.required(specConfig)));
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -61,6 +61,7 @@ public class BeaconStateSchemaCapella
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
@@ -97,39 +98,39 @@ public class BeaconStateSchemaCapella
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
   }
 
-  public ExecutionPayloadHeaderSchemaCapella getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaCapella)
+  public ExecutionPayloadHeaderSchemaEip4844 getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaEip4844)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 
   @Override
-  public MutableBeaconStateCapella createBuilder() {
-    return new MutableBeaconStateCapellaImpl(createEmptyBeaconStateImpl(), true);
+  public MutableBeaconStateEip4844 createBuilder() {
+    return new MutableBeaconStateEip4844Impl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaCapella create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaCapella(specConfig);
+  public static BeaconStateSchemaEip4844 create(final SpecConfig specConfig) {
+    return new BeaconStateSchemaEip4844(specConfig);
   }
 
-  public static BeaconStateSchemaCapella required(final BeaconStateSchema<?, ?> schema) {
+  public static BeaconStateSchemaEip4844 required(final BeaconStateSchema<?, ?> schema) {
     checkArgument(
-        schema instanceof BeaconStateSchemaCapella,
-        "Expected a BeaconStateSchemaCapella but was %s",
+        schema instanceof BeaconStateSchemaEip4844,
+        "Expected a BeaconStateSchemaEip4844 but was %s",
         schema.getClass());
-    return (BeaconStateSchemaCapella) schema;
+    return (BeaconStateSchemaEip4844) schema;
   }
 
   @Override
-  public BeaconStateCapella createEmpty() {
+  public BeaconStateEip4844 createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStateCapellaImpl createEmptyBeaconStateImpl() {
-    return new BeaconStateCapellaImpl(this);
+  private BeaconStateEip4844Impl createEmptyBeaconStateImpl() {
+    return new BeaconStateEip4844Impl(this);
   }
 
   @Override
-  public BeaconStateCapella createFromBackingNode(TreeNode node) {
-    return new BeaconStateCapellaImpl(this, node);
+  public BeaconStateEip4844 createFromBackingNode(TreeNode node) {
+    return new BeaconStateEip4844Impl(this, node);
   }
 }
