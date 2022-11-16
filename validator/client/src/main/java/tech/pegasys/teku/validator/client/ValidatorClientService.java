@@ -202,22 +202,38 @@ public class ValidatorClientService extends Service {
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
-    if (validatorConfig.isDoppelgangerDetectionEnabled()) {
-      validatorClientService.initializeDoppelgangerDetectionService(
-          asyncRunner,
-          validatorApiChannel,
-          validatorClientService.validatorIndexProvider,
-          validatorClientService.spec,
-          services.getTimeProvider(),
-          genesisDataProvider);
-    }
+    SafeFuture<Void> validatorsInitialized = new SafeFuture<>();
 
     asyncRunner
         .runAsync(
-            () ->
-                validatorClientService.scheduleValidatorsDuties(
-                    config, validatorApiChannel, asyncRunner))
-        .propagateTo(validatorClientService.initializationComplete);
+            () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
+        .propagateTo(validatorsInitialized);
+
+    validatorsInitialized
+        .thenCompose(
+            __ -> {
+              if (validatorConfig.isDoppelgangerDetectionEnabled()) {
+                validatorClientService.initializeDoppelgangerDetectionService(
+                    asyncRunner,
+                    validatorApiChannel,
+                    validatorClientService.validatorIndexProvider,
+                    validatorClientService.spec,
+                    services.getTimeProvider(),
+                    genesisDataProvider);
+              }
+              return SafeFuture.COMPLETE;
+            })
+        .thenCompose(
+            __ -> {
+              asyncRunner
+                  .runAsync(
+                      () ->
+                          validatorClientService.scheduleValidatorsDuties(
+                              config, validatorApiChannel, asyncRunner))
+                  .propagateTo(validatorClientService.initializationComplete);
+              return SafeFuture.COMPLETE;
+            })
+        .ifExceptionGetsHereRaiseABug();
 
     return validatorClientService;
   }
