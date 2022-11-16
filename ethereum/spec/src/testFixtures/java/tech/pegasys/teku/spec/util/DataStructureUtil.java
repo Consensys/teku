@@ -582,7 +582,7 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeaderEip4844() {
-    final SpecConfigEip4844 specConfigCapella =
+    final SpecConfigEip4844 specConfigEip4844 =
         SpecConfigEip4844.required(spec.getGenesisSpecConfig());
     return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
         .getExecutionPayloadHeaderSchema()
@@ -593,13 +593,13 @@ public final class DataStructureUtil {
             randomBytes20(),
             randomBytes32(),
             randomBytes32(),
-            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
+            randomBytes(specConfigEip4844.getBytesPerLogsBloom()),
             randomBytes32(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
-            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
+            randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
             randomUInt256(),
             randomUInt64(),
             randomBytes32(),
