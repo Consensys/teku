@@ -11,29 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
+package tech.pegasys.teku.spec.logic.versions.eip4844.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderEip4844;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip4844.BeaconStateEip4844;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
-public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
+public class Eip4844StateUpgrade implements StateUpgrade<BeaconStateEip4844> {
 
-  private final SpecConfigCapella specConfig;
-  private final SchemaDefinitionsCapella schemaDefinitions;
+  private final SpecConfigEip4844 specConfig;
+  private final SchemaDefinitionsEip4844 schemaDefinitions;
   private final BeaconStateAccessorsAltair beaconStateAccessors;
 
-  public CapellaStateUpgrade(
-      final SpecConfigCapella specConfig,
-      final SchemaDefinitionsCapella schemaDefinitions,
+  public Eip4844StateUpgrade(
+      final SpecConfigEip4844 specConfig,
+      final SchemaDefinitionsEip4844 schemaDefinitions,
       final BeaconStateAccessorsAltair beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
@@ -41,44 +41,44 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
   }
 
   @Override
-  public BeaconStateCapella upgrade(final BeaconState preState) {
+  public BeaconStateEip4844 upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
-    BeaconStateBellatrix preStateBellatrix = BeaconStateBellatrix.required(preState);
+    BeaconStateCapella preStateCapella = BeaconStateCapella.required(preState);
     return schemaDefinitions
         .getBeaconStateSchema()
         .createEmpty()
-        .updatedCapella(
+        .updatedEip4844(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateBellatrix.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(
-                  preStateBellatrix.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateBellatrix.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateBellatrix.getNextSyncCommittee());
-              state.setInactivityScores(preStateBellatrix.getInactivityScores());
+              state.setCurrentEpochParticipation(preStateCapella.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(preStateCapella.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateCapella.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateCapella.getNextSyncCommittee());
+              state.setInactivityScores(preStateCapella.getInactivityScores());
 
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrentVersion(),
-                      specConfig.getCapellaForkVersion(),
+                      specConfig.getEip4844ForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderCapella upgradedExecutionPayloadHeader =
+              final ExecutionPayloadHeaderEip4844 upgradedExecutionPayloadHeader =
                   schemaDefinitions
                       .getExecutionPayloadHeaderSchema()
-                      .toVersionCapella()
+                      .toVersionEip4844()
                       .orElseThrow()
-                      .createFromExecutionPayloadHeaderBellatrix(
-                          preStateBellatrix
+                      .createFromExecutionPayloadHeaderCapella(
+                          preStateCapella
                               .getLatestExecutionPayloadHeader()
-                              .toVersionBellatrix()
+                              .toVersionCapella()
                               .orElseThrow());
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 
-              state.setNextWithdrawalValidatorIndex(UInt64.ZERO);
-              state.setNextWithdrawalIndex(UInt64.ZERO);
+              state.setNextWithdrawalValidatorIndex(
+                  preStateCapella.getNextWithdrawalValidatorIndex());
+              state.setNextWithdrawalIndex(preStateCapella.getNextWithdrawalIndex());
             });
   }
 }
