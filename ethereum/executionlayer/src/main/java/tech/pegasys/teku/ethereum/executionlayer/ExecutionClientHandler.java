@@ -32,7 +32,7 @@ public interface ExecutionClientHandler {
 
   SafeFuture<PowBlock> eth1GetPowChainHead();
 
-  public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
+  SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
