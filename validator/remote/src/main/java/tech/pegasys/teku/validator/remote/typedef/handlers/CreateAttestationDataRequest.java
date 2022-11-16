@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.ethereum.json.types.ApiTypesHelper;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
@@ -38,6 +39,6 @@ public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
     return get(
         ValidatorApiMethod.GET_ATTESTATION_DATA,
         queryParams,
-        new ResponseHandler<>(ApiTypesHelper.withDataWrapper(AttestationData.SSZ_SCHEMA)));
+        new ResponseHandler<>(withDataWrapper(AttestationData.SSZ_SCHEMA)));
   }
 }

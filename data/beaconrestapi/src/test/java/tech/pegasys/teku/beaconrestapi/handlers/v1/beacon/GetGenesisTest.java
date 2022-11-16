@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.ethereum.json.types.GetGenesisData;
+import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -37,7 +37,8 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataPr
   final UInt64 genesisTime = dataStructureUtil.randomUInt64();
   final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final Bytes4 fork = dataStructureUtil.randomBytes4();
-  final GetGenesisData responseData = new GetGenesisData(genesisTime, genesisValidatorsRoot, fork);
+  final GetGenesisApiData responseData =
+      new GetGenesisApiData(genesisTime, genesisValidatorsRoot, fork);
 
   @BeforeEach
   void setUp() {
@@ -58,8 +59,8 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataPr
 
     final GenesisData genesisData = chainDataProvider.getGenesisStateData();
 
-    final GetGenesisData expectedData =
-        new GetGenesisData(
+    final GetGenesisApiData expectedData =
+        new GetGenesisApiData(
             genesisData.getGenesisTime(),
             genesisData.getGenesisValidatorsRoot(),
             chainDataProvider.getGenesisForkVersion());
