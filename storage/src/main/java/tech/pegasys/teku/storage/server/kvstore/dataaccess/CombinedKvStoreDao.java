@@ -771,6 +771,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+      stateStorageUpdater.addReconstructedFinalizedState(db, transaction, schema, state);
+    }
+
+    @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot, slot);
     }

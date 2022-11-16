@@ -29,6 +29,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Changed the builder `is online\is offline` logs to `is available\is not available`
  - Added `/eth/v1/beacon/states/{state_id}/randao` to beacon-api.
  - Block timing tracking is now enabled by default. The `--Xmetrics-block-timing-tracking-enabled` option has been renamed to `--metrics-block-timing-tracking-enabled`.
+-  Updated TDD for Gnosis
 
 ### Bug Fixes
  - Fix missing status filters (active, pending, exited, withdrawal) for the `/eth/v1/beacon/states/{state_id}/validators` endpoint
