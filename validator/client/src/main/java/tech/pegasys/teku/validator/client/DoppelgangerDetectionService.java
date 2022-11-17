@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +52,8 @@ public class DoppelgangerDetectionService {
   private final GenesisDataProvider genesisDataProvider;
   private Optional<UInt64> epochAtStart = Optional.empty();
   private volatile Cancellable doppelgangerDetectionTask;
-  private Optional<SafeFuture<Boolean>> doppelgangerCheckFinished = Optional.empty();
+  private Optional<SafeFuture<Map<Integer, BLSPublicKey>>> doppelgangerCheckFinished =
+      Optional.empty();
   private long startTime;
 
   public DoppelgangerDetectionService(
@@ -73,7 +75,7 @@ public class DoppelgangerDetectionService {
     this.timeout = timeout;
   }
 
-  protected synchronized SafeFuture<Boolean> performDoppelgangerDetection() {
+  protected synchronized SafeFuture<Map<Integer, BLSPublicKey>> performDoppelgangerDetection() {
     LOGGER.info("Starting doppelganger detection service...");
     doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
     startTime = System.nanoTime();
@@ -89,11 +91,12 @@ public class DoppelgangerDetectionService {
     return doppelgangerCheckFinished.get();
   }
 
-  private synchronized SafeFuture<?> stopDoppelgangerDetection(boolean doppelgangerDetected) {
+  private synchronized SafeFuture<?> stopDoppelgangerDetection(
+      Map<Integer, BLSPublicKey> detectedDoppelgangers) {
     if (doppelgangerCheckFinished.isEmpty()) {
       throw new RuntimeException("Doppelganger Detection is already stopped.");
     }
-    doppelgangerCheckFinished.get().complete(Boolean.valueOf(doppelgangerDetected));
+    doppelgangerCheckFinished.get().complete(detectedDoppelgangers);
     doppelgangerCheckFinished = Optional.empty();
     return SafeFuture.fromRunnable(
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
@@ -104,7 +107,7 @@ public class DoppelgangerDetectionService {
     if (duration.compareTo(timeout) > 0) {
       LOGGER.info(
           "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
-      return stopDoppelgangerDetection(false);
+      return stopDoppelgangerDetection(new HashMap<>());
     }
 
     return genesisDataProvider
@@ -124,7 +127,7 @@ public class DoppelgangerDetectionService {
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
                 LOGGER.info(
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
-                return stopDoppelgangerDetection(false);
+                return stopDoppelgangerDetection(new HashMap<>());
               }
 
               LOGGER.info(
@@ -157,11 +160,11 @@ public class DoppelgangerDetectionService {
             });
   }
 
-  private SafeFuture<Object> checkIndicesLiveness(
+  private SafeFuture<Void> checkIndicesLiveness(
       UInt64 currentSlot, UInt64 currentEpoch, IntCollection validatorIndices) {
     return validatorApiChannel
         .checkValidatorsDoppelganger(mapToUIntIndices(validatorIndices), currentEpoch)
-        .thenApply(
+        .thenAccept(
             validatorLivenessAtEpoches ->
                 doppelgangerDetected(
                     validatorLivenessAtEpoches,
@@ -174,12 +177,12 @@ public class DoppelgangerDetectionService {
               LOGGER.error(
                   "Unable to check validators doppelganger. Unable to get validators liveness: {}",
                   extractErrorMessage(throwable));
-              return false;
+              return null;
             })
         .thenApply(doppelgangerDetected -> null);
   }
 
-  private boolean doppelgangerDetected(
+  private void doppelgangerDetected(
       final Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
       final List<UInt64> validatorIndices,
       final UInt64 epoch,
@@ -193,7 +196,12 @@ public class DoppelgangerDetectionService {
           .thenApply(
               blsPublicKeyIntegerMap -> {
                 STATUS_LOG.validatorsDoppelgangerDetected(
-                    mapLivenessAtEpochToIndicesPubKeys(liveValidators, blsPublicKeyIntegerMap));
+                    mapLivenessAtEpochToIndicesPubKeysStrings(
+                        liveValidators, blsPublicKeyIntegerMap));
+                stopDoppelgangerDetection(
+                        mapLivenessAtEpochToIndicesPubKeys(
+                            liveValidators, Optional.of(blsPublicKeyIntegerMap)))
+                    .ifExceptionGetsHereRaiseABug();
                 return null;
               })
           .exceptionally(
@@ -204,17 +212,18 @@ public class DoppelgangerDetectionService {
                 STATUS_LOG.validatorsDoppelgangerDetected(
                     liveValidators.stream()
                         .collect(Collectors.toMap(e -> e.getIndex().intValue(), e -> "")));
+                stopDoppelgangerDetection(
+                        mapLivenessAtEpochToIndicesPubKeys(liveValidators, Optional.empty()))
+                    .ifExceptionGetsHereRaiseABug();
                 return null;
               })
           .ifExceptionGetsHereRaiseABug();
-      stopDoppelgangerDetection(true).ifExceptionGetsHereRaiseABug();
     } else {
       LOGGER.info("No validators doppelganger detected for epoch {}, slot {}", epoch, slot);
     }
-    return false;
   }
 
-  private Map<Integer, String> mapLivenessAtEpochToIndicesPubKeys(
+  private Map<Integer, String> mapLivenessAtEpochToIndicesPubKeysStrings(
       List<ValidatorLivenessAtEpoch> liveValidators,
       Map<BLSPublicKey, Integer> blsPublicKeyIntegerMap) {
     return blsPublicKeyIntegerMap.entrySet().stream()
@@ -227,6 +236,28 @@ public class DoppelgangerDetectionService {
                                 .getIndex()
                                 .equals(UInt64.valueOf(pubKeyIndexEntry.getValue()))))
         .collect(Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
+  }
+
+  private Map<Integer, BLSPublicKey> mapLivenessAtEpochToIndicesPubKeys(
+      List<ValidatorLivenessAtEpoch> liveValidators,
+      Optional<Map<BLSPublicKey, Integer>> blsPublicKeyIntegerMap) {
+    return blsPublicKeyIntegerMap
+        .map(
+            publicKeyIntegerMap ->
+                publicKeyIntegerMap.entrySet().stream()
+                    .filter(
+                        pubKeyIndexEntry ->
+                            liveValidators.stream()
+                                .anyMatch(
+                                    validatorLivenessAtEpoch ->
+                                        validatorLivenessAtEpoch
+                                            .getIndex()
+                                            .equals(UInt64.valueOf(pubKeyIndexEntry.getValue()))))
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)))
+        .orElse(
+            liveValidators.stream()
+                .collect(
+                    Collectors.toMap(e -> e.getIndex().intValue(), e -> BLSPublicKey.empty())));
   }
 
   private List<ValidatorLivenessAtEpoch> filterLiveValidators(

@@ -455,7 +455,7 @@ public class ValidatorClientService extends Service {
                               .performDoppelgangerDetection()
                               .thenAccept(
                                   doppelgangerDetected -> {
-                                    if (doppelgangerDetected) {
+                                    if (!doppelgangerDetected.isEmpty()) {
                                       System.exit(1);
                                     }
                                   }))
