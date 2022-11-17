@@ -14,9 +14,20 @@
 package tech.pegasys.teku.spec.constants;
 
 import java.math.BigInteger;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class EthConstants {
 
   public static final UInt64 ETH_TO_GWEI = UInt64.valueOf(BigInteger.TEN.pow(9));
+
+  private static final UInt256 ETH_TO_GWEI_256 = UInt256.valueOf(ETH_TO_GWEI.bigIntegerValue());
+
+  public static UInt256 gweiToWei(final UInt64 gwei) {
+    return UInt256.valueOf(gwei.bigIntegerValue()).multiply(ETH_TO_GWEI_256);
+  }
+
+  public static UInt64 weiToGwei(final UInt256 wei) {
+    return UInt64.valueOf(wei.divide(ETH_TO_GWEI_256).toLong());
+  }
 }

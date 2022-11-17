@@ -40,13 +40,6 @@ import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingBuilder
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -69,10 +62,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
@@ -91,7 +84,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final NavigableMap<UInt64, Optional<FallbackData>> slotToLocalElFallbackData =
       new ConcurrentSkipListMap<>();
 
-  private final ExecutionEngineClient executionEngineClient;
   private final Optional<BuilderClient> builderClient;
   private final AtomicBoolean latestBuilderAvailability;
   private final Spec spec;
@@ -99,16 +91,16 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final BuilderBidValidator builderBidValidator;
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
+  private final ExecutionClientHandler executionClientHandler;
 
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
-      final ExecutionEngineClient executionEngineClient,
+      final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
       final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker) {
-
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -129,13 +121,36 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     Source.BUILDER_LOCAL_EL_FALLBACK.toString(), fallbackReason));
 
     return new ExecutionLayerManagerImpl(
-        executionEngineClient,
+        executionClientHandler,
         builderClient,
         spec,
         eventLogger,
         builderBidValidator,
         builderCircuitBreaker,
         executionPayloadSourceCounter);
+  }
+
+  public static ExecutionLayerManagerImpl create(
+      final EventLogger eventLogger,
+      final ExecutionEngineClient executionEngineClient,
+      final Optional<BuilderClient> builderClient,
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
+    final ExecutionClientHandler executionClientHandler =
+        spec.isMilestoneSupported(SpecMilestone.CAPELLA)
+            ? new CapellaExecutionClientHandler(spec, executionEngineClient)
+            : new BellatrixExecutionClientHandler(spec, executionEngineClient);
+
+    return create(
+        eventLogger,
+        executionClientHandler,
+        builderClient,
+        spec,
+        metricsSystem,
+        builderBidValidator,
+        builderCircuitBreaker);
   }
 
   public static ExecutionEngineClient createEngineClient(
@@ -169,14 +184,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private ExecutionLayerManagerImpl(
-      final ExecutionEngineClient executionEngineClient,
+      final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
       final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter) {
-    this.executionEngineClient = executionEngineClient;
+    this.executionClientHandler = executionClientHandler;
     this.builderClient = builderClient;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.spec = spec;
@@ -196,47 +211,25 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    LOG.trace("calling eth1GetPowBlock(blockHash={})", blockHash);
-
-    return executionEngineClient
-        .getPowBlock(blockHash)
-        .thenPeek(
-            powBlock -> LOG.trace("eth1GetPowBlock(blockHash={}) -> {}", blockHash, powBlock));
+    return executionClientHandler.eth1GetPowBlock(blockHash);
   }
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
-    LOG.trace("calling eth1GetPowChainHead()");
-
-    return executionEngineClient
-        .getPowChainHead()
-        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
+    return executionClientHandler.eth1GetPowChainHead();
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult>
-      engineForkChoiceUpdated(
-          final ForkChoiceState forkChoiceState,
-          final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+  public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState,
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
 
     LOG.trace(
         "calling engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadBuildingAttributes);
-
-    return executionEngineClient
-        .forkChoiceUpdatedV1(
-            ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
-            PayloadAttributesV1.fromInternalPayloadBuildingAttributes(payloadBuildingAttributes))
-        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
-        .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
-        .thenPeek(
-            forkChoiceUpdatedResult ->
-                LOG.trace(
-                    "engineForkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
-                    forkChoiceState,
-                    payloadBuildingAttributes,
-                    forkChoiceUpdatedResult));
+    return executionClientHandler.engineForkChoiceUpdated(
+        forkChoiceState, payloadBuildingAttributes);
   }
 
   @Override
@@ -254,64 +247,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
-
     if (!isFallbackCall
         && isBuilderAvailable()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
-
-    return executionEngineClient
-        .getPayloadV1(executionPayloadContext.getPayloadId())
-        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getExecutionPayloadSchema()),
-            ExecutionPayloadV1::asInternalExecutionPayload)
-        .thenPeek(
-            executionPayload ->
-                LOG.trace(
-                    "engineGetPayload(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext.getPayloadId(),
-                    slot,
-                    executionPayload));
+    return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     LOG.trace("calling engineNewPayload(executionPayload={})", executionPayload);
-
-    return executionEngineClient
-        .newPayloadV1(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayload(executionPayload={}) -> {}", executionPayload, payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    return executionClientHandler.engineNewPayload(executionPayload);
   }
 
   @Override
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration) {
-    LOG.trace(
-        "calling engineExchangeTransitionConfiguration(transitionConfiguration={})",
-        transitionConfiguration);
-
-    return executionEngineClient
-        .exchangeTransitionConfiguration(
-            TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
-        .thenApply(ExecutionLayerManagerImpl::unwrapExecutionClientResponseOrThrow)
-        .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
-        .thenPeek(
-            remoteTransitionConfiguration ->
-                LOG.trace(
-                    "engineExchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
-                    transitionConfiguration,
-                    remoteTransitionConfiguration));
+    return executionClientHandler.engineExchangeTransitionConfiguration(transitionConfiguration);
   }
 
   @Override
@@ -330,7 +283,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return builderClient
         .orElseThrow()
         .registerValidators(slot, signedValidatorRegistrations)
-        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
+        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             __ ->
                 LOG.trace(
@@ -383,7 +336,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return builderClient
         .orElseThrow()
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
-        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
+        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             signedBuilderBidMaybe ->
                 LOG.trace(
@@ -474,7 +427,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 new RuntimeException(
                     "Unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBeaconBlock)
-        .thenApply(ExecutionLayerManagerImpl::unwrapBuilderResponseOrThrow)
+        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             executionPayload -> {
               logReceivedBuilderExecutionPayload(executionPayload);
@@ -498,26 +451,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   boolean isBuilderAvailable() {
     return latestBuilderAvailability.get();
-  }
-
-  private static <K> K unwrapExecutionClientResponseOrThrow(final Response<K> response) {
-    return unwrapResponseOrThrow(RemoteService.EXECUTION_CLIENT, response);
-  }
-
-  private static <K> K unwrapBuilderResponseOrThrow(final Response<K> response) {
-    return unwrapResponseOrThrow(RemoteService.BUILDER, response);
-  }
-
-  private static <K> K unwrapResponseOrThrow(
-      final RemoteService remoteService, final Response<K> response) {
-    if (response.isFailure()) {
-      final String errorMessage =
-          String.format(
-              "Invalid remote response from the %s: %s",
-              remoteService.displayName, response.getErrorMessage());
-      throw new InvalidRemoteResponseException(errorMessage);
-    }
-    return response.getPayload();
   }
 
   private void updateBuilderAvailability() {
@@ -604,17 +537,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
       this.executionPayload = executionPayload;
       this.reason = reason;
-    }
-  }
-
-  private enum RemoteService {
-    EXECUTION_CLIENT("execution client"),
-    BUILDER("builder");
-
-    private final String displayName;
-
-    RemoteService(final String displayName) {
-      this.displayName = displayName;
     }
   }
 
