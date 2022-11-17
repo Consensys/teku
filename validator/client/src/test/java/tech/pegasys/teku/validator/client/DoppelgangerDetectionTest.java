@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
-public class DoppelgangerDetectionServiceTest {
+public class DoppelgangerDetectionTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -53,7 +53,7 @@ public class DoppelgangerDetectionServiceTest {
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
-  private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetectionService.class);
+  private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetection.class);
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
   private final String doppelgangerServiceStartLog = "Starting doppelganger detection service...";
   private final String doppelgangerTimeoutLog =
@@ -86,8 +86,8 @@ public class DoppelgangerDetectionServiceTest {
                             UInt64.valueOf(4), dataStructureUtil.randomEpoch(), true),
                         new ValidatorLivenessAtEpoch(
                             UInt64.valueOf(5), dataStructureUtil.randomEpoch(), true)))));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -97,7 +97,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofMinutes(2));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -131,8 +131,8 @@ public class DoppelgangerDetectionServiceTest {
                             UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
     when(validatorIndexProvider.getValidatorIndicesByPublicKey())
         .thenReturn(SafeFuture.failedFuture(new Exception("Validators Public Keys Exception")));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -142,7 +142,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofMinutes(20));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -194,8 +194,8 @@ public class DoppelgangerDetectionServiceTest {
                     Map.entry(pubKey3, 3),
                     Map.entry(dataStructureUtil.randomPublicKey(), 5),
                     Map.entry(dataStructureUtil.randomPublicKey(), 7))));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -205,7 +205,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofMinutes(20));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -232,8 +232,8 @@ public class DoppelgangerDetectionServiceTest {
   public void shouldTimeoutDueToGenesisDataProviderException() {
     when(genesisDataProvider.getGenesisTime())
         .thenReturn(SafeFuture.failedFuture(new Exception("Genesis Time Exception")));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -243,7 +243,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -262,8 +262,8 @@ public class DoppelgangerDetectionServiceTest {
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.failedFuture(new Exception("Validator Indices Exception")));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -273,7 +273,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -297,8 +297,8 @@ public class DoppelgangerDetectionServiceTest {
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Validator API Channel Exception")));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -308,7 +308,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -332,8 +332,8 @@ public class DoppelgangerDetectionServiceTest {
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
         .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -343,7 +343,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -363,8 +363,8 @@ public class DoppelgangerDetectionServiceTest {
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -374,7 +374,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
@@ -392,8 +392,8 @@ public class DoppelgangerDetectionServiceTest {
   public void shouldTimeoutDueToGenesisDataProviderTimeout() {
     when(genesisDataProvider.getGenesisTime())
         .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -403,7 +403,7 @@ public class DoppelgangerDetectionServiceTest {
             Duration.ofSeconds(2),
             Duration.ofSeconds(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectionFuture =
-        doppelgangerDetectionService.performDoppelgangerDetection();
+        doppelgangerDetection.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(3);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);

@@ -80,8 +80,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
-  private Optional<DoppelgangerDetectionService> maybeDoppelgangerDetectionService =
-      Optional.empty();
+  private Optional<DoppelgangerDetection> maybeDoppelgangerDetectionService = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
@@ -245,8 +244,8 @@ public class ValidatorClientService extends Service {
       Spec spec,
       TimeProvider timeProvider,
       GenesisDataProvider genesisDataProvider) {
-    DoppelgangerDetectionService doppelgangerDetectionService =
-        new DoppelgangerDetectionService(
+    DoppelgangerDetection doppelgangerDetection =
+        new DoppelgangerDetection(
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -255,7 +254,7 @@ public class ValidatorClientService extends Service {
             genesisDataProvider,
             DOPPELGANGER_DETECTION_CHECK_DELAY,
             DOPPELGANGER_DETECTION_TIMEOUT);
-    maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetectionService);
+    maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetection);
   }
 
   private static BeaconNodeApi createBeaconNodeApi(
@@ -450,8 +449,8 @@ public class ValidatorClientService extends Service {
               validatorIndexProvider.lookupValidators();
               return maybeDoppelgangerDetectionService
                   .map(
-                      doppelgangerDetectionService ->
-                          doppelgangerDetectionService
+                      doppelgangerDetection ->
+                          doppelgangerDetection
                               .performDoppelgangerDetection()
                               .thenAccept(
                                   doppelgangerDetected -> {

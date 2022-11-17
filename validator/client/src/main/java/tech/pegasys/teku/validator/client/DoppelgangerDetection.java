@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
-public class DoppelgangerDetectionService {
+public class DoppelgangerDetection {
 
   private static final Logger LOGGER = LogManager.getLogger();
   private final Duration checkDelay;
@@ -56,7 +56,7 @@ public class DoppelgangerDetectionService {
       Optional.empty();
   private long startTime;
 
-  public DoppelgangerDetectionService(
+  public DoppelgangerDetection(
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
       final ValidatorIndexProvider validatorIndexProvider,
