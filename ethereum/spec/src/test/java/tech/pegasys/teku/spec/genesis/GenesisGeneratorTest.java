@@ -201,7 +201,7 @@ class GenesisGeneratorTest {
         UInt64.valueOf(982928293223232L),
         initialDeposits.subList(0, 8));
     final ExecutionPayloadHeader payloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeaderBellatrix();
+        dataStructureUtil.randomExecutionPayloadHeaderBellatrixOrLater();
     genesisGenerator.updateExecutionPayloadHeader(payloadHeader);
     final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isInstanceOf(BeaconStateBellatrix.class);
