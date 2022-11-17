@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import nl.altindag.log.LogCaptor;
 import nl.altindag.log.model.LogEvent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -63,6 +64,11 @@ public class DoppelgangerDetectionServiceTest {
     System.setOut(new PrintStream(stdOut));
   }
 
+  @AfterEach
+  void tearDown() {
+    System.setOut(System.out);
+  }
+
   @Test
   public void shouldNotDetectDoppelganger() {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
@@ -89,11 +95,10 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofMinutes(2),
-            __ -> {});
-    SafeFuture<?> doppelgangerCheckFuture =
+            Duration.ofMinutes(2));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
-    doppelgangerCheckFuture.join();
+    doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
@@ -103,7 +108,8 @@ public class DoppelgangerDetectionServiceTest {
         logCaptor.getLogEvents().get(4),
         "INFO",
         "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
-    assertThat(doppelgangerCheckFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -125,7 +131,6 @@ public class DoppelgangerDetectionServiceTest {
                             UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
     when(validatorIndexProvider.getValidatorIndicesByPublicKey())
         .thenReturn(SafeFuture.failedFuture(new Exception("Validators Public Keys Exception")));
-    String doppelgangerDetectedMessage = "Doppelganger Detection ended";
     DoppelgangerDetectionService doppelgangerDetectionService =
         new DoppelgangerDetectionService(
             asyncRunner,
@@ -135,11 +140,10 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofMinutes(20),
-            __ -> System.out.println(doppelgangerDetectedMessage));
-    SafeFuture<?> doppelgangerCheckFuture =
+            Duration.ofMinutes(20));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
-    doppelgangerCheckFuture.join();
+    doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
@@ -154,8 +158,8 @@ public class DoppelgangerDetectionServiceTest {
         "Unable to get doppelgangers public keys. Only indices are available: java.lang.Exception: Validators Public Keys Exception");
     assertThat(stdOut.toString(UTF_8))
         .contains("Detected 2 validators doppelganger: \n" + "Index: 1\n" + "Index: 3");
-    assertThat(stdOut.toString(UTF_8)).contains(doppelgangerDetectedMessage);
-    assertThat(doppelgangerCheckFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.TRUE);
   }
 
   @Test
@@ -188,7 +192,6 @@ public class DoppelgangerDetectionServiceTest {
                     Map.entry(pubKey3, 3),
                     Map.entry(dataStructureUtil.randomPublicKey(), 5),
                     Map.entry(dataStructureUtil.randomPublicKey(), 7))));
-    String doppelgangerDetectedMessage = "Doppelganger Detection ended";
     DoppelgangerDetectionService doppelgangerDetectionService =
         new DoppelgangerDetectionService(
             asyncRunner,
@@ -198,11 +201,10 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofMinutes(20),
-            __ -> System.out.println(doppelgangerDetectedMessage));
-    SafeFuture<?> doppelgangerCheckFuture =
+            Duration.ofMinutes(20));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
-    doppelgangerCheckFuture.join();
+    doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerServiceStartEpochLog(0));
@@ -219,8 +221,8 @@ public class DoppelgangerDetectionServiceTest {
                 + "\n"
                 + "Index: 3, Public key: "
                 + pubKey3);
-    assertThat(stdOut.toString(UTF_8)).contains(doppelgangerDetectedMessage);
-    assertThat(doppelgangerCheckFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.TRUE);
   }
 
   @Test
@@ -236,9 +238,8 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerDetectionFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
@@ -249,6 +250,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(2), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(3), "INFO", doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -266,9 +268,8 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerDetectionFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
@@ -282,6 +283,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -301,9 +303,8 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerDetectionFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
@@ -317,6 +318,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -336,9 +338,8 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerDetectionFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
@@ -350,6 +351,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -367,9 +369,8 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerDetectionFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
     doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
@@ -381,6 +382,7 @@ public class DoppelgangerDetectionServiceTest {
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   @Test
@@ -396,18 +398,18 @@ public class DoppelgangerDetectionServiceTest {
             timeProvider,
             genesisDataProvider,
             Duration.ofSeconds(2),
-            Duration.ofSeconds(6),
-            __ -> {});
-    SafeFuture<?> doppelgangerCheckFuture =
+            Duration.ofSeconds(6));
+    SafeFuture<Boolean> doppelgangerDetectionFuture =
         doppelgangerDetectionService.performDoppelgangerDetection();
-    doppelgangerCheckFuture.join();
+    doppelgangerDetectionFuture.join();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(3);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerServiceStartLog);
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: Request timeout";
     expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", doppelgangerTimeoutLog);
-    assertThat(doppelgangerCheckFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompleted();
+    assertThat(doppelgangerDetectionFuture).isCompletedWithValue(Boolean.FALSE);
   }
 
   private void expectLogMessage(

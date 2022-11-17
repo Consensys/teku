@@ -254,8 +254,7 @@ public class ValidatorClientService extends Service {
             timeProvider,
             genesisDataProvider,
             DOPPELGANGER_DETECTION_CHECK_DELAY,
-            DOPPELGANGER_DETECTION_TIMEOUT,
-            __ -> System.exit(1));
+            DOPPELGANGER_DETECTION_TIMEOUT);
     maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetectionService);
   }
 
@@ -452,7 +451,14 @@ public class ValidatorClientService extends Service {
               return maybeDoppelgangerDetectionService
                   .map(
                       doppelgangerDetectionService ->
-                          doppelgangerDetectionService.performDoppelgangerDetection().toVoid())
+                          doppelgangerDetectionService
+                              .performDoppelgangerDetection()
+                              .thenAccept(
+                                  doppelgangerDetected -> {
+                                    if (doppelgangerDetected) {
+                                      System.exit(1);
+                                    }
+                                  }))
                   .orElse(SafeFuture.COMPLETE);
             })
         .thenCompose(
