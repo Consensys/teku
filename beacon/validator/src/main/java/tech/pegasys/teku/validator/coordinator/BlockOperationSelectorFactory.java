@@ -25,15 +25,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -135,6 +138,14 @@ public class BlockOperationSelectorFactory {
 
       final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
 
+      if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+        final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
+            BeaconBlockBodySchemaCapella.required(
+                    specVersion.getSchemaDefinitions().getBeaconBlockBodySchema())
+                .getBlsToExecutionChangesSchema()
+                .getDefault();
+        bodyBuilder.blsToExecutionChanges(() -> blsToExecutionChanges);
+      }
       // execution payload handling
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required

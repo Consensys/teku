@@ -45,12 +45,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -128,6 +131,17 @@ class BlockFactoryTest {
     final BeaconBlock block = assertBlockCreated(1, spec, false, false);
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
+  }
+
+  @Test
+  void shouldCreateCapellaBlock() {
+    final Spec spec = TestSpecFactory.createMinimalCapella();
+    prepareDefaultPayload(spec);
+
+    final BeaconBlock block = assertBlockCreated(1, spec, false, false);
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
+        BeaconBlockBodyCapella.required(block.getBody()).getBlsToExecutionChanges();
+    assertThat(blsToExecutionChanges).isNotNull();
   }
 
   @Test
@@ -404,14 +418,26 @@ class BlockFactoryTest {
   }
 
   private void prepareDefaultPayload(final Spec spec) {
-    executionPayload =
-        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-            .getExecutionPayloadSchema()
-            .getDefault();
+    if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
+      executionPayload =
+          SchemaDefinitionsCapella.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadSchema()
+              .getDefault();
 
-    executionPayloadHeader =
-        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-            .getExecutionPayloadHeaderSchema()
-            .getHeaderOfDefaultPayload();
+      executionPayloadHeader =
+          SchemaDefinitionsCapella.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadHeaderSchema()
+              .getHeaderOfDefaultPayload();
+    } else {
+      executionPayload =
+          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadSchema()
+              .getDefault();
+
+      executionPayloadHeader =
+          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadHeaderSchema()
+              .getHeaderOfDefaultPayload();
+    }
   }
 }
