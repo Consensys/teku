@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandler
     implements ExecutionClientHandler {
@@ -54,7 +54,7 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
         .thenCombine(
             SafeFuture.of(
                 () ->
-                    SchemaDefinitionsCapella.required(spec.atSlot(slot).getSchemaDefinitions())
+                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV2::asInternalExecutionPayload)
         .thenPeek(
