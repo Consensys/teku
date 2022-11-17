@@ -450,7 +450,9 @@ public class ValidatorClientService extends Service {
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
               return maybeDoppelgangerDetectionService
-                  .map(service -> service.start().toVoid())
+                  .map(
+                      doppelgangerDetectionService ->
+                          doppelgangerDetectionService.performDoppelgangerDetection().toVoid())
                   .orElse(SafeFuture.COMPLETE);
             })
         .thenCompose(

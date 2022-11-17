@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -33,12 +32,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
-public class DoppelgangerDetectionService extends Service {
+public class DoppelgangerDetectionService {
 
   private static final Logger LOGGER = LogManager.getLogger();
   private final Duration checkDelay;
@@ -51,7 +49,7 @@ public class DoppelgangerDetectionService extends Service {
   private final GenesisDataProvider genesisDataProvider;
   private Optional<UInt64> epochAtStart = Optional.empty();
   private volatile Cancellable doppelgangerDetectionTask;
-  private final AtomicBoolean doppelgangerCheckFinished;
+  private Optional<SafeFuture<?>> doppelgangerCheckFinished = Optional.empty();
   private final Consumer<Void> doppelgangerDetectionAction;
   private long startTime;
 
@@ -71,15 +69,14 @@ public class DoppelgangerDetectionService extends Service {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.genesisDataProvider = genesisDataProvider;
-    this.doppelgangerCheckFinished = new AtomicBoolean(false);
     this.checkDelay = checkDelay;
     this.timeout = timeout;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
-  @Override
-  protected SafeFuture<?> doStart() {
+  protected synchronized SafeFuture<?> performDoppelgangerDetection() {
     LOGGER.info("Starting doppelganger detection service...");
+    doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
@@ -90,15 +87,15 @@ public class DoppelgangerDetectionService extends Service {
                 LOGGER.error(
                     "Error while checking validators doppelganger. The check could not be performed correctly.",
                     throwable));
-    while (true) {
-      if (doppelgangerCheckFinished.get()) {
-        return SafeFuture.COMPLETE;
-      }
-    }
+    return doppelgangerCheckFinished.get();
   }
 
-  @Override
-  protected SafeFuture<?> doStop() {
+  private synchronized SafeFuture<?> stopDoppelgangerDetection() {
+    if (doppelgangerCheckFinished.isEmpty()) {
+      throw new RuntimeException("Doppelganger Detection is already stopped.");
+    }
+    doppelgangerCheckFinished.get().complete(null);
+    doppelgangerCheckFinished = Optional.empty();
     return SafeFuture.fromRunnable(
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
   }
@@ -108,7 +105,7 @@ public class DoppelgangerDetectionService extends Service {
     if (duration.compareTo(timeout) > 0) {
       LOGGER.info(
           "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
-      return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
+      return stopDoppelgangerDetection();
     }
 
     return genesisDataProvider
@@ -128,7 +125,7 @@ public class DoppelgangerDetectionService extends Service {
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
                 LOGGER.info(
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
-                return stop().thenRun(() -> doppelgangerCheckFinished.set(true));
+                return stopDoppelgangerDetection();
               }
 
               LOGGER.info(
@@ -233,7 +230,7 @@ public class DoppelgangerDetectionService extends Service {
                 })
             .ifExceptionGetsHereRaiseABug();
         doppelgangerDetectionAction.accept(null);
-        stop().thenRun(() -> doppelgangerCheckFinished.set(true)).ifExceptionGetsHereRaiseABug();
+        stopDoppelgangerDetection().ifExceptionGetsHereRaiseABug();
       } else {
         LOGGER.info("No validators doppelganger detected for epoch {}, slot {}", epoch, slot);
       }
