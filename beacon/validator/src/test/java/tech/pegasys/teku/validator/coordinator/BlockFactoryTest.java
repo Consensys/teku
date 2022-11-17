@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -418,26 +417,14 @@ class BlockFactoryTest {
   }
 
   private void prepareDefaultPayload(final Spec spec) {
-    if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
-      executionPayload =
-          SchemaDefinitionsCapella.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadSchema()
-              .getDefault();
+    executionPayload =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+            .getExecutionPayloadSchema()
+            .getDefault();
 
-      executionPayloadHeader =
-          SchemaDefinitionsCapella.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadHeaderSchema()
-              .getHeaderOfDefaultPayload();
-    } else {
-      executionPayload =
-          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadSchema()
-              .getDefault();
-
-      executionPayloadHeader =
-          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
-              .getExecutionPayloadHeaderSchema()
-              .getHeaderOfDefaultPayload();
-    }
+    executionPayloadHeader =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema()
+            .getHeaderOfDefaultPayload();
   }
 }

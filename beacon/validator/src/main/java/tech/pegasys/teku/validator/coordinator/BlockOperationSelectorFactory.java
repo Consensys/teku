@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -122,6 +120,7 @@ public class BlockOperationSelectorFactory {
               exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
+      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
       bodyBuilder
           .randaoReveal(randaoReveal)
           .eth1Data(eth1Data)
@@ -134,18 +133,15 @@ public class BlockOperationSelectorFactory {
           .syncAggregate(
               () ->
                   contributionPool.createSyncAggregateForBlock(
-                      blockSlotState.getSlot(), parentRoot));
+                      blockSlotState.getSlot(), parentRoot))
+          .blsToExecutionChanges(
+              () ->
+                  BeaconBlockBodySchemaCapella.required(
+                          specVersion.getSchemaDefinitions().getBeaconBlockBodySchema())
+                      .getBlsToExecutionChangesSchema()
+                      .getDefault());
+      ;
 
-      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
-
-      if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-        final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
-            BeaconBlockBodySchemaCapella.required(
-                    specVersion.getSchemaDefinitions().getBeaconBlockBodySchema())
-                .getBlsToExecutionChangesSchema()
-                .getDefault();
-        bodyBuilder.blsToExecutionChanges(() -> blsToExecutionChanges);
-      }
       // execution payload handling
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required
