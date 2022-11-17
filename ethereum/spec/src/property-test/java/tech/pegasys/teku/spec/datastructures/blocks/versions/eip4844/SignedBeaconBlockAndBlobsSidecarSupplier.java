@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.type;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.eip4844;
 
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SszKZGCommitmentSupplier extends DataStructureUtilSupplier<SszKZGCommitment> {
-  public SszKZGCommitmentSupplier() {
-    super(DataStructureUtil::randomSszKZGCommitment, SpecMilestone.EIP4844);
+public class SignedBeaconBlockAndBlobsSidecarSupplier
+    extends DataStructureUtilSupplier<SignedBeaconBlockAndBlobsSidecar> {
+  public SignedBeaconBlockAndBlobsSidecarSupplier() {
+    super(DataStructureUtil::randomSignedBeaconBlockAndBlobsSidecar, SpecMilestone.EIP4844);
   }
 }
