@@ -47,6 +47,8 @@ public class TestSpecFactory {
         return createMinimalBellatrix();
       case CAPELLA:
         return createMinimalCapella();
+      case EIP4844:
+        return createMinimalEip4844();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -152,7 +154,7 @@ public class TestSpecFactory {
 
   public static Spec createMainnetEip4844() {
     final SpecConfigBellatrix specConfig = getEip4844SpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.CAPELLA);
+    return create(specConfig, SpecMilestone.EIP4844);
   }
 
   public static Spec createMainnetPhase0() {

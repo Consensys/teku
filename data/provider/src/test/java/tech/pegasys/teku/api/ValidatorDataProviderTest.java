@@ -46,6 +46,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
+import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockEip4844;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -54,7 +55,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -70,13 +70,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-@TestSpecContext(
-    milestone = {
-      SpecMilestone.PHASE0,
-      SpecMilestone.ALTAIR,
-      SpecMilestone.BELLATRIX,
-      SpecMilestone.CAPELLA
-    })
+@TestSpecContext(allMilestones = true)
 public class ValidatorDataProviderTest {
 
   @SuppressWarnings("unchecked")
@@ -238,6 +232,9 @@ public class ValidatorDataProviderTest {
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockCapella.class);
         break;
       case EIP4844:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockEip4844.class);
+        break;
+      default:
         throw new RuntimeException("notImplemented");
     }
   }
