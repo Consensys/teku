@@ -58,7 +58,7 @@ public class Firewall extends ChannelInboundHandlerAdapter {
       if (cause instanceof WriteTimeoutException) {
         LOG.debug("Firewall closed channel by write timeout. No writes during " + writeTimeout);
       } else {
-        LOG.debug("Error in Firewall, disconnecting" + cause);
+        LOG.debug("Error in Firewall, disconnecting " + cause);
         FutureUtil.ignoreFuture(ctx.close());
       }
     }
