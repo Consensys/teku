@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -57,7 +59,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected final GossipEncoding gossipEncoding;
 
   // Upstream consumers
-  private final OperationProcessor<SignedBeaconBlock> blockProcessor;
+  private final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor;
   private final OperationProcessor<ValidateableAttestation> attestationProcessor;
   private final OperationProcessor<ValidateableAttestation> aggregateProcessor;
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
@@ -66,7 +68,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
-  private BlockGossipManager blockGossipManager;
+  private Optional<BlockGossipManager> blockGossipManager;
   private VoluntaryExitGossipManager voluntaryExitGossipManager;
   private ProposerSlashingGossipManager proposerSlashingGossipManager;
   private AttesterSlashingGossipManager attesterSlashingGossipManager;
@@ -79,7 +81,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final OperationProcessor<SignedBeaconBlock> blockProcessor,
+      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -129,17 +131,22 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             forkInfo,
             getMessageMaxSize());
 
-    blockGossipManager =
-        new BlockGossipManager(
-            recentChainData,
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            forkInfo,
-            blockProcessor,
-            getMessageMaxSize());
-    addGossipManager(blockGossipManager);
+    blockProcessor.ifPresentOrElse(
+        processor -> {
+          blockGossipManager =
+              Optional.of(
+                  new BlockGossipManager(
+                      recentChainData,
+                      spec,
+                      asyncRunner,
+                      discoveryNetwork,
+                      gossipEncoding,
+                      forkInfo,
+                      processor,
+                      getMessageMaxSize()));
+          addGossipManager(blockGossipManager.get());
+        },
+        () -> blockGossipManager = Optional.empty());
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -216,7 +223,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void publishBlock(final SignedBeaconBlock block) {
-    blockGossipManager.publishBlock(block);
+    blockGossipManager.ifPresent(manager -> manager.publishBlock(block));
+  }
+
+  @Override
+  public void publishBlockAndBlobsSidecar(
+      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar) {
+    // Does not apply to this fork.
   }
 
   @Override

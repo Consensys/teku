@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip4844;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -91,6 +93,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected RecentChainData recentChainData;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor;
   protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
@@ -202,7 +205,7 @@ public class Eth2P2PNetworkBuilder {
             network,
             recentChainData,
             gossipEncoding,
-            gossipedBlockProcessor,
+            Optional.of(gossipedBlockProcessor),
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
@@ -217,7 +220,7 @@ public class Eth2P2PNetworkBuilder {
             network,
             recentChainData,
             gossipEncoding,
-            gossipedBlockProcessor,
+            Optional.of(gossipedBlockProcessor),
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
@@ -234,7 +237,7 @@ public class Eth2P2PNetworkBuilder {
             network,
             recentChainData,
             gossipEncoding,
-            gossipedBlockProcessor,
+            Optional.of(gossipedBlockProcessor),
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
@@ -251,7 +254,25 @@ public class Eth2P2PNetworkBuilder {
             network,
             recentChainData,
             gossipEncoding,
-            gossipedBlockProcessor,
+            Optional.of(gossipedBlockProcessor),
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            gossipedProposerSlashingConsumer,
+            gossipedVoluntaryExitConsumer,
+            gossipedSignedContributionAndProofProcessor,
+            gossipedSyncCommitteeMessageProcessor,
+            gossipedSignedBlsToExecutionChangeProcessor);
+      case EIP4844:
+        return new GossipForkSubscriptionsEip4844(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockAndBlobsProcessor,
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
@@ -403,6 +424,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedBlockAndBlobsProcessor(
+      final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor) {
+    checkNotNull(gossipedBlockAndBlobsProcessor);
+    this.gossipedBlockAndBlobsProcessor = gossipedBlockAndBlobsProcessor;
     return this;
   }
 

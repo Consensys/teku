@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE_BELLATRIX;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -41,7 +42,7 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
       DiscoveryNetwork<?> discoveryNetwork,
       RecentChainData recentChainData,
       GossipEncoding gossipEncoding,
-      OperationProcessor<SignedBeaconBlock> blockProcessor,
+      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
       OperationProcessor<ValidateableAttestation> attestationProcessor,
       OperationProcessor<ValidateableAttestation> aggregateProcessor,
       OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
