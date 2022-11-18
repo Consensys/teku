@@ -67,8 +67,8 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 public class ValidatorClientService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration DOPPELGANGER_DETECTION_CHECK_DELAY = Duration.ofSeconds(12);
-  private static final Duration DOPPELGANGER_DETECTION_TIMEOUT = Duration.ofMinutes(15);
+  private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(12);
+  private static final Duration DOPPELGANGER_DETECTOR_TIMEOUT = Duration.ofMinutes(15);
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
@@ -252,8 +252,8 @@ public class ValidatorClientService extends Service {
             spec,
             timeProvider,
             genesisDataProvider,
-            DOPPELGANGER_DETECTION_CHECK_DELAY,
-            DOPPELGANGER_DETECTION_TIMEOUT);
+            DOPPELGANGER_DETECTOR_CHECK_DELAY,
+            DOPPELGANGER_DETECTOR_TIMEOUT);
     maybeDoppelgangerDetector = Optional.of(doppelgangerDetector);
   }
 
