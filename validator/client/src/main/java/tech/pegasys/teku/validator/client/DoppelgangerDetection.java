@@ -139,7 +139,8 @@ public class DoppelgangerDetection {
                   .getValidatorIndices()
                   .thenCompose(
                       validatorIndices ->
-                          checkIndicesLiveness(currentSlot, currentEpoch, validatorIndices))
+                          checkValidatorsLivenessAtEpoch(
+                              currentSlot, currentEpoch, validatorIndices))
                   .orTimeout(checkDelay)
                   .exceptionally(
                       throwable -> {
@@ -160,13 +161,13 @@ public class DoppelgangerDetection {
             });
   }
 
-  private SafeFuture<Void> checkIndicesLiveness(
+  private SafeFuture<Void> checkValidatorsLivenessAtEpoch(
       UInt64 currentSlot, UInt64 currentEpoch, IntCollection validatorIndices) {
     return validatorApiChannel
-        .checkValidatorsDoppelganger(mapToUIntIndices(validatorIndices), currentEpoch)
+        .getValidatorsLiveness(mapToUIntIndices(validatorIndices), currentEpoch)
         .thenAccept(
             validatorLivenessAtEpoches ->
-                doppelgangerDetected(
+                checkValidatorDoppelgangers(
                     validatorLivenessAtEpoches,
                     mapToUIntIndices(validatorIndices),
                     currentEpoch,
@@ -182,7 +183,7 @@ public class DoppelgangerDetection {
         .thenApply(doppelgangerDetected -> null);
   }
 
-  private void doppelgangerDetected(
+  private void checkValidatorDoppelgangers(
       final Optional<List<ValidatorLivenessAtEpoch>> validatorLivenessAtEpoches,
       final List<UInt64> validatorIndices,
       final UInt64 epoch,

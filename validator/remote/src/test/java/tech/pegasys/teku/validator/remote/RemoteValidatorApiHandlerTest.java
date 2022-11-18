@@ -567,7 +567,7 @@ class RemoteValidatorApiHandlerTest {
             dataStructureUtil.randomUInt64());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
-        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+        apiHandler.getValidatorsLiveness(validatorIndices, epoch);
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompleted();
@@ -601,7 +601,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(postValidatorLivenessResponse));
 
     final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
-        apiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+        apiHandler.getValidatorsLiveness(validatorIndices, epoch);
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompleted();

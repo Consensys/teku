@@ -77,7 +77,7 @@ public class DoppelgangerDetectionTest {
         .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
-    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
@@ -121,7 +121,7 @@ public class DoppelgangerDetectionTest {
         .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
-    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
@@ -174,7 +174,7 @@ public class DoppelgangerDetectionTest {
         .thenReturn(UInt64.valueOf(1200));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
-    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
@@ -299,7 +299,7 @@ public class DoppelgangerDetectionTest {
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
-    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Validator API Channel Exception")));
     DoppelgangerDetection doppelgangerDetection =
         new DoppelgangerDetection(
@@ -335,7 +335,7 @@ public class DoppelgangerDetectionTest {
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.valueOf(10));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
-    when(validatorApiChannel.checkValidatorsDoppelganger(any(), any()))
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(SafeFuture.of(new SafeFuture<>().newIncompleteFuture()));
     DoppelgangerDetection doppelgangerDetection =
         new DoppelgangerDetection(

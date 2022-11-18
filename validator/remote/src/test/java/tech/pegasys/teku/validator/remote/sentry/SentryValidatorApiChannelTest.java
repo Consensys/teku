@@ -438,8 +438,8 @@ class SentryValidatorApiChannelTest {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomUInt64());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
-    sentryValidatorApiChannel.checkValidatorsDoppelganger(validatorIndices, epoch);
-    verify(dutiesProviderChannel).checkValidatorsDoppelganger(validatorIndices, epoch);
+    sentryValidatorApiChannel.getValidatorsLiveness(validatorIndices, epoch);
+    verify(dutiesProviderChannel).getValidatorsLiveness(validatorIndices, epoch);
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
