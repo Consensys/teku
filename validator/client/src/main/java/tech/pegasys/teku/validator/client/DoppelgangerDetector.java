@@ -194,13 +194,13 @@ public class DoppelgangerDetector {
       this.validatorIndexProvider
           .getValidatorIndicesByPublicKey()
           .thenApply(
-              blsPublicKeyIntegerMap -> {
+              validatorIndicesByPubKeys -> {
                 STATUS_LOG.validatorsDoppelgangerDetected(
                     mapLivenessAtEpochToIndicesPubKeysStrings(
-                        doppelgangers, blsPublicKeyIntegerMap));
+                        doppelgangers, validatorIndicesByPubKeys));
                 stopDoppelgangerDetector(
                         mapLivenessAtEpochToIndicesPubKeys(
-                            doppelgangers, Optional.of(blsPublicKeyIntegerMap)))
+                            doppelgangers, Optional.of(validatorIndicesByPubKeys)))
                     .ifExceptionGetsHereRaiseABug();
                 return null;
               })
