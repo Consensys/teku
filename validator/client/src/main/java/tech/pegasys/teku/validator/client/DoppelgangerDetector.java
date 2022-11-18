@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -224,6 +225,27 @@ public class DoppelgangerDetector {
   }
 
   private Map<Integer, String> mapLivenessAtEpochToIndicesPubKeysStrings(
+      final List<ValidatorLivenessAtEpoch> doppelgangers,
+      final Map<BLSPublicKey, Integer> validatorIndicesByPubKey) {
+    return filterDoppelgangerIndicesPubKeys(doppelgangers, validatorIndicesByPubKey)
+        .collect(Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
+  }
+
+  private Map<Integer, BLSPublicKey> mapLivenessAtEpochToIndicesPubKeys(
+      final List<ValidatorLivenessAtEpoch> doppelgangers,
+      final Optional<Map<BLSPublicKey, Integer>> maybeValidatorIndicesByPubKey) {
+    return maybeValidatorIndicesByPubKey
+        .map(
+            validatorIndicesByPubKey ->
+                filterDoppelgangerIndicesPubKeys(doppelgangers, validatorIndicesByPubKey)
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)))
+        .orElse(
+            doppelgangers.stream()
+                .collect(
+                    Collectors.toMap(e -> e.getIndex().intValue(), e -> BLSPublicKey.empty())));
+  }
+
+  private Stream<Map.Entry<BLSPublicKey, Integer>> filterDoppelgangerIndicesPubKeys(
       final List<ValidatorLivenessAtEpoch> liveValidators,
       final Map<BLSPublicKey, Integer> validatorIndicesByPubKey) {
     return validatorIndicesByPubKey.entrySet().stream()
@@ -234,30 +256,7 @@ public class DoppelgangerDetector {
                         validatorLivenessAtEpoch ->
                             validatorLivenessAtEpoch
                                 .getIndex()
-                                .equals(UInt64.valueOf(indexPubKey.getValue()))))
-        .collect(Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
-  }
-
-  private Map<Integer, BLSPublicKey> mapLivenessAtEpochToIndicesPubKeys(
-      final List<ValidatorLivenessAtEpoch> liveValidators,
-      final Optional<Map<BLSPublicKey, Integer>> maybeValidatorIndicesByPubKey) {
-    return maybeValidatorIndicesByPubKey
-        .map(
-            validatorIndicesByPubKey ->
-                validatorIndicesByPubKey.entrySet().stream()
-                    .filter(
-                        indexPubKey ->
-                            liveValidators.stream()
-                                .anyMatch(
-                                    validatorLivenessAtEpoch ->
-                                        validatorLivenessAtEpoch
-                                            .getIndex()
-                                            .equals(UInt64.valueOf(indexPubKey.getValue()))))
-                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)))
-        .orElse(
-            liveValidators.stream()
-                .collect(
-                    Collectors.toMap(e -> e.getIndex().intValue(), e -> BLSPublicKey.empty())));
+                                .equals(UInt64.valueOf(indexPubKey.getValue()))));
   }
 
   private List<ValidatorLivenessAtEpoch> filterLiveValidators(
