@@ -150,7 +150,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void doppelgangerDetectionShouldBeDisabledByDefault() {
+  public void doppelgangerDetectorShouldBeDisabledByDefault() {
 
     final String[] args = {"vc", "--network", "minimal"};
 
@@ -161,7 +161,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableDoppelgangerDetection() {
+  public void shouldEnableDoppelgangerDetector() {
 
     final String[] args = {
       "vc", "--network", "minimal", "--Xdoppelganger-detection-enabled", "true"

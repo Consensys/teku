@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
-public class DoppelgangerDetection {
+public class DoppelgangerDetector {
 
   private static final Logger LOGGER = LogManager.getLogger();
   private final Duration checkDelay;
@@ -56,7 +56,7 @@ public class DoppelgangerDetection {
       Optional.empty();
   private long startTime;
 
-  public DoppelgangerDetection(
+  public DoppelgangerDetector(
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
       final ValidatorIndexProvider validatorIndexProvider,
@@ -91,7 +91,7 @@ public class DoppelgangerDetection {
     return doppelgangerCheckFinished.get();
   }
 
-  private synchronized SafeFuture<?> stopDoppelgangerDetection(
+  private synchronized SafeFuture<?> stopDoppelgangerDetector(
       Map<Integer, BLSPublicKey> detectedDoppelgangers) {
     if (doppelgangerCheckFinished.isEmpty()) {
       throw new RuntimeException("Doppelganger Detection is already stopped.");
@@ -107,7 +107,7 @@ public class DoppelgangerDetection {
     if (duration.compareTo(timeout) > 0) {
       LOGGER.info(
           "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
-      return stopDoppelgangerDetection(new HashMap<>());
+      return stopDoppelgangerDetector(new HashMap<>());
     }
 
     return genesisDataProvider
@@ -127,7 +127,7 @@ public class DoppelgangerDetection {
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
                 LOGGER.info(
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection.");
-                return stopDoppelgangerDetection(new HashMap<>());
+                return stopDoppelgangerDetector(new HashMap<>());
               }
 
               LOGGER.info(
@@ -199,7 +199,7 @@ public class DoppelgangerDetection {
                 STATUS_LOG.validatorsDoppelgangerDetected(
                     mapLivenessAtEpochToIndicesPubKeysStrings(
                         liveValidators, blsPublicKeyIntegerMap));
-                stopDoppelgangerDetection(
+                stopDoppelgangerDetector(
                         mapLivenessAtEpochToIndicesPubKeys(
                             liveValidators, Optional.of(blsPublicKeyIntegerMap)))
                     .ifExceptionGetsHereRaiseABug();
@@ -213,7 +213,7 @@ public class DoppelgangerDetection {
                 STATUS_LOG.validatorsDoppelgangerDetected(
                     liveValidators.stream()
                         .collect(Collectors.toMap(e -> e.getIndex().intValue(), e -> "")));
-                stopDoppelgangerDetection(
+                stopDoppelgangerDetector(
                         mapLivenessAtEpochToIndicesPubKeys(liveValidators, Optional.empty()))
                     .ifExceptionGetsHereRaiseABug();
                 return null;
