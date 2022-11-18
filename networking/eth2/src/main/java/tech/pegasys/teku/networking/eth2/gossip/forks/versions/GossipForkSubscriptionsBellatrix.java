@@ -71,11 +71,6 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addAttestationGossipManager(forkInfo);
-  }
-
-  @Override
   protected int getMessageMaxSize() {
     return GOSSIP_MAX_SIZE_BELLATRIX;
   }
