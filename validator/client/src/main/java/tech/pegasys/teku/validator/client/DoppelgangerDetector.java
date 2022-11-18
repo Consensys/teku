@@ -81,7 +81,7 @@ public class DoppelgangerDetector {
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
-            this::checkValidatorsDoppelganger,
+            this::performDoppelgangerCheck,
             checkDelay,
             checkDelay,
             throwable ->
@@ -91,7 +91,7 @@ public class DoppelgangerDetector {
     return doppelgangerCheckFinished.get();
   }
 
-  private synchronized SafeFuture<?> stopDoppelgangerDetector(
+  private synchronized SafeFuture<Void> stopDoppelgangerDetector(
       final Map<Integer, BLSPublicKey> detectedDoppelgangers) {
     if (doppelgangerCheckFinished.isEmpty()) {
       throw new RuntimeException("Doppelganger Detection is already stopped.");
@@ -102,7 +102,7 @@ public class DoppelgangerDetector {
         () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
   }
 
-  private SafeFuture<?> checkValidatorsDoppelganger() {
+  private SafeFuture<Void> performDoppelgangerCheck() {
     final Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
     if (duration.compareTo(timeout) > 0) {
       LOG.info(
@@ -148,7 +148,7 @@ public class DoppelgangerDetector {
                             extractErrorMessage(throwable));
                         return null;
                       })
-                  .thenApply(o -> null);
+                  .toVoid();
             })
         .orTimeout(checkDelay)
         .exceptionally(
