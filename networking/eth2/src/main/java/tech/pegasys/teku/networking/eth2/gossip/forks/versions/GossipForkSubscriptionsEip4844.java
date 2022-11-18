@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipManager;
@@ -67,7 +66,7 @@ public class GossipForkSubscriptionsEip4844 extends GossipForkSubscriptionsCapel
         discoveryNetwork,
         recentChainData,
         gossipEncoding,
-        Optional.empty(),
+        OperationProcessor.noop(),
         attestationProcessor,
         aggregateProcessor,
         attesterSlashingProcessor,
@@ -82,7 +81,25 @@ public class GossipForkSubscriptionsEip4844 extends GossipForkSubscriptionsCapel
 
   @Override
   protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
+    // Phase0 without BlockGossipManager
+    addAttestationGossipManager(forkInfo);
+    addAggregateGossipManager(forkInfo);
+    addVoluntaryExitGossipManager(forkInfo);
+    addProposerSlashingGossipManager(forkInfo);
+    addAttesterSlashingGossipManager(forkInfo);
+
+    // Altair
+    addSignedContributionAndProofGossipManager(forkInfo);
+    addSyncCommitteeMessageGossipManager(forkInfo);
+
+    // Capella
+    addSignedBlsToExecutionChangeGossipManager(forkInfo);
+
+    // Eip4844
+    addBlockAndBlobsSidecarGossipManager(forkInfo);
+  }
+
+  void addBlockAndBlobsSidecarGossipManager(final ForkInfo forkInfo) {
     blockAndBlobsSidecarGossipManager =
         new BlockAndBlobsSidecarGossipManager(
             recentChainData,

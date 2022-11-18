@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE_BELLATRIX;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAltair {
@@ -42,7 +42,7 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -68,6 +68,11 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor);
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addAttestationGossipManager(forkInfo);
   }
 
   @Override

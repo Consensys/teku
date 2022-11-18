@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
@@ -53,7 +52,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -82,9 +81,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
   }
 
-  @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
+  void addSignedContributionAndProofGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     syncCommitteeContributionGossipManager =
@@ -98,7 +95,11 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             signedContributionAndProofOperationProcessor,
             getMessageMaxSize());
     addGossipManager(syncCommitteeContributionGossipManager);
+  }
 
+  void addSyncCommitteeMessageGossipManager(final ForkInfo forkInfo) {
+    final SchemaDefinitionsAltair schemaDefinitions =
+        SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
             spec,
@@ -117,6 +118,13 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             new SyncCommitteeStateUtils(spec, recentChainData),
             syncCommitteeSubnetSubscriptions);
     addGossipManager(syncCommitteeMessageGossipManager);
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addSignedContributionAndProofGossipManager(forkInfo);
+    addSyncCommitteeMessageGossipManager(forkInfo);
   }
 
   @Override

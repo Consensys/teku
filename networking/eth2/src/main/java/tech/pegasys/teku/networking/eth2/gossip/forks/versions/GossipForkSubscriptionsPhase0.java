@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -59,7 +58,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected final GossipEncoding gossipEncoding;
 
   // Upstream consumers
-  private final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor;
+  private final OperationProcessor<SignedBeaconBlock> blockProcessor;
   private final OperationProcessor<ValidateableAttestation> attestationProcessor;
   private final OperationProcessor<ValidateableAttestation> aggregateProcessor;
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
@@ -68,7 +67,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
-  private Optional<BlockGossipManager> blockGossipManager;
+  private BlockGossipManager blockGossipManager;
   private VoluntaryExitGossipManager voluntaryExitGossipManager;
   private ProposerSlashingGossipManager proposerSlashingGossipManager;
   private AttesterSlashingGossipManager attesterSlashingGossipManager;
@@ -81,7 +80,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -119,7 +118,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
         .forEach(GossipManager::subscribe);
   }
 
-  protected void addGossipManagers(final ForkInfo forkInfo) {
+  void addAttestationGossipManager(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -131,27 +130,26 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             forkInfo,
             getMessageMaxSize());
 
-    blockProcessor.ifPresentOrElse(
-        processor -> {
-          blockGossipManager =
-              Optional.of(
-                  new BlockGossipManager(
-                      recentChainData,
-                      spec,
-                      asyncRunner,
-                      discoveryNetwork,
-                      gossipEncoding,
-                      forkInfo,
-                      processor,
-                      getMessageMaxSize()));
-          addGossipManager(blockGossipManager.get());
-        },
-        () -> blockGossipManager = Optional.empty());
-
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
     addGossipManager(attestationGossipManager);
+  }
 
+  void addBlockGossipManager(final ForkInfo forkInfo) {
+    blockGossipManager =
+        new BlockGossipManager(
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            blockProcessor,
+            getMessageMaxSize());
+    addGossipManager(blockGossipManager);
+  }
+
+  void addAggregateGossipManager(final ForkInfo forkInfo) {
     aggregateGossipManager =
         new AggregateGossipManager(
             spec,
@@ -163,7 +161,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             aggregateProcessor,
             getMessageMaxSize());
     addGossipManager(aggregateGossipManager);
+  }
 
+  void addVoluntaryExitGossipManager(final ForkInfo forkInfo) {
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
             recentChainData,
@@ -174,7 +174,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             voluntaryExitProcessor,
             getMessageMaxSize());
     addGossipManager(voluntaryExitGossipManager);
+  }
 
+  void addProposerSlashingGossipManager(final ForkInfo forkInfo) {
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
             recentChainData,
@@ -185,7 +187,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             proposerSlashingProcessor,
             getMessageMaxSize());
     addGossipManager(proposerSlashingGossipManager);
+  }
 
+  void addAttesterSlashingGossipManager(final ForkInfo forkInfo) {
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
             spec,
@@ -197,6 +201,15 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             attesterSlashingProcessor,
             getMessageMaxSize());
     addGossipManager(attesterSlashingGossipManager);
+  }
+
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    addAttestationGossipManager(forkInfo);
+    addBlockGossipManager(forkInfo);
+    addAggregateGossipManager(forkInfo);
+    addVoluntaryExitGossipManager(forkInfo);
+    addProposerSlashingGossipManager(forkInfo);
+    addAttesterSlashingGossipManager(forkInfo);
   }
 
   protected void addGossipManager(final GossipManager gossipManager) {
@@ -223,7 +236,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void publishBlock(final SignedBeaconBlock block) {
-    blockGossipManager.ifPresent(manager -> manager.publishBlock(block));
+    blockGossipManager.publishBlock(block);
   }
 
   @Override

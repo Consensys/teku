@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.SignedBlsToExecutionChangeGossipManager;
@@ -49,7 +48,7 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -82,9 +81,7 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
         signedBlsToExecutionChangeOperationProcessor;
   }
 
-  @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
+  void addSignedBlsToExecutionChangeGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsCapella schemaDefinitions =
         SchemaDefinitionsCapella.required(
             spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
@@ -99,6 +96,12 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
             signedBlsToExecutionChangeOperationProcessor,
             getMessageMaxSize());
     addGossipManager(signedBlsToExecutionChangeGossipManager);
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addSignedBlsToExecutionChangeGossipManager(forkInfo);
   }
 
   @Override
