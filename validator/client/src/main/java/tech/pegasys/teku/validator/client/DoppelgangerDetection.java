@@ -76,7 +76,7 @@ public class DoppelgangerDetection {
   }
 
   protected synchronized SafeFuture<Map<Integer, BLSPublicKey>> performDoppelgangerDetection() {
-    LOGGER.info("Starting doppelganger detection service...");
+    LOGGER.info("Starting doppelganger detection...");
     doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
@@ -106,7 +106,7 @@ public class DoppelgangerDetection {
     Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
     if (duration.compareTo(timeout) > 0) {
       LOGGER.info(
-          "Validators Doppelganger Detection timeout reached, stopping the service. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
+          "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
       return stopDoppelgangerDetection(new HashMap<>());
     }
 
@@ -126,7 +126,7 @@ public class DoppelgangerDetection {
 
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
                 LOGGER.info(
-                    "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection service.");
+                    "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection.");
                 return stopDoppelgangerDetection(new HashMap<>());
               }
 

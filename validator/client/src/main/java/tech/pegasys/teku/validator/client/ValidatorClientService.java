@@ -80,7 +80,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
-  private Optional<DoppelgangerDetection> maybeDoppelgangerDetectionService = Optional.empty();
+  private Optional<DoppelgangerDetection> maybeDoppelgangerDetection = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
@@ -212,7 +212,7 @@ public class ValidatorClientService extends Service {
         .thenCompose(
             __ -> {
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
-                validatorClientService.initializeDoppelgangerDetectionService(
+                validatorClientService.initializeDoppelgangerDetection(
                     asyncRunner,
                     validatorApiChannel,
                     validatorClientService.validatorIndexProvider,
@@ -237,7 +237,7 @@ public class ValidatorClientService extends Service {
     return validatorClientService;
   }
 
-  private void initializeDoppelgangerDetectionService(
+  private void initializeDoppelgangerDetection(
       AsyncRunner asyncRunner,
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
@@ -254,7 +254,7 @@ public class ValidatorClientService extends Service {
             genesisDataProvider,
             DOPPELGANGER_DETECTION_CHECK_DELAY,
             DOPPELGANGER_DETECTION_TIMEOUT);
-    maybeDoppelgangerDetectionService = Optional.of(doppelgangerDetection);
+    maybeDoppelgangerDetection = Optional.of(doppelgangerDetection);
   }
 
   private static BeaconNodeApi createBeaconNodeApi(
@@ -447,7 +447,7 @@ public class ValidatorClientService extends Service {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
-              return maybeDoppelgangerDetectionService
+              return maybeDoppelgangerDetection
                   .map(
                       doppelgangerDetection ->
                           doppelgangerDetection
