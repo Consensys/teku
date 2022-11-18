@@ -45,12 +45,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
@@ -128,6 +130,17 @@ class BlockFactoryTest {
     final BeaconBlock block = assertBlockCreated(1, spec, false, false);
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
+  }
+
+  @Test
+  void shouldCreateCapellaBlock() {
+    final Spec spec = TestSpecFactory.createMinimalCapella();
+    prepareDefaultPayload(spec);
+
+    final BeaconBlock block = assertBlockCreated(1, spec, false, false);
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
+        BeaconBlockBodyCapella.required(block.getBody()).getBlsToExecutionChanges();
+    assertThat(blsToExecutionChanges).isNotNull();
   }
 
   @Test
