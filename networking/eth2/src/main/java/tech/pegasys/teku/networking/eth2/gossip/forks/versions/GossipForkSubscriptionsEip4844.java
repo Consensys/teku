@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -46,6 +47,7 @@ public class GossipForkSubscriptionsEip4844 extends GossipForkSubscriptionsCapel
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
@@ -66,7 +68,7 @@ public class GossipForkSubscriptionsEip4844 extends GossipForkSubscriptionsCapel
         discoveryNetwork,
         recentChainData,
         gossipEncoding,
-        OperationProcessor.noop(),
+        blockProcessor,
         attestationProcessor,
         aggregateProcessor,
         attesterSlashingProcessor,

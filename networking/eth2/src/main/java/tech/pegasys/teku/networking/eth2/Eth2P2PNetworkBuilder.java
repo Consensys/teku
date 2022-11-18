@@ -272,6 +272,7 @@ public class Eth2P2PNetworkBuilder {
             network,
             recentChainData,
             gossipEncoding,
+            gossipedBlockProcessor,
             gossipedBlockAndBlobsProcessor,
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
