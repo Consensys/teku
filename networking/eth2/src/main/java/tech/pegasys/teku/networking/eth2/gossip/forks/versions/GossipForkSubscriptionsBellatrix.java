@@ -35,21 +35,23 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAltair {
 
   public GossipForkSubscriptionsBellatrix(
-      Fork fork,
-      Spec spec,
-      AsyncRunner asyncRunner,
-      MetricsSystem metricsSystem,
-      DiscoveryNetwork<?> discoveryNetwork,
-      RecentChainData recentChainData,
-      GossipEncoding gossipEncoding,
+      final Fork fork,
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem,
+      final DiscoveryNetwork<?> discoveryNetwork,
+      final RecentChainData recentChainData,
+      final GossipEncoding gossipEncoding,
       final Optional<OperationProcessor<SignedBeaconBlock>> blockProcessor,
-      OperationProcessor<ValidateableAttestation> attestationProcessor,
-      OperationProcessor<ValidateableAttestation> aggregateProcessor,
-      OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      OperationProcessor<SignedContributionAndProof> signedContributionAndProofOperationProcessor,
-      OperationProcessor<ValidateableSyncCommitteeMessage> syncCommitteeMessageOperationProcessor) {
+      final OperationProcessor<ValidateableAttestation> attestationProcessor,
+      final OperationProcessor<ValidateableAttestation> aggregateProcessor,
+      final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
+      final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
+      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+      final OperationProcessor<SignedContributionAndProof>
+          signedContributionAndProofOperationProcessor,
+      final OperationProcessor<ValidateableSyncCommitteeMessage>
+          syncCommitteeMessageOperationProcessor) {
     super(
         fork,
         spec,
