@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -161,26 +162,18 @@ public class StatusLogger {
   }
 
   public void validatorsDoppelgangerDetected(final Map<Integer, String> doppelgangersInfo) {
-    StringBuilder doppelgangersLogInfo = new StringBuilder("\n");
-    for (Map.Entry<Integer, String> doppelgangerInfo : doppelgangersInfo.entrySet()) {
-      doppelgangersLogInfo.append(
-          StringUtils.isBlank(doppelgangerInfo.getValue())
-              ? "Index: " + doppelgangerInfo.getKey() + "\n"
-              : "Index: "
-                  + doppelgangerInfo.getKey()
-                  + ", Public key: "
-                  + doppelgangerInfo.getValue()
-                  + "\n");
-    }
-    if (doppelgangersInfo.size() > 100) {
-      log.fatal("Detected {} validators doppelganger.", doppelgangersInfo.size());
-      log.fatal("Validators doppelganger: {}", doppelgangersLogInfo.toString());
-    } else {
-      log.fatal(
-          "Detected {} validators doppelganger: {}",
-          doppelgangersInfo.size(),
-          doppelgangersLogInfo.toString());
-    }
+    String doppelgangersLogInfo =
+        doppelgangersInfo.entrySet().stream()
+            .map(
+                doppelgangerInfo ->
+                    StringUtils.isBlank(doppelgangerInfo.getValue())
+                        ? String.format("Index: %d", doppelgangerInfo.getKey())
+                        : String.format(
+                            "Index: %d, Public key: %s",
+                            doppelgangerInfo.getKey(), doppelgangerInfo.getValue()))
+            .collect(Collectors.joining("\n", "\n", "\n"));
+    log.fatal(
+        "Detected {} validators doppelganger: {}", doppelgangersInfo.size(), doppelgangersLogInfo);
   }
 
   public void beginInitializingChainData() {
