@@ -207,28 +207,55 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
     final PayloadBuildingAttributes payloadAttributes = headAndAttrs.attributes;
 
-    final ExecutionPayload executionPayload =
-        schemaDefinitionsBellatrix
-            .get()
-            .getExecutionPayloadSchema()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .create(
-                headAndAttrs.head,
-                payloadAttributes.getFeeRecipient(),
-                Bytes32.ZERO,
-                Bytes32.ZERO,
-                Bytes.random(256),
-                payloadAttributes.getPrevRandao(),
-                UInt64.valueOf(payloadIdCounter.get()),
-                UInt64.ONE,
-                UInt64.ZERO,
-                payloadAttributes.getTimestamp(),
-                Bytes.EMPTY,
-                UInt256.ONE,
-                Bytes32.random(),
-                List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")));
-
+    final ExecutionPayload executionPayload;
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      executionPayload =
+          spec.atSlot(slot)
+              .getSchemaDefinitions()
+              .toVersionCapella()
+              .orElseThrow()
+              .getExecutionPayloadSchema()
+              .toVersionCapella()
+              .orElseThrow()
+              .create(
+                  headAndAttrs.head,
+                  payloadAttributes.getFeeRecipient(),
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes.random(256),
+                  payloadAttributes.getPrevRandao(),
+                  UInt64.valueOf(payloadIdCounter.get()),
+                  UInt64.ONE,
+                  UInt64.ZERO,
+                  payloadAttributes.getTimestamp(),
+                  Bytes.EMPTY,
+                  UInt256.ONE,
+                  Bytes32.random(),
+                  List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")),
+                  List.of());
+    } else {
+      executionPayload =
+          schemaDefinitionsBellatrix
+              .get()
+              .getExecutionPayloadSchema()
+              .toVersionBellatrix()
+              .orElseThrow()
+              .create(
+                  headAndAttrs.head,
+                  payloadAttributes.getFeeRecipient(),
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes.random(256),
+                  payloadAttributes.getPrevRandao(),
+                  UInt64.valueOf(payloadIdCounter.get()),
+                  UInt64.ONE,
+                  UInt64.ZERO,
+                  payloadAttributes.getTimestamp(),
+                  Bytes.EMPTY,
+                  UInt256.ONE,
+                  Bytes32.random(),
+                  List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")));
+    }
     // we assume all blocks are produced locally
     lastValidBlock =
         Optional.of(
