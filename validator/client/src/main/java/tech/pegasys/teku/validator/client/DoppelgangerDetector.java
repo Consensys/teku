@@ -41,7 +41,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 public class DoppelgangerDetector {
 
-  private static final Logger LOGGER = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
   private final Duration checkDelay;
   private final Duration timeout;
   private final AsyncRunner asyncRunner;
@@ -76,7 +76,7 @@ public class DoppelgangerDetector {
   }
 
   protected synchronized SafeFuture<Map<Integer, BLSPublicKey>> performDoppelgangerDetection() {
-    LOGGER.info("Starting doppelganger detection...");
+    LOG.info("Starting doppelganger detection...");
     doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
     startTime = System.nanoTime();
     doppelgangerDetectionTask =
@@ -85,7 +85,7 @@ public class DoppelgangerDetector {
             checkDelay,
             checkDelay,
             throwable ->
-                LOGGER.error(
+                LOG.error(
                     "Error while checking validators doppelganger. The check could not be performed correctly.",
                     throwable));
     return doppelgangerCheckFinished.get();
@@ -105,7 +105,7 @@ public class DoppelgangerDetector {
   private SafeFuture<?> checkValidatorsDoppelganger() {
     final Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
     if (duration.compareTo(timeout) > 0) {
-      LOGGER.info(
+      LOG.info(
           "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
       return stopDoppelgangerDetector(new HashMap<>());
     }
@@ -120,17 +120,16 @@ public class DoppelgangerDetector {
 
               if (epochAtStart.isEmpty()) {
                 epochAtStart = Optional.of(currentEpoch);
-                LOGGER.info(
-                    "Validators doppelganger check started at epoch {}", epochAtStart.get());
+                LOG.info("Validators doppelganger check started at epoch {}", epochAtStart.get());
               }
 
               if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
-                LOGGER.info(
+                LOG.info(
                     "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection.");
                 return stopDoppelgangerDetector(new HashMap<>());
               }
 
-              LOGGER.info(
+              LOG.info(
                   "Performing a validators doppelganger check for epoch {}, slot {}",
                   currentEpoch,
                   currentSlot);
@@ -144,7 +143,7 @@ public class DoppelgangerDetector {
                   .orTimeout(checkDelay)
                   .exceptionally(
                       throwable -> {
-                        LOGGER.error(
+                        LOG.error(
                             "Unable to check validators doppelganger. Unable to get validators indices: {}",
                             extractErrorMessage(throwable));
                         return null;
@@ -154,7 +153,7 @@ public class DoppelgangerDetector {
         .orTimeout(checkDelay)
         .exceptionally(
             throwable -> {
-              LOGGER.error(
+              LOG.error(
                   "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: {}",
                   extractErrorMessage(throwable));
               return null;
@@ -175,7 +174,7 @@ public class DoppelgangerDetector {
         .orTimeout(checkDelay)
         .exceptionally(
             throwable -> {
-              LOGGER.error(
+              LOG.error(
                   "Unable to check validators doppelganger. Unable to get validators liveness: {}",
                   extractErrorMessage(throwable));
               return null;
@@ -191,7 +190,7 @@ public class DoppelgangerDetector {
     final List<ValidatorLivenessAtEpoch> doppelgangers =
         filterLiveValidators(validatorLivenessAtEpoches, validatorIndices);
     if (!doppelgangers.isEmpty()) {
-      LOGGER.fatal("Doppelganger detected. Shutting down Validator Client.");
+      LOG.fatal("Doppelganger detected. Shutting down Validator Client.");
       this.validatorIndexProvider
           .getValidatorIndicesByPublicKey()
           .thenApply(
@@ -207,7 +206,7 @@ public class DoppelgangerDetector {
               })
           .exceptionally(
               error -> {
-                LOGGER.error(
+                LOG.error(
                     "Unable to get doppelgangers public keys. Only indices are available: {}",
                     error.getMessage());
                 STATUS_LOG.validatorsDoppelgangerDetected(
@@ -220,7 +219,7 @@ public class DoppelgangerDetector {
               })
           .ifExceptionGetsHereRaiseABug();
     } else {
-      LOGGER.info("No validators doppelganger detected for epoch {}, slot {}", epoch, slot);
+      LOG.info("No validators doppelganger detected for epoch {}, slot {}", epoch, slot);
     }
   }
 
