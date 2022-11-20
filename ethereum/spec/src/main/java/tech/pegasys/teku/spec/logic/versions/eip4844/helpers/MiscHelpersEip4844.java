@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
-import tech.pegasys.teku.infrastructure.crypto.VersionedHash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.SignedBlobTransaction;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
+import tech.pegasys.teku.spec.logic.versions.eip4844.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.eip4844.util.KZGUtilEip4844;
 
 public class MiscHelpersEip4844 extends MiscHelpersCapella {

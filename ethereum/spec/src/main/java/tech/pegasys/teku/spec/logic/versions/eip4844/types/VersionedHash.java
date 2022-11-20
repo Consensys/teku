@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.crypto;
+package tech.pegasys.teku.spec.logic.versions.eip4844.types;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
