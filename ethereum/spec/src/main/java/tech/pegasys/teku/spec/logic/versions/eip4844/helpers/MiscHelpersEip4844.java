@@ -19,9 +19,9 @@ import static tech.pegasys.teku.spec.config.SpecConfigEip4844.VERSIONED_HASH_VER
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.VersionedHash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -64,17 +64,18 @@ public class MiscHelpersEip4844 extends MiscHelpersCapella {
     return true;
   }
 
-  private Bytes32 kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    return Bytes32.wrap(
-        Bytes.wrap(
-            VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()).slice(1)));
+  private VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    return VersionedHash.create(
+        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
   }
 
-  private List<Bytes32> txPeekBlobVersionedHashes(final Transaction transaction) {
+  private List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
     checkArgument(isBlobTransaction(transaction), "Transaction should be of BLOB type");
     final SignedBlobTransaction signedBlobTransaction =
         SignedBlobTransaction.SSZ_SCHEMA.sszDeserialize(transaction.getBytes().slice(1));
-    return signedBlobTransaction.getBlobTransaction().getBlobVersionedHashes();
+    return signedBlobTransaction.getBlobTransaction().getBlobVersionedHashes().stream()
+        .map(VersionedHash::new)
+        .collect(Collectors.toList());
   }
 
   private boolean isBlobTransaction(final Transaction transaction) {
@@ -83,13 +84,13 @@ public class MiscHelpersEip4844 extends MiscHelpersCapella {
 
   public boolean verifyKZGCommitmentsAgainstTransactions(
       final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
-    final List<Bytes32> transactionsVersionedHashes =
+    final List<VersionedHash> transactionsVersionedHashes =
         transactions.stream()
             .filter(this::isBlobTransaction)
             .map(this::txPeekBlobVersionedHashes)
             .flatMap(List::stream)
             .collect(Collectors.toList());
-    final List<Bytes32> commitmentsVersionedHashes =
+    final List<VersionedHash> commitmentsVersionedHashes =
         kzgCommitments.stream()
             .map(this::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());

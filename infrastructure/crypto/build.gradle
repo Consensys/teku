@@ -1,7 +1,7 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   api 'org.apache.tuweni:tuweni-bytes'
-
+  implementation 'commons-io:commons-io'
 
   jmhImplementation 'org.bouncycastle:bcprov-jdk15on'
   jmhImplementation project(':infrastructure:crypto')
