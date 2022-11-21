@@ -59,8 +59,8 @@ public class SpecFactory {
             .toVersionEip4844()
             .map(SpecConfigEip4844::getEip4844ForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
-
     final SpecMilestone highestMilestoneSupported;
+
     if (!eip4844ForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = EIP4844;
     } else if (!capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {

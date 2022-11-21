@@ -25,12 +25,13 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandler
     implements ExecutionClientHandler {
@@ -44,6 +45,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return super.engineGetPayload(executionPayloadContext, slot);
+    }
     LOG.trace(
         "calling engineGetPayloadV2(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
@@ -54,7 +58,7 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
         .thenCombine(
             SafeFuture.of(
                 () ->
-                    SchemaDefinitionsCapella.required(spec.atSlot(slot).getSchemaDefinitions())
+                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV2::asInternalExecutionPayload)
         .thenPeek(
@@ -72,6 +76,10 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
 
+    if (payloadBuildingAttributes.isEmpty()
+        || payloadBuildingAttributes.get().getWithdrawals().isEmpty()) {
+      return super.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
+    }
     LOG.trace(
         "calling engineForkChoiceUpdatedV2(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
@@ -93,6 +101,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+    if (executionPayload.getOptionalWithdrawals().isEmpty()) {
+      return super.engineNewPayload(executionPayload);
+    }
     LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
     return executionEngineClient
         .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))

@@ -15,10 +15,10 @@ package tech.pegasys.teku.infrastructure.restapi;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 
-import io.javalin.core.security.AccessManager;
-import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.security.AccessManager;
+import io.javalin.security.RouteRole;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 public class AuthorizationManager implements AccessManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,10 +60,7 @@ public class AuthorizationManager implements AccessManager {
   }
 
   @Override
-  public void manage(
-      @NotNull final Handler handler,
-      @NotNull final Context ctx,
-      @NotNull final Set<RouteRole> routeRoles)
+  public void manage(final Handler handler, final Context ctx, final Set<? extends RouteRole> set)
       throws Exception {
     if (ctx.matchedPath().equals("/swagger-docs")) {
       handler.handle(ctx);

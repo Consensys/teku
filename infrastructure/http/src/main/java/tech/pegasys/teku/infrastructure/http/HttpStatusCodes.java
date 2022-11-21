@@ -24,6 +24,7 @@ public class HttpStatusCodes {
   public static final int SC_FORBIDDEN = 403;
   public static final int SC_NOT_FOUND = 404;
   public static final int SC_NOT_ACCEPTABLE = 406;
+  public static final int SC_GONE = 410;
   public static final int SC_PRECONDITION_FAILED = 412;
   public static final int SC_UNSUPPORTED_MEDIA_TYPE = 415;
   public static final int SC_TOO_MANY_REQUESTS = 429;
