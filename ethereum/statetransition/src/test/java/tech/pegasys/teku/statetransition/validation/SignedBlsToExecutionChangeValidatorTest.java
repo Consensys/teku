@@ -59,7 +59,8 @@ class SignedBlsToExecutionChangeValidatorTest {
     mockSpecValidationSucceeded();
     mockSignatureVerificationSucceeded();
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.validateFully(message);
+    final SafeFuture<InternalValidationResult> validationResult =
+        validator.validateForGossip(message);
 
     assertValidationResult(validationResult, ValidationResultCode.ACCEPT);
   }
@@ -71,9 +72,9 @@ class SignedBlsToExecutionChangeValidatorTest {
     mockSignatureVerificationSucceeded();
 
     final SafeFuture<InternalValidationResult> firstValidationResult =
-        validator.validateFully(message);
+        validator.validateForGossip(message);
     final SafeFuture<InternalValidationResult> secondValidationResult =
-        validator.validateFully(message);
+        validator.validateForGossip(message);
 
     assertValidationResult(firstValidationResult, ValidationResultCode.ACCEPT);
     assertValidationResult(
@@ -90,23 +91,10 @@ class SignedBlsToExecutionChangeValidatorTest {
     mockSpecValidationFailed(expectedFailureDescription);
 
     final SafeFuture<InternalValidationResult> validationResult =
-        validator.validateFully(signedBlsToExecutionChange);
+        validator.validateForGossip(signedBlsToExecutionChange);
 
     assertValidationResult(
         validationResult, ValidationResultCode.REJECT, expectedFailureDescription);
-  }
-
-  @Test
-  public void validateForStateTransitionShouldReturnEmptyIfSpecValidationSucceeds() {
-    final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        dataStructureUtil.randomSignedBlsToExecutionChange();
-    mockSpecValidationSucceeded();
-    // no need to mock signature because it is not checked on validateForStateTransition()
-
-    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
-        validator.validateForStateTransition(mock(BeaconState.class), signedBlsToExecutionChange);
-
-    assertThat(maybeOperationInvalidReason).isEmpty();
   }
 
   @Test
@@ -134,20 +122,6 @@ class SignedBlsToExecutionChangeValidatorTest {
         validator.validateForBlockInclusion(mock(BeaconState.class), signedBlsToExecutionChange);
 
     assertThat(maybeOperationInvalidReason).isEmpty();
-  }
-
-  @Test
-  public void validateForStateTransitionShouldReturnSpecValidationInvalidReasonWhenInvalid() {
-    final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        dataStructureUtil.randomSignedBlsToExecutionChange();
-    final String expectedFailureDescription = "Spec validation failed";
-    mockSpecValidationFailed(expectedFailureDescription);
-
-    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
-        validator.validateForStateTransition(mock(BeaconState.class), signedBlsToExecutionChange);
-
-    assertThat(maybeOperationInvalidReason).isNotEmpty();
-    assertThat(maybeOperationInvalidReason.get().describe()).contains(expectedFailureDescription);
   }
 
   private void assertValidationResult(

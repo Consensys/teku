@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitVa
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -45,7 +46,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(SignedVoluntaryExit exit) {
+  public SafeFuture<InternalValidationResult> validateForGossip(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
@@ -83,30 +84,23 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   @Override
-  public Optional<OperationInvalidReason> validateForStateTransition(
-      BeaconState state, SignedVoluntaryExit exit) {
-    return getFailureReason(state, exit, false);
-  }
-
-  @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState stateAtBlockSlot, final SignedVoluntaryExit exit) {
-    return getFailureReason(stateAtBlockSlot, exit, true);
+    return getFailureReason(stateAtBlockSlot, exit);
   }
 
   private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(SignedVoluntaryExit exit) {
-    return getState().thenApply(state -> getFailureReason(state, exit, true));
+    return getState().thenApply(state -> getFailureReason(state, exit));
   }
 
   private Optional<OperationInvalidReason> getFailureReason(
-      final BeaconState state, final SignedVoluntaryExit exit, final boolean verifySignature) {
+      final BeaconState state, final SignedVoluntaryExit exit) {
     Optional<OperationInvalidReason> invalidReason = spec.validateVoluntaryExit(state, exit);
     if (invalidReason.isPresent()) {
       return invalidReason;
     }
 
-    if (verifySignature
-        && !spec.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
+    if (!spec.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
       return Optional.of(ExitInvalidReason.invalidSignature());
     }
     return Optional.empty();

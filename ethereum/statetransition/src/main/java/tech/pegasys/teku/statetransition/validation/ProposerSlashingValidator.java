@@ -44,7 +44,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(ProposerSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateForGossip(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
@@ -71,16 +71,10 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   @Override
-  public Optional<OperationInvalidReason> validateForStateTransition(
-      BeaconState state, ProposerSlashing slashing) {
-    return spec.validateProposerSlashing(state, slashing);
-  }
-
-  @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState stateAtBlockSlot, final ProposerSlashing slashing) {
     final Optional<OperationInvalidReason> invalidReason =
-        validateForStateTransition(stateAtBlockSlot, slashing);
+        spec.validateProposerSlashing(stateAtBlockSlot, slashing);
     if (invalidReason.isPresent()) {
       return invalidReason;
     }
@@ -94,7 +88,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
         .thenApply(
             state -> {
               final Optional<OperationInvalidReason> invalidReason =
-                  validateForStateTransition(state, slashing);
+                  spec.validateProposerSlashing(state, slashing);
               if (invalidReason.isPresent()) {
                 return invalidReason;
               }
