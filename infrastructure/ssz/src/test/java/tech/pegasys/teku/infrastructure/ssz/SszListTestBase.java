@@ -30,7 +30,8 @@ public interface SszListTestBase extends SszCollectionTestBase {
   @ParameterizedTest
   default void sszSerialize_emptyNonBitListShouldResultInEmptySsz(SszList<?> data) {
     Assumptions.assumeTrue(data.isEmpty());
-    Assumptions.assumeTrue(data.getSchema().getElementSchema() != SszPrimitiveSchemas.BIT_SCHEMA);
+    Assumptions.assumeTrue(
+        !data.getSchema().getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA));
     assertThat(data.sszSerialize()).isEqualTo(Bytes.EMPTY);
   }
 

@@ -134,6 +134,13 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Void> onReconstructedFinalizedState(
+      BeaconState finalizedState, Bytes32 blockRoot) {
+    return SafeFuture.fromRunnable(
+        () -> database.storeReconstructedFinalizedState(finalizedState, blockRoot));
+  }
+
+  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     database.storeInitialAnchor(initialAnchor);
   }

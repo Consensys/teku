@@ -24,12 +24,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
@@ -48,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -275,28 +274,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final BLSSignatureVerifier signatureVerifier) {
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
-      final int validatorIndex = addressChange.getValidatorIndex().intValue();
-      if (genericState.getValidators().size() <= validatorIndex) {
-        return BlockValidationResult.failed("Validator index invalid: " + validatorIndex);
+
+      final Optional<OperationInvalidReason> operationInvalidReason =
+          operationValidator.validateBlsToExecutionChange(
+              genericState.getFork(), genericState, addressChange);
+      if (operationInvalidReason.isPresent()) {
+        return BlockValidationResult.failed(operationInvalidReason.get().describe());
       }
-      final Bytes32 withdrawalCredentials =
-          genericState.getValidators().get(validatorIndex).getWithdrawalCredentials();
-      if (withdrawalCredentials.get(0) != WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0)) {
-        return BlockValidationResult.failed(
-            "Not using BLS withdrawal credentials for validator "
-                + validatorIndex
-                + " Credentials: "
-                + withdrawalCredentials);
-      }
-      if (!withdrawalCredentials
-          .slice(1)
-          .equals(Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1))) {
-        return BlockValidationResult.failed(
-            "Validator "
-                + validatorIndex
-                + " public key does not match withdrawal credentials: "
-                + addressChange.getFromBlsPubkey());
-      }
+
       boolean signatureValid =
           operationSignatureVerifier.verifyBlsToExecutionChangeSignature(
               genericState.getFork(), genericState, signedBlsToExecutionChange, signatureVerifier);

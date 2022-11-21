@@ -19,9 +19,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HandlerType;
+import io.javalin.security.RouteRole;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +39,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldNotRequireAuthorizationForSwagger(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
-    when(context.method()).thenReturn("GET");
+    when(context.method()).thenReturn(HandlerType.GET);
     when(context.matchedPath()).thenReturn("/swagger-docs");
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
     manager.manage(handler, context, roles);
@@ -48,7 +49,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldGrantAccessIfHeaderSet(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
-    when(context.method()).thenReturn("DELETE");
+    when(context.method()).thenReturn(HandlerType.DELETE);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -60,7 +61,7 @@ public class AuthorizationManagerTest {
   void shouldGrantAccessIfHeaderSetEncoded(@TempDir final Path tempDir) throws Exception {
     // url encode will rewrite the ' ' to a '+'
     Files.writeString(tempDir.resolve("passwd"), PASS + " " + PASS);
-    when(context.method()).thenReturn("POST");
+    when(context.method()).thenReturn(HandlerType.POST);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS + "+" + PASS);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -71,7 +72,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldDenyAccessIfHeaderNotSet(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
-    when(context.method()).thenReturn("POST");
+    when(context.method()).thenReturn(HandlerType.POST);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -83,7 +84,7 @@ public class AuthorizationManagerTest {
 
   @Test
   void shouldDenyAccessIfServerBearerMissing(@TempDir final Path tempDir) throws Exception {
-    when(context.method()).thenReturn("GET");
+    when(context.method()).thenReturn(HandlerType.GET);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -96,7 +97,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldDenyAccessIfServerBearerEmpty(@TempDir final Path tempDir) throws Exception {
     Files.createFile(tempDir.resolve("passwd"));
-    when(context.method()).thenReturn("GET");
+    when(context.method()).thenReturn(HandlerType.GET);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -109,7 +110,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldDenyAccessIfHeaderIsNotBearer(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
-    when(context.method()).thenReturn("GET");
+    when(context.method()).thenReturn(HandlerType.GET);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(PASS);
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
@@ -122,7 +123,7 @@ public class AuthorizationManagerTest {
   @Test
   void shouldDenyAccessIfBearerIsIncorrect(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
-    when(context.method()).thenReturn("GET");
+    when(context.method()).thenReturn(HandlerType.GET);
     when(context.matchedPath()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer no");
     AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));

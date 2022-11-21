@@ -63,8 +63,10 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -553,6 +555,23 @@ public class Spec {
         .validateVoluntaryExit(state.getFork(), state, signedExit);
   }
 
+  public Optional<OperationInvalidReason> validateBlsToExecutionChange(
+      final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
+    return atState(state)
+        .getOperationValidator()
+        .validateBlsToExecutionChange(state.getFork(), state, blsToExecutionChange);
+  }
+
+  public boolean verifyBlsToExecutionChangeSignature(
+      final BeaconState state,
+      final SignedBlsToExecutionChange signedBlsToExecutionChange,
+      final BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyBlsToExecutionChangeSignature(
+            state.getFork(), state, signedBlsToExecutionChange, signatureVerifier);
+  }
+
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {
     return atSlot(slot).getBlockProcessor().isOptimistic();
   }
@@ -750,7 +769,7 @@ public class Spec {
   }
 
   public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return atState(state).createAttestationWorthinessChecker(state);
+    return atState(state).getAttestationUtil().createAttestationWorthinessChecker(state);
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {

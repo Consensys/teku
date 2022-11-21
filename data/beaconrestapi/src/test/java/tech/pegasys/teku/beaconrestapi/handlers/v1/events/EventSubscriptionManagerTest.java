@@ -20,14 +20,12 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,9 +100,8 @@ public class EventSubscriptionManagerTest {
   private final EventChannels channels = mock(EventChannels.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse res = mock(HttpServletResponse.class);
-  private final ServletResponse srvResponse = mock(ServletResponse.class);
   private final TestServletOutputStream outputStream = new TestServletOutputStream();
-  private final Context ctx = new Context(req, res, Collections.emptyMap());
+  private final Context ctx = new StubContext(req, res);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private SseClient client1;
 
@@ -113,8 +110,8 @@ public class EventSubscriptionManagerTest {
   @BeforeEach
   void setup() throws IOException {
     when(req.getAsyncContext()).thenReturn(async);
-    when(async.getResponse()).thenReturn(srvResponse);
-    when(srvResponse.getOutputStream()).thenReturn(outputStream);
+    when(async.getResponse()).thenReturn(res);
+    when(res.getOutputStream()).thenReturn(outputStream);
     manager =
         new EventSubscriptionManager(
             nodeDataProvider,

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -63,9 +64,21 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
                       specConfig.getCapellaForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(
-                  schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
+              final ExecutionPayloadHeaderCapella upgradedExecutionPayloadHeader =
+                  schemaDefinitions
+                      .getExecutionPayloadHeaderSchema()
+                      .toVersionCapella()
+                      .orElseThrow()
+                      .createFromExecutionPayloadHeaderBellatrix(
+                          preStateBellatrix
+                              .getLatestExecutionPayloadHeader()
+                              .toVersionBellatrix()
+                              .orElseThrow());
+
+              state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
+
               state.setNextWithdrawalValidatorIndex(UInt64.ZERO);
+              state.setNextWithdrawalIndex(UInt64.ZERO);
             });
   }
 }

@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -21,6 +26,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
@@ -43,6 +50,23 @@ public class BlobsSidecarSchema
   @SuppressWarnings("unchecked")
   public SszListSchema<Blob, ?> getBlobsSchema() {
     return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
+  }
+
+  public BlobSchema getBlobSchema() {
+    return (BlobSchema) getBlobsSchema().getElementSchema();
+  }
+
+  public BlobsSidecar create(
+      final Bytes32 beaconBlockRoot,
+      final UInt64 beaconBlockSlot,
+      final List<Bytes> blobs,
+      final Bytes48 kzgAggregatedProof) {
+    return new BlobsSidecar(
+        this,
+        beaconBlockRoot,
+        beaconBlockSlot,
+        blobs.stream().map(bytes -> new Blob(getBlobSchema(), bytes)).collect(Collectors.toList()),
+        KZGProof.fromBytesCompressed(kzgAggregatedProof));
   }
 
   public static BlobsSidecarSchema create(

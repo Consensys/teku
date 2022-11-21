@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecSupplier implements ArbitrarySupplier<Spec> {
-
   private final SpecMilestone minimumSpecMilestone;
 
   @SuppressWarnings("unused")

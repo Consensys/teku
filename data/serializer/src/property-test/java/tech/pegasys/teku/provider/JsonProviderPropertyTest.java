@@ -43,6 +43,7 @@ import tech.pegasys.teku.api.schema.DepositData;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.IndexedAttestation;
+import tech.pegasys.teku.api.schema.KZGCommitment;
 import tech.pegasys.teku.api.schema.PendingAttestation;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -53,6 +54,11 @@ import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
+import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
+import tech.pegasys.teku.api.schema.eip4844.BeaconStateEip4844;
+import tech.pegasys.teku.api.schema.eip4844.BlobsSidecar;
+import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockEip4844;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -63,6 +69,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -74,18 +81,29 @@ public class JsonProviderPropertyTest {
   private static final Map<SpecMilestone, Class<? extends SignedBeaconBlock>>
       SIGNED_BEACON_BLOCK_CLASS_MAP =
           Map.of(
-              SpecMilestone.PHASE0, SignedBeaconBlockPhase0.class,
-              SpecMilestone.ALTAIR, SignedBeaconBlockAltair.class,
-              SpecMilestone.BELLATRIX, SignedBeaconBlockBellatrix.class,
-              // TODO CAPELLA
-              SpecMilestone.CAPELLA, SignedBeaconBlockBellatrix.class);
+              SpecMilestone.PHASE0,
+              SignedBeaconBlockPhase0.class,
+              SpecMilestone.ALTAIR,
+              SignedBeaconBlockAltair.class,
+              SpecMilestone.BELLATRIX,
+              SignedBeaconBlockBellatrix.class,
+              SpecMilestone.CAPELLA,
+              SignedBeaconBlockCapella.class,
+              SpecMilestone.EIP4844,
+              SignedBeaconBlockEip4844.class);
 
   private static final Map<SpecMilestone, Class<? extends BeaconState>> BEACON_STATE_CLASS_MAP =
       Map.of(
-          SpecMilestone.PHASE0, BeaconStatePhase0.class,
-          SpecMilestone.ALTAIR, BeaconStateAltair.class,
-          SpecMilestone.BELLATRIX, BeaconStateBellatrix.class,
-          SpecMilestone.CAPELLA, BeaconStateCapella.class);
+          SpecMilestone.PHASE0,
+          BeaconStatePhase0.class,
+          SpecMilestone.ALTAIR,
+          BeaconStateAltair.class,
+          SpecMilestone.BELLATRIX,
+          BeaconStateBellatrix.class,
+          SpecMilestone.CAPELLA,
+          BeaconStateCapella.class,
+          SpecMilestone.EIP4844,
+          BeaconStateEip4844.class);
 
   @Property
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {
@@ -390,5 +408,52 @@ public class JsonProviderPropertyTest {
     final SszData deserialized = JsonUtil.parse(serialized, stateTypeDefinition);
     assertThat(deserialized.hashTreeRoot())
         .isEqualTo(original.asInternalBeaconState(spec).hashTreeRoot());
+  }
+
+  @Property
+  void roundTripKZGCommitment(@ForAll final int seed) throws JsonProcessingException {
+    final SpecMilestone specMilestone = SpecMilestone.EIP4844;
+    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final KZGCommitment original = new KZGCommitment(dataStructureUtil.randomKZGCommitment());
+    final String serialized = jsonProvider.objectToJSON(original);
+    final KZGCommitment deserialized = jsonProvider.jsonToObject(serialized, KZGCommitment.class);
+    assertThat(deserialized).isEqualTo(original);
+  }
+
+  @Property
+  void roundTripBlobsSidecar(@ForAll final int seed) throws JsonProcessingException {
+    final SpecMilestone specMilestone = SpecMilestone.EIP4844;
+    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final BlobsSidecar original = new BlobsSidecar(dataStructureUtil.randomBlobsSidecar());
+    final String serialized = jsonProvider.objectToJSON(original);
+    final BlobsSidecar deserialized = jsonProvider.jsonToObject(serialized, BlobsSidecar.class);
+    assertThat(deserialized).isEqualToComparingFieldByField(original);
+  }
+
+  @Property
+  void roundTripSignedBeaconBlockAndBlobsSidecar(@ForAll final int seed)
+      throws JsonProcessingException {
+    final SpecMilestone specMilestone = SpecMilestone.EIP4844;
+    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
+    final SignedBeaconBlockAndBlobsSidecar original =
+        new SignedBeaconBlockAndBlobsSidecar(
+            dataStructureUtil.randomSignedBeaconBlockAndBlobsSidecar());
+    final String serialized = jsonProvider.objectToJSON(original);
+    final SignedBeaconBlockAndBlobsSidecar deserialized =
+        jsonProvider.jsonToObject(serialized, SignedBeaconBlockAndBlobsSidecar.class);
+    final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionEip4844()
+            .orElseThrow()
+            .getSignedBeaconBlockAndBlobsSidecarSchema();
+    assertThat(
+            deserialized.asInternalSignedBeaconBlockAndBlobsSidecar(
+                signedBeaconBlockAndBlobsSidecarSchema, spec))
+        .isEqualTo(
+            original.asInternalSignedBeaconBlockAndBlobsSidecar(
+                signedBeaconBlockAndBlobsSidecarSchema, spec));
   }
 }

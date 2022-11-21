@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class Blob extends SszByteVectorImpl {
 
-  Blob(BlobSchema schema, TreeNode backingNode) {
+  Blob(final BlobSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public Blob(final BlobSchema blobSchema, final Bytes bytes) {
+    super(blobSchema, bytes);
   }
 
   @Override

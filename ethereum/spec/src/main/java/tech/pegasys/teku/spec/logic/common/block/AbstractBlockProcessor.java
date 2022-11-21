@@ -96,7 +96,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
-  private final OperationValidator operationValidator;
+  protected final OperationValidator operationValidator;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,

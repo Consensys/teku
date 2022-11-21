@@ -55,7 +55,7 @@ public class SyncCommitteeDuty {
     }
     final SyncCommitteeDuty that = (SyncCommitteeDuty) o;
     return validatorIndex == that.validatorIndex
-        && validatorSyncCommitteeIndices == that.validatorSyncCommitteeIndices
+        && Objects.equals(validatorSyncCommitteeIndices, that.validatorSyncCommitteeIndices)
         && Objects.equals(publicKey, that.publicKey);
   }
 

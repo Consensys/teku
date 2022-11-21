@@ -83,7 +83,7 @@ public class EventSubscriber {
       // Had excessive queuing for too long, disconnect.
       if (stopped.compareAndSet(false, true)) {
         LOG.debug("Closing event connection due to exceeding the pending message limit");
-        sseClient.ctx.req.getAsyncContext().complete();
+        sseClient.ctx().req().getAsyncContext().complete();
         closeCallback.run();
       }
     } else {
