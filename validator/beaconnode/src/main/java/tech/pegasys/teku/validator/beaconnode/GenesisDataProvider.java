@@ -53,6 +53,9 @@ public class GenesisDataProvider {
 
   private SafeFuture<GenesisData> fetchGenesisData() {
     return requestGenesisData()
+        .thenApply(
+            response ->
+                new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()))
         .exceptionallyCompose(
             error -> {
               LOG.error("Failed to retrieve genesis data. Retrying after delay", error);
