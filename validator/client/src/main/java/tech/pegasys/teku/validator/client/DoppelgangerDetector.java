@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -197,10 +196,9 @@ public class DoppelgangerDetector {
           .thenApply(
               validatorIndicesByPubKey -> {
                 STATUS_LOG.validatorsDoppelgangerDetected(
-                    mapLivenessAtEpochToIndicesPubKeysStrings(
-                        doppelgangers, validatorIndicesByPubKey));
+                    mapLivenessAtEpochToIndicesByPubKey(doppelgangers, validatorIndicesByPubKey));
                 stopDoppelgangerDetector(
-                        mapLivenessAtEpochToIndicesPubKeys(
+                        mapLivenessAtEpochToIndicesByPubKey(
                             doppelgangers, Optional.of(validatorIndicesByPubKey)))
                     .ifExceptionGetsHereRaiseABug();
                 return null;
@@ -214,7 +212,7 @@ public class DoppelgangerDetector {
                     doppelgangers.stream()
                         .collect(Collectors.toMap(e -> e.getIndex().intValue(), e -> "")));
                 stopDoppelgangerDetector(
-                        mapLivenessAtEpochToIndicesPubKeys(doppelgangers, Optional.empty()))
+                        mapLivenessAtEpochToIndicesByPubKey(doppelgangers, Optional.empty()))
                     .ifExceptionGetsHereRaiseABug();
                 return null;
               })
@@ -224,28 +222,29 @@ public class DoppelgangerDetector {
     }
   }
 
-  private Map<Integer, String> mapLivenessAtEpochToIndicesPubKeysStrings(
+  private Map<Integer, String> mapLivenessAtEpochToIndicesByPubKey(
       final List<ValidatorLivenessAtEpoch> doppelgangers,
       final Map<BLSPublicKey, Integer> validatorIndicesByPubKey) {
-    return filterDoppelgangerIndicesPubKeys(doppelgangers, validatorIndicesByPubKey)
-        .collect(Collectors.toMap(Map.Entry::getValue, e -> e.getKey().toString()));
+    return filterDoppelgangerIndicesByPubKey(doppelgangers, validatorIndicesByPubKey)
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
   }
 
-  private Map<Integer, BLSPublicKey> mapLivenessAtEpochToIndicesPubKeys(
+  private Map<Integer, BLSPublicKey> mapLivenessAtEpochToIndicesByPubKey(
       final List<ValidatorLivenessAtEpoch> doppelgangers,
       final Optional<Map<BLSPublicKey, Integer>> maybeValidatorIndicesByPubKey) {
     return maybeValidatorIndicesByPubKey
         .map(
             validatorIndicesByPubKey ->
-                filterDoppelgangerIndicesPubKeys(doppelgangers, validatorIndicesByPubKey)
-                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)))
+                filterDoppelgangerIndicesByPubKey(doppelgangers, validatorIndicesByPubKey))
         .orElse(
             doppelgangers.stream()
                 .collect(
                     Collectors.toMap(e -> e.getIndex().intValue(), e -> BLSPublicKey.empty())));
   }
 
-  private Stream<Map.Entry<BLSPublicKey, Integer>> filterDoppelgangerIndicesPubKeys(
+  private Map<Integer, BLSPublicKey> filterDoppelgangerIndicesByPubKey(
       final List<ValidatorLivenessAtEpoch> liveValidators,
       final Map<BLSPublicKey, Integer> validatorIndicesByPubKey) {
     return validatorIndicesByPubKey.entrySet().stream()
@@ -256,7 +255,8 @@ public class DoppelgangerDetector {
                         validatorLivenessAtEpoch ->
                             validatorLivenessAtEpoch
                                 .getIndex()
-                                .equals(UInt64.valueOf(indexPubKey.getValue()))));
+                                .equals(UInt64.valueOf(indexPubKey.getValue()))))
+        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }
 
   private List<ValidatorLivenessAtEpoch> filterLiveValidators(
