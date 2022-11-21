@@ -236,6 +236,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       if (aggregate.getSyncCommitteeBits().getBit(i)) {
         participantPubkeys.add(publicKey);
         beaconStateMutators.increaseBalance(state, validatorIndex, participantReward);
+        beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
       } else {
         beaconStateMutators.decreaseBalance(state, validatorIndex, participantReward);
       }
@@ -258,10 +259,6 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
-
-    // Apply proposer rewards
-    UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
-    beaconStateMutators.increaseBalance(state, proposerIndex, totalProposerReward);
   }
 
   @Override
