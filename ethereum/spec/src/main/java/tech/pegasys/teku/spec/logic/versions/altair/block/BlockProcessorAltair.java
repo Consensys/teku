@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
@@ -68,13 +67,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final SpecConfigAltair specConfigAltair;
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
-  private final SyncCommitteeUtil syncCommitteeUtil;
 
   public BlockProcessorAltair(
       final SpecConfigAltair specConfig,
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
-      final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -97,7 +94,6 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
-    this.syncCommitteeUtil = syncCommitteeUtil;
   }
 
   @Override
@@ -202,15 +198,46 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
-    final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
+
+    // Compute participant and proposer rewards
+    final UInt64 totalActiveIncrements =
+        beaconStateAccessors
+            .getTotalActiveBalance(state)
+            .dividedBy(specConfig.getEffectiveBalanceIncrement());
+    final UInt64 totalBaseRewards =
+        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state).times(totalActiveIncrements);
+    final UInt64 maxParticipantRewards =
+        totalBaseRewards
+            .times(SYNC_REWARD_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR)
+            .dividedBy(specConfig.getSlotsPerEpoch());
+    final UInt64 participantReward =
+        maxParticipantRewards.dividedBy(specConfigAltair.getSyncCommitteeSize());
+    final UInt64 proposerReward =
+        participantReward
+            .times(PROPOSER_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
+
+    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
 
     for (int i = 0; i < specConfigAltair.getSyncCommitteeSize(); i++) {
+      final BLSPublicKey uncachedPubkey =
+          state.getCurrentSyncCommittee().getPubkeys().get(i).getBLSPublicKey();
+      final int validatorIndex =
+          validatorsUtil
+              .getValidatorIndex(state, uncachedPubkey)
+              .orElseThrow(
+                  () -> new IllegalArgumentException("Unknown validator found in sync committee"));
       final BLSPublicKey publicKey =
-          syncCommitteeUtil.getCurrentSyncCommitteeParticipantPubKey(state, i);
+          beaconStateAccessors
+              .getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
+              .orElseThrow(
+                  () -> new IllegalStateException("Validator in sync committee has no public key"));
       if (aggregate.getSyncCommitteeBits().getBit(i)) {
         participantPubkeys.add(publicKey);
+        beaconStateMutators.increaseBalance(state, validatorIndex, participantReward);
       } else {
-        idlePubkeys.add(publicKey);
+        beaconStateMutators.decreaseBalance(state, validatorIndex, participantReward);
       }
     }
 
@@ -232,41 +259,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
 
-    // Compute participant and proposer rewards
-    final UInt64 totalActiveIncrements =
-        beaconStateAccessors
-            .getTotalActiveBalance(state)
-            .dividedBy(specConfig.getEffectiveBalanceIncrement());
-    final UInt64 totalBaseRewards =
-        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state).times(totalActiveIncrements);
-    final UInt64 maxParticipantRewards =
-        totalBaseRewards
-            .times(SYNC_REWARD_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR)
-            .dividedBy(specConfig.getSlotsPerEpoch());
-    final UInt64 participantReward =
-        maxParticipantRewards.dividedBy(specConfigAltair.getSyncCommitteeSize());
-    final UInt64 proposerReward =
-        participantReward
-            .times(PROPOSER_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
-
-    // Apply participant and proposer rewards
-    participantPubkeys.stream()
-        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
-        .forEach(
-            participantIndex ->
-                beaconStateMutators.increaseBalance(state, participantIndex, participantReward));
+    // Apply proposer rewards
     UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
-    beaconStateMutators.increaseBalance(
-        state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
-
-    // impose penalties for any idle validators
-    idlePubkeys.stream()
-        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
-        .forEach(
-            participantIndex ->
-                beaconStateMutators.decreaseBalance(state, participantIndex, participantReward));
+    beaconStateMutators.increaseBalance(state, proposerIndex, totalProposerReward);
   }
 
   @Override

@@ -154,12 +154,6 @@ public class SyncCommitteeUtil {
         .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
   }
 
-  public BLSPublicKey getCurrentSyncCommitteeParticipantPubKey(
-      final BeaconStateAltair state, final int committeeIndex) {
-    final SyncCommittee syncCommittee = state.getCurrentSyncCommittee();
-    return getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
-  }
-
   public BLSPublicKey getSyncCommitteeParticipantPubKey(
       final BeaconStateAltair state, final SyncCommittee syncCommittee, final int committeeIndex) {
     final BLSPublicKey uncachedPublicKey =

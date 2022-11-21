@@ -134,7 +134,6 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
             config,
             predicates,
             miscHelpers,
-            syncCommitteeUtil,
             beaconStateAccessors,
             beaconStateMutators,
             operationSignatureVerifier,
