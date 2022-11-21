@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigEip4844.BLOB_TX_TYPE;
 import static tech.pegasys.teku.spec.config.SpecConfigEip4844.VERSIONED_HASH_VERSION_KZG;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -64,12 +65,14 @@ public class MiscHelpersEip4844 extends MiscHelpersCapella {
     return true;
   }
 
-  private VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+  @VisibleForTesting
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
     return VersionedHash.create(
         VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
   }
 
-  private List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
+  @VisibleForTesting
+  public List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
     checkArgument(isBlobTransaction(transaction), "Transaction should be of BLOB type");
     final SignedBlobTransaction signedBlobTransaction =
         SignedBlobTransaction.SSZ_SCHEMA.sszDeserialize(transaction.getBytes().slice(1));
