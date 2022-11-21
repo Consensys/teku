@@ -53,6 +53,11 @@ public class RestApi extends Service {
     try {
       passwordPath.ifPresent(this::checkAccessFile);
       app.start();
+      final String serverHost = app.jettyServer().getServerHost();
+      LOG.info(
+          "Listening on http://{}:{}/",
+          serverHost != null ? serverHost : "localhost",
+          app.jettyServer().getServerPort());
     } catch (final RuntimeException e) {
       if (Throwables.getRootCause(e) instanceof BindException) {
         throw new InvalidConfigurationException(
@@ -85,7 +90,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    app._conf.accessManager(new AuthorizationManager(path));
+    app.updateConfig(config -> config.accessManager(new AuthorizationManager(path)));
   }
 
   @Override

@@ -14,9 +14,9 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static java.util.Collections.emptyMap;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.io.IOException;
