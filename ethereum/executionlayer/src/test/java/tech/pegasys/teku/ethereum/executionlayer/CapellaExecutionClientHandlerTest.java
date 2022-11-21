@@ -113,7 +113,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
 
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV1() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV1WhenNoPayloadAttributes() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
