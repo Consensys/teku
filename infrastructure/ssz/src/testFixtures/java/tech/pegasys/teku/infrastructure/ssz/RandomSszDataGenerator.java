@@ -75,19 +75,19 @@ public class RandomSszDataGenerator {
   @SuppressWarnings("unchecked")
   public <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
-      if (schema == SszPrimitiveSchemas.NONE_SCHEMA) {
+      if (schema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
         return (Stream<T>) Stream.generate(() -> SszNone.INSTANCE);
-      } else if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
         return (Stream<T>) Stream.generate(bitSupplier);
-      } else if (schema == SszPrimitiveSchemas.BYTE_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
         return (Stream<T>) Stream.generate(byteSupplier);
-      } else if (schema == SszPrimitiveSchemas.UINT64_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
         return (Stream<T>) Stream.generate(uintSupplier);
-      } else if (schema == SszPrimitiveSchemas.UINT256_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.UINT256_SCHEMA)) {
         return (Stream<T>) Stream.generate(uint256Supplier);
-      } else if (schema == SszPrimitiveSchemas.BYTES4_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.BYTES4_SCHEMA)) {
         return (Stream<T>) Stream.generate(bytes4Supplier);
-      } else if (schema == SszPrimitiveSchemas.BYTES32_SCHEMA) {
+      } else if (schema.equals(SszPrimitiveSchemas.BYTES32_SCHEMA)) {
         return (Stream<T>) Stream.generate(bytes32Supplier);
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);

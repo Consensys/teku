@@ -38,7 +38,7 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
       final SszPrimitiveSchema<Byte, SszByte> elementSchema, final long maxLength) {
     super(elementSchema, maxLength);
     this.jsonTypeDefinition =
-        elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA
+        elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)
             ? SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ encoded byte list")
             : new DeserializableArrayTypeDefinition<>(
                 getElementSchema().getJsonTypeDefinition(), this::createFromElements);

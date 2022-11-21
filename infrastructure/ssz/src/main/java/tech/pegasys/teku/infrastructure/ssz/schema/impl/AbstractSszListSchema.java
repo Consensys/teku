@@ -123,7 +123,7 @@ public abstract class AbstractSszListSchema<
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
-    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
+    if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl serialization is only supported by SszBitlistSchema");
     } else {
@@ -134,7 +134,7 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
+    if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl deserialization is only supported by SszBitlistSchema");
     } else {
@@ -313,7 +313,7 @@ public abstract class AbstractSszListSchema<
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(maxLength).getMaxBits());
     // adding 1 boundary bit for BitlistImpl
     return maxLenBounds
-        .addBits(elementSchema == SszPrimitiveSchemas.BIT_SCHEMA ? 1 : 0)
+        .addBits(elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA) ? 1 : 0)
         .ceilToBytes();
   }
 

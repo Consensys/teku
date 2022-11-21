@@ -26,7 +26,13 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true)
+@TestSpecContext(
+    milestone = {
+      SpecMilestone.PHASE0,
+      SpecMilestone.ALTAIR,
+      SpecMilestone.BELLATRIX,
+      SpecMilestone.CAPELLA
+    })
 class SignedBeaconBlockTest {
 
   private Spec spec;

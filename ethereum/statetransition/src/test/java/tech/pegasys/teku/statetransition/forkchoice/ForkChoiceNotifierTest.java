@@ -947,7 +947,12 @@ class ForkChoiceNotifierTest {
         overrideFeeRecipient.orElse(dataStructureUtil.randomEth1Address());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
-    return new PayloadBuildingAttributes(timestamp, random, feeRecipient, validatorRegistration);
+    return new PayloadBuildingAttributes(
+        timestamp,
+        random,
+        feeRecipient,
+        validatorRegistration,
+        dataStructureUtil.randomWithdrawalList());
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {

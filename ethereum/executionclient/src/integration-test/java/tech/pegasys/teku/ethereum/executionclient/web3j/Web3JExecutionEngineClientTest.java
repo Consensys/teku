@@ -134,7 +134,7 @@ public class Web3JExecutionEngineClientTest {
             Bytes20.fromHexString("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d"));
 
     final SafeFuture<Response<ForkChoiceUpdatedResult>> futureResponseForkChoiceUpdatedResult =
-        eeClient.forkChoiceUpdated(
+        eeClient.forkChoiceUpdatedV1(
             forkChoiceStateV1Request, Optional.of(payloadAttributesV1Request));
 
     final RecordedRequest request = mockWebServer.takeRequest();

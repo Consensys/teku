@@ -14,40 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
 public class SignedBeaconBlockAndBlobsSidecar
     extends Container2<SignedBeaconBlockAndBlobsSidecar, SignedBeaconBlock, BlobsSidecar> {
 
-  public static class SignedBeaconBlockAndBlobsSidecarSchema
-      extends ContainerSchema2<SignedBeaconBlockAndBlobsSidecar, SignedBeaconBlock, BlobsSidecar> {
-
-    SignedBeaconBlockAndBlobsSidecarSchema(
-        final SignedBeaconBlockSchema signedBeaconBlockSchema,
-        final BlobsSidecar.BlobsSidecarSchema blobsSidecarSchema) {
-      super(
-          "SignedBeaconBlockAndBlobsSidecar",
-          namedSchema("beacon_block", signedBeaconBlockSchema),
-          namedSchema("blobs_sidecar", blobsSidecarSchema));
-    }
-
-    @Override
-    public SignedBeaconBlockAndBlobsSidecar createFromBackingNode(final TreeNode node) {
-      return new SignedBeaconBlockAndBlobsSidecar(this, node);
-    }
-  }
-
-  public static SignedBeaconBlockAndBlobsSidecarSchema create(
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final BlobsSidecar.BlobsSidecarSchema blobsSidecarSchema) {
-    return new SignedBeaconBlockAndBlobsSidecarSchema(signedBeaconBlockSchema, blobsSidecarSchema);
-  }
-
-  private SignedBeaconBlockAndBlobsSidecar(
+  SignedBeaconBlockAndBlobsSidecar(
       final SignedBeaconBlockAndBlobsSidecarSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }

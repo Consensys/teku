@@ -62,6 +62,9 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     private Optional<UInt64> lastStateStoredSlot = Optional.empty();
     private boolean loadedLastStoreState = false;
 
+    private Optional<UInt64> lastReconstructedStateStoredSlot = Optional.empty();
+    private boolean loadedLastReconstructedStoreState = false;
+
     private FinalizedStateSnapshotUpdater(final UInt64 stateStorageFrequency) {
       this.stateStorageFrequency = stateStorageFrequency;
     }
@@ -87,6 +90,25 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     }
 
     @Override
+    public void addReconstructedFinalizedState(
+        KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state) {
+      if (!loadedLastReconstructedStoreState) {
+        lastReconstructedStateStoredSlot =
+            db.getFloorEntry(schema.getColumnFinalizedStatesBySlot(), state.getSlot())
+                .map(ColumnEntry::getKey);
+        loadedLastReconstructedStoreState = true;
+      }
+      if (lastReconstructedStateStoredSlot.isPresent()) {
+        UInt64 nextStorageSlot = lastReconstructedStateStoredSlot.get().plus(stateStorageFrequency);
+        if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
+          addReconstructedFinalizedState(transaction, schema, state);
+        }
+      } else {
+        addReconstructedFinalizedState(transaction, schema, state);
+      }
+    }
+
+    @Override
     public void commit() {}
 
     private void addFinalizedState(
@@ -95,6 +117,14 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
         final BeaconState state) {
       transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
       lastStateStoredSlot = Optional.of(state.getSlot());
+    }
+
+    private void addReconstructedFinalizedState(
+        final KvStoreTransaction transaction,
+        final SchemaFinalizedSnapshotState schema,
+        final BeaconState state) {
+      transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
+      lastReconstructedStateStoredSlot = Optional.of(state.getSlot());
     }
   }
 }

@@ -127,4 +127,38 @@ class V4FinalizedStateSnapshotStorageLogicTest {
     updater.addFinalizedState(db, transaction, schema, state2);
     verifyNoMoreInteractions(transaction);
   }
+
+  @Test
+  void updater_shouldStoreReconstructedStateAfterFinalizedState() {
+    final FinalizedStateUpdater<SchemaFinalizedSnapshotStateAdapter> updater = logic.updater();
+
+    // Store finalized state
+    final KvStoreTransaction transaction = mock(KvStoreTransaction.class);
+    final BeaconState finalizedState = dataStructureUtil.randomBeaconState(UInt64.valueOf(20));
+
+    updater.addFinalizedState(db, transaction, schema, finalizedState);
+    verify(transaction)
+        .put(schema.getColumnFinalizedStatesBySlot(), finalizedState.getSlot(), finalizedState);
+
+    // Store reconstructed finalized state
+    final KvStoreTransaction reconstructTransaction = mock(KvStoreTransaction.class);
+    final BeaconState reconstructedFinalizedState =
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(5));
+
+    updater.addReconstructedFinalizedState(
+        db, reconstructTransaction, schema, reconstructedFinalizedState);
+    verify(reconstructTransaction)
+        .put(
+            schema.getColumnFinalizedStatesBySlot(),
+            reconstructedFinalizedState.getSlot(),
+            reconstructedFinalizedState);
+
+    // Store finalized state before latest
+    final KvStoreTransaction invalidTransaction = mock(KvStoreTransaction.class);
+    final BeaconState invalidFinalizedState =
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(11));
+
+    updater.addFinalizedState(db, invalidTransaction, schema, invalidFinalizedState);
+    verifyNoInteractions(invalidTransaction);
+  }
 }

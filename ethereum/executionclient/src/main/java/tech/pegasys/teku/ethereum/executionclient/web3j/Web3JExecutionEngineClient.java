@@ -28,9 +28,11 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -81,7 +83,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId) {
+  public SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(Bytes8 payloadId) {
     Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayloadV1",
@@ -92,7 +94,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<PayloadStatusV1>> newPayload(ExecutionPayloadV1 executionPayload) {
+  public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
+    Request<?, ExecutionPayloadV2Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getPayloadV2",
+            Collections.singletonList(payloadId.toHexString()),
+            web3JClient.getWeb3jService(),
+            ExecutionPayloadV2Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(ExecutionPayloadV1 executionPayload) {
     Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV1",
@@ -103,11 +116,36 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
+      final ExecutionPayloadV2 executionPayload) {
+    Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_newPayloadV2",
+            Collections.singletonList(executionPayload),
+            web3JClient.getWeb3jService(),
+            PayloadStatusV1Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes) {
     Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV1",
+            list(forkChoiceState, payloadAttributes.orElse(null)),
+            web3JClient.getWeb3jService(),
+            ForkChoiceUpdatedResultWeb3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV2> payloadAttributes) {
+    Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_forkchoiceUpdatedV2",
             list(forkChoiceState, payloadAttributes.orElse(null)),
             web3JClient.getWeb3jService(),
             ForkChoiceUpdatedResultWeb3jResponse.class);
@@ -128,6 +166,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
+
+  static class ExecutionPayloadV2Web3jResponse
+      extends org.web3j.protocol.core.Response<ExecutionPayloadV2> {}
 
   static class PayloadStatusV1Web3jResponse
       extends org.web3j.protocol.core.Response<PayloadStatusV1> {}

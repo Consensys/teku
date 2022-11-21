@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -46,20 +47,24 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class AttestationUtil {
+public abstract class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SchemaDefinitions schemaDefinitions;
-  private final BeaconStateAccessors beaconStateAccessors;
-  private final MiscHelpers miscHelpers;
+  protected final SchemaDefinitions schemaDefinitions;
+  protected final BeaconStateAccessors beaconStateAccessors;
+  protected final MiscHelpers miscHelpers;
+  protected final SpecConfig specConfig;
 
   public AttestationUtil(
+      final SpecConfig specConfig,
       final SchemaDefinitions schemaDefinitions,
       final BeaconStateAccessors beaconStateAccessors,
       final MiscHelpers miscHelpers) {
+    this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
@@ -289,4 +294,7 @@ public class AttestationUtil {
     // Set attestation data
     return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
   }
+
+  public abstract AttestationWorthinessChecker createAttestationWorthinessChecker(
+      BeaconState state);
 }

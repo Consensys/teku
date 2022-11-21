@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  private static final int NEXT_WITHDRAWAL_INDEX = 25;
-  private static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
+  public static final int NEXT_WITHDRAWAL_INDEX = 25;
+  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
 
   @VisibleForTesting
   BeaconStateSchemaCapella(final SpecConfig specConfig) {
