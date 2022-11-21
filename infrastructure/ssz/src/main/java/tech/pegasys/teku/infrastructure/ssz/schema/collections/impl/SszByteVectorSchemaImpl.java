@@ -40,7 +40,7 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
 
   @Override
   protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
-    return getElementSchema() == SszPrimitiveSchemas.BYTE_SCHEMA
+    return getElementSchema().equals(SszPrimitiveSchemas.BYTE_SCHEMA)
         ? sszSerializedType(this, "SSZ hexadecimal")
         : super.createTypeDefinition();
   }

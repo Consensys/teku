@@ -79,7 +79,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     checkArgument(
         childrenSchemas.stream()
             .skip(1)
-            .allMatch(schema -> schema != SszPrimitiveSchemas.NONE_SCHEMA),
+            .allMatch(schema -> !schema.equals(SszPrimitiveSchemas.NONE_SCHEMA)),
         "None is allowed for zero selector only");
     this.childrenSchemas = childrenSchemas;
     defaultTree =
