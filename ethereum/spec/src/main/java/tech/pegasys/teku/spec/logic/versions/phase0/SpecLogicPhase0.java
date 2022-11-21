@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidators;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -47,7 +47,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final OperationValidator operationValidator,
+      final OperationValidators operationValidator,
       final ValidatorStatusFactoryPhase0 validatorStatusFactory,
       final EpochProcessorPhase0 epochProcessor,
       final BlockProcessorPhase0 blockProcessor,
@@ -94,8 +94,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilPhase0(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
-    final OperationValidator operationValidator =
-        OperationValidator.create(
+    final OperationValidators operationValidator =
+        OperationValidators.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(

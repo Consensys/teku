@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidators;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
@@ -52,7 +52,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final OperationValidator operationValidator,
+      final OperationValidators operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorBellatrix epochProcessor,
       final BlockProcessorBellatrix blockProcessor,
@@ -105,8 +105,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
-    final OperationValidator operationValidator =
-        OperationValidator.create(
+    final OperationValidators operationValidator =
+        OperationValidators.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(

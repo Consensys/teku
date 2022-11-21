@@ -89,6 +89,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecution
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
+
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
@@ -239,6 +240,7 @@ public class Spec {
         .map(SpecConfigAltair::getSyncCommitteeSize)
         .orElse(0);
   }
+
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash,
@@ -534,7 +536,7 @@ public class Spec {
     final UInt64 epoch = computeEpochAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
     return atEpoch(epoch)
         .getOperationValidator()
-        .validateAttesterSlashing(state.getFork(), state, attesterSlashing);
+        .validate(state.getFork(), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
@@ -542,15 +544,13 @@ public class Spec {
     final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
     return atEpoch(epoch)
         .getOperationValidator()
-        .validateProposerSlashing(state.getFork(), state, proposerSlashing);
+        .validate(state.getFork(), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
-    return atEpoch(epoch)
-        .getOperationValidator()
-        .validateVoluntaryExit(state.getFork(), state, signedExit);
+    return atEpoch(epoch).getOperationValidator().validate(state.getFork(), state, signedExit);
   }
 
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {

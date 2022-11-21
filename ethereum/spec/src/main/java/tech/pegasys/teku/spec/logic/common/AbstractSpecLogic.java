@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -44,7 +44,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
-  protected final OperationValidator operationValidator;
+  protected final OperationValidators operationValidator;
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
   protected final BlockProcessor blockProcessor;
@@ -64,7 +64,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final OperationValidator operationValidator,
+      final OperationValidators operationValidator,
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
@@ -111,7 +111,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   }
 
   @Override
-  public OperationValidator getOperationValidator() {
+  public OperationValidators getOperationValidator() {
     return operationValidator;
   }
 

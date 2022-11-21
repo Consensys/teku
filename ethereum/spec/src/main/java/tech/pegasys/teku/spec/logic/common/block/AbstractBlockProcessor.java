@@ -66,8 +66,9 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidators;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -78,6 +79,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
+
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
@@ -96,7 +98,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
-  private final OperationValidator operationValidator;
+  private final OperationValidators operationValidator;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
@@ -108,7 +110,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final OperationValidator operationValidator) {
+      final OperationValidators operationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
@@ -280,7 +282,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return operationValidator.validateAttestationData(state.getFork(), state, data);
+    return operationValidator.validate(state.getFork(), state, data);
   }
 
   protected void assertAttestationValid(
@@ -429,7 +431,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                           .longValue()));
           checkArgument(
               body.getDeposits().size() == expectedDepositCount,
-              "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
+              "process_operations: Verify that outstanding deposits are processed up to the maximum number of "
+                  + "deposits");
 
           processProposerSlashingsNoValidation(state, body.getProposerSlashings());
           processAttesterSlashings(state, body.getAttesterSlashings());
@@ -462,8 +465,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           // For each proposer_slashing in block.body.proposer_slashings:
           for (ProposerSlashing proposerSlashing : proposerSlashings) {
             Optional<OperationInvalidReason> invalidReason =
-                operationValidator.validateProposerSlashing(
-                    state.getFork(), state, proposerSlashing);
+                operationValidator.validate(state.getFork(), state, proposerSlashing);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_proposer_slashings: %s",
@@ -505,8 +507,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           for (AttesterSlashing attesterSlashing : attesterSlashings) {
             List<UInt64> indicesToSlash = new ArrayList<>();
             final Optional<OperationInvalidReason> invalidReason =
-                operationValidator.validateAttesterSlashing(
-                    state.getFork(), state, attesterSlashing, indicesToSlash::add);
+                operationValidator
+                    .getValidatorOfType(AttesterSlashingValidator.class)
+                    .validate(state.getFork(), state, attesterSlashing, indicesToSlash::add);
 
             checkArgument(
                 invalidReason.isEmpty(),
@@ -782,7 +785,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
             Optional<OperationInvalidReason> invalidReason =
-                operationValidator.validateVoluntaryExit(state.getFork(), state, signedExit);
+                operationValidator.validate(state.getFork(), state, signedExit);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",
@@ -821,10 +824,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected interface IndexedAttestationProvider {
+
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 
   private interface BlockProcessingAction {
+
     void run() throws BlockProcessingException;
   }
 }
