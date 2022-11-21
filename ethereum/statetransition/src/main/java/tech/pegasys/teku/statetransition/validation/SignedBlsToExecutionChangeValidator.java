@@ -31,12 +31,6 @@ public class SignedBlsToExecutionChangeValidator
   }
 
   @Override
-  public Optional<OperationInvalidReason> validateForStateTransition(
-      final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return Optional.empty();
-  }
-
-  @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState stateAtBlockSlot, final SignedBlsToExecutionChange operation) {
     return Optional.empty();

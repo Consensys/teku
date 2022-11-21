@@ -27,8 +27,6 @@ public interface OperationValidator<T> {
    */
   SafeFuture<InternalValidationResult> validateForGossip(T operation);
 
-  Optional<OperationInvalidReason> validateForStateTransition(BeaconState state, T operation);
-
   /**
    * * Validates an operation when selecting it from an {@link
    * tech.pegasys.teku.statetransition.OperationPool}. Used when creating a new block.

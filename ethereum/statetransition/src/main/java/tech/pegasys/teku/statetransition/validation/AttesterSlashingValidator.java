@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingValidator implements OperationValidator<AttesterSlashing> {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
@@ -51,7 +52,7 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
         .thenApply(
             state -> {
               final Optional<OperationInvalidReason> invalidReason =
-                  validateForStateTransition(state, slashing);
+                  spec.validateAttesterSlashing(state, slashing);
               if (invalidReason.isPresent()) {
                 return InternalValidationResult.create(
                     ValidationResultCode.REJECT, invalidReason.get().describe());
@@ -68,16 +69,10 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   }
 
   @Override
-  public Optional<OperationInvalidReason> validateForStateTransition(
-      BeaconState state, AttesterSlashing slashing) {
-    return spec.validateAttesterSlashing(state, slashing);
-  }
-
-  @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState stateAtBlockSlot, final AttesterSlashing slashing) {
     // The signature *is* verified during the state checks as part of isValidIndexedAttestation
-    return validateForStateTransition(stateAtBlockSlot, slashing);
+    return spec.validateAttesterSlashing(stateAtBlockSlot, slashing);
   }
 
   private boolean includesUnseenIndexToSlash(Set<UInt64> intersectingIndices) {
