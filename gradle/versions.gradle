@@ -15,7 +15,7 @@ dependencyManagement {
       entry 'error_prone_test_helpers'
     }
 
-    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.0'
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:31.1-jre'
     dependency 'com.google.code.gson:gson:2.10'
