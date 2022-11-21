@@ -332,7 +332,7 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeaderBellatrix();
+        dataStructureUtil.randomExecutionPayloadHeader();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));

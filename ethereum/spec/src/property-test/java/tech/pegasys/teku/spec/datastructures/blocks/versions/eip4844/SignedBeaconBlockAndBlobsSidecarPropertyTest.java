@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.eip4844;
 
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
@@ -19,19 +19,22 @@ import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.asse
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 
-public class SyncAggregatePropertyTest {
+public class SignedBeaconBlockAndBlobsSidecarPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate)
+  void roundTrip(
+      @ForAll(supplier = SignedBeaconBlockAndBlobsSidecarSupplier.class)
+          final SignedBeaconBlockAndBlobsSidecar signedBeaconBlockAndBlobsSidecar)
       throws JsonProcessingException {
-    assertRoundTrip(syncAggregate);
+    assertRoundTrip(signedBeaconBlockAndBlobsSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SyncAggregateSupplier.class) final SyncAggregate syncAggregate,
+      @ForAll(supplier = SignedBeaconBlockAndBlobsSidecarSupplier.class)
+          final SignedBeaconBlockAndBlobsSidecar signedBeaconBlockAndBlobsSidecar,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(syncAggregate, seed);
+    assertDeserializeMutatedThrowsExpected(signedBeaconBlockAndBlobsSidecar, seed);
   }
 }

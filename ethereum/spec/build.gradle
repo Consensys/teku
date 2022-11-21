@@ -5,6 +5,7 @@ dependencies {
     api project(':infrastructure:bytes')
     api project(':infrastructure:collections')
     api project(':infrastructure:ssz')
+    api project(':infrastructure:kzg')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

@@ -194,7 +194,7 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> String getResponseContentType(final int statusCode) {
+  public String getResponseContentType(final int statusCode) {
     return contentTypeMap.get(statusCode);
   }
 

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;

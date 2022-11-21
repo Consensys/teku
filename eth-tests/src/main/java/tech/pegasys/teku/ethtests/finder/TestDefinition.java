@@ -86,6 +86,9 @@ public class TestDefinition {
       case TestFork.CAPELLA:
         highestSupportedMilestone = SpecMilestone.CAPELLA;
         break;
+      case TestFork.EIP4844:
+        highestSupportedMilestone = SpecMilestone.EIP4844;
+        break;
       default:
         throw new IllegalArgumentException("Unknown fork: " + fork);
     }

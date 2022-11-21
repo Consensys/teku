@@ -22,6 +22,7 @@ import static tech.pegasys.teku.beacon.sync.events.SyncState.SYNCING;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -32,7 +33,6 @@ import it.unimi.dsi.fastutil.ints.IntArraySet;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +65,7 @@ public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     handler.handleRequest(request);
 
-    Assertions.assertThat(request.getResponseCode()).isEqualTo(HttpServletResponse.SC_OK);
+    Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     Assertions.assertThat(request.getResponseBody()).isEqualTo(responseData);
   }
 
@@ -75,8 +75,7 @@ public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
     when(syncService.getCurrentSyncState()).thenReturn(SYNCING);
     handler.handleRequest(request);
 
-    Assertions.assertThat(request.getResponseCode())
-        .isEqualTo(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     Assertions.assertThat(request.getResponseBody()).isInstanceOf(HttpErrorResponse.class);
   }
 

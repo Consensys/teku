@@ -86,7 +86,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   public void registerClient(final SseClient sseClient) {
     LOG.trace("connected " + sseClient.hashCode());
     final List<String> allTopicsInContext =
-        ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx.queryParamMap(), TOPICS);
+        ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx().queryParamMap(), TOPICS);
     final EventSubscriber subscriber =
         new EventSubscriber(
             allTopicsInContext,

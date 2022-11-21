@@ -38,15 +38,15 @@ public interface SszPrimitiveVectorSchema<
   static <PrimT, SszPrimT extends SszPrimitive<PrimT, SszPrimT>>
       SszPrimitiveVectorSchema<PrimT, SszPrimT, ?> create(
           SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long length, SszSchemaHints hints) {
-    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
+    if (elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>) SszBitvectorSchema.create(length);
-    } else if (elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
           SszByteVectorSchema.create((int) length);
-    } else if (elementSchema == SszPrimitiveSchemas.UINT8_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
           SszByteVectorSchema.createUInt8((int) length);
-    } else if (elementSchema == SszPrimitiveSchemas.BYTES32_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.BYTES32_SCHEMA)) {
       return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
           SszBytes32VectorSchema.create((int) length);
     } else {

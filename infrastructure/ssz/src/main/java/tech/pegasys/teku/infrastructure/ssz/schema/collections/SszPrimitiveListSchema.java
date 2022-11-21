@@ -38,13 +38,13 @@ public interface SszPrimitiveListSchema<
   static <PrimT, SszPrimT extends SszPrimitive<PrimT, SszPrimT>>
       SszPrimitiveListSchema<PrimT, SszPrimT, ?> create(
           SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long maxLength, SszSchemaHints hints) {
-    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
+    if (elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBitlistSchema.create(maxLength);
-    } else if (elementSchema == SszPrimitiveSchemas.UINT64_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszUInt64ListSchema.create(maxLength);
-    } else if (elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.create(maxLength);
-    } else if (elementSchema == SszPrimitiveSchemas.UINT8_SCHEMA) {
+    } else if (elementSchema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.createUInt8(maxLength);
     } else {
       return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);

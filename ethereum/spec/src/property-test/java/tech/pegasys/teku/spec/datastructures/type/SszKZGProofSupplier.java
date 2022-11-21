@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszKZGProofSupplier extends DataStructureUtilSupplier<SszKZGProof> {
   public SszKZGProofSupplier() {
-    super(DataStructureUtil::randomSszKZGProof);
+    super(DataStructureUtil::randomSszKZGProof, SpecMilestone.EIP4844);
   }
 }

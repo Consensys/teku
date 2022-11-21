@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,14 +38,14 @@ public class GetFinalizedBlockRootIntegrationTest extends AbstractDataBackedRest
     createBlocksAtSlots(10);
     chainUpdater.finalizeEpoch(10);
     final Response response = get(UInt64.valueOf(10));
-    Assertions.assertThat(response.code()).isEqualTo(HttpServletResponse.SC_OK);
+    Assertions.assertThat(response.code()).isEqualTo(SC_OK);
   }
 
   @Test
   void shouldReturnNotFoundWhenBlockIsNotFinalized() throws IOException {
     createBlocksAtSlots(10);
     final Response response = get(UInt64.valueOf(10));
-    Assertions.assertThat(response.code()).isEqualTo(HttpServletResponse.SC_NOT_FOUND);
+    Assertions.assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
   }
 
   private Response get(UInt64 slot) throws IOException {

@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszKZGCommitmentSupplier extends DataStructureUtilSupplier<SszKZGCommitment> {
   public SszKZGCommitmentSupplier() {
-    super(DataStructureUtil::randomSszKZGCommitment);
+    super(DataStructureUtil::randomSszKZGCommitment, SpecMilestone.EIP4844);
   }
 }
