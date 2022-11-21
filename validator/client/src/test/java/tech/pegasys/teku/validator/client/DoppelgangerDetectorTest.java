@@ -37,6 +37,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 public class DoppelgangerDetectorTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
@@ -88,7 +90,7 @@ public class DoppelgangerDetectorTest {
                             UInt64.valueOf(5), dataStructureUtil.randomEpoch(), true)))));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
@@ -98,7 +100,7 @@ public class DoppelgangerDetectorTest {
             Duration.ofMinutes(2));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
+    stubAsyncRunner.executeUntilDone();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
@@ -133,7 +135,7 @@ public class DoppelgangerDetectorTest {
         .thenReturn(SafeFuture.failedFuture(new Exception("Validators Public Keys Exception")));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
@@ -143,7 +145,7 @@ public class DoppelgangerDetectorTest {
             Duration.ofMinutes(20));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
+    stubAsyncRunner.executeUntilDone();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
@@ -196,7 +198,7 @@ public class DoppelgangerDetectorTest {
                     Map.entry(dataStructureUtil.randomPublicKey(), 7))));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
@@ -206,7 +208,7 @@ public class DoppelgangerDetectorTest {
             Duration.ofMinutes(20));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
+    stubAsyncRunner.executeUntilDone();
     assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
     expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
@@ -234,24 +236,25 @@ public class DoppelgangerDetectorTest {
         .thenReturn(SafeFuture.failedFuture(new Exception("Genesis Time Exception")));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(4);
+    stubAsyncRunner.executeUntilDone();
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception";
-    expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(2), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(3), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -264,27 +267,27 @@ public class DoppelgangerDetectorTest {
         .thenReturn(SafeFuture.failedFuture(new Exception("Validator Indices Exception")));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
+    stubAsyncRunner.executeUntilDone();
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
-    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
-    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", doppelgangerDetectorStartEpochLog(0));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", performingDoppelgangerCheckLog(0, 1));
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get validators indices: java.lang.Exception: Validator Indices Exception";
-    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", performingDoppelgangerCheckLog(0, 1));
-    expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -299,27 +302,27 @@ public class DoppelgangerDetectorTest {
         .thenReturn(SafeFuture.failedFuture(new Exception("Validator API Channel Exception")));
     DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
-            asyncRunner,
+            stubAsyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
-    doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(7);
+    stubAsyncRunner.executeUntilDone();
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
-    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
-    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", doppelgangerDetectorStartEpochLog(0));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", performingDoppelgangerCheckLog(0, 1));
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get validators liveness: java.lang.Exception: Validator API Channel Exception";
-    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", performingDoppelgangerCheckLog(0, 1));
-    expectLogMessage(logCaptor.getLogEvents().get(5), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(6), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -340,19 +343,21 @@ public class DoppelgangerDetectorTest {
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
     doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
-    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
-    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", doppelgangerDetectorStartEpochLog(0));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", performingDoppelgangerCheckLog(0, 1));
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get validators liveness: Request timeout";
-    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -371,19 +376,21 @@ public class DoppelgangerDetectorTest {
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
     doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(5);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
-    expectLogMessage(logCaptor.getLogEvents().get(1), "INFO", doppelgangerDetectorStartEpochLog(0));
-    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", performingDoppelgangerCheckLog(0, 1));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", doppelgangerDetectorStartEpochLog(0));
+    expectLogsToContain(logCaptor.getLogEvents(), "INFO", performingDoppelgangerCheckLog(0, 1));
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get validators indices: Request timeout";
-    expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -400,17 +407,19 @@ public class DoppelgangerDetectorTest {
             spec,
             timeProvider,
             genesisDataProvider,
-            Duration.ofSeconds(2),
-            Duration.ofSeconds(6));
+            Duration.ofMillis(1),
+            Duration.ofMillis(6));
     SafeFuture<Map<Integer, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection();
     doppelgangerDetectorFuture.join();
-    assertThat(logCaptor.getLogEvents().size()).isEqualTo(3);
     expectLogMessage(logCaptor.getLogEvents().get(0), "INFO", doppelgangerStartLog);
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: Request timeout";
-    expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
-    expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", doppelgangerTimeoutLog);
+    expectLogsToContain(logCaptor.getLogEvents(), "ERROR", expectedErrorLog);
+    expectLogMessage(
+        logCaptor.getLogEvents().get(logCaptor.getLogEvents().size() - 1),
+        "INFO",
+        doppelgangerTimeoutLog);
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -419,6 +428,17 @@ public class DoppelgangerDetectorTest {
       LogEvent logEvent, String expectedLevel, String expectedLogMessage) {
     assertThat(logEvent.getLevel()).isEqualTo(expectedLevel);
     assertThat(logEvent.getMessage()).isEqualTo(expectedLogMessage);
+  }
+
+  private void expectLogsToContain(
+      List<LogEvent> logEvents, String expectedLevel, String expectedLogMessage) {
+    assertThat(
+            logEvents.stream()
+                .anyMatch(
+                    logEvent ->
+                        logEvent.getLevel().equals(expectedLevel)
+                            && logEvent.getMessage().equals(expectedLogMessage)))
+        .isTrue();
   }
 
   private String doppelgangerDetectorStartEpochLog(int epoch) {
