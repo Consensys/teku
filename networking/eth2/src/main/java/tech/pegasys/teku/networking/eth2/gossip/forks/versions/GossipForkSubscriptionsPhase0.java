@@ -36,13 +36,9 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -240,22 +236,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public void publishBlockAndBlobsSidecar(
-      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
-    // Does not apply to this fork.
-  }
-
-  @Override
   public void publishProposerSlashing(final ProposerSlashing message) {
     proposerSlashingGossipManager.publishProposerSlashing(message);
   }
@@ -278,21 +258,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
-  }
-
-  @Override
-  public void subscribeToSyncCommitteeSubnet(final int subnetId) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {
-    // Does not apply to this fork
   }
 
   protected int getMessageMaxSize() {

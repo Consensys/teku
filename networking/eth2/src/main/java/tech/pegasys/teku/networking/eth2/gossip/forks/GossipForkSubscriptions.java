@@ -39,15 +39,21 @@ public interface GossipForkSubscriptions {
 
   void publishBlock(SignedBeaconBlock block);
 
-  void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar);
+  default void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar) {
+    // from Eip4844
+  }
 
   void subscribeToAttestationSubnetId(int subnetId);
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
 
-  void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message);
+  default void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message) {
+    // from Altair
+  }
 
-  void publishSyncCommitteeContribution(SignedContributionAndProof message);
+  default void publishSyncCommitteeContribution(SignedContributionAndProof message) {
+    // from Altair
+  }
 
   void publishProposerSlashing(ProposerSlashing message);
 
@@ -55,9 +61,13 @@ public interface GossipForkSubscriptions {
 
   void publishVoluntaryExit(SignedVoluntaryExit message);
 
-  void subscribeToSyncCommitteeSubnet(int subnetId);
+  default void subscribeToSyncCommitteeSubnet(int subnetId) {
+    // from Altair
+  }
 
-  void unsubscribeFromSyncCommitteeSubnet(int subnetId);
+  default void unsubscribeFromSyncCommitteeSubnet(int subnetId) {
+    // from Altair
+  }
 
-  void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message);
+  default void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message) {}
 }
