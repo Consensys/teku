@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SYNCING_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;

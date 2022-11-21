@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PEER_ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
