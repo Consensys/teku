@@ -38,10 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -117,7 +114,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
         .forEach(GossipManager::subscribe);
   }
 
-  protected void addGossipManagers(final ForkInfo forkInfo) {
+  void addAttestationGossipManager(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -129,6 +126,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             forkInfo,
             getMessageMaxSize());
 
+    attestationGossipManager =
+        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
+    addGossipManager(attestationGossipManager);
+  }
+
+  void addBlockGossipManager(final ForkInfo forkInfo) {
     blockGossipManager =
         new BlockGossipManager(
             recentChainData,
@@ -140,11 +143,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             blockProcessor,
             getMessageMaxSize());
     addGossipManager(blockGossipManager);
+  }
 
-    attestationGossipManager =
-        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
-    addGossipManager(attestationGossipManager);
-
+  void addAggregateGossipManager(final ForkInfo forkInfo) {
     aggregateGossipManager =
         new AggregateGossipManager(
             spec,
@@ -156,7 +157,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             aggregateProcessor,
             getMessageMaxSize());
     addGossipManager(aggregateGossipManager);
+  }
 
+  void addVoluntaryExitGossipManager(final ForkInfo forkInfo) {
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
             recentChainData,
@@ -167,7 +170,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             voluntaryExitProcessor,
             getMessageMaxSize());
     addGossipManager(voluntaryExitGossipManager);
+  }
 
+  void addProposerSlashingGossipManager(final ForkInfo forkInfo) {
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
             recentChainData,
@@ -178,7 +183,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             proposerSlashingProcessor,
             getMessageMaxSize());
     addGossipManager(proposerSlashingGossipManager);
+  }
 
+  void addAttesterSlashingGossipManager(final ForkInfo forkInfo) {
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
             spec,
@@ -190,6 +197,15 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             attesterSlashingProcessor,
             getMessageMaxSize());
     addGossipManager(attesterSlashingGossipManager);
+  }
+
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    addAttestationGossipManager(forkInfo);
+    addBlockGossipManager(forkInfo);
+    addAggregateGossipManager(forkInfo);
+    addVoluntaryExitGossipManager(forkInfo);
+    addProposerSlashingGossipManager(forkInfo);
+    addAttesterSlashingGossipManager(forkInfo);
   }
 
   protected void addGossipManager(final GossipManager gossipManager) {
@@ -220,16 +236,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
-    // Does not apply to this fork.
-  }
-
-  @Override
   public void publishProposerSlashing(final ProposerSlashing message) {
     proposerSlashingGossipManager.publishProposerSlashing(message);
   }
@@ -252,21 +258,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
-  }
-
-  @Override
-  public void subscribeToSyncCommitteeSubnet(final int subnetId) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
-    // Does not apply to this fork.
-  }
-
-  @Override
-  public void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {
-    // Does not apply to this fork
   }
 
   protected int getMessageMaxSize() {

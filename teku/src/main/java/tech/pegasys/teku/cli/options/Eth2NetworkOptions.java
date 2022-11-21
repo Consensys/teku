@@ -87,6 +87,14 @@ public class Eth2NetworkOptions {
   private UInt64 capellaForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-eip4844-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the eip4844 fork activation epoch.",
+      arity = "1")
+  private UInt64 eip4844ForkEpoch;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -197,6 +205,9 @@ public class Eth2NetworkOptions {
     }
     if (capellaForkEpoch != null) {
       builder.capellaForkEpoch(capellaForkEpoch);
+    }
+    if (eip4844ForkEpoch != null) {
+      builder.eip4844ForkEpoch(eip4844ForkEpoch);
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);

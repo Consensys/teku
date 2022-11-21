@@ -20,6 +20,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class ExecutionPayloadHeaderSupplier
     extends DataStructureUtilSupplier<ExecutionPayloadHeader> {
   public ExecutionPayloadHeaderSupplier() {
-    super(DataStructureUtil::randomExecutionPayloadHeaderBellatrix, SpecMilestone.BELLATRIX);
+    super(DataStructureUtil::randomExecutionPayloadHeader, SpecMilestone.BELLATRIX);
   }
 }

@@ -31,6 +31,11 @@ import tech.pegasys.teku.api.schema.capella.BeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.api.schema.capella.BlindedBlockCapella;
+import tech.pegasys.teku.api.schema.eip4844.BeaconBlockBodyEip4844;
+import tech.pegasys.teku.api.schema.eip4844.BeaconBlockEip4844;
+import tech.pegasys.teku.api.schema.eip4844.BeaconStateEip4844;
+import tech.pegasys.teku.api.schema.eip4844.BlindedBeaconBlockBodyEip4844;
+import tech.pegasys.teku.api.schema.eip4844.BlindedBlockEip4844;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -106,6 +111,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBlindedBlockBodyCapella(block.getBody()));
+      case EIP4844:
+        return new BlindedBlockEip4844(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBlindedBlockBodyEip4844(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -143,6 +155,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBeaconBlockBodyCapella(block.getBody()));
+      case EIP4844:
+        return new BeaconBlockEip4844(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyEip4844(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -169,6 +188,13 @@ public class SchemaObjectProvider {
             .BeaconBlockBodyCapella.required(body));
   }
 
+  private BeaconBlockBodyEip4844 getBeaconBlockBodyEip4844(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyEip4844(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844
+            .BeaconBlockBodyEip4844.required(body));
+  }
+
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyBellatrix(
@@ -183,6 +209,13 @@ public class SchemaObjectProvider {
             .BlindedBeaconBlockBodyCapella.required(body));
   }
 
+  private BlindedBeaconBlockBodyEip4844 getBlindedBlockBodyEip4844(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyEip4844(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844
+            .BlindedBeaconBlockBodyEip4844.required(body));
+  }
+
   public BeaconState getBeaconState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final UInt64 slot = state.getSlot();
@@ -195,6 +228,8 @@ public class SchemaObjectProvider {
         return new BeaconStateBellatrix(state);
       case CAPELLA:
         return new BeaconStateCapella(state);
+      case EIP4844:
+        return new BeaconStateEip4844(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }
