@@ -14,26 +14,32 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class SignedBlsToExecutionChangeValidatorTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
-
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-
-  private RecentChainData recentChainData;
+  private final Spec spec = spy(TestSpecFactory.createMinimalCapella());
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -41,15 +47,17 @@ class SignedBlsToExecutionChangeValidatorTest {
 
   @BeforeEach
   public void beforeEach() {
-    storageSystem.chainUpdater().initializeGenesis();
-    recentChainData = storageSystem.recentChainData();
-
+    Mockito.reset(spec, recentChainData);
+    when(recentChainData.getBestState())
+        .thenReturn(Optional.of(SafeFuture.completedFuture(mock(BeaconState.class))));
     validator = new SignedBlsToExecutionChangeValidator(spec, recentChainData);
   }
 
   @Test
-  public void shouldAcceptValidMessage() {
+  public void validateFullyShouldAcceptValidMessage() {
     final SignedBlsToExecutionChange message = dataStructureUtil.randomSignedBlsToExecutionChange();
+    mockSpecValidationSucceeded();
+    mockSignatureVerificationSucceeded();
 
     final SafeFuture<InternalValidationResult> validationResult = validator.validateFully(message);
 
@@ -57,8 +65,10 @@ class SignedBlsToExecutionChangeValidatorTest {
   }
 
   @Test
-  public void shouldIgnoreSubsequentMessagesForSameValidator() {
+  public void validateFullyShouldIgnoreSubsequentMessagesForSameValidator() {
     final SignedBlsToExecutionChange message = dataStructureUtil.randomSignedBlsToExecutionChange();
+    mockSpecValidationSucceeded();
+    mockSignatureVerificationSucceeded();
 
     final SafeFuture<InternalValidationResult> firstValidationResult =
         validator.validateFully(message);
@@ -66,12 +76,78 @@ class SignedBlsToExecutionChangeValidatorTest {
         validator.validateFully(message);
 
     assertValidationResult(firstValidationResult, ValidationResultCode.ACCEPT);
-    assertValidationResult(secondValidationResult, ValidationResultCode.IGNORE);
+    assertValidationResult(
+        secondValidationResult,
+        ValidationResultCode.IGNORE,
+        "BlsToExecutionChange is not the first one for validator");
   }
 
   @Test
-  public void shouldRejectMessageFailingValidation() {
-    fail();
+  public void validateFullyShouldRejectMessageIfSpecValidationFails() {
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final String expectedFailureDescription = "Spec validation failed";
+    mockSpecValidationFailed(expectedFailureDescription);
+
+    final SafeFuture<InternalValidationResult> validationResult =
+        validator.validateFully(signedBlsToExecutionChange);
+
+    assertValidationResult(
+        validationResult, ValidationResultCode.REJECT, expectedFailureDescription);
+  }
+
+  @Test
+  public void validateForStateTransitionShouldReturnEmptyIfSpecValidationSucceeds() {
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    mockSpecValidationSucceeded();
+    // no need to mock signature because it is not checked on validateForStateTransition()
+
+    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
+        validator.validateForStateTransition(mock(BeaconState.class), signedBlsToExecutionChange);
+
+    assertThat(maybeOperationInvalidReason).isEmpty();
+  }
+
+  @Test
+  public void validateForBlockInclusionShouldReturnSpecValidationInvalidReasonWhenInvalid() {
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final String expectedFailureDescription = "Spec validation failed";
+    mockSpecValidationFailed(expectedFailureDescription);
+
+    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
+        validator.validateForBlockInclusion(mock(BeaconState.class), signedBlsToExecutionChange);
+
+    assertThat(maybeOperationInvalidReason).isNotEmpty();
+    assertThat(maybeOperationInvalidReason.get().describe()).contains(expectedFailureDescription);
+  }
+
+  @Test
+  public void validateForBlockInclusionShouldReturnEmptyIfSpecValidationSucceeds() {
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    mockSpecValidationSucceeded();
+    mockSignatureVerificationSucceeded();
+
+    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
+        validator.validateForBlockInclusion(mock(BeaconState.class), signedBlsToExecutionChange);
+
+    assertThat(maybeOperationInvalidReason).isEmpty();
+  }
+
+  @Test
+  public void validateForStateTransitionShouldReturnSpecValidationInvalidReasonWhenInvalid() {
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final String expectedFailureDescription = "Spec validation failed";
+    mockSpecValidationFailed(expectedFailureDescription);
+
+    final Optional<OperationInvalidReason> maybeOperationInvalidReason =
+        validator.validateForStateTransition(mock(BeaconState.class), signedBlsToExecutionChange);
+
+    assertThat(maybeOperationInvalidReason).isNotEmpty();
+    assertThat(maybeOperationInvalidReason.get().describe()).contains(expectedFailureDescription);
   }
 
   private void assertValidationResult(
@@ -79,5 +155,38 @@ class SignedBlsToExecutionChangeValidatorTest {
       final ValidationResultCode expectedResultCode) {
     assertThat(validationResult)
         .isCompletedWithValueMatching(result -> result.code() == expectedResultCode);
+  }
+
+  private void assertValidationResult(
+      final SafeFuture<InternalValidationResult> validationResult,
+      final ValidationResultCode expectedResultCode,
+      final String expectedDescription) {
+    assertThat(validationResult)
+        .isCompletedWithValueMatching(
+            result ->
+                result.code() == expectedResultCode
+                    && result.getDescription().orElseThrow().contains(expectedDescription));
+  }
+
+  private void mockSpecValidationSucceeded() {
+    doReturn(Optional.empty())
+        .when(spec)
+        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+  }
+
+  private void mockSpecValidationFailed(final String expectedDescription) {
+    final OperationInvalidReason expectedInvalidReason = () -> expectedDescription;
+    doReturn(Optional.of(expectedInvalidReason))
+        .when(spec)
+        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+  }
+
+  private void mockSignatureVerificationSucceeded() {
+    doReturn(true)
+        .when(spec)
+        .verifyBlsToExecutionChangeSignature(
+            any(BeaconState.class),
+            any(SignedBlsToExecutionChange.class),
+            eq(BLSSignatureVerifier.SIMPLE));
   }
 }

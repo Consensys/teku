@@ -394,6 +394,15 @@ public final class DataStructureUtil {
     return UInt64.valueOf(randomInt(1_000_000_000));
   }
 
+  /**
+   * A random UInt64 that is within a reasonable bound for a validator index. Even tough
+   * VALIDATOR_REGISTRY_LIMIT allows for more validators, Ethereum would run out of Ether before we
+   * reached that many validators.
+   */
+  public UInt64 randomValidatorIndex() {
+    return UInt64.valueOf(randomInt(3_000_000));
+  }
+
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
     return randomSlotAndBlockRoot(randomUInt64());
   }
@@ -1780,7 +1789,7 @@ public final class DataStructureUtil {
   public Withdrawal randomWithdrawal() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
-        .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
+        .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
   public Optional<List<Withdrawal>> randomWithdrawalList() {
@@ -1800,7 +1809,13 @@ public final class DataStructureUtil {
   public BlsToExecutionChange randomBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
-        .create(randomUInt64(), randomPublicKey(), randomBytes20());
+        .create(randomValidatorIndex(), randomPublicKey(), randomBytes20());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIdex) {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(UInt64.valueOf(validatorIdex), randomPublicKey(), randomBytes20());
   }
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {

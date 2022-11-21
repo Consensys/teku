@@ -44,7 +44,8 @@ public class BlsToExecutionChangesValidator
   private Optional<OperationInvalidReason> verifyValidatorIndex(
       final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
     final int validatorIndex = blsToExecutionChange.getValidatorIndex().intValue();
-    return check(validatorIndex < state.getValidators().size(), invalidValidatorIndex());
+    final boolean validatorIndexWithinBounds = validatorIndex < state.getValidators().size();
+    return check(validatorIndexWithinBounds, invalidValidatorIndex());
   }
 
   private Optional<OperationInvalidReason> verifyWithdrawalCredentialPrefix(
@@ -65,12 +66,12 @@ public class BlsToExecutionChangesValidator
     final Bytes32 withdrawalCredentials =
         getWithdrawalCredentialsForValidatorIndex(beaconState, validatorIndex);
 
-    boolean valid =
+    boolean matchingBlsPubKey =
         withdrawalCredentials
             .slice(1)
             .equals(Hash.sha256(operation.getFromBlsPubkey().toBytesCompressed()).slice(1));
 
-    return check(valid, publicKeyNotMatchingCredentials(validatorIndex, operation));
+    return check(matchingBlsPubKey, publicKeyNotMatchingCredentials(validatorIndex, operation));
   }
 
   private static Bytes32 getWithdrawalCredentialsForValidatorIndex(

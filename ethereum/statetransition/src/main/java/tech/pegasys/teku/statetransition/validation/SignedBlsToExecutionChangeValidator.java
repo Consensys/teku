@@ -68,24 +68,16 @@ public class SignedBlsToExecutionChangeValidator
     /*
      [REJECT] All of the conditions within process_bls_to_execution_change pass validation.
     */
-    return getFailureReason(operation)
+    return getMaybeFailureReason(operation)
         .thenApply(
-            failureReason -> {
-              if (failureReason.isPresent()) {
+            maybeFailureReason -> {
+              if (maybeFailureReason.isPresent()) {
                 return InternalValidationResult.reject(
-                    "Exit for validator %s is invalid: %s",
-                    validatorIndex, failureReason.get().describe());
-              }
-
-              if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
-                return InternalValidationResult.ACCEPT;
+                    "BlsToExecutionChange for validator %s is invalid: %s",
+                    validatorIndex, maybeFailureReason.get().describe());
               } else {
-                final String msg =
-                    String.format(
-                        "SignedBlsToExecutionChangeValidator: operation is not the first one for validator %s.",
-                        validatorIndex);
-                LOG.trace(msg);
-                return InternalValidationResult.create(IGNORE, msg);
+                seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex);
+                return InternalValidationResult.ACCEPT;
               }
             });
   }
@@ -93,21 +85,22 @@ public class SignedBlsToExecutionChangeValidator
   @Override
   public Optional<OperationInvalidReason> validateForStateTransition(
       final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return getFailureReason(state, operation, false);
+    return getMaybeFailureReason(state, operation, false);
   }
 
   @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return getFailureReason(state, operation, true);
+    return getMaybeFailureReason(state, operation, true);
   }
 
-  private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(
+  private SafeFuture<Optional<OperationInvalidReason>> getMaybeFailureReason(
       final SignedBlsToExecutionChange signedBlsToExecutionChange) {
-    return getState().thenApply(state -> getFailureReason(state, signedBlsToExecutionChange, true));
+    return getState()
+        .thenApply(state -> getMaybeFailureReason(state, signedBlsToExecutionChange, true));
   }
 
-  private Optional<OperationInvalidReason> getFailureReason(
+  private Optional<OperationInvalidReason> getMaybeFailureReason(
       final BeaconState state,
       final SignedBlsToExecutionChange signedBlsToExecutionChange,
       final boolean verifySignature) {
