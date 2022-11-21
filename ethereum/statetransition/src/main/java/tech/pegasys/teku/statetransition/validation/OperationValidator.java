@@ -19,10 +19,20 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 
 public interface OperationValidator<T> {
-  SafeFuture<InternalValidationResult> validateFully(T operation);
+
+  /**
+   * Validates an operation before adding it into an {@link
+   * tech.pegasys.teku.statetransition.OperationPool}. Used when receiving operation messages
+   * broadcast via gossip or sent to the node's REST API.
+   */
+  SafeFuture<InternalValidationResult> validateForGossip(T operation);
 
   Optional<OperationInvalidReason> validateForStateTransition(BeaconState state, T operation);
 
+  /**
+   * * Validates an operation when selecting it from an {@link
+   * tech.pegasys.teku.statetransition.OperationPool}. Used when creating a new block.
+   */
   Optional<OperationInvalidReason> validateForBlockInclusion(
       BeaconState stateAtBlockSlot, T operation);
 }

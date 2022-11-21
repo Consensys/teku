@@ -117,7 +117,7 @@ public class VoluntaryExitValidatorTest {
 
   private void assertValidationResult(
       final SignedVoluntaryExit exit, final ValidationResultCode expectedResultCode) {
-    assertThat(voluntaryExitValidator.validateFully(exit))
+    assertThat(voluntaryExitValidator.validateForGossip(exit))
         .isCompletedWithValueMatching(result -> result.code() == expectedResultCode);
   }
 
@@ -125,7 +125,7 @@ public class VoluntaryExitValidatorTest {
       final SignedVoluntaryExit exit,
       final ValidationResultCode expectedCode,
       final String description) {
-    assertThat(voluntaryExitValidator.validateFully(exit))
+    assertThat(voluntaryExitValidator.validateForGossip(exit))
         .isCompletedWithValueMatching(
             result ->
                 result.code() == expectedCode

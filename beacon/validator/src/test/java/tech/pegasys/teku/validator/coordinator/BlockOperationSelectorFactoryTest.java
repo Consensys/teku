@@ -162,11 +162,11 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(
             beaconBlockSchemaSupplier.apply(UInt64.ZERO).getAttestationsSchema().getDefault());
     when(contributionValidator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));
-    when(attesterSlashingValidator.validateFully(any()))
+    when(attesterSlashingValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
-    when(proposerSlashingValidator.validateFully(any()))
+    when(proposerSlashingValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
-    when(voluntaryExitValidator.validateFully(any()))
+    when(voluntaryExitValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));

@@ -151,7 +151,7 @@ public class OperationPool<T extends SszData> {
 
   private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
     return operationValidator
-        .validateFully(item)
+        .validateForGossip(item)
         .thenApply(
             result -> {
               validationReasonCounter.labels(result.code().toString()).inc();

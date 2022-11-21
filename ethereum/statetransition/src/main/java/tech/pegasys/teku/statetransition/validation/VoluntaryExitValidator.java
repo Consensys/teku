@@ -45,7 +45,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(SignedVoluntaryExit exit) {
+  public SafeFuture<InternalValidationResult> validateForGossip(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",

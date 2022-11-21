@@ -44,7 +44,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(ProposerSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateForGossip(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");

@@ -50,7 +50,7 @@ public class AttesterSlashingValidatorTest {
   public void shouldAcceptValidAttesterSlashing() {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(mockSpec.validateAttesterSlashing(bestState, slashing)).thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validateFully(slashing))
+    assertThat(attesterSlashingValidator.validateForGossip(slashing))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 
@@ -59,7 +59,7 @@ public class AttesterSlashingValidatorTest {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(mockSpec.validateAttesterSlashing(bestState, slashing))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
-    assertThat(attesterSlashingValidator.validateFully(slashing))
+    assertThat(attesterSlashingValidator.validateForGossip(slashing))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -69,9 +69,9 @@ public class AttesterSlashingValidatorTest {
     AttesterSlashing slashing2 =
         slashing1.getSchema().create(slashing1.getAttestation1(), slashing1.getAttestation2());
     when(mockSpec.validateAttesterSlashing(eq(bestState), any())).thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validateFully(slashing1))
+    assertThat(attesterSlashingValidator.validateForGossip(slashing1))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-    assertThat(attesterSlashingValidator.validateFully(slashing2))
+    assertThat(attesterSlashingValidator.validateForGossip(slashing2))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 }

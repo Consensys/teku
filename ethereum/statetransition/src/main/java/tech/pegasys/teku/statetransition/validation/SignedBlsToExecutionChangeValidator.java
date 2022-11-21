@@ -25,7 +25,7 @@ public class SignedBlsToExecutionChangeValidator
   // FIXME Implement validation logic (#6358)
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(
+  public SafeFuture<InternalValidationResult> validateForGossip(
       final SignedBlsToExecutionChange operation) {
     return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }

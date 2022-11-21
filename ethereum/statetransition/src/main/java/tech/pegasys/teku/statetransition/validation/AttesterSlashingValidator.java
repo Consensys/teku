@@ -41,7 +41,7 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(AttesterSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateForGossip(AttesterSlashing slashing) {
     if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
