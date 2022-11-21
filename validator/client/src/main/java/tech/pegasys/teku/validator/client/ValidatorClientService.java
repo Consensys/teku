@@ -201,14 +201,9 @@ public class ValidatorClientService extends Service {
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
-    SafeFuture<Void> validatorsInitialized = new SafeFuture<>();
-
     asyncRunner
         .runAsync(
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
-        .propagateTo(validatorsInitialized);
-
-    validatorsInitialized
         .thenCompose(
             __ -> {
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
