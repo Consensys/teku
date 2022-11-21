@@ -43,14 +43,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
-@TestSpecContext(
-    milestone = {
-      SpecMilestone.PHASE0,
-      SpecMilestone.ALTAIR,
-      SpecMilestone.BELLATRIX,
-      SpecMilestone.CAPELLA
-    },
-    network = Eth2Network.MINIMAL)
+@TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
 class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;

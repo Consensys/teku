@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -26,6 +27,10 @@ public class BlobSchema extends SszByteVectorSchemaImpl<Blob> {
         SpecConfigEip4844.BYTES_PER_FIELD_ELEMENT
             .times(specConfig.getFieldElementsPerBlob())
             .longValue());
+  }
+
+  public Blob create(final Bytes bytes) {
+    return new Blob(this, bytes);
   }
 
   @Override

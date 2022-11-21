@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.schema;
 import java.util.Optional;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.api.schema.capella.ExecutionPayloadHeaderCapella;
+import tech.pegasys.teku.api.schema.eip4844.ExecutionPayloadHeaderEip4844;
 
 public interface ExecutionPayloadHeader {
 
@@ -24,6 +25,10 @@ public interface ExecutionPayloadHeader {
   }
 
   default Optional<ExecutionPayloadHeaderCapella> toVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadHeaderEip4844> toVersionEip4844() {
     return Optional.empty();
   }
 }

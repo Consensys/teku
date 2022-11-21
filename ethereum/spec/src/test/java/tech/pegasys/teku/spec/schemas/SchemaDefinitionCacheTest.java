@@ -64,9 +64,6 @@ public class SchemaDefinitionCacheTest {
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
   void shouldGetSpecMilestoneFromSpecObject(final SpecMilestone specMilestone) {
-    if (specMilestone == SpecMilestone.EIP4844) {
-      return;
-    }
     final Spec spec = TestSpecFactory.createMinimal(specMilestone);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(cache.milestoneAtSlot(UInt64.ONE)).isSameAs(specMilestone);
@@ -85,9 +82,6 @@ public class SchemaDefinitionCacheTest {
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
   void subsequentCallsShouldGetTheSameSchemaObject(final SpecMilestone specMilestone) {
-    if (specMilestone == SpecMilestone.EIP4844) {
-      return;
-    }
     final Spec spec = TestSpecFactory.createMinimal(specMilestone);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
 

@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SyncAggregateSupplier extends DataStructureUtilSupplier<SyncAggregate> {
-  public SyncAggregateSupplier() {
-    super(DataStructureUtil::randomSyncAggregate, SpecMilestone.ALTAIR);
+public class BlobSupplier extends DataStructureUtilSupplier<Blob> {
+  public BlobSupplier() {
+    super(DataStructureUtil::randomBlob, SpecMilestone.EIP4844);
   }
 }
