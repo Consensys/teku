@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
+
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -55,8 +57,6 @@ public class AbstractTypeDefRequestTestBase {
 
   @SuppressWarnings("unchecked")
   protected String serializeSszObjectToJsonWithDataWrapper(final SszData value) throws Exception {
-    return JsonUtil.serialize(
-        value,
-        ValidatorClientTypeDefinitions.withDataWrapper((SszSchema<SszData>) value.getSchema()));
+    return JsonUtil.serialize(value, withDataWrapper((SszSchema<SszData>) value.getSchema()));
   }
 }

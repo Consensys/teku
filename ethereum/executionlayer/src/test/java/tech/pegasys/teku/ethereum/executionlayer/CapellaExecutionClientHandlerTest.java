@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
-            Optional.empty());
+            Optional.of(List.of()));
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
@@ -108,6 +109,26 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         .thenReturn(dummyResponse);
     handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  @Test
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV1WhenNoPayloadAttributes() {
+    final ExecutionClientHandler handler = getHandler();
+    final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
+    final ForkChoiceStateV1 forkChoiceStateV1 =
+        ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                new ForkChoiceUpdatedResult(
+                    new PayloadStatusV1(
+                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+                    dataStructureUtil.randomBytes8())));
+    when(executionEngineClient.forkChoiceUpdatedV1(forkChoiceStateV1, Optional.empty()))
+        .thenReturn(dummyResponse);
+    handler.engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineClient).forkChoiceUpdatedV1(forkChoiceStateV1, Optional.empty());
   }
 
   @Override

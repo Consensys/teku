@@ -19,7 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import java.util.List;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;

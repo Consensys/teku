@@ -22,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.MoreObjects;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;

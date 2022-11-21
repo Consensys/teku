@@ -199,7 +199,7 @@ public class BlindedBeaconBlockBodySchemaEip4844Impl
   @Override
   public ExecutionPayloadHeaderSchemaEip4844 getExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchemaEip4844)
-        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
   }
 
   @SuppressWarnings("unchecked")

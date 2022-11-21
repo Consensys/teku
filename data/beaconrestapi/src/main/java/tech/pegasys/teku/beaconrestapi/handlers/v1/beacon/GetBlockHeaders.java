@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARENT_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;

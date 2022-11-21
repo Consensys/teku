@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.KZGCommitment;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.jackson.Eth1AddressDeserializer;
@@ -97,6 +98,9 @@ public class JsonProvider {
         GetStateResponseV2.class, new GetStateResponseV2Deserializer(objectMapper));
     module.addDeserializer(
         GetNewBlindedBlockResponse.class, new GetNewBlindedBlockResponseDeserializer(objectMapper));
+
+    module.addSerializer(KZGCommitment.class, new KZGCommitmentSerializer());
+    module.addDeserializer(KZGCommitment.class, new KZGCommitmentDeserializer());
 
     objectMapper.registerModule(module);
   }
