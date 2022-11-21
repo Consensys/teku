@@ -53,7 +53,7 @@ class ForkChoicePayloadExecutorTest {
   private final MergeTransitionBlockValidator transitionValidator =
       mock(MergeTransitionBlockValidator.class);
   private final ExecutionPayloadHeader payloadHeader =
-      dataStructureUtil.randomExecutionPayloadHeaderBellatrixOrLater();
+      dataStructureUtil.randomExecutionPayloadHeader();
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
   private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(0);
 
