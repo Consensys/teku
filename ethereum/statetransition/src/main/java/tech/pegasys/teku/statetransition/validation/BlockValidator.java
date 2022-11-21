@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -52,7 +53,8 @@ public class BlockValidator {
     this.recentChainData = recentChainData;
   }
 
-  public SafeFuture<InternalValidationResult> validate(SignedBeaconBlock block) {
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedBeaconBlock block, final Optional<BlobsSidecar> blobsSidecar) {
 
     if (!blockSlotIsGreaterThanLatestFinalizedSlot(block)
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
@@ -94,6 +96,16 @@ public class BlockValidator {
       return completedFuture(reject("Parent block is after child block."));
     }
 
+    if (blobsSidecar.isPresent()) {
+      if (blobsSidecar.get().getBeaconBlockRoot().equals(block.getRoot())) {
+        return completedFuture(InternalValidationResult.IGNORE);
+      }
+
+      if (blobsSidecar.get().getBeaconBlockSlot().equals(block.getSlot())) {
+        return completedFuture(InternalValidationResult.IGNORE);
+      }
+    }
+
     return getParentStateInBlockEpoch(block, parentBlockSlot)
         .thenApply(
             maybePostState -> {
@@ -128,6 +140,9 @@ public class BlockValidator {
               if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                 return reject("Block signature is invalid");
               }
+
+              // TODO kzg validation
+
               return InternalValidationResult.ACCEPT;
             });
   }
@@ -196,6 +211,8 @@ public class BlockValidator {
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
+
+
 
   private static class SlotAndProposer {
     private final UInt64 slot;

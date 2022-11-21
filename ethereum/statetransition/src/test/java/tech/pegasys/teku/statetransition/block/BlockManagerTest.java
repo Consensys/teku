@@ -567,7 +567,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any()))
+    when(blockValidator.validate(any(), any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 3000ms
@@ -610,7 +610,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any()))
+    when(blockValidator.validate(any(), any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 500ms
@@ -638,7 +638,7 @@ public class BlockManagerTest {
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
     assertThat(blockManager.validateAndImportBlock(block))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
-    verify(blockValidator, never()).validate(block);
+    verify(blockValidator, never()).validate(block, Optional.empty());
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {

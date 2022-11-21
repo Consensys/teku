@@ -809,7 +809,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            .gossipedBlockAndBlobsProcessor(OperationProcessor.noop())
+            .gossipedBlockAndBlobsProcessor(blockManager::validateAndImportBlockAndBlobs)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
