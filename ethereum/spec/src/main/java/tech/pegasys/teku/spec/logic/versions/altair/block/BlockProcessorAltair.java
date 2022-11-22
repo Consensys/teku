@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
@@ -67,11 +68,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final SpecConfigAltair specConfigAltair;
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
+  private final SyncCommitteeUtil syncCommitteeUtil;
 
   public BlockProcessorAltair(
       final SpecConfigAltair specConfig,
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
+      final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -94,6 +97,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
+    this.syncCommitteeUtil = syncCommitteeUtil;
   }
 
   @Override
@@ -221,13 +225,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
 
     for (int i = 0; i < specConfigAltair.getSyncCommitteeSize(); i++) {
-      final BLSPublicKey uncachedPubkey =
-          state.getCurrentSyncCommittee().getPubkeys().get(i).getBLSPublicKey();
       final int validatorIndex =
-          validatorsUtil
-              .getValidatorIndex(state, uncachedPubkey)
-              .orElseThrow(
-                  () -> new IllegalArgumentException("Unknown validator found in sync committee"));
+          syncCommitteeUtil.getCurrentSyncCommitteeParticipantValidatorIndex(state, i);
       final BLSPublicKey publicKey =
           beaconStateAccessors
               .getValidatorPubKey(state, UInt64.valueOf(validatorIndex))

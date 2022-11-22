@@ -128,6 +128,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             config,
             predicates,
             miscHelpers,
+            syncCommitteeUtil,
             beaconStateAccessors,
             beaconStateMutators,
             operationSignatureVerifier,

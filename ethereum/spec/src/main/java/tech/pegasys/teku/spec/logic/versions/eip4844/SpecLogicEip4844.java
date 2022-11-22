@@ -130,6 +130,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
             config,
             predicates,
             miscHelpers,
+            syncCommitteeUtil,
             beaconStateAccessors,
             beaconStateMutators,
             operationSignatureVerifier,

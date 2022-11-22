@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockV
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
@@ -72,6 +73,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final SpecConfigCapella specConfig,
       final Predicates predicates,
       final MiscHelpersBellatrix miscHelpers,
+      final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -84,6 +86,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         specConfig,
         predicates,
         miscHelpers,
+        syncCommitteeUtil,
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,
