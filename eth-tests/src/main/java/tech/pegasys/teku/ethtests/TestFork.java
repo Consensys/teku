@@ -18,4 +18,5 @@ public class TestFork {
   public static final String ALTAIR = "altair";
   public static final String BELLATRIX = "bellatrix";
   public static final String CAPELLA = "capella";
+  public static final String EIP4844 = "eip4844";
 }

@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 
 public class MutableBeaconStateCapellaImpl
     extends AbstractMutableBeaconState<BeaconStateCapellaImpl>
@@ -45,7 +44,6 @@ public class MutableBeaconStateCapellaImpl
 
   @Override
   protected void addCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
-    BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
     BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
   }
 

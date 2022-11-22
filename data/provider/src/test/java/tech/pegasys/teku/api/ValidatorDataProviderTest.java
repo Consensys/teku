@@ -46,6 +46,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
+import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockEip4844;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -230,6 +231,11 @@ public class ValidatorDataProviderTest {
       case CAPELLA:
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockCapella.class);
         break;
+      case EIP4844:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockEip4844.class);
+        break;
+      default:
+        throw new RuntimeException("notImplemented");
     }
   }
 

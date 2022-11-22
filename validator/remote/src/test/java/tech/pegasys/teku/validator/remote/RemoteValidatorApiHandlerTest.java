@@ -137,7 +137,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
-    when(apiClient.getGenesis()).thenReturn(Optional.empty());
+    when(typeDefClient.getGenesis()).thenReturn(Optional.empty());
 
     SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
 

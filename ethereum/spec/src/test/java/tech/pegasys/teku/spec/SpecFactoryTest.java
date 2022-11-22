@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("gnosis", "swift", "less-swift");
+  private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
   @Test
   public void defaultFactoryShouldScheduleAltairAndBellatrixForMainNet() {
@@ -78,10 +78,7 @@ public class SpecFactoryTest {
   }
 
   @ParameterizedTest
-  @EnumSource(
-      value = SpecMilestone.class,
-      names = {"BELLATRIX", "CAPELLA"},
-      mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(value = SpecMilestone.class)
   public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMainnet(milestone);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

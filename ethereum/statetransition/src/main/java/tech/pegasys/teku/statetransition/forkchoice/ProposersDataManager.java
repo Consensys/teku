@@ -225,9 +225,14 @@ public class ProposersDataManager implements SlotEventsChannel {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
+
     return Optional.of(
         new PayloadBuildingAttributes(
-            timestamp, random, getFeeRecipient(proposerInfo, blockSlot), validatorRegistration));
+            timestamp,
+            random,
+            getFeeRecipient(proposerInfo, blockSlot),
+            validatorRegistration,
+            spec.getExpectedWithdrawals(state)));
   }
 
   // this function MUST return a fee recipient.

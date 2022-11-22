@@ -15,8 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptySet;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_exiting;
@@ -30,6 +28,8 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawa
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -52,7 +52,6 @@ import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -183,7 +182,7 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
     final List<StateValidatorData> value = List.of(data1, data2);
     final ObjectAndMetaData<List<StateValidatorData>> responseData = withMetaData(value);
 
-    final String data = getResponseStringFromMetadata(handler, HttpStatusCodes.SC_OK, responseData);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
             Resources.getResource(GetStateValidatorsTest.class, "getStateValidatorsTest.json"),

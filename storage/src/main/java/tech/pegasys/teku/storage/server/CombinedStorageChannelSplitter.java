@@ -78,6 +78,12 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Void> onReconstructedFinalizedState(
+      BeaconState finalizedState, Bytes32 blockRoot) {
+    return updateDelegate.onReconstructedFinalizedState(finalizedState, blockRoot);
+  }
+
+  @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return updateDelegate.onWeakSubjectivityUpdate(weakSubjectivityUpdate);

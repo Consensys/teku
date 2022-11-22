@@ -66,11 +66,11 @@ public class PostValidatorLiveness extends RestApiEndpoint {
             .summary("Get Validator Liveness")
             .description(
                 "Requests the beacon node to indicate if a validator has been"
-                    + "observed to be live in a given epoch. The beacon node might detect liveness by"
-                    + "observing messages from the validator on the network, in the beacon chain,"
-                    + "from its API or from any other source. It is important to note that the"
-                    + "values returned by the beacon node are not canonical; they are best-effort"
-                    + "and based upon a subjective view of the network.")
+                    + " observed to be live in a given epoch. The beacon node might detect liveness by"
+                    + " observing messages from the validator on the network, in the beacon chain,"
+                    + " from its API or from any other source. It is important to note that the"
+                    + " values returned by the beacon node are not canonical; they are best-effort"
+                    + " and based upon a subjective view of the network.")
             .tags(TAG_EXPERIMENTAL)
             .requestBodyType(ValidatorLivenessRequest.getJsonTypeDefinition())
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)

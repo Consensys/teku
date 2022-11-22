@@ -14,15 +14,13 @@
 package tech.pegasys.teku.infrastructure.restapi;
 
 import io.javalin.Javalin;
-import io.javalin.core.JavalinConfig;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.Handler;
 import io.javalin.http.staticfiles.Location;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import kotlin.jvm.functions.Function1;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class SwaggerUIBuilder {
@@ -59,23 +57,22 @@ public class SwaggerUIBuilder {
     if (!enabled) {
       return;
     }
-    config.addStaticFiles(
+    config.staticFiles.add(
         staticFileConfig -> {
           staticFileConfig.hostedPath = SWAGGER_HOSTED_PATH;
           staticFileConfig.directory = RESOURCES_WEBJARS_SWAGGER_UI;
           staticFileConfig.location = Location.CLASSPATH;
           staticFileConfig.skipFileFunction =
-              (Function1<HttpServletRequest, Boolean>)
-                  httpServletRequest ->
-                      httpServletRequest.getPathInfo() != null
-                          && MODIFIED_FILES.contains(httpServletRequest.getPathInfo());
+              httpServletRequest ->
+                  httpServletRequest.getPathInfo() != null
+                      && MODIFIED_FILES.contains(httpServletRequest.getPathInfo());
         });
-    config.addSinglePageRoot(
+    config.spaRoot.addFile(
         SWAGGER_HOSTED_PATH + SWAGGER_INITIALIZER_JS,
         SWAGGER_UI_PATCHED + SWAGGER_INITIALIZER_JS,
         Location.CLASSPATH);
     ThymeleafConfigurator.enableThymeleafTemplates(SWAGGER_UI_PATCHED + "/");
-    config.addSinglePageHandler(SWAGGER_UI_PATH, INDEX);
+    config.spaRoot.addHandler(SWAGGER_UI_PATH, INDEX);
   }
 
   public Optional<String> configureDocs(

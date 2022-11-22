@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -29,7 +30,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true)
+@TestSpecContext(
+    milestone = {
+      SpecMilestone.PHASE0,
+      SpecMilestone.ALTAIR,
+      SpecMilestone.BELLATRIX,
+      SpecMilestone.CAPELLA
+    })
 class EpochProcessorTest {
   /**
    * Updating the effective balance to the same value is wasteful and results in new validator

@@ -81,9 +81,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
   }
 
-  @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
+  void addSignedContributionAndProofGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     syncCommitteeContributionGossipManager =
@@ -97,7 +95,11 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             signedContributionAndProofOperationProcessor,
             getMessageMaxSize());
     addGossipManager(syncCommitteeContributionGossipManager);
+  }
 
+  void addSyncCommitteeMessageGossipManager(final ForkInfo forkInfo) {
+    final SchemaDefinitionsAltair schemaDefinitions =
+        SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
             spec,
@@ -116,6 +118,13 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             new SyncCommitteeStateUtils(spec, recentChainData),
             syncCommitteeSubnetSubscriptions);
     addGossipManager(syncCommitteeMessageGossipManager);
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addSignedContributionAndProofGossipManager(forkInfo);
+    addSyncCommitteeMessageGossipManager(forkInfo);
   }
 
   @Override

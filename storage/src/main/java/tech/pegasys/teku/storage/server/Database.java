@@ -50,6 +50,8 @@ public interface Database extends AutoCloseable {
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
+  void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot);
+
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
   Optional<OnDiskStoreData> createMemoryStore();

@@ -142,6 +142,8 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
+    void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
 
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);

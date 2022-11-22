@@ -76,7 +76,7 @@ public abstract class AbstractBeaconStateTest<
     final T state = randomState();
     final Object stateCopy = state.getSchema().createFromBackingNode(state.getBackingNode());
 
-    assertThat(state == stateCopy).isFalse();
+    assertThat(state).isNotSameAs(stateCopy);
     assertThat(state).isEqualTo(stateCopy);
     assertThat(state.hashCode()).isEqualTo(stateCopy.hashCode());
   }
@@ -87,7 +87,7 @@ public abstract class AbstractBeaconStateTest<
     final T state = randomState();
     final T stateCopy = (T) state.updated(s -> s.setSlot(s.getSlot().plus(1)));
 
-    assertThat(state == stateCopy).isFalse();
+    assertThat(state).isNotSameAs(stateCopy);
     assertThat(state).isNotEqualTo(stateCopy);
     assertThat(state.hashCode()).isNotEqualTo(stateCopy.hashCode());
   }

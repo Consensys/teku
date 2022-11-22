@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -46,6 +47,8 @@ public class TestSpecFactory {
         return createMinimalBellatrix();
       case CAPELLA:
         return createMinimalCapella();
+      case EIP4844:
+        return createMinimalEip4844();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -61,6 +64,8 @@ public class TestSpecFactory {
         return createMainnetBellatrix();
       case CAPELLA:
         return createMainnetCapella();
+      case EIP4844:
+        return createMainnetEip4844();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -97,6 +102,11 @@ public class TestSpecFactory {
   public static Spec createMinimalCapella() {
     final SpecConfigCapella specConfig = getCapellaSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createMinimalEip4844() {
+    final SpecConfigEip4844 specConfig = getEip4844SpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.EIP4844);
   }
 
   /**
@@ -138,8 +148,13 @@ public class TestSpecFactory {
   }
 
   public static Spec createMainnetCapella() {
-    final SpecConfigBellatrix specConfig = getCapellaSpecConfig(Eth2Network.MAINNET);
+    final SpecConfigCapella specConfig = getCapellaSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createMainnetEip4844() {
+    final SpecConfigBellatrix specConfig = getEip4844SpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.EIP4844);
   }
 
   public static Spec createMainnetPhase0() {
@@ -166,6 +181,10 @@ public class TestSpecFactory {
 
   public static Spec createCapella(final SpecConfig config) {
     return create(config, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createEip4844(final SpecConfig config) {
+    return create(config, SpecMilestone.EIP4844);
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
@@ -200,6 +219,15 @@ public class TestSpecFactory {
                     z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                         .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                         .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
+        break;
+      case EIP4844:
+        actualModifier =
+            configModifier.andThen(
+                z ->
+                    z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                        .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO)));
         break;
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -256,7 +284,7 @@ public class TestSpecFactory {
   private static SpecConfigCapella getCapellaSpecConfig(
       final Eth2Network network,
       final UInt64 altairForkEpoch,
-      UInt64 bellatrixForkEpoch,
+      final UInt64 bellatrixForkEpoch,
       final UInt64 capellaForkEpoch) {
     return getCapellaSpecConfig(
         network,
@@ -276,6 +304,40 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
+  }
+
+  private static SpecConfigEip4844 getEip4844SpecConfig(final Eth2Network network) {
+    return getEip4844SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigEip4844 getEip4844SpecConfig(
+      final Eth2Network network,
+      final UInt64 altairForkEpoch,
+      final UInt64 bellatrixForkEpoch,
+      final UInt64 capellaForkEpoch,
+      final UInt64 eip4844ForkEpoch) {
+    return getEip4844SpecConfig(
+        network,
+        z ->
+            z.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch))
+                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .eip4844Builder(d -> d.eip4844ForkEpoch(eip4844ForkEpoch)));
+  }
+
+  private static SpecConfigEip4844 getEip4844SpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return SpecConfigEip4844.required(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
             }));
   }

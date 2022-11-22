@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;

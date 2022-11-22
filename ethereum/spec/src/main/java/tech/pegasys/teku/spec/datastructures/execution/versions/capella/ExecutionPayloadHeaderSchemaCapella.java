@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 
 public class ExecutionPayloadHeaderSchemaCapella
     extends ContainerSchema15<
@@ -154,6 +155,28 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
+  }
+
+  public ExecutionPayloadHeaderCapellaImpl createFromExecutionPayloadHeaderBellatrix(
+      final ExecutionPayloadHeaderBellatrix executionPayloadHeaderBellatrix) {
+    return new ExecutionPayloadHeaderCapellaImpl(
+        this,
+        SszBytes32.of(executionPayloadHeaderBellatrix.getParentHash()),
+        SszByteVector.fromBytes(
+            executionPayloadHeaderBellatrix.getFeeRecipient().getWrappedBytes()),
+        SszBytes32.of(executionPayloadHeaderBellatrix.getStateRoot()),
+        SszBytes32.of(executionPayloadHeaderBellatrix.getReceiptsRoot()),
+        SszByteVector.fromBytes(executionPayloadHeaderBellatrix.getLogsBloom()),
+        SszBytes32.of(executionPayloadHeaderBellatrix.getPrevRandao()),
+        SszUInt64.of(executionPayloadHeaderBellatrix.getBlockNumber()),
+        SszUInt64.of(executionPayloadHeaderBellatrix.getGasLimit()),
+        SszUInt64.of(executionPayloadHeaderBellatrix.getGasUsed()),
+        SszUInt64.of(executionPayloadHeaderBellatrix.getTimestamp()),
+        getExtraDataSchema().fromBytes(executionPayloadHeaderBellatrix.getExtraData()),
+        SszUInt256.of(executionPayloadHeaderBellatrix.getBaseFeePerGas()),
+        SszBytes32.of(executionPayloadHeaderBellatrix.getBlockHash()),
+        SszBytes32.of(executionPayloadHeaderBellatrix.getTransactionsRoot()),
+        SszBytes32.of(Bytes32.ZERO));
   }
 
   private SszByteListSchema<?> getExtraDataSchema() {

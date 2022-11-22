@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
@@ -45,7 +45,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella;
   private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
 
-  private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaCapella<?> blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
