@@ -140,7 +140,6 @@ public class BlockOperationSelectorFactory {
                           specVersion.getSchemaDefinitions().getBeaconBlockBodySchema())
                       .getBlsToExecutionChangesSchema()
                       .getDefault());
-      ;
 
       // execution payload handling
       if (bodyBuilder.isBlinded()) {

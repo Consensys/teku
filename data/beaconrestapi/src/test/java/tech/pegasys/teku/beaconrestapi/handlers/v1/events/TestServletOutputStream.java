@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestServletOutputStream extends ServletOutputStream {

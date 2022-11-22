@@ -5,6 +5,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':ethereum:execution-types')
+  implementation project(':ethereum:json-types')
   implementation project(':ethereum:spec')
   implementation project(':data:serializer')
 

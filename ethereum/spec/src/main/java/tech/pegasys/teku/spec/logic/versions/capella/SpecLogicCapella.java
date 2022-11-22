@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+  private final BellatrixTransitionHelpers bellatrixTransitionHelpers;
 
   private SpecLogicCapella(
       final Predicates predicates,
@@ -58,7 +59,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final CapellaStateUpgrade stateUpgrade) {
+      final CapellaStateUpgrade stateUpgrade,
+      final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
     super(
         predicates,
         miscHelpers,
@@ -77,6 +79,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.bellatrixTransitionHelpers = bellatrixTransitionHelpers;
   }
 
   public static SpecLogicCapella create(
@@ -151,6 +154,9 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     final CapellaStateUpgrade stateUpgrade =
         new CapellaStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
+    final BellatrixTransitionHelpers bellatrixTransitionHelpers =
+        new BellatrixTransitionHelpers(config, miscHelpers);
+
     return new SpecLogicCapella(
         predicates,
         miscHelpers,
@@ -168,7 +174,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
-        stateUpgrade);
+        stateUpgrade,
+        bellatrixTransitionHelpers);
   }
 
   @Override
@@ -178,6 +185,6 @@ public class SpecLogicCapella extends AbstractSpecLogic {
 
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
-    return Optional.empty();
+    return Optional.of(bellatrixTransitionHelpers);
   }
 }

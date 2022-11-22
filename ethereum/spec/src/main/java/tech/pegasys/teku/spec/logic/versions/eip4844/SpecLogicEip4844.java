@@ -31,11 +31,11 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.eip4844.forktransition.Eip4844StateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class SpecLogicEip4844 extends AbstractSpecLogic {
@@ -43,7 +43,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
 
   private SpecLogicEip4844(
       final Predicates predicates,
-      final MiscHelpersBellatrix miscHelpers,
+      final MiscHelpersEip4844 miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -83,7 +83,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
       final SpecConfigEip4844 config, final SchemaDefinitionsEip4844 schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
-    final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
+    final MiscHelpersEip4844 miscHelpers = new MiscHelpersEip4844(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =

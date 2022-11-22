@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -61,6 +62,8 @@ public class Eth2NetworkConfiguration {
   private final List<String> discoveryBootnodes;
   private final Optional<UInt64> altairForkEpoch;
   private final Optional<UInt64> bellatrixForkEpoch;
+  private final Optional<UInt64> capellaForkEpoch;
+  private final Optional<UInt64> eip4844ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
@@ -83,6 +86,8 @@ public class Eth2NetworkConfiguration {
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
+      final Optional<UInt64> capellaForkEpoch,
+      final Optional<UInt64> eip4844ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride) {
@@ -96,6 +101,8 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.altairForkEpoch = altairForkEpoch;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
+    this.capellaForkEpoch = capellaForkEpoch;
+    this.eip4844ForkEpoch = eip4844ForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -168,12 +175,19 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
-  public Optional<UInt64> getAltairForkEpoch() {
-    return altairForkEpoch;
-  }
-
-  public Optional<UInt64> getBellatrixForkEpoch() {
-    return bellatrixForkEpoch;
+  public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
+    switch (specMilestone) {
+      case ALTAIR:
+        return altairForkEpoch;
+      case BELLATRIX:
+        return bellatrixForkEpoch;
+      case CAPELLA:
+        return capellaForkEpoch;
+      case EIP4844:
+        return eip4844ForkEpoch;
+      default:
+        return Optional.empty();
+    }
   }
 
   public Optional<Bytes32> getTerminalBlockHashOverride() {
@@ -207,6 +221,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
+    private Optional<UInt64> eip4844ForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -247,6 +262,9 @@ public class Eth2NetworkConfiguration {
                   builder.capellaBuilder(
                       capellaBuilder ->
                           capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
+                  builder.eip4844Builder(
+                      eip4844Builder ->
+                          eip4844ForkEpoch.ifPresent(eip4844Builder::eip4844ForkEpoch));
                 });
       }
       // if the deposit contract was not set, default from constants
@@ -267,6 +285,8 @@ public class Eth2NetworkConfiguration {
           forkChoiceUpdateHeadOnBlockImportEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
+          capellaForkEpoch,
+          eip4844ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride);
@@ -370,6 +390,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder capellaForkEpoch(final UInt64 capellaForkEpoch) {
       this.capellaForkEpoch = Optional.of(capellaForkEpoch);
+      return this;
+    }
+
+    public Builder eip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
+      this.eip4844ForkEpoch = Optional.of(eip4844ForkEpoch);
       return this;
     }
 

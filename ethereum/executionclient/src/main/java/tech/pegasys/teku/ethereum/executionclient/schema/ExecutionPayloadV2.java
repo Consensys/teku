@@ -92,6 +92,9 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
   @Override
   public ExecutionPayload asInternalExecutionPayload(
       ExecutionPayloadSchema<?> executionPayloadSchema) {
+    if (withdrawals == null) {
+      return super.asInternalExecutionPayload(executionPayloadSchema);
+    }
     return executionPayloadSchema
         .toVersionCapella()
         .orElseThrow()

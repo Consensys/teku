@@ -38,8 +38,17 @@ public class SignedBeaconBlockAndBlobsSidecarSchema
     return new SignedBeaconBlockAndBlobsSidecarSchema(signedBeaconBlockSchema, blobsSidecarSchema);
   }
 
+  public SignedBeaconBlockAndBlobsSidecar create(
+      final SignedBeaconBlock signedBeaconBlock, final BlobsSidecar blobsSidecar) {
+    return new SignedBeaconBlockAndBlobsSidecar(this, signedBeaconBlock, blobsSidecar);
+  }
+
   @Override
   public SignedBeaconBlockAndBlobsSidecar createFromBackingNode(final TreeNode node) {
     return new SignedBeaconBlockAndBlobsSidecar(this, node);
+  }
+
+  public BlobsSidecarSchema getBlobsSidecarSchema() {
+    return (BlobsSidecarSchema) getFieldSchema1();
   }
 }

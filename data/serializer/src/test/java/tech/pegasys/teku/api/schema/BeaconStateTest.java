@@ -19,19 +19,13 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
+import tech.pegasys.teku.api.schema.eip4844.BeaconStateEip4844;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 
-@TestSpecContext(
-    milestone = {
-      SpecMilestone.PHASE0,
-      SpecMilestone.ALTAIR,
-      SpecMilestone.BELLATRIX,
-      SpecMilestone.CAPELLA
-    })
+@TestSpecContext(allMilestones = true)
 public class BeaconStateTest {
 
   @TestTemplate
@@ -53,6 +47,9 @@ public class BeaconStateTest {
         break;
       case CAPELLA:
         beaconState = new BeaconStateCapella(beaconStateInternal);
+        break;
+      case EIP4844:
+        beaconState = new BeaconStateEip4844(beaconStateInternal);
         break;
       default:
         throw new IllegalStateException("Unsupported milestone");

@@ -76,7 +76,11 @@ public class OkHttpValidatorTypeDefClient {
   }
 
   public Optional<GenesisData> getGenesis() {
-    return getGenesisRequest.getGenesisData();
+    return getGenesisRequest
+        .getGenesisData()
+        .map(
+            response ->
+                new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {

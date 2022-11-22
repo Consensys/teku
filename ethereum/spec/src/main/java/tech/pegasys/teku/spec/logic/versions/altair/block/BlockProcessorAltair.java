@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -202,35 +203,6 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
-    final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
-
-    for (int i = 0; i < specConfigAltair.getSyncCommitteeSize(); i++) {
-      final BLSPublicKey publicKey =
-          syncCommitteeUtil.getCurrentSyncCommitteeParticipantPubKey(state, i);
-      if (aggregate.getSyncCommitteeBits().getBit(i)) {
-        participantPubkeys.add(publicKey);
-      } else {
-        idlePubkeys.add(publicKey);
-      }
-    }
-
-    final UInt64 previousSlot = state.getSlot().minusMinZero(1);
-    final Bytes32 domain =
-        beaconStateAccessors.getDomain(
-            state.getForkInfo(),
-            Domain.SYNC_COMMITTEE,
-            miscHelpers.computeEpochAtSlot(previousSlot));
-    final Bytes32 signingRoot =
-        miscHelpersAltair.computeSigningRoot(
-            beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
-
-    if (!eth2FastAggregateVerify(
-        signatureVerifier,
-        participantPubkeys,
-        signingRoot,
-        aggregate.getSyncCommitteeSignature().getSignature())) {
-      throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
-    }
 
     // Compute participant and proposer rewards
     final UInt64 totalActiveIncrements =
@@ -251,22 +223,42 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .times(PROPOSER_WEIGHT)
             .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
 
-    // Apply participant and proposer rewards
-    participantPubkeys.stream()
-        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
-        .forEach(
-            participantIndex ->
-                beaconStateMutators.increaseBalance(state, participantIndex, participantReward));
-    UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
-    beaconStateMutators.increaseBalance(
-        state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
+    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
 
-    // impose penalties for any idle validators
-    idlePubkeys.stream()
-        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
-        .forEach(
-            participantIndex ->
-                beaconStateMutators.decreaseBalance(state, participantIndex, participantReward));
+    for (int i = 0; i < specConfigAltair.getSyncCommitteeSize(); i++) {
+      final int validatorIndex =
+          syncCommitteeUtil.getCurrentSyncCommitteeParticipantValidatorIndex(state, i);
+      final BLSPublicKey publicKey =
+          beaconStateAccessors
+              .getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
+              .orElseThrow(
+                  () -> new IllegalStateException("Validator in sync committee has no public key"));
+      if (aggregate.getSyncCommitteeBits().getBit(i)) {
+        participantPubkeys.add(publicKey);
+        beaconStateMutators.increaseBalance(state, validatorIndex, participantReward);
+        beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+      } else {
+        beaconStateMutators.decreaseBalance(state, validatorIndex, participantReward);
+      }
+    }
+
+    final UInt64 previousSlot = state.getSlot().minusMinZero(1);
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(
+            state.getForkInfo(),
+            Domain.SYNC_COMMITTEE,
+            miscHelpers.computeEpochAtSlot(previousSlot));
+    final Bytes32 signingRoot =
+        miscHelpersAltair.computeSigningRoot(
+            beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
+
+    if (!eth2FastAggregateVerify(
+        signatureVerifier,
+        participantPubkeys,
+        signingRoot,
+        aggregate.getSyncCommitteeSignature().getSignature())) {
+      throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
+    }
   }
 
   @Override
@@ -307,6 +299,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       throws BlockProcessingException {
 
     throw new UnsupportedOperationException("No withdrawals in Altair");
+  }
+
+  @Override
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
+    return Optional.empty();
   }
 
   public static boolean eth2FastAggregateVerify(

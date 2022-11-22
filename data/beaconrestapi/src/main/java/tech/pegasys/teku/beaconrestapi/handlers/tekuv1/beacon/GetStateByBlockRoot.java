@@ -22,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;

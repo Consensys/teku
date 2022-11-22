@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -143,4 +145,6 @@ public interface BlockProcessor {
 
   void processWithdrawals(MutableBeaconState state, ExecutionPayload payload)
       throws BlockProcessingException;
+
+  Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
 }

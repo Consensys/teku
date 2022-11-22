@@ -89,18 +89,13 @@ public abstract class AbstractNode implements Node {
   }
 
   private void reportOverrides(final TekuConfiguration tekuConfig) {
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getAltairForkEpoch()
-        .ifPresent(
-            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.ALTAIR.name(), forkEpoch));
 
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getBellatrixForkEpoch()
-        .ifPresent(
-            forkEpoch ->
-                STATUS_LOG.warnForkEpochChanged(SpecMilestone.BELLATRIX.name(), forkEpoch));
+    for (SpecMilestone specMilestone : SpecMilestone.values()) {
+      tekuConfig
+          .eth2NetworkConfiguration()
+          .getForkEpoch(specMilestone)
+          .ifPresent(forkEpoch -> STATUS_LOG.warnForkEpochChanged(specMilestone.name(), forkEpoch));
+    }
 
     tekuConfig
         .eth2NetworkConfiguration()
