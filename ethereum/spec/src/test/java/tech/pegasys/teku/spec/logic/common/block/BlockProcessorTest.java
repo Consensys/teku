@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class BlockProcessorTest {
   protected final Spec spec = createSpec();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final SpecConfig specConfig = genesisSpec.getConfig();

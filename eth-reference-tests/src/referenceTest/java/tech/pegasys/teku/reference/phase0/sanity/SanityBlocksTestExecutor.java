@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.assertj.core.api.AbstractThrowableAssert;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.BlsSetting;
@@ -37,6 +38,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 public class SanityBlocksTestExecutor implements TestExecutor {
 
   private static final String EXPECTED_STATE_FILENAME = "post.ssz_snappy";
+  private static final String STATE_ROOT_MISMATCH_ERROR_MESSAGE =
+      "Block state root does NOT match the calculated " + "state root";
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
@@ -74,9 +77,22 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     expectedState.ifPresentOrElse(
         (state) ->
             assertThat(processor.processBlocks(spec, metaData, preState, blocks)).isEqualTo(state),
-        () ->
-            assertThatThrownBy(() -> processor.processBlocks(spec, metaData, preState, blocks))
-                .hasCauseInstanceOf(StateTransitionException.class));
+        () -> {
+          final AbstractThrowableAssert<?, ? extends Throwable> throwableAssert =
+              assertThatThrownBy(() -> processor.processBlocks(spec, metaData, preState, blocks))
+                  .hasCauseInstanceOf(StateTransitionException.class);
+          /*
+           We don't have a better way to know if the test case cares about a state root mismatch until this
+           issue is resolved: https://github.com/ethereum/consensus-specs/issues/3122
+          */
+          if (testDefinition.getTestName().contains("invalid_state_root")) {
+            throwableAssert.hasMessageContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
+          } else {
+            throwableAssert
+                .as("Expected state transition failure not caused by state root mismatch")
+                .hasMessageNotContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
+          }
+        });
   }
 
   private BeaconState applyBlocks(
@@ -103,6 +119,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
   }
 
   private static class SanityBlocksMetaData {
+
     @JsonProperty(value = "blocks_count", required = true)
     private int blocksCount;
 
@@ -123,6 +140,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
   }
 
   private interface BlocksProcessor {
+
     BeaconState processBlocks(
         final Spec spec,
         final SanityBlocksMetaData metaData,
