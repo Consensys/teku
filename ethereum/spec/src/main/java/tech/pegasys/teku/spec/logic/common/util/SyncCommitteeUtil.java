@@ -154,10 +154,14 @@ public class SyncCommitteeUtil {
         .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
   }
 
-  public BLSPublicKey getCurrentSyncCommitteeParticipantPubKey(
-      final BeaconStateAltair state, final int committeeIndex) {
-    final SyncCommittee syncCommittee = state.getCurrentSyncCommittee();
-    return getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
+  public int getCurrentSyncCommitteeParticipantValidatorIndex(
+      final BeaconStateAltair state, final int commiteeIndex) {
+    final BLSPublicKey uncachedPubkey =
+        state.getCurrentSyncCommittee().getPubkeys().get(commiteeIndex).getBLSPublicKey();
+    return validatorsUtil
+        .getValidatorIndex(state, uncachedPubkey)
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unknown validator found in sync committee"));
   }
 
   public BLSPublicKey getSyncCommitteeParticipantPubKey(
