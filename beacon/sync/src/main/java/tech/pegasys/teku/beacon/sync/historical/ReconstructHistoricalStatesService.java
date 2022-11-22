@@ -100,41 +100,34 @@ public class ReconstructHistoricalStatesService extends Service {
 
               chainDataClient
                   .getLatestAvailableFinalizedState(anchorSlot.decrement())
-                  .thenAccept(
+                  .thenComposeChecked(
                       latestState -> {
                         if (latestState.isPresent()) {
                           final BeaconState state = latestState.get();
-                          Context context =
-                              new Context(state, state.getSlot().increment(), anchorSlot);
-                          applyBlocks(context, SafeFuture.COMPLETE);
+                          return SafeFuture.completedFuture(
+                              new Context(state, state.getSlot().increment(), anchorSlot));
+                        }
 
+                        final Bytes32 genesisBlockRoot =
+                            BeaconBlockHeader.fromState(genesisState).getRoot();
+                        storageUpdateChannel
+                            .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
+                            .ifExceptionGetsHereRaiseABug();
+                        return SafeFuture.completedFuture(
+                            new Context(genesisState, GENESIS_SLOT.increment(), anchorSlot));
+                      })
+                  .thenComposeChecked(this::applyNextBlock)
+                  .finish(
+                      error -> {
+                        final Throwable rootCause = Throwables.getRootCause(error);
+                        if (rootCause instanceof ShuttingDownException
+                            || rootCause instanceof InterruptedException
+                            || rootCause instanceof RejectedExecutionException) {
+                          LOG.debug("Shutting down", rootCause);
                         } else {
-                          Context context =
-                              new Context(genesisState, GENESIS_SLOT.increment(), anchorSlot);
-                          final Bytes32 genesisBlockRoot =
-                              BeaconBlockHeader.fromState(genesisState).getRoot();
-                          final SafeFuture<Void> storeGenesisState =
-                              storageUpdateChannel.onReconstructedFinalizedState(
-                                  genesisState, genesisBlockRoot);
-                          applyBlocks(context, storeGenesisState);
+                          statusLogger.reconstructHistoricalStatesServiceFailedProcess(error);
                         }
                       });
-            });
-  }
-
-  public void applyBlocks(final Context context, final SafeFuture<Void> storeGenesisState) {
-    storeGenesisState
-        .thenComposeChecked(__ -> applyNextBlock(context))
-        .finish(
-            error -> {
-              final Throwable rootCause = Throwables.getRootCause(error);
-              if (rootCause instanceof ShuttingDownException
-                  || rootCause instanceof InterruptedException
-                  || rootCause instanceof RejectedExecutionException) {
-                LOG.debug("Shutting down", rootCause);
-              } else {
-                statusLogger.reconstructHistoricalStatesServiceFailedProcess(error);
-              }
             });
   }
 

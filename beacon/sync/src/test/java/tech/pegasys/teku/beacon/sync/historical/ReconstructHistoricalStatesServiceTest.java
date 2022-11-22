@@ -104,6 +104,9 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   public void shouldRegenerateStates(@TempDir final Path tempDir) throws IOException {
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 
@@ -116,6 +119,9 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   void shouldRegenerateStatesWithEmptySlots(@TempDir final Path tempDir) throws IOException {
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
     chainBuilder.generateBlockAtSlot(12);
     chainBuilder.generateBlocksUpToSlot(18);
     final Checkpoint initialAnchor = getInitialAnchor();
@@ -132,13 +138,14 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldLogFailServiceProcess(@TempDir final Path tempDir) throws IOException {
     when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, times(1)).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
@@ -146,13 +153,14 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldHandleShutdown(@TempDir final Path tempDir) throws IOException {
     when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RejectedExecutionException()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
