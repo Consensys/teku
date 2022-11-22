@@ -1870,13 +1870,17 @@ public final class DataStructureUtil {
   }
 
   public BlobsSidecar randomBlobsSidecar() {
+    return randomBlobsSidecar(randomBytes32(), randomUInt64());
+  }
+
+  public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
     final BlobsSidecarSchema blobsSidecarSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return blobsSidecarSchema.create(
-        randomBytes32(),
-        randomUInt64(),
+        blockRoot,
+        slot,
         IntStream.range(0, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()))
             .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
             .collect(toList()),

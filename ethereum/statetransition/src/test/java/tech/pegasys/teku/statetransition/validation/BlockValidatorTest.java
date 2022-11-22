@@ -317,10 +317,45 @@ public class BlockValidatorTest {
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    final BlobsSidecar blobsSidecar = specContext.getDataStructureUtil().randomBlobsSidecar();
+    final BlobsSidecar wrongSlotBlobsSidecar =
+        specContext
+            .getDataStructureUtil()
+            .randomBlobsSidecar(block.getRoot(), specContext.getDataStructureUtil().randomUInt64());
 
-    InternalValidationResult result =
-        blockValidator.validate(block, Optional.of(blobsSidecar)).join();
-    assertTrue(result.isReject());
+    assertTrue(
+        blockValidator.validate(block, Optional.of(wrongSlotBlobsSidecar)).join().isReject());
+
+    final BlobsSidecar wrongRootBlobsSidecar =
+        specContext
+            .getDataStructureUtil()
+            .randomBlobsSidecar(
+                specContext.getDataStructureUtil().randomBytes32(), block.getSlot());
+
+    assertTrue(
+        blockValidator.validate(block, Optional.of(wrongRootBlobsSidecar)).join().isReject());
+  }
+
+  @TestTemplate
+  void shouldReturnAcceptConsistentBlockAndBlobsSidecar(final SpecContext specContext) {
+    specContext.assumeEip4844Active();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    final BlobsSidecar consistentBlobsSidecar =
+        specContext.getDataStructureUtil().randomBlobsSidecar(block.getRoot(), block.getSlot());
+
+    assertTrue(
+        blockValidator.validate(block, Optional.of(consistentBlobsSidecar)).join().isAccept());
   }
 }
