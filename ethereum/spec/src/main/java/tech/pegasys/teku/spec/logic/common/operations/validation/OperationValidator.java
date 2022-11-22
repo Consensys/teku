@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -28,20 +29,25 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashin
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 
 public class OperationValidator {
+
   private final AttestationDataValidator attestationDataValidator;
   private final AttesterSlashingValidator attesterSlashingValidator;
   private final ProposerSlashingValidator proposerSlashingValidator;
   private final VoluntaryExitValidator voluntaryExitValidator;
 
+  private final BlsToExecutionChangesValidator blsToExecutionChangesValidator;
+
   private OperationValidator(
       final AttestationDataValidator attestationDataValidator,
       final AttesterSlashingValidator attesterSlashingValidator,
       final ProposerSlashingValidator proposerSlashingValidator,
-      final VoluntaryExitValidator voluntaryExitValidator) {
+      final VoluntaryExitValidator voluntaryExitValidator,
+      final BlsToExecutionChangesValidator blsToExecutionChangesValidator) {
     this.attestationDataValidator = attestationDataValidator;
     this.attesterSlashingValidator = attesterSlashingValidator;
     this.proposerSlashingValidator = proposerSlashingValidator;
     this.voluntaryExitValidator = voluntaryExitValidator;
+    this.blsToExecutionChangesValidator = blsToExecutionChangesValidator;
   }
 
   public static OperationValidator create(
@@ -58,11 +64,14 @@ public class OperationValidator {
         new ProposerSlashingValidator(predicates, beaconStateAccessors);
     final VoluntaryExitValidator voluntaryExitValidator =
         new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
+    final BlsToExecutionChangesValidator blsToExecutionChangesValidator =
+        new BlsToExecutionChangesValidator();
     return new OperationValidator(
         attestationDataValidator,
         attesterSlashingValidator,
         proposerSlashingValidator,
-        voluntaryExitValidator);
+        voluntaryExitValidator,
+        blsToExecutionChangesValidator);
   }
 
   public Optional<OperationInvalidReason> validateAttestationData(
@@ -91,5 +100,10 @@ public class OperationValidator {
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
     return voluntaryExitValidator.validate(fork, state, signedExit);
+  }
+
+  public Optional<OperationInvalidReason> validateBlsToExecutionChange(
+      final Fork fork, final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
+    return blsToExecutionChangesValidator.validate(fork, state, blsToExecutionChange);
   }
 }

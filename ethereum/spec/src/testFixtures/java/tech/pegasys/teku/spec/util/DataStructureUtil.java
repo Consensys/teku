@@ -92,6 +92,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -103,6 +104,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -394,6 +399,15 @@ public final class DataStructureUtil {
     return UInt64.valueOf(randomInt(1_000_000_000));
   }
 
+  /**
+   * A random UInt64 that is within a reasonable bound for a validator index. Even tough
+   * VALIDATOR_REGISTRY_LIMIT allows for more validators, Ethereum would run out of Ether before we
+   * reached that many validators.
+   */
+  public UInt64 randomValidatorIndex() {
+    return UInt64.valueOf(randomInt(3_000_000));
+  }
+
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
     return randomSlotAndBlockRoot(randomUInt64());
   }
@@ -513,47 +527,27 @@ public final class DataStructureUtil {
             .getExecutionPayloadHeaderSchema();
     return schema
         .toVersionBellatrix()
-        .map(
-            schemaBellatrix ->
-                (ExecutionPayloadHeader)
-                    schemaBellatrix.create(
-                        randomBytes32(),
-                        randomBytes20(),
-                        randomBytes32(),
-                        randomBytes32(),
-                        randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
-                        randomBytes32(),
-                        randomUInt64(),
-                        randomUInt64(),
-                        randomUInt64(),
-                        randomUInt64(),
-                        randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
-                        randomUInt256(),
-                        randomBytes32(),
-                        randomBytes32()))
-        .or(
-            () ->
-                schema
-                    .toVersionCapella()
-                    .map(
-                        schemaCapella ->
-                            schemaCapella.create(
-                                randomBytes32(),
-                                randomBytes20(),
-                                randomBytes32(),
-                                randomBytes32(),
-                                randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
-                                randomBytes32(),
-                                randomUInt64(),
-                                randomUInt64(),
-                                randomUInt64(),
-                                randomUInt64(),
-                                randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
-                                randomUInt256(),
-                                randomBytes32(),
-                                randomBytes32(),
-                                randomBytes32())))
-        .orElseThrow();
+        .orElseThrow()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
+            randomBytes32());
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeader() {
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    return randomExecutionPayloadHeader(specVersion);
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeaderCapella() {
@@ -731,6 +725,9 @@ public final class DataStructureUtil {
       case CAPELLA:
         return randomExecutionPayloadCapella(specVersion);
 
+      case EIP4844:
+        return randomExecutionPayloadEip4844(specVersion);
+
       default:
         throw new UnsupportedOperationException(
             "Can't create ExecutionPayload for milestone: " + specVersion.getMilestone());
@@ -739,6 +736,10 @@ public final class DataStructureUtil {
 
   public ExecutionPayload randomExecutionPayloadCapella() {
     return randomExecutionPayloadCapella(spec.getGenesisSpec());
+  }
+
+  public ExecutionPayload randomExecutionPayloadEip4844() {
+    return randomExecutionPayloadEip4844(spec.getGenesisSpec());
   }
 
   public Transaction randomExecutionPayloadTransaction() {
@@ -1154,7 +1155,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadHeader(spec.atSlot(slotNum))))
-                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
+                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
   }
 
@@ -1188,7 +1190,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
-                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
+                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
   }
 
@@ -1221,7 +1224,8 @@ public final class DataStructureUtil {
                         () ->
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
-                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
+                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
   }
 
@@ -1255,7 +1259,8 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 this.randomExecutionPayloadIfRequiredBySchema(
                                     spec.getGenesisSpec())))
-                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList))
+                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
+                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
   }
 
@@ -1780,7 +1785,7 @@ public final class DataStructureUtil {
   public Withdrawal randomWithdrawal() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
-        .create(randomUInt64(), randomUInt64(), randomBytes20(), randomUInt64());
+        .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
   public Optional<List<Withdrawal>> randomWithdrawalList() {
@@ -1800,7 +1805,13 @@ public final class DataStructureUtil {
   public BlsToExecutionChange randomBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
-        .create(randomUInt64(), randomPublicKey(), randomBytes20());
+        .create(randomValidatorIndex(), randomPublicKey(), randomBytes20());
+  }
+
+  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIdex) {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBlsToExecutionChangeSchema()
+        .create(UInt64.valueOf(validatorIdex), randomPublicKey(), randomBytes20());
   }
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
@@ -1841,6 +1852,45 @@ public final class DataStructureUtil {
         Bytes.concatenate(
             Bytes.fromHexString("0x010000000000000000000000"),
             randomEth1Address().getWrappedBytes()));
+  }
+
+  public Blob randomBlob() {
+    final BlobSchema blobSchema =
+        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
+    return blobSchema.create(randomBytes(blobSchema.getLength()));
+  }
+
+  public BlobsSidecar randomBlobsSidecar() {
+    final BlobsSidecarSchema blobsSidecarSchema =
+        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+            .getBlobsSidecarSchema();
+
+    return blobsSidecarSchema.create(
+        randomBytes32(),
+        randomUInt64(),
+        IntStream.range(0, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()))
+            .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
+            .collect(toList()),
+        randomBytes48());
+  }
+
+  public SignedBeaconBlockAndBlobsSidecar randomSignedBeaconBlockAndBlobsSidecar() {
+    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBeaconBlockAndBlobsSidecarSchema()
+        .create(randomSignedBeaconBlock(), randomBlobsSidecar());
+  }
+
+  public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
+    final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
+        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionEip4844()
+            .orElseThrow()
+            .getBlobKzgCommitmentsSchema();
+    final long maxKzgCommitments =
+        spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow().getMaxBlobsPerBlock();
+
+    return randomSszList(kzgCommitmentsSchema, maxKzgCommitments, this::randomSszKZGCommitment);
   }
 
   private int randomInt(final int bound) {

@@ -77,6 +77,7 @@ class SimpleBranchNode implements BranchNode, TreeNode {
   }
 
   @Override
+  @SuppressWarnings("ReferenceComparison")
   public String toString() {
     return left == right ? ("(2x " + left + ")") : ("(" + left + ", " + right + ')');
   }

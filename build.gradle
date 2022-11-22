@@ -209,6 +209,9 @@ allprojects {
       // Force strict compliance with Java naming conventions
       check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
+      // Check for uses of == that should probably be .equals
+      check('ReferenceComparison', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+
       // These checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
