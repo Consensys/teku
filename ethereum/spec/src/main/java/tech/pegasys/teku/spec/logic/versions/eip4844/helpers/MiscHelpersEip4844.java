@@ -18,16 +18,19 @@ import static tech.pegasys.teku.spec.config.SpecConfigEip4844.BLOB_TX_TYPE;
 import static tech.pegasys.teku.spec.config.SpecConfigEip4844.VERSIONED_HASH_VERSION_KZG;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.SignedBlobTransaction;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.eip4844.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.eip4844.util.KZGUtilEip4844;
@@ -74,11 +77,26 @@ public class MiscHelpersEip4844 extends MiscHelpersCapella {
   @VisibleForTesting
   public List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
     checkArgument(isBlobTransaction(transaction), "Transaction should be of BLOB type");
-    final SignedBlobTransaction signedBlobTransaction =
-        SignedBlobTransaction.SSZ_SCHEMA.sszDeserialize(transaction.getBytes().slice(1));
-    return signedBlobTransaction.getBlobTransaction().getBlobVersionedHashes().stream()
-        .map(VersionedHash::new)
-        .collect(Collectors.toList());
+    final Bytes txData = transaction.getBytes();
+    // 1st byte is transaction type, next goes ssz encoded SignedBlobTransaction
+    // Getting variable length BlobTransaction offset, which is the message of signed tx
+    final int messageOffset =
+        UInt32.fromBytes(txData.slice(1, 4), ByteOrder.LITTLE_ENDIAN).add(1).intValue();
+    // Getting blobVersionedHashes field offset in BlobTransaction
+    // field offset: 32 + 8 + 32 + 32 + 8 + 4 + 32 + 4 + 4 + 32 = 188
+    final int blobVersionedHashesOffset =
+        messageOffset
+            + UInt32.fromBytes(txData.slice(messageOffset + 188, 4), ByteOrder.LITTLE_ENDIAN)
+                .intValue();
+    final List<VersionedHash> versionedHashes = new ArrayList<>();
+    for (int hashStartOffset = blobVersionedHashesOffset;
+        hashStartOffset < txData.size();
+        hashStartOffset += VersionedHash.SIZE) {
+      versionedHashes.add(
+          new VersionedHash(Bytes32.wrap(txData.slice(hashStartOffset, VersionedHash.SIZE))));
+    }
+
+    return versionedHashes;
   }
 
   private boolean isBlobTransaction(final Transaction transaction) {

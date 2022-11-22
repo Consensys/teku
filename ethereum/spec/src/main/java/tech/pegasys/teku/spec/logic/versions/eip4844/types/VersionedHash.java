@@ -20,6 +20,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class VersionedHash {
+
+  public static final int SIZE = 32;
+
   final Bytes version;
   final Bytes value;
 
