@@ -97,8 +97,8 @@ public class BlockValidator {
     }
 
     if (blobsSidecar.isPresent()) {
-      if (!blockAndBlobsAreConsistent(block, blobsSidecar.get())) {
-        return completedFuture(InternalValidationResult.IGNORE);
+      if (!blockAndBlobsSidecarAreConsistent(block, blobsSidecar.get())) {
+        return completedFuture(reject("Block and BlobsSidecar are inconsistent"));
       }
     }
 
@@ -209,13 +209,13 @@ public class BlockValidator {
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
-  private boolean blockAndBlobsAreConsistent(
+  private boolean blockAndBlobsSidecarAreConsistent(
       final SignedBeaconBlock block, final BlobsSidecar blobsSidecar) {
-    if (blobsSidecar.getBeaconBlockRoot().equals(block.getRoot())) {
+    if (!blobsSidecar.getBeaconBlockRoot().equals(block.getRoot())) {
       return false;
     }
 
-    if (blobsSidecar.getBeaconBlockSlot().equals(block.getSlot())) {
+    if (!blobsSidecar.getBeaconBlockSlot().equals(block.getSlot())) {
       return false;
     }
 

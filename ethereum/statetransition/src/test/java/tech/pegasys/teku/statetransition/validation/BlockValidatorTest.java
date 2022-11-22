@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -64,7 +65,7 @@ public class BlockValidatorTest {
   }
 
   @BeforeEach
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
@@ -249,7 +250,7 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
-  void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
+  void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(final SpecContext specContext) {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
@@ -270,7 +271,7 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
-  void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
+  void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(final SpecContext specContext) {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
@@ -296,6 +297,30 @@ public class BlockValidatorTest {
 
     InternalValidationResult result =
         blockValidator.validate(signedBlockAndState.getBlock(), Optional.empty()).join();
+    assertTrue(result.isReject());
+  }
+
+  @TestTemplate
+  void shouldReturnInvalidForInconsistentBlockAndBlobsSidecar(final SpecContext specContext) {
+    specContext.assumeEip4844Active();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    final BlobsSidecar blobsSidecar = specContext.getDataStructureUtil().randomBlobsSidecar();
+
+    InternalValidationResult result =
+        blockValidator.validate(block, Optional.of(blobsSidecar)).join();
     assertTrue(result.isReject());
   }
 }
