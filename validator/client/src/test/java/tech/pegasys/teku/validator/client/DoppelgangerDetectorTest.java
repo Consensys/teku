@@ -108,7 +108,6 @@ public class DoppelgangerDetectorTest {
         logCaptor.getLogEvents().get(4),
         "INFO",
         "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection.");
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -148,7 +147,6 @@ public class DoppelgangerDetectorTest {
         .validatorsDoppelgangerDetected(
             doppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> "")));
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
@@ -195,7 +193,6 @@ public class DoppelgangerDetectorTest {
         .validatorsDoppelgangerDetected(
             doppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
@@ -214,7 +211,6 @@ public class DoppelgangerDetectorTest {
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception";
     expectLogMessage(logCaptor.getLogEvents().get(1), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(2), "INFO", doppelgangerTimeoutLog);
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -236,7 +232,6 @@ public class DoppelgangerDetectorTest {
         "Unable to check validators doppelganger. Unable to get validators indices: java.lang.Exception: Validator Indices Exception";
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -257,7 +252,6 @@ public class DoppelgangerDetectorTest {
         "Unable to check validators doppelganger. Unable to get validators liveness: java.lang.Exception: Validator API Channel Exception";
     expectLogMessage(logCaptor.getLogEvents().get(3), "ERROR", expectedErrorLog);
     expectLogMessage(logCaptor.getLogEvents().get(4), "INFO", doppelgangerTimeoutLog);
-    assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
