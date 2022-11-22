@@ -219,6 +219,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
   // process_withdrawals
 
+  @Override
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
+    return Optional.of(getExpectedWithdrawals(BeaconStateCapella.required(preState)));
+  }
+
   // get_expected_withdrawals
   private List<Withdrawal> getExpectedWithdrawals(final BeaconStateCapella preState) {
     final List<Withdrawal> expectedWithdrawals = new ArrayList<>();
