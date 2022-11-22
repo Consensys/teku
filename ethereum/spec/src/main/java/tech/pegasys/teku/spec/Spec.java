@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -637,6 +638,10 @@ public class Spec {
                   "Blinder not available for the current spec but the given block was unblinded");
               return unblindedSignedBeaconBlock;
             });
+  }
+
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState state) {
+    return atState(state).getBlockProcessor().getExpectedWithdrawals(state);
   }
 
   // Block Processor Utils
