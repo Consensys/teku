@@ -195,12 +195,9 @@ public class DoppelgangerDetectorTest {
         "Doppelganger detected. Shutting down Validator Client.");
     assertThat(stdOut.toString(UTF_8))
         .contains(
-            "Detected 2 validators doppelganger: \n"
-                + "Index: 1, Public key: "
-                + pubKey1
-                + "\n"
-                + "Index: 3, Public key: "
-                + pubKey3);
+            String.format(
+                "Detected 2 validators doppelganger: \nIndex: %d, Public key: %s\nIndex: %d, Public key: %s",
+                1, pubKey1, 3, pubKey3));
     assertThat(doppelgangerDetectorFuture).isCompleted();
     assertThat(doppelgangerDetectorFuture)
         .isCompletedWithValue(Map.ofEntries(Map.entry(1, pubKey1), Map.entry(3, pubKey3)));
