@@ -127,7 +127,7 @@ public class ProposerSlashingValidatorTest {
 
   private void assertValidationResult(
       final ProposerSlashing slashing, final ValidationResultCode expectedResultCode) {
-    assertThat(proposerSlashingValidator.validateFully(slashing))
+    assertThat(proposerSlashingValidator.validateForGossip(slashing))
         .isCompletedWithValueMatching(result -> result.code() == expectedResultCode);
   }
 

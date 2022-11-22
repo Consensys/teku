@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':ethereum:json-types')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')

@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -119,6 +120,7 @@ public class BlockOperationSelectorFactory {
               exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
+      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
       bodyBuilder
           .randaoReveal(randaoReveal)
           .eth1Data(eth1Data)
@@ -131,9 +133,13 @@ public class BlockOperationSelectorFactory {
           .syncAggregate(
               () ->
                   contributionPool.createSyncAggregateForBlock(
-                      blockSlotState.getSlot(), parentRoot));
-
-      final SpecVersion specVersion = spec.atSlot(blockSlotState.getSlot());
+                      blockSlotState.getSlot(), parentRoot))
+          .blsToExecutionChanges(
+              () ->
+                  BeaconBlockBodySchemaCapella.required(
+                          specVersion.getSchemaDefinitions().getBeaconBlockBodySchema())
+                      .getBlsToExecutionChangesSchema()
+                      .getDefault());
 
       // execution payload handling
       if (bodyBuilder.isBlinded()) {

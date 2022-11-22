@@ -13,24 +13,31 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import io.javalin.plugin.rendering.JavalinRenderer;
-import io.javalin.plugin.rendering.template.JavalinThymeleaf;
+import io.javalin.rendering.template.JavalinThymeleaf;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
 
-/** ThymeLeaf templates configuration for Javalin */
-public class ThymeleafConfigurator {
+/**
+ * ThymeLeaf templates configuration for Javalin. Note that Javalin renderers are configured using a
+ * singleton so only the first call to this class will have any effect.
+ */
+class ThymeleafConfigurator {
+  private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+
   public static void enableThymeleafTemplates(final String templatePath) {
-    JavalinRenderer.register(JavalinThymeleaf.INSTANCE);
+    if (!REGISTERED.compareAndSet(false, true)) {
+      return;
+    }
     TemplateEngine templateEngine = new TemplateEngine();
     templateEngine.addTemplateResolver(templateResolver(TemplateMode.HTML, templatePath, ".html"));
-    JavalinThymeleaf.configure(templateEngine);
+    JavalinThymeleaf.init(templateEngine);
   }
 
   private static ITemplateResolver templateResolver(
-      TemplateMode templateMode, String prefix, String suffix) {
+      final TemplateMode templateMode, final String prefix, final String suffix) {
     ClassLoaderTemplateResolver templateResolver =
         new ClassLoaderTemplateResolver(Thread.currentThread().getContextClassLoader());
     templateResolver.setTemplateMode(templateMode);

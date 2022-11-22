@@ -39,6 +39,12 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onReconstructedFinalizedState(
+      BeaconState finalizedState, Bytes32 blockRoot) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.COMPLETE;
   }

@@ -28,7 +28,6 @@ dependencies {
     implementation 'io.swagger.core.v3:swagger-annotations'
     implementation 'io.github.classgraph:classgraph'
     implementation 'io.javalin:javalin'
-    implementation 'io.javalin:javalin-openapi'
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.webjars:swagger-ui'
 

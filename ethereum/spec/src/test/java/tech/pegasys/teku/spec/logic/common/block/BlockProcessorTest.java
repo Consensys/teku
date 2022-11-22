@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class BlockProcessorTest {
   protected final Spec spec = createSpec();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final SpecConfig specConfig = genesisSpec.getConfig();
@@ -206,7 +206,7 @@ public abstract class BlockProcessorTest {
     return createBeaconState(true, amount, knownValidator);
   }
 
-  private BeaconState createBeaconState(
+  protected BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
     return spec.getGenesisSpec()
         .getSchemaDefinitions()
@@ -267,7 +267,16 @@ public abstract class BlockProcessorTest {
     return beaconState.updated(state -> blockProcessor.processDeposits(state, deposits));
   }
 
-  private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
+  protected Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
+    return makeValidator(
+        pubkey, withdrawalCredentials, SpecConfig.FAR_FUTURE_EPOCH, SpecConfig.FAR_FUTURE_EPOCH);
+  }
+
+  protected Validator makeValidator(
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 exitEpoch,
+      final UInt64 withdrawableEpoch) {
     return new Validator(
         pubkey,
         withdrawalCredentials,
@@ -275,7 +284,7 @@ public abstract class BlockProcessorTest {
         false,
         SpecConfig.FAR_FUTURE_EPOCH,
         SpecConfig.FAR_FUTURE_EPOCH,
-        SpecConfig.FAR_FUTURE_EPOCH,
-        SpecConfig.FAR_FUTURE_EPOCH);
+        exitEpoch,
+        withdrawableEpoch);
   }
 }

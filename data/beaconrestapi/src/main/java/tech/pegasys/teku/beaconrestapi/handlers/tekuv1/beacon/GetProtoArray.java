@@ -20,7 +20,7 @@ import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefi
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.mapOfStrings;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;

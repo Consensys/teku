@@ -167,7 +167,7 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
+    if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "Bitvector deserialization is only supported by SszBitvectorSchema");
     }

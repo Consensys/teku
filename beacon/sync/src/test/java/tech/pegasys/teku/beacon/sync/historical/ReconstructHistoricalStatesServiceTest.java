@@ -56,7 +56,8 @@ public class ReconstructHistoricalStatesServiceTest {
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(10);
 
-    when(storageUpdateChannel.onFinalizedState(any(), any())).thenReturn(SafeFuture.COMPLETE);
+    when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -70,7 +71,7 @@ public class ReconstructHistoricalStatesServiceTest {
         .isCompletedExceptionallyWithMessage("Genesis state resource not provided");
 
     verify(chainDataClient, never()).getInitialAnchor();
-    verify(storageUpdateChannel, never()).onFinalizedState(any(), any());
+    verify(storageUpdateChannel, never()).onReconstructedFinalizedState(any(), any());
   }
 
   @Test
@@ -85,7 +86,7 @@ public class ReconstructHistoricalStatesServiceTest {
             "Failed to load initial state from invalid resource: Not found");
 
     verify(chainDataClient, never()).getInitialAnchor();
-    verify(storageUpdateChannel, never()).onFinalizedState(any(), any());
+    verify(storageUpdateChannel, never()).onReconstructedFinalizedState(any(), any());
   }
 
   @Test
@@ -98,7 +99,7 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, never()).onFinalizedState(any(), any());
+    verify(storageUpdateChannel, never()).onReconstructedFinalizedState(any(), any());
   }
 
   @Test
@@ -109,8 +110,8 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
-        .onFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).intValue()))
+        .onReconstructedFinalizedState(any(), any());
   }
 
   @Test
@@ -123,13 +124,13 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(2).intValue()))
-        .onFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(initialAnchor.getEpochStartSlot(spec).minus(1).intValue()))
+        .onReconstructedFinalizedState(any(), any());
   }
 
   @Test
   void shouldLogFailServiceProcess(@TempDir final Path tempDir) throws IOException {
-    when(storageUpdateChannel.onFinalizedState(any(), any()))
+    when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException()));
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
@@ -137,21 +138,21 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(1)).onFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, times(1)).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
   @Test
   void shouldHandleShutdown(@TempDir final Path tempDir) throws IOException {
-    when(storageUpdateChannel.onFinalizedState(any(), any()))
-        .thenThrow(new RejectedExecutionException());
+    when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new RejectedExecutionException()));
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(1)).onFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 

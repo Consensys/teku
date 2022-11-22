@@ -17,19 +17,19 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_W
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -220,6 +221,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
   // process_withdrawals
 
+  @Override
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
+    return Optional.of(getExpectedWithdrawals(BeaconStateCapella.required(preState)));
+  }
+
   // get_expected_withdrawals
   private List<Withdrawal> getExpectedWithdrawals(final BeaconStateCapella preState) {
     final List<Withdrawal> expectedWithdrawals = new ArrayList<>();
@@ -269,34 +275,28 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     return (validatorIndex + 1) % validatorCount;
   }
 
-  private BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
+  @VisibleForTesting
+  BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
       final BLSSignatureVerifier signatureVerifier) {
+
+    final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
-      final int validatorIndex = addressChange.getValidatorIndex().intValue();
-      if (genericState.getValidators().size() <= validatorIndex) {
-        return BlockValidationResult.failed("Validator index invalid: " + validatorIndex);
-      }
-      final Bytes32 withdrawalCredentials =
-          genericState.getValidators().get(validatorIndex).getWithdrawalCredentials();
-      if (withdrawalCredentials.get(0) != WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0)) {
+
+      if (!validatorsSeenInBlock.add(addressChange.getValidatorIndex())) {
         return BlockValidationResult.failed(
-            "Not using BLS withdrawal credentials for validator "
-                + validatorIndex
-                + " Credentials: "
-                + withdrawalCredentials);
+            "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
-      if (!withdrawalCredentials
-          .slice(1)
-          .equals(Hash.sha256(addressChange.getFromBlsPubkey().toBytesCompressed()).slice(1))) {
-        return BlockValidationResult.failed(
-            "Validator "
-                + validatorIndex
-                + " public key does not match withdrawal credentials: "
-                + addressChange.getFromBlsPubkey());
+
+      final Optional<OperationInvalidReason> operationInvalidReason =
+          operationValidator.validateBlsToExecutionChange(
+              genericState.getFork(), genericState, addressChange);
+      if (operationInvalidReason.isPresent()) {
+        return BlockValidationResult.failed(operationInvalidReason.get().describe());
       }
+
       boolean signatureValid =
           operationSignatureVerifier.verifyBlsToExecutionChangeSignature(
               genericState.getFork(), genericState, signedBlsToExecutionChange, signatureVerifier);
