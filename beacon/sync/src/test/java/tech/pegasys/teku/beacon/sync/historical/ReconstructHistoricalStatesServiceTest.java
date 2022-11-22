@@ -41,7 +41,10 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ReconstructHistoricalStatesServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -162,6 +165,29 @@ public class ReconstructHistoricalStatesServiceTest {
     verify(chainDataClient, times(1)).getInitialAnchor();
     verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
+  }
+
+  @Test
+  void shouldHandleStartWithPartialStorage(@TempDir final Path tempDir) throws IOException {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final ChainUpdater updater = storageSystem.chainUpdater();
+    updater.initializeGenesis(chainBuilder.getGenesis());
+    updater.syncWithUpToSlot(chainBuilder, 5);
+
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenAnswer(
+            invocation ->
+                storageSystem
+                    .combinedChainDataClient()
+                    .getLatestStateAtSlot(invocation.getArgument(0)));
+    final Checkpoint initialAnchor =
+        storageSystem.chainBuilder().getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    setUpService(tempDir, initialAnchor);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
   }
 
   private Checkpoint getInitialAnchor() {

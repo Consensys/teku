@@ -239,6 +239,11 @@ public class ChainBuilder {
         Optional.empty());
   }
 
+  public void assignGenesis(final SignedBlockAndState genesis) {
+    checkState(blocks.isEmpty(), "Genesis already created");
+    trackBlock(genesis);
+  }
+
   public SignedBlockAndState generateGenesis(
       final UInt64 genesisTime,
       final boolean signDeposits,
