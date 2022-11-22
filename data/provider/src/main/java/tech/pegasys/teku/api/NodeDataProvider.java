@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -48,6 +49,7 @@ public class NodeDataProvider {
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
   private final AttestationManager attestationManager;
@@ -60,6 +62,7 @@ public class NodeDataProvider {
       final OperationPool<AttesterSlashing> attesterSlashingsPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final BlockManager blockManager,
       final AttestationManager attestationManager,
@@ -70,6 +73,7 @@ public class NodeDataProvider {
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
+    this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.blockManager = blockManager;
     this.attestationManager = attestationManager;
@@ -105,6 +109,15 @@ public class NodeDataProvider {
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
     return proposerSlashingPool.addLocal(slashing);
+  }
+
+  public List<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
+    return new ArrayList<>(blsToExecutionChangePool.getAll());
+  }
+
+  public SafeFuture<InternalValidationResult> postBlsToExecutionChange(
+      final SignedBlsToExecutionChange blsToExecutionChange) {
+    return blsToExecutionChangePool.addLocal(blsToExecutionChange);
   }
 
   public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
