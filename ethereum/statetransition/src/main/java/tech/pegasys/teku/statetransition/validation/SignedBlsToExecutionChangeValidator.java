@@ -47,7 +47,7 @@ public class SignedBlsToExecutionChangeValidator
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateFully(
+  public SafeFuture<InternalValidationResult> validateForGossip(
       final SignedBlsToExecutionChange operation) {
 
     final BlsToExecutionChange blsToExecutionChange = operation.getMessage();
@@ -83,36 +83,26 @@ public class SignedBlsToExecutionChangeValidator
   }
 
   @Override
-  public Optional<OperationInvalidReason> validateForStateTransition(
-      final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return getMaybeFailureReason(state, operation, false);
-  }
-
-  @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return getMaybeFailureReason(state, operation, true);
+    return getMaybeFailureReason(state, operation);
   }
 
   private SafeFuture<Optional<OperationInvalidReason>> getMaybeFailureReason(
       final SignedBlsToExecutionChange signedBlsToExecutionChange) {
-    return getState()
-        .thenApply(state -> getMaybeFailureReason(state, signedBlsToExecutionChange, true));
+    return getState().thenApply(state -> getMaybeFailureReason(state, signedBlsToExecutionChange));
   }
 
   private Optional<OperationInvalidReason> getMaybeFailureReason(
-      final BeaconState state,
-      final SignedBlsToExecutionChange signedBlsToExecutionChange,
-      final boolean verifySignature) {
+      final BeaconState state, final SignedBlsToExecutionChange signedBlsToExecutionChange) {
     final Optional<OperationInvalidReason> invalidReason =
         spec.validateBlsToExecutionChange(state, signedBlsToExecutionChange.getMessage());
     if (invalidReason.isPresent()) {
       return invalidReason;
     }
 
-    if (verifySignature
-        && !spec.verifyBlsToExecutionChangeSignature(
-            state, signedBlsToExecutionChange, BLSSignatureVerifier.SIMPLE)) {
+    if (!spec.verifyBlsToExecutionChangeSignature(
+        state, signedBlsToExecutionChange, BLSSignatureVerifier.SIMPLE)) {
       return Optional.of(() -> "Signature is invalid");
     }
     return Optional.empty();
