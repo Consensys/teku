@@ -13,29 +13,28 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import nl.altindag.log.LogCaptor;
 import nl.altindag.log.model.LogEvent;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -45,6 +44,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 public class DoppelgangerDetectorTest {
+  private final StatusLogger statusLog = mock(StatusLogger.class);
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10);
@@ -53,7 +53,6 @@ public class DoppelgangerDetectorTest {
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetector.class);
-  private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
   private final String doppelgangerStartLog = "Starting doppelganger detection...";
   private final String doppelgangerTimeoutLog =
       "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.";
@@ -65,12 +64,12 @@ public class DoppelgangerDetectorTest {
 
   @BeforeEach
   public void setup() throws IOException {
-    System.setOut(new PrintStream(stdOut));
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
     doppelgangerDetector =
         new DoppelgangerDetector(
+            statusLog,
             asyncRunner,
             validatorApiChannel,
             validatorIndexProvider,
@@ -79,11 +78,6 @@ public class DoppelgangerDetectorTest {
             genesisDataProvider,
             checkDelay,
             timeout);
-  }
-
-  @AfterEach
-  void tearDown() {
-    System.setOut(System.out);
   }
 
   @Test
@@ -148,12 +142,14 @@ public class DoppelgangerDetectorTest {
         logCaptor.getLogEvents().get(4),
         "ERROR",
         "Unable to get doppelgangers public keys. Only indices are available: java.lang.Exception: Validators Public Keys Exception");
-    assertThat(stdOut.toString(UTF_8))
-        .contains("Detected 2 validators doppelganger: \n" + "Index: 1\n" + "Index: 3");
+    Map<Integer, BLSPublicKey> doppelgangers =
+        Map.ofEntries(Map.entry(1, BLSPublicKey.empty()), Map.entry(3, BLSPublicKey.empty()));
+    verify(statusLog)
+        .validatorsDoppelgangerDetected(
+            doppelgangers.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> "")));
     assertThat(doppelgangerDetectorFuture).isCompleted();
-    assertThat(doppelgangerDetectorFuture)
-        .isCompletedWithValue(
-            Map.ofEntries(Map.entry(1, BLSPublicKey.empty()), Map.entry(3, BLSPublicKey.empty())));
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
   @Test
@@ -193,14 +189,14 @@ public class DoppelgangerDetectorTest {
         logCaptor.getLogEvents().get(3),
         "ERROR",
         "Doppelganger detected. Shutting down Validator Client.");
-    assertThat(stdOut.toString(UTF_8))
-        .contains(
-            String.format(
-                "Detected 2 validators doppelganger: \nIndex: %d, Public key: %s\nIndex: %d, Public key: %s",
-                1, pubKey1, 3, pubKey3));
+    Map<Integer, BLSPublicKey> doppelgangers =
+        Map.ofEntries(Map.entry(1, pubKey1), Map.entry(3, pubKey3));
+    verify(statusLog)
+        .validatorsDoppelgangerDetected(
+            doppelgangers.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     assertThat(doppelgangerDetectorFuture).isCompleted();
-    assertThat(doppelgangerDetectorFuture)
-        .isCompletedWithValue(Map.ofEntries(Map.entry(1, pubKey1), Map.entry(3, pubKey3)));
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
   @Test

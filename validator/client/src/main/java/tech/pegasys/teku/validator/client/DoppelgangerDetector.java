@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 public class DoppelgangerDetector {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final StatusLogger statusLog;
   private final Duration checkDelay;
   private final Duration timeout;
   private final AsyncRunner asyncRunner;
@@ -64,6 +66,29 @@ public class DoppelgangerDetector {
       final GenesisDataProvider genesisDataProvider,
       final Duration checkDelay,
       final Duration timeout) {
+    this(
+        STATUS_LOG,
+        asyncRunner,
+        validatorApiChannel,
+        validatorIndexProvider,
+        spec,
+        timeProvider,
+        genesisDataProvider,
+        checkDelay,
+        timeout);
+  }
+
+  public DoppelgangerDetector(
+      final StatusLogger statusLog,
+      final AsyncRunner asyncRunner,
+      final ValidatorApiChannel validatorApiChannel,
+      final ValidatorIndexProvider validatorIndexProvider,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final GenesisDataProvider genesisDataProvider,
+      final Duration checkDelay,
+      final Duration timeout) {
+    this.statusLog = statusLog;
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
@@ -196,7 +221,7 @@ public class DoppelgangerDetector {
           .getValidatorIndicesByPublicKey()
           .thenApply(
               validatorIndicesByPubKey -> {
-                STATUS_LOG.validatorsDoppelgangerDetected(
+                statusLog.validatorsDoppelgangerDetected(
                     mapLivenessAtEpochToIndicesByPubKey(doppelgangers, validatorIndicesByPubKey));
                 stopDoppelgangerDetector(
                         mapLivenessAtEpochToIndicesByPubKey(
@@ -209,7 +234,7 @@ public class DoppelgangerDetector {
                 LOG.error(
                     "Unable to get doppelgangers public keys. Only indices are available: {}",
                     error.getMessage());
-                STATUS_LOG.validatorsDoppelgangerDetected(
+                statusLog.validatorsDoppelgangerDetected(
                     doppelgangers.stream()
                         .collect(Collectors.toMap(e -> e.getIndex().intValue(), e -> "")));
                 stopDoppelgangerDetector(
