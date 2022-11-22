@@ -31,11 +31,11 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.eip4844.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.eip4844.util.KZGUtilEip4844;
 
-public class MiscHelpersEip4844 extends MiscHelpersCapella {
+public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
 
   public MiscHelpersEip4844(final SpecConfig specConfig) {
     super(specConfig);
