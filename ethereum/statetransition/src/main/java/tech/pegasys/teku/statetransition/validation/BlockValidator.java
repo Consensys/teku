@@ -97,11 +97,7 @@ public class BlockValidator {
     }
 
     if (blobsSidecar.isPresent()) {
-      if (blobsSidecar.get().getBeaconBlockRoot().equals(block.getRoot())) {
-        return completedFuture(InternalValidationResult.IGNORE);
-      }
-
-      if (blobsSidecar.get().getBeaconBlockSlot().equals(block.getSlot())) {
+      if (!blockAndBlobsAreConsistent(block, blobsSidecar.get())) {
         return completedFuture(InternalValidationResult.IGNORE);
       }
     }
@@ -137,11 +133,12 @@ public class BlockValidator {
                       "Execution Payload timestamp is not consistence with and block slot time");
                 }
               }
+
+              // TODO kzg validation by calling validate_blobs_sidecar from misc helper
+
               if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                 return reject("Block signature is invalid");
               }
-
-              // TODO kzg validation
 
               return InternalValidationResult.ACCEPT;
             });
@@ -212,7 +209,18 @@ public class BlockValidator {
         recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
+  private boolean blockAndBlobsAreConsistent(
+      final SignedBeaconBlock block, final BlobsSidecar blobsSidecar) {
+    if (blobsSidecar.getBeaconBlockRoot().equals(block.getRoot())) {
+      return false;
+    }
 
+    if (blobsSidecar.getBeaconBlockSlot().equals(block.getSlot())) {
+      return false;
+    }
+
+    return true;
+  }
 
   private static class SlotAndProposer {
     private final UInt64 slot;

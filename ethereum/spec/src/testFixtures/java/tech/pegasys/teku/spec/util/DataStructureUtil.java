@@ -1802,6 +1802,15 @@ public final class DataStructureUtil {
     }
   }
 
+  public SszList<SignedBlsToExecutionChange> emptySignedBlsToExecutionChangesList() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBeaconBlockBodySchema()
+        .toVersionCapella()
+        .orElseThrow()
+        .getBlsToExecutionChangesSchema()
+        .createFromElements(List.of());
+  }
+
   public BlsToExecutionChange randomBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
@@ -1891,6 +1900,15 @@ public final class DataStructureUtil {
         spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow().getMaxBlobsPerBlock();
 
     return randomSszList(kzgCommitmentsSchema, maxKzgCommitments, this::randomSszKZGCommitment);
+  }
+
+  public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
+    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        .getBeaconBlockBodySchema()
+        .toVersionEip4844()
+        .orElseThrow()
+        .getBlobKzgCommitmentsSchema()
+        .createFromElements(List.of());
   }
 
   private int randomInt(final int bound) {

@@ -96,24 +96,24 @@ public class BlockManager extends Service
   @Override
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
-    return doImportBlock(block, Optional.empty(), Optional.empty());
+    return doImportBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty());
   }
 
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block) {
 
-    return validateAndImportBlockAndMaybeBlobs(block, Optional.empty());
+    return validateAndImportBlockAndBlobsSidecar(block, Optional.empty());
   }
 
-  public SafeFuture<InternalValidationResult> validateAndImportBlockAndBlobs(
+  public SafeFuture<InternalValidationResult> validateAndImportBlockAndBlobsSidecar(
       final SignedBeaconBlockAndBlobsSidecar signedBeaconBlockAndBlobsSidecar) {
-    return validateAndImportBlockAndMaybeBlobs(
+    return validateAndImportBlockAndBlobsSidecar(
         signedBeaconBlockAndBlobsSidecar.getSignedBeaconBlock(),
         Optional.of(signedBeaconBlockAndBlobsSidecar.getBlobsSidecar()));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  private SafeFuture<InternalValidationResult> validateAndImportBlockAndMaybeBlobs(
+  private SafeFuture<InternalValidationResult> validateAndImportBlockAndBlobsSidecar(
       final SignedBeaconBlock block, final Optional<BlobsSidecar> blobsSidecar) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
@@ -132,12 +132,13 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.validate(block, blobsSidecar);
+    final SafeFuture<InternalValidationResult> validationResult =
+        validator.validate(block, blobsSidecar);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blobsSidecar, blockImportPerformance)
+            doImportBlockAndBlobsSidecar(block, blobsSidecar, blockImportPerformance)
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -176,10 +177,11 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), Optional.empty()).ifExceptionGetsHereRaiseABug();
+    doImportBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty())
+        .ifExceptionGetsHereRaiseABug();
   }
 
-  private SafeFuture<BlockImportResult> doImportBlock(
+  private SafeFuture<BlockImportResult> doImportBlockAndBlobsSidecar(
       final SignedBeaconBlock block,
       final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
@@ -187,7 +189,7 @@ public class BlockManager extends Service
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blobsSidecar, blockImportPerformance)
+                handleBlockAndBlobsSidecarImport(block, blobsSidecar, blockImportPerformance)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -231,15 +233,12 @@ public class BlockManager extends Service
                 SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private SafeFuture<BlockImportResult> handleBlockImport(
+  private SafeFuture<BlockImportResult> handleBlockAndBlobsSidecarImport(
       final SignedBeaconBlock block,
       final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
-    if (blobsSidecar.isPresent()) {
-      LOG.trace("blobsSidecar is present");
-    }
     return blockImporter
-        .importBlock(block, blockImportPerformance)
+        .importBlockAndBlobsSidecar(block, blobsSidecar, blockImportPerformance)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {

@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX})
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.EIP4844})
 public class BlockValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
@@ -253,7 +253,10 @@ public class BlockValidatorTest {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 
@@ -271,7 +274,10 @@ public class BlockValidatorTest {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 
