@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.SUCCESS_RESULT_METRIC_LABEL_VALUE;
@@ -30,32 +31,23 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
-import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
 public class BlockImportMetrics {
-  private final MetricsHistogram metricsHistogram;
   private final MetricsCountersByIntervals metricsCountersByIntervals;
+  private final SettableLabelledGauge latestDelayGauge;
 
   public BlockImportMetrics(
-      final MetricsHistogram metricsHistogram,
-      final MetricsCountersByIntervals metricsCountersByIntervals) {
-    this.metricsHistogram = metricsHistogram;
+      final MetricsCountersByIntervals metricsCountersByIntervals,
+      final SettableLabelledGauge latestDelayGauge) {
     this.metricsCountersByIntervals = metricsCountersByIntervals;
+    this.latestDelayGauge = latestDelayGauge;
   }
 
   public static BlockImportMetrics create(final MetricsSystem metricsSystem) {
-
-    final MetricsHistogram metricsHistogram =
-        MetricsHistogram.create(
-            TekuMetricCategory.BEACON,
-            metricsSystem,
-            "block_import_delay_summary",
-            "Histogram recording delay in milliseconds at each stage of block import",
-            1,
-            List.of("stage"));
 
     final Map<List<String>, List<Long>> eventsAndBoundaries =
         Map.of(
@@ -91,16 +83,24 @@ public class BlockImportMetrics {
                         PROCESSED_EVENT_LABEL,
                         TRANSACTION_PREPARED_EVENT_LABEL,
                         TRANSACTION_COMMITTED_EVENT_LABEL,
+                        EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL,
                         COMPLETED_EVENT_LABEL,
                         TOTAL_PROCESSING_TIME_LABEL)
                     .forEach(
                         stage -> metricsCountersByIntervals.initCounters(List.of(stage, result))));
 
-    return new BlockImportMetrics(metricsHistogram, metricsCountersByIntervals);
+    final SettableLabelledGauge latestDelayGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "block_import_delay_latest",
+            "Milliseconds delay at each stage of block import for the last imported block",
+            "stage");
+    return new BlockImportMetrics(metricsCountersByIntervals, latestDelayGauge);
   }
 
   public void recordValue(final UInt64 value, final String stage, final String result) {
-    metricsHistogram.recordValue(value.longValue(), stage);
     metricsCountersByIntervals.recordValue(value, stage, result);
+    latestDelayGauge.set(value.doubleValue(), stage);
   }
 }

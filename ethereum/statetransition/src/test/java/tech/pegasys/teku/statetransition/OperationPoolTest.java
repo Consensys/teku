@@ -89,7 +89,7 @@ public class OperationPoolTest {
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 1; i++) {
@@ -109,7 +109,7 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     when(filter.test(any())).thenReturn(false);
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
     for (int i = 0; i < maxVoluntaryExits + 10; i++) {
@@ -131,7 +131,7 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
 
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
 
     final SignedVoluntaryExit exit1 = dataStructureUtil.randomSignedVoluntaryExit();
@@ -162,7 +162,7 @@ public class OperationPoolTest {
     OperationPool<AttesterSlashing> pool =
         new OperationPool<>(
             "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
         Stream.generate(() -> dataStructureUtil.randomAttesterSlashing())
@@ -185,7 +185,7 @@ public class OperationPoolTest {
     final ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     final ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
 
     pool.addLocal(slashing1);
     pool.addLocal(slashing2);
@@ -212,7 +212,7 @@ public class OperationPoolTest {
     final ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     final ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
 
     pool.addLocal(slashing1);
     pool.addLocal(slashing2);
@@ -246,11 +246,11 @@ public class OperationPoolTest {
     ProposerSlashing slashing3 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing4 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(slashing1)).thenReturn(completedFuture(ACCEPT));
-    when(validator.validateFully(slashing2)).thenReturn(completedFuture(SAVE_FOR_FUTURE));
-    when(validator.validateFully(slashing3))
+    when(validator.validateForGossip(slashing1)).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForGossip(slashing2)).thenReturn(completedFuture(SAVE_FOR_FUTURE));
+    when(validator.validateForGossip(slashing3))
         .thenReturn(completedFuture(InternalValidationResult.reject("Nah")));
-    when(validator.validateFully(slashing4)).thenReturn(completedFuture(IGNORE));
+    when(validator.validateForGossip(slashing4)).thenReturn(completedFuture(IGNORE));
 
     pool.addLocal(slashing1);
     pool.addLocal(slashing2);

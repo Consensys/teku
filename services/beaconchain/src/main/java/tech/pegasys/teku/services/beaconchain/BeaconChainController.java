@@ -510,7 +510,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initSignedBlsToExecutionChangePool() {
     LOG.debug("BeaconChainController.initSignedBlsToExecutionChangePool()");
-    final SignedBlsToExecutionChangeValidator validator = new SignedBlsToExecutionChangeValidator();
+    final SignedBlsToExecutionChangeValidator validator =
+        new SignedBlsToExecutionChangeValidator(spec, recentChainData);
 
     signedBlsToExecutionChangePool =
         new OperationPool<>(
