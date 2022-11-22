@@ -146,7 +146,5 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayload payload)
       throws BlockProcessingException;
 
-  default Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState) {
-    return Optional.empty();
-  }
+  Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
 }
