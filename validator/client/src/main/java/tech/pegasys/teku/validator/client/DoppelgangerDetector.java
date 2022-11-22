@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +53,7 @@ public class DoppelgangerDetector {
   private volatile Cancellable doppelgangerDetectionTask;
   private Optional<SafeFuture<Map<Integer, BLSPublicKey>>> doppelgangerCheckFinished =
       Optional.empty();
-  private long startTime;
+  private UInt64 startTime;
 
   public DoppelgangerDetector(
       final AsyncRunner asyncRunner,
@@ -78,7 +77,7 @@ public class DoppelgangerDetector {
   protected synchronized SafeFuture<Map<Integer, BLSPublicKey>> performDoppelgangerDetection() {
     LOG.info("Starting doppelganger detection...");
     doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
-    startTime = System.nanoTime();
+    startTime = timeProvider.getTimeInSeconds();
     doppelgangerDetectionTask =
         asyncRunner.runWithFixedDelay(
             this::performDoppelgangerCheck,
@@ -103,8 +102,10 @@ public class DoppelgangerDetector {
   }
 
   private SafeFuture<Void> performDoppelgangerCheck() {
-    final Duration duration = Duration.of(System.nanoTime() - startTime, ChronoUnit.NANOS);
-    if (duration.compareTo(timeout) > 0) {
+    if (timeProvider
+        .getTimeInSeconds()
+        .minus(startTime)
+        .isGreaterThanOrEqualTo(timeout.toSeconds())) {
       LOG.info(
           "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.");
       return stopDoppelgangerDetector(new HashMap<>());
