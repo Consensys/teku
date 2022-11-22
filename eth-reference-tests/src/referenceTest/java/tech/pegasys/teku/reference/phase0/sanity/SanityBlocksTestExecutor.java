@@ -39,7 +39,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
 
   private static final String EXPECTED_STATE_FILENAME = "post.ssz_snappy";
   private static final String STATE_ROOT_MISMATCH_ERROR_MESSAGE =
-      "Block state root does NOT match the calculated " + "state root";
+      "Block state root does NOT match the calculated state root";
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
