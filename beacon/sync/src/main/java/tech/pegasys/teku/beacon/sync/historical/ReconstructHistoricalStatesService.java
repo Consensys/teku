@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.base.Throwables;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -96,16 +96,34 @@ public class ReconstructHistoricalStatesService extends Service {
               if (checkpoint.isEmpty()) {
                 return;
               }
-              applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
+              final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
+
+              chainDataClient
+                  .getLatestAvailableFinalizedState(anchorSlot.decrement())
+                  .thenAccept(
+                      latestState -> {
+                        if (latestState.isPresent()) {
+                          final BeaconState state = latestState.get();
+                          Context context =
+                              new Context(state, state.getSlot().increment(), anchorSlot);
+                          applyBlocks(context, SafeFuture.COMPLETE);
+
+                        } else {
+                          Context context =
+                              new Context(genesisState, GENESIS_SLOT.increment(), anchorSlot);
+                          final Bytes32 genesisBlockRoot =
+                              BeaconBlockHeader.fromState(genesisState).getRoot();
+                          final SafeFuture<Void> storeGenesisState =
+                              storageUpdateChannel.onReconstructedFinalizedState(
+                                  genesisState, genesisBlockRoot);
+                          applyBlocks(context, storeGenesisState);
+                        }
+                      });
             });
   }
 
-  public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
-    Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
-
-    final Bytes32 genesisBlockRoot = BeaconBlockHeader.fromState(genesisState).getRoot();
-    storageUpdateChannel
-        .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
+  public void applyBlocks(final Context context, final SafeFuture<Void> storeGenesisState) {
+    storeGenesisState
         .thenComposeChecked(__ -> applyNextBlock(context))
         .finish(
             error -> {
