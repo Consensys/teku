@@ -46,9 +46,9 @@ public class PostValidatorLivenessTest extends AbstractMigratedBeaconHandlerTest
 
   @Test
   void shouldReadRequestBody() throws IOException {
-    final ValidatorLivenessRequest requestBody =
-        new ValidatorLivenessRequest(UInt64.ONE, List.of(UInt64.ZERO, UInt64.ONE));
-    final String data = "{\"epoch\":1,\"indices\":[0,1]}";
+    final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
+    final ValidatorLivenessRequest requestBody = new ValidatorLivenessRequest(indices);
+    final String data = String.format("{\"indices\":%s}", indices);
     assertThat(getRequestBodyFromMetadata(handler, data)).isEqualTo(requestBody);
   }
 

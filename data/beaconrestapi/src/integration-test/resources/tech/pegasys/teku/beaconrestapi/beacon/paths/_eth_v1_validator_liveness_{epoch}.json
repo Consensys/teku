@@ -4,19 +4,24 @@
     "operationId" : "postValidatorLiveness",
     "summary" : "Get Validator Liveness",
     "description" : "Requests the beacon node to indicate if a validator has been observed to be live in a given epoch. The beacon node might detect liveness by observing messages from the validator on the network, in the beacon chain, from its API or from any other source. It is important to note that the values returned by the beacon node are not canonical; they are best-effort and based upon a subjective view of the network.",
+    "parameters" : [ {
+      "name" : "epoch",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
             "type" : "object",
-            "required" : [ "epoch", "indices" ],
+            "required" : [ "indices" ],
             "properties" : {
-              "epoch" : {
-                "type" : "string",
-                "description" : "unsigned 64 bit integer",
-                "example" : "1",
-                "format" : "uint64"
-              },
               "indices" : {
                 "type" : "array",
                 "items" : {

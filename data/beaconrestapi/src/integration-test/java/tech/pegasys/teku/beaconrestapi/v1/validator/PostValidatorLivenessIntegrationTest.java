@@ -61,14 +61,17 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     setCurrentSlot(12);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    final ValidatorLivenessRequest request =
-        new ValidatorLivenessRequest(epoch, List.of(validatorIndex));
-    Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(request));
+    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(List.of(validatorIndex));
+    Response response = post(getValidatorLivenessUrl(epoch), jsonProvider.objectToJSON(request));
     assertThat(response.code()).isEqualTo(SC_OK);
     final PostValidatorLivenessResponse result =
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
     assertThat(result.data.get(0))
         .isEqualTo(new ValidatorLivenessAtEpoch(validatorIndex, epoch, true));
+  }
+
+  private String getValidatorLivenessUrl(final UInt64 epoch) {
+    return PostValidatorLiveness.ROUTE.replace("{epoch}", epoch.toString());
   }
 
   private void blockReceivedFromProposer(final UInt64 slot, final UInt64 proposerIndex) {

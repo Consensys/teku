@@ -88,7 +88,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
-
+  public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   private final Config config;
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
@@ -249,10 +249,10 @@ public class TekuNode extends Node {
   private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
       final UInt64 epoch, List<UInt64> validators) throws IOException {
 
-    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(epoch, validators);
+    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(validators);
     final String response =
         httpClient.post(
-            getRestApiUrl(), "/eth/v1/validator/liveness", JSON_PROVIDER.objectToJSON(request));
+            getRestApiUrl(), getValidatorLivenessUrl(epoch), JSON_PROVIDER.objectToJSON(request));
     final PostValidatorLivenessResponse livenessResponse =
         JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
@@ -260,6 +260,10 @@ public class TekuNode extends Node {
       output.put(entry.index, entry.isLive);
     }
     return output;
+  }
+
+  private String getValidatorLivenessUrl(final UInt64 epoch) {
+    return LOCAL_VALIDATOR_LIVENESS_URL.replace("{epoch}", epoch.toString());
   }
 
   public void waitForGenesisTime(final UInt64 expectedGenesisTime) {

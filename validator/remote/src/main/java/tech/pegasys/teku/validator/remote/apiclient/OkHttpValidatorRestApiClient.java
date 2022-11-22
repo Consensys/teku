@@ -331,9 +331,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
       UInt64 epoch, List<UInt64> validatorsIndices) {
     ValidatorLivenessRequest validatorLivenessRequest =
-        new ValidatorLivenessRequest(epoch, validatorsIndices);
+        new ValidatorLivenessRequest(validatorsIndices);
     return post(
         SEND_VALIDATOR_LIVENESS,
+        Map.of("epoch", epoch.toString()),
         validatorLivenessRequest,
         createHandler(PostValidatorLivenessResponse.class));
   }
