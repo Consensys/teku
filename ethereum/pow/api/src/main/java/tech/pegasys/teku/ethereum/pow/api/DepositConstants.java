@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.ethereum.pow.api;
 
-import org.apache.tuweni.bytes.Bytes;
-
 public class DepositConstants {
-  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+
   public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 }

@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -157,30 +157,18 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(spec, validatorKeys, storageClient, forkChoice, signDeposits);
   }
 
-  public static void initializeStorage(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final List<BLSKeyPair> validatorKeys) {
-    initializeStorage(spec, recentChainData, validatorKeys, true);
-  }
-
-  public static void initializeStorage(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final List<BLSKeyPair> validatorKeys,
-      final boolean signDeposits) {
-    final BeaconState initState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(
-            spec, 0, validatorKeys, signDeposits);
-    recentChainData.initializeFromGenesis(initState, UInt64.ZERO);
-  }
-
   public void initializeStorage() {
     initializeStorage(recentChainData);
   }
 
   public void initializeStorage(final RecentChainData recentChainData) {
-    initializeStorage(spec, recentChainData, validatorKeys, signDeposits);
+    final BeaconState initState =
+        new GenesisStateBuilder()
+            .spec(spec)
+            .signDeposits(signDeposits)
+            .addValidators(validatorKeys)
+            .build();
+    recentChainData.initializeFromGenesis(initState, UInt64.ZERO);
   }
 
   public void setSlot(final UInt64 currentSlot) {

@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -81,7 +81,11 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
+        new GenesisStateBuilder()
+            .spec(spec)
+            .signDeposits(false)
+            .addValidators(validatorKeys)
+            .build();
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
@@ -169,7 +173,11 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
+        new GenesisStateBuilder()
+            .spec(spec)
+            .signDeposits(false)
+            .addValidators(validatorKeys)
+            .build();
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {

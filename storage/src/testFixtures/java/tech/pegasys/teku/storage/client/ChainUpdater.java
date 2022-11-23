@@ -19,19 +19,16 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -39,11 +36,13 @@ public class ChainUpdater {
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
   public final Spec spec;
+  private final DataStructureUtil dataStructureUtil;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
-    spec = TestSpecFactory.createMinimalPhase0();
+    this.spec = TestSpecFactory.createMinimalPhase0();
+    this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
   public ChainUpdater(
@@ -51,6 +50,7 @@ public class ChainUpdater {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
   public UInt64 getHeadSlot() {
@@ -95,44 +95,26 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(
-        signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance(), Optional.empty());
+    return initializeGenesis(signDeposits, Optional.empty());
   }
 
   public SignedBlockAndState initializeGenesisWithPayload(final boolean signDeposits) {
-    return initializeGenesis(
-        signDeposits,
-        spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
-        Optional.of(
-            SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
-                .getExecutionPayloadHeaderSchema()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .create(
-                    Bytes32.random(),
-                    Bytes20.ZERO,
-                    Bytes32.ZERO,
-                    Bytes32.ZERO,
-                    Bytes.random(256),
-                    Bytes32.ZERO,
-                    UInt64.ZERO,
-                    UInt64.ZERO,
-                    UInt64.ZERO,
-                    UInt64.ZERO,
-                    Bytes32.ZERO,
-                    UInt256.ONE,
-                    Bytes32.random(),
-                    Bytes32.ZERO)));
+    final ExecutionPayloadHeader executionPayload =
+        dataStructureUtil.randomExecutionPayloadHeader();
+    return initializeGenesis(signDeposits, Optional.of(executionPayload));
   }
 
   public SignedBlockAndState initializeGenesis(
-      final boolean signDeposits,
-      final UInt64 depositAmount,
-      final Optional<ExecutionPayloadHeader> payloadHeader) {
+      final boolean signDeposits, final Optional<ExecutionPayloadHeader> payloadHeader) {
     final SignedBlockAndState genesis =
-        chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, depositAmount, payloadHeader);
+        chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, payloadHeader);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     return genesis;
+  }
+
+  public void initializeGenesis(final BeaconState genesisState) {
+    chainBuilder.initializeGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
   }
 
   public SignedBlockAndState finalizeEpoch(final long epoch) {
