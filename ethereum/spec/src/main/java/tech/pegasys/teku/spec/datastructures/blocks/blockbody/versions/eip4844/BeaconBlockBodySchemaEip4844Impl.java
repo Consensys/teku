@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -23,12 +22,12 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyUtil;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
@@ -224,16 +223,7 @@ public class BeaconBlockBodySchemaEip4844Impl
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
-    final long childGeneralizedIndex =
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
-    final LongList schemaGeneralizedIndices =
-        getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices();
-    final LongList blindedNodeGeneralizedIndices =
-        new LongArrayList(schemaGeneralizedIndices.size());
-    for (long relativeIndex : schemaGeneralizedIndices) {
-      blindedNodeGeneralizedIndices.add(
-          GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
-    }
-    return blindedNodeGeneralizedIndices;
+    return BeaconBlockBodyUtil.getGeneralizedIndices(
+        getExecutionPayloadSchema(), getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
   }
 }

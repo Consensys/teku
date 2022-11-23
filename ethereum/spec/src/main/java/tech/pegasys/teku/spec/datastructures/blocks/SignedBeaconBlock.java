@@ -66,16 +66,17 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   private TreeNode getBlindedTree() {
     final SignedBeaconBlockSchema schema = getSchema();
     final LongList maybeNodeIndicesToBlind = schema.getBlindedNodeGeneralizedIndices();
-    TreeNode backingNode = getBackingNode();
+    final TreeNode backingNode = getBackingNode();
     if (maybeNodeIndicesToBlind.isEmpty()) {
       return backingNode;
     }
+    final List<TreeUpdates.Update> updatesList = new ArrayList<>();
     for (long nodeIndexToBlind : maybeNodeIndicesToBlind) {
       final Bytes32 blindedNodeRoot = backingNode.get(nodeIndexToBlind).hashTreeRoot();
       final TreeNode blindedNode = SszBytes32.of(blindedNodeRoot).getBackingNode();
-      backingNode = backingNode.updated(nodeIndexToBlind, blindedNode);
+      updatesList.add(new TreeUpdates.Update(nodeIndexToBlind, blindedNode));
     }
-    return backingNode;
+    return backingNode.updated(new TreeUpdates(updatesList));
   }
 
   public boolean isBlinded() {
