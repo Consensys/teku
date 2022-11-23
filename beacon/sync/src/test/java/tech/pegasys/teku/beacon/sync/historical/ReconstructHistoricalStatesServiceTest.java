@@ -148,7 +148,7 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, times(1)).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
@@ -163,7 +163,7 @@ public class ReconstructHistoricalStatesServiceTest {
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
+    verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
   }
 
@@ -179,7 +179,7 @@ public class ReconstructHistoricalStatesServiceTest {
             invocation ->
                 storageSystem
                     .combinedChainDataClient()
-                    .getLatestStateAtSlot(invocation.getArgument(0)));
+                    .getLatestAvailableFinalizedState(invocation.getArgument(0)));
     final Checkpoint initialAnchor =
         storageSystem.chainBuilder().getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
     setUpService(tempDir, initialAnchor);
