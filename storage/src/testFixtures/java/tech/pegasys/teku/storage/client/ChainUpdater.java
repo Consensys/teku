@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -36,13 +35,11 @@ public class ChainUpdater {
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
   public final Spec spec;
-  private final DataStructureUtil dataStructureUtil;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = TestSpecFactory.createMinimalPhase0();
-    this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
   public ChainUpdater(
@@ -50,7 +47,6 @@ public class ChainUpdater {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
-    this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
   public UInt64 getHeadSlot() {
@@ -98,10 +94,9 @@ public class ChainUpdater {
     return initializeGenesis(signDeposits, Optional.empty());
   }
 
-  public SignedBlockAndState initializeGenesisWithPayload(final boolean signDeposits) {
-    final ExecutionPayloadHeader executionPayload =
-        dataStructureUtil.randomExecutionPayloadHeader();
-    return initializeGenesis(signDeposits, Optional.of(executionPayload));
+  public SignedBlockAndState initializeGenesisWithPayload(
+      final boolean signDeposits, final ExecutionPayloadHeader executionPayloadHeader) {
+    return initializeGenesis(signDeposits, Optional.of(executionPayloadHeader));
   }
 
   public SignedBlockAndState initializeGenesis(

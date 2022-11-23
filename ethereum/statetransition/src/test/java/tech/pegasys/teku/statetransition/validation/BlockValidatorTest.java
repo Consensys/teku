@@ -250,7 +250,10 @@ public class BlockValidatorTest {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 
@@ -268,7 +271,10 @@ public class BlockValidatorTest {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 

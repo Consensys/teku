@@ -147,7 +147,9 @@ public class BlockManagerTest {
   @BeforeEach
   public void setup() {
     forwardBlockImportedNotificationsTo(blockManager);
-    localChain.chainUpdater().initializeGenesisWithPayload(false);
+    localChain
+        .chainUpdater()
+        .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
   }
 
