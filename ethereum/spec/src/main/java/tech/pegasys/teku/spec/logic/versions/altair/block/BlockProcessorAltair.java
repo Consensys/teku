@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -298,6 +299,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       throws BlockProcessingException {
 
     throw new UnsupportedOperationException("No withdrawals in Altair");
+  }
+
+  @Override
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
+    return Optional.empty();
   }
 
   public static boolean eth2FastAggregateVerify(
