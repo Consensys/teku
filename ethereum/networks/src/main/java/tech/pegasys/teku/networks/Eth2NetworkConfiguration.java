@@ -71,6 +71,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
+  private final Optional<Eth2Network> eth2Network;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -90,7 +91,8 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> eip4844ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
-      final Optional<UInt64> terminalBlockHashEpochOverride) {
+      final Optional<UInt64> terminalBlockHashEpochOverride,
+      final Optional<Eth2Network> eth2Network) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -112,6 +114,7 @@ public class Eth2NetworkConfiguration {
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
+    this.eth2Network = eth2Network;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -202,6 +205,10 @@ public class Eth2NetworkConfiguration {
     return terminalBlockHashEpochOverride;
   }
 
+  public Optional<Eth2Network> getEth2Network() {
+    return eth2Network;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -225,6 +232,7 @@ public class Eth2NetworkConfiguration {
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
+    private Optional<Eth2Network> eth2Network = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
@@ -289,7 +297,8 @@ public class Eth2NetworkConfiguration {
           eip4844ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
-          terminalBlockHashEpochOverride);
+          terminalBlockHashEpochOverride,
+          eth2Network);
     }
 
     public Builder constants(final String constants) {
@@ -430,6 +439,7 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
+      this.eth2Network = Optional.of(network);
       switch (network) {
         case MAINNET:
           return applyMainnetNetworkDefaults();

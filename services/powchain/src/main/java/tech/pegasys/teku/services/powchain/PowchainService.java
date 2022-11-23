@@ -184,6 +184,7 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositSnapshotFileLoader,
             depositSnapshotStorageLoader,
+            powConfig.isDepositSnapshotBundleEnabled(),
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock,

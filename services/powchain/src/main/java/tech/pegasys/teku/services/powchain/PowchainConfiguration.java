@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +25,13 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
   public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED = false;
+  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_BUNDLE_ENABLED = false;
 
   private final Spec spec;
   private final List<String> eth1Endpoints;
@@ -38,6 +41,7 @@ public class PowchainConfiguration {
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
   private final boolean depositSnapshotStorageEnabled;
+  private final boolean depositSnapshotBundleEnabled;
 
   private PowchainConfiguration(
       final Spec spec,
@@ -47,13 +51,15 @@ public class PowchainConfiguration {
       final Optional<String> depositSnapshotPath,
       final int eth1LogsMaxBlockRange,
       final boolean useMissingDepositEventLogging,
-      final boolean depositSnapshotStorageEnabled) {
+      final boolean depositSnapshotStorageEnabled,
+      final boolean depositSnapshotBundleEnabled) {
     this.spec = spec;
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
     this.depositSnapshotPath = depositSnapshotPath;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
+    this.depositSnapshotBundleEnabled = depositSnapshotBundleEnabled;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
@@ -90,6 +96,10 @@ public class PowchainConfiguration {
     return depositSnapshotStorageEnabled;
   }
 
+  public boolean isDepositSnapshotBundleEnabled() {
+    return depositSnapshotBundleEnabled;
+  }
+
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
   }
@@ -107,11 +117,15 @@ public class PowchainConfiguration {
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
     private boolean depositSnapshotStorageEnabled = DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
+    private boolean depositSnapshotBundleEnabled = DEFAULT_DEPOSIT_SNAPSHOT_BUNDLE_ENABLED;
 
     private Builder() {}
 
     public PowchainConfiguration build() {
       validate();
+      if (depositSnapshotBundleEnabled) {
+        depositSnapshotStorageEnabled = true;
+      }
       return new PowchainConfiguration(
           spec,
           eth1Endpoints,
@@ -120,7 +134,8 @@ public class PowchainConfiguration {
           depositSnapshotPath,
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging,
-          depositSnapshotStorageEnabled);
+          depositSnapshotStorageEnabled,
+          depositSnapshotBundleEnabled);
     }
 
     private void validate() {
@@ -180,8 +195,28 @@ public class PowchainConfiguration {
       return this;
     }
 
+    public Builder setDepositSnapshotPathForNetwork(final Optional<Eth2Network> eth2Network) {
+      checkNotNull(eth2Network);
+      if (eth2Network.isPresent()
+          && this.depositSnapshotBundleEnabled
+          && DEFAULT_SNAPSHOT_RESOURCE_PATHS.containsKey(eth2Network.get())) {
+        if (depositSnapshotPath.isPresent()) {
+          throw new InvalidConfigurationException(
+              "Use either custom deposit tree snapshot path or snapshot bundle");
+        }
+        this.depositSnapshotPath =
+            Optional.of(DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(eth2Network.get()));
+      }
+      return this;
+    }
+
     public Builder depositSnapshotStorageEnabled(final boolean depositSnapshotStorageEnabled) {
       this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
+      return this;
+    }
+
+    public Builder depositSnapshotBundleEnabled(final boolean depositSnapshotBundleEnabled) {
+      this.depositSnapshotBundleEnabled = depositSnapshotBundleEnabled;
       return this;
     }
 

@@ -15,18 +15,38 @@ package tech.pegasys.teku.beacon.pow;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositSnapshotFileLoader {
+
+  public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
+      Map.of(
+          Eth2Network.GNOSIS, "/snapshots/gnosis.json",
+          Eth2Network.PRATER, "/snapshots/goerli.json",
+          Eth2Network.MAINNET, "/snapshots/mainnet.json",
+          Eth2Network.SEPOLIA, "/snapshots/sepolia.json");
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Optional<String> depositSnapshotResource;
@@ -44,11 +64,11 @@ public class DepositSnapshotFileLoader {
   private Optional<DepositTreeSnapshot> loadDepositSnapshot(
       final Optional<String> depositSnapshotResource) {
     return depositSnapshotResource.map(
-        snapshotResource -> {
-          final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(snapshotResource);
+        snapshotPath -> {
+          final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(snapshotPath);
           try {
             STATUS_LOG.loadingDepositSnapshot(sanitizedResource);
-            final DepositTreeSnapshot depositSnapshot = loadFromResource(snapshotResource);
+            final DepositTreeSnapshot depositSnapshot = loadFromUrl(snapshotPath);
             STATUS_LOG.loadedDepositSnapshotResource(
                 depositSnapshot.getDepositCount(), depositSnapshot.getExecutionBlockHash());
             return depositSnapshot;
@@ -63,10 +83,95 @@ public class DepositSnapshotFileLoader {
         });
   }
 
-  private DepositTreeSnapshot loadFromResource(final String source) throws IOException {
-    return DepositTreeSnapshot.fromBytes(
-        ResourceLoader.urlOrFile("application/octet-stream")
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Not found")));
+  private DepositTreeSnapshot loadFromUrl(final String path) throws IOException {
+    final Bytes snapshotData =
+        readFromUrlOrPath(path)
+            .or(() -> readFromClasspath(path))
+            .orElseThrow(
+                () -> new FileNotFoundException(String.format("File '%s' not found", path)));
+
+    return parseAsSsz(snapshotData)
+        .or(() -> parseAsDepositTreeJson(snapshotData))
+        .or(() -> parseAsDepositTreeInDataJson(snapshotData))
+        .orElseThrow(
+            () ->
+                new InvalidConfigurationException(
+                    String.format("Couldn't decode snapshot data from '%s'", path)));
+  }
+
+  private Optional<Bytes> readFromUrlOrPath(final String source) {
+    try {
+      return ResourceLoader.urlOrFile("application/octet-stream").loadBytes(source);
+    } catch (final IOException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<Bytes> readFromClasspath(final String source) {
+    try {
+      return ResourceLoader.classpathUrlOrFile(
+              DepositSnapshotFileLoader.class,
+              new ArrayList<>(DEFAULT_SNAPSHOT_RESOURCE_PATHS.values()),
+              __ -> true)
+          .loadBytes(source);
+    } catch (final IOException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<DepositTreeSnapshot> parseAsSsz(final Bytes data) {
+    try {
+      return Optional.of(DepositTreeSnapshot.fromBytes(data));
+    } catch (final SszDeserializeException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<DepositTreeSnapshot> parseAsDepositTreeJson(final Bytes data) {
+    try {
+      return Optional.of(
+          JsonUtil.parse(
+              new String(data.toArray(), StandardCharsets.UTF_8),
+              DepositTreeSnapshot.getJsonTypeDefinition()));
+    } catch (final JsonProcessingException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<DepositTreeSnapshot> parseAsDepositTreeInDataJson(final Bytes data) {
+    try {
+      return Optional.of(
+          JsonUtil.parse(
+                  new String(data.toArray(), StandardCharsets.UTF_8),
+                  typeDefinition(DepositTreeSnapshot.SSZ_SCHEMA))
+              .getData());
+    } catch (final JsonProcessingException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private <T extends SszData> DeserializableTypeDefinition<ResponseData<T>> typeDefinition(
+      final SszSchema<T> dataSchema) {
+    return DeserializableTypeDefinition.<ResponseData<T>, ResponseData<T>>object()
+        .initializer(ResponseData::new)
+        .finisher(Function.identity())
+        .withField(
+            "data",
+            dataSchema.getJsonTypeDefinition(),
+            ResponseData::getData,
+            ResponseData::setData)
+        .build();
+  }
+
+  private static class ResponseData<T> {
+    private T data;
+
+    public T getData() {
+      return data;
+    }
+
+    public void setData(final T data) {
+      this.data = data;
+    }
   }
 }

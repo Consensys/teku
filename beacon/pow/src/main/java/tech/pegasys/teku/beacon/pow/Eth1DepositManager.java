@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.Optional;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -44,6 +45,7 @@ public class Eth1DepositManager {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositSnapshotFileLoader depositSnapshotFileLoader;
   private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
+  private final boolean takeBestDepositSnapshot;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -57,6 +59,7 @@ public class Eth1DepositManager {
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositSnapshotFileLoader depositSnapshotFileLoader,
       final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
+      final boolean takeBestDepositSnapshot,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -68,6 +71,7 @@ public class Eth1DepositManager {
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositSnapshotFileLoader = depositSnapshotFileLoader;
     this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
+    this.takeBestDepositSnapshot = takeBestDepositSnapshot;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -111,16 +115,23 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
-    // If DepositTreeSnapshot is loaded from file, we prefer it
-    final LoadDepositSnapshotResult depositSnapshotResult =
+    final LoadDepositSnapshotResult fileDepositSnapshotResult =
         depositSnapshotFileLoader.loadDepositSnapshot();
-    if (depositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
-      return SafeFuture.completedFuture(depositSnapshotResult);
+    if (fileDepositSnapshotResult.getDepositTreeSnapshot().isPresent()
+        && !takeBestDepositSnapshot) {
+      LOG.debug("Deposit snapshot from file is provided, using it");
+      return SafeFuture.completedFuture(fileDepositSnapshotResult);
     }
 
-    LOG.debug(
-        "Deposit tree snapshot from file is not provided, trying to load it from the database");
-    return depositSnapshotStorageLoader.loadDepositSnapshot();
+    if (takeBestDepositSnapshot) {
+      return depositSnapshotStorageLoader
+          .loadDepositSnapshot()
+          .thenApply(
+              storageDepositSnapshotResult ->
+                  ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult));
+    } else {
+      return depositSnapshotStorageLoader.loadDepositSnapshot();
+    }
   }
 
   public void stop() {
