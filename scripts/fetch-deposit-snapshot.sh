@@ -12,7 +12,7 @@ require_command() {
   if which "${1}" &> /dev/null; then
     echo "OK"
   else
-    echo "FAILED" && exit 127
+    echo "FAILED" && exit 65
   fi
 }
 
