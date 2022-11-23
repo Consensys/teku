@@ -50,11 +50,13 @@ import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -453,6 +455,8 @@ public class ChainBuilder {
                   options.getTransactions(),
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
+                  options.getBlsToExecutionChange(),
+                  options.getKzgCommitments(),
                   options.getSkipStateTransition()));
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
@@ -576,6 +580,8 @@ public class ChainBuilder {
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
+    private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
+    private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
 
@@ -605,12 +611,23 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setTerminalBlockHash(Bytes32 blockHash) {
+    public BlockOptions setTerminalBlockHash(final Bytes32 blockHash) {
       this.terminalBlockHash = Optional.of(blockHash);
       return this;
     }
 
-    public BlockOptions setExecutionPayload(ExecutionPayload executionPayload) {
+    public BlockOptions setBlsToExecutionChange(
+        final SszList<SignedBlsToExecutionChange> blsToExecutionChange) {
+      this.blsToExecutionChange = Optional.of(blsToExecutionChange);
+      return this;
+    }
+
+    public BlockOptions setKzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
+      this.kzgCommitments = Optional.of(kzgCommitments);
+      return this;
+    }
+
+    public BlockOptions setExecutionPayload(final ExecutionPayload executionPayload) {
       this.executionPayload = Optional.of(executionPayload);
       return this;
     }
@@ -643,6 +660,14 @@ public class ChainBuilder {
 
     public Optional<ExecutionPayload> getExecutionPayload() {
       return executionPayload;
+    }
+
+    public Optional<SszList<SignedBlsToExecutionChange>> getBlsToExecutionChange() {
+      return blsToExecutionChange;
+    }
+
+    public Optional<SszList<SszKZGCommitment>> getKzgCommitments() {
+      return kzgCommitments;
     }
 
     public boolean getSkipStateTransition() {
