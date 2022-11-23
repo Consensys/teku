@@ -39,9 +39,11 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -73,7 +75,9 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload)
+      final Optional<ExecutionPayload> executionPayload,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -105,7 +109,14 @@ public class BlockProposalTestUtil {
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock)))),
+                                            newSlot, state, transactions, terminalBlock))))
+                    .blsToExecutionChanges(
+                        () ->
+                            blsToExecutionChange.orElseGet(
+                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
+                    .blobKzgCommitments(
+                        () ->
+                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)),
             false)
         .thenApply(
             newBlockAndState -> {
@@ -132,7 +143,9 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload)
+      final Optional<ExecutionPayload> executionPayload,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -164,7 +177,14 @@ public class BlockProposalTestUtil {
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock)))))
+                                            newSlot, state, transactions, terminalBlock))))
+                    .blsToExecutionChanges(
+                        () ->
+                            blsToExecutionChange.orElseGet(
+                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
+                    .blobKzgCommitments(
+                        () ->
+                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)))
         .thenApply(
             blockBody -> {
               final BeaconBlock block =
@@ -255,6 +275,32 @@ public class BlockProposalTestUtil {
                                 List.of(
                                     dataStructureUtil.randomWithdrawal(),
                                     dataStructureUtil.randomWithdrawal()))))
+        // Eip4844 version
+        .or(
+            () ->
+                schema
+                    .toVersionEip4844()
+                    .map(
+                        schemaEip4844 ->
+                            schemaEip4844.create(
+                                parentHash,
+                                Bytes20.ZERO,
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomBytes256(),
+                                specVersion
+                                    .beaconStateAccessors()
+                                    .getRandaoMix(state, currentEpoch),
+                                newSlot,
+                                UInt64.valueOf(30_000_000L),
+                                UInt64.valueOf(30_000_000L),
+                                specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
+                                dataStructureUtil.randomBytes32(),
+                                UInt256.ONE,
+                                UInt64.ONE,
+                                dataStructureUtil.randomBytes32(),
+                                transactions.orElse(Collections.emptyList()),
+                                List.of())))
         .orElseThrow();
   }
 
@@ -275,6 +321,8 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -292,7 +340,9 @@ public class BlockProposalTestUtil {
           exits.orElse(blockBodyLists.createVoluntaryExits()),
           transactions,
           terminalBlock,
-          executionPayload);
+          executionPayload,
+          blsToExecutionChange,
+          kzgCommitments);
     }
     return createNewBlock(
         signer,
@@ -307,7 +357,9 @@ public class BlockProposalTestUtil {
         exits.orElse(blockBodyLists.createVoluntaryExits()),
         transactions,
         terminalBlock,
-        executionPayload);
+        executionPayload,
+        blsToExecutionChange,
+        kzgCommitments);
   }
 
   private Eth1Data getEth1DataStub(BeaconState state, UInt64 currentEpoch) {
