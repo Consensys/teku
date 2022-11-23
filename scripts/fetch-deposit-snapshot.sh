@@ -5,21 +5,6 @@ REST_API=${1:?Must specify Teku Rest API url}
 VERIFY=${2:?Whether to check that snapshot points to higher deposit count than existing}
 OUT=${3:?Out filename}
 
-echo "Checking that required software available"
-
-require_command() {
-  echo -n "Checking $1... "
-  if which "${1}" &> /dev/null; then
-    echo "OK"
-  else
-    echo "FAILED" && exit 65
-  fi
-}
-
-require_command "curl"
-require_command "jq"
-require_command "sed"
-
 if [[ REST_API != *deposit_snapshot ]]
 then
   REST_API=$(echo "$REST_API" | sed 's:/*$::')
