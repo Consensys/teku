@@ -223,7 +223,8 @@ public class BeaconBlockBodySchemaEip4844Impl
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
-    return BeaconBlockBodyUtil.getGeneralizedIndices(
-        getExecutionPayloadSchema(), getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+    return BeaconBlockBodyUtil.getBlindedExecutionPayloadGeneralizedIndices(
+        getExecutionPayloadSchema(),
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)));
   }
 }

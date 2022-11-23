@@ -201,7 +201,8 @@ public class BeaconBlockBodySchemaCapellaImpl
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
-    return BeaconBlockBodyUtil.getGeneralizedIndices(
-        getExecutionPayloadSchema(), getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+    return BeaconBlockBodyUtil.getBlindedExecutionPayloadGeneralizedIndices(
+        getExecutionPayloadSchema(),
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)));
   }
 }

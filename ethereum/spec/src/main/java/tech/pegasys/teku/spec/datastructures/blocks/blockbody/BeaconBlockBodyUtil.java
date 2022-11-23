@@ -20,8 +20,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class BeaconBlockBodyUtil {
 
-  public static LongList getGeneralizedIndices(
-      final ExecutionPayloadSchema<?> executionPayloadSchema, final int childGeneralizedIndex) {
+  public static LongList getBlindedExecutionPayloadGeneralizedIndices(
+      final ExecutionPayloadSchema<?> executionPayloadSchema, final long childGeneralizedIndex) {
     final LongList schemaGeneralizedIndices =
         executionPayloadSchema.getBlindedNodeGeneralizedIndices();
     final LongList blindedNodeGeneralizedIndices =
