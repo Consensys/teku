@@ -31,11 +31,12 @@ echo ${REST_API}
 curl --fail -H 'Accept: application/json' "${REST_API}" -o "${temp_file}"
 
 new_snapshot_deposit_count=$(jq -r '.data.deposit_count' ${temp_file})
-echo "Downloaded deposit snapshot with $new_snapshot_deposit_count deposit_count"
+new_snapshot_block_height=$(jq -r '.data.execution_block_height' ${temp_file})
+echo "Downloaded deposit snapshot with deposit count: $new_snapshot_deposit_count, block height: $new_snapshot_block_height"
 if [ -f "$OUT" ]; then
-  old_snapshot_deposit_count=$(jq -r '.data.deposit_count' ${OUT})
-  echo "Found old deposit snapshot with $old_snapshot_deposit_count deposit_count"
-  if (( "$new_snapshot_deposit_count" > "$old_snapshot_deposit_count" )); then
+  old_snapshot_block_height=$(jq -r '.data.execution_block_height' ${OUT})
+  echo "Found old deposit snapshot with $old_snapshot_block_height block height"
+  if (( "$new_snapshot_block_height" > "$old_snapshot_block_height" )); then
       more_deposits=true
   else
       more_deposits=false
