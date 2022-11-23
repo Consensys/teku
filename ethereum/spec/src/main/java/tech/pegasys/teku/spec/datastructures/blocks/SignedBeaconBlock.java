@@ -102,7 +102,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     final List<TreeUpdates.Update> updatesList = new ArrayList<>();
     final List<TreeNode> unblindedData = payload.getUnblindedTreeNodes();
     for (int i = 0; i < blindedNodeIndices.size(); i++) {
-      final long blindedNodeIndex = blindedNodeIndices.get(i);
+      final long blindedNodeIndex = blindedNodeIndices.getLong(i);
       final Bytes32 expectedRoot = backingNode.get(blindedNodeIndex).hashTreeRoot();
       final TreeNode replacement = unblindedData.get(i);
       checkState(
