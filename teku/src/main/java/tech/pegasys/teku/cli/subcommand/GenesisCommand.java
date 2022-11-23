@@ -18,16 +18,13 @@ import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMM
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.MinimalEth2NetworkOptions;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @Command(
@@ -71,10 +68,12 @@ public class GenesisCommand {
       }
 
       final long genesisTime = genesisParams.genesisTime;
-      final List<BLSKeyPair> validatorKeys =
-          new MockStartValidatorKeyPairFactory().generateKeyPairs(0, genesisParams.validatorCount);
       final BeaconState genesisState =
-          InteropStartupUtil.createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys);
+          new GenesisStateBuilder()
+              .spec(spec)
+              .genesisTime(genesisTime)
+              .addMockValidators(genesisParams.validatorCount)
+              .build();
 
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, false);
