@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import nl.altindag.log.LogCaptor;
 import nl.altindag.log.model.LogEvent;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -52,7 +53,7 @@ public class DoppelgangerDetectorTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
-  private final LogCaptor logCaptor = LogCaptor.forClass(DoppelgangerDetector.class);
+  private static LogCaptor logCaptor;
   private final String doppelgangerStartLog = "Starting doppelganger detection...";
   private final String doppelgangerTimeoutLog =
       "Validators Doppelganger Detection timeout reached. Some technical issues prevented the validators doppelganger detection from running correctly. Please check the logs and consider performing a new validators doppelganger check.";
@@ -62,8 +63,14 @@ public class DoppelgangerDetectorTest {
 
   private DoppelgangerDetector doppelgangerDetector;
 
+  @BeforeAll
+  public static void setupLogCaptor() {
+    logCaptor = LogCaptor.forClass(DoppelgangerDetector.class);
+  }
+
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup() {
+    logCaptor.clearLogs();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(UInt64.ZERO));
     when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(IntArrayList.of(1, 2, 3)));
@@ -78,6 +85,11 @@ public class DoppelgangerDetectorTest {
             genesisDataProvider,
             checkDelay,
             timeout);
+  }
+
+  @AfterAll
+  public static void tearDown() {
+    logCaptor.close();
   }
 
   @Test
