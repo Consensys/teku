@@ -17,8 +17,10 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_W
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -219,6 +221,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
   // process_withdrawals
 
+  @Override
+  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
+    return Optional.of(getExpectedWithdrawals(BeaconStateCapella.required(preState)));
+  }
+
   // get_expected_withdrawals
   private List<Withdrawal> getExpectedWithdrawals(final BeaconStateCapella preState) {
     final List<Withdrawal> expectedWithdrawals = new ArrayList<>();
@@ -268,12 +275,20 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     return (validatorIndex + 1) % validatorCount;
   }
 
-  private BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
+  @VisibleForTesting
+  BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
       final BLSSignatureVerifier signatureVerifier) {
+
+    final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
       final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
+
+      if (!validatorsSeenInBlock.add(addressChange.getValidatorIndex())) {
+        return BlockValidationResult.failed(
+            "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
+      }
 
       final Optional<OperationInvalidReason> operationInvalidReason =
           operationValidator.validateBlsToExecutionChange(
