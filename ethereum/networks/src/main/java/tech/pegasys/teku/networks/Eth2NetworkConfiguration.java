@@ -232,7 +232,6 @@ public class Eth2NetworkConfiguration {
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
-    private Optional<Eth2Network> eth2Network = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
@@ -279,6 +278,7 @@ public class Eth2NetworkConfiguration {
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(spec.getGenesisSpec().getConfig().getDepositContractAddress());
       }
+      final Optional<Eth2Network> eth2Network = Eth2Network.fromStringLenient(constants);
       return new Eth2NetworkConfiguration(
           spec,
           constants,
@@ -439,7 +439,6 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
-      this.eth2Network = Optional.of(network);
       switch (network) {
         case MAINNET:
           return applyMainnetNetworkDefaults();
