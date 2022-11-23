@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -183,9 +184,12 @@ public class ExecutionPayloadHeaderSchemaCapella
     return (SszByteListSchema<?>) getFieldSchema10();
   }
 
+  // note needs generalized index order
   @Override
-  public long getBlindedNodeGeneralizedIndex() {
-    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT));
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return LongList.of(
+        getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)));
   }
 
   @Override

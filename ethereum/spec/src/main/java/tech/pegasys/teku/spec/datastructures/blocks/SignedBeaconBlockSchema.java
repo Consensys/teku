@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.Optional;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
@@ -41,15 +42,17 @@ public class SignedBeaconBlockSchema
     return new SignedBeaconBlock(this, node);
   }
 
-  public Optional<Long> getBlindedNodeGeneralizedIndex() {
-    return getBlockSchema()
-        .getBlindedNodeGeneralizedIndex()
-        .map(
-            relativeIndex -> {
-              final long childGeneralizedIndex =
-                  getChildGeneralizedIndex(getFieldIndex(SignedBeaconBlockFields.MESSAGE));
-              return GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex);
-            });
+  public LongList getBlindedNodeGeneralizedIndices() {
+    final LongList schemaGeneralizedIndices = getBlockSchema().getBlindedNodeGeneralizedIndices();
+    final long childGeneralizedIndex =
+        getChildGeneralizedIndex(getFieldIndex(SignedBeaconBlockFields.MESSAGE));
+    final LongList blindedNodeGeneralizedIndices =
+        new LongArrayList(schemaGeneralizedIndices.size());
+    for (long relativeIndex : schemaGeneralizedIndices) {
+      blindedNodeGeneralizedIndices.add(
+          GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
+    }
+    return blindedNodeGeneralizedIndices;
   }
 
   public BeaconBlockSchema getBlockSchema() {

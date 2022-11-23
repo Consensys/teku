@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.Optional;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -55,15 +56,17 @@ public class BeaconBlockSchema
     return new BeaconBlock(this, slot, proposerIndex, parentRoot, stateRoot, body);
   }
 
-  public Optional<Long> getBlindedNodeGeneralizedIndex() {
-    return getBodySchema()
-        .getBlindedNodeGeneralizedIndex()
-        .map(
-            childIndex -> {
-              final long childGeneralizedIndex =
-                  getChildGeneralizedIndex(getFieldIndex(BeaconBlockFields.BODY));
-              return GIndexUtil.gIdxCompose(childGeneralizedIndex, childIndex);
-            });
+  public LongList getBlindedNodeGeneralizedIndices() {
+    final LongList schemaGeneralizedIndices = getBodySchema().getBlindedNodeGeneralizedIndices();
+    final long childGeneralizedIndex =
+        getChildGeneralizedIndex(getFieldIndex(BeaconBlockFields.BODY));
+    final LongList blindedNodeGeneralizedIndices =
+        new LongArrayList(schemaGeneralizedIndices.size());
+    for (long relativeIndex : schemaGeneralizedIndices) {
+      blindedNodeGeneralizedIndices.add(
+          GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
+    }
+    return blindedNodeGeneralizedIndices;
   }
 
   public BeaconBlockBodySchema<?> getBodySchema() {

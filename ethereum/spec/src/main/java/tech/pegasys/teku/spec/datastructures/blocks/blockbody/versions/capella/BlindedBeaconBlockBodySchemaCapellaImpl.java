@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -200,10 +202,17 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public Optional<Long> getBlindedNodeGeneralizedIndex() {
+  public LongList getBlindedNodeGeneralizedIndices() {
     final long childGeneralizedIndex =
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
-    final long relativeIndex = getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndex();
-    return Optional.of(GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
+    final LongList schemaGeneralizedIndices =
+        getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices();
+    final LongList blindedNodeGeneralizedIndices =
+        new LongArrayList(schemaGeneralizedIndices.size());
+    for (long relativeIndex : schemaGeneralizedIndices) {
+      blindedNodeGeneralizedIndices.add(
+          GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
+    }
+    return blindedNodeGeneralizedIndices;
   }
 }

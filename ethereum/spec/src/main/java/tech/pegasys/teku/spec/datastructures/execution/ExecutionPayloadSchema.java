@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -27,7 +28,7 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszC
 
   TransactionSchema getTransactionSchema();
 
-  long getBlindedNodeGeneralizedIndex();
+  LongList getBlindedNodeGeneralizedIndices();
 
   default Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
     return Optional.empty();
