@@ -475,7 +475,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater chainUpdater = storageSystem.chainUpdater();
-    chainUpdater.initializeGenesisWithPayload(true);
+    chainUpdater.initializeGenesisWithPayload(
+        true, dataStructureUtil.randomExecutionPayloadHeader());
     final ForkChoiceStrategy protoArray = getProtoArray(storageSystem);
     final RecentChainData recentChainData = storageSystem.recentChainData();
     final SignedBlockAndState optimisticHead = chainUpdater.finalizeCurrentChainOptimistically();

@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -77,18 +78,24 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
-    return importBlock(block, Optional.empty());
+    return importBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty());
   }
 
   @CheckReturnValue
-  public SafeFuture<BlockImportResult> importBlock(
+  public SafeFuture<BlockImportResult> importBlockAndBlobsSidecar(
       final SignedBeaconBlock block,
+      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
+    // TODO to be removed once we pass blobs to forkChoice
+    if (blobsSidecar.isPresent()) {
+      LOG.trace("blobsSidecar is present");
+    }
+
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
     if (knownOptimistic.isPresent()) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
-          () -> block.toLogString());
+          block::toLogString);
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
     }
 
@@ -105,10 +112,10 @@ public class BlockImporter {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
                     result::getFailureReason,
-                    () -> block.toLogString());
+                    block::toLogString);
                 return result;
               }
-              LOG.trace("Successfully imported block {}", () -> block.toLogString());
+              LOG.trace("Successfully imported block {}", block::toLogString);
 
               blockImportNotifications.onBlockImported(block);
 
