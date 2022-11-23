@@ -110,11 +110,12 @@ public class ReconstructHistoricalStatesService extends Service {
 
                         final Bytes32 genesisBlockRoot =
                             BeaconBlockHeader.fromState(genesisState).getRoot();
-                        storageUpdateChannel
+                        return storageUpdateChannel
                             .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
-                            .ifExceptionGetsHereRaiseABug();
-                        return SafeFuture.completedFuture(
-                            new Context(genesisState, GENESIS_SLOT.increment(), anchorSlot));
+                            .thenApply(
+                                __ ->
+                                    new Context(
+                                        genesisState, GENESIS_SLOT.increment(), anchorSlot));
                       })
                   .thenComposeChecked(this::applyNextBlock)
                   .finish(
