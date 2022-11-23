@@ -280,20 +280,6 @@ public class CombinedChainDataClient {
       return STATE_NOT_AVAILABLE;
     }
 
-    if (isRecentData(slot)) {
-      return recentChainData
-          .retrieveStateInEffectAtSlot(slot)
-          .thenCompose(
-              recentState -> {
-                if (recentState.isPresent()) {
-                  return completedFuture(recentState);
-                }
-                // Fall-through to historical query in case state has moved into historical range
-                // during processing
-                return historicalChainData.getLatestAvailableFinalizedState(slot);
-              });
-    }
-
     return historicalChainData.getLatestAvailableFinalizedState(slot);
   }
 
