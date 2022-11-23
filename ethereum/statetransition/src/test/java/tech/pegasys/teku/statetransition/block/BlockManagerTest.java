@@ -81,7 +81,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class BlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -147,7 +147,9 @@ public class BlockManagerTest {
   @BeforeEach
   public void setup() {
     forwardBlockImportedNotificationsTo(blockManager);
-    localChain.chainUpdater().initializeGenesisWithPayload(false);
+    localChain
+        .chainUpdater()
+        .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
   }
 
@@ -283,21 +285,26 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock, Optional.empty()))
+    when(blockImporter.importBlockAndBlobsSidecar(
+            nextNextBlock, Optional.empty(), Optional.empty()))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
     incrementSlot();
     incrementSlot();
     blockManager.importBlock(nextNextBlock);
-    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock, Optional.empty()));
+    ignoreFuture(
+        verify(blockImporter)
+            .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty(), Optional.empty()));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
 
     // So when the block import completes, it should be retried
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
-    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock, Optional.empty()));
+    ignoreFuture(
+        verify(blockImporter, times(2))
+            .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty(), Optional.empty()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }
@@ -567,7 +574,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any()))
+    when(blockValidator.validate(any(), any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 3000ms
@@ -610,7 +617,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any()))
+    when(blockValidator.validate(any(), any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 500ms
@@ -638,7 +645,7 @@ public class BlockManagerTest {
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
     assertThat(blockManager.validateAndImportBlock(block))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
-    verify(blockValidator, never()).validate(block);
+    verify(blockValidator, never()).validate(block, Optional.empty());
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {

@@ -1802,6 +1802,15 @@ public final class DataStructureUtil {
     }
   }
 
+  public SszList<SignedBlsToExecutionChange> emptySignedBlsToExecutionChangesList() {
+    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        .getBeaconBlockBodySchema()
+        .toVersionCapella()
+        .orElseThrow()
+        .getBlsToExecutionChangesSchema()
+        .createFromElements(List.of());
+  }
+
   public BlsToExecutionChange randomBlsToExecutionChange() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
@@ -1861,13 +1870,17 @@ public final class DataStructureUtil {
   }
 
   public BlobsSidecar randomBlobsSidecar() {
+    return randomBlobsSidecar(randomBytes32(), randomUInt64());
+  }
+
+  public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
     final BlobsSidecarSchema blobsSidecarSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return blobsSidecarSchema.create(
-        randomBytes32(),
-        randomUInt64(),
+        blockRoot,
+        slot,
         IntStream.range(0, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()))
             .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
             .collect(toList()),
@@ -1891,6 +1904,15 @@ public final class DataStructureUtil {
         spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow().getMaxBlobsPerBlock();
 
     return randomSszList(kzgCommitmentsSchema, maxKzgCommitments, this::randomSszKZGCommitment);
+  }
+
+  public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
+    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        .getBeaconBlockBodySchema()
+        .toVersionEip4844()
+        .orElseThrow()
+        .getBlobKzgCommitmentsSchema()
+        .createFromElements(List.of());
   }
 
   private int randomInt(final int bound) {
