@@ -278,7 +278,9 @@ class BlockFactoryTest {
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       if (postMerge) {
-        localChain.chainUpdater().initializeGenesisWithPayload(false);
+        localChain
+            .chainUpdater()
+            .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
       } else {
         localChain.chainUpdater().initializeGenesis(false);
       }

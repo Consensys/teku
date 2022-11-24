@@ -133,7 +133,9 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 

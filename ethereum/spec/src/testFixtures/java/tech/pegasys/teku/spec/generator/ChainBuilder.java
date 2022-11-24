@@ -46,19 +46,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -227,16 +226,16 @@ public class ChainBuilder {
     return new Checkpoint(epoch, block.getMessage().hashTreeRoot());
   }
 
+  public void initializeGenesis(final BeaconState genesis) {
+    addGenesisBlock(genesis);
+  }
+
   public SignedBlockAndState generateGenesis() {
     return generateGenesis(UInt64.ZERO, true);
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
-    return generateGenesis(
-        genesisTime,
-        signDeposits,
-        spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
-        Optional.empty());
+    return generateGenesis(genesisTime, signDeposits, Optional.empty());
   }
 
   public void assignGenesis(final SignedBlockAndState genesis) {
@@ -247,18 +246,23 @@ public class ChainBuilder {
   public SignedBlockAndState generateGenesis(
       final UInt64 genesisTime,
       final boolean signDeposits,
-      final UInt64 depositAmount,
       final Optional<ExecutionPayloadHeader> payloadHeader) {
     checkState(blocks.isEmpty(), "Genesis already created");
 
     // Generate genesis state
-    final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(spec, new DepositGenerator(spec, signDeposits))
-            .createDeposits(validatorKeys, depositAmount);
     BeaconState genesisState =
-        new MockStartBeaconStateGenerator(spec)
-            .createInitialBeaconState(genesisTime, initialDepositData, payloadHeader);
+        new GenesisStateBuilder()
+            .spec(spec)
+            .signDeposits(signDeposits)
+            .addValidators(validatorKeys)
+            .genesisTime(genesisTime)
+            .executionPayloadHeader(payloadHeader)
+            .build();
 
+    return addGenesisBlock(genesisState);
+  }
+
+  private SignedBlockAndState addGenesisBlock(final BeaconState genesisState) {
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedBlock =
@@ -456,6 +460,8 @@ public class ChainBuilder {
                   options.getTransactions(),
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
+                  options.getBlsToExecutionChange(),
+                  options.getKzgCommitments(),
                   options.getSkipStateTransition()));
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
@@ -579,6 +585,8 @@ public class ChainBuilder {
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
+    private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
+    private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
 
@@ -608,12 +616,23 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setTerminalBlockHash(Bytes32 blockHash) {
+    public BlockOptions setTerminalBlockHash(final Bytes32 blockHash) {
       this.terminalBlockHash = Optional.of(blockHash);
       return this;
     }
 
-    public BlockOptions setExecutionPayload(ExecutionPayload executionPayload) {
+    public BlockOptions setBlsToExecutionChange(
+        final SszList<SignedBlsToExecutionChange> blsToExecutionChange) {
+      this.blsToExecutionChange = Optional.of(blsToExecutionChange);
+      return this;
+    }
+
+    public BlockOptions setKzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
+      this.kzgCommitments = Optional.of(kzgCommitments);
+      return this;
+    }
+
+    public BlockOptions setExecutionPayload(final ExecutionPayload executionPayload) {
       this.executionPayload = Optional.of(executionPayload);
       return this;
     }
@@ -646,6 +665,14 @@ public class ChainBuilder {
 
     public Optional<ExecutionPayload> getExecutionPayload() {
       return executionPayload;
+    }
+
+    public Optional<SszList<SignedBlsToExecutionChange>> getBlsToExecutionChange() {
+      return blsToExecutionChange;
+    }
+
+    public Optional<SszList<SszKZGCommitment>> getKzgCommitments() {
+      return kzgCommitments;
     }
 
     public boolean getSkipStateTransition() {
