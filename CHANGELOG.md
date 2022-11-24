@@ -22,5 +22,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Updated REST API to use Javalin 5
+- Added REST API methods for BLSToExecutionChange operation [#6493](https://github.com/ConsenSys/teku/pull/6493)
 
 ### Bug Fixes
