@@ -66,7 +66,7 @@ class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void returnsEmptyListWhenPoolIsEmpty() throws JsonProcessingException {
-    when(nodeDataProvider.getVoluntaryExits()).thenReturn(Collections.emptyList());
+    when(nodeDataProvider.getBlsToExecutionChanges()).thenReturn(Collections.emptyList());
 
     handler.handleRequest(request);
 
