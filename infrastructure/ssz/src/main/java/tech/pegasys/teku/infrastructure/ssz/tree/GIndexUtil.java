@@ -16,6 +16,8 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 import static java.lang.Integer.min;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 
 /**
  * Util methods for binary tree generalized indices manipulations See
@@ -220,6 +222,25 @@ public class GIndexUtil {
     long childAnchor = Long.highestOneBit(childGeneralizedIndex);
     int childDepth = Long.bitCount(childAnchor - 1);
     return (parentGeneralizedIndex << childDepth) | (childGeneralizedIndex ^ childAnchor);
+  }
+
+  /**
+   * Compose absolute generalized index, over a list of indices, where <code>childGeneralizedIndices
+   * </code> is relative to the nodes at <code>parentGeneralizedIndex</code>
+   *
+   * <p>For example:
+   *
+   * <ul>
+   *   <li><code>gIdxComposeAll(0b1111, [0b1000, 0b1001]) == [0b1111000, 0b11111001]</code>
+   *   <li><code>gIdxComposeAll(0b1000, [0b1111, 0b0101]) == [0b1000111, 0b10000101]</code>
+   * </ul>
+   */
+  public static LongList gIdxComposeAll(
+      final long parentGeneralizedIndex, final LongList childGeneralizedIndices) {
+    return childGeneralizedIndices
+        .longStream()
+        .map(childIndex -> gIdxCompose(parentGeneralizedIndex, childIndex))
+        .collect(LongArrayList::new, LongArrayList::add, LongList::addAll);
   }
 
   /**

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -209,7 +210,7 @@ public class ExecutionPayloadEip4844Impl
   }
 
   @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
+  public List<TreeNode> getUnblindedTreeNodes() {
+    return List.of(getTransactions().getBackingNode(), getWithdrawals().getBackingNode());
   }
 }
