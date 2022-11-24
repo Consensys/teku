@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class DepositSnapshotFileLoaderTest {
   private static final String SNAPSHOT_RESOURCE_SSZ = "snapshot.ssz";
   private static final String SNAPSHOT_RESOURCE_JSON = "snapshot.json";
-  private static final String SNAPSHOT_DATA_RESOURCE_JSON = "snapshot_data.json";
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -85,7 +84,7 @@ public class DepositSnapshotFileLoaderTest {
   }
 
   public static Stream<String> getSnapshotPaths() {
-    return Stream.of(SNAPSHOT_RESOURCE_SSZ, SNAPSHOT_RESOURCE_JSON, SNAPSHOT_DATA_RESOURCE_JSON);
+    return Stream.of(SNAPSHOT_RESOURCE_SSZ, SNAPSHOT_RESOURCE_JSON);
   }
 
   private String getResourceFilePath(final String resource) {
