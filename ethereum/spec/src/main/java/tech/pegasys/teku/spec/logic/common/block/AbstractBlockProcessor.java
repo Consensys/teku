@@ -76,6 +76,8 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
   /**
@@ -126,7 +128,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
+      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
@@ -135,7 +139,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             blockSlotState,
             indexedAttestationCache,
             signatureVerifier,
-            payloadExecutor);
+            payloadExecutor,
+            kzgCommitmentsProcessor,
+            blobsSidecarAvailabilityChecker);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block " + signedBlock.toLogString());
@@ -149,7 +155,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
+      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
       throws StateTransitionException {
     try {
       final BlockValidationResult preValidationResult =
@@ -165,7 +173,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               signedBlock.getMessage(),
               indexedAttestationCache,
               signatureVerifier,
-              payloadExecutor);
+              payloadExecutor,
+              kzgCommitmentsProcessor,
+              blobsSidecarAvailabilityChecker);
 
       BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
@@ -306,12 +316,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
+      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
       throws BlockProcessingException {
     return preState.updated(
         state ->
             processBlock(
-                state, block, indexedAttestationCache, signatureVerifier, payloadExecutor));
+                state,
+                block,
+                indexedAttestationCache,
+                signatureVerifier,
+                payloadExecutor,
+                kzgCommitmentsProcessor,
+                blobsSidecarAvailabilityChecker));
   }
 
   protected void processBlock(
@@ -319,7 +337,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
+      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
       throws BlockProcessingException {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());
@@ -811,7 +831,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException
-  private void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
+  protected void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
     try {
       action.run();
     } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
@@ -824,7 +844,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 
-  private interface BlockProcessingAction {
+  protected interface BlockProcessingAction {
     void run() throws BlockProcessingException;
   }
 }

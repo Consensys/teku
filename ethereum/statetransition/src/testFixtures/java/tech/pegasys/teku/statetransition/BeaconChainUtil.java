@@ -243,6 +243,7 @@ public class BeaconChainUtil {
             .onBlock(
                 block,
                 Optional.empty(),
+                Optional.empty(),
                 new ExecutionLayerChannelStub(spec, false, Optional.empty()))
             .join();
     if (!importResult.isSuccessful()) {

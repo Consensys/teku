@@ -86,10 +86,6 @@ public class BlockImporter {
       final SignedBeaconBlock block,
       final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
-    // TODO to be removed once we pass blobs to forkChoice
-    if (blobsSidecar.isPresent()) {
-      LOG.trace("blobsSidecar is present");
-    }
 
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
     if (knownOptimistic.isPresent()) {
@@ -105,7 +101,8 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> forkChoice.onBlock(block, blockImportPerformance, executionLayer))
+        .thenCompose(
+            __ -> forkChoice.onBlock(block, blobsSidecar, blockImportPerformance, executionLayer))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

@@ -42,6 +42,8 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlockProcessorBellatrix extends BlockProcessorAltair {
@@ -83,7 +85,9 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
+      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     final BeaconBlockBody blockBody = block.getBody();
