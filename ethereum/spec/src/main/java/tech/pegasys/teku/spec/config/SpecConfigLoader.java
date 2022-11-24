@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,13 @@ public class SpecConfigLoader {
 
   public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
+    if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
+      try {
+        applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
     reader.loadFromMap(config, true);
     return reader.build();
   }

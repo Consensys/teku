@@ -663,14 +663,8 @@ public class SpecConfigBuilder {
       if (altairForkEpoch == null) {
         altairForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
         altairForkVersion = PLACEHOLDER_FORK_VERSION;
-        inactivityPenaltyQuotientAltair = inactivityPenaltyQuotient;
-        minSlashingPenaltyQuotientAltair = minSlashingPenaltyQuotient;
-        proportionalSlashingMultiplierAltair = proportionalSlashingMultiplier;
-        syncCommitteeSize = 512;
         inactivityScoreBias = UInt64.valueOf(4);
         inactivityScoreRecoveryRate = UInt64.valueOf(16);
-        epochsPerSyncCommitteePeriod = 256;
-        minSyncCommitteeParticipants = 1;
       }
       validateConstant("inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
       validateConstant("minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
@@ -829,13 +823,6 @@ public class SpecConfigBuilder {
       if (bellatrixForkEpoch == null) {
         bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
         bellatrixForkVersion = PLACEHOLDER_FORK_VERSION;
-        inactivityPenaltyQuotientBellatrix = inactivityPenaltyQuotient;
-        minSlashingPenaltyQuotientBellatrix = minSlashingPenaltyQuotient;
-        proportionalSlashingMultiplierBellatrix = proportionalSlashingMultiplier;
-        maxBytesPerTransaction = 1073741824;
-        maxTransactionsPerPayload = 1048576;
-        bytesPerLogsBloom = 256;
-        maxExtraDataBytes = 32;
       }
       validateConstant("bellatrixForkVersion", bellatrixForkVersion);
       validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
@@ -1010,8 +997,6 @@ public class SpecConfigBuilder {
         // Provide MainNet-like defaults and ensure Capella isn't actually supported
         capellaForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
         capellaForkVersion = PLACEHOLDER_FORK_VERSION;
-        maxBlsToExecutionChanges = UInt64.valueOf(16);
-        maxWithdrawalsPerPayload = 16;
       }
       validateConstant("capellaForkVersion", capellaForkVersion);
       validateConstant("capellaForkEpoch", capellaForkEpoch);
@@ -1067,8 +1052,6 @@ public class SpecConfigBuilder {
       if (eip4844ForkEpoch == null) {
         eip4844ForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
         eip4844ForkVersion = PLACEHOLDER_FORK_VERSION;
-        fieldElementsPerBlob = 4096;
-        maxBlobsPerBlock = 16;
       }
       validateConstant("eip4844ForkEpoch", eip4844ForkEpoch);
       validateConstant("eip4844ForkVersion", eip4844ForkVersion);
