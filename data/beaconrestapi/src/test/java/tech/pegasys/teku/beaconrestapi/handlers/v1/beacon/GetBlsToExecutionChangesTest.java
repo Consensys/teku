@@ -89,7 +89,8 @@ class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlsToExecutionChangesTest.class, "getVoluntaryExits.json"),
+            Resources.getResource(
+                GetBlsToExecutionChangesTest.class, "getBlsToExecutionChanges.json"),
             UTF_8);
     assertThat(data).isEqualTo(expected);
   }
