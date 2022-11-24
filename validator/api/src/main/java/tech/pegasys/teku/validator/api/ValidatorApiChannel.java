@@ -94,6 +94,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
 
-  SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+  SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch);
 }
