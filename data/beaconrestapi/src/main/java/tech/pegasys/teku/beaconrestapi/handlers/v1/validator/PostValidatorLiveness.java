@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -34,9 +35,10 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PostValidatorLiveness extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/liveness";
+  public static final String ROUTE = "/eth/v1/validator/liveness/{epoch}";
 
   private static final SerializableTypeDefinition<List<ValidatorLivenessAtEpoch>> RESPONSE_TYPE =
       SerializableTypeDefinition.<List<ValidatorLivenessAtEpoch>>object()
@@ -72,6 +74,7 @@ public class PostValidatorLiveness extends RestApiEndpoint {
                     + " values returned by the beacon node are not canonical; they are best-effort"
                     + " and based upon a subjective view of the network.")
             .tags(TAG_EXPERIMENTAL)
+            .pathParam(EPOCH_PARAMETER)
             .requestBodyType(ValidatorLivenessRequest.getJsonTypeDefinition())
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()
@@ -87,10 +90,11 @@ public class PostValidatorLiveness extends RestApiEndpoint {
       throw new ServiceUnavailableException();
     }
 
+    final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     final ValidatorLivenessRequest requestBody = request.getRequestBody();
     SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> future =
         nodeDataProvider.getValidatorLiveness(
-            requestBody.getIndices(), requestBody.getEpoch(), chainDataProvider.getCurrentEpoch());
+            requestBody.getIndices(), epoch, chainDataProvider.getCurrentEpoch());
 
     request.respondAsync(
         future.thenApply(
