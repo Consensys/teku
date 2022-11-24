@@ -111,26 +111,6 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV1WhenNoPayloadAttributes() {
-    final ExecutionClientHandler handler = getHandler();
-    final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
-    final ForkChoiceStateV1 forkChoiceStateV1 =
-        ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
-    final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new ForkChoiceUpdatedResult(
-                    new PayloadStatusV1(
-                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
-                    dataStructureUtil.randomBytes8())));
-    when(executionEngineClient.forkChoiceUpdatedV1(forkChoiceStateV1, Optional.empty()))
-        .thenReturn(dummyResponse);
-    handler.engineForkChoiceUpdated(forkChoiceState, Optional.empty());
-    verify(executionEngineClient).forkChoiceUpdatedV1(forkChoiceStateV1, Optional.empty());
-  }
-
   @Override
   public ExecutionClientHandler getHandler() {
     return new CapellaExecutionClientHandler(spec, executionEngineClient);
