@@ -28,7 +28,7 @@ if [ -f "$OUT" ]; then
   fi
   if [[ "$VERIFY" = false || ("$VERIFY" = true  && "$more_deposits" = true) ]]; then
     echo "Replacing old file ${OUT} with new deposit snapshot"
-    mv -f "${temp_file}" "$OUT"
+    jq . "${temp_file}" > "$OUT"
   else
     echo "Deposit snapshot is up-to-date";fi
 else
