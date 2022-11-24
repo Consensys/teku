@@ -235,8 +235,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new PostVoluntaryExit(dataProvider))
         .endpoint(new PostSyncCommittees(dataProvider))
         .endpoint(new PostValidatorLiveness(dataProvider))
-        .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
-        .endpoint(new GetBlsToExecutionChanges(dataProvider))
+        .endpoint(new PostBlsToExecutionChanges(dataProvider.getNodeDataProvider(), schemaCache))
+        .endpoint(new GetBlsToExecutionChanges(dataProvider.getNodeDataProvider(), schemaCache))
         // Event Handler
         .endpoint(
             new GetEvents(

@@ -1,0 +1,81 @@
+{
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "postBlsToExecutionChange",
+    "summary" : "Submit SignedBLSToExecutionChange object to node's pool",
+    "description" : "Submits SignedBLSToExecutionChange object to node's pool and if passes validation node MUST broadcast it to network.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/SignedBLSToExecutionChange"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "BLS to execution change is stored in node and broadcasted to network",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getBlsToExecutionChanges",
+    "summary" : "Get SignedBLSToExecutionChange from operations pool",
+    "description" : "Retrieves BLS to execution changes known by the node but not necessarily incorporated into any block",
+    "responses" : {
+      "200" : {
+        "description" : "Successful response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlsToExecutionChangeResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

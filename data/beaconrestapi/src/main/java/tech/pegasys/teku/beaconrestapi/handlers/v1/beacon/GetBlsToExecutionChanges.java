@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -23,43 +22,50 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
 import java.util.function.Function;
-import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetBlsToExecutionChanges extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
 
-  private static final SerializableTypeDefinition<List<SignedVoluntaryExit>> RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<SignedVoluntaryExit>>object()
-          .name("GetBlsToExecutionChangeResponse")
-          .withField(
-              "data",
-              listOf(SignedVoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition()),
-              Function.identity())
-          .build();
-
   private final NodeDataProvider nodeDataProvider;
 
-  public GetBlsToExecutionChanges(final DataProvider dataProvider) {
-    super(createEndpointMetadata());
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+  public GetBlsToExecutionChanges(
+      final NodeDataProvider nodeDataProvider, final SchemaDefinitionCache schemaCache) {
+    super(createEndpointMetadata(schemaCache));
+    this.nodeDataProvider = nodeDataProvider;
   }
 
-  private static EndpointMetadata createEndpointMetadata() {
-    return EndpointMetadata.post(ROUTE)
+  private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
+    final SerializableTypeDefinition<List<SignedBlsToExecutionChange>> responseType =
+        SerializableTypeDefinition.<List<SignedBlsToExecutionChange>>object()
+            .name("GetBlsToExecutionChangeResponse")
+            .withField(
+                "data",
+                listOf(
+                    schemaCache
+                        .getSchemaDefinition(SpecMilestone.CAPELLA)
+                        .toVersionCapella()
+                        .orElseThrow()
+                        .getSignedBlsToExecutionChangeSchema()
+                        .getJsonTypeDefinition()),
+                Function.identity())
+            .build();
+
+    return EndpointMetadata.get(ROUTE)
         .operationId("getBlsToExecutionChanges")
         .summary("Get SignedBLSToExecutionChange from operations pool")
         .description(
             "Retrieves BLS to execution changes known by the node but not necessarily incorporated into any block")
         .tags(TAG_BEACON)
-        .response(SC_OK, "Successful response", RESPONSE_TYPE)
-        .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error")
+        .response(SC_OK, "Successful response", responseType)
         .build();
   }
 

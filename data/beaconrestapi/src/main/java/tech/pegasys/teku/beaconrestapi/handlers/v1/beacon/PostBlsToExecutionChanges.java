@@ -14,14 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -41,9 +39,9 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
   private final NodeDataProvider nodeDataProvider;
 
   public PostBlsToExecutionChanges(
-      final DataProvider provider, final SchemaDefinitionCache schemaCache) {
+      final NodeDataProvider provider, final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
-    this.nodeDataProvider = provider.getNodeDataProvider();
+    this.nodeDataProvider = provider;
   }
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
@@ -62,8 +60,6 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
                 .getSignedBlsToExecutionChangeSchema()
                 .getJsonTypeDefinition())
         .response(SC_OK, "BLS to execution change is stored in node and broadcasted to network")
-        .response(SC_BAD_REQUEST, "Invalid BLS to execution change")
-        .response(SC_INTERNAL_SERVER_ERROR, "Beacon node internal error")
         .build();
   }
 
