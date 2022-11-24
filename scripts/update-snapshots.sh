@@ -65,12 +65,12 @@ get_finalized_slot() {
 }
 
 download_snapshot "${SERVER_GOERLI_URL}" "goerli.json"
-echo "Latest finalized slot verification link: https://goerli.beaconcha.in/slot/$(get_finalized_slot)"
+echo "GOERLI latest finalized slot verification link: https://goerli.beaconcha.in/slot/$(get_finalized_slot)"
 download_snapshot "${SERVER_SEPOLIA_URL}" "sepolia.json"
-echo "Latest finalized slot verification link: https://sepolia.beaconcha.in/slot/$(get_finalized_slot)"
+echo "SEPOLIA latest finalized slot verification link: https://sepolia.beaconcha.in/slot/$(get_finalized_slot)"
 download_snapshot "${SERVER_GNOSIS_URL}" "gnosis.json"
-echo "Latest finalized slot verification link: https://beacon.gnosischain.com/block/$(get_finalized_slot)"
+echo "GNOSIS latest finalized slot verification link: https://beacon.gnosischain.com/block/$(get_finalized_slot)"
 download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json"
-echo "Latest finalized slot verification link: https://beaconcha.in/slot/$(get_finalized_slot)"
+echo "MAINNET latest finalized slot verification link: https://beaconcha.in/slot/$(get_finalized_slot)"
 
 echo $'\nAll done! Commit changes manually'
