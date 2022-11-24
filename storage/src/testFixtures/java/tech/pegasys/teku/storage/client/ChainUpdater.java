@@ -167,10 +167,7 @@ public class ChainUpdater {
   }
 
   public void syncWithUpToSlot(final ChainBuilder otherChain, final long slot) {
-    otherChain
-        .streamBlocksAndStates()
-        .filter(signedBlockAndState -> signedBlockAndState.getSlot().isLessThanOrEqualTo(slot))
-        .forEach(this::saveBlock);
+    otherChain.streamBlocksAndStates(0, slot).forEach(this::saveBlock);
     updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
   }
 
