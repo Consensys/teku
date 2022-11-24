@@ -54,13 +54,23 @@ OUT=$(echo "$OUT" | sed 's:/*$::')
 download_snapshot() {
   echo ""
   echo "Downloading $2"
-  ssh -f -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
+  ssh -f -o ExitOnForwardFailure=yes -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
   "${SNAPSHOT_DOWNLOAD_SCRIPT}" http://localhost:"${LOCAL_REST_API_BINDING_PORT}" true "${OUT}/${2}"
 }
 
+get_finalized_slot() {
+  local result=$(curl -s --fail -H 'Accept: application/json' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/beacon/headers/finalized \
+  | jq -r '.data.header.message.slot')
+  echo "$result"
+}
+
 download_snapshot "${SERVER_GOERLI_URL}" "goerli.json"
+echo "Latest finalized slot verification link: https://goerli.beaconcha.in/slot/$(get_finalized_slot)"
 download_snapshot "${SERVER_SEPOLIA_URL}" "sepolia.json"
+echo "Latest finalized slot verification link: https://sepolia.beaconcha.in/slot/$(get_finalized_slot)"
 download_snapshot "${SERVER_GNOSIS_URL}" "gnosis.json"
+echo "Latest finalized slot verification link: https://beacon.gnosischain.com/block/$(get_finalized_slot)"
 download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json"
+echo "Latest finalized slot verification link: https://beaconcha.in/slot/$(get_finalized_slot)"
 
 echo $'\nAll done! Commit changes manually'
