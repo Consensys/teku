@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,10 +41,10 @@ public class DepositSnapshotFileLoader {
 
   public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
       Map.of(
-          Eth2Network.GNOSIS, "/snapshots/gnosis.json",
-          Eth2Network.PRATER, "/snapshots/goerli.json",
-          Eth2Network.MAINNET, "/snapshots/mainnet.json",
-          Eth2Network.SEPOLIA, "/snapshots/sepolia.json");
+          Eth2Network.GNOSIS, "gnosis.json",
+          Eth2Network.PRATER, "goerli.json",
+          Eth2Network.MAINNET, "mainnet.json",
+          Eth2Network.SEPOLIA, "sepolia.json");
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -85,8 +84,8 @@ public class DepositSnapshotFileLoader {
 
   private DepositTreeSnapshot loadFromUrl(final String path) throws IOException {
     final Bytes snapshotData =
-        readFromUrlOrPath(path)
-            .or(() -> readFromClasspath(path))
+        ResourceLoader.urlOrFile("application/octet-stream")
+            .loadBytes(path)
             .orElseThrow(
                 () -> new FileNotFoundException(String.format("File '%s' not found", path)));
 
@@ -97,26 +96,6 @@ public class DepositSnapshotFileLoader {
             () ->
                 new InvalidConfigurationException(
                     String.format("Couldn't decode snapshot data from '%s'", path)));
-  }
-
-  private Optional<Bytes> readFromUrlOrPath(final String source) {
-    try {
-      return ResourceLoader.urlOrFile("application/octet-stream").loadBytes(source);
-    } catch (final IOException exception) {
-      return Optional.empty();
-    }
-  }
-
-  private Optional<Bytes> readFromClasspath(final String source) {
-    try {
-      return ResourceLoader.classpathUrlOrFile(
-              DepositSnapshotFileLoader.class,
-              new ArrayList<>(DEFAULT_SNAPSHOT_RESOURCE_PATHS.values()),
-              __ -> true)
-          .loadBytes(source);
-    } catch (final IOException exception) {
-      return Optional.empty();
-    }
   }
 
   private Optional<DepositTreeSnapshot> parseAsSsz(final Bytes data) {

@@ -205,7 +205,10 @@ public class PowchainConfiguration {
               "Use either custom deposit tree snapshot path or snapshot bundle");
         }
         this.depositSnapshotPath =
-            Optional.of(DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(eth2Network.get()));
+            Optional.of(
+                PowchainConfiguration.class
+                    .getResource(DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(eth2Network.get()))
+                    .toExternalForm());
       }
       return this;
     }

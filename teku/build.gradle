@@ -68,6 +68,5 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
 
   testImplementation project(':data:provider')
-  testImplementation project(':ethereum:pow:merkletree')
   testImplementation 'org.awaitility:awaitility'
 }

@@ -21,6 +21,8 @@ dependencies {
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
 
+  testImplementation project(':ethereum:pow:merkletree')
+
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))

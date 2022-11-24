@@ -11,43 +11,45 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package tech.pegasys.teku.services.powchain;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
-import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 /** Checks consistency of bundled deposit snapshots */
-public class DepositSnapshotsBundleTest extends AbstractBeaconNodeCommandTest {
+public class DepositSnapshotsBundleTest {
+  private static final Spec SPEC = TestSpecFactory.createDefault();
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getAllNetworks")
-  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded(final Eth2Network eth2Network) {
-    final String[] args = {
-      "--network=" + eth2Network.configName(), "--Xdeposit-snapshot-bundle-enabled"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    if (config.powchain().getDepositSnapshotPath().isEmpty()) {
+  public void shouldCreateCorrectDepositTreeSnapshotFromEachBundleSnapshot(final Eth2Network eth2Network) {
+    final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
+    powchainConfigBuilder
+        .specProvider(SPEC)
+        .depositSnapshotBundleEnabled(true)
+        .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
+    final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
+    if (powchainConfiguration.getDepositSnapshotPath().isEmpty()) {
       return;
     }
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
         new DepositSnapshotFileLoader(
-            Optional.of(config.powchain().getDepositSnapshotPath().get()));
+            Optional.of(powchainConfiguration.getDepositSnapshotPath().get()));
     final DepositTreeSnapshot depositTreeSnapshot =
         depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().get();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
-    assertThat(depositTree.getDepositCount()).isGreaterThan(0);
-    assertThat(depositTree.getSnapshot().get()).isEqualTo(depositTreeSnapshot);
+    Assertions.assertThat(depositTree.getDepositCount()).isGreaterThan(0);
+    Assertions.assertThat(depositTree.getSnapshot().get()).isEqualTo(depositTreeSnapshot);
   }
 
   public static Stream<Eth2Network> getAllNetworks() {
