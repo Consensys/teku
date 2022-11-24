@@ -44,7 +44,8 @@ public class MilestoneDependentTypesUtil {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : SpecMilestone.values()) {
-      if (IGNORED_MILESTONES.contains(milestone)) {
+      if (!schemaDefinitionCache.getEnabledMilestones().contains(milestone)
+          || IGNORED_MILESTONES.contains(milestone)) {
         continue;
       }
       final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =

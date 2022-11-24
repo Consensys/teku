@@ -14,18 +14,26 @@
 package tech.pegasys.teku.spec.schemas;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class SchemaDefinitionCache {
   private final Spec spec;
   private final Map<SpecMilestone, SchemaDefinitions> schemas = new ConcurrentHashMap<>();
+  private final Set<SpecMilestone> supportedMilestones;
 
   public SchemaDefinitionCache(final Spec spec) {
     this.spec = spec;
+    this.supportedMilestones =
+        spec.getEnabledMilestones().stream()
+            .map(ForkAndSpecMilestone::getSpecMilestone)
+            .collect(Collectors.toSet());
   }
 
   public SchemaDefinitions getSchemaDefinition(final SpecMilestone milestone) {
@@ -53,5 +61,9 @@ public class SchemaDefinitionCache {
                         + milestone.name()
                         + ". Ensure network config includes all required options."))
         .getSchemaDefinitions();
+  }
+
+  public Set<SpecMilestone> getEnabledMilestones() {
+    return supportedMilestones;
   }
 }
