@@ -208,8 +208,8 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch) {
-    return dutiesProviderChannel.checkValidatorsDoppelganger(validatorIndices, epoch);
+    return dutiesProviderChannel.getValidatorsLiveness(validatorIndices, epoch);
   }
 }

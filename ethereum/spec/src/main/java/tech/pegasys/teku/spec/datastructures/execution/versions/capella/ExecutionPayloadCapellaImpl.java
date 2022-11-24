@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -198,8 +199,9 @@ public class ExecutionPayloadCapellaImpl
     return getField14();
   }
 
+  // List<TreeNode> generalisedIndex order
   @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
+  public List<TreeNode> getUnblindedTreeNodes() {
+    return List.of(getTransactions().getBackingNode(), getWithdrawals().getBackingNode());
   }
 }

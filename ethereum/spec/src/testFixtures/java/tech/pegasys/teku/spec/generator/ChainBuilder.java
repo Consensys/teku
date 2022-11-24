@@ -46,12 +46,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -60,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -229,33 +226,38 @@ public class ChainBuilder {
     return new Checkpoint(epoch, block.getMessage().hashTreeRoot());
   }
 
+  public void initializeGenesis(final BeaconState genesis) {
+    addGenesisBlock(genesis);
+  }
+
   public SignedBlockAndState generateGenesis() {
     return generateGenesis(UInt64.ZERO, true);
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
-    return generateGenesis(
-        genesisTime,
-        signDeposits,
-        spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
-        Optional.empty());
+    return generateGenesis(genesisTime, signDeposits, Optional.empty());
   }
 
   public SignedBlockAndState generateGenesis(
       final UInt64 genesisTime,
       final boolean signDeposits,
-      final UInt64 depositAmount,
       final Optional<ExecutionPayloadHeader> payloadHeader) {
     checkState(blocks.isEmpty(), "Genesis already created");
 
     // Generate genesis state
-    final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(spec, new DepositGenerator(spec, signDeposits))
-            .createDeposits(validatorKeys, depositAmount);
     BeaconState genesisState =
-        new MockStartBeaconStateGenerator(spec)
-            .createInitialBeaconState(genesisTime, initialDepositData, payloadHeader);
+        new GenesisStateBuilder()
+            .spec(spec)
+            .signDeposits(signDeposits)
+            .addValidators(validatorKeys)
+            .genesisTime(genesisTime)
+            .executionPayloadHeader(payloadHeader)
+            .build();
 
+    return addGenesisBlock(genesisState);
+  }
+
+  private SignedBlockAndState addGenesisBlock(final BeaconState genesisState) {
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedBlock =

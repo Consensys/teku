@@ -1,0 +1,31 @@
+{
+  "title" : "Withdrawal",
+  "type" : "object",
+  "required" : [ "index", "validator_index", "address", "amount" ],
+  "properties" : {
+    "index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "validator_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "address" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "SSZ hexadecimal",
+      "format" : "bytes"
+    },
+    "amount" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

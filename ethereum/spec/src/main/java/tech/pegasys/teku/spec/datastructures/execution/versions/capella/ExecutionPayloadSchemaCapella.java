@@ -29,6 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -155,8 +156,10 @@ public class ExecutionPayloadSchemaCapella
   }
 
   @Override
-  public long getBlindedNodeGeneralizedIndex() {
-    return getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS));
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return LongList.of(
+        getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)));
   }
 
   @Override

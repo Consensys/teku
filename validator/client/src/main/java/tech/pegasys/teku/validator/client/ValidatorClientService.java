@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -65,6 +67,8 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 public class ValidatorClientService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(12);
+  private static final Duration DOPPELGANGER_DETECTOR_TIMEOUT = Duration.ofMinutes(15);
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
@@ -75,6 +79,8 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
+
+  private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
@@ -192,13 +198,58 @@ public class ValidatorClientService extends Service {
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem());
+
+    validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
+
     asyncRunner
         .runAsync(
-            () ->
-                validatorClientService.initializeValidators(
-                    config, validatorApiChannel, asyncRunner))
-        .propagateTo(validatorClientService.initializationComplete);
+            () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
+        .thenCompose(
+            __ -> {
+              if (validatorConfig.isDoppelgangerDetectionEnabled()) {
+                validatorClientService.initializeDoppelgangerDetector(
+                    asyncRunner,
+                    validatorApiChannel,
+                    validatorClientService.validatorIndexProvider,
+                    validatorClientService.spec,
+                    services.getTimeProvider(),
+                    genesisDataProvider);
+              }
+              return SafeFuture.COMPLETE;
+            })
+        .thenCompose(
+            __ -> {
+              asyncRunner
+                  .runAsync(
+                      () ->
+                          validatorClientService.scheduleValidatorsDuties(
+                              config, validatorApiChannel, asyncRunner))
+                  .propagateTo(validatorClientService.initializationComplete);
+              return SafeFuture.COMPLETE;
+            })
+        .ifExceptionGetsHereRaiseABug();
+
     return validatorClientService;
+  }
+
+  private void initializeDoppelgangerDetector(
+      AsyncRunner asyncRunner,
+      ValidatorApiChannel validatorApiChannel,
+      ValidatorIndexProvider validatorIndexProvider,
+      Spec spec,
+      TimeProvider timeProvider,
+      GenesisDataProvider genesisDataProvider) {
+    DoppelgangerDetector doppelgangerDetector =
+        new DoppelgangerDetector(
+            asyncRunner,
+            validatorApiChannel,
+            validatorIndexProvider,
+            spec,
+            timeProvider,
+            genesisDataProvider,
+            DOPPELGANGER_DETECTOR_CHECK_DELAY,
+            DOPPELGANGER_DETECTOR_TIMEOUT);
+    maybeDoppelgangerDetector = Optional.of(doppelgangerDetector);
   }
 
   private static BeaconNodeApi createBeaconNodeApi(
@@ -270,14 +321,18 @@ public class ValidatorClientService extends Service {
   }
 
   private void initializeValidators(
+      final ValidatorApiChannel validatorApiChannel, final AsyncRunner asyncRunner) {
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    this.validatorIndexProvider =
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
+  }
+
+  private void scheduleValidatorsDuties(
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
-    validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-
-    this.validatorIndexProvider =
-        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
@@ -387,6 +442,21 @@ public class ValidatorClientService extends Service {
               validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
+              return maybeDoppelgangerDetector
+                  .map(
+                      doppelgangerDetector ->
+                          doppelgangerDetector
+                              .performDoppelgangerDetection()
+                              .thenAccept(
+                                  doppelgangerDetected -> {
+                                    if (!doppelgangerDetected.isEmpty()) {
+                                      System.exit(1);
+                                    }
+                                  }))
+                  .orElse(SafeFuture.COMPLETE);
+            })
+        .thenCompose(
+            __ -> {
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(

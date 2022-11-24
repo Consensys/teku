@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -69,7 +70,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
     return Optional.empty();
   }
 
-  default Optional<Long> getBlindedNodeGeneralizedIndex() {
-    return Optional.empty();
-  }
+  /**
+   * getBlindedNodeGeneralizedIndices
+   *
+   * @return a list of generalized indices in numeric order
+   */
+  LongList getBlindedNodeGeneralizedIndices();
 }

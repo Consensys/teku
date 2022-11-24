@@ -3,4 +3,6 @@ dependencies {
     api 'org.apache.tuweni:tuweni-units'
 
     implementation 'org.apache.logging.log4j:log4j-core'
+
+    testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }

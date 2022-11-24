@@ -5,10 +5,10 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
     },
     "data" : {
-      "$ref": "#/components/schemas/LightClientBootstrap"
+      "$ref" : "#/components/schemas/LightClientBootstrap"
     }
   }
 }

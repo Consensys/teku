@@ -1033,7 +1033,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
     final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
-        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+        validatorApiHandler.getValidatorsLiveness(validatorIndices, epoch);
 
     verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
     assertThat(result).isCompleted();
@@ -1065,7 +1065,7 @@ class ValidatorApiHandlerTest {
     when(chainDataProvider.getCurrentEpoch()).thenReturn(currentEpoch);
 
     final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
-        validatorApiHandler.checkValidatorsDoppelganger(validatorIndices, epoch);
+        validatorApiHandler.getValidatorsLiveness(validatorIndices, epoch);
 
     verify(nodeDataProvider).getValidatorLiveness(validatorIndices, epoch, currentEpoch);
     assertThat(result).isCompleted();

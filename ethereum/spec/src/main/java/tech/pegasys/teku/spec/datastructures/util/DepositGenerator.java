@@ -13,19 +13,22 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.BLS_WITHDRAWAL_PREFIX;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.MutableBytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 
@@ -48,6 +51,21 @@ public class DepositGenerator {
       final UInt64 amountInGwei,
       final BLSPublicKey withdrawalPublicKey) {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
+    return createDepositData(validatorKeyPair, amountInGwei, withdrawalCredentials);
+  }
+
+  public DepositData createDepositData(
+      final BLSKeyPair validatorKeyPair,
+      final UInt64 amountInGwei,
+      final Bytes20 withdrawalAddress) {
+    final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalAddress);
+    return createDepositData(validatorKeyPair, amountInGwei, withdrawalCredentials);
+  }
+
+  public DepositData createDepositData(
+      final BLSKeyPair validatorKeyPair,
+      final UInt64 amountInGwei,
+      final Bytes32 withdrawalCredentials) {
     final DepositMessage depositMessage =
         new DepositMessage(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei);
     final SpecVersion specVersion = spec.getGenesisSpec();
@@ -63,7 +81,15 @@ public class DepositGenerator {
 
   private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {
     final Bytes publicKeyHash = Hash.sha256(withdrawalPublicKey.toBytesCompressed());
-    final Bytes credentials = Bytes.wrap(BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
+    final Bytes credentials =
+        Bytes.wrap(WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
     return Bytes32.wrap(credentials);
+  }
+
+  private static Bytes32 createWithdrawalCredentials(final Bytes20 withdrawalAddress) {
+    final MutableBytes32 mutableBytes32 = MutableBytes32.create();
+    mutableBytes32.set(Bytes32.SIZE - Bytes20.SIZE, withdrawalAddress.getWrappedBytes());
+    mutableBytes32.set(0, ETH1_ADDRESS_WITHDRAWAL_PREFIX);
+    return mutableBytes32.copy();
   }
 }
