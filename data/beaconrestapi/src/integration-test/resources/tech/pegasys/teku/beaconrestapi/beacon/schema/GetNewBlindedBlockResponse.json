@@ -12,13 +12,11 @@
         "$ref" : "#/components/schemas/BeaconBlockAltair"
       }, {
         "$ref" : "#/components/schemas/BlindedBlockBellatrix"
-      }, {
-        "$ref" : "#/components/schemas/BlindedBlockCapella"
       } ]
     },
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
+      "enum" : [ "phase0", "altair", "bellatrix" ]
     }
   }
 }
