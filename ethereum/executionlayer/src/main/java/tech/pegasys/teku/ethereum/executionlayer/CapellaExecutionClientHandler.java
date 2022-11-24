@@ -76,8 +76,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
 
-    if (payloadBuildingAttributes.isEmpty()
-        || payloadBuildingAttributes.get().getWithdrawals().isEmpty()) {
+    if (!spec.atSlot(forkChoiceState.getHeadBlockSlot().increment())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
       return super.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
     }
     LOG.trace(
