@@ -166,6 +166,11 @@ public class ChainUpdater {
     updateBestBlock(otherChain.getLatestBlockAndState());
   }
 
+  public void syncWithUpToSlot(final ChainBuilder otherChain, final long slot) {
+    otherChain.streamBlocksAndStates(0, slot).forEach(this::saveBlock);
+    updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
+  }
+
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
     if (!recentChainData.containsBlock(bestBlock.getRoot())) {
       saveBlock(bestBlock);

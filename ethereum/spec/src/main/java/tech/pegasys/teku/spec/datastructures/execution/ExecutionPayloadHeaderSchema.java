@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -30,7 +31,12 @@ public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
 
   T createFromExecutionPayload(ExecutionPayload payload);
 
-  long getBlindedNodeGeneralizedIndex();
+  /**
+   * getBlindedNodeGeneralizedIndices
+   *
+   * @return a list of generalized indices in numeric order
+   */
+  LongList getBlindedNodeGeneralizedIndices();
 
   default Optional<ExecutionPayloadHeaderSchemaBellatrix> toVersionBellatrix() {
     return Optional.empty();

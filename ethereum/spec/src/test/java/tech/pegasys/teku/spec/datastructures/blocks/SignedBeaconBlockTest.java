@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -63,6 +64,14 @@ class SignedBeaconBlockTest {
     } else {
       // Check the blinded block actually matches the schema by serializing it
       assertThatNoException().isThrownBy(blinded::sszSerialize);
+      assertThatNoException()
+          .isThrownBy(
+              () ->
+                  JsonUtil.serialize(
+                      blinded,
+                      spec.getGenesisSchemaDefinitions()
+                          .getSignedBlindedBeaconBlockSchema()
+                          .getJsonTypeDefinition()));
 
       // Otherwise, we should be able to unblind it again
       final SignedBeaconBlock unblinded =
@@ -71,6 +80,14 @@ class SignedBeaconBlockTest {
               original.getMessage().getBody().getOptionalExecutionPayload().orElseThrow());
       assertThat(unblinded.hashTreeRoot()).isEqualTo(original.hashTreeRoot());
       assertThat(unblinded.sszSerialize()).isEqualTo(original.sszSerialize());
+      assertThatNoException()
+          .isThrownBy(
+              () ->
+                  JsonUtil.serialize(
+                      unblinded,
+                      spec.getGenesisSchemaDefinitions()
+                          .getSignedBeaconBlockSchema()
+                          .getJsonTypeDefinition()));
     }
   }
 }

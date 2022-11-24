@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -148,6 +149,11 @@ public class BeaconBlockBodySchemaAltairImpl
   @Override
   public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
     return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
+  }
+
+  @Override
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return LongList.of();
   }
 
   @Override
