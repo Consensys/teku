@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.base.Throwables;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -96,27 +96,39 @@ public class ReconstructHistoricalStatesService extends Service {
               if (checkpoint.isEmpty()) {
                 return;
               }
-              applyBlocks(genesisState, checkpoint.get().getEpochStartSlot(spec));
-            });
-  }
+              final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
 
-  public void applyBlocks(final BeaconState genesisState, final UInt64 anchorSlot) {
-    Context context = new Context(genesisState, SpecConfig.GENESIS_SLOT.plus(1), anchorSlot);
+              chainDataClient
+                  .getLatestAvailableFinalizedState(anchorSlot.decrement())
+                  .thenComposeChecked(
+                      latestState -> {
+                        if (latestState.isPresent()) {
+                          final BeaconState state = latestState.get();
+                          return SafeFuture.completedFuture(
+                              new Context(state, state.getSlot().increment(), anchorSlot));
+                        }
 
-    final Bytes32 genesisBlockRoot = BeaconBlockHeader.fromState(genesisState).getRoot();
-    storageUpdateChannel
-        .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
-        .thenComposeChecked(__ -> applyNextBlock(context))
-        .finish(
-            error -> {
-              final Throwable rootCause = Throwables.getRootCause(error);
-              if (rootCause instanceof ShuttingDownException
-                  || rootCause instanceof InterruptedException
-                  || rootCause instanceof RejectedExecutionException) {
-                LOG.debug("Shutting down", rootCause);
-              } else {
-                statusLogger.reconstructHistoricalStatesServiceFailedProcess(error);
-              }
+                        final Bytes32 genesisBlockRoot =
+                            BeaconBlockHeader.fromState(genesisState).getRoot();
+                        return storageUpdateChannel
+                            .onReconstructedFinalizedState(genesisState, genesisBlockRoot)
+                            .thenApply(
+                                __ ->
+                                    new Context(
+                                        genesisState, GENESIS_SLOT.increment(), anchorSlot));
+                      })
+                  .thenComposeChecked(this::applyNextBlock)
+                  .finish(
+                      error -> {
+                        final Throwable rootCause = Throwables.getRootCause(error);
+                        if (rootCause instanceof ShuttingDownException
+                            || rootCause instanceof InterruptedException
+                            || rootCause instanceof RejectedExecutionException) {
+                          LOG.debug("Shutting down", rootCause);
+                        } else {
+                          statusLogger.reconstructHistoricalStatesServiceFailedProcess(error);
+                        }
+                      });
             });
   }
 

@@ -272,6 +272,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
+    return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
     return SafeFuture.of(
         () ->
@@ -298,6 +303,10 @@ public class ChainStorage
 
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UInt64 slot) {
     return finalizedStateCache.getFinalizedState(slot);
+  }
+
+  private Optional<BeaconState> getLatestAvailableFinalizedStateSync(final UInt64 slot) {
+    return database.getLatestAvailableFinalizedState(slot);
   }
 
   @Override
