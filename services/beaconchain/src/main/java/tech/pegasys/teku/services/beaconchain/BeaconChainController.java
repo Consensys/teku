@@ -82,7 +82,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -1101,11 +1101,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     final BeaconState genesisState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(
-            spec,
-            config.getInteropGenesisTime(),
-            config.getInteropNumberOfValidators(),
-            executionPayloadHeader);
+        new GenesisStateBuilder()
+            .spec(spec)
+            .genesisTime(config.getInteropGenesisTime())
+            .addMockValidators(config.getInteropNumberOfValidators())
+            .executionPayloadHeader(executionPayloadHeader)
+            .build();
 
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 

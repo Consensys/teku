@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -98,7 +99,13 @@ public class ChainDataProviderTest {
   public void setup() {
     final UInt64 slot = UInt64.valueOf(specConfig.getSlotsPerEpoch() * 3L);
     final UInt64 actualBalance = specConfig.getMaxEffectiveBalance().plus(100000);
-    storageSystem.chainUpdater().initializeGenesis(true, actualBalance, Optional.empty());
+    final GenesisStateBuilder genesisBuilder =
+        new GenesisStateBuilder().spec(spec).genesisTime(ZERO);
+    storageSystem
+        .chainBuilder()
+        .getValidatorKeys()
+        .forEach(key -> genesisBuilder.addValidator(key, actualBalance));
+    storageSystem.chainUpdater().initializeGenesis(genesisBuilder.build());
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
     storageSystem.chainUpdater().finalizeEpoch(slot);
