@@ -553,10 +553,11 @@ public class ChainBuilder {
       final BeaconStateAltair state,
       final BLSPublicKey validatorPublicKey) {
     final int validatorIndex = spec.getValidatorIndex(state, validatorPublicKey).orElseThrow();
+
+    final UInt64 epoch = spec.getSyncCommitteeUtilRequired(slot).getEpochForDutiesAtSlot(slot);
+    final ForkInfo forkInfo = new ForkInfo(spec.fork(epoch), state.getGenesisValidatorsRoot());
     final BLSSignature signature =
-        getSigner(validatorIndex)
-            .signSyncCommitteeMessage(slot, blockRoot, state.getForkInfo())
-            .join();
+        getSigner(validatorIndex).signSyncCommitteeMessage(slot, blockRoot, forkInfo).join();
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
         .getSyncCommitteeMessageSchema()
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);

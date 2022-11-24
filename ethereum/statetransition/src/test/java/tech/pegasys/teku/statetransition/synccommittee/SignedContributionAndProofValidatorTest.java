@@ -19,7 +19,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -39,31 +38,42 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class SignedContributionAndProofValidatorTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
-  private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(10).build();
-  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private Spec spec;
+  private SpecConfigAltair config;
+  private DataStructureUtil dataStructureUtil;
+  private StorageSystem storageSystem;
+  private ChainBuilder chainBuilder;
 
-  private final SyncCommitteeStateUtils syncCommitteeStateUtils =
-      new SyncCommitteeStateUtils(spec, storageSystem.recentChainData());
-  private final SignedContributionAndProofValidator validator =
-      new SignedContributionAndProofValidator(
-          spec,
-          storageSystem.recentChainData(),
-          syncCommitteeStateUtils,
-          timeProvider,
-          new SimpleSignatureVerificationService());
+  private SyncCommitteeStateUtils syncCommitteeStateUtils;
+  private SignedContributionAndProofValidator validator;
 
-  @BeforeEach
-  void setUp() {
-    storageSystem.chainUpdater().initializeGenesis();
+  private SignedBlockAndState setupWithDefaultSpec() {
+    return setupWithSpec(TestSpecFactory.createMinimalAltair());
+  }
+
+  private SignedBlockAndState setupWithSpec(final Spec spec) {
+    this.spec = spec;
+    config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
+    dataStructureUtil = new DataStructureUtil(spec);
+    storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(10).build();
+    chainBuilder = storageSystem.chainBuilder();
+
+    syncCommitteeStateUtils = new SyncCommitteeStateUtils(spec, storageSystem.recentChainData());
+    validator =
+        new SignedContributionAndProofValidator(
+            spec,
+            storageSystem.recentChainData(),
+            syncCommitteeStateUtils,
+            timeProvider,
+            new SimpleSignatureVerificationService());
+    return storageSystem.chainUpdater().initializeGenesis();
   }
 
   @Test
   void shouldAcceptWhenValid() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
@@ -72,6 +82,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldAcceptWhenValidInSlotLastSlotOfSyncCommitteePeriod() {
+    setupWithDefaultSpec();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
     final UInt64 period2StartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
@@ -99,6 +110,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldIgnoreWhenContributionIsNotFromTheCurrentSlot() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final UInt64 slot = message.getMessage().getContribution().getSlot().plus(1);
@@ -116,6 +128,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldAcceptWhenContributionIsStillValidatingAfterSlotEnds() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     // When we check the current time it's in the right slot
@@ -132,6 +145,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenAggregationBitsAreEmpty() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().removeAllParticipants().build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
@@ -140,6 +154,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldAcceptWhenValidButBeaconBlockRootIsUnknown() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder(
@@ -151,6 +166,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenSubcommitteeIndexIsTooLarge() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -162,6 +178,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldIgnoreWhenAlreadySeen() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
@@ -171,6 +188,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldIgnoreWhenSubsetOfAlreadySeen() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof bigMessage =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final UInt64 firstAggregator = bigMessage.getMessage().getAggregatorIndex();
@@ -189,6 +207,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldNotIgnoreWhenSubsetOfAlreadySeenForSameBlockRootInDifferentSlot() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final UInt64 nextSlot = storageSystem.chainUpdater().getHeadSlot().plus(1);
@@ -203,6 +222,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldNotIgnoreWhenSubsetOfAlreadySeenForSameBlockRootAndSlotInDifferentSubcommittee() {
+    setupWithDefaultSpec();
     final SignedBlockAndState head = chainBuilder.getLatestBlockAndState();
     final SignedContributionAndProof message1 =
         chainBuilder
@@ -223,6 +243,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenAggregatorIndexIsUnknown() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -234,6 +255,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenAggregatorIsNotInSyncCommittee() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -245,6 +267,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenSelectionProofIsInvalid() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -256,6 +279,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectWhenSignedContributionAndProofSignatureIsInvalid() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -267,6 +291,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldRejectAggregateSignatureIsInvalid() {
+    setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
             .createValidSignedContributionAndProofBuilder()
@@ -278,6 +303,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldHandleBeaconBlockRootBeingFromBeforeCurrentSyncCommitteePeriod() {
+    setupWithDefaultSpec();
     final Bytes32 blockRoot = chainBuilder.getLatestBlockAndState().getRoot();
     final UInt64 slot =
         UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1);
@@ -297,6 +323,7 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldIgnoreWhenBeaconBlockRootFromBeforePreviousSyncCommitteePeriod() {
+    setupWithDefaultSpec();
     // Would have to process too many empty slots to get a state we can use to validate so ignore
     final Bytes32 blockRoot = chainBuilder.getLatestBlockAndState().getRoot();
     final int slot = 2 * config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1;
@@ -313,25 +340,15 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldUseCorrectForkForSignatureVerificationWhenHeadStateIsBeforeNewMilestone() {
-    final Spec spec =
-        TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE);
-    final StorageSystem storageSystem =
-        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
-    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    final SignedBlockAndState genesis =
+        setupWithSpec(
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
     final UInt64 bellatrixStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
     storageSystem.chainUpdater().setCurrentSlot(bellatrixStartSlot);
     timeProvider.advanceTimeBySeconds(
         spec.computeTimeAtSlot(genesis.getState(), bellatrixStartSlot)
             .minus(timeProvider.getTimeInSeconds())
             .longValue());
-
-    final SignedContributionAndProofValidator validator =
-        new SignedContributionAndProofValidator(
-            spec,
-            storageSystem.recentChainData(),
-            new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
-            timeProvider,
-            new SimpleSignatureVerificationService());
 
     final SignedContributionAndProof message =
         storageSystem
@@ -346,25 +363,15 @@ class SignedContributionAndProofValidatorTest {
 
   @Test
   void shouldUseCorrectForkForSignatureVerificationWhenSlotIsJustBeforeNewMilestone() {
-    final Spec spec =
-        TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE);
-    final StorageSystem storageSystem =
-        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
-    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    final SignedBlockAndState genesis =
+        setupWithSpec(
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
     final UInt64 lastAltairSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).minus(1);
     storageSystem.chainUpdater().setCurrentSlot(lastAltairSlot);
     timeProvider.advanceTimeBySeconds(
         spec.computeTimeAtSlot(genesis.getState(), lastAltairSlot)
             .minus(timeProvider.getTimeInSeconds())
             .longValue());
-
-    final SignedContributionAndProofValidator validator =
-        new SignedContributionAndProofValidator(
-            spec,
-            storageSystem.recentChainData(),
-            new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
-            timeProvider,
-            new SimpleSignatureVerificationService());
 
     final SignedContributionAndProof message =
         storageSystem

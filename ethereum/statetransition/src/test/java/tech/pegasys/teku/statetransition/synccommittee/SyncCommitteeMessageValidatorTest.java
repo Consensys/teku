@@ -23,7 +23,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -51,35 +50,41 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class SyncCommitteeMessageValidatorTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
-  private final Spec spec =
-      TestSpecFactory.createAltair(
-          SpecConfigLoader.loadConfig(
-              "minimal",
-              phase0Builder ->
-                  phase0Builder.altairBuilder(
-                      altairBuilder ->
-                          altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO))));
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(17).build();
-  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private StorageSystem storageSystem;
+  private ChainBuilder chainBuilder;
+  private RecentChainData recentChainData;
 
-  private final SyncCommitteeMessageValidator validator =
-      new SyncCommitteeMessageValidator(
-          spec,
-          recentChainData,
-          new SyncCommitteeStateUtils(spec, recentChainData),
-          AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-          timeProvider);
+  private SyncCommitteeMessageValidator validator;
 
-  @BeforeEach
-  void setUp() {
-    storageSystem.chainUpdater().initializeGenesis();
+  private void setupWithDefaultSpec() {
+    setupWithSpec(TestSpecFactory.createMinimalAltair());
+  }
+
+  private SignedBlockAndState setupWithSpec(final Spec spec) {
+    this.spec = spec;
+
+    dataStructureUtil = new DataStructureUtil(spec);
+    storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(17).build();
+    chainBuilder = storageSystem.chainBuilder();
+    recentChainData = storageSystem.recentChainData();
+
+    validator =
+        new SyncCommitteeMessageValidator(
+            spec,
+            recentChainData,
+            new SyncCommitteeStateUtils(spec, recentChainData),
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+            timeProvider);
+
+    return storageSystem.chainUpdater().initializeGenesis();
   }
 
   @Test
   void shouldAcceptWhenValid() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     final SyncSubcommitteeAssignments assignments =
         spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
@@ -98,6 +103,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldAcceptWhenValidInSlotLastSlotOfSyncCommitteePeriod() {
+    setupWithDefaultSpec();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
     final UInt64 period2StartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
@@ -136,6 +142,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenAltairIsNotActiveAtSlot() {
+    setupWithDefaultSpec();
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
     final SyncCommitteeMessageValidator validator =
         new SyncCommitteeMessageValidator(
@@ -152,6 +159,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenNotForTheCurrentSlot() {
+    setupWithDefaultSpec();
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
     final SyncCommitteeMessage message =
         chainBuilder.createSyncCommitteeMessage(
@@ -163,6 +171,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldIgnoreDuplicateMessages() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
@@ -173,6 +182,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldAllowDuplicateMessagesForDistinctSubnets() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
@@ -183,6 +193,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldIgnoreDuplicateMessagesForSameSubnet() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
@@ -193,6 +204,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldIgnoreDuplicateMessagesForLocalValidatorsInMultipleSubnets() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
@@ -203,6 +215,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldIgnoreDuplicateMessagesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(fromValidatorSpy(message, IntSet.of(1, 2))))
@@ -215,6 +228,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldAcceptWhenValidButBeaconBlockIsUnknown() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message =
         chainBuilder.createSyncCommitteeMessage(
             chainBuilder.getLatestSlot(), dataStructureUtil.randomBytes32());
@@ -224,6 +238,14 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenValidatorIsNotInSyncCommittee() {
+    setupWithSpec(
+        TestSpecFactory.createAltair(
+            SpecConfigLoader.loadConfig(
+                "minimal",
+                phase0Builder ->
+                    phase0Builder.altairBuilder(
+                        altairBuilder ->
+                            altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO)))));
     final SignedBlockAndState target = chainBuilder.getLatestBlockAndState();
     final BeaconStateAltair state = BeaconStateAltair.required(target.getState());
     final List<SszPublicKey> committeePubkeys =
@@ -246,6 +268,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenReceivedOnIncorrectSubnet() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     // 9 is never a valid subnet
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromNetwork(message, 9)))
@@ -254,6 +277,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenValidatorIsUnknown() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage template = chainBuilder.createValidSyncCommitteeMessage();
     final SyncCommitteeMessage message =
         template
@@ -270,6 +294,7 @@ class SyncCommitteeMessageValidatorTest {
 
   @Test
   void shouldRejectWhenSignatureIsInvalid() {
+    setupWithDefaultSpec();
     final SyncCommitteeMessage template = chainBuilder.createValidSyncCommitteeMessage();
     final SyncCommitteeMessage message =
         template
@@ -281,6 +306,58 @@ class SyncCommitteeMessageValidatorTest {
                 dataStructureUtil.randomSignature());
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+  }
+
+  @Test
+  void shouldUseCorrectForkForSignatureVerificationWhenHeadStateIsBeforeNewMilestone() {
+    final SignedBlockAndState genesis =
+        setupWithSpec(
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
+    final UInt64 bellatrixStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    storageSystem.chainUpdater().setCurrentSlot(bellatrixStartSlot);
+    timeProvider.advanceTimeBySeconds(
+        spec.computeTimeAtSlot(genesis.getState(), bellatrixStartSlot)
+            .minus(timeProvider.getTimeInSeconds())
+            .longValue());
+
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(bellatrixStartSlot, genesis.getRoot());
+    final SyncSubcommitteeAssignments assignments =
+        spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
+            .getSubcommitteeAssignments(
+                chainBuilder.getLatestBlockAndState().getState(),
+                chainBuilder.getLatestEpoch(),
+                message.getValidatorIndex());
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  void shouldUseCorrectForkForSignatureVerificationWhenSlotIsJustBeforeNewMilestone() {
+    final SignedBlockAndState genesis =
+        setupWithSpec(
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
+    final UInt64 lastAltairSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).minus(1);
+    storageSystem.chainUpdater().setCurrentSlot(lastAltairSlot);
+    timeProvider.advanceTimeBySeconds(
+        spec.computeTimeAtSlot(genesis.getState(), lastAltairSlot)
+            .minus(timeProvider.getTimeInSeconds())
+            .longValue());
+
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(lastAltairSlot, genesis.getRoot());
+    final SyncSubcommitteeAssignments assignments =
+        spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
+            .getSubcommitteeAssignments(
+                chainBuilder.getLatestBlockAndState().getState(),
+                chainBuilder.getLatestEpoch(),
+                message.getValidatorIndex());
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
   }
 
   private ValidateableSyncCommitteeMessage fromValidatorSpy(

@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -179,9 +180,11 @@ public class SyncCommitteeMessageValidator {
 
     // [REJECT] The message is valid for the message beacon_block_root for the validator
     // referenced by validator_index.
+    final ForkInfo forkInfo =
+        new ForkInfo(spec.fork(messageEpoch), state.getGenesisValidatorsRoot());
     final Bytes32 signingRoot =
         syncCommitteeUtil.getSyncCommitteeMessageSigningRoot(
-            message.getBeaconBlockRoot(), messageEpoch, state.getForkInfo());
+            message.getBeaconBlockRoot(), messageEpoch, forkInfo);
     return signatureVerifier
         .verify(maybeValidatorPublicKey.get(), signingRoot, message.getSignature())
         .thenApply(
