@@ -173,7 +173,7 @@ public class ReconstructHistoricalStatesServiceTest {
     chainBuilder.finalizeCurrentChain();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater updater = storageSystem.chainUpdater();
-    updater.initializeGenesis(chainBuilder.getGenesis());
+    updater.initializeGenesis(chainBuilder.getGenesis().getState());
     updater.syncWithUpToSlot(chainBuilder, 5);
 
     when(chainDataClient.getLatestAvailableFinalizedState(any()))

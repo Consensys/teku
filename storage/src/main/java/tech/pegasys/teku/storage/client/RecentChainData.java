@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -130,11 +129,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void subscribeBestBlockInitialized(Runnable runnable) {
     bestBlockInitialized.always(runnable);
-  }
-
-  public void initializeFromGenesis(final SignedBlockAndState genesis, final UInt64 currentTime) {
-    final AnchorPoint genesisAnchorPoint = AnchorPoint.fromGenesisBlockAndState(spec, genesis);
-    initializeFromAnchorPoint(genesisAnchorPoint, currentTime);
   }
 
   public void initializeFromGenesis(final BeaconState genesisState, final UInt64 currentTime) {
