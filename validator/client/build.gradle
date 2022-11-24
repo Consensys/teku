@@ -41,6 +41,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:json'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
   testImplementation testFixtures(project(':infrastructure:restapi'))

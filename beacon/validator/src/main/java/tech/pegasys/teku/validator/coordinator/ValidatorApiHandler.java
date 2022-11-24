@@ -671,7 +671,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       final List<UInt64> validatorIndices, final UInt64 epoch) {
     return nodeDataProvider.getValidatorLiveness(
         validatorIndices, epoch, chainDataProvider.getCurrentEpoch());

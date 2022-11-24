@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.Optional;
+import it.unimi.dsi.fastutil.longs.LongList;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -55,15 +55,10 @@ public class BeaconBlockSchema
     return new BeaconBlock(this, slot, proposerIndex, parentRoot, stateRoot, body);
   }
 
-  public Optional<Long> getBlindedNodeGeneralizedIndex() {
-    return getBodySchema()
-        .getBlindedNodeGeneralizedIndex()
-        .map(
-            childIndex -> {
-              final long childGeneralizedIndex =
-                  getChildGeneralizedIndex(getFieldIndex(BeaconBlockFields.BODY));
-              return GIndexUtil.gIdxCompose(childGeneralizedIndex, childIndex);
-            });
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return GIndexUtil.gIdxComposeAll(
+        getChildGeneralizedIndex(getFieldIndex(BeaconBlockFields.BODY)),
+        getBodySchema().getBlindedNodeGeneralizedIndices());
   }
 
   public BeaconBlockBodySchema<?> getBodySchema() {

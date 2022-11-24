@@ -694,7 +694,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(SyncCommitteeContribution.class))),
         getArguments(
             "checkValidatorsDoppelganger",
-            apiChannel -> apiChannel.checkValidatorsDoppelganger(List.of(UInt64.ZERO), epoch),
+            apiChannel -> apiChannel.getValidatorsLiveness(List.of(UInt64.ZERO), epoch),
             BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD,
             Optional.of(List.of(validatorLivenessAtEpoch))));
   }

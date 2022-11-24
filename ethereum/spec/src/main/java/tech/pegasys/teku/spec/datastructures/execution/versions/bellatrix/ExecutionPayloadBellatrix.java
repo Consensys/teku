@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -192,8 +193,8 @@ public class ExecutionPayloadBellatrix
   }
 
   @Override
-  public TreeNode getUnblindedNode() {
-    return getTransactions().getBackingNode();
+  public List<TreeNode> getUnblindedTreeNodes() {
+    return List.of(getTransactions().getBackingNode());
   }
 
   @Override

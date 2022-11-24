@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -33,7 +34,12 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer 
     return Optional.empty();
   }
 
-  TreeNode getUnblindedNode();
+  /**
+   * getUnblindedTreeNodes
+   *
+   * @return a list of unblinded tree nodes in the order of their generalized indices
+   */
+  List<TreeNode> getUnblindedTreeNodes();
 
   default Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
     return Optional.empty();
