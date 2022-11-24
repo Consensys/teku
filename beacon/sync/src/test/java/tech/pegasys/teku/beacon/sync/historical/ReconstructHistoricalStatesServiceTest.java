@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -41,7 +42,10 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ReconstructHistoricalStatesServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -104,6 +108,9 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   public void shouldRegenerateStates(@TempDir final Path tempDir) throws IOException {
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
     final Checkpoint initialAnchor = getInitialAnchor();
     setUpService(tempDir, initialAnchor);
 
@@ -116,6 +123,9 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   void shouldRegenerateStatesWithEmptySlots(@TempDir final Path tempDir) throws IOException {
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
     chainBuilder.generateBlockAtSlot(12);
     chainBuilder.generateBlocksUpToSlot(18);
     final Checkpoint initialAnchor = getInitialAnchor();
@@ -132,8 +142,9 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldLogFailServiceProcess(@TempDir final Path tempDir) throws IOException {
     when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
@@ -146,14 +157,43 @@ public class ReconstructHistoricalStatesServiceTest {
   void shouldHandleShutdown(@TempDir final Path tempDir) throws IOException {
     when(storageUpdateChannel.onReconstructedFinalizedState(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RejectedExecutionException()));
-    final Checkpoint initialAnchor = getInitialAnchor();
-    setUpService(tempDir, initialAnchor);
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    setUpService(tempDir, getInitialAnchor());
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
     verify(storageUpdateChannel, times(1)).onReconstructedFinalizedState(any(), any());
     verify(statusLogger, never()).reconstructHistoricalStatesServiceFailedProcess(any());
+  }
+
+  @Test
+  void shouldHandleStartWithPartialStorage(@TempDir final Path tempDir) throws IOException {
+    chainBuilder.finalizeCurrentChain();
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final ChainUpdater updater = storageSystem.chainUpdater();
+    updater.initializeGenesis(chainBuilder.getGenesis().getState());
+    updater.syncWithUpToSlot(chainBuilder, 5);
+
+    when(chainDataClient.getLatestAvailableFinalizedState(any()))
+        .thenAnswer(
+            invocation ->
+                storageSystem
+                    .combinedChainDataClient()
+                    .getLatestAvailableFinalizedState(invocation.getArgument(0)));
+    final Checkpoint initialAnchor = storageSystem.chainBuilder().getCurrentCheckpointForEpoch(2);
+    setUpService(tempDir, initialAnchor);
+
+    final SafeFuture<?> res = service.start();
+    assertThat(res).isCompleted();
+    verify(chainDataClient, times(1)).getInitialAnchor();
+    chainBuilder
+        .streamBlocksAndStates(6, initialAnchor.getEpochStartSlot(spec).longValue() - 1)
+        .forEach(
+            signedBlockAndState ->
+                verify(storageUpdateChannel)
+                    .onReconstructedFinalizedState(any(), eq(signedBlockAndState.getRoot())));
   }
 
   private Checkpoint getInitialAnchor() {
