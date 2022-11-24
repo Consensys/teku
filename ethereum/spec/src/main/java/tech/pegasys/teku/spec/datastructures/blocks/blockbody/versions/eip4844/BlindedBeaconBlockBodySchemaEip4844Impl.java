@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -225,16 +224,8 @@ public class BlindedBeaconBlockBodySchemaEip4844Impl
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
-    final long childGeneralizedIndex =
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
-    final LongList schemaGeneralizedIndices =
-        getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices();
-    final LongList blindedNodeGeneralizedIndices =
-        new LongArrayList(schemaGeneralizedIndices.size());
-    for (long relativeIndex : schemaGeneralizedIndices) {
-      blindedNodeGeneralizedIndices.add(
-          GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
-    }
-    return blindedNodeGeneralizedIndices;
+    return GIndexUtil.gIdxComposeAll(
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER)),
+        getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices());
   }
 }
