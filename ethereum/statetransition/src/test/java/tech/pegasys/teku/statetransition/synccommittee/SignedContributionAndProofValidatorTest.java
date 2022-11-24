@@ -324,15 +324,56 @@ class SignedContributionAndProofValidatorTest {
         spec.computeTimeAtSlot(genesis.getState(), bellatrixStartSlot)
             .minus(timeProvider.getTimeInSeconds())
             .longValue());
+
+    final SignedContributionAndProofValidator validator =
+        new SignedContributionAndProofValidator(
+            spec,
+            storageSystem.recentChainData(),
+            new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
+            timeProvider,
+            new SimpleSignatureVerificationService());
+
     final SignedContributionAndProof message =
-        chainBuilder
-            .createValidSignedContributionAndProofBuilder()
-            .slot(bellatrixStartSlot)
+        storageSystem
+            .chainBuilder()
+            .createValidSignedContributionAndProofBuilder(bellatrixStartSlot)
             .beaconBlockRoot(genesis.getRoot())
             // So the signatures get updated for the new block root
             .resetParticipantsToOnlyAggregator()
             .build();
+    assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
+  }
 
+  @Test
+  void shouldUseCorrectForkForSignatureVerificationWhenSlotIsJustBeforeNewMilestone() {
+    final Spec spec =
+        TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE);
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
+    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    final UInt64 lastAltairSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).minus(1);
+    storageSystem.chainUpdater().setCurrentSlot(lastAltairSlot);
+    timeProvider.advanceTimeBySeconds(
+        spec.computeTimeAtSlot(genesis.getState(), lastAltairSlot)
+            .minus(timeProvider.getTimeInSeconds())
+            .longValue());
+
+    final SignedContributionAndProofValidator validator =
+        new SignedContributionAndProofValidator(
+            spec,
+            storageSystem.recentChainData(),
+            new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
+            timeProvider,
+            new SimpleSignatureVerificationService());
+
+    final SignedContributionAndProof message =
+        storageSystem
+            .chainBuilder()
+            .createValidSignedContributionAndProofBuilder(lastAltairSlot)
+            .beaconBlockRoot(genesis.getRoot())
+            // So the signatures get updated for the new block root
+            .resetParticipantsToOnlyAggregator()
+            .build();
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
   }
 }

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -202,7 +203,7 @@ public class SignedContributionAndProofValidator {
         syncCommitteeUtil.getSyncAggregatorSelectionDataSigningRoot(
             syncCommitteeUtil.createSyncAggregatorSelectionData(
                 contribution.getSlot(), contribution.getSubcommitteeIndex()),
-            state.getForkInfo());
+            new ForkInfo(spec.fork(contributionEpoch), state.getGenesisValidatorsRoot()));
     if (!signatureVerifier.verify(
         aggregatorPublicKey.get(), signingRoot, contributionAndProof.getSelectionProof())) {
       return futureFailureResult(
