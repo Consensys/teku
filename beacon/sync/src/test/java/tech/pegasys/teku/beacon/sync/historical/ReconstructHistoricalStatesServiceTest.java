@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -169,6 +170,7 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   void shouldHandleStartWithPartialStorage(@TempDir final Path tempDir) throws IOException {
+    chainBuilder.finalizeCurrentChain();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater updater = storageSystem.chainUpdater();
     updater.initializeGenesis(chainBuilder.getGenesis());
@@ -180,14 +182,18 @@ public class ReconstructHistoricalStatesServiceTest {
                 storageSystem
                     .combinedChainDataClient()
                     .getLatestAvailableFinalizedState(invocation.getArgument(0)));
-    final Checkpoint initialAnchor =
-        storageSystem.chainBuilder().getCurrentCheckpointForEpoch(chainBuilder.getLatestEpoch());
+    final Checkpoint initialAnchor = storageSystem.chainBuilder().getCurrentCheckpointForEpoch(2);
     setUpService(tempDir, initialAnchor);
 
     final SafeFuture<?> res = service.start();
     assertThat(res).isCompleted();
     verify(chainDataClient, times(1)).getInitialAnchor();
-    verify(storageUpdateChannel, times(2)).onReconstructedFinalizedState(any(), any());
+    chainBuilder
+        .streamBlocksAndStates(6, initialAnchor.getEpochStartSlot(spec).longValue() - 1)
+        .forEach(
+            signedBlockAndState ->
+                verify(storageUpdateChannel)
+                    .onReconstructedFinalizedState(any(), eq(signedBlockAndState.getRoot())));
   }
 
   private Checkpoint getInitialAnchor() {
