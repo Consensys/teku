@@ -54,14 +54,20 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
 
-    if (!isBlockInDataAvailabilityWindow()) {
-      return BlobsSidecarAvailabilityChecker.NOT_REQUIRED_RESULT;
+    // in the current 4844 specs, the blobsSidecar is immediately available with the block
+    // so if we have it we do want to validate them regardless
+    if (blobsSidecar.isPresent()) {
+      return validate(blobsSidecar.get());
     }
 
-    if (blobsSidecar.isEmpty()) {
+    if (isBlockInDataAvailabilityWindow()) {
       return BlobsSidecarAvailabilityChecker.NOT_AVAILABLE_RESULT;
     }
 
+    return BlobsSidecarAvailabilityChecker.NOT_REQUIRED_RESULT;
+  }
+
+  private SafeFuture<BlobsSidecarAndValidationResult> validate(final BlobsSidecar blobsSidecar) {
     final BeaconBlockBodyEip4844 blockBody =
         block
             .getBeaconBlock()
@@ -77,7 +83,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
             blockBody.getBlobKzgCommitments().stream()
                 .map(SszKZGCommitment::getKZGCommitment)
                 .collect(Collectors.toUnmodifiableList()),
-            blobsSidecar.get())) {
+            blobsSidecar)) {
       return BlobsSidecarAvailabilityChecker.invalidResult(blobsSidecar);
     }
 

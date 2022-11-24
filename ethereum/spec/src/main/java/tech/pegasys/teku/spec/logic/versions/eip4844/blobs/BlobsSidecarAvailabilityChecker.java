@@ -50,16 +50,17 @@ public interface BlobsSidecarAvailabilityChecker {
   SafeFuture<BlobsSidecarAndValidationResult> NOT_AVAILABLE_RESULT =
       SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE);
 
-  static SafeFuture<BlobsSidecarAndValidationResult> validResult(
-      final Optional<BlobsSidecar> blobsSidecar) {
+  static SafeFuture<BlobsSidecarAndValidationResult> validResult(final BlobsSidecar blobsSidecar) {
     return SafeFuture.completedFuture(
-        new BlobsSidecarAndValidationResult(BlobsSidecarValidationResult.VALID, blobsSidecar));
+        new BlobsSidecarAndValidationResult(
+            BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar)));
   }
 
   static SafeFuture<BlobsSidecarAndValidationResult> invalidResult(
-      final Optional<BlobsSidecar> blobsSidecar) {
+      final BlobsSidecar blobsSidecar) {
     return SafeFuture.completedFuture(
-        new BlobsSidecarAndValidationResult(BlobsSidecarValidationResult.INVALID, blobsSidecar));
+        new BlobsSidecarAndValidationResult(
+            BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar)));
   }
 
   class BlobsSidecarAndValidationResult {
