@@ -31,7 +31,11 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings({"UnusedReturnValue", "unused"})
 public class SpecConfigBuilder {
+
+  // Placeholder version explicitly doesn't match MainNet (or any other known testnet)
+  private static final Bytes4 PLACEHOLDER_FORK_VERSION = Bytes4.fromHexString("0x99999999");
   private final Map<String, Object> rawConfig = new HashMap<>();
 
   // Misc
@@ -107,16 +111,16 @@ public class SpecConfigBuilder {
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.USED;
 
   // Altair
-  private Optional<AltairBuilder> altairBuilder = Optional.empty();
+  private Optional<AltairBuilder> altairBuilder = Optional.of(new AltairBuilder());
 
   // Bellatrix
-  private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
+  private Optional<BellatrixBuilder> bellatrixBuilder = Optional.of(new BellatrixBuilder());
 
   // Capella
-  private Optional<CapellaBuilder> capellaBuilder = Optional.empty();
+  private Optional<CapellaBuilder> capellaBuilder = Optional.of(new CapellaBuilder());
 
   // EIP-4844
-  private Optional<Eip4844Builder> eip4844Builder = Optional.empty();
+  private Optional<Eip4844Builder> eip4844Builder = Optional.of(new Eip4844Builder());
 
   public SpecConfig build() {
     validate();
@@ -656,6 +660,18 @@ public class SpecConfigBuilder {
 
     @Override
     public void validate() {
+      if (altairForkEpoch == null) {
+        altairForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+        altairForkVersion = PLACEHOLDER_FORK_VERSION;
+        inactivityPenaltyQuotientAltair = inactivityPenaltyQuotient;
+        minSlashingPenaltyQuotientAltair = minSlashingPenaltyQuotient;
+        proportionalSlashingMultiplierAltair = proportionalSlashingMultiplier;
+        syncCommitteeSize = 512;
+        inactivityScoreBias = UInt64.valueOf(4);
+        inactivityScoreRecoveryRate = UInt64.valueOf(16);
+        epochsPerSyncCommitteePeriod = 256;
+        minSyncCommitteeParticipants = 1;
+      }
       validateConstant("inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
       validateConstant("minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
       validateConstant(
@@ -786,7 +802,7 @@ public class SpecConfigBuilder {
 
     @Override
     public boolean isForkIncluded() {
-      return bellatrixForkEpoch != null;
+      return true;
     }
 
     @Override
@@ -810,6 +826,17 @@ public class SpecConfigBuilder {
 
     @Override
     public void validate() {
+      if (bellatrixForkEpoch == null) {
+        bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+        bellatrixForkVersion = PLACEHOLDER_FORK_VERSION;
+        inactivityPenaltyQuotientBellatrix = inactivityPenaltyQuotient;
+        minSlashingPenaltyQuotientBellatrix = minSlashingPenaltyQuotient;
+        proportionalSlashingMultiplierBellatrix = proportionalSlashingMultiplier;
+        maxBytesPerTransaction = 1073741824;
+        maxTransactionsPerPayload = 1048576;
+        bytesPerLogsBloom = 256;
+        maxExtraDataBytes = 32;
+      }
       validateConstant("bellatrixForkVersion", bellatrixForkVersion);
       validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
       validateConstant("inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
@@ -950,7 +977,7 @@ public class SpecConfigBuilder {
 
     @Override
     public boolean isForkIncluded() {
-      return capellaForkEpoch != null;
+      return true;
     }
 
     public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
@@ -977,6 +1004,15 @@ public class SpecConfigBuilder {
 
     @Override
     public void validate() {
+      if (capellaForkEpoch == null) {
+        // Config doesn't include Capella configuration but we need some values for the REST API
+        // type definitions.
+        // Provide MainNet-like defaults and ensure Capella isn't actually supported
+        capellaForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+        capellaForkVersion = PLACEHOLDER_FORK_VERSION;
+        maxBlsToExecutionChanges = UInt64.valueOf(16);
+        maxWithdrawalsPerPayload = 16;
+      }
       validateConstant("capellaForkVersion", capellaForkVersion);
       validateConstant("capellaForkEpoch", capellaForkEpoch);
       validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
@@ -1001,7 +1037,7 @@ public class SpecConfigBuilder {
 
     @Override
     public boolean isForkIncluded() {
-      return eip4844ForkEpoch != null;
+      return true;
     }
 
     public Eip4844Builder eip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
@@ -1028,6 +1064,12 @@ public class SpecConfigBuilder {
 
     @Override
     public void validate() {
+      if (eip4844ForkEpoch == null) {
+        eip4844ForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+        eip4844ForkVersion = PLACEHOLDER_FORK_VERSION;
+        fieldElementsPerBlob = 4096;
+        maxBlobsPerBlock = 16;
+      }
       validateConstant("eip4844ForkEpoch", eip4844ForkEpoch);
       validateConstant("eip4844ForkVersion", eip4844ForkVersion);
       validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
