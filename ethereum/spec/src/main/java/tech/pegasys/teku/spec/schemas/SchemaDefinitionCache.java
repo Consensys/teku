@@ -26,11 +26,11 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 public class SchemaDefinitionCache {
   private final Spec spec;
   private final Map<SpecMilestone, SchemaDefinitions> schemas = new ConcurrentHashMap<>();
-  private final Set<SpecMilestone> supportedMilestones;
+  private final Set<SpecMilestone> enabledMilestones;
 
   public SchemaDefinitionCache(final Spec spec) {
     this.spec = spec;
-    this.supportedMilestones =
+    this.enabledMilestones =
         spec.getEnabledMilestones().stream()
             .map(ForkAndSpecMilestone::getSpecMilestone)
             .collect(Collectors.toSet());
@@ -64,6 +64,6 @@ public class SchemaDefinitionCache {
   }
 
   public Set<SpecMilestone> getEnabledMilestones() {
-    return supportedMilestones;
+    return enabledMilestones;
   }
 }
