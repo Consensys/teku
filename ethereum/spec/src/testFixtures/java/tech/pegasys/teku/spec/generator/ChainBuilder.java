@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -509,11 +510,11 @@ public class ChainBuilder {
         final SyncAggregatorSelectionData syncAggregatorSelectionData =
             syncCommitteeUtil.createSyncAggregatorSelectionData(
                 slot, UInt64.valueOf(subcommitteeIndex));
+        final ForkInfo forkInfo =
+            new ForkInfo(
+                spec.fork(epoch), latestBlockAndState.getState().getGenesisValidatorsRoot());
         final BLSSignature proof =
-            signer
-                .signSyncCommitteeSelectionProof(
-                    syncAggregatorSelectionData, latestBlockAndState.getState().getForkInfo())
-                .join();
+            signer.signSyncCommitteeSelectionProof(syncAggregatorSelectionData, forkInfo).join();
         if (syncCommitteeUtil.isSyncCommitteeAggregator(proof)) {
           return new SignedContributionAndProofTestBuilder()
               .signerProvider(this::getSigner)
@@ -552,10 +553,11 @@ public class ChainBuilder {
       final BeaconStateAltair state,
       final BLSPublicKey validatorPublicKey) {
     final int validatorIndex = spec.getValidatorIndex(state, validatorPublicKey).orElseThrow();
+
+    final UInt64 epoch = spec.getSyncCommitteeUtilRequired(slot).getEpochForDutiesAtSlot(slot);
+    final ForkInfo forkInfo = new ForkInfo(spec.fork(epoch), state.getGenesisValidatorsRoot());
     final BLSSignature signature =
-        getSigner(validatorIndex)
-            .signSyncCommitteeMessage(slot, blockRoot, state.getForkInfo())
-            .join();
+        getSigner(validatorIndex).signSyncCommitteeMessage(slot, blockRoot, forkInfo).join();
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
         .getSyncCommitteeMessageSchema()
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
