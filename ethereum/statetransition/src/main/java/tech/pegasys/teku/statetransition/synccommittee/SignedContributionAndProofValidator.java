@@ -16,7 +16,8 @@ package tech.pegasys.teku.statetransition.synccommittee;
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.errorprone.annotations.FormatMethod;
 import java.util.List;
@@ -47,7 +48,6 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofValidator {
@@ -84,7 +84,7 @@ public class SignedContributionAndProofValidator {
     final SourceUniquenessKey sourceUniquenessKey =
         getUniquenessKey(contributionAndProof, contribution);
     if (seenIndices.contains(sourceUniquenessKey)) {
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(ignore("Duplicate contribution from validator"));
     }
     final TargetUniquenessKey targetUniquenessKey =
         new TargetUniquenessKey(
@@ -92,7 +92,7 @@ public class SignedContributionAndProofValidator {
             contribution.getBeaconBlockRoot(),
             contribution.getSubcommitteeIndex());
     if (seenAggregatesCache.isAlreadySeen(targetUniquenessKey, contribution.getAggregationBits())) {
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(ignore("Redundant aggregate"));
     }
 
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
@@ -105,15 +105,14 @@ public class SignedContributionAndProofValidator {
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
     if (proof.getMessage().getContribution().getAggregationBits().getBitCount() == 0) {
-      return SafeFuture.completedFuture(
-          failureResult("Rejecting proof because participant set is empty"));
+      return SafeFuture.completedFuture(reject("Rejecting proof because participant set is empty"));
     }
 
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
     if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
       LOG.trace("Ignoring proof because it is not from the current slot");
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(ignore("Not from current slot"));
     }
 
     // [REJECT] The subcommittee index is in the allowed range
@@ -130,7 +129,7 @@ public class SignedContributionAndProofValidator {
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace("Ignoring proof because state is not available or not from Altair fork");
-                return SafeFuture.completedFuture(IGNORE);
+                return SafeFuture.completedFuture(ignore("No Altair state available"));
               }
               return validateWithState(
                   proof,
@@ -146,14 +145,7 @@ public class SignedContributionAndProofValidator {
   @FormatMethod
   private SafeFuture<InternalValidationResult> futureFailureResult(
       final String message, Object... args) {
-    return SafeFuture.completedFuture(failureResult(message, args));
-  }
-
-  @FormatMethod
-  private InternalValidationResult failureResult(final String message, Object... args) {
-    final String contextMessage = String.format(message, args);
-    LOG.trace(contextMessage);
-    return InternalValidationResult.create(ValidationResultCode.REJECT, contextMessage);
+    return SafeFuture.completedFuture(reject(message, args));
   }
 
   private SafeFuture<InternalValidationResult> validateWithState(
@@ -261,19 +253,19 @@ public class SignedContributionAndProofValidator {
         .thenApply(
             signatureValid -> {
               if (!signatureValid) {
-                return failureResult(
+                return reject(
                     "Rejecting proof with signature %s because batch signature check failed",
                     contribution.getSignature());
               }
 
               if (!seenIndices.add(sourceUniquenessKey)) {
                 // Got added by another thread while we were validating it
-                return IGNORE;
+                return ignore("Already seen contribution from validator");
               }
 
               if (!seenAggregatesCache.add(
                   targetUniquenessKey, contribution.getAggregationBits())) {
-                return IGNORE;
+                return ignore("Redundant aggregate");
               }
               return ACCEPT;
             });

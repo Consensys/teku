@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -111,8 +110,8 @@ class SignedContributionAndProofValidatorTest {
         .chainUpdater()
         .setCurrentSlot(message.getMessage().getContribution().getSlot().plus(1));
 
-    final SafeFuture<InternalValidationResult> result = validator.validate(message);
-    assertThat(result).isCompletedWithValue(IGNORE);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -166,7 +165,8 @@ class SignedContributionAndProofValidatorTest {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(message)).isCompletedWithValue(IGNORE);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -183,7 +183,8 @@ class SignedContributionAndProofValidatorTest {
             .addParticipant(firstAggregator, chainBuilder.getSigner(firstAggregator.intValue()))
             .build();
     assertThat(validator.validate(bigMessage)).isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(smallMessage)).isCompletedWithValue(IGNORE);
+    assertThat(validator.validate(smallMessage))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -306,6 +307,32 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .beaconBlockRoot(blockRoot)
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(IGNORE);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @Test
+  void shouldUseCorrectForkForSignatureVerificationWhenHeadStateIsBeforeNewMilestone() {
+    final Spec spec =
+        TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE);
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
+    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    final UInt64 bellatrixStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    storageSystem.chainUpdater().setCurrentSlot(bellatrixStartSlot);
+    timeProvider.advanceTimeBySeconds(
+        spec.computeTimeAtSlot(genesis.getState(), bellatrixStartSlot)
+            .minus(timeProvider.getTimeInSeconds())
+            .longValue());
+    final SignedContributionAndProof message =
+        chainBuilder
+            .createValidSignedContributionAndProofBuilder()
+            .slot(bellatrixStartSlot)
+            .beaconBlockRoot(genesis.getRoot())
+            // So the signatures get updated for the new block root
+            .resetParticipantsToOnlyAggregator()
+            .build();
+
+    assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
   }
 }
