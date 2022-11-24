@@ -23,7 +23,6 @@ require_env "SERVER_GOERLI_URL"
 require_env "SERVER_MAINNET_URL"
 require_env "SERVER_SEPOLIA_URL"
 require_env "SERVER_GNOSIS_URL"
-require_env "MAINNET_SSH_KEY"
 
 if [[ "$all_env_set" = false ]]; then
   echo "Not all required environment variables are set. Following environment variables should be set:"
@@ -31,7 +30,6 @@ if [[ "$all_env_set" = false ]]; then
   echo "SERVER_MAINNET_URL: ssh url to Mainnet server with Teku like 'user@8.8.8.8'"
   echo "SERVER_SEPOLIA_URL: ssh url to Sepolia server with Teku like 'user@8.8.8.8'"
   echo "SERVER_GNOSIS_URL: ssh url to Gnosis server with Teku like 'user@8.8.8.8'"
-  echo "MAINNET_SSH_KEY: path to SSH key required for Mainnet server like '~/.ssh/secret-key.pem'"
   exit 89
 fi
 
@@ -56,18 +54,13 @@ OUT=$(echo "$OUT" | sed 's:/*$::')
 download_snapshot() {
   echo ""
   echo "Downloading $2"
-  if [ -z ${3+x}  ]; then
-    ssh -f -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
-  else
-    ssh -f -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 -o "IdentitiesOnly=yes" -i "${3}" "${1}" sleep 1
-  fi
-
+  ssh -f -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
   "${SNAPSHOT_DOWNLOAD_SCRIPT}" http://localhost:"${LOCAL_REST_API_BINDING_PORT}" true "${OUT}/${2}"
 }
 
 download_snapshot "${SERVER_GOERLI_URL}" "goerli.json"
 download_snapshot "${SERVER_SEPOLIA_URL}" "sepolia.json"
 download_snapshot "${SERVER_GNOSIS_URL}" "gnosis.json"
-download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json" "${MAINNET_SSH_KEY}"
+download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json"
 
 echo $'\nAll done! Commit changes manually'
