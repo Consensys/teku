@@ -172,8 +172,7 @@ public class PowchainService extends Service {
     final StorageQueryChannel storageQueryChannel =
         serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
     final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
-        new DepositSnapshotStorageLoader(
-            powConfig.isDepositSnapshotStorageEnabled(), storageQueryChannel);
+        new DepositSnapshotStorageLoader(powConfig.isDepositSnapshotEnabled(), storageQueryChannel);
 
     eth1DepositManager =
         new Eth1DepositManager(
@@ -184,7 +183,7 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositSnapshotFileLoader,
             depositSnapshotStorageLoader,
-            powConfig.isDepositSnapshotBundleEnabled(),
+            powConfig.isDepositSnapshotEnabled(),
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock,

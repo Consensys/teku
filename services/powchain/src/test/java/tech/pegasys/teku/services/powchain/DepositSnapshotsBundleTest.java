@@ -31,11 +31,12 @@ public class DepositSnapshotsBundleTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getAllNetworks")
-  public void shouldCreateCorrectDepositTreeSnapshotFromEachBundleSnapshot(final Eth2Network eth2Network) {
+  public void shouldCreateCorrectDepositTreeSnapshotFromEachBundleSnapshot(
+      final Eth2Network eth2Network) {
     final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
     powchainConfigBuilder
         .specProvider(SPEC)
-        .depositSnapshotBundleEnabled(true)
+        .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
     if (powchainConfiguration.getDepositSnapshotPath().isEmpty()) {

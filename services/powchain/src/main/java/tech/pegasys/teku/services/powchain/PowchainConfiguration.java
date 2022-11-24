@@ -30,8 +30,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
-  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED = false;
-  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_BUNDLE_ENABLED = false;
+  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_ENABLED = false;
 
   private final Spec spec;
   private final List<String> eth1Endpoints;
@@ -40,8 +39,7 @@ public class PowchainConfiguration {
   private final Optional<String> depositSnapshotPath;
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
-  private final boolean depositSnapshotStorageEnabled;
-  private final boolean depositSnapshotBundleEnabled;
+  private final boolean depositSnapshotEnabled;
 
   private PowchainConfiguration(
       final Spec spec,
@@ -51,15 +49,13 @@ public class PowchainConfiguration {
       final Optional<String> depositSnapshotPath,
       final int eth1LogsMaxBlockRange,
       final boolean useMissingDepositEventLogging,
-      final boolean depositSnapshotStorageEnabled,
-      final boolean depositSnapshotBundleEnabled) {
+      final boolean depositSnapshotEnabled) {
     this.spec = spec;
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
     this.depositSnapshotPath = depositSnapshotPath;
-    this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
-    this.depositSnapshotBundleEnabled = depositSnapshotBundleEnabled;
+    this.depositSnapshotEnabled = depositSnapshotEnabled;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
   }
@@ -92,12 +88,8 @@ public class PowchainConfiguration {
     return depositSnapshotPath;
   }
 
-  public boolean isDepositSnapshotStorageEnabled() {
-    return depositSnapshotStorageEnabled;
-  }
-
-  public boolean isDepositSnapshotBundleEnabled() {
-    return depositSnapshotBundleEnabled;
+  public boolean isDepositSnapshotEnabled() {
+    return depositSnapshotEnabled;
   }
 
   public int getEth1LogsMaxBlockRange() {
@@ -116,16 +108,12 @@ public class PowchainConfiguration {
     private Optional<String> depositSnapshotPath = Optional.empty();
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
-    private boolean depositSnapshotStorageEnabled = DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
-    private boolean depositSnapshotBundleEnabled = DEFAULT_DEPOSIT_SNAPSHOT_BUNDLE_ENABLED;
+    private boolean depositSnapshotEnabled = DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
 
     private Builder() {}
 
     public PowchainConfiguration build() {
       validate();
-      if (depositSnapshotBundleEnabled) {
-        depositSnapshotStorageEnabled = true;
-      }
       return new PowchainConfiguration(
           spec,
           eth1Endpoints,
@@ -134,8 +122,7 @@ public class PowchainConfiguration {
           depositSnapshotPath,
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging,
-          depositSnapshotStorageEnabled,
-          depositSnapshotBundleEnabled);
+          depositSnapshotEnabled);
     }
 
     private void validate() {
@@ -198,7 +185,7 @@ public class PowchainConfiguration {
     public Builder setDepositSnapshotPathForNetwork(final Optional<Eth2Network> eth2Network) {
       checkNotNull(eth2Network);
       if (eth2Network.isPresent()
-          && this.depositSnapshotBundleEnabled
+          && this.depositSnapshotEnabled
           && DEFAULT_SNAPSHOT_RESOURCE_PATHS.containsKey(eth2Network.get())) {
         if (depositSnapshotPath.isPresent()) {
           throw new InvalidConfigurationException(
@@ -213,13 +200,8 @@ public class PowchainConfiguration {
       return this;
     }
 
-    public Builder depositSnapshotStorageEnabled(final boolean depositSnapshotStorageEnabled) {
-      this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
-      return this;
-    }
-
-    public Builder depositSnapshotBundleEnabled(final boolean depositSnapshotBundleEnabled) {
-      this.depositSnapshotBundleEnabled = depositSnapshotBundleEnabled;
+    public Builder depositSnapshotEnabled(final boolean depositSnapshotEnabled) {
+      this.depositSnapshotEnabled = depositSnapshotEnabled;
       return this;
     }
 

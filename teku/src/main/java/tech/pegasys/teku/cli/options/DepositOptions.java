@@ -60,26 +60,14 @@ public class DepositOptions {
   private String depositSnapshotPath;
 
   @Option(
-      names = {"--Xdeposit-snapshot-storage-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable loading of finalized deposit tree snapshot from storage",
-      hidden = true,
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean depositSnapshotStorageEnabled =
-      PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_STORAGE_ENABLED;
-
-  @Option(
-      names = {"--Xdeposit-snapshot-bundle-enabled"},
+      names = {"--Xdeposit-snapshot-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Uses bundled snapshot for client network and persists deposit tree snapshot",
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean depositSnapshotBundleEnabled =
-      PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_BUNDLE_ENABLED;
+  private boolean depositSnapshotEnabled = PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
@@ -88,7 +76,6 @@ public class DepositOptions {
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
                 .useMissingDepositEventLogging(useMissingDepositEventLogging)
                 .depositSnapshotPath(depositSnapshotPath)
-                .depositSnapshotStorageEnabled(depositSnapshotStorageEnabled)
-                .depositSnapshotBundleEnabled(depositSnapshotBundleEnabled));
+                .depositSnapshotEnabled(depositSnapshotEnabled));
   }
 }

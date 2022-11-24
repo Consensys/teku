@@ -24,6 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -116,20 +117,23 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "sepolia"})
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
-    final String[] args = {"--network=" + network, "--Xdeposit-snapshot-bundle-enabled"};
+    final String[] args = {"--network=" + network, "--Xdeposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isDepositSnapshotBundleEnabled()).isTrue();
-    assertThat(config.powchain().isDepositSnapshotStorageEnabled()).isTrue();
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath())
-        .contains(DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(Eth2Network.fromString(network)));
+        .contains(
+            PowchainConfiguration.class
+                .getResource(
+                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
+                        Eth2Network.fromStringLenient(network).get()))
+                .toExternalForm());
   }
 
   @Test
   public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
-    final String[] args = {"--network=swift", "--Xdeposit-snapshot-bundle-enabled"};
+    final String[] args = {"--network=swift", "--Xdeposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isDepositSnapshotBundleEnabled()).isTrue();
-    assertThat(config.powchain().isDepositSnapshotStorageEnabled()).isTrue();
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath()).isEmpty();
   }
 
@@ -139,8 +143,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
             () ->
                 createConfigBuilder()
                     .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
-                    .powchain(
-                        b -> b.depositSnapshotBundleEnabled(true).depositSnapshotPath("/some/path"))
+                    .powchain(b -> b.depositSnapshotEnabled(true).depositSnapshotPath("/some/path"))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
