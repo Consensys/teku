@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,9 +30,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -91,7 +87,6 @@ public class DepositSnapshotFileLoader {
 
     return parseAsSsz(snapshotData)
         .or(() -> parseAsDepositTreeJson(snapshotData))
-        .or(() -> parseAsDepositTreeInDataJson(snapshotData))
         .orElseThrow(
             () ->
                 new InvalidConfigurationException(
@@ -114,43 +109,6 @@ public class DepositSnapshotFileLoader {
               DepositTreeSnapshot.getJsonTypeDefinition()));
     } catch (final JsonProcessingException exception) {
       return Optional.empty();
-    }
-  }
-
-  private Optional<DepositTreeSnapshot> parseAsDepositTreeInDataJson(final Bytes data) {
-    try {
-      return Optional.of(
-          JsonUtil.parse(
-                  new String(data.toArray(), StandardCharsets.UTF_8),
-                  typeDefinition(DepositTreeSnapshot.SSZ_SCHEMA))
-              .getData());
-    } catch (final JsonProcessingException exception) {
-      return Optional.empty();
-    }
-  }
-
-  private <T extends SszData> DeserializableTypeDefinition<ResponseData<T>> typeDefinition(
-      final SszSchema<T> dataSchema) {
-    return DeserializableTypeDefinition.<ResponseData<T>, ResponseData<T>>object()
-        .initializer(ResponseData::new)
-        .finisher(Function.identity())
-        .withField(
-            "data",
-            dataSchema.getJsonTypeDefinition(),
-            ResponseData::getData,
-            ResponseData::setData)
-        .build();
-  }
-
-  private static class ResponseData<T> {
-    private T data;
-
-    public T getData() {
-      return data;
-    }
-
-    public void setData(final T data) {
-      this.data = data;
     }
   }
 }
