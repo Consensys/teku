@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -184,10 +185,9 @@ public class BeaconBlockBodySchemaBellatrixImpl
   }
 
   @Override
-  public Optional<Long> getBlindedNodeGeneralizedIndex() {
-    final long childGeneralizedIndex =
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
-    final long relativeIndex = getExecutionPayloadSchema().getBlindedNodeGeneralizedIndex();
-    return Optional.of(GIndexUtil.gIdxCompose(childGeneralizedIndex, relativeIndex));
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return GIndexUtil.gIdxComposeAll(
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),
+        getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices());
   }
 }

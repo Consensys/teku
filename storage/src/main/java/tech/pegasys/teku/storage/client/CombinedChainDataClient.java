@@ -269,6 +269,20 @@ public class CombinedChainDataClient {
     return historicalChainData.getLatestFinalizedStateAtSlot(slot);
   }
 
+  /**
+   * Returns the latest available state prior to the given slot on the current chain.
+   *
+   * @param slot the latest slot to get the state for
+   * @return the State at or before slot
+   */
+  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(final UInt64 slot) {
+    if (!isChainDataFullyAvailable()) {
+      return STATE_NOT_AVAILABLE;
+    }
+
+    return historicalChainData.getLatestAvailableFinalizedState(slot);
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
     final UpdatableStore store = getStore();
     if (store == null) {

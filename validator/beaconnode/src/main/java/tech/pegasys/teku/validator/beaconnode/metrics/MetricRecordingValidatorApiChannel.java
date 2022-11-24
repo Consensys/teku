@@ -275,10 +275,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch) {
     return countOptionalDataRequest(
-        delegate.checkValidatorsDoppelganger(validatorIndices, epoch),
+        delegate.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }
 

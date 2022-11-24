@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
@@ -82,7 +82,11 @@ public class ProcessSyncAggregateBenchmark {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     state =
         BeaconStateAltair.required(
-            InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false));
+            new GenesisStateBuilder()
+                .spec(spec)
+                .signDeposits(false)
+                .addValidators(validatorKeys)
+                .build());
     final MutableBeaconStateAltair mutableState = state.createWritableCopy();
     mutableState.setSlot(UInt64.ONE);
     state = mutableState.commitChanges();

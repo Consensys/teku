@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -44,7 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX})
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.EIP4844})
 public class BlockValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
@@ -63,7 +65,7 @@ public class BlockValidatorTest {
   }
 
   @BeforeEach
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
@@ -79,7 +81,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isAccept());
   }
 
@@ -87,7 +89,7 @@ public class BlockValidatorTest {
   void shouldIgnoreAlreadyImportedBlock() {
     final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isIgnore());
   }
 
@@ -99,10 +101,10 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result1 = blockValidator.validate(block).join();
+    InternalValidationResult result1 = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result1.isAccept());
 
-    InternalValidationResult result2 = blockValidator.validate(block).join();
+    InternalValidationResult result2 = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result2.isIgnore());
   }
 
@@ -112,7 +114,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -144,7 +146,8 @@ public class BlockValidatorTest {
     final SignedBeaconBlock blockWithNoParent =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
+    InternalValidationResult result =
+        blockValidator.validate(blockWithNoParent, Optional.empty()).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -160,7 +163,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem2.chainBuilder().generateBlockAtSlot(finalizedSlot.minus(ONE)).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isIgnore());
   }
 
@@ -194,7 +197,8 @@ public class BlockValidatorTest {
     final SignedBeaconBlock invalidProposerSignedBlock =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
+    InternalValidationResult result =
+        blockValidator.validate(invalidProposerSignedBlock, Optional.empty()).join();
     assertTrue(result.isReject());
   }
 
@@ -209,7 +213,7 @@ public class BlockValidatorTest {
             storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock().getMessage(),
             BLSTestUtil.randomSignature(0));
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isReject());
   }
 
@@ -241,16 +245,19 @@ public class BlockValidatorTest {
         chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
-        blockValidator.validate(blockAndState.getBlock());
+        blockValidator.validate(blockAndState.getBlock(), Optional.empty());
     assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate
-  void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
+  void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(final SpecContext specContext) {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 
@@ -259,16 +266,19 @@ public class BlockValidatorTest {
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result = blockValidator.validate(block, Optional.empty()).join();
     assertTrue(result.isAccept());
   }
 
   @TestTemplate
-  void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
+  void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(final SpecContext specContext) {
     specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
 
@@ -286,7 +296,66 @@ public class BlockValidatorTest {
                         specContext.getDataStructureUtil().randomExecutionPayload()));
 
     InternalValidationResult result =
-        blockValidator.validate(signedBlockAndState.getBlock()).join();
+        blockValidator.validate(signedBlockAndState.getBlock(), Optional.empty()).join();
     assertTrue(result.isReject());
+  }
+
+  @TestTemplate
+  void shouldReturnInvalidForInconsistentBlockAndBlobsSidecar(final SpecContext specContext) {
+    specContext.assumeEip4844Active();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    final BlobsSidecar wrongSlotBlobsSidecar =
+        specContext
+            .getDataStructureUtil()
+            .randomBlobsSidecar(block.getRoot(), specContext.getDataStructureUtil().randomUInt64());
+
+    assertTrue(
+        blockValidator.validate(block, Optional.of(wrongSlotBlobsSidecar)).join().isReject());
+
+    final BlobsSidecar wrongRootBlobsSidecar =
+        specContext
+            .getDataStructureUtil()
+            .randomBlobsSidecar(
+                specContext.getDataStructureUtil().randomBytes32(), block.getSlot());
+
+    assertTrue(
+        blockValidator.validate(block, Optional.of(wrongRootBlobsSidecar)).join().isReject());
+  }
+
+  @TestTemplate
+  void shouldReturnAcceptConsistentBlockAndBlobsSidecar(final SpecContext specContext) {
+    specContext.assumeEip4844Active();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    final BlobsSidecar consistentBlobsSidecar =
+        specContext.getDataStructureUtil().randomBlobsSidecar(block.getRoot(), block.getSlot());
+
+    assertTrue(
+        blockValidator.validate(block, Optional.of(consistentBlobsSidecar)).join().isAccept());
   }
 }

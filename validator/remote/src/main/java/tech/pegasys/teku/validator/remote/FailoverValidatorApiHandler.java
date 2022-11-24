@@ -284,10 +284,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> checkValidatorsDoppelganger(
+  public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       final List<UInt64> validatorIndices, final UInt64 epoch) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.checkValidatorsDoppelganger(validatorIndices, epoch),
+        apiChannel -> apiChannel.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
   }
 
