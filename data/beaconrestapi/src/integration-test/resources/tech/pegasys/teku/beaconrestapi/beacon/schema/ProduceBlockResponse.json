@@ -12,7 +12,9 @@
         "$ref" : "#/components/schemas/BeaconBlockAltair"
       }, {
         "$ref" : "#/components/schemas/BeaconBlockBellatrix"
-      } ]
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockCapella"
+      }  ]
     }
   }
 }
