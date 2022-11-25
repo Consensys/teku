@@ -805,12 +805,6 @@ subprojects {
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
-    configurations {
-      testImplementation {
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
-      }
-    }
-
     testFixturesImplementation 'org.assertj:assertj-core'
 
     testFixturesRuntimeOnly 'org.apiguardian:apiguardian-api'

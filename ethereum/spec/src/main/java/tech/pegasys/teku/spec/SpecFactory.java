@@ -25,10 +25,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecFactory {
 

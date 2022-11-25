@@ -30,13 +30,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthLog;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.beacon.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -104,9 +104,7 @@ public class FallbackAwareEth1ProviderTest {
       assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
       final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
       assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
-      assertThat(logCaptor.getLogEvents()).isNotEmpty();
-      assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
-      assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+      assertThat(logCaptor.getThrowable(0)).isEmpty();
     }
   }
 
@@ -124,9 +122,7 @@ public class FallbackAwareEth1ProviderTest {
       assertThatThrownBy(future::get).hasCauseInstanceOf(Eth1RequestException.class);
       final String expectedWarningMessage = EXPECTED_TIMEOUT_MESSAGE;
       assertThat(logCaptor.getWarnLogs()).containsExactly(expectedWarningMessage);
-      assertThat(logCaptor.getLogEvents()).isNotEmpty();
-      assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(expectedWarningMessage);
-      assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+      assertThat(logCaptor.getThrowable(0)).isEmpty();
     }
   }
 
