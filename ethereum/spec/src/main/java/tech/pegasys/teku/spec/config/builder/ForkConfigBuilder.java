@@ -11,11 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.spec.config.builder;
 
-public interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
+import java.util.function.BiConsumer;
+import tech.pegasys.teku.spec.config.SpecConfig;
+
+interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
   ForkType build(ParentType specConfig);
 
   void validate();
+
+  void addOverridableItemsToRawConfig(BiConsumer<String, Object> rawConfig);
 }

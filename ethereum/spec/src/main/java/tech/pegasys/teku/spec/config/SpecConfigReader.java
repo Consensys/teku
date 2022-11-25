@@ -44,7 +44,11 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
+import tech.pegasys.teku.spec.config.builder.AltairBuilder;
+import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
+import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
+import tech.pegasys.teku.spec.config.builder.Eip4844Builder;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
@@ -146,7 +150,7 @@ public class SpecConfigReader {
             });
 
     // Process altair config
-    streamConfigSetters(SpecConfigBuilder.AltairBuilder.class)
+    streamConfigSetters(AltairBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
@@ -166,7 +170,7 @@ public class SpecConfigReader {
             });
 
     // Process capella config
-    streamConfigSetters(SpecConfigBuilder.CapellaBuilder.class)
+    streamConfigSetters(CapellaBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
@@ -176,7 +180,7 @@ public class SpecConfigReader {
             });
 
     // Process EIP-4844 config
-    streamConfigSetters(SpecConfigBuilder.Eip4844Builder.class)
+    streamConfigSetters(Eip4844Builder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());

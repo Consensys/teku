@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
 
