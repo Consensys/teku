@@ -22,8 +22,6 @@
               "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
             }, {
               "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
-            }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
             } ]
           }
         }

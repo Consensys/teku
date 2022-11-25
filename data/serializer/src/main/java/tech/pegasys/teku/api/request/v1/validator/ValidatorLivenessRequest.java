@@ -23,17 +23,12 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorLivenessRequest {
-  @Schema(type = "string", format = "uint64")
-  public final UInt64 epoch;
 
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> indices;
 
   @JsonCreator
-  public ValidatorLivenessRequest(
-      @JsonProperty("epoch") final UInt64 epoch,
-      @JsonProperty("indices") final List<UInt64> indices) {
-    this.epoch = epoch;
+  public ValidatorLivenessRequest(@JsonProperty("indices") final List<UInt64> indices) {
     this.indices = indices;
   }
 
@@ -46,16 +41,16 @@ public class ValidatorLivenessRequest {
       return false;
     }
     final ValidatorLivenessRequest that = (ValidatorLivenessRequest) o;
-    return Objects.equals(epoch, that.epoch) && Objects.equals(indices, that.indices);
+    return Objects.equals(indices, that.indices);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, indices);
+    return Objects.hash(indices);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("epoch", epoch).add("indices", indices).toString();
+    return MoreObjects.toStringHelper(this).add("indices", indices).toString();
   }
 }

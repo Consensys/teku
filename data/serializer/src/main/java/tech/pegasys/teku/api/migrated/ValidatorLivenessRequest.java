@@ -21,22 +21,12 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorLivenessRequest {
-  private UInt64 epoch;
   private List<UInt64> indices;
 
   ValidatorLivenessRequest() {}
 
-  public ValidatorLivenessRequest(final UInt64 epoch, final List<UInt64> indices) {
-    this.epoch = epoch;
+  public ValidatorLivenessRequest(final List<UInt64> indices) {
     this.indices = indices;
-  }
-
-  public UInt64 getEpoch() {
-    return epoch;
-  }
-
-  private void setEpoch(UInt64 epoch) {
-    this.epoch = epoch;
   }
 
   public List<UInt64> getIndices() {
@@ -50,11 +40,6 @@ public class ValidatorLivenessRequest {
   public static DeserializableTypeDefinition<ValidatorLivenessRequest> getJsonTypeDefinition() {
     return DeserializableTypeDefinition.object(ValidatorLivenessRequest.class)
         .initializer(ValidatorLivenessRequest::new)
-        .withField(
-            "epoch",
-            UINT64_TYPE,
-            ValidatorLivenessRequest::getEpoch,
-            ValidatorLivenessRequest::setEpoch)
         .withField(
             "indices",
             DeserializableTypeDefinition.listOf(UINT64_TYPE),
@@ -72,16 +57,16 @@ public class ValidatorLivenessRequest {
       return false;
     }
     ValidatorLivenessRequest that = (ValidatorLivenessRequest) o;
-    return Objects.equals(epoch, that.epoch) && Objects.equals(indices, that.indices);
+    return Objects.equals(indices, that.indices);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, indices);
+    return Objects.hash(indices);
   }
 
   @Override
   public String toString() {
-    return "ValidatorLivenessRequest{" + "epoch=" + epoch + ", indices=" + indices + '}';
+    return String.format("ValidatorLivenessRequest{indices=%s}", indices);
   }
 }
