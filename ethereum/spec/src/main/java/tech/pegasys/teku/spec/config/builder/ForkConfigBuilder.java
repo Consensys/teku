@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.spec.config.builder;
 
-import com.google.common.base.CaseFormat;
-import com.google.common.base.Converter;
+import java.util.function.BiConsumer;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
-public class SpecConfigFormatter {
-  private static final Converter<String, String> CAMEL_TO_SNAKE_CASE =
-      CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
+interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
-  public static String camelToSnakeCase(final String camelCase) {
-    return CAMEL_TO_SNAKE_CASE.convert(camelCase);
-  }
+  ForkType build(ParentType specConfig);
+
+  void validate();
+
+  void addOverridableItemsToRawConfig(BiConsumer<String, Object> rawConfig);
 }

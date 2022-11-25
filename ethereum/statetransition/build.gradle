@@ -34,7 +34,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':storage'))
-  testImplementation 'io.github.hakky54:logcaptor'
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
   testFixturesApi testFixtures(project(':infrastructure:bls'))
@@ -48,6 +47,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
 }

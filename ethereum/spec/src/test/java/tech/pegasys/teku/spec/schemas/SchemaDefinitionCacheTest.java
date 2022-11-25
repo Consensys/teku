@@ -24,28 +24,45 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions.NonSchema;
 
 public class SchemaDefinitionCacheTest {
   private static final Logger LOG = LogManager.getLogger();
 
   @ParameterizedTest
-  @EnumSource(SpecMilestone.class)
-  void shouldGetSchemasForAllMilestones(final SpecMilestone specMilestone) {
-    final Spec spec = TestSpecFactory.createMinimalPhase0();
+  @MethodSource("allNetworksWithAllMilestones")
+  void shouldGetSchemasForAllMilestonesOnAllNetworks(
+      final Eth2Network network, final SpecMilestone specMilestone) {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfigStrict(network.configName());
+    final Spec spec = SpecFactory.create(specConfig);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(cache.getSchemaDefinition(specMilestone)).isNotNull();
+  }
+
+  static Stream<Arguments> allNetworksWithAllMilestones() {
+    return Stream.of(Eth2Network.values())
+        .flatMap(
+            network ->
+                Stream.of(SpecMilestone.values())
+                    .map(milestone -> Arguments.of(network, milestone)));
   }
 
   @Test
