@@ -117,7 +117,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     }
     blobsSidecarAvailabilityChecker =
         new ForkChoiceBlobsSidecarAvailabilityChecker(
-            spec.getGenesisSpec(),
+            specVersionMock,
             recentChainData,
             dataStructureUtil.randomSignedBeaconBlock(1),
             blobAvailable ? Optional.of(blobsSidecar) : Optional.empty());
@@ -132,7 +132,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     }
     blobsSidecarAvailabilityChecker =
         new ForkChoiceBlobsSidecarAvailabilityChecker(
-            spec.getGenesisSpec(),
+            specVersionMock,
             recentChainData,
             dataStructureUtil.randomSignedBeaconBlock(1),
             blobAvailable ? Optional.of(blobsSidecar) : Optional.empty());
