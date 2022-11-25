@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
+      "enum" : [ "phase0", "altair", "bellatrix" ]
     },
     "data" : {
       "type" : "array",
@@ -22,8 +22,6 @@
               "$ref" : "#/components/schemas/BeaconBlockAltair"
             }, {
               "$ref" : "#/components/schemas/BeaconBlockBellatrix"
-            }, {
-              "$ref" : "#/components/schemas/BeaconBlockCapella"
             } ]
           },
           "signature" : {
