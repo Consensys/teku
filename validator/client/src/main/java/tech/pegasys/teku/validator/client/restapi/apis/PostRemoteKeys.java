@@ -19,9 +19,11 @@ import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_KE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
@@ -33,7 +35,10 @@ public class PostRemoteKeys extends RestApiEndpoint {
   @SuppressWarnings("unused")
   private final KeyManager keyManager;
 
-  public PostRemoteKeys(final KeyManager keyManager) {
+  private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
+
+  public PostRemoteKeys(
+      final KeyManager keyManager, final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportRemoteKeys")
@@ -46,6 +51,7 @@ public class PostRemoteKeys extends RestApiEndpoint {
             .withAuthenticationResponses()
             .build());
     this.keyManager = keyManager;
+    this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
   }
 
   @Override
@@ -58,6 +64,6 @@ public class PostRemoteKeys extends RestApiEndpoint {
     }
 
     List<ExternalValidator> validators = body.getExternalValidators();
-    request.respondOk(keyManager.importExternalValidators(validators));
+    request.respondOk(keyManager.importExternalValidators(validators, maybeDoppelgangerDetector));
   }
 }

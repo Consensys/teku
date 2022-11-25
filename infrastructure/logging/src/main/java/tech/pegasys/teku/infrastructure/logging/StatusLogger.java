@@ -161,15 +161,15 @@ public class StatusLogger {
     }
   }
 
-  public void validatorsDoppelgangerDetected(final Map<Integer, String> doppelgangersInfo) {
+  public void validatorsDoppelgangerDetected(final Map<UInt64, String> doppelgangersInfo) {
     String doppelgangersLogInfo =
         doppelgangersInfo.entrySet().stream()
             .map(
                 doppelgangerInfo ->
                     StringUtils.isBlank(doppelgangerInfo.getValue())
-                        ? String.format("Index: %d", doppelgangerInfo.getKey())
+                        ? String.format("Index: %s", doppelgangerInfo.getKey())
                         : String.format(
-                            "Index: %d, Public key: %s",
+                            "Index: %s, Public key: %s",
                             doppelgangerInfo.getKey(), doppelgangerInfo.getValue()))
             .collect(Collectors.joining("\n", "\n", "\n"));
     log.fatal(

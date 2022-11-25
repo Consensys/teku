@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes48;
@@ -111,13 +112,15 @@ public class ValidatorLoader {
     return mutableLocalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized PostKeyResult loadLocalMutableValidator(
+  public synchronized Pair<Optional<BLSPublicKey>, PostKeyResult> loadLocalMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+
     if (!canAddValidator(mutableLocalValidatorSource)) {
-      return PostKeyResult.error("Not able to add validator");
+      return Pair.of(Optional.empty(), PostKeyResult.error("Not able to add validator"));
     }
+
     final BLSPublicKey publicKey =
         BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
 
@@ -125,21 +128,21 @@ public class ValidatorLoader {
       final Optional<String> errorString =
           slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
       if (errorString.isPresent()) {
-        return PostKeyResult.error(errorString.get());
+        return Pair.of(Optional.of(publicKey), PostKeyResult.error(errorString.get()));
       }
     }
     if (ownedValidators.hasValidator(publicKey)) {
-      return PostKeyResult.duplicate();
+      return Pair.of(Optional.of(publicKey), PostKeyResult.duplicate());
     }
 
     final AddValidatorResult validatorAddResult =
         mutableLocalValidatorSource.get().addValidator(keyStoreData, password, publicKey);
 
     if (validatorAddResult.getSigner().isEmpty()) {
-      return validatorAddResult.getResult();
+      return Pair.of(Optional.of(publicKey), validatorAddResult.getResult());
     }
     addValidator(validatorAddResult.getSigner().get(), publicKey);
-    return PostKeyResult.success();
+    return Pair.of(Optional.of(publicKey), PostKeyResult.success());
   }
 
   public DeleteKeyResult deleteExternalMutableValidator(final BLSPublicKey publicKey) {
@@ -150,23 +153,23 @@ public class ValidatorLoader {
     return mutableExternalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized PostKeyResult loadExternalMutableValidator(
+  public synchronized Pair<BLSPublicKey, PostKeyResult> loadExternalMutableValidator(
       final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     if (!canAddValidator(mutableExternalValidatorSource)) {
-      return PostKeyResult.error("Not able to add validator");
+      return Pair.of(publicKey, PostKeyResult.error("Not able to add validator"));
     }
     if (ownedValidators.hasValidator(publicKey)) {
-      return PostKeyResult.duplicate();
+      return Pair.of(publicKey, PostKeyResult.duplicate());
     }
 
     final AddValidatorResult validatorAddResult =
         mutableExternalValidatorSource.get().addValidator(publicKey, signerUrl);
 
     if (validatorAddResult.getSigner().isEmpty()) {
-      return validatorAddResult.getResult();
+      return Pair.of(publicKey, validatorAddResult.getResult());
     }
     addValidator(validatorAddResult.getSigner().get(), publicKey);
-    return PostKeyResult.success();
+    return Pair.of(publicKey, PostKeyResult.success());
   }
 
   private void addValidator(final Signer signer, final BLSPublicKey publicKey) {

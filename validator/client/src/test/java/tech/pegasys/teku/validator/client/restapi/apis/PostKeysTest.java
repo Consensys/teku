@@ -39,7 +39,7 @@ public class PostKeysTest {
   @Test
   void shouldRespondBadRequestIfPasswordsAndKeystoresMisMatch(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty());
     final PostKeysRequest body = new PostKeysRequest();
     body.setKeystores(List.of("{}"));
     body.setPasswords(List.of());
@@ -54,7 +54,7 @@ public class PostKeysTest {
   @Test
   void shouldNotImportSlashingProtectionWithoutKeysPresent(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty());
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
     when(request.getRequestBody()).thenReturn(body);
@@ -66,7 +66,7 @@ public class PostKeysTest {
   @Test
   void emptyRequest_shouldGiveEmptySuccess(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty());
     final PostKeysRequest body = new PostKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
@@ -77,7 +77,7 @@ public class PostKeysTest {
   @Test
   void shouldRespondBadRequestIfSlashingProtectionImportFails(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty());
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
     body.setPasswords(List.of("pass"));

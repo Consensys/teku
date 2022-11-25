@@ -51,7 +51,11 @@ class ValidatorOpenApiTest {
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
     final RestApi restApi =
         ValidatorRestApi.create(
-            config, Optional.of(proposerConfigManager), keyManager, dataDirLayout);
+            config,
+            Optional.of(proposerConfigManager),
+            keyManager,
+            dataDirLayout,
+            Optional.empty());
     final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());

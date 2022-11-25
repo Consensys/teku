@@ -30,6 +30,7 @@ import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
@@ -38,8 +39,12 @@ public class PostKeys extends RestApiEndpoint {
   private final KeyManager keyManager;
   public static final String ROUTE = "/eth/v1/keystores";
   private final Path slashingProtectionPath;
+  private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
 
-  public PostKeys(final KeyManager keyManager, final Path slashingProtectionPath) {
+  public PostKeys(
+      final KeyManager keyManager,
+      final Path slashingProtectionPath,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportKeystores")
@@ -53,6 +58,7 @@ public class PostKeys extends RestApiEndpoint {
             .build());
     this.keyManager = keyManager;
     this.slashingProtectionPath = slashingProtectionPath;
+    this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
   }
 
   @Override
@@ -75,7 +81,8 @@ public class PostKeys extends RestApiEndpoint {
         readSlashingProtectionDataIfPresent(body.getSlashingProtection());
 
     request.respondOk(
-        keyManager.importValidators(body.getKeystores(), body.getPasswords(), slashingData));
+        keyManager.importValidators(
+            body.getKeystores(), body.getPasswords(), slashingData, maybeDoppelgangerDetector));
   }
 
   private Optional<SlashingProtectionImporter> readSlashingProtectionDataIfPresent(

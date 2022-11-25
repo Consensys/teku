@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -669,9 +670,10 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final PostKeyResult result =
+    final Pair<Optional<BLSPublicKey>, PostKeyResult> result =
         validatorLoader.loadLocalMutableValidator(null, "", Optional.empty());
-    assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
+    assertThat(result)
+        .isEqualTo(Pair.of(Optional.empty(), PostKeyResult.error("Not able to add validator")));
   }
 
   @Test
@@ -693,10 +695,10 @@ class ValidatorLoaderTest {
 
     final String keystoreString =
         Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
-    PostKeyResult result =
+    Pair<Optional<BLSPublicKey>, PostKeyResult> result =
         validatorLoader.loadLocalMutableValidator(
             KeyStoreLoader.loadFromString(keystoreString), "testpassword", Optional.empty());
-    assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(result.getValue().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
 
     final Optional<Validator> validator =
         validatorLoader.getOwnedValidators().getValidator(PUBLIC_KEY1);

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -84,8 +85,9 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(PostKeyResult.success());
-    keyManager.importValidators(List.of(data), List.of("testpassword"), Optional.empty());
+        .thenReturn(Pair.of(Optional.empty(), PostKeyResult.success()));
+    keyManager.importValidators(
+        List.of(data), List.of("testpassword"), Optional.empty(), Optional.empty());
     verify(channel, times(1)).onValidatorsAdded();
   }
 
@@ -94,8 +96,9 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(PostKeyResult.duplicate());
-    keyManager.importValidators(List.of(data), List.of("testpassword"), Optional.empty());
+        .thenReturn(Pair.of(Optional.empty(), PostKeyResult.duplicate()));
+    keyManager.importValidators(
+        List.of(data), List.of("testpassword"), Optional.empty(), Optional.empty());
     verify(channel, never()).onValidatorsAdded();
   }
 

@@ -19,7 +19,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
@@ -28,6 +30,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -214,24 +217,59 @@ public class ActiveKeyManager implements KeyManager {
   public List<PostKeyResult> importValidators(
       final List<String> keystores,
       final List<String> passwords,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
-    final List<PostKeyResult> importResults = new ArrayList<>();
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+    final List<Pair<Optional<BLSPublicKey>, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
       importResults.add(
           importValidatorFromKeystore(
               keystores.get(i), passwords.get(i), slashingProtectionImporter));
-      if (importResults.get(i).getImportStatus() == ImportStatus.IMPORTED) {
+      if (importResults.get(i).getValue().getImportStatus() == ImportStatus.IMPORTED) {
         reloadRequired = true;
       }
     }
     if (reloadRequired) {
-      validatorTimingChannel.onValidatorsAdded();
+      maybeDoppelgangerDetector
+          .map(
+              doppelgangerDetector ->
+                  doppelgangerDetector
+                      .performDoppelgangerDetection(filterImportedPubKeys(importResults))
+                      .thenAccept(
+                          doppelgangerDetected -> {
+                            if (!doppelgangerDetected.isEmpty()) {
+                              System.exit(1);
+                            }
+                          }))
+          .orElse(SafeFuture.COMPLETE)
+          .thenAccept(__ -> validatorTimingChannel.onValidatorsAdded())
+          .ifExceptionGetsHereRaiseABug();
     }
-    return importResults;
+    return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
   }
 
-  private PostKeyResult importValidatorFromKeystore(
+  private Set<BLSPublicKey> filterImportedPubKeys(
+      List<Pair<Optional<BLSPublicKey>, PostKeyResult>> importResults) {
+    return importResults.stream()
+        .filter(
+            pubKeyPostKeyResultPair ->
+                pubKeyPostKeyResultPair.getValue().getImportStatus().equals(ImportStatus.IMPORTED)
+                    && pubKeyPostKeyResultPair.getKey().isPresent())
+        .map(optionalPostKeyResultPair -> optionalPostKeyResultPair.getKey().get())
+        .collect(Collectors.toSet());
+  }
+
+  private Set<BLSPublicKey> filterExternallyImportedPubKeys(
+      List<Pair<BLSPublicKey, PostKeyResult>> importResults) {
+    return importResults.stream()
+        .filter(
+            pubKeyPostKeyResultPair ->
+                pubKeyPostKeyResultPair.getValue().getImportStatus().equals(ImportStatus.IMPORTED))
+        .map(Pair::getKey)
+        .collect(Collectors.toSet());
+  }
+
+  private Pair<Optional<BLSPublicKey>, PostKeyResult> importValidatorFromKeystore(
       final String keystoreString,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
@@ -239,7 +277,7 @@ public class ActiveKeyManager implements KeyManager {
     try {
       keyStoreData.validate();
     } catch (KeyStoreValidationException ex) {
-      return PostKeyResult.error(ex.getMessage());
+      return Pair.of(Optional.empty(), PostKeyResult.error(ex.getMessage()));
     }
 
     return validatorLoader.loadLocalMutableValidator(
@@ -247,24 +285,39 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   @Override
-  public List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators) {
-    final List<PostKeyResult> importResults = new ArrayList<>();
+  public List<PostKeyResult> importExternalValidators(
+      final List<ExternalValidator> validators,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+    final List<Pair<BLSPublicKey, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (ExternalValidator v : validators) {
       try {
         importResults.add(
             validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
-        if (importResults.get(importResults.size() - 1).getImportStatus()
+        if (importResults.get(importResults.size() - 1).getValue().getImportStatus()
             == ImportStatus.IMPORTED) {
           reloadRequired = true;
         }
       } catch (Exception e) {
-        importResults.add(PostKeyResult.error(e.getMessage()));
+        importResults.add(Pair.of(v.getPublicKey(), PostKeyResult.error(e.getMessage())));
       }
     }
     if (reloadRequired) {
-      validatorTimingChannel.onValidatorsAdded();
+      maybeDoppelgangerDetector
+          .map(
+              doppelgangerDetector ->
+                  doppelgangerDetector
+                      .performDoppelgangerDetection(filterExternallyImportedPubKeys(importResults))
+                      .thenAccept(
+                          doppelgangerDetected -> {
+                            if (!doppelgangerDetected.isEmpty()) {
+                              System.exit(1);
+                            }
+                          }))
+          .orElse(SafeFuture.COMPLETE)
+          .thenAccept(__ -> validatorTimingChannel.onValidatorsAdded())
+          .ifExceptionGetsHereRaiseABug();
     }
-    return importResults;
+    return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
   }
 }

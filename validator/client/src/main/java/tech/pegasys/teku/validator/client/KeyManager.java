@@ -36,7 +36,10 @@ public interface KeyManager {
   List<PostKeyResult> importValidators(
       final List<String> keystores,
       final List<String> passwords,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter);
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final Optional<DoppelgangerDetector> doppelgangerDetector);
 
-  List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators);
+  List<PostKeyResult> importExternalValidators(
+      final List<ExternalValidator> validators,
+      final Optional<DoppelgangerDetector> doppelgangerDetector);
 }

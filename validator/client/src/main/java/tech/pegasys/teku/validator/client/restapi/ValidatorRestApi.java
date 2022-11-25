@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
@@ -52,7 +53,8 @@ public class ValidatorRestApi {
       final ValidatorRestApiConfig config,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
-      final DataDirLayout dataDirLayout) {
+      final DataDirLayout dataDirLayout,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
     return new RestApiBuilder()
@@ -86,9 +88,9 @@ public class ValidatorRestApi {
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager, slashingProtectionPath))
-        .endpoint(new PostKeys(keyManager, slashingProtectionPath))
+        .endpoint(new PostKeys(keyManager, slashingProtectionPath, maybeDoppelgangerDetector))
         .endpoint(new GetRemoteKeys(keyManager))
-        .endpoint(new PostRemoteKeys(keyManager))
+        .endpoint(new PostRemoteKeys(keyManager, maybeDoppelgangerDetector))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(proposerConfigManager))
         .endpoint(new GetGasLimit(proposerConfigManager))

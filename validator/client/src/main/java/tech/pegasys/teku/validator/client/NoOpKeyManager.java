@@ -51,12 +51,15 @@ public class NoOpKeyManager implements KeyManager {
   public List<PostKeyResult> importValidators(
       final List<String> keystores,
       final List<String> passwords,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     return Collections.emptyList();
   }
 
   @Override
-  public List<PostKeyResult> importExternalValidators(List<ExternalValidator> validators) {
+  public List<PostKeyResult> importExternalValidators(
+      List<ExternalValidator> validators,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerdetector) {
     return Collections.emptyList();
   }
 }
