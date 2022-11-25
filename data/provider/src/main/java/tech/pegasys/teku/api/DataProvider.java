@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DataProvider {
+
   private final NetworkDataProvider networkDataProvider;
   private final ChainDataProvider chainDataProvider;
   private final SyncDataProvider syncDataProvider;
@@ -85,6 +87,7 @@ public class DataProvider {
   }
 
   public static class Builder {
+
     private Spec spec;
     private RecentChainData recentChainData;
     private CombinedChainDataClient combinedChainDataClient;
@@ -98,6 +101,7 @@ public class DataProvider {
     private OperationPool<AttesterSlashing> attesterSlashingPool;
     private OperationPool<ProposerSlashing> proposerSlashingPool;
     private OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+    private OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
     private ProposersDataManager proposersDataManager;
 
@@ -171,6 +175,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder blsToExecutionChangePool(
+        final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePoolExitPool) {
+      this.blsToExecutionChangePool = blsToExecutionChangePoolExitPool;
+      return this;
+    }
+
     public Builder syncCommitteeContributionPool(
         final SyncCommitteeContributionPool syncCommitteeContributionPool) {
       this.syncCommitteeContributionPool = syncCommitteeContributionPool;
@@ -196,6 +206,7 @@ public class DataProvider {
               attesterSlashingPool,
               proposerSlashingPool,
               voluntaryExitPool,
+              blsToExecutionChangePool,
               syncCommitteeContributionPool,
               blockManager,
               attestationManager,
