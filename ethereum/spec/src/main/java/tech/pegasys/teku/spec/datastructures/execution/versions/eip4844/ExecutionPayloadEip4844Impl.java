@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -117,6 +118,11 @@ public class ExecutionPayloadEip4844Impl
   @Override
   public boolean isDefaultPayload() {
     return super.isDefault();
+  }
+
+  @Override
+  public Optional<Bytes32> getOptionalWithdrawalsRoot() {
+    return Optional.of(getWithdrawals().hashTreeRoot());
   }
 
   @Override

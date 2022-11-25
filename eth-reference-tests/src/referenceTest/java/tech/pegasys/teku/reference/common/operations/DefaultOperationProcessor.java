@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -128,8 +129,9 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processWithdrawals(final MutableBeaconState state, final ExecutionPayload payload)
+  public void processWithdrawals(
+      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payload);
+    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payloadSummary);
   }
 }
