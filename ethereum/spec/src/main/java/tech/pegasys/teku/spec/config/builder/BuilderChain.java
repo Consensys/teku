@@ -11,9 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.spec.config.builder;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 /**
  * Hides some serious abuse of Java's type system so that from the outside we have a type safe chain
@@ -64,6 +66,13 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     return new BuilderChain<>(builderToApply, newTail);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
+    builderToApply.addOverridableItemsToRawConfig(rawConfig);
+    tail.addOverridableItemsToRawConfig(rawConfig);
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public Out build(final In specConfig) {
@@ -86,5 +95,8 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
 
     @Override
     public void validate() {}
+
+    @Override
+    public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
   }
 }

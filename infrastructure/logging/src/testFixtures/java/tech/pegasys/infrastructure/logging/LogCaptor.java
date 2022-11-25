@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Appender;
@@ -61,10 +63,22 @@ public class LogCaptor implements AutoCloseable {
     assertThat(getMessages(level)).contains(message);
   }
 
+  public List<String> getWarnLogs() {
+    return getMessages(Level.WARN).collect(Collectors.toList());
+  }
+
+  public List<String> getErrorLogs() {
+    return getMessages(Level.ERROR).collect(Collectors.toList());
+  }
+
   private Stream<String> getMessages(final Level level) {
     return appender.logs.stream()
         .filter(log -> log.getLevel().equals(level))
         .map(log -> log.getMessage().getFormattedMessage());
+  }
+
+  public Optional<Throwable> getThrowable(final int index) {
+    return Optional.ofNullable(appender.logs.get(index).getThrown());
   }
 
   public static LogCaptor forClass(final Class<?> clazz) {

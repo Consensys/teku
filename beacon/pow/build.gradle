@@ -24,8 +24,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
-
-  testImplementation 'io.github.hakky54:logcaptor'
+  testImplementation testFixtures(project(':infrastructure:logging'))
 
   testFixturesImplementation project(':ethereum:pow:api')
   testFixturesImplementation project(':infrastructure:events')
