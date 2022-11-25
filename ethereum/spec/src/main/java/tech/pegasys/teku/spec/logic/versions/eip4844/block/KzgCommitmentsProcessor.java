@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip4844.block;
 
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
@@ -24,5 +24,5 @@ public interface KzgCommitmentsProcessor {
     return new KzgCommitmentsProcessorImpl(miscHelpers);
   }
 
-  void processBlobKzgCommitments(BeaconBlock block) throws BlockProcessingException;
+  void processBlobKzgCommitments(BeaconBlockBody body) throws BlockProcessingException;
 }

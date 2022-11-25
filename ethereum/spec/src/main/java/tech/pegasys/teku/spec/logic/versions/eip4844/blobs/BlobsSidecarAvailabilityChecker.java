@@ -21,19 +21,19 @@ public interface BlobsSidecarAvailabilityChecker {
   BlobsSidecarAvailabilityChecker NOOP =
       new BlobsSidecarAvailabilityChecker() {
         @Override
-        public boolean retrieveBlobsSidecar() {
+        public boolean initiateDataAvailabilityCheck() {
           return true;
         }
 
         @Override
-        public SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
+        public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
           return NOT_REQUIRED_RESULT;
         }
       };
 
-  boolean retrieveBlobsSidecar();
+  boolean initiateDataAvailabilityCheck();
 
-  SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar();
+  SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult();
 
   enum BlobsSidecarValidationResult {
     NOT_REQUIRED,

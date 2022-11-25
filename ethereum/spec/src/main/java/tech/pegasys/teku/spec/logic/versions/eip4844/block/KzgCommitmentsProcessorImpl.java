@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.eip4844.block;
 
 import java.util.stream.Collectors;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -29,17 +29,16 @@ public class KzgCommitmentsProcessorImpl implements KzgCommitmentsProcessor {
   }
 
   @Override
-  public void processBlobKzgCommitments(final BeaconBlock block) throws BlockProcessingException {
+  public void processBlobKzgCommitments(final BeaconBlockBody body)
+      throws BlockProcessingException {
 
-    final BeaconBlockBodyEip4844 blockBody =
-        block
-            .getBody()
-            .toVersionEip4844()
+    final BeaconBlockBodyEip4844 eip4844Body =
+        body.toVersionEip4844()
             .orElseThrow(() -> new BlockProcessingException("Eip4844 block is required"));
 
     if (!miscHelpers.verifyKZGCommitmentsAgainstTransactions(
-        blockBody.getExecutionPayload().getTransactions().asList(),
-        blockBody.getBlobKzgCommitments().stream()
+        eip4844Body.getExecutionPayload().getTransactions().asList(),
+        eip4844Body.getBlobKzgCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .collect(Collectors.toUnmodifiableList()))) {
       throw new BlockProcessingException("KZG commitments do not match transactions");

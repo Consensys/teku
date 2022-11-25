@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -332,5 +333,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       return signature.isInfinity();
     }
     return signatureVerifier.verify(pubkeys, message, signature);
+  }
+
+  @Override
+  public void processBlobKzgCommitments(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No blob Kzg commitments in Altair");
   }
 }

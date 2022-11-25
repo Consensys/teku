@@ -35,6 +35,8 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   private SignedBeaconBlock block;
   private Optional<BlobsSidecar> blobsSidecar;
 
+  private final SafeFuture<BlobsSidecarAndValidationResult> validationResult = new SafeFuture<>();
+
   public ForkChoiceBlobsSidecarAvailabilityChecker(
       final SpecVersion specVersion,
       final RecentChainData recentChainData,
@@ -47,12 +49,17 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   }
 
   @Override
-  public boolean retrieveBlobsSidecar() {
+  public boolean initiateDataAvailabilityCheck() {
+    validateBlobsSidecar().propagateTo(validationResult);
     return true;
   }
 
   @Override
-  public SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
+  public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
+    return validationResult;
+  }
+
+  private SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
     // so if we have it we do want to validate them regardless
@@ -93,14 +100,10 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   private boolean isBlockInDataAvailabilityWindow() {
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
 
-    if (block
-        .getSlot()
-        .minusMinZero(currentSlot)
-        .isGreaterThan(
-            (long) specVersion.getSlotsPerEpoch() * MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS)) {
-      return false;
-    }
+    final UInt64 oldestSlotRequiringBlobs =
+        currentSlot.minusMinZero(
+            (long) specVersion.getSlotsPerEpoch() * MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS);
 
-    return true;
+    return block.getSlot().isGreaterThanOrEqualTo(oldestSlotRequiringBlobs);
   }
 }

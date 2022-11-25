@@ -317,7 +317,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            forkChoiceBlobsSidecarAvailabilityChecker.validateBlobsSidecar(),
+            forkChoiceBlobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
             (payloadResult, blobsSidecarAndValidationResult) ->
                 importBlockAndState(
                     block,

@@ -213,4 +213,13 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in Bellatrix");
   }
+
+  @Override
+  public void processBlobKzgCommitments(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No blob Kzg commitments in Bellatrix");
+  }
 }

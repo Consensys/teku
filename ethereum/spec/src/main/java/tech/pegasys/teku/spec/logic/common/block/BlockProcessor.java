@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -156,4 +157,10 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
+
+  void processBlobKzgCommitments(
+      MutableBeaconState state,
+      BeaconBlockBody body,
+      KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException;
 }

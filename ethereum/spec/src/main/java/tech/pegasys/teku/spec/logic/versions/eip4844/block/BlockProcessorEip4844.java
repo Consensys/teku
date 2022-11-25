@@ -18,6 +18,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -85,11 +86,21 @@ public class BlockProcessorEip4844 extends BlockProcessorCapella {
         kzgCommitmentsProcessor,
         blobsSidecarAvailabilityChecker);
 
-    kzgCommitmentsProcessor.processBlobKzgCommitments(block);
+    processBlobKzgCommitments(genericState, block.getBody(), kzgCommitmentsProcessor);
 
-    final boolean blobsRetrievalStarted = blobsSidecarAvailabilityChecker.retrieveBlobsSidecar();
+    final boolean blobsRetrievalStarted =
+        blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
     if (!blobsRetrievalStarted) {
       throw new BlockProcessingException("Blobs retrieval not started");
     }
+  }
+
+  @Override
+  public void processBlobKzgCommitments(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException {
+    kzgCommitmentsProcessor.processBlobKzgCommitments(body);
   }
 }
