@@ -11,20 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.spec.config;
 
-public enum DockerVersion {
-  LOCAL_BUILD("develop"),
-  LAST_RELEASE("latest"),
-  V22_8_1("22.8.1");
+public interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
-  private final String version;
+  ForkType build(ParentType specConfig);
 
-  DockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
-  }
+  void validate();
 }

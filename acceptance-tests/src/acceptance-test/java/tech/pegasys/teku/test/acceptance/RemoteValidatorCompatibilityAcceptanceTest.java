@@ -27,7 +27,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
 
   @Test
   void shouldRunUpdatedValidatorAgainstOldBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.V21_10_0, DockerVersion.LOCAL_BUILD);
+    verifyCompatibility(DockerVersion.V22_8_1, DockerVersion.LOCAL_BUILD);
   }
 
   @Test
