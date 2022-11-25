@@ -50,7 +50,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    validateBlobsSidecar().propagateTo(validationResult);
+    SafeFuture.of(this::validateBlobsSidecar).propagateTo(validationResult);
     return true;
   }
 
@@ -85,15 +85,20 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
             .flatMap(BeaconBlockBody::toVersionEip4844)
             .orElseThrow();
 
-    if (!specVersion
-        .miscHelpers()
-        .isDataAvailable(
-            block.getSlot(),
-            block.getBodyRoot(),
-            blockBody.getBlobKzgCommitments().stream()
-                .map(SszKZGCommitment::getKZGCommitment)
-                .collect(Collectors.toUnmodifiableList()),
-            blobsSidecar)) {
+    try {
+      if (!specVersion
+          .miscHelpers()
+          .isDataAvailable(
+              block.getSlot(),
+              block.getBodyRoot(),
+              blockBody.getBlobKzgCommitments().stream()
+                  .map(SszKZGCommitment::getKZGCommitment)
+                  .collect(Collectors.toUnmodifiableList()),
+              blobsSidecar)) {
+        return BlobsSidecarAvailabilityChecker.invalidResult(blobsSidecar);
+      }
+    } catch (RuntimeException ex) {
+      // TODO we must revisit this once we plug the kzg library
       return BlobsSidecarAvailabilityChecker.invalidResult(blobsSidecar);
     }
 
