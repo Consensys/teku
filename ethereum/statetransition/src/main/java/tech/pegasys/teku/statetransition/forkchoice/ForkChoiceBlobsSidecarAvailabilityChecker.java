@@ -62,15 +62,18 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   private SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
-    // so if we have it we do want to validate them regardless
+    // so if we have it we do want to validate it regardless
     if (blobsSidecar.isPresent()) {
       return validate(blobsSidecar.get());
     }
 
+    // when blobs are not available, we check if it is ok to not have them based on
+    // the required availability window.
     if (isBlockInDataAvailabilityWindow()) {
       return BlobsSidecarAvailabilityChecker.NOT_AVAILABLE_RESULT;
     }
 
+    // block is older than the availability window
     return BlobsSidecarAvailabilityChecker.NOT_REQUIRED_RESULT;
   }
 
