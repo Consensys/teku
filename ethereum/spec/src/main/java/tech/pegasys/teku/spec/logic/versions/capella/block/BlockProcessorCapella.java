@@ -181,15 +181,17 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             .getWithdrawalsSchemaRequired()
             .createFromElements(getExpectedWithdrawals(state));
 
-    if (payloadSummary.getOptionalWithdrawalsRoot().isPresent()
-        && !expectedWithdrawals
+    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
+        || !expectedWithdrawals
             .hashTreeRoot()
             .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
       throw new BlockProcessingException(
           "Expected "
               + expectedWithdrawals
-              + " withdrawals root, but payload contained "
-              + payloadSummary.getOptionalWithdrawalsRoot().get());
+              + " withdrawals root, but withdrawals root was "
+              + (payloadSummary.getOptionalWithdrawalsRoot().isPresent()
+                  ? payloadSummary.getOptionalWithdrawalsRoot().get()
+                  : "MISSING"));
     }
     for (int i = 0; i < expectedWithdrawals.size(); i++) {
       final Withdrawal withdrawal = expectedWithdrawals.get(i);
