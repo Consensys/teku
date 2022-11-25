@@ -151,6 +151,11 @@ public class ExecutionPayloadSchemaCapella
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 
+  @Override
+  public SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired() {
+    return getWithdrawalsSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }

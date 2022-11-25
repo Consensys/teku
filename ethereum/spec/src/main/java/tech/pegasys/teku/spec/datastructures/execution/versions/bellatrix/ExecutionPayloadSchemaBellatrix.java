@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadSchemaBellatrix
     extends ContainerSchema14<
@@ -137,6 +138,11 @@ public class ExecutionPayloadSchemaBellatrix
   @Override
   public TransactionSchema getTransactionSchema() {
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  }
+
+  @Override
+  public SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a withdrawals schema from bellatrix");
   }
 
   @Override

@@ -158,6 +158,11 @@ public class ExecutionPayloadSchemaEip4844
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 
+  @Override
+  public SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired() {
+    return getWithdrawalsSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
