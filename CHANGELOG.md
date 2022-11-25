@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- Dropped support for custom network configurations that do not use the current preset format. Presets have been in use since before the MainNet beaconchain launch so this is not expected to affect any users.
 
 ### Additions and Improvements
 - Updated REST API to use Javalin 5
