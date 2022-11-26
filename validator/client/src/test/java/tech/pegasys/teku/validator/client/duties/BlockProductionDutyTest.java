@@ -286,5 +286,10 @@ class BlockProductionDutyTest {
     public boolean isDefaultPayload() {
       return false;
     }
+
+    @Override
+    public Optional<Bytes32> getOptionalWithdrawalsRoot() {
+      return Optional.empty();
+    }
   }
 }

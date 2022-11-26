@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -51,6 +52,8 @@ public interface ExecutionPayloadSummary {
   Bytes32 getPayloadHash();
 
   boolean isDefaultPayload();
+
+  Optional<Bytes32> getOptionalWithdrawalsRoot();
 
   default String toLogString() {
     return LogFormatter.formatBlock(getBlockNumber(), getBlockHash());
