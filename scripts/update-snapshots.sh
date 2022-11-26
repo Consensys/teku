@@ -49,28 +49,28 @@ require_command "jq"
 require_command "sed"
 require_command "ssh"
 
-echo $'\nStarting download of deposit tree snapshots...'
+echo $'\nStarting download of deposit tree snapshots and verification data...'
 OUT=$(echo "$OUT" | sed 's:/*$::')
-download_snapshot() {
-  echo ""
-  echo "Downloading $2"
-  ssh -f -o ExitOnForwardFailure=yes -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
-  "${SNAPSHOT_DOWNLOAD_SCRIPT}" http://localhost:"${LOCAL_REST_API_BINDING_PORT}" true "${OUT}/${2}"
+
+downloader() {
+  echo "" >&2
+  echo "Downloading $1 snapshot, header, state" >&2
+  ssh -f -o ExitOnForwardFailure=yes -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${2}" sleep 1
+  curl -s --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/teku/v1/beacon/deposit_snapshot -o "${OUT}/${1}.ssz"
+  local result=$(curl -s --fail -H 'Accept: application/json' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/beacon/headers/finalized | jq '.data')
+  echo $result > "${OUT}/${1}_header.json"
+  curl -s --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/debug/beacon/states/finalized -o "${OUT}/${1}_state.ssz"
+  local block_root=$(echo $result | jq -r '.root')
+  echo "$block_root"
 }
 
-get_finalized_slot() {
-  local result=$(curl -s --fail -H 'Accept: application/json' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/beacon/headers/finalized \
-  | jq -r '.data.header.message.slot')
-  echo "$result"
-}
+goerli_root=$(downloader "goerli" "${SERVER_GOERLI_URL}")
+echo "GOERLI latest finalized slot verification link: https://goerli.beaconcha.in/slot/$goerli_root"
+sepolia_root=$(downloader "sepolia" "${SERVER_SEPOLIA_URL}")
+echo "SEPOLIA latest finalized slot verification link: https://sepolia.beaconcha.in/slot/$sepolia_root"
+gnosis_root=$(downloader "gnosis" "${SERVER_GNOSIS_URL}")
+echo "GNOSIS latest finalized slot verification link: https://beacon.gnosischain.com/block/$gnosis_root"
+mainnet_root=$(downloader "mainnet" "${SERVER_MAINNET_URL}")
+echo "MAINNET latest finalized slot verification link: https://beaconcha.in/slot/$mainnet_root"
 
-download_snapshot "${SERVER_GOERLI_URL}" "goerli.json"
-echo "GOERLI latest finalized slot verification link: https://goerli.beaconcha.in/slot/$(get_finalized_slot)"
-download_snapshot "${SERVER_SEPOLIA_URL}" "sepolia.json"
-echo "SEPOLIA latest finalized slot verification link: https://sepolia.beaconcha.in/slot/$(get_finalized_slot)"
-download_snapshot "${SERVER_GNOSIS_URL}" "gnosis.json"
-echo "GNOSIS latest finalized slot verification link: https://beacon.gnosischain.com/block/$(get_finalized_slot)"
-download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json"
-echo "MAINNET latest finalized slot verification link: https://beaconcha.in/slot/$(get_finalized_slot)"
-
-echo $'\nAll done! Commit changes manually'
+echo $'\nAll done! Run verification tests and commit changes manually'
