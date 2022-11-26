@@ -15,10 +15,8 @@ package tech.pegasys.teku.beacon.pow;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -29,18 +27,16 @@ import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositSnapshotFileLoader {
 
   public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
       Map.of(
-          Eth2Network.GNOSIS, "gnosis.json",
-          Eth2Network.PRATER, "goerli.json",
-          Eth2Network.MAINNET, "mainnet.json",
-          Eth2Network.SEPOLIA, "sepolia.json");
+          Eth2Network.GNOSIS, "gnosis.ssz",
+          Eth2Network.PRATER, "goerli.ssz",
+          Eth2Network.MAINNET, "mainnet.ssz",
+          Eth2Network.SEPOLIA, "sepolia.ssz");
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -85,30 +81,6 @@ public class DepositSnapshotFileLoader {
             .orElseThrow(
                 () -> new FileNotFoundException(String.format("File '%s' not found", path)));
 
-    return parseAsSsz(snapshotData)
-        .or(() -> parseAsDepositTreeJson(snapshotData))
-        .orElseThrow(
-            () ->
-                new InvalidConfigurationException(
-                    String.format("Couldn't decode snapshot data from '%s'", path)));
-  }
-
-  private Optional<DepositTreeSnapshot> parseAsSsz(final Bytes data) {
-    try {
-      return Optional.of(DepositTreeSnapshot.fromBytes(data));
-    } catch (final SszDeserializeException exception) {
-      return Optional.empty();
-    }
-  }
-
-  private Optional<DepositTreeSnapshot> parseAsDepositTreeJson(final Bytes data) {
-    try {
-      return Optional.of(
-          JsonUtil.parse(
-              new String(data.toArray(), StandardCharsets.UTF_8),
-              DepositTreeSnapshot.getJsonTypeDefinition()));
-    } catch (final JsonProcessingException exception) {
-      return Optional.empty();
-    }
+    return DepositTreeSnapshot.fromBytes(snapshotData);
   }
 }
