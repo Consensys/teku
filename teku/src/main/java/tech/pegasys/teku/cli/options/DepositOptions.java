@@ -62,7 +62,7 @@ public class DepositOptions {
   @Option(
       names = {"--Xdeposit-snapshot-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Uses bundled snapshot for client network and persists deposit tree snapshot",
+      description = "Use bundled snapshot for most networks and persist deposit tree snapshot",
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",

@@ -66,7 +66,7 @@ public class DepositSnapshotsBundleTest {
     assertThat(depositTree.getSnapshot().get()).isEqualTo(depositTreeSnapshot);
   }
 
-  @Disabled("Remove to verify updated deposit snapshots")
+  @Disabled("Remove to verify updated deposit snapshots against headers and states")
   @ParameterizedTest(name = "{0}")
   @MethodSource("getAllNetworks")
   public void shouldCheckConsistencyOfSnapshotAndBlockHeaderAndState(final Eth2Network eth2Network)
