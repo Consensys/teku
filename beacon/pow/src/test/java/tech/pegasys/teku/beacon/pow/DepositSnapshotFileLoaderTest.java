@@ -20,11 +20,8 @@ import static org.assertj.core.api.Assertions.assertWith;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
@@ -32,8 +29,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositSnapshotFileLoaderTest {
-  private static final String SNAPSHOT_RESOURCE_SSZ = "snapshot.ssz";
-  private static final String SNAPSHOT_RESOURCE_JSON = "snapshot.json";
+  private static final String SNAPSHOT_RESOURCE = "snapshot.ssz";
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -45,7 +41,7 @@ public class DepositSnapshotFileLoaderTest {
   public void setup() {
     this.notFoundResource = dataStructureUtil.randomBytes32().toHexString();
     this.depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE_SSZ)));
+        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)));
   }
 
   @Test
@@ -62,11 +58,8 @@ public class DepositSnapshotFileLoaderTest {
         .isInstanceOf(InvalidConfigurationException.class);
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getSnapshotPaths")
-  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded(final String path) {
-    this.depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(path)));
+  @Test
+  public void shouldHaveCorrectDepositsData_whenSnapshotLoaded() {
     final int deposits = 16646;
     final int blockNumber = 1033803;
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
@@ -81,10 +74,6 @@ public class DepositSnapshotFileLoaderTest {
           assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
               .isEqualTo(blockNumber);
         });
-  }
-
-  public static Stream<String> getSnapshotPaths() {
-    return Stream.of(SNAPSHOT_RESOURCE_SSZ, SNAPSHOT_RESOURCE_JSON);
   }
 
   private String getResourceFilePath(final String resource) {
