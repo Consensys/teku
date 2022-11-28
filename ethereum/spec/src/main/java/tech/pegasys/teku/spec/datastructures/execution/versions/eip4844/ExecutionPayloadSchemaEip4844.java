@@ -31,7 +31,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -163,10 +162,5 @@ public class ExecutionPayloadSchemaEip4844
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
-  }
-
-  @Override
-  public Optional<ExecutionPayloadSchemaEip4844> toVersionEip4844() {
-    return Optional.of(this);
   }
 }

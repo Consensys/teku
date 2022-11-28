@@ -29,7 +29,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -135,11 +134,6 @@ public class ExecutionPayloadSchemaBellatrix
   @Override
   public ExecutionPayloadBellatrix createFromBackingNode(TreeNode node) {
     return new ExecutionPayloadBellatrix(this, node);
-  }
-
-  @Override
-  public Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
   }
 
   @SuppressWarnings("unchecked")

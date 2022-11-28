@@ -109,10 +109,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
   private Withdrawal createInternalWithdrawal(
       final WithdrawalV1 withdrawalV1, ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        // TODO: Should use getWithdrawalsSchemaRequired when it merges
-        .toVersionCapella()
-        .orElseThrow()
-        .getWithdrawalSchema()
+        .getWithdrawalSchemaRequired()
         .create(
             withdrawalV1.index,
             withdrawalV1.validatorIndex,
