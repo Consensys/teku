@@ -150,7 +150,7 @@ public class BlindedBeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
                           executionPayloadHeader.timestamp,
                           executionPayloadHeader.extraData,
                           executionPayloadHeader.baseFeePerGas,
-                          executionPayloadHeader.excessBlobs,
+                          executionPayloadHeader.excessDataGas,
                           executionPayloadHeader.blockHash,
                           executionPayloadHeader.transactionsRoot,
                           executionPayloadHeader.withdrawalsRoot)));

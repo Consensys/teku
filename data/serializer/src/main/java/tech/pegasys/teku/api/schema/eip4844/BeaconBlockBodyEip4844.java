@@ -142,7 +142,7 @@ public class BeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
                           executionPayload.timestamp,
                           executionPayload.extraData,
                           executionPayload.baseFeePerGas,
-                          executionPayload.excessBlobs,
+                          executionPayload.excessDataGas,
                           executionPayload.blockHash,
                           executionPayload.transactions,
                           executionPayload.withdrawals.stream()

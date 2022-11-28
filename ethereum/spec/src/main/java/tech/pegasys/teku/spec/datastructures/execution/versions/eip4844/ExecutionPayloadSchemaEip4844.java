@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOBS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -73,7 +73,7 @@ public class ExecutionPayloadSchemaEip4844
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt64,
+        SszUInt256,
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>>
@@ -96,7 +96,7 @@ public class ExecutionPayloadSchemaEip4844
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             TRANSACTIONS,
@@ -122,7 +122,7 @@ public class ExecutionPayloadSchemaEip4844
       UInt64 timestamp,
       Bytes extraData,
       UInt256 baseFeePerGas,
-      UInt64 excessBlobs,
+      UInt256 excessDataGas,
       Bytes32 blockHash,
       List<Bytes> transactions,
       List<Withdrawal> withdrawals) {
@@ -140,7 +140,7 @@ public class ExecutionPayloadSchemaEip4844
         SszUInt64.of(timestamp),
         getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszUInt64.of(excessBlobs),
+        SszUInt256.of(excessDataGas),
         SszBytes32.of(blockHash),
         transactions.stream()
             .map(getTransactionSchema()::fromBytes)

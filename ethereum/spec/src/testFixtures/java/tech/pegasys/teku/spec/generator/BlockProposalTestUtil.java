@@ -297,7 +297,7 @@ public class BlockProposalTestUtil {
                                 specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
                                 dataStructureUtil.randomBytes32(),
                                 UInt256.ONE,
-                                UInt64.ONE,
+                                UInt256.ONE,
                                 dataStructureUtil.randomBytes32(),
                                 transactions.orElse(Collections.emptyList()),
                                 List.of())))
