@@ -110,6 +110,11 @@ public class ExecutionPayloadHeaderBellatrix
   }
 
   @Override
+  public Optional<Bytes32> getOptionalWithdrawalsRoot() {
+    return Optional.empty();
+  }
+
+  @Override
   public ExecutionPayloadHeaderSchemaBellatrix getSchema() {
     return (ExecutionPayloadHeaderSchemaBellatrix) super.getSchema();
   }

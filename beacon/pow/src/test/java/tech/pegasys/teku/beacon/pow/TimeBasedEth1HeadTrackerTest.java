@@ -28,10 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
@@ -279,14 +279,13 @@ class TimeBasedEth1HeadTrackerTest {
 
   @Test
   void shouldNotLogStacktraceWhenExecutionClientGoesOffline() {
-    LogCaptor logCaptor = LogCaptor.forClass(TimeBasedEth1HeadTracker.class);
-    final String exceptionMessage = "Failed to connect to eth1 client";
-    final String errorLogMessage = "Failed to update eth1 chain head - " + exceptionMessage;
-    headTracker.onError(new ConnectException(exceptionMessage));
-    assertThat(logCaptor.getLogEvents()).isNotEmpty();
-    assertThat(logCaptor.getErrorLogs()).containsExactly(errorLogMessage);
-    assertThat(logCaptor.getLogEvents().get(0).getMessage()).isEqualTo(errorLogMessage);
-    assertThat(logCaptor.getLogEvents().get(0).getThrowable()).isEmpty();
+    try (LogCaptor logCaptor = LogCaptor.forClass(TimeBasedEth1HeadTracker.class)) {
+      final String exceptionMessage = "Failed to connect to eth1 client";
+      final String errorLogMessage = "Failed to update eth1 chain head - " + exceptionMessage;
+      headTracker.onError(new ConnectException(exceptionMessage));
+      assertThat(logCaptor.getErrorLogs()).containsExactly(errorLogMessage);
+      assertThat(logCaptor.getThrowable(0)).isEmpty();
+    }
   }
 
   private void verifyBlockRequested(final long blockNumber) {

@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SpecConfigBuilderTest {

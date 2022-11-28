@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -143,7 +144,7 @@ public interface BlockProcessor {
       MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException;
 
-  void processWithdrawals(MutableBeaconState state, ExecutionPayload payload)
+  void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);

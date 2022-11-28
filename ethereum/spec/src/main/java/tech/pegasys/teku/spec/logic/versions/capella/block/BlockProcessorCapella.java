@@ -32,10 +32,9 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
-
   private final SchemaDefinitionsCapella schemaDefinitionsCapella;
   private static final Bytes ETH1_WITHDRAWAL_KEY_PREFIX =
       Bytes.concatenate(ETH1_ADDRESS_WITHDRAWAL_PREFIX, Bytes.repeat((byte) 0x00, 11));
@@ -107,7 +105,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    processWithdrawals(genericState, maybeExecutionPayload);
+    processWithdrawals(genericState, executionPayloadHeader);
     super.executionProcessing(
         genericState, executionPayloadHeader, maybeExecutionPayload, payloadExecutor);
   }
@@ -117,10 +115,18 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   protected BlockValidationResult validateBlockPreProcessing(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier) {
+      final BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
     return verifyBlsToExecutionChangesPreProcessing(
         preState,
-        BeaconBlockBodyCapella.required(block.getMessage().getBody()).getBlsToExecutionChanges(),
+        block
+            .getMessage()
+            .getBody()
+            .getOptionalBlsToExecutionChanges()
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "BlsToExecutionChanges was not found during block processing.")),
         signatureVerifier);
   }
 
@@ -134,7 +140,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
     processBlsToExecutionChangesNoValidation(
         MutableBeaconStateCapella.required(state),
-        BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
+        body.getOptionalBlsToExecutionChanges()
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "BlsToExecutionChanges was not found during block processing.")));
   }
 
   @Override
@@ -170,48 +180,37 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     }
   }
 
-  public void processWithdrawals(
-      final MutableBeaconState genericState, final Optional<ExecutionPayload> maybePayload)
-      throws BlockProcessingException {
-    final ExecutionPayload payload =
-        maybePayload.orElseThrow(
-            () ->
-                new BlockProcessingException(
-                    "ExecutionPayload was not found during block processing."));
-    processWithdrawals(genericState, payload);
-  }
-
   @Override
   public void processWithdrawals(
-      final MutableBeaconState genericState, final ExecutionPayload payload)
+      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
-    final ExecutionPayloadCapella executionPayloadCapella =
-        ExecutionPayloadCapella.required(payload);
-    final SszList<Withdrawal> payloadWithdrawals = executionPayloadCapella.getWithdrawals();
-    final List<Withdrawal> expectedWithdrawals = getExpectedWithdrawals(state);
-    if (expectedWithdrawals.size() != payloadWithdrawals.size()) {
+    final SszList<Withdrawal> expectedWithdrawals =
+        schemaDefinitionsCapella
+            .getExecutionPayloadSchema()
+            .getWithdrawalsSchemaRequired()
+            .createFromElements(getExpectedWithdrawals(state));
+
+    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
+        || !expectedWithdrawals
+            .hashTreeRoot()
+            .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
       throw new BlockProcessingException(
           "Expected "
-              + expectedWithdrawals.size()
-              + " withdrawals, but payload contained "
-              + payloadWithdrawals.size());
+              + expectedWithdrawals
+              + " withdrawals root, but withdrawals root was "
+              + (payloadSummary.getOptionalWithdrawalsRoot().isPresent()
+                  ? payloadSummary.getOptionalWithdrawalsRoot().get()
+                  : "MISSING"));
     }
     for (int i = 0; i < expectedWithdrawals.size(); i++) {
-      final Withdrawal withdrawal = payloadWithdrawals.get(i);
-      if (!expectedWithdrawals.get(i).equals(withdrawal)) {
-        throw new BlockProcessingException(
-            "Withdrawal "
-                + withdrawal.getIndex()
-                + " does not match expected withdrawal "
-                + expectedWithdrawals.get(i).getIndex());
-      }
+      final Withdrawal withdrawal = expectedWithdrawals.get(i);
       beaconStateMutators.decreaseBalance(
           state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
     }
 
-    if (payloadWithdrawals.size() > 0) {
-      final Withdrawal latestWithdrawal = payloadWithdrawals.get(payloadWithdrawals.size() - 1);
+    if (expectedWithdrawals.size() > 0) {
+      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
       final int nextWithdrawalValidatorIndex =
           incrementValidatorIndex(
               latestWithdrawal.getValidatorIndex().intValue(), genericState.getValidators().size());

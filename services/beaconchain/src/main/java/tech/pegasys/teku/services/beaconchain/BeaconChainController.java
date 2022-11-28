@@ -212,7 +212,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  protected volatile OperationPool<SignedBlsToExecutionChange> signedBlsToExecutionChangePool;
+  protected volatile OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
@@ -512,7 +512,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SignedBlsToExecutionChangeValidator validator =
         new SignedBlsToExecutionChangeValidator(spec, recentChainData);
 
-    signedBlsToExecutionChangePool =
+    blsToExecutionChangePool =
         new OperationPool<>(
             "SignedBlsToExecutionChangePool",
             metricsSystem,
@@ -543,6 +543,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .attesterSlashingPool(attesterSlashingPool)
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
+            .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
@@ -816,7 +817,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
-            .gossipedSignedBlsToExecutionChangeProcessor(signedBlsToExecutionChangePool::addRemote)
+            .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(storageQueryChannel)
@@ -838,7 +839,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
     voluntaryExitPool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
-    signedBlsToExecutionChangePool.subscribeOperationAdded(
+    blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
   }
 

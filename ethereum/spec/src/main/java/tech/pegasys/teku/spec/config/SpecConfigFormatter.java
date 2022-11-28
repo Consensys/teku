@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.config;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Converter;
 
-class SpecConfigFormatter {
+public class SpecConfigFormatter {
   private static final Converter<String, String> CAMEL_TO_SNAKE_CASE =
       CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
 

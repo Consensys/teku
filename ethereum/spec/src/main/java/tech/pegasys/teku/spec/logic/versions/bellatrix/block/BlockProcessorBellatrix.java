@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -203,7 +204,8 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   }
 
   @Override
-  public void processWithdrawals(final MutableBeaconState state, final ExecutionPayload payload)
+  public void processWithdrawals(
+      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in Bellatrix");
   }

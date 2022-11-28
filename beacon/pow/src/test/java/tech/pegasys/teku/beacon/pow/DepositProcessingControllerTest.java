@@ -38,8 +38,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class DepositProcessingControllerTest {
 

@@ -79,7 +79,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
