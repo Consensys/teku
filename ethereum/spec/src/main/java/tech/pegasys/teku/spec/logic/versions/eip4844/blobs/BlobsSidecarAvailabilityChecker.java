@@ -45,16 +45,6 @@ public interface BlobsSidecarAvailabilityChecker {
   SafeFuture<BlobsSidecarAndValidationResult> NOT_AVAILABLE_RESULT_FUTURE =
       SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE);
 
-  static BlobsSidecarAndValidationResult validResult(final BlobsSidecar blobsSidecar) {
-    return new BlobsSidecarAndValidationResult(
-        BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar));
-  }
-
-  static BlobsSidecarAndValidationResult invalidResult(final BlobsSidecar blobsSidecar) {
-    return new BlobsSidecarAndValidationResult(
-        BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar));
-  }
-
   class BlobsSidecarAndValidationResult {
     private final BlobsSidecarValidationResult validationResult;
     private final Optional<BlobsSidecar> blobsSidecar;
@@ -67,7 +57,17 @@ public interface BlobsSidecarAvailabilityChecker {
         new BlobsSidecarAndValidationResult(
             BlobsSidecarValidationResult.NOT_REQUIRED, Optional.empty());
 
-    public BlobsSidecarAndValidationResult(
+    public static BlobsSidecarAndValidationResult validResult(final BlobsSidecar blobsSidecar) {
+      return new BlobsSidecarAndValidationResult(
+          BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar));
+    }
+
+    public static BlobsSidecarAndValidationResult invalidResult(final BlobsSidecar blobsSidecar) {
+      return new BlobsSidecarAndValidationResult(
+          BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar));
+    }
+
+    private BlobsSidecarAndValidationResult(
         final BlobsSidecarValidationResult validationResult,
         final Optional<BlobsSidecar> blobsSidecar) {
       this.validationResult = validationResult;

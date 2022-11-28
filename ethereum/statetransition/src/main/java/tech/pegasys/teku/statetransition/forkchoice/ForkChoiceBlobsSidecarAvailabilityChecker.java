@@ -95,14 +95,14 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
                   .map(SszKZGCommitment::getKZGCommitment)
                   .collect(Collectors.toUnmodifiableList()),
               blobsSidecar)) {
-        return BlobsSidecarAvailabilityChecker.invalidResult(blobsSidecar);
+        return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar);
       }
     } catch (RuntimeException ex) {
       // TODO we must revisit this once we plug the kzg library
-      return BlobsSidecarAvailabilityChecker.invalidResult(blobsSidecar);
+      return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar);
     }
 
-    return BlobsSidecarAvailabilityChecker.validResult(blobsSidecar);
+    return BlobsSidecarAndValidationResult.validResult(blobsSidecar);
   }
 
   private boolean isBlockInDataAvailabilityWindow() {
