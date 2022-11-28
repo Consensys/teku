@@ -113,8 +113,8 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                     ? BLSSignatureVerifier.NO_OP
                     : BLSSignatureVerifier.SIMPLE,
                 Optional.empty(),
-            KzgCommitmentsProcessor.NOOP,
-                    BlobsSidecarAvailabilityChecker.NOOP);
+                KzgCommitmentsProcessor.NOOP,
+                BlobsSidecarAvailabilityChecker.NOOP);
       }
       return result;
     } catch (StateTransitionException e) {
