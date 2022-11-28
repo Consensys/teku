@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 
 public interface ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella {
 
-  UInt64 getExcessBlobs();
+  UInt256 getExcessDataGas();
 
   @Override
   default Optional<ExecutionPayloadHeaderEip4844> toVersionEip4844() {

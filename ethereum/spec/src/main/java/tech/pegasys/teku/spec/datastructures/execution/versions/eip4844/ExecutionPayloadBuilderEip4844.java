@@ -16,18 +16,18 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadBuilderCapella;
 
 public class ExecutionPayloadBuilderEip4844 extends ExecutionPayloadBuilderCapella {
   private ExecutionPayloadSchemaEip4844 schema;
 
-  protected UInt64 excessBlobs;
+  protected UInt256 excessDataGas;
 
   public ExecutionPayloadBuilderEip4844 schema(final ExecutionPayloadSchemaEip4844 schema) {
     this.schema = schema;
@@ -35,8 +35,9 @@ public class ExecutionPayloadBuilderEip4844 extends ExecutionPayloadBuilderCapel
   }
 
   @Override
-  public ExecutionPayloadBuilderEip4844 excessBlobs(final Supplier<UInt64> excessBlobsSupplier) {
-    this.excessBlobs = excessBlobsSupplier.get();
+  public ExecutionPayloadBuilderEip4844 excessDataGas(
+      final Supplier<UInt256> excessDataGasSupplier) {
+    this.excessDataGas = excessDataGasSupplier.get();
     return this;
   }
 
@@ -48,7 +49,7 @@ public class ExecutionPayloadBuilderEip4844 extends ExecutionPayloadBuilderCapel
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(excessBlobs, "excessBlobs must be specified");
+    checkNotNull(excessDataGas, "excessDataGas must be specified");
   }
 
   @Override
@@ -68,7 +69,7 @@ public class ExecutionPayloadBuilderEip4844 extends ExecutionPayloadBuilderCapel
         SszUInt64.of(timestamp),
         schema.getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszUInt64.of(excessBlobs),
+        SszUInt256.of(excessDataGas),
         SszBytes32.of(blockHash),
         transactions.stream()
             .map(schema.getTransactionSchema()::fromBytes)

@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements ExecutionPayload {
 
-  @JsonProperty("excess_blobs")
-  public final UInt64 excessBlobs;
+  @JsonProperty("excess_data_gas")
+  public final UInt256 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadEip4844(
@@ -49,7 +49,7 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
       @JsonProperty("timestamp") final UInt64 timestamp,
       @JsonProperty("extra_data") final Bytes extraData,
       @JsonProperty("base_fee_per_gas") final UInt256 baseFeePerGas,
-      @JsonProperty("excess_blobs") final UInt64 excessBlobs,
+      @JsonProperty("excess_data_gas") final UInt256 excessDataGas,
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals) {
@@ -69,20 +69,20 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
         blockHash,
         transactions,
         withdrawals);
-    this.excessBlobs = excessBlobs;
+    this.excessDataGas = excessDataGas;
   }
 
   public ExecutionPayloadEip4844(
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
-    this.excessBlobs = executionPayload.toVersionEip4844().orElseThrow().getExcessBlobs();
+    this.excessDataGas = executionPayload.toVersionEip4844().orElseThrow().getExcessDataGas();
   }
 
   @Override
   protected ExecutionPayloadBuilder applyToBuilder(
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
-    return super.applyToBuilder(executionPayloadSchema, builder).excessBlobs(() -> excessBlobs);
+    return super.applyToBuilder(executionPayloadSchema, builder).excessDataGas(() -> excessDataGas);
   }
 
   @Override
@@ -102,12 +102,12 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
       return false;
     }
     final ExecutionPayloadEip4844 that = (ExecutionPayloadEip4844) o;
-    return Objects.equals(excessBlobs, that.excessBlobs);
+    return Objects.equals(excessDataGas, that.excessDataGas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), excessBlobs);
+    return Objects.hash(super.hashCode(), excessDataGas);
   }
 
   @Override
@@ -125,7 +125,7 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
         .add("timestamp", timestamp)
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
-        .add("excessBlobs", excessBlobs)
+        .add("excessDataGas", excessDataGas)
         .add("blockHash", blockHash)
         .add("transactions", transactions)
         .add("withdrawals", withdrawals)

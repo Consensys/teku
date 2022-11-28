@@ -233,7 +233,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .transactions(
                             List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
                         .withdrawals(Collections::emptyList)
-                        .excessBlobs(() -> UInt64.ZERO));
+                        .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
     lastValidBlock =
         Optional.of(
