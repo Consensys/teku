@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -143,6 +144,11 @@ class BlindedBeaconBlockBodyCapellaImpl
   @Override
   public SszList<SignedVoluntaryExit> getVoluntaryExits() {
     return getField7();
+  }
+
+  @Override
+  public Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
+    return Optional.of(getBlsToExecutionChanges());
   }
 
   @Override
