@@ -128,7 +128,7 @@ public class HistoricalBlockSyncService extends Service {
     ReconstructHistoricalStatesService reconstructHistoricalStatesService =
         reconstructHistoricStatesEnabled
             ? new ReconstructHistoricalStatesService(
-                storageUpdateChannel, chainData, spec, genesisStateResource)
+                storageUpdateChannel, chainData, spec, metricsSystem, genesisStateResource)
             : null;
 
     return new HistoricalBlockSyncService(

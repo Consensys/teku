@@ -24,9 +24,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
@@ -41,11 +44,12 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 public class ReconstructHistoricalStatesService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final CombinedChainDataClient chainDataClient;
   private final Spec spec;
+  private final CombinedChainDataClient chainDataClient;
   private final Optional<String> genesisStateResource;
   private final StorageUpdateChannel storageUpdateChannel;
   private final StatusLogger statusLogger;
+  private final SettableGauge reconstructGauge;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final SafeFuture<Void> stopped = new SafeFuture<>();
@@ -54,14 +58,22 @@ public class ReconstructHistoricalStatesService extends Service {
       final StorageUpdateChannel storageUpdateChannel,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final Optional<String> genesisStateResource) {
-    this(storageUpdateChannel, chainDataClient, spec, genesisStateResource, STATUS_LOG);
+    this(
+        storageUpdateChannel,
+        chainDataClient,
+        spec,
+        metricsSystem,
+        genesisStateResource,
+        STATUS_LOG);
   }
 
   public ReconstructHistoricalStatesService(
       final StorageUpdateChannel storageUpdateChannel,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final Optional<String> genesisStateResource,
       final StatusLogger statusLogger) {
     this.storageUpdateChannel = storageUpdateChannel;
@@ -69,6 +81,13 @@ public class ReconstructHistoricalStatesService extends Service {
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
     this.statusLogger = statusLogger;
+
+    this.reconstructGauge =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "reconstruct_historical_states_slot",
+            "The slot the reconstruct historical states service has last saved");
   }
 
   @Override
@@ -153,6 +172,7 @@ public class ReconstructHistoricalStatesService extends Service {
               }
 
               final SignedBeaconBlock block = maybeBlock.get();
+              reconstructGauge.set(block.getSlot().doubleValue());
               context.currentState = spec.replayValidatedBlock(context.currentState, block);
               return storageUpdateChannel.onReconstructedFinalizedState(
                   context.currentState, block.getRoot());

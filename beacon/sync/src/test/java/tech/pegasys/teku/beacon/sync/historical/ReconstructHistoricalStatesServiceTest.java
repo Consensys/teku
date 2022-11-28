@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,6 +56,7 @@ public class ReconstructHistoricalStatesServiceTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private ReconstructHistoricalStatesService service;
   private final StatusLogger statusLogger = mock(StatusLogger.class);
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
   @BeforeEach
   void setup() {
@@ -224,6 +227,11 @@ public class ReconstructHistoricalStatesServiceTest {
   private void createService(final Optional<String> genesisStateResource) {
     service =
         new ReconstructHistoricalStatesService(
-            storageUpdateChannel, chainDataClient, spec, genesisStateResource, statusLogger);
+            storageUpdateChannel,
+            chainDataClient,
+            spec,
+            metricsSystem,
+            genesisStateResource,
+            statusLogger);
   }
 }
