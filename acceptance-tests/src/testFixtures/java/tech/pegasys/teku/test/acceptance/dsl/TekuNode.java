@@ -333,8 +333,7 @@ public class TekuNode extends Node {
                   .executionPayload
                   .toVersionBellatrix()
                   .orElseThrow()
-                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
-                  .orElseThrow();
+                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
 
           assertThat(executionPayload.isDefault()).isFalse();
           LOG.debug(

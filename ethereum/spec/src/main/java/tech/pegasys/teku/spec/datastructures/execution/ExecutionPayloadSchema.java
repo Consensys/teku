@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadSchemaEip4844;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszContainerSchema<T> {
@@ -33,7 +35,11 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload> extends SszC
 
   SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired();
 
+  WithdrawalSchema getWithdrawalSchemaRequired();
+
   LongList getBlindedNodeGeneralizedIndices();
+
+  ExecutionPayload createExecutionPayload(Consumer<ExecutionPayloadBuilder> builderConsumer);
 
   default Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
     return Optional.empty();

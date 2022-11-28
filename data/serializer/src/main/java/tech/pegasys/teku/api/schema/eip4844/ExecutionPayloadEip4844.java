@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema.eip4844;
 
-import static java.util.stream.Collectors.toList;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -29,8 +27,8 @@ import tech.pegasys.teku.api.schema.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.api.schema.capella.Withdrawal;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements ExecutionPayload {
 
@@ -81,46 +79,10 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
   }
 
   @Override
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
-      asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
-
-    final Optional<SchemaDefinitionsEip4844> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
-
-    if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-EIP4844 slot %s", slot);
-      throw new IllegalArgumentException(message);
-    }
-
-    return maybeSchema.map(
-        schemaDefinitionsEip4844 ->
-            schemaDefinitionsEip4844
-                .getExecutionPayloadSchema()
-                .toVersionEip4844()
-                .orElseThrow()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    excessBlobs,
-                    blockHash,
-                    transactions,
-                    withdrawals.stream()
-                        .map(
-                            withdrawal ->
-                                withdrawal.asInternalWithdrawal(
-                                    schemaDefinitionsEip4844.getWithdrawalSchema()))
-                        .collect(toList())));
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return super.applyToBuilder(executionPayloadSchema, builder).excessBlobs(() -> excessBlobs);
   }
 
   @Override

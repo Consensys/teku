@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
@@ -70,24 +71,28 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
 
   public ExecutionPayload asInternalExecutionPayload(
       ExecutionPayloadSchema<?> executionPayloadSchema) {
-    return executionPayloadSchema
-        .toVersionBellatrix()
-        .orElseThrow()
-        .create(
-            parentHash,
-            feeRecipient,
-            stateRoot,
-            receiptsRoot,
-            logsBloom,
-            prevRandao,
-            blockNumber,
-            gasLimit,
-            gasUsed,
-            timestamp,
-            extraData,
-            baseFeePerGas,
-            blockHash,
-            transactions);
+    return executionPayloadSchema.createExecutionPayload(
+        builder -> applyToBuilder(executionPayloadSchema, builder));
+  }
+
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return builder
+        .parentHash(parentHash)
+        .feeRecipient(feeRecipient)
+        .stateRoot(stateRoot)
+        .receiptsRoot(receiptsRoot)
+        .logsBloom(logsBloom)
+        .prevRandao(prevRandao)
+        .blockNumber(blockNumber)
+        .gasLimit(gasLimit)
+        .gasUsed(gasUsed)
+        .timestamp(timestamp)
+        .extraData(extraData)
+        .baseFeePerGas(baseFeePerGas)
+        .blockHash(blockHash)
+        .transactions(transactions);
   }
 
   public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
