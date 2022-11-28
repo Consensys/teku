@@ -27,7 +27,7 @@ public interface BlobsSidecarAvailabilityChecker {
 
         @Override
         public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
-          return NOT_REQUIRED_RESULT;
+          return NOT_AVAILABLE_RESULT_FUTURE;
         }
       };
 
@@ -42,34 +42,30 @@ public interface BlobsSidecarAvailabilityChecker {
     VALID
   }
 
-  SafeFuture<BlobsSidecarAndValidationResult> NOT_REQUIRED_RESULT =
-      SafeFuture.completedFuture(
-          new BlobsSidecarAndValidationResult(
-              BlobsSidecarValidationResult.NOT_REQUIRED, Optional.empty()));
-
-  SafeFuture<BlobsSidecarAndValidationResult> NOT_AVAILABLE_RESULT =
+  SafeFuture<BlobsSidecarAndValidationResult> NOT_AVAILABLE_RESULT_FUTURE =
       SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE);
 
-  static SafeFuture<BlobsSidecarAndValidationResult> validResult(final BlobsSidecar blobsSidecar) {
-    return SafeFuture.completedFuture(
-        new BlobsSidecarAndValidationResult(
-            BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar)));
+  static BlobsSidecarAndValidationResult validResult(final BlobsSidecar blobsSidecar) {
+    return new BlobsSidecarAndValidationResult(
+        BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar));
   }
 
-  static SafeFuture<BlobsSidecarAndValidationResult> invalidResult(
-      final BlobsSidecar blobsSidecar) {
-    return SafeFuture.completedFuture(
-        new BlobsSidecarAndValidationResult(
-            BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar)));
+  static BlobsSidecarAndValidationResult invalidResult(final BlobsSidecar blobsSidecar) {
+    return new BlobsSidecarAndValidationResult(
+        BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar));
   }
 
   class BlobsSidecarAndValidationResult {
     private final BlobsSidecarValidationResult validationResult;
     private final Optional<BlobsSidecar> blobsSidecar;
 
-    private static final BlobsSidecarAndValidationResult NOT_AVAILABLE =
+    public static final BlobsSidecarAndValidationResult NOT_AVAILABLE =
         new BlobsSidecarAndValidationResult(
             BlobsSidecarValidationResult.NOT_AVAILABLE, Optional.empty());
+
+    public static final BlobsSidecarAndValidationResult NOT_REQUIRED =
+        new BlobsSidecarAndValidationResult(
+            BlobsSidecarValidationResult.NOT_REQUIRED, Optional.empty());
 
     public BlobsSidecarAndValidationResult(
         final BlobsSidecarValidationResult validationResult,

@@ -35,7 +35,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   private SignedBeaconBlock block;
   private Optional<BlobsSidecar> blobsSidecar;
 
-  private final SafeFuture<BlobsSidecarAndValidationResult> validationResult = new SafeFuture<>();
+  private Optional<SafeFuture<BlobsSidecarAndValidationResult>> validationResult = Optional.empty();
 
   public ForkChoiceBlobsSidecarAvailabilityChecker(
       final SpecVersion specVersion,
@@ -50,16 +50,16 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    SafeFuture.of(this::validateBlobsSidecar).propagateTo(validationResult);
+    validationResult = Optional.of(SafeFuture.of(this::validateBlobsSidecar));
     return true;
   }
 
   @Override
   public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
-    return validationResult;
+    return validationResult.orElse(NOT_AVAILABLE_RESULT_FUTURE);
   }
 
-  private SafeFuture<BlobsSidecarAndValidationResult> validateBlobsSidecar() {
+  private BlobsSidecarAndValidationResult validateBlobsSidecar() {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
     // so if we have it we do want to validate it regardless
@@ -70,14 +70,14 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
     // when blobs are not available, we check if it is ok to not have them based on
     // the required availability window.
     if (isBlockInDataAvailabilityWindow()) {
-      return BlobsSidecarAvailabilityChecker.NOT_AVAILABLE_RESULT;
+      return BlobsSidecarAndValidationResult.NOT_AVAILABLE;
     }
 
     // block is older than the availability window
-    return BlobsSidecarAvailabilityChecker.NOT_REQUIRED_RESULT;
+    return BlobsSidecarAndValidationResult.NOT_REQUIRED;
   }
 
-  private SafeFuture<BlobsSidecarAndValidationResult> validate(final BlobsSidecar blobsSidecar) {
+  private BlobsSidecarAndValidationResult validate(final BlobsSidecar blobsSidecar) {
     final BeaconBlockBodyEip4844 blockBody =
         block
             .getBeaconBlock()

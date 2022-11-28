@@ -23,6 +23,7 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -58,12 +60,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     prepareBlockAndBlobOutsideAvailabilityWindow(false);
 
     blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValueMatching(
-            result ->
-                !result.isFailure()
-                    && result.isNotRequired()
-                    && result.getBlobsSidecar().isEmpty());
+    assertNotRequired(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
   @Test
@@ -71,12 +68,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     prepareBlockAndBlobInAvailabilityWindow(false);
 
     blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValueMatching(
-            result ->
-                result.isFailure()
-                    && result.getValidationResult() == BlobsSidecarValidationResult.NOT_AVAILABLE
-                    && result.getBlobsSidecar().isEmpty());
+    assertNotAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
   @Test
@@ -84,12 +76,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
     blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValueMatching(
-            result ->
-                result.isFailure()
-                    && result.getValidationResult() == BlobsSidecarValidationResult.INVALID
-                    && result.getBlobsSidecar().orElseThrow().equals(blobsSidecar));
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
   @Test
@@ -100,12 +87,46 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
         .thenThrow(new RuntimeException("ops!"));
 
     blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+  }
+
+  @Test
+  void shouldReturnNotAvailableWhenNotDataAvailabilityCheckNotInitiated() {
+    prepareBlockAndBlobInAvailabilityWindow(true);
+
+    assertNotAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+  }
+
+  private void assertNotRequired(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+    assertThat(availabilityCheck)
+        .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
+        .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
-            result ->
-                result.isFailure()
-                    && result.getValidationResult() == BlobsSidecarValidationResult.INVALID
-                    && result.getBlobsSidecar().orElseThrow().equals(blobsSidecar));
+            BlobsSidecarAndValidationResult::isNotRequired, "is not required")
+        .isCompletedWithValueMatching(
+            result -> result.getBlobsSidecar().isEmpty(), "has empty blob");
+  }
+
+  private void assertInvalid(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+    assertThat(availabilityCheck)
+        .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
+        .isCompletedWithValueMatching(
+            result -> result.getValidationResult() == BlobsSidecarValidationResult.INVALID,
+            "is not available")
+        .isCompletedWithValueMatching(
+            result -> result.getBlobsSidecar().orElseThrow().equals(blobsSidecar),
+            "has not empty blob");
+  }
+
+  private void assertNotAvailable(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+    assertThat(availabilityCheck)
+        .isCompletedWithValueMatching(BlobsSidecarAndValidationResult::isFailure, "is failure")
+        .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
+        .isCompletedWithValueMatching(
+            result -> result.getValidationResult() == BlobsSidecarValidationResult.NOT_AVAILABLE,
+            "is not available")
+        .isCompletedWithValueMatching(
+            result -> result.getBlobsSidecar().isEmpty(), "has empty blob");
   }
 
   private void prepareBlockAndBlobInAvailabilityWindow(boolean blobAvailable) {
