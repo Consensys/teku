@@ -190,7 +190,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected BlockValidationResult validateBlockPreProcessing(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier) {
+      final BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
     return BlockValidationResult.SUCCESSFUL;
   }
 
