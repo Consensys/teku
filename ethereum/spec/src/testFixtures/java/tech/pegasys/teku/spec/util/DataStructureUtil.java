@@ -595,7 +595,7 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
             randomUInt256(),
-            randomUInt64(),
+            randomUInt256(),
             randomBytes32(),
             randomBytes32(),
             randomBytes32());
@@ -710,7 +710,7 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
             randomUInt256(),
-            randomUInt64(),
+            randomUInt256(),
             randomBytes32(),
             randomExecutionPayloadTransactions(),
             randomExecutionPayloadWithdrawals());

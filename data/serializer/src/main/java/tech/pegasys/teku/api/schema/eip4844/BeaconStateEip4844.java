@@ -157,7 +157,7 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
             instance.latestExecutionPayloadHeader.timestamp,
             instance.latestExecutionPayloadHeader.extraData,
             instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.excessBlobs,
+            instance.latestExecutionPayloadHeader.excessDataGas,
             instance.latestExecutionPayloadHeader.blockHash,
             instance.latestExecutionPayloadHeader.transactionsRoot,
             instance.latestExecutionPayloadHeader.withdrawalsRoot));
