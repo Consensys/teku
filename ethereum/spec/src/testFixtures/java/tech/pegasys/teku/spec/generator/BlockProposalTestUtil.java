@@ -109,7 +109,7 @@ public class BlockProposalTestUtil {
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock))))
+                                            newSlot, blockSlotState, transactions, terminalBlock))))
                     .blsToExecutionChanges(
                         () ->
                             blsToExecutionChange.orElseGet(
@@ -228,80 +228,25 @@ public class BlockProposalTestUtil {
     Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
     UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
-    // Bellatrix version
-    return schema
-        .toVersionBellatrix()
-        .map(
-            schemaBellatrix ->
-                schemaBellatrix.create(
-                    parentHash,
-                    Bytes20.ZERO,
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes256(),
-                    specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch),
-                    newSlot,
-                    UInt64.valueOf(30_000_000L),
-                    UInt64.valueOf(30_000_000L),
-                    specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
-                    dataStructureUtil.randomBytes32(),
-                    UInt256.ONE,
-                    dataStructureUtil.randomBytes32(),
-                    transactions.orElse(Collections.emptyList())))
-        // Capella version
-        .or(
-            () ->
-                schema
-                    .toVersionCapella()
-                    .map(
-                        schemaCapella ->
-                            schemaCapella.create(
-                                parentHash,
-                                Bytes20.ZERO,
-                                dataStructureUtil.randomBytes32(),
-                                dataStructureUtil.randomBytes32(),
-                                dataStructureUtil.randomBytes256(),
-                                specVersion
-                                    .beaconStateAccessors()
-                                    .getRandaoMix(state, currentEpoch),
-                                newSlot,
-                                UInt64.valueOf(30_000_000L),
-                                UInt64.valueOf(30_000_000L),
-                                specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
-                                dataStructureUtil.randomBytes32(),
-                                UInt256.ONE,
-                                dataStructureUtil.randomBytes32(),
-                                transactions.orElse(Collections.emptyList()),
-                                List.of(
-                                    dataStructureUtil.randomWithdrawal(),
-                                    dataStructureUtil.randomWithdrawal()))))
-        // Eip4844 version
-        .or(
-            () ->
-                schema
-                    .toVersionEip4844()
-                    .map(
-                        schemaEip4844 ->
-                            schemaEip4844.create(
-                                parentHash,
-                                Bytes20.ZERO,
-                                dataStructureUtil.randomBytes32(),
-                                dataStructureUtil.randomBytes32(),
-                                dataStructureUtil.randomBytes256(),
-                                specVersion
-                                    .beaconStateAccessors()
-                                    .getRandaoMix(state, currentEpoch),
-                                newSlot,
-                                UInt64.valueOf(30_000_000L),
-                                UInt64.valueOf(30_000_000L),
-                                specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
-                                dataStructureUtil.randomBytes32(),
-                                UInt256.ONE,
-                                UInt256.ONE,
-                                dataStructureUtil.randomBytes32(),
-                                transactions.orElse(Collections.emptyList()),
-                                List.of())))
-        .orElseThrow();
+    return schema.createExecutionPayload(
+        builder ->
+            builder
+                .parentHash(parentHash)
+                .feeRecipient(Bytes20.ZERO)
+                .stateRoot(dataStructureUtil.randomBytes32())
+                .receiptsRoot(dataStructureUtil.randomBytes32())
+                .logsBloom(dataStructureUtil.randomBytes256())
+                .prevRandao(specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch))
+                .blockNumber(newSlot)
+                .gasLimit(UInt64.valueOf(30_000_000L))
+                .gasUsed(UInt64.valueOf(30_000_000L))
+                .timestamp(specVersion.miscHelpers().computeTimeAtSlot(state, newSlot))
+                .extraData(dataStructureUtil.randomBytes32())
+                .baseFeePerGas(UInt256.ONE)
+                .blockHash(dataStructureUtil.randomBytes32())
+                .transactions(transactions.orElse(Collections.emptyList()))
+                .withdrawals(List::of)
+                .excessDataGas(() -> UInt256.ZERO));
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {
