@@ -45,6 +45,7 @@ public class DoppelgangerDetector {
   private static final Logger LOG = LogManager.getLogger();
   private final StatusLogger statusLog;
   private final Duration checkDelay;
+  private final int maxEpochs;
   private final Duration timeout;
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
@@ -59,7 +60,8 @@ public class DoppelgangerDetector {
       final TimeProvider timeProvider,
       final GenesisDataProvider genesisDataProvider,
       final Duration checkDelay,
-      final Duration timeout) {
+      final Duration timeout,
+      final int maxEpochs) {
     this(
         STATUS_LOG,
         asyncRunner,
@@ -68,7 +70,8 @@ public class DoppelgangerDetector {
         timeProvider,
         genesisDataProvider,
         checkDelay,
-        timeout);
+        timeout,
+        maxEpochs);
   }
 
   public DoppelgangerDetector(
@@ -79,7 +82,8 @@ public class DoppelgangerDetector {
       final TimeProvider timeProvider,
       final GenesisDataProvider genesisDataProvider,
       final Duration checkDelay,
-      final Duration timeout) {
+      final Duration timeout,
+      final int maxEpochs) {
     this.statusLog = statusLog;
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
@@ -88,6 +92,7 @@ public class DoppelgangerDetector {
     this.genesisDataProvider = genesisDataProvider;
     this.checkDelay = checkDelay;
     this.timeout = timeout;
+    this.maxEpochs = maxEpochs;
   }
 
   protected SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
@@ -164,7 +169,7 @@ public class DoppelgangerDetector {
                   LOG.info("Validators doppelganger check started at epoch {}", epochAtStart.get());
                 }
 
-                if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
+                if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs)) {
                   statusLog.doppelgangerDetectionEnd(
                       pubKeys.stream()
                           .map(BLSPublicKey::toAbbreviatedString)

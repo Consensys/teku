@@ -59,6 +59,7 @@ public class DoppelgangerDetectorTest {
 
   private final Duration checkDelay = Duration.ofSeconds(2);
   private final Duration timeout = Duration.ofMinutes(15);
+  private final int maxEpochs = 2;
   private final BLSPublicKey pubKey1 = dataStructureUtil.randomPublicKey();
   private final BLSPublicKey pubKey2 = dataStructureUtil.randomPublicKey();
   private final BLSPublicKey pubKey3 = dataStructureUtil.randomPublicKey();
@@ -93,7 +94,8 @@ public class DoppelgangerDetectorTest {
             timeProvider,
             genesisDataProvider,
             checkDelay,
-            timeout);
+            timeout,
+            maxEpochs);
   }
 
   @AfterEach

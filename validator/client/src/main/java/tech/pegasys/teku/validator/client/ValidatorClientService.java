@@ -69,6 +69,7 @@ public class ValidatorClientService extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(5);
   private static final Duration DOPPELGANGER_DETECTOR_TIMEOUT = Duration.ofMinutes(15);
+  private static final int DOPPELGANGER_DETECTOR_MAX_EPOCHS = 2;
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
@@ -216,7 +217,8 @@ public class ValidatorClientService extends Service {
                               services.getTimeProvider(),
                               genesisDataProvider,
                               DOPPELGANGER_DETECTOR_CHECK_DELAY,
-                              DOPPELGANGER_DETECTOR_TIMEOUT));
+                              DOPPELGANGER_DETECTOR_TIMEOUT,
+                              DOPPELGANGER_DETECTOR_MAX_EPOCHS));
                 } else {
                   maybeDoppelgangerDetector = Optional.empty();
                 }
@@ -262,7 +264,8 @@ public class ValidatorClientService extends Service {
             timeProvider,
             genesisDataProvider,
             DOPPELGANGER_DETECTOR_CHECK_DELAY,
-            DOPPELGANGER_DETECTOR_TIMEOUT);
+            DOPPELGANGER_DETECTOR_TIMEOUT,
+            DOPPELGANGER_DETECTOR_MAX_EPOCHS);
     maybeDoppelgangerDetector = Optional.of(doppelgangerDetector);
   }
 
