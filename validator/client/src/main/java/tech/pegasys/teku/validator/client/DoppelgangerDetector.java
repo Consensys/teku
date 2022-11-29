@@ -91,7 +91,7 @@ public class DoppelgangerDetector {
   }
 
   protected SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
-      Set<BLSPublicKey> pubKeys) {
+      final Set<BLSPublicKey> pubKeys) {
     DoppelgangerDetectionTask doppelgangerDetectionTask =
         new DoppelgangerDetectionTask(timeProvider.getTimeInSeconds(), pubKeys);
     return doppelgangerDetectionTask.performDoppelgangerDetectionTask();
@@ -106,7 +106,7 @@ public class DoppelgangerDetector {
     private final Set<BLSPublicKey> pubKeys;
     private Optional<UInt64> epochAtStart = Optional.empty();
 
-    public DoppelgangerDetectionTask(UInt64 startTime, Set<BLSPublicKey> pubKeys) {
+    public DoppelgangerDetectionTask(final UInt64 startTime, final Set<BLSPublicKey> pubKeys) {
       this.startTime = startTime;
       this.pubKeys = pubKeys;
     }
@@ -140,7 +140,7 @@ public class DoppelgangerDetector {
           () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
     }
 
-    private SafeFuture<Void> performDoppelgangerCheck(Set<BLSPublicKey> pubKeys) {
+    private SafeFuture<Void> performDoppelgangerCheck(final Set<BLSPublicKey> pubKeys) {
       if (timeProvider
           .getTimeInSeconds()
           .minus(startTime)
