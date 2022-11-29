@@ -79,7 +79,6 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
-
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
@@ -186,7 +185,7 @@ public class ValidatorClientService extends Service {
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
-    final Optional<ProposerConfigManager> finalProposerConfigManger = proposerConfigManager;
+    Optional<ProposerConfigManager> finalProposerConfigManager = proposerConfigManager;
 
     asyncRunner
         .runAsync(
@@ -206,30 +205,14 @@ public class ValidatorClientService extends Service {
         .thenCompose(
             __ -> {
               if (validatorApiConfig.isRestApiEnabled()) {
-                final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
-                if (validatorConfig.isDoppelgangerDetectionEnabled()) {
-                  maybeDoppelgangerDetector =
-                      Optional.of(
-                          new DoppelgangerDetector(
-                              asyncRunner,
-                              validatorApiChannel,
-                              validatorClientService.spec,
-                              services.getTimeProvider(),
-                              genesisDataProvider,
-                              DOPPELGANGER_DETECTOR_CHECK_DELAY,
-                              DOPPELGANGER_DETECTOR_TIMEOUT,
-                              DOPPELGANGER_DETECTOR_MAX_EPOCHS));
-                } else {
-                  maybeDoppelgangerDetector = Optional.empty();
-                }
                 validatorClientService.initializeValidatorRestApi(
                     validatorApiConfig,
-                    finalProposerConfigManger,
+                    finalProposerConfigManager,
                     new ActiveKeyManager(
                         validatorLoader,
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                     services.getDataDirLayout(),
-                    maybeDoppelgangerDetector);
+                    validatorClientService.maybeDoppelgangerDetector);
               } else {
                 LOG.info("validator-api-enabled is false, not starting rest api.");
               }

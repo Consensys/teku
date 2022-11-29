@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -364,6 +365,14 @@ public class DoppelgangerDetectorTest {
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
+  @Test
+  public void shouldNotStartDoppelgangerDetectionWhenEmptyKeySet() {
+    SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
+        doppelgangerDetector.performDoppelgangerDetection(new HashSet<>());
+    logCaptor.assertErrorLog("Unable to perform doppelganger detection. No public keys provided");
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
+  }
+
   private String doppelgangerDetectorStartEpochLog(int epoch) {
     return String.format("Validators doppelganger check started at epoch %d", epoch);
   }
@@ -371,16 +380,5 @@ public class DoppelgangerDetectorTest {
   private String performingDoppelgangerCheckLog(int epoch, int slot) {
     return String.format(
         "Performing a validators doppelganger check at epoch %d, slot %d", epoch, slot);
-  }
-
-  private String startUpLog(Set<BLSPublicKey> publicKeys) {
-    return String.format(
-        "Starting doppelganger detection for public keys: %s", formatPubKeys(publicKeys));
-  }
-
-  private String formatPubKeys(Set<BLSPublicKey> publicKeys) {
-    return publicKeys.stream()
-        .map(BLSPublicKey::toAbbreviatedString)
-        .collect(Collectors.joining(", "));
   }
 }
