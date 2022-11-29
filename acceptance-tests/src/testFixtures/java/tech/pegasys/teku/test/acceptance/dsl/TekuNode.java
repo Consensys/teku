@@ -83,7 +83,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -734,8 +733,15 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
+    public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
       configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder ->
+                          bellatrixBuilder.terminalTotalDifficulty(
+                              UInt256.valueOf(totalTerminalDifficulty))));
       return this;
     }
 
