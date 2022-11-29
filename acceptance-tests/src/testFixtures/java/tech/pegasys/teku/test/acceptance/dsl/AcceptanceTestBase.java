@@ -32,6 +32,12 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
+  static {
+    // Disable libsodium in tuweni Hash because the check for its presence can be very slow.
+    System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
+  }
+
+
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
 
