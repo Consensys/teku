@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOBS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -67,7 +67,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt64,
+        SszUInt256,
         SszBytes32,
         SszBytes32,
         SszBytes32>
@@ -91,7 +91,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
@@ -118,7 +118,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
       UInt64 timestamp,
       Bytes extraData,
       UInt256 baseFeePerGas,
-      UInt64 excessBlobs,
+      UInt256 excessDataGas,
       Bytes32 blockHash,
       Bytes32 transactionsRoot,
       Bytes32 withdrawalsRoot) {
@@ -136,7 +136,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszUInt64.of(timestamp),
         getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszUInt64.of(excessBlobs),
+        SszUInt256.of(excessDataGas),
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot));
@@ -158,7 +158,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszUInt64.of(executionPayloadHeaderCapella.getTimestamp()),
         getExtraDataSchema().fromBytes(executionPayloadHeaderCapella.getExtraData()),
         SszUInt256.of(executionPayloadHeaderCapella.getBaseFeePerGas()),
-        SszUInt64.ZERO,
+        SszUInt256.ZERO,
         SszBytes32.of(executionPayloadHeaderCapella.getBlockHash()),
         SszBytes32.of(executionPayloadHeaderCapella.getTransactionsRoot()),
         SszBytes32.of(executionPayloadHeaderCapella.getWithdrawalsRoot()));
@@ -208,7 +208,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszUInt64.of(executionPayload.getTimestamp()),
         getExtraDataSchema().fromBytes(executionPayload.getExtraData()),
         SszUInt256.of(executionPayload.getBaseFeePerGas()),
-        SszUInt64.of(executionPayload.getExcessBlobs()),
+        SszUInt256.of(executionPayload.getExcessDataGas()),
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));

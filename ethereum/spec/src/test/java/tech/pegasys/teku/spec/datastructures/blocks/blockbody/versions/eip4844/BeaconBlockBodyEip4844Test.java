@@ -43,7 +43,7 @@ class BeaconBlockBodyEip4844Test extends AbstractBeaconBlockBodyTest<BeaconBlock
         SpecMilestone.EIP4844,
         () -> {
           syncAggregate = dataStructureUtil.randomSyncAggregate();
-          executionPayload = dataStructureUtil.randomExecutionPayloadEip4844();
+          executionPayload = dataStructureUtil.randomExecutionPayload();
           blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
           blobKzgCommitments = dataStructureUtil.randomSszKzgCommitmentList();
         });

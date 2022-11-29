@@ -595,7 +595,7 @@ public final class DataStructureUtil {
             randomUInt64(),
             randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
             randomUInt256(),
-            randomUInt64(),
+            randomUInt256(),
             randomBytes32(),
             randomBytes32(),
             randomBytes32());
@@ -618,128 +618,34 @@ public final class DataStructureUtil {
         .create(randomBuilderBid(), randomSignature());
   }
 
-  public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(SpecVersion specVersion) {
-    final BeaconBlockBodySchema<?> schema =
-        specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
-    final SpecMilestone milestone = specVersion.getMilestone();
-    if (milestone.equals(SpecMilestone.BELLATRIX)) {
-      return schema
-          .toVersionBellatrix()
-          .map(__ -> randomExecutionPayloadBellatrix(specVersion))
-          .orElse(null);
-    } else if (milestone.equals(SpecMilestone.CAPELLA)) {
-      return schema
-          .toVersionCapella()
-          .map(__ -> randomExecutionPayloadCapella(specVersion))
-          .orElse(null);
-    } else if (milestone.equals(SpecMilestone.EIP4844)) {
-      return schema
-          .toVersionEip4844()
-          .map(__ -> randomExecutionPayloadEip4844(specVersion))
-          .orElse(null);
-    } else {
-      throw new IllegalArgumentException(
-          "There is no random execution payload configured for " + milestone);
-    }
+  public ExecutionPayload randomExecutionPayload() {
+    return randomExecutionPayload(spec.getGenesisSpec());
   }
 
-  public ExecutionPayload randomExecutionPayloadBellatrix(SpecVersion specVersion) {
+  public ExecutionPayload randomExecutionPayload(final SpecVersion specVersion) {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(specVersion.getConfig());
     return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
         .getExecutionPayloadSchema()
-        .toVersionBellatrix()
-        .orElseThrow()
-        .create(
-            randomBytes32(),
-            randomBytes20(),
-            randomBytes32(),
-            randomBytes32(),
-            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
-            randomBytes32(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
-            randomUInt256(),
-            randomBytes32(),
-            randomExecutionPayloadTransactions());
-  }
-
-  public ExecutionPayload randomExecutionPayloadCapella(SpecVersion specVersion) {
-    final SpecConfigCapella specConfigCapella = SpecConfigCapella.required(specVersion.getConfig());
-    return SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
-        .getExecutionPayloadSchema()
-        .toVersionCapella()
-        .orElseThrow()
-        .create(
-            randomBytes32(),
-            randomBytes20(),
-            randomBytes32(),
-            randomBytes32(),
-            randomBytes(specConfigCapella.getBytesPerLogsBloom()),
-            randomBytes32(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomBytes(randomInt(specConfigCapella.getMaxExtraDataBytes())),
-            randomUInt256(),
-            randomBytes32(),
-            randomExecutionPayloadTransactions(),
-            randomExecutionPayloadWithdrawals());
-  }
-
-  public ExecutionPayload randomExecutionPayloadEip4844(SpecVersion specVersion) {
-    final SpecConfigEip4844 specConfigEip4844 = SpecConfigEip4844.required(specVersion.getConfig());
-    return SchemaDefinitionsEip4844.required(specVersion.getSchemaDefinitions())
-        .getExecutionPayloadSchema()
-        .toVersionEip4844()
-        .orElseThrow()
-        .create(
-            randomBytes32(),
-            randomBytes20(),
-            randomBytes32(),
-            randomBytes32(),
-            randomBytes(specConfigEip4844.getBytesPerLogsBloom()),
-            randomBytes32(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomBytes(randomInt(specConfigEip4844.getMaxExtraDataBytes())),
-            randomUInt256(),
-            randomUInt64(),
-            randomBytes32(),
-            randomExecutionPayloadTransactions(),
-            randomExecutionPayloadWithdrawals());
-  }
-
-  public ExecutionPayload randomExecutionPayload() {
-    final SpecVersion specVersion = spec.getGenesisSpec();
-    switch (specVersion.getMilestone()) {
-      case BELLATRIX:
-        return randomExecutionPayloadBellatrix(specVersion);
-
-      case CAPELLA:
-        return randomExecutionPayloadCapella(specVersion);
-
-      case EIP4844:
-        return randomExecutionPayloadEip4844(specVersion);
-
-      default:
-        throw new UnsupportedOperationException(
-            "Can't create ExecutionPayload for milestone: " + specVersion.getMilestone());
-    }
-  }
-
-  public ExecutionPayload randomExecutionPayloadCapella() {
-    return randomExecutionPayloadCapella(spec.getGenesisSpec());
-  }
-
-  public ExecutionPayload randomExecutionPayloadEip4844() {
-    return randomExecutionPayloadEip4844(spec.getGenesisSpec());
+        .createExecutionPayload(
+            builder ->
+                builder
+                    .parentHash(randomBytes32())
+                    .feeRecipient(randomBytes20())
+                    .stateRoot(randomBytes32())
+                    .receiptsRoot(randomBytes32())
+                    .logsBloom(randomBytes(specConfigBellatrix.getBytesPerLogsBloom()))
+                    .prevRandao(randomBytes32())
+                    .blockNumber(randomUInt64())
+                    .gasLimit(randomUInt64())
+                    .gasUsed(randomUInt64())
+                    .timestamp(randomUInt64())
+                    .extraData(randomBytes(specConfigBellatrix.getMaxExtraDataBytes()))
+                    .baseFeePerGas(randomUInt256())
+                    .blockHash(randomBytes32())
+                    .transactions(randomExecutionPayloadTransactions())
+                    .withdrawals(this::randomExecutionPayloadWithdrawals)
+                    .excessDataGas(this::randomUInt256));
   }
 
   public Transaction randomExecutionPayloadTransaction() {
@@ -1189,7 +1095,7 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.atSlot(slotNum))))
+                                randomExecutionPayload(spec.atSlot(slotNum))))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
                     .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
@@ -1223,7 +1129,7 @@ public final class DataStructureUtil {
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                randomExecutionPayloadIfRequiredBySchema(spec.getGenesisSpec())))
+                                randomExecutionPayload(spec.getGenesisSpec())))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
                     .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();
@@ -1253,12 +1159,11 @@ public final class DataStructureUtil {
                     .voluntaryExits(
                         randomFullSszList(
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit))
-                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .syncAggregate(() -> randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(
                         () ->
                             SafeFuture.completedFuture(
-                                this.randomExecutionPayloadIfRequiredBySchema(
-                                    spec.getGenesisSpec())))
+                                randomExecutionPayload(spec.getGenesisSpec())))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
                     .blobKzgCommitments(this::randomSszKzgCommitmentList))
         .join();

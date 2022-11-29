@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
-
   private final SchemaDefinitionsCapella schemaDefinitionsCapella;
   private static final Bytes ETH1_WITHDRAWAL_KEY_PREFIX =
       Bytes.concatenate(ETH1_ADDRESS_WITHDRAWAL_PREFIX, Bytes.repeat((byte) 0x00, 11));
@@ -117,10 +115,18 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   protected BlockValidationResult validateBlockPreProcessing(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier) {
+      final BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
     return verifyBlsToExecutionChangesPreProcessing(
         preState,
-        BeaconBlockBodyCapella.required(block.getMessage().getBody()).getBlsToExecutionChanges(),
+        block
+            .getMessage()
+            .getBody()
+            .getOptionalBlsToExecutionChanges()
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "BlsToExecutionChanges was not found during block processing.")),
         signatureVerifier);
   }
 
@@ -134,7 +140,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
     processBlsToExecutionChangesNoValidation(
         MutableBeaconStateCapella.required(state),
-        BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges());
+        body.getOptionalBlsToExecutionChanges()
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "BlsToExecutionChanges was not found during block processing.")));
   }
 
   @Override

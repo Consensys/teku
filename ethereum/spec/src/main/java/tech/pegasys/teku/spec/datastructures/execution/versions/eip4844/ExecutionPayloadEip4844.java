@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 
@@ -30,7 +30,7 @@ public interface ExecutionPayloadEip4844 extends ExecutionPayload, ExecutionPayl
                         + payload.getClass().getSimpleName()));
   }
 
-  UInt64 getExcessBlobs();
+  UInt256 getExcessDataGas();
 
   @Override
   default Optional<ExecutionPayloadEip4844> toVersionEip4844() {

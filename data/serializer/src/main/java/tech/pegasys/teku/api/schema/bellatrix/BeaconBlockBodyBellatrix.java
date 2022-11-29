@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 
 public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
@@ -85,35 +84,12 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(
       final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
-
-    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
-        getBeaconBlockBodySchema(spec)
-            .getExecutionPayloadSchema()
-            .toVersionBellatrix()
-            .orElseThrow();
-
     return super.asInternalBeaconBlockBody(
         spec,
         (builder) -> {
           builderRef.accept(builder);
           builder.executionPayload(
-              () ->
-                  SafeFuture.completedFuture(
-                      executionPayloadSchemaBellatrix.create(
-                          executionPayload.parentHash,
-                          executionPayload.feeRecipient,
-                          executionPayload.stateRoot,
-                          executionPayload.receiptsRoot,
-                          executionPayload.logsBloom,
-                          executionPayload.prevRandao,
-                          executionPayload.blockNumber,
-                          executionPayload.gasLimit,
-                          executionPayload.gasUsed,
-                          executionPayload.timestamp,
-                          executionPayload.extraData,
-                          executionPayload.baseFeePerGas,
-                          executionPayload.blockHash,
-                          executionPayload.transactions)));
+              () -> SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
         });
   }
 }

@@ -41,7 +41,7 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
         SpecMilestone.CAPELLA,
         () -> {
           syncAggregate = dataStructureUtil.randomSyncAggregate();
-          executionPayload = dataStructureUtil.randomExecutionPayloadCapella();
+          executionPayload = dataStructureUtil.randomExecutionPayload();
           blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
         });
   }
