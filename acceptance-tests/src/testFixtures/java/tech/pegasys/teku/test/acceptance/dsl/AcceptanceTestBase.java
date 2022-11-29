@@ -29,13 +29,11 @@ import org.testcontainers.containers.Network;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
-  private final GenesisStateGenerator genesisStateGenerator = new GenesisStateGenerator();
 
   @AfterEach
   final void shutdownNodes() {
@@ -54,7 +52,7 @@ public class AcceptanceTestBase {
   protected TekuNode createTekuNode(
       final DockerVersion version, final Consumer<TekuNode.Config> configOptions) {
     try {
-      return addNode(TekuNode.create(network, version, configOptions, genesisStateGenerator));
+      return addNode(TekuNode.create(network, version, configOptions));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }

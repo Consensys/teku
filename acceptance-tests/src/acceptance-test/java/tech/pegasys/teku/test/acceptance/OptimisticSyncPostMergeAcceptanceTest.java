@@ -91,11 +91,11 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     return config
         .withNetwork(NETWORK_NAME)
         .withBellatrixEpoch(UInt64.ZERO)
-        .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
+        .withTotalTerminalDifficulty(10001)
         .withGenesisTime(genesisTime)
         .withRealNetwork()
         .withStartupTargetPeerCount(0)
-        .withExecutionEngineEndpoint(executionEngine.getInternalEngineJsonRpcUrl())
+        .withExecutionEngine(executionEngine)
         .withJwtSecretFile(JWT_FILE);
   }
 }
