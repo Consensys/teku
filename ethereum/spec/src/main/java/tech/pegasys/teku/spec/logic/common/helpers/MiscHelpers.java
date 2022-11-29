@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -28,7 +29,10 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -248,6 +252,19 @@ public class MiscHelpers {
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
+    return false;
+  }
+
+  public boolean isDataAvailable(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final List<KZGCommitment> kzgCommitments,
+      final BlobsSidecar blobsSidecar) {
+    return false;
+  }
+
+  public boolean verifyKZGCommitmentsAgainstTransactions(
+      final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
     return false;
   }
 }
