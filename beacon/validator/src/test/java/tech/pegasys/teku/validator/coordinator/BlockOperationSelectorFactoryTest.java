@@ -272,7 +272,8 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.graffiti).isEqualTo(defaultGraffiti);
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
     assertThat(bodyBuilder.attesterSlashings).containsOnly(attesterSlashing1);
-    assertThat(bodyBuilder.voluntaryExits).containsOnly(voluntaryExit3);
+    // Both exit 3 or 4 are valid, but you can't include two exits for the same validator
+    assertThat(bodyBuilder.voluntaryExits).hasSize(1).containsAnyOf(voluntaryExit3, voluntaryExit4);
     assertThat(bodyBuilder.syncAggregate)
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
