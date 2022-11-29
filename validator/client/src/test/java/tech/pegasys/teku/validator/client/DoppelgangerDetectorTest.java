@@ -119,15 +119,15 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBySeconds(120);
     asyncRunner.executeQueuedActions();
+    Set<String> pubKeysToString =
+        pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet());
+    verify(statusLog).doppelgangerDetectionStart(pubKeysToString);
     logCaptor.assertMessagesInOrder(
         Level.INFO,
-        startUpLog(pubKeys),
         doppelgangerDetectorStartEpochLog(0),
         performingDoppelgangerCheckLog(0, 1),
-        "No validators doppelganger detected at epoch 0, slot 1",
-        String.format(
-            "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys %s.",
-            formatPubKeys(pubKeys)));
+        "No validators doppelganger detected at epoch 0, slot 1");
+    verify(statusLog).doppelgangerDetectionEnd(pubKeysToString);
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -150,8 +150,9 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBySeconds(120);
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(pubKeys));
-    logCaptor.assertInfoLog(doppelgangerDetectorStartEpochLog(0));
+    Set<String> pubKeysToString =
+        pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet());
+    verify(statusLog).doppelgangerDetectionStart(pubKeysToString);
     logCaptor.assertInfoLog(performingDoppelgangerCheckLog(0, 1));
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
@@ -182,8 +183,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBySeconds(150);
     asyncRunner.executeUntilDone();
-    logCaptor.assertMessagesInOrder(
-        Level.INFO, startUpLog(Set.of(pubKey1)), startUpLog(Set.of(pubKey2)));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey2.toAbbreviatedString()));
     logCaptor.assertMessagesInOrder(
         Level.INFO, doppelgangerDetectorStartEpochLog(0), doppelgangerDetectorStartEpochLog(0));
     logCaptor.assertMessagesInOrder(
@@ -192,14 +193,8 @@ public class DoppelgangerDetectorTest {
         Level.INFO,
         "No validators doppelganger detected at epoch 0, slot 1",
         "No validators doppelganger detected at epoch 0, slot 1");
-    logCaptor.assertMessagesInOrder(
-        Level.INFO,
-        String.format(
-            "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys %s.",
-            formatPubKeys(Set.of(pubKey1))),
-        String.format(
-            "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys %s.",
-            formatPubKeys(Set.of(pubKey2))));
+    verify(statusLog).doppelgangerDetectionEnd(Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerDetectionEnd(Set.of(pubKey2.toAbbreviatedString()));
     assertThat(firstDoppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
     assertThat(secondDoppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -224,8 +219,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBySeconds(120);
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(Set.of(pubKey1)));
-    logCaptor.assertInfoLog(startUpLog(Set.of(pubKey3)));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey3.toAbbreviatedString()));
     logCaptor.assertMessagesInOrder(
         Level.INFO, doppelgangerDetectorStartEpochLog(0), doppelgangerDetectorStartEpochLog(0));
     logCaptor.assertMessagesInOrder(
@@ -275,8 +270,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBy(Duration.ofMinutes(50));
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(Set.of(pubKey1)));
-    logCaptor.assertInfoLog(startUpLog(Set.of(pubKey3)));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey3.toAbbreviatedString()));
     logCaptor.assertMessagesInOrder(
         Level.INFO, doppelgangerDetectorStartEpochLog(0), doppelgangerDetectorStartEpochLog(0));
     logCaptor.assertMessagesInOrder(
@@ -309,7 +304,9 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBy(Duration.ofMinutes(25));
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(pubKeys));
+    verify(statusLog)
+        .doppelgangerDetectionStart(
+            pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
     final String expectedErrorLog =
         "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception";
     logCaptor.assertErrorLog(expectedErrorLog);
@@ -328,7 +325,9 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBy(Duration.ofMinutes(25));
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(pubKeys));
+    verify(statusLog)
+        .doppelgangerDetectionStart(
+            pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
     logCaptor.assertInfoLog(doppelgangerDetectorStartEpochLog(0));
     logCaptor.assertInfoLog(performingDoppelgangerCheckLog(0, 1));
     logCaptor.assertErrorLog(
@@ -350,7 +349,9 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     timeProvider.advanceTimeBy(Duration.ofMinutes(25));
     asyncRunner.executeQueuedActions();
-    logCaptor.assertInfoLog(startUpLog(pubKeys));
+    verify(statusLog)
+        .doppelgangerDetectionStart(
+            pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
     logCaptor.assertInfoLog(doppelgangerDetectorStartEpochLog(0));
     logCaptor.assertInfoLog(performingDoppelgangerCheckLog(0, 1));
     logCaptor.assertErrorLog(

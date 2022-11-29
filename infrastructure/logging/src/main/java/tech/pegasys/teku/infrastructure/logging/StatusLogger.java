@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -159,6 +160,16 @@ public class StatusLogger {
     } else {
       log.info("Loaded {} Validators: {}", validators::size, () -> String.join(", ", validators));
     }
+  }
+
+  public void doppelgangerDetectionStart(Set<String> publicKeys) {
+    log.info("Starting doppelganger detection for public keys: {}", String.join(", ", publicKeys));
+  }
+
+  public void doppelgangerDetectionEnd(Set<String> publicKeys) {
+    log.info(
+        "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
+        String.join(", ", publicKeys));
   }
 
   public void validatorsDoppelgangerDetected(final Map<UInt64, String> doppelgangersInfo) {

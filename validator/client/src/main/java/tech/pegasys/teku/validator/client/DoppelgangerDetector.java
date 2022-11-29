@@ -113,7 +113,8 @@ public class DoppelgangerDetector {
 
     protected synchronized SafeFuture<Map<UInt64, BLSPublicKey>>
         performDoppelgangerDetectionTask() {
-      LOG.info("Starting doppelganger detection for public keys: {}", formattedPubKeys());
+      statusLog.doppelgangerDetectionStart(
+          pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
       doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
       epochAtStart = Optional.empty();
       doppelgangerDetectionTask =
@@ -164,9 +165,10 @@ public class DoppelgangerDetector {
                 }
 
                 if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(2)) {
-                  LOG.info(
-                      "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
-                      formattedPubKeys());
+                  statusLog.doppelgangerDetectionEnd(
+                      pubKeys.stream()
+                          .map(BLSPublicKey::toAbbreviatedString)
+                          .collect(Collectors.toSet()));
                   return stopDoppelgangerDetector(new HashMap<>());
                 }
 
@@ -292,12 +294,6 @@ public class DoppelgangerDetector {
       return ExceptionUtil.hasCause(throwable, TimeoutException.class)
           ? "Request timeout"
           : throwable.getMessage();
-    }
-
-    private String formattedPubKeys() {
-      return pubKeys.stream()
-          .map(BLSPublicKey::toAbbreviatedString)
-          .collect(Collectors.joining(", "));
     }
   }
 }
