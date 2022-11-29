@@ -91,7 +91,8 @@ public class BlockProcessorEip4844 extends BlockProcessorCapella {
     final boolean blobsRetrievalStarted =
         blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
     if (!blobsRetrievalStarted) {
-      throw new BlockProcessingException("Blobs retrieval not started");
+      throw new BlockProcessingException(
+          "Blobs Sidecar availability check initiation has been rejected");
     }
   }
 

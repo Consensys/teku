@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.blobs;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
 public interface BlobsSidecarAvailabilityChecker {
@@ -31,6 +33,14 @@ public interface BlobsSidecarAvailabilityChecker {
         }
       };
 
+  /**
+   * Similar to {@link
+   * tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor#optimisticallyExecute(ExecutionPayloadHeader,
+   * ExecutionPayload)}
+   *
+   * @return true if data availability check is initiated or false to immediately fail the
+   *     validation
+   */
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult();
