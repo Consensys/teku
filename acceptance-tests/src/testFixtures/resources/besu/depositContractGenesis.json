@@ -15,7 +15,6 @@
     "londonBlock": 0,
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
-    "terminalTotalDifficulty": 0,
 
     "contractSizeLimit": 2147483647,
     "ethash": {
