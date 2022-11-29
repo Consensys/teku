@@ -59,7 +59,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
   void shouldReturnNotRequired() {
     prepareBlockAndBlobOutsideAvailabilityWindow(false);
 
-    blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
+    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertNotRequired(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
@@ -67,7 +67,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
   void shouldReturnNotAvailable() {
     prepareBlockAndBlobInAvailabilityWindow(false);
 
-    blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
+    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertNotAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
@@ -75,7 +75,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
   void shouldReturnInvalid() {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
-    blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
+    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
@@ -86,8 +86,18 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar)))
         .thenThrow(new RuntimeException("ops!"));
 
-    blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
+    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+  }
+
+  @Test
+  void shouldReturnValid() {
+    prepareBlockAndBlobInAvailabilityWindow(true);
+
+    when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar))).thenReturn(true);
+
+    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+    assertAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
   @Test
@@ -127,6 +137,18 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
             "is not available")
         .isCompletedWithValueMatching(
             result -> result.getBlobsSidecar().isEmpty(), "has empty blob");
+  }
+
+  private void assertAvailable(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+    assertThat(availabilityCheck)
+        .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
+        .isCompletedWithValueMatching(BlobsSidecarAndValidationResult::isValid, "is valid")
+        .isCompletedWithValueMatching(
+            result -> result.getValidationResult() == BlobsSidecarValidationResult.VALID,
+            "is valid")
+        .isCompletedWithValueMatching(
+            result -> result.getBlobsSidecar().orElseThrow().equals(blobsSidecar),
+            "has not empty blob");
   }
 
   private void prepareBlockAndBlobInAvailabilityWindow(boolean blobAvailable) {
