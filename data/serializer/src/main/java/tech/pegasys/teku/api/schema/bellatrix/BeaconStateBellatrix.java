@@ -118,21 +118,8 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
     state.setLatestExecutionPayloadHeader(
-        executionPayloadHeaderSchema.create(
-            instance.latestExecutionPayloadHeader.parentHash,
-            instance.latestExecutionPayloadHeader.feeRecipient,
-            instance.latestExecutionPayloadHeader.stateRoot,
-            instance.latestExecutionPayloadHeader.receiptsRoot,
-            instance.latestExecutionPayloadHeader.logsBloom,
-            instance.latestExecutionPayloadHeader.prevRandao,
-            instance.latestExecutionPayloadHeader.blockNumber,
-            instance.latestExecutionPayloadHeader.gasLimit,
-            instance.latestExecutionPayloadHeader.gasUsed,
-            instance.latestExecutionPayloadHeader.timestamp,
-            instance.latestExecutionPayloadHeader.extraData,
-            instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.blockHash,
-            instance.latestExecutionPayloadHeader.transactionsRoot));
+        instance.latestExecutionPayloadHeader.asInternalExecutionPayloadHeader(
+            executionPayloadHeaderSchema));
   }
 
   public BeaconStateBellatrix(BeaconState beaconState) {

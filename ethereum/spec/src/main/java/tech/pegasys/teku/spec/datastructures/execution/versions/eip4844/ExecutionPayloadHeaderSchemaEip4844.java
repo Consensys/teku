@@ -31,10 +31,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -46,11 +43,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 
 public class ExecutionPayloadHeaderSchemaEip4844
     extends ContainerSchema16<
@@ -105,66 +102,7 @@ public class ExecutionPayloadHeaderSchemaEip4844
     this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
 
-  public ExecutionPayloadHeaderEip4844Impl create(
-      Bytes32 parentHash,
-      Bytes20 feeRecipient,
-      Bytes32 stateRoot,
-      Bytes32 receiptsRoot,
-      Bytes logsBloom,
-      Bytes32 prevRandao,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      UInt256 excessDataGas,
-      Bytes32 blockHash,
-      Bytes32 transactionsRoot,
-      Bytes32 withdrawalsRoot) {
-    return new ExecutionPayloadHeaderEip4844Impl(
-        this,
-        SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszBytes32.of(stateRoot),
-        SszBytes32.of(receiptsRoot),
-        SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(prevRandao),
-        SszUInt64.of(blockNumber),
-        SszUInt64.of(gasLimit),
-        SszUInt64.of(gasUsed),
-        SszUInt64.of(timestamp),
-        getExtraDataSchema().fromBytes(extraData),
-        SszUInt256.of(baseFeePerGas),
-        SszUInt256.of(excessDataGas),
-        SszBytes32.of(blockHash),
-        SszBytes32.of(transactionsRoot),
-        SszBytes32.of(withdrawalsRoot));
-  }
-
-  public ExecutionPayloadHeaderEip4844Impl createFromExecutionPayloadHeaderCapella(
-      final ExecutionPayloadHeaderCapella executionPayloadHeaderCapella) {
-    return new ExecutionPayloadHeaderEip4844Impl(
-        this,
-        SszBytes32.of(executionPayloadHeaderCapella.getParentHash()),
-        SszByteVector.fromBytes(executionPayloadHeaderCapella.getFeeRecipient().getWrappedBytes()),
-        SszBytes32.of(executionPayloadHeaderCapella.getStateRoot()),
-        SszBytes32.of(executionPayloadHeaderCapella.getReceiptsRoot()),
-        SszByteVector.fromBytes(executionPayloadHeaderCapella.getLogsBloom()),
-        SszBytes32.of(executionPayloadHeaderCapella.getPrevRandao()),
-        SszUInt64.of(executionPayloadHeaderCapella.getBlockNumber()),
-        SszUInt64.of(executionPayloadHeaderCapella.getGasLimit()),
-        SszUInt64.of(executionPayloadHeaderCapella.getGasUsed()),
-        SszUInt64.of(executionPayloadHeaderCapella.getTimestamp()),
-        getExtraDataSchema().fromBytes(executionPayloadHeaderCapella.getExtraData()),
-        SszUInt256.of(executionPayloadHeaderCapella.getBaseFeePerGas()),
-        SszUInt256.ZERO,
-        SszBytes32.of(executionPayloadHeaderCapella.getBlockHash()),
-        SszBytes32.of(executionPayloadHeaderCapella.getTransactionsRoot()),
-        SszBytes32.of(executionPayloadHeaderCapella.getWithdrawalsRoot()));
-  }
-
-  private SszByteListSchema<?> getExtraDataSchema() {
+  public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getChildSchema(getFieldIndex(EXTRA_DATA));
   }
 
@@ -173,6 +111,15 @@ public class ExecutionPayloadHeaderSchemaEip4844
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)));
+  }
+
+  @Override
+  public ExecutionPayloadHeader createExecutionPayloadHeader(
+      final Consumer<ExecutionPayloadHeaderBuilder> builderConsumer) {
+    final ExecutionPayloadHeaderBuilderEip4844 builder =
+        new ExecutionPayloadHeaderBuilderEip4844().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
   @Override
@@ -212,10 +159,5 @@ public class ExecutionPayloadHeaderSchemaEip4844
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
-  }
-
-  @Override
-  public Optional<ExecutionPayloadHeaderSchemaEip4844> toVersionEip4844() {
-    return Optional.of(this);
   }
 }

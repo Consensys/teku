@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload_header")
@@ -97,11 +97,8 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
 
-    final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema =
-        getBeaconBlockBodySchema(spec)
-            .getExecutionPayloadHeaderSchema()
-            .toVersionBellatrix()
-            .orElseThrow();
+    final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
 
     return super.asInternalBeaconBlockBody(
         spec,
@@ -109,20 +106,7 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
             builder.executionPayloadHeader(
                 () ->
                     SafeFuture.completedFuture(
-                        executionPayloadHeaderSchema.create(
-                            executionPayloadHeader.parentHash,
-                            executionPayloadHeader.feeRecipient,
-                            executionPayloadHeader.stateRoot,
-                            executionPayloadHeader.receiptsRoot,
-                            executionPayloadHeader.logsBloom,
-                            executionPayloadHeader.prevRandao,
-                            executionPayloadHeader.blockNumber,
-                            executionPayloadHeader.gasLimit,
-                            executionPayloadHeader.gasUsed,
-                            executionPayloadHeader.timestamp,
-                            executionPayloadHeader.extraData,
-                            executionPayloadHeader.baseFeePerGas,
-                            executionPayloadHeader.blockHash,
-                            executionPayloadHeader.transactionsRoot))));
+                        executionPayloadHeader.asInternalExecutionPayloadHeader(
+                            executionPayloadHeaderSchema))));
   }
 }
