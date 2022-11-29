@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransiti
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.BlockProcessorEip4844;
 import tech.pegasys.teku.spec.logic.versions.eip4844.forktransition.Eip4844StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
@@ -125,8 +126,8 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
-    final BlockProcessorCapella blockProcessor =
-        new BlockProcessorCapella(
+    final BlockProcessorEip4844 blockProcessor =
+        new BlockProcessorEip4844(
             config,
             predicates,
             miscHelpers,
