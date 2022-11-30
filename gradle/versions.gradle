@@ -148,8 +148,14 @@ dependencyManagement {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
+      entry('core')
+      entry('config')
     }
-    dependency 'org.hyperledger.besu:plugin-api:22.7.7'
+    dependencySet(group: 'org.hyperledger.besu', version: '22.7.7') {
+      entry('besu-datatypes')
+      entry('evm')
+      entry('plugin-api')
+    }
 
     dependencySet(group: 'org.testcontainers', version: '1.17.5') {
       entry "testcontainers"

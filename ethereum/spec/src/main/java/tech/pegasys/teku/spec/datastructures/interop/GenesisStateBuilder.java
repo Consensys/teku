@@ -91,6 +91,16 @@ public class GenesisStateBuilder {
                 keyPair, spec.getGenesisSpecConfig().getMaxEffectiveBalance(), withdrawalAddress));
   }
 
+  public GenesisStateBuilder addValidator(
+      final BLSKeyPair keyPair, final Bytes32 withdrawalCredentials) {
+    return addValidator(
+        new DepositGenerator(spec, signDeposits)
+            .createDepositData(
+                keyPair,
+                spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
+                withdrawalCredentials));
+  }
+
   public GenesisStateBuilder addValidator(final DepositData depositData) {
     genesisDeposits.add(new Deposit(depositData));
     return this;

@@ -83,6 +83,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -604,9 +605,11 @@ public class TekuNode extends Node {
   public static class Config {
     public static final String DEFAULT_NETWORK_NAME = "swift";
     public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
+    private static final String INITIAL_STATE_FILE = "/state.ssz";
 
     private Optional<URL> maybeNetworkYaml = Optional.empty();
     private Optional<URL> maybeJwtFile = Optional.empty();
+    private Optional<InitialStateData> maybeInitialState = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -733,15 +736,36 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withCapellaEpoch(final UInt64 capellaForkEpoch) {
+      configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.capellaBuilder(
+                      capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+      return this;
+    }
+
     public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
-      configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+      return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
+    }
+
+    public Config withTotalTerminalDifficulty(final UInt256 totalTerminalDifficulty) {
+      configMap.put(
+          "Xnetwork-total-terminal-difficulty-override",
+          totalTerminalDifficulty.toBigInteger().toString());
       specConfigModifier =
           specConfigModifier.andThen(
               specConfigBuilder ->
                   specConfigBuilder.bellatrixBuilder(
                       bellatrixBuilder ->
-                          bellatrixBuilder.terminalTotalDifficulty(
-                              UInt256.valueOf(totalTerminalDifficulty))));
+                          bellatrixBuilder.terminalTotalDifficulty(totalTerminalDifficulty)));
+      return this;
+    }
+
+    public Config withInitialState(final InitialStateData initialState) {
+      configMap.put("initial-state", INITIAL_STATE_FILE);
+      this.maybeInitialState = Optional.of(initialState);
       return this;
     }
 
@@ -807,6 +831,12 @@ public class TekuNode extends Node {
       }
       if (maybeJwtFile.isPresent()) {
         configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
+      }
+      if (maybeInitialState.isPresent()) {
+        final InitialStateData initialStateData = maybeInitialState.get();
+        final File initialStateFile =
+            copyToTmpFile(initialStateData.writeToTempFile().toURI().toURL());
+        configFiles.put(initialStateFile, INITIAL_STATE_FILE);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");

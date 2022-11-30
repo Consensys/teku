@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -25,44 +23,31 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 
 public class DepositGenerator implements AutoCloseable {
-  private final ValidatorKeyGenerator validatorKeyGenerator;
   private final DepositSenderService depositSenderService;
-  private final List<ValidatorKeys> keys = new ArrayList<>();
 
   public DepositGenerator(
       final Spec spec,
       final String eth1Endpoint,
       final Eth1Address depositContractAddress,
       final Credentials eth1Credentials,
-      final int validatorCount,
       final UInt64 amount) {
-    this.validatorKeyGenerator = new ValidatorKeyGenerator(validatorCount);
     this.depositSenderService =
         new DepositSenderService(
             spec, eth1Endpoint, eth1Credentials, depositContractAddress, amount);
   }
 
-  public List<ValidatorKeys> getKeys() {
-    return keys;
-  }
-
-  public SafeFuture<Void> generate() {
+  public SafeFuture<Void> sendDeposits(final ValidatorKeystores validators) {
     return SafeFuture.of(
         () -> {
           final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-              generateKeysStream()
-                  .peek(keys::add)
+              validators.getValidatorKeys().stream()
                   .map(this::sendDeposit)
                   .collect(Collectors.toList());
           return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
         });
   }
 
-  public Stream<ValidatorKeys> generateKeysStream() {
-    return validatorKeyGenerator.generateKeysStream();
-  }
-
-  public SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
+  private SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
     return depositSenderService.sendDeposit(validatorKeys);
   }
 
