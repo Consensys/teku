@@ -37,7 +37,7 @@ public interface KZG4844 {
    * @param path a path to a trusted setup file in filesystem
    * @throws KzgException if file not found or arguments from file are incorrect
    */
-  void loadTrustedSetup(final String path) throws KzgException;
+  void loadTrustedSetup(String path) throws KzgException;
 
   /**
    * Calculates aggregated proof for the given blobs
@@ -45,7 +45,7 @@ public interface KZG4844 {
    * @param blobs Blobs
    * @return the aggregated proof
    */
-  KZGProof computeAggregateKzgProof(List<Bytes> blobs);
+  KZGProof computeAggregateKzgProof(List<Bytes> blobs) throws KzgException;
 
   /**
    * Verify aggregated proof and commitments for the given blobs
@@ -56,7 +56,7 @@ public interface KZG4844 {
    * @return true if the proof is valid and false otherwise
    */
   boolean verifyAggregateKzgProof(
-      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof);
+      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof) throws KzgException;
 
   /**
    * Calculates commitment for a given blob
@@ -64,7 +64,7 @@ public interface KZG4844 {
    * @param blob Blob
    * @return the commitment
    */
-  KZGCommitment blobToKzgCommitment(Bytes blob);
+  KZGCommitment blobToKzgCommitment(Bytes blob) throws KzgException;
 
   /**
    * Verify the proof by point evaluation for the given commitment
@@ -75,5 +75,6 @@ public interface KZG4844 {
    * @param kzgProof The proof that needs verifying
    * @return true if the proof is valid and false otherwise
    */
-  boolean verifyKzgProof(KZGCommitment kzgCommitment, Bytes32 z, Bytes32 y, KZGProof kzgProof);
+  boolean verifyKzgProof(KZGCommitment kzgCommitment, Bytes32 z, Bytes32 y, KZGProof kzgProof)
+      throws KzgException;
 }

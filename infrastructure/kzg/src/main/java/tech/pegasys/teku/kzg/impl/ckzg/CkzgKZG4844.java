@@ -47,7 +47,7 @@ public final class CkzgKZG4844 implements KZG4844 {
   }
 
   @Override
-  public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) {
+  public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KzgException {
     try {
       final byte[] result =
           CKzg4844JNI.computeAggregateKzgProof(
@@ -60,7 +60,8 @@ public final class CkzgKZG4844 implements KZG4844 {
 
   @Override
   public boolean verifyAggregateKzgProof(
-      final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof) {
+      final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof)
+      throws KzgException {
     try {
       return CKzg4844JNI.verifyAggregateKzgProof(
           blobs.stream().reduce(Bytes::wrap).orElseThrow().toArray(),
@@ -78,7 +79,7 @@ public final class CkzgKZG4844 implements KZG4844 {
   }
 
   @Override
-  public KZGCommitment blobToKzgCommitment(final Bytes blob) {
+  public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KzgException {
     try {
       return KZGCommitment.fromBytesCompressed(
           Bytes48.wrap(CKzg4844JNI.blobToKzgCommitment(blob.toArray())));
@@ -89,10 +90,8 @@ public final class CkzgKZG4844 implements KZG4844 {
 
   @Override
   public boolean verifyKzgProof(
-      final KZGCommitment kzgCommitment,
-      final Bytes32 z,
-      final Bytes32 y,
-      final KZGProof kzgProof) {
+      final KZGCommitment kzgCommitment, final Bytes32 z, final Bytes32 y, final KZGProof kzgProof)
+      throws KzgException {
     try {
       return CKzg4844JNI.verifyKzgProof(
           kzgCommitment.getBytesCompressed().toArray(),
