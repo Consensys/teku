@@ -77,9 +77,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldHaveNonDefaultExecutionPayloadAndFinalizeAfterMergeTransition() {
-    tekuNode.waitForGenesis();
-    tekuNode.waitForNonDefaultExecutionPayload();
-
+    tekuNode.waitForGenesisWithNonDefaultExecutionPayload();
     tekuNode.waitForNewFinalization();
   }
 }

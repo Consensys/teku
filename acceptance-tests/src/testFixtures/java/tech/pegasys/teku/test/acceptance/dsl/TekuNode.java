@@ -83,6 +83,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
@@ -320,13 +321,27 @@ public class TekuNode extends Node {
                   .getBody()
                   .executionPayload
                   .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
-
-          assertThat(executionPayload.isDefault()).isFalse();
+          assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
           LOG.debug(
               "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
         },
         5,
         MINUTES);
+  }
+
+  public void waitForGenesisWithNonDefaultExecutionPayload() {
+    LOG.debug("Wait for genesis block containing a non default execution payload");
+
+    waitFor(
+        () -> {
+          final Optional<BeaconState> maybeState = fetchState("genesis");
+          assertThat(maybeState).isPresent();
+          assertThat(maybeState.get().toVersionBellatrix()).isPresent();
+          final BeaconStateBellatrix genesisState = maybeState.get().toVersionBellatrix().get();
+          assertThat(genesisState.getLatestExecutionPayloadHeader().isDefault())
+              .describedAs("Is latest execution payload header a default payload header")
+              .isFalse();
+        });
   }
 
   public void waitForFullSyncCommitteeAggregate() {
@@ -432,7 +447,11 @@ public class TekuNode extends Node {
   }
 
   private Optional<SignedBlock> fetchHeadBlock() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
+    return fetchBlock("head");
+  }
+
+  private Optional<SignedBlock> fetchBlock(final String blockId) throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
@@ -441,10 +460,14 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
+    return fetchState("head");
+  }
+
+  private Optional<BeaconState> fetchState(final String stateId) throws IOException {
     final Bytes result =
         httpClient.getAsBytes(
             getRestApiUrl(),
-            "/eth/v2/debug/beacon/states/head",
+            "/eth/v2/debug/beacon/states/" + stateId,
             Map.of("Accept", "application/octet-stream"));
     if (result.isEmpty()) {
       return Optional.empty();
