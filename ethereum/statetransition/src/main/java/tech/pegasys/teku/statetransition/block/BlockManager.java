@@ -277,9 +277,10 @@ public class BlockManager extends Service
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
                   case FAILED_BLOBS_AVAILABILITY_CHECK:
-                    // TODO: we cannot invalidate the block root since it passed the checks
-                    // we should maintain a set of invalid BlobsSidecar root OR
-                    // SignedBeaconBlockAndBlobsSidecar root
+                    // TODO:
+                    //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
+                    //  contains a valid block but the BlobsSidecar validation fails.
+                    //  Should be similar to what we do with pendingBlocks.
                     break;
                   default:
                     LOG.trace(
