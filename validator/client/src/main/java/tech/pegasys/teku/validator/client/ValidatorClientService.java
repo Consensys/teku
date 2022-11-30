@@ -128,7 +128,7 @@ public class ValidatorClientService extends Service {
 
     final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
-    Optional<ProposerConfigManager> proposerConfigManager = Optional.empty();
+    final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
     Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
     if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
@@ -169,6 +169,8 @@ public class ValidatorClientService extends Service {
                   new ValidatorRegistrationBatchSender(
                       validatorConfig.getBuilderRegistrationSendingBatchSize(),
                       validatorApiChannel)));
+    } else {
+      proposerConfigManager = Optional.empty();
     }
 
     ValidatorClientService validatorClientService =
@@ -184,8 +186,6 @@ public class ValidatorClientService extends Service {
             services.getMetricsSystem());
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
-
-    Optional<ProposerConfigManager> finalProposerConfigManager = proposerConfigManager;
 
     asyncRunner
         .runAsync(
@@ -207,7 +207,7 @@ public class ValidatorClientService extends Service {
               if (validatorApiConfig.isRestApiEnabled()) {
                 validatorClientService.initializeValidatorRestApi(
                     validatorApiConfig,
-                    finalProposerConfigManager,
+                    proposerConfigManager,
                     new ActiveKeyManager(
                         validatorLoader,
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),

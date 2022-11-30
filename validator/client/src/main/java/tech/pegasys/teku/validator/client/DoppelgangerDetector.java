@@ -98,7 +98,7 @@ public class DoppelgangerDetector {
   protected SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
       final Set<BLSPublicKey> pubKeys) {
     if (pubKeys.isEmpty()) {
-      LOG.error("Unable to perform doppelganger detection. No public keys provided");
+      LOG.info("Skipping doppelganger detection: No public keys to check");
       return SafeFuture.completedFuture(new HashMap<>());
     }
     DoppelgangerDetectionTask doppelgangerDetectionTask =
