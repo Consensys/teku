@@ -231,30 +231,36 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     final WithdrawalSchema withdrawalSchema = schemaDefinitionsCapella.getWithdrawalSchema();
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(preState.getSlot());
     final int validatorCount = preState.getValidators().size();
+    final int maxValidatorsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
     int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
     for (int i = 0;
-        i < validatorCount
-            && expectedWithdrawals.size() < specConfigCapella.getMaxWithdrawalsPerPayload();
+        i < validatorCount && expectedWithdrawals.size() < maxValidatorsPerPayload;
         i++) {
+
       final Validator validator = preState.getValidators().get(validatorIndex);
-      final UInt64 balance = preState.getBalances().get(validatorIndex).get();
-      if (predicates.isFullyWithdrawableValidator(validator, balance, epoch)) {
-        expectedWithdrawals.add(
-            withdrawalSchema.create(
-                withdrawalIndex,
-                UInt64.valueOf(validatorIndex),
-                new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                balance));
-        withdrawalIndex = withdrawalIndex.increment();
-      } else if (predicates.isPartiallyWithdrawableValidator(validator, balance)) {
-        expectedWithdrawals.add(
-            withdrawalSchema.create(
-                withdrawalIndex,
-                UInt64.valueOf(validatorIndex),
-                new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                balance.minus(specConfig.getMaxEffectiveBalance())));
-        withdrawalIndex = withdrawalIndex.increment();
+      if (predicates.hasEth1WithdrawalCredential(validator)) {
+        final UInt64 balance = preState.getBalances().get(validatorIndex).get();
+
+        if (predicates.isFullyWithdrawableValidatorEth1CredentialsChecked(
+            validator, balance, epoch)) {
+          expectedWithdrawals.add(
+              withdrawalSchema.create(
+                  withdrawalIndex,
+                  UInt64.valueOf(validatorIndex),
+                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  balance));
+          withdrawalIndex = withdrawalIndex.increment();
+        } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+            validator, balance)) {
+          expectedWithdrawals.add(
+              withdrawalSchema.create(
+                  withdrawalIndex,
+                  UInt64.valueOf(validatorIndex),
+                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  balance.minus(specConfig.getMaxEffectiveBalance())));
+          withdrawalIndex = withdrawalIndex.increment();
+        }
       }
 
       validatorIndex = incrementValidatorIndex(validatorIndex, validatorCount);
