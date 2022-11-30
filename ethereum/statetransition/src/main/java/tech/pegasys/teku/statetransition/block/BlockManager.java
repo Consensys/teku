@@ -276,6 +276,11 @@ public class BlockManager extends Service
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
+                  case FAILED_BLOBS_AVAILABILITY_CHECK:
+                    // TODO: we cannot invalidate the block root since it passed the checks
+                    // we should maintain a set of invalid BlobsSidecar root OR
+                    // SignedBeaconBlockAndBlobsSidecar root
+                    break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",

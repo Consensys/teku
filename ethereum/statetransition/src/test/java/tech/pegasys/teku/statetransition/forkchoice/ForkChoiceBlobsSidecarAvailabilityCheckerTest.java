@@ -101,10 +101,10 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldReturnNotAvailableWhenNotDataAvailabilityCheckNotInitiated() {
+  void shouldReturnNotRequiredWhenNotDataAvailabilityCheckNotInitiated() {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
-    assertNotAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertNotRequired(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
   }
 
   private void assertNotRequired(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {

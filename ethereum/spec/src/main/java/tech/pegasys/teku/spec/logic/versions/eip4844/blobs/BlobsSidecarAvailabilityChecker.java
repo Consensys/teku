@@ -29,7 +29,7 @@ public interface BlobsSidecarAvailabilityChecker {
 
         @Override
         public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
-          return NOT_AVAILABLE_RESULT_FUTURE;
+          return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
 
@@ -52,8 +52,8 @@ public interface BlobsSidecarAvailabilityChecker {
     VALID
   }
 
-  SafeFuture<BlobsSidecarAndValidationResult> NOT_AVAILABLE_RESULT_FUTURE =
-      SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE);
+  SafeFuture<BlobsSidecarAndValidationResult> NOT_REQUIRED_RESULT_FUTURE =
+      SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_REQUIRED);
 
   class BlobsSidecarAndValidationResult {
     private final BlobsSidecarValidationResult validationResult;
