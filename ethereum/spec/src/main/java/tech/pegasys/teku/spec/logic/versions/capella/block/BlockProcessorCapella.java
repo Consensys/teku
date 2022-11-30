@@ -234,11 +234,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     final SszList<Validator> validators = preState.getValidators();
     final SszUInt64List balances = preState.getBalances();
     final int validatorCount = validators.size();
-    final int maxValidatorsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
+    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
     int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
     for (int i = 0;
-        i < validatorCount && expectedWithdrawals.size() < maxValidatorsPerPayload;
+        i < validatorCount && expectedWithdrawals.size() < maxWithdrawalsPerPayload;
         i++) {
 
       final Validator validator = validators.get(validatorIndex);
