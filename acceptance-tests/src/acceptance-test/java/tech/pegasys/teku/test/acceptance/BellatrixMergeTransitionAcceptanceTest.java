@@ -58,7 +58,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorKeystores(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
+                    .withExecutionEngine(eth1Node)
                     .withJwtSecretFile(JWT_FILE));
     tekuNode.start();
   }
@@ -74,7 +74,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
   private TekuNode.Config configureTekuNode(final TekuNode.Config node, final int genesisTime) {
     return node.withNetwork(NETWORK_NAME)
         .withBellatrixEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
+        .withTotalTerminalDifficulty(10001)
         .withGenesisTime(genesisTime);
   }
 }
