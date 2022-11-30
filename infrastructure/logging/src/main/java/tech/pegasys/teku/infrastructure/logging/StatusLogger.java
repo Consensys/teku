@@ -172,6 +172,14 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
+  public void doppelgangerCheck(long epoch, long slot, Set<String> publicKeys) {
+    log.info(
+        "Performing doppelganger check. Epoch {}, Slot {}, PubKeys {}",
+        epoch,
+        slot,
+        String.join(", ", publicKeys));
+  }
+
   public void validatorsDoppelgangerDetected(final Map<UInt64, String> doppelgangersInfo) {
     String doppelgangersLogInfo =
         doppelgangersInfo.entrySet().stream()
