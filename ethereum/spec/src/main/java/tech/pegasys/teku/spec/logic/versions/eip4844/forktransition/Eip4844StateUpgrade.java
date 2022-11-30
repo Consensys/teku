@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip4844.forktransition;
 
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -63,16 +65,33 @@ public class Eip4844StateUpgrade implements StateUpgrade<BeaconStateEip4844> {
                       specConfig.getEip4844ForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderEip4844 upgradedExecutionPayloadHeader =
+              final ExecutionPayloadHeaderCapella capellaHeader =
+                  preStateCapella
+                      .getLatestExecutionPayloadHeader()
+                      .toVersionCapella()
+                      .orElseThrow();
+              final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
                   schemaDefinitions
                       .getExecutionPayloadHeaderSchema()
-                      .toVersionEip4844()
-                      .orElseThrow()
-                      .createFromExecutionPayloadHeaderCapella(
-                          preStateCapella
-                              .getLatestExecutionPayloadHeader()
-                              .toVersionCapella()
-                              .orElseThrow());
+                      .createExecutionPayloadHeader(
+                          builder ->
+                              builder
+                                  .parentHash(capellaHeader.getParentHash())
+                                  .feeRecipient(capellaHeader.getFeeRecipient())
+                                  .stateRoot(capellaHeader.getStateRoot())
+                                  .receiptsRoot(capellaHeader.getReceiptsRoot())
+                                  .logsBloom(capellaHeader.getLogsBloom())
+                                  .prevRandao(capellaHeader.getPrevRandao())
+                                  .blockNumber(capellaHeader.getBlockNumber())
+                                  .gasLimit(capellaHeader.getGasLimit())
+                                  .gasUsed(capellaHeader.getGasUsed())
+                                  .timestamp(capellaHeader.getTimestamp())
+                                  .extraData(capellaHeader.getExtraData())
+                                  .baseFeePerGas(capellaHeader.getBaseFeePerGas())
+                                  .blockHash(capellaHeader.getBlockHash())
+                                  .transactionsRoot(capellaHeader.getTransactionsRoot())
+                                  .withdrawalsRoot(capellaHeader::getWithdrawalsRoot)
+                                  .excessDataGas(() -> UInt256.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

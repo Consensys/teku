@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -64,16 +65,29 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
                       specConfig.getCapellaForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderCapella upgradedExecutionPayloadHeader =
+              final ExecutionPayloadHeader bellatrixHeader =
+                  preStateBellatrix.getLatestExecutionPayloadHeader();
+              final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
                   schemaDefinitions
                       .getExecutionPayloadHeaderSchema()
-                      .toVersionCapella()
-                      .orElseThrow()
-                      .createFromExecutionPayloadHeaderBellatrix(
-                          preStateBellatrix
-                              .getLatestExecutionPayloadHeader()
-                              .toVersionBellatrix()
-                              .orElseThrow());
+                      .createExecutionPayloadHeader(
+                          builder ->
+                              builder
+                                  .parentHash(bellatrixHeader.getParentHash())
+                                  .feeRecipient(bellatrixHeader.getFeeRecipient())
+                                  .stateRoot(bellatrixHeader.getStateRoot())
+                                  .receiptsRoot(bellatrixHeader.getReceiptsRoot())
+                                  .logsBloom(bellatrixHeader.getLogsBloom())
+                                  .prevRandao(bellatrixHeader.getPrevRandao())
+                                  .blockNumber(bellatrixHeader.getBlockNumber())
+                                  .gasLimit(bellatrixHeader.getGasLimit())
+                                  .gasUsed(bellatrixHeader.getGasUsed())
+                                  .timestamp(bellatrixHeader.getTimestamp())
+                                  .extraData(bellatrixHeader.getExtraData())
+                                  .baseFeePerGas(bellatrixHeader.getBaseFeePerGas())
+                                  .blockHash(bellatrixHeader.getBlockHash())
+                                  .transactionsRoot(bellatrixHeader.getTransactionsRoot())
+                                  .withdrawalsRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

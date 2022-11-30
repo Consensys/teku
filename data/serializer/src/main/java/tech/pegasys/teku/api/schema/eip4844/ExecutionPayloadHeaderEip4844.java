@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.schema.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella {
 
@@ -86,6 +87,30 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
         executionPayloadHeader.getTransactionsRoot(),
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow());
     this.excessDataGas = executionPayloadHeader.toVersionEip4844().orElseThrow().getExcessDataGas();
+  }
+
+  @Override
+  public ExecutionPayloadHeader asInternalExecutionPayloadHeader(
+      final ExecutionPayloadHeaderSchema<?> schema) {
+    return schema.createExecutionPayloadHeader(
+        payloadBuilder ->
+            payloadBuilder
+                .parentHash(parentHash)
+                .feeRecipient(feeRecipient)
+                .stateRoot(stateRoot)
+                .receiptsRoot(receiptsRoot)
+                .logsBloom(logsBloom)
+                .prevRandao(prevRandao)
+                .blockNumber(blockNumber)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
+                .timestamp(timestamp)
+                .extraData(extraData)
+                .baseFeePerGas(baseFeePerGas)
+                .blockHash(blockHash)
+                .transactionsRoot(transactionsRoot)
+                .withdrawalsRoot(() -> withdrawalsRoot)
+                .excessDataGas(() -> excessDataGas));
   }
 
   @Override

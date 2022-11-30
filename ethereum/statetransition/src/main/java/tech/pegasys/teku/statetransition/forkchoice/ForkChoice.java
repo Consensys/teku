@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -373,14 +374,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    if (blobsSidecarAndValidationResult.isFailure()) {
-      LOG.error("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
-      // TODO: fail block import
-    } else if (blobsSidecarAndValidationResult.isNotRequired()) {
-      LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
-    } else if (blobsSidecarAndValidationResult.isValid()) {
-      LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
-      // TODO: store blobs
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      if (blobsSidecarAndValidationResult.isFailure()) {
+        LOG.error("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+        // TODO: fail block import
+      } else if (blobsSidecarAndValidationResult.isNotRequired()) {
+        LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+      } else if (blobsSidecarAndValidationResult.isValid()) {
+        LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+        // TODO: store blobs
+      }
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();

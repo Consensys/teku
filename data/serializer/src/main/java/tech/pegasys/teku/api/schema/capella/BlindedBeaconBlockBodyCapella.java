@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
 
@@ -104,11 +104,8 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
 
-    final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema =
-        getBeaconBlockBodySchema(spec)
-            .getExecutionPayloadHeaderSchema()
-            .toVersionCapella()
-            .orElseThrow();
+    final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
 
     final SszListSchema<
             tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
@@ -120,22 +117,8 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
           builder.executionPayloadHeader(
               () ->
                   SafeFuture.completedFuture(
-                      executionPayloadHeaderSchema.create(
-                          executionPayloadHeader.parentHash,
-                          executionPayloadHeader.feeRecipient,
-                          executionPayloadHeader.stateRoot,
-                          executionPayloadHeader.receiptsRoot,
-                          executionPayloadHeader.logsBloom,
-                          executionPayloadHeader.prevRandao,
-                          executionPayloadHeader.blockNumber,
-                          executionPayloadHeader.gasLimit,
-                          executionPayloadHeader.gasUsed,
-                          executionPayloadHeader.timestamp,
-                          executionPayloadHeader.extraData,
-                          executionPayloadHeader.baseFeePerGas,
-                          executionPayloadHeader.blockHash,
-                          executionPayloadHeader.transactionsRoot,
-                          executionPayloadHeader.withdrawalsRoot)));
+                      executionPayloadHeader.asInternalExecutionPayloadHeader(
+                          executionPayloadHeaderSchema)));
           builder.blsToExecutionChanges(
               () ->
                   this.blsToExecutionChanges.stream()
