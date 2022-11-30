@@ -17,6 +17,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -116,9 +117,8 @@ public final class KZGTest {
   }
 
   private void loadTrustedSetup() {
-    final String resourcePath =
-        KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST).toExternalForm();
-    KZG.loadTrustedSetup(resourcePath);
+    final URL resourceUrl = KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST);
+    KZG.loadTrustedSetup(resourceUrl);
   }
 
   private BigInteger randomBigIntegerInModulus(final BigInteger modulus, final Random rnd) {

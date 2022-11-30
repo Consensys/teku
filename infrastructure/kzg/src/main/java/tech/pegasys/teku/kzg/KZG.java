@@ -17,6 +17,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.kzg.impl.ckzg.CkzgLoader;
  */
 public final class KZG {
   private static final Logger LOG = LogManager.getLogger();
+  private static final String FILE_SCHEME = "file";
 
   private static KZG4844 kzgImpl;
 
@@ -68,13 +71,13 @@ public final class KZG {
     }
   }
 
-  public static void loadTrustedSetup(final String path) {
+  public static void loadTrustedSetup(final URL url) {
     final String filePath;
     try {
-      filePath = copyResourceToTempFile(path);
+      filePath = copyResourceToTempFileIfNeeded(url);
     } catch (final IOException ex) {
       throw new KzgException(
-          String.format("Failed to copy resource '%s' to temporary file", path), ex);
+          String.format("Failed to copy trusted setup '%s' to temporary file", url), ex);
     }
     kzgImpl.loadTrustedSetup(filePath);
   }
@@ -100,10 +103,18 @@ public final class KZG {
     return kzgImpl.verifyKzgProof(kzgCommitment, z, y, kzgProof);
   }
 
-  private static String copyResourceToTempFile(final String path) throws IOException {
+  private static String copyResourceToTempFileIfNeeded(final URL url) throws IOException {
+    try {
+      if (url.toURI().getScheme().equals(FILE_SCHEME)) {
+        return url.getPath();
+      }
+    } catch (final URISyntaxException ex) {
+      throw new KzgException(String.format("%s is incorrect file path", url), ex);
+    }
+
     final Bytes resource =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .loadBytes(path)
+            .loadBytes(url.toExternalForm())
             .orElseThrow(() -> new FileNotFoundException("Not found"));
 
     File temp = File.createTempFile("resource", ".tmp");
