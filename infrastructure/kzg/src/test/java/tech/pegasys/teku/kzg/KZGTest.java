@@ -107,8 +107,9 @@ public final class KZGTest {
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
     assertThat(KZG.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
     assertThat(KZG.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
-    // FIXME: Segmentation Fault here
-    //    assertThat(KZG.blobToKzgCommitment(Bytes.EMPTY)).isEqualTo(kzgCommitment);
+    assertThat(
+            KZG.blobToKzgCommitment(Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE])))
+        .isEqualTo(kzgCommitment);
     assertThat(
             KZG.verifyAggregateKzgProof(Collections.emptyList(), Collections.emptyList(), kzgProof))
         .isTrue();
