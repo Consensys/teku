@@ -51,7 +51,7 @@ public final class CkzgKZG4844 implements KZG4844 {
     try {
       final byte[] result =
           CKzg4844JNI.computeAggregateKzgProof(
-              blobs.stream().reduce(Bytes::wrap).orElseThrow().toArray(), blobs.size());
+              blobs.stream().reduce(Bytes::wrap).orElse(Bytes.EMPTY).toArray(), blobs.size());
       return KZGProof.fromBytesCompressed(Bytes48.wrap(result));
     } catch (final Exception ex) {
       throw new KzgException("Failed to compute aggregated KZG Proof for Blobs", ex);
@@ -64,11 +64,11 @@ public final class CkzgKZG4844 implements KZG4844 {
       throws KzgException {
     try {
       return CKzg4844JNI.verifyAggregateKzgProof(
-          blobs.stream().reduce(Bytes::wrap).orElseThrow().toArray(),
+          blobs.stream().reduce(Bytes::wrap).orElse(Bytes.EMPTY).toArray(),
           kzgCommitments.stream()
               .map(kzgCommitment -> (Bytes) kzgCommitment.getBytesCompressed())
               .reduce(Bytes::wrap)
-              .orElseThrow()
+              .orElse(Bytes.EMPTY)
               .toArray(),
           blobs.size(),
           kzgProof.getBytesCompressed().toArray());
