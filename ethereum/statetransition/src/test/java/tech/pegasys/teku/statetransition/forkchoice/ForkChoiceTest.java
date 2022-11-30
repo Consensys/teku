@@ -166,7 +166,8 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -183,7 +184,8 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -492,7 +494,8 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -736,7 +739,8 @@ class ForkChoiceTest {
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -1086,14 +1090,14 @@ class ForkChoiceTest {
   private void importBlock(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -1107,7 +1111,7 @@ class ForkChoiceTest {
   private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 

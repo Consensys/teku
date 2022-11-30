@@ -29,7 +29,7 @@ public enum ExecutionPayloadFields implements SszFieldName {
   TIMESTAMP,
   EXTRA_DATA,
   BASE_FEE_PER_GAS,
-  EXCESS_BLOBS,
+  EXCESS_DATA_GAS,
   BLOCK_HASH,
   TRANSACTIONS,
   WITHDRAWALS,

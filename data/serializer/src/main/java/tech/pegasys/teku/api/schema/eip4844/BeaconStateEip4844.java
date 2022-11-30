@@ -144,23 +144,8 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
     state.setLatestExecutionPayloadHeader(
-        executionPayloadHeaderSchema.create(
-            instance.latestExecutionPayloadHeader.parentHash,
-            instance.latestExecutionPayloadHeader.feeRecipient,
-            instance.latestExecutionPayloadHeader.stateRoot,
-            instance.latestExecutionPayloadHeader.receiptsRoot,
-            instance.latestExecutionPayloadHeader.logsBloom,
-            instance.latestExecutionPayloadHeader.prevRandao,
-            instance.latestExecutionPayloadHeader.blockNumber,
-            instance.latestExecutionPayloadHeader.gasLimit,
-            instance.latestExecutionPayloadHeader.gasUsed,
-            instance.latestExecutionPayloadHeader.timestamp,
-            instance.latestExecutionPayloadHeader.extraData,
-            instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.excessBlobs,
-            instance.latestExecutionPayloadHeader.blockHash,
-            instance.latestExecutionPayloadHeader.transactionsRoot,
-            instance.latestExecutionPayloadHeader.withdrawalsRoot));
+        instance.latestExecutionPayloadHeader.asInternalExecutionPayloadHeader(
+            executionPayloadHeaderSchema));
 
     state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);

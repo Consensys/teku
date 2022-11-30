@@ -29,11 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.List;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
@@ -47,13 +43,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaBellatrix
     extends ContainerSchema14<
@@ -100,41 +97,6 @@ public class ExecutionPayloadSchemaBellatrix
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
-  public ExecutionPayload create(
-      Bytes32 parentHash,
-      Bytes20 feeRecipient,
-      Bytes32 stateRoot,
-      Bytes32 receiptsRoot,
-      Bytes logsBloom,
-      Bytes32 prevRandao,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      Bytes32 blockHash,
-      List<Bytes> transactions) {
-    return new ExecutionPayloadBellatrix(
-        this,
-        SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszBytes32.of(stateRoot),
-        SszBytes32.of(receiptsRoot),
-        SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(prevRandao),
-        SszUInt64.of(blockNumber),
-        SszUInt64.of(gasLimit),
-        SszUInt64.of(gasUsed),
-        SszUInt64.of(timestamp),
-        getExtraDataSchema().fromBytes(extraData),
-        SszUInt256.of(baseFeePerGas),
-        SszBytes32.of(blockHash),
-        transactions.stream()
-            .map(getTransactionSchema()::fromBytes)
-            .collect(getTransactionsSchema().collector()));
-  }
-
   @Override
   public TransactionSchema getTransactionSchema() {
     return (TransactionSchema) getTransactionsSchema().getElementSchema();
@@ -146,8 +108,22 @@ public class ExecutionPayloadSchemaBellatrix
   }
 
   @Override
+  public WithdrawalSchema getWithdrawalSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a withdrawal schema from bellatrix");
+  }
+
+  @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)));
+  }
+
+  @Override
+  public ExecutionPayload createExecutionPayload(
+      final Consumer<ExecutionPayloadBuilder> builderConsumer) {
+    final ExecutionPayloadBuilderBellatrix builder =
+        new ExecutionPayloadBuilderBellatrix().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
   @Override
@@ -160,18 +136,13 @@ public class ExecutionPayloadSchemaBellatrix
     return new ExecutionPayloadBellatrix(this, node);
   }
 
-  @Override
-  public Optional<ExecutionPayloadSchemaBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
-  }
-
   @SuppressWarnings("unchecked")
-  private SszListSchema<Transaction, ?> getTransactionsSchema() {
+  public SszListSchema<Transaction, ?> getTransactionsSchema() {
     return (SszListSchema<Transaction, ?>) getFieldSchema13();
   }
 
   @SuppressWarnings("unchecked")
-  private SszByteListSchema<?> getExtraDataSchema() {
+  public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
   }
 }

@@ -56,9 +56,9 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                     .withNetwork(networkName)
                     .withDepositsFrom(eth1Node)
                     .withBellatrixEpoch(UInt64.ONE)
-                    .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
+                    .withTotalTerminalDifficulty(10001)
                     .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withExecutionEngineEndpoint(eth1Node.getInternalEngineJsonRpcUrl())
+                    .withExecutionEngine(eth1Node)
                     .withJwtSecretFile(JWT_FILE));
 
     final TekuValidatorNode validatorClient =

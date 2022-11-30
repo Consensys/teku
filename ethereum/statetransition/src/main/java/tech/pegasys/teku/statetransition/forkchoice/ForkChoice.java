@@ -35,11 +35,14 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -57,6 +60,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
@@ -235,6 +241,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   /** Import a block to the store. */
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
+      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
@@ -242,7 +249,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
-                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
+                onBlock(
+                    block, blobsSidecar, blockSlotState, blockImportPerformance, executionLayer));
   }
 
   /**
@@ -251,6 +259,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
    */
   private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
+      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final ExecutionLayerChannel executionLayer) {
@@ -263,9 +272,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block.getSlot(),
         blockSlotState.get().getSlot());
 
+    final SpecVersion specVersion = spec.atSlot(block.getSlot());
+
     final ForkChoicePayloadExecutor payloadExecutor =
         ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionLayer);
-    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
+    final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(
             block, blockSlotState.get(), recentChainData.getStore());
@@ -277,6 +288,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
+    final KzgCommitmentsProcessor kzgCommitmentsProcessor =
+        KzgCommitmentsProcessor.create(specVersion.miscHelpers());
+
+    final BlobsSidecarAvailabilityChecker forkChoiceBlobsSidecarAvailabilityChecker =
+        new ForkChoiceBlobsSidecarAvailabilityChecker(
+            specVersion, recentChainData, block, blobsSidecar);
+
     final BeaconState postState;
     try {
       postState =
@@ -285,7 +303,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   block,
                   blockSlotState.get(),
                   indexedAttestationCache,
-                  Optional.of(payloadExecutor));
+                  Optional.of(payloadExecutor),
+                  kzgCommitmentsProcessor,
+                  forkChoiceBlobsSidecarAvailabilityChecker);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -297,8 +317,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .getExecutionResult()
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
-        .thenApplyAsync(
-            payloadResult ->
+        .thenCombineAsync(
+            forkChoiceBlobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
+            (payloadResult, blobsSidecarAndValidationResult) ->
                 importBlockAndState(
                     block,
                     blockSlotState.get(),
@@ -306,7 +327,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     forkChoiceUtil,
                     indexedAttestationCache,
                     postState,
-                    payloadResult),
+                    payloadResult,
+                    blobsSidecarAndValidationResult),
             forkChoiceExecutor);
   }
 
@@ -317,7 +339,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceUtil forkChoiceUtil,
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
-      final PayloadValidationResult payloadValidationResult) {
+      final PayloadValidationResult payloadValidationResult,
+      final BlobsSidecarAndValidationResult blobsSidecarAndValidationResult) {
     blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
@@ -349,6 +372,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (payloadResult.hasFailedExecution()) {
       return BlockImportResult.failedExecutionPayloadExecution(
           payloadResult.getFailureCause().orElseThrow());
+    }
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      if (blobsSidecarAndValidationResult.isFailure()) {
+        LOG.error("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+        // TODO: fail block import
+      } else if (blobsSidecarAndValidationResult.isNotRequired()) {
+        LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+      } else if (blobsSidecarAndValidationResult.isValid()) {
+        LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+        // TODO: store blobs
+      }
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();

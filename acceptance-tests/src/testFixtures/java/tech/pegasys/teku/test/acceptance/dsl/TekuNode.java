@@ -56,6 +56,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
@@ -82,8 +83,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -100,8 +99,7 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
-    Consumer<SpecConfigBuilder> specConfigModifier =
-        config.getSpecConfigModifier().orElse(__ -> {});
+    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier();
     this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
@@ -116,24 +114,13 @@ public class TekuNode extends Node {
   }
 
   public static TekuNode create(
-      final Network network,
-      final DockerVersion version,
-      final Consumer<Config> configOptions,
-      final GenesisStateGenerator genesisStateGenerator)
+      final Network network, final DockerVersion version, final Consumer<Config> configOptions)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(network, version, config);
-
-    if (config.getGenesisStateConfig().isPresent()) {
-      final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
-      File genesisFile = genesisStateGenerator.generateState(genesisConfig);
-      node.copyFileToContainer(genesisFile, genesisConfig.getPath());
-    }
-
-    return node;
+    return new TekuNode(network, version, config);
   }
 
   public void start() throws Exception {
@@ -331,10 +318,7 @@ public class TekuNode extends Node {
                   .getMessage()
                   .getBody()
                   .executionPayload
-                  .toVersionBellatrix()
-                  .orElseThrow()
-                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
-                  .orElseThrow();
+                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
 
           assertThat(executionPayload.isDefault()).isFalse();
           LOG.debug(
@@ -632,8 +616,7 @@ public class TekuNode extends Node {
     private final Map<String, Object> configMap = new HashMap<>();
     private final List<File> tarballsToCopy = new ArrayList<>();
 
-    private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
-    private Optional<Consumer<SpecConfigBuilder>> specConfigModifier = Optional.empty();
+    private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
     public Config() {
       configMap.put("network", networkName);
@@ -659,7 +642,6 @@ public class TekuNode extends Node {
       configMap.put("metrics-host-allowlist", "*");
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
-      configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
       configMap.put("rest-api-host-allowlist", "*");
     }
@@ -701,6 +683,7 @@ public class TekuNode extends Node {
     }
 
     public Config withValidatorKeystores(final ValidatorKeystores keystores) {
+      configMap.put("Xinterop-enabled", false);
       tarballsToCopy.add(keystores.getTarball());
       configMap.put(
           "validator-keys",
@@ -730,23 +713,35 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withAltairEpoch(final UInt64 altairSlot) {
-      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
+    public Config withAltairEpoch(final UInt64 altairForkEpoch) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.altairBuilder(
+                      altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
       return this;
     }
 
     public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
       configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
       specConfigModifier =
-          Optional.of(
+          specConfigModifier.andThen(
               specConfigBuilder ->
                   specConfigBuilder.bellatrixBuilder(
                       bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
       return this;
     }
 
-    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
+    public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
       configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder ->
+                          bellatrixBuilder.terminalTotalDifficulty(
+                              UInt256.valueOf(totalTerminalDifficulty))));
       return this;
     }
 
@@ -757,8 +752,8 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withExecutionEngineEndpoint(final String eeEndpoint) {
-      configMap.put("ee-endpoint", eeEndpoint);
+    public Config withExecutionEngine(final BesuNode node) {
+      configMap.put("ee-endpoint", node.getInternalEngineJsonRpcUrl());
       return this;
     }
 
@@ -795,11 +790,7 @@ public class TekuNode extends Node {
       return peerId.toBase58();
     }
 
-    public Optional<GenesisStateConfig> getGenesisStateConfig() {
-      return genesisStateConfig;
-    }
-
-    public Optional<Consumer<SpecConfigBuilder>> getSpecConfigModifier() {
+    public Consumer<SpecConfigBuilder> getSpecConfigModifier() {
       return specConfigModifier;
     }
 

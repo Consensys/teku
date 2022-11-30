@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -207,55 +208,32 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
     final PayloadBuildingAttributes payloadAttributes = headAndAttrs.attributes;
 
-    final ExecutionPayload executionPayload;
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      executionPayload =
-          spec.atSlot(slot)
-              .getSchemaDefinitions()
-              .toVersionCapella()
-              .orElseThrow()
-              .getExecutionPayloadSchema()
-              .toVersionCapella()
-              .orElseThrow()
-              .create(
-                  headAndAttrs.head,
-                  payloadAttributes.getFeeRecipient(),
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes.random(256),
-                  payloadAttributes.getPrevRandao(),
-                  UInt64.valueOf(payloadIdCounter.get()),
-                  UInt64.ONE,
-                  UInt64.ZERO,
-                  payloadAttributes.getTimestamp(),
-                  Bytes.EMPTY,
-                  UInt256.ONE,
-                  Bytes32.random(),
-                  List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")),
-                  List.of());
-    } else {
-      executionPayload =
-          schemaDefinitionsBellatrix
-              .get()
-              .getExecutionPayloadSchema()
-              .toVersionBellatrix()
-              .orElseThrow()
-              .create(
-                  headAndAttrs.head,
-                  payloadAttributes.getFeeRecipient(),
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes.random(256),
-                  payloadAttributes.getPrevRandao(),
-                  UInt64.valueOf(payloadIdCounter.get()),
-                  UInt64.ONE,
-                  UInt64.ZERO,
-                  payloadAttributes.getTimestamp(),
-                  Bytes.EMPTY,
-                  UInt256.ONE,
-                  Bytes32.random(),
-                  List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")));
-    }
+    final ExecutionPayload executionPayload =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadSchema()
+            .createExecutionPayload(
+                builder ->
+                    builder
+                        .parentHash(headAndAttrs.head)
+                        .feeRecipient(payloadAttributes.getFeeRecipient())
+                        .stateRoot(Bytes32.ZERO)
+                        .receiptsRoot(Bytes32.ZERO)
+                        .logsBloom(Bytes.random(256))
+                        .prevRandao(payloadAttributes.getPrevRandao())
+                        .blockNumber(UInt64.valueOf(payloadIdCounter.get()))
+                        .gasLimit(UInt64.ONE)
+                        .gasUsed(UInt64.ZERO)
+                        .timestamp(payloadAttributes.getTimestamp())
+                        .extraData(Bytes.EMPTY)
+                        .baseFeePerGas(UInt256.ONE)
+                        .blockHash(Bytes32.random())
+                        .transactions(
+                            List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
+                        .withdrawals(Collections::emptyList)
+                        .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
     lastValidBlock =
         Optional.of(

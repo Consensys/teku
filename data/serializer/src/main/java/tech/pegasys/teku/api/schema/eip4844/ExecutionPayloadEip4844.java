@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema.eip4844;
 
-import static java.util.stream.Collectors.toList;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -29,13 +27,13 @@ import tech.pegasys.teku.api.schema.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.api.schema.capella.Withdrawal;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements ExecutionPayload {
 
-  @JsonProperty("excess_blobs")
-  public final UInt64 excessBlobs;
+  @JsonProperty("excess_data_gas")
+  public final UInt256 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadEip4844(
@@ -51,7 +49,7 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
       @JsonProperty("timestamp") final UInt64 timestamp,
       @JsonProperty("extra_data") final Bytes extraData,
       @JsonProperty("base_fee_per_gas") final UInt256 baseFeePerGas,
-      @JsonProperty("excess_blobs") final UInt64 excessBlobs,
+      @JsonProperty("excess_data_gas") final UInt256 excessDataGas,
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals) {
@@ -71,56 +69,20 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
         blockHash,
         transactions,
         withdrawals);
-    this.excessBlobs = excessBlobs;
+    this.excessDataGas = excessDataGas;
   }
 
   public ExecutionPayloadEip4844(
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
-    this.excessBlobs = executionPayload.toVersionEip4844().orElseThrow().getExcessBlobs();
+    this.excessDataGas = executionPayload.toVersionEip4844().orElseThrow().getExcessDataGas();
   }
 
   @Override
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
-      asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
-
-    final Optional<SchemaDefinitionsEip4844> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
-
-    if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-EIP4844 slot %s", slot);
-      throw new IllegalArgumentException(message);
-    }
-
-    return maybeSchema.map(
-        schemaDefinitionsEip4844 ->
-            schemaDefinitionsEip4844
-                .getExecutionPayloadSchema()
-                .toVersionEip4844()
-                .orElseThrow()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    excessBlobs,
-                    blockHash,
-                    transactions,
-                    withdrawals.stream()
-                        .map(
-                            withdrawal ->
-                                withdrawal.asInternalWithdrawal(
-                                    schemaDefinitionsEip4844.getWithdrawalSchema()))
-                        .collect(toList())));
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return super.applyToBuilder(executionPayloadSchema, builder).excessDataGas(() -> excessDataGas);
   }
 
   @Override
@@ -140,12 +102,12 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
       return false;
     }
     final ExecutionPayloadEip4844 that = (ExecutionPayloadEip4844) o;
-    return Objects.equals(excessBlobs, that.excessBlobs);
+    return Objects.equals(excessDataGas, that.excessDataGas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), excessBlobs);
+    return Objects.hash(super.hashCode(), excessDataGas);
   }
 
   @Override
@@ -163,7 +125,7 @@ public class ExecutionPayloadEip4844 extends ExecutionPayloadCapella implements 
         .add("timestamp", timestamp)
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
-        .add("excessBlobs", excessBlobs)
+        .add("excessDataGas", excessDataGas)
         .add("blockHash", blockHash)
         .add("transactions", transactions)
         .add("withdrawals", withdrawals)

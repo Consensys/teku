@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
@@ -146,5 +148,14 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
     return Optional.empty();
+  }
+
+  @Override
+  public void processBlobKzgCommitments(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No blob Kzg commitments in phase0");
   }
 }

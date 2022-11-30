@@ -31,8 +31,8 @@ import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implements ExecutionPayload {
 
@@ -85,45 +85,18 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
   }
 
   @Override
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
-      asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
-
-    final Optional<SchemaDefinitionsCapella> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionCapella();
-
-    if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-bellatrix slot %s", slot);
-      throw new IllegalArgumentException(message);
-    }
-
-    return maybeSchema.map(
-        schemaDefinitionsCapella ->
-            schemaDefinitionsCapella
-                .getExecutionPayloadSchema()
-                .toVersionCapella()
-                .orElseThrow()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    blockHash,
-                    transactions,
-                    withdrawals.stream()
-                        .map(
-                            withdrawal ->
-                                withdrawal.asInternalWithdrawal(
-                                    schemaDefinitionsCapella.getWithdrawalSchema()))
-                        .collect(toList())));
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return super.applyToBuilder(executionPayloadSchema, builder)
+        .withdrawals(
+            () ->
+                withdrawals.stream()
+                    .map(
+                        withdrawal ->
+                            withdrawal.asInternalWithdrawal(
+                                executionPayloadSchema.getWithdrawalSchemaRequired()))
+                    .collect(toList()));
   }
 
   @Override

@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -231,26 +230,28 @@ public class BuilderBidValidatorTest {
             dataStructureUtil.randomSignature());
   }
 
-  private ExecutionPayloadHeaderBellatrix createExecutionPayloadHeaderWithGasLimit(
+  private ExecutionPayloadHeader createExecutionPayloadHeaderWithGasLimit(
       SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
-        .toVersionBellatrix()
-        .orElseThrow()
-        .create(
-            Bytes32.random(),
-            Bytes20.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes.random(256),
-            Bytes32.ZERO,
-            UInt64.ZERO,
-            gasLimit,
-            UInt64.ZERO,
-            UInt64.ZERO,
-            Bytes32.ZERO,
-            UInt256.ONE,
-            Bytes32.random(),
-            Bytes32.ZERO);
+        .createExecutionPayloadHeader(
+            builder ->
+                builder
+                    .parentHash(Bytes32.random())
+                    .feeRecipient(Bytes20.ZERO)
+                    .stateRoot(Bytes32.ZERO)
+                    .receiptsRoot(Bytes32.ZERO)
+                    .logsBloom(Bytes.random(256))
+                    .prevRandao(Bytes32.ZERO)
+                    .blockNumber(UInt64.ZERO)
+                    .gasLimit(gasLimit)
+                    .gasUsed(UInt64.ZERO)
+                    .timestamp(UInt64.ZERO)
+                    .extraData(Bytes32.ZERO)
+                    .baseFeePerGas(UInt256.ZERO)
+                    .blockHash(Bytes32.random())
+                    .transactionsRoot(Bytes32.ZERO)
+                    .withdrawalsRoot(() -> Bytes32.ZERO)
+                    .excessDataGas(() -> UInt256.ONE));
   }
 }

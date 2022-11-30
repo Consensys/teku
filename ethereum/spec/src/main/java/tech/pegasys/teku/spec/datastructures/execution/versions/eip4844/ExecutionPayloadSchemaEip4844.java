@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOBS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -31,11 +31,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.List;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
@@ -49,9 +45,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
@@ -73,7 +69,7 @@ public class ExecutionPayloadSchemaEip4844
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt64,
+        SszUInt256,
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>>
@@ -96,7 +92,7 @@ public class ExecutionPayloadSchemaEip4844
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(EXCESS_BLOBS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             TRANSACTIONS,
@@ -107,45 +103,6 @@ public class ExecutionPayloadSchemaEip4844
             SszListSchema.create(
                 new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
-  }
-
-  public ExecutionPayload create(
-      Bytes32 parentHash,
-      Bytes20 feeRecipient,
-      Bytes32 stateRoot,
-      Bytes32 receiptsRoot,
-      Bytes logsBloom,
-      Bytes32 prevRandao,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      UInt64 excessBlobs,
-      Bytes32 blockHash,
-      List<Bytes> transactions,
-      List<Withdrawal> withdrawals) {
-    return new ExecutionPayloadEip4844Impl(
-        this,
-        SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszBytes32.of(stateRoot),
-        SszBytes32.of(receiptsRoot),
-        SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(prevRandao),
-        SszUInt64.of(blockNumber),
-        SszUInt64.of(gasLimit),
-        SszUInt64.of(gasUsed),
-        SszUInt64.of(timestamp),
-        getExtraDataSchema().fromBytes(extraData),
-        SszUInt256.of(baseFeePerGas),
-        SszUInt64.of(excessBlobs),
-        SszBytes32.of(blockHash),
-        transactions.stream()
-            .map(getTransactionSchema()::fromBytes)
-            .collect(getTransactionsSchema().collector()),
-        withdrawals.stream().collect(getWithdrawalsSchema().collector()));
   }
 
   @Override
@@ -163,6 +120,11 @@ public class ExecutionPayloadSchemaEip4844
     return getWithdrawalsSchema();
   }
 
+  @Override
+  public WithdrawalSchema getWithdrawalSchemaRequired() {
+    return getWithdrawalSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
@@ -175,26 +137,30 @@ public class ExecutionPayloadSchemaEip4844
   }
 
   @Override
+  public ExecutionPayload createExecutionPayload(
+      final Consumer<ExecutionPayloadBuilder> builderConsumer) {
+    final ExecutionPayloadBuilderEip4844 builder =
+        new ExecutionPayloadBuilderEip4844().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
+  }
+
+  @Override
   public ExecutionPayloadEip4844Impl createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadEip4844Impl(this, node);
   }
 
-  private SszByteListSchema<?> getExtraDataSchema() {
+  public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getChildSchema(getFieldIndex(EXTRA_DATA));
   }
 
   @SuppressWarnings("unchecked")
-  private SszListSchema<Transaction, ?> getTransactionsSchema() {
+  public SszListSchema<Transaction, ?> getTransactionsSchema() {
     return (SszListSchema<Transaction, ?>) getChildSchema(getFieldIndex(TRANSACTIONS));
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
-  }
-
-  @Override
-  public Optional<ExecutionPayloadSchemaEip4844> toVersionEip4844() {
-    return Optional.of(this);
   }
 }

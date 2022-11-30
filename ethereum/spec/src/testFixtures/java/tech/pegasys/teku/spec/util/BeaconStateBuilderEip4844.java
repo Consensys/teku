@@ -116,7 +116,7 @@ public class BeaconStateBuilderEip4844
             schema.getInactivityScoresSchema(), defaultItemsInSSZLists);
     currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
-    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeaderEip4844();
+    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
 
     this.nextWithdrawalIndex = UInt64.ZERO;
     this.nextWithdrawalValidatorIndex =
