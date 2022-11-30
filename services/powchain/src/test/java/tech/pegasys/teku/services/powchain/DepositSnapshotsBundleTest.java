@@ -15,35 +15,44 @@ package tech.pegasys.teku.services.powchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.api.migrated.BlockHeaderData;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.ReadonlyTransactionManager;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.contract.DepositContract;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 /** Checks consistency of bundled deposit snapshots */
 public class DepositSnapshotsBundleTest {
   private static final Spec SPEC = TestSpecFactory.createDefault();
+  private static final String INFURA_KEY_ENV = "INFURA_KEY";
+  public static final Map<Eth2Network, String> SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES =
+      Map.of(
+          Eth2Network.PRATER, "goerli",
+          Eth2Network.MAINNET, "mainnet",
+          Eth2Network.SEPOLIA, "sepolia");
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getAllNetworks")
+  @MethodSource("getSupportedNetworks")
   public void shouldCreateCorrectDepositTreeSnapshotFromEachBundleSnapshot(
       final Eth2Network eth2Network) {
     final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
@@ -66,20 +75,16 @@ public class DepositSnapshotsBundleTest {
     assertThat(depositTree.getSnapshot().get()).isEqualTo(depositTreeSnapshot);
   }
 
-  @Disabled("Remove to verify updated deposit snapshots against headers and states")
+  @Disabled("Executed for manual verification, slow for CI")
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getAllNetworks")
-  public void shouldCheckConsistencyOfSnapshotAndBlockHeaderAndState(final Eth2Network eth2Network)
-      throws IOException {
+  @MethodSource("getSupportedNetworks")
+  public void shouldValidateSnapshotViaRemoteAPI(final Eth2Network eth2Network) throws Exception {
     final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
     powchainConfigBuilder
         .specProvider(SPEC)
         .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
-    if (powchainConfiguration.getDepositSnapshotPath().isEmpty()) {
-      return;
-    }
 
     final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().get();
     final DepositSnapshotFileLoader depositSnapshotLoader =
@@ -87,39 +92,57 @@ public class DepositSnapshotsBundleTest {
 
     // Snapshot
     final DepositTreeSnapshot depositTreeSnapshot =
-        depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().get();
+        depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
 
-    // Block header
-    final String snapshotNoSuffixPath =
-        depositSnapshotPath.substring(0, depositSnapshotPath.length() - 4);
-    final String blockHeaderPath = snapshotNoSuffixPath + "_header.json";
-    final String headerJson =
-        new String(loadFromUrl(blockHeaderPath).toArray(), StandardCharsets.UTF_8);
-    BlockHeaderData blockHeaderData =
-        JsonUtil.parse(headerJson, BlockHeaderData.getJsonTypeDefinition());
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(eth2Network).build();
+    final OkHttpClient httpClient =
+        new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
+    final String infuraKey = System.getenv(INFURA_KEY_ENV);
+    if (infuraKey == null) {
+      throw new RuntimeException("Configure Infura key with environmental variable INFURA_KEY");
+    }
+    final String endpoint =
+        "https://"
+            + SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES.get(eth2Network)
+            + ".infura.io/v3/"
+            + infuraKey;
+    final Web3j web3j = Web3j.build(new HttpService(endpoint, httpClient));
+    final DepositContract depositContract =
+        DepositContract.load(
+            networkConfig.getEth1DepositContractAddress().toHexString(),
+            web3j,
+            new ReadonlyTransactionManager(
+                web3j, networkConfig.getEth1DepositContractAddress().toHexString()),
+            null);
 
-    // State
-    final String statePath = snapshotNoSuffixPath + "_state.ssz";
-    final Spec spec = SpecFactory.create(eth2Network.configName());
-    final BeaconState state = ChainDataLoader.loadState(spec, statePath);
+    // Query deposit contract at DepositTreeSnapshot block height
+    depositContract.setDefaultBlockParameter(
+        DefaultBlockParameter.valueOf(
+            depositTreeSnapshot.getExecutionBlockHeight().bigIntegerValue()));
 
-    // Assertions
-    assertThat(blockHeaderData.getHeader().getMessage().getStateRoot())
-        .isEqualTo(state.hashTreeRoot());
-    final Eth1Data eth1Data = state.getEth1Data();
-    assertThat(depositTreeSnapshot.getDepositCount())
-        .isEqualTo(eth1Data.getDepositCount().longValue());
-    assertThat(depositTreeSnapshot.getDepositRoot()).isEqualTo(eth1Data.getDepositRoot());
-    assertThat(depositTreeSnapshot.getExecutionBlockHash()).isEqualTo(eth1Data.getBlockHash());
+    // Verify deposit_root
+    final Bytes32 expectedRoot = Bytes32.wrap(depositContract.getDepositRoot().send().getValue());
+    assertThat(depositTreeSnapshot.getDepositRoot()).isEqualTo(expectedRoot);
+
+    // Verify deposit_count
+    final Bytes depositCountBytes = Bytes.wrap(depositContract.getDepositCount().send().getValue());
+    final UInt64 depositCount = MathHelpers.bytesToUInt64(depositCountBytes);
+    assertThat(depositTreeSnapshot.getDepositCount()).isEqualTo(depositCount.longValue());
+
+    // Check that the block hash is the canonical block at the expected block height
+    final EthBlock block =
+        web3j
+            .ethGetBlockByNumber(
+                DefaultBlockParameter.valueOf(
+                    depositTreeSnapshot.getExecutionBlockHeight().bigIntegerValue()),
+                false)
+            .send();
+    assertThat(block.getBlock().getHash())
+        .isEqualTo(depositTreeSnapshot.getExecutionBlockHash().toHexString());
   }
 
-  private Bytes loadFromUrl(final String path) throws IOException {
-    return ResourceLoader.urlOrFile("application/octet-stream")
-        .loadBytes(path)
-        .orElseThrow(() -> new FileNotFoundException(String.format("File '%s' not found", path)));
-  }
-
-  public static Stream<Eth2Network> getAllNetworks() {
-    return Stream.of(Eth2Network.values());
+  public static Stream<Eth2Network> getSupportedNetworks() {
+    return SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES.keySet().stream();
   }
 }
