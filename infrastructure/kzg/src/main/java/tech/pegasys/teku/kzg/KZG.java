@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -106,7 +107,8 @@ public final class KZG {
   private static String copyResourceToTempFileIfNeeded(final URL url) throws IOException {
     try {
       if (url.toURI().getScheme().equals(FILE_SCHEME)) {
-        return url.getPath();
+        // Platform-agnostic safe way to get path
+        return Paths.get(url.toURI()).toFile().getPath();
       }
     } catch (final URISyntaxException ex) {
       throw new KzgException(String.format("%s is incorrect file path", url), ex);
