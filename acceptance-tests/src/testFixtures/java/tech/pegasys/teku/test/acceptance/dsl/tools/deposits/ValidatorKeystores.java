@@ -99,7 +99,7 @@ public class ValidatorKeystores {
             maybeTarball = Optional.of(createValidatorKeystoresTarBall());
             return maybeTarball.get();
           } catch (Exception e) {
-            throw new IllegalStateException("Unable to create validator tarball");
+            throw new IllegalStateException("Unable to create validator tarball", e);
           }
         });
   }
