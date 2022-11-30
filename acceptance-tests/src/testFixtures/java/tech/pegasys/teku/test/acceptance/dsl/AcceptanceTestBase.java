@@ -37,7 +37,6 @@ public class AcceptanceTestBase {
     System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
   }
 
-
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
 
