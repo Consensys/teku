@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg;
+package tech.pegasys.teku.kzg.ckzg4844;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,8 +26,9 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.kzg.KZGException;
 
-public class KZGUtils {
+public class CKZG4844Utils {
 
   private static final String FILE_SCHEME = "file";
 

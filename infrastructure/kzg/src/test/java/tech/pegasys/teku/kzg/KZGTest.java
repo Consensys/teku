@@ -34,15 +34,11 @@ import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 public final class KZGTest {
 
   private static final String MAINNET_TRUSTED_SETUP_TEST = "trusted_setups/test_mainnet.txt";
-
   private static final BigInteger BLS_MODULUS =
       new BigInteger(
           "52435875175126190479447740508185965837690552500527637822603658699938581184513");
-
   private static final int FIELD_ELEMENTS_PER_BLOB = 4096;
-
   private static final int RANDOM_SEED = 5566;
-
   private static final Random RND = new Random(RANDOM_SEED);
 
   private final KZG kzg = new CKZG4844();

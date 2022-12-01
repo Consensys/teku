@@ -25,7 +25,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.KZGUtils;
 
 /** Wrapper around jc-kzg-4844 */
 public final class CKZG4844 implements KZG {
@@ -43,7 +42,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public void loadTrustedSetup(final URL trustedSetup) throws KZGException {
     try {
-      final String file = KZGUtils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
+      final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
       CKzg4844JNI.loadTrustedSetup(file);
       LOG.info("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
@@ -63,7 +62,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
     try {
-      final byte[] blobsBytes = KZGUtils.flattenBytesListToArray(blobs);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBytesListToArray(blobs);
       final byte[] proof = CKzg4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
@@ -76,10 +75,11 @@ public final class CKZG4844 implements KZG {
       final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof)
       throws KZGException {
     try {
-      final byte[] blobsBytes = KZGUtils.flattenBytesListToArray(blobs);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBytesListToArray(blobs);
       final Stream<Bytes> commitmentsBytesStream =
           kzgCommitments.stream().map(KZGCommitment::getBytesCompressed);
-      final byte[] commitmentsBytes = KZGUtils.flattenBytesStreamToArray(commitmentsBytesStream);
+      final byte[] commitmentsBytes =
+          CKZG4844Utils.flattenBytesStreamToArray(commitmentsBytesStream);
       return CKzg4844JNI.verifyAggregateKzgProof(
           blobsBytes, commitmentsBytes, blobs.size(), kzgProof.toArray());
     } catch (final Exception ex) {
