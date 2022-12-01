@@ -28,8 +28,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
@@ -49,7 +47,7 @@ public class ReconstructHistoricalStatesService extends Service {
   private final Optional<String> genesisStateResource;
   private final StorageUpdateChannel storageUpdateChannel;
   private final StatusLogger statusLogger;
-  private final SettableGauge reconstructGauge;
+  private final ProgressLogger progressLogger;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final SafeFuture<Void> stopped = new SafeFuture<>();
@@ -81,13 +79,7 @@ public class ReconstructHistoricalStatesService extends Service {
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
     this.statusLogger = statusLogger;
-
-    this.reconstructGauge =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "reconstruct_historical_states_slot",
-            "The slot the reconstruct historical states service has last saved");
+    this.progressLogger = new ProgressLogger(metricsSystem, statusLogger);
   }
 
   @Override
@@ -172,7 +164,7 @@ public class ReconstructHistoricalStatesService extends Service {
               }
 
               final SignedBeaconBlock block = maybeBlock.get();
-              reconstructGauge.set(block.getSlot().doubleValue());
+              progressLogger.update(block, context.anchorSlot);
               context.currentState = spec.replayValidatedBlock(context.currentState, block);
               return storageUpdateChannel.onReconstructedFinalizedState(
                   context.currentState, block.getRoot());
