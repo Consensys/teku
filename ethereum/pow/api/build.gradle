@@ -4,4 +4,6 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:logging')
+
+  testImplementation testFixtures(project(':ethereum:spec'))
 }

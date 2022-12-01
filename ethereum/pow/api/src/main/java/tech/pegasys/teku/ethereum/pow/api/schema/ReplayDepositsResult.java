@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.pow.api.schema;
 
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ReplayDepositsResult {
@@ -68,5 +69,24 @@ public class ReplayDepositsResult {
 
   public boolean isPastMinGenesisBlock() {
     return pastMinGenesisBlock;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ReplayDepositsResult that = (ReplayDepositsResult) o;
+    return pastMinGenesisBlock == that.pastMinGenesisBlock
+        && Objects.equals(lastProcessedBlockNumber, that.lastProcessedBlockNumber)
+        && Objects.equals(lastProcessedDepositIndex, that.lastProcessedDepositIndex);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(lastProcessedBlockNumber, lastProcessedDepositIndex, pastMinGenesisBlock);
   }
 }
