@@ -113,11 +113,11 @@ public class DepositSnapshotsBundleTest {
             depositTreeSnapshot.getExecutionBlockHeight().bigIntegerValue()));
 
     // Verify deposit_root
-    final Bytes32 expectedRoot = Bytes32.wrap(depositContract.getDepositRoot().send().getValue());
+    final Bytes32 expectedRoot = Bytes32.wrap(depositContract.getDepositRoot().send());
     assertThat(depositTreeSnapshot.getDepositRoot()).isEqualTo(expectedRoot);
 
     // Verify deposit_count
-    final Bytes depositCountBytes = Bytes.wrap(depositContract.getDepositCount().send().getValue());
+    final Bytes depositCountBytes = Bytes.wrap(depositContract.getDepositCount().send());
     final UInt64 depositCount = MathHelpers.bytesToUInt64(depositCountBytes);
     assertThat(depositTreeSnapshot.getDepositCount()).isEqualTo(depositCount.longValue());
 

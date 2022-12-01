@@ -94,23 +94,22 @@ public class DepositContract extends Contract {
     return new DepositContract(contractAddress, web3j, transactionManager, contractGasProvider);
   }
 
-  public RemoteFunctionCall<DynamicBytes> getDepositCount() {
+  public RemoteFunctionCall<byte[]> getDepositCount() {
     final Function function =
         new Function(
             FUNC_GET_DEPOSIT_COUNT,
             Collections.emptyList(),
             List.of(new TypeReference<DynamicBytes>() {}));
-    return executeRemoteCallSingleValueReturn(function, DynamicBytes.class);
+    return executeRemoteCallSingleValueReturn(function, byte[].class);
   }
 
-  public RemoteFunctionCall<org.web3j.abi.datatypes.generated.Bytes32> getDepositRoot() {
+  public RemoteFunctionCall<byte[]> getDepositRoot() {
     final Function function =
         new Function(
             FUNC_GET_DEPOSIT_ROOT,
             Collections.emptyList(),
             List.of(new TypeReference<org.web3j.abi.datatypes.generated.Bytes32>() {}));
-    return executeRemoteCallSingleValueReturn(
-        function, org.web3j.abi.datatypes.generated.Bytes32.class);
+    return executeRemoteCallSingleValueReturn(function, byte[].class);
   }
 
   public static class DepositEventEventResponse extends BaseEventResponse {
