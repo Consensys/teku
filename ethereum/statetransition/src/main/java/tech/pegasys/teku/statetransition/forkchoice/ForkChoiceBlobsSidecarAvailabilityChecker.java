@@ -56,7 +56,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
 
   @Override
   public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
-    return validationResult.orElse(NOT_AVAILABLE_RESULT_FUTURE);
+    return validationResult.orElse(NOT_REQUIRED_RESULT_FUTURE);
   }
 
   private BlobsSidecarAndValidationResult validateBlobsSidecar() {

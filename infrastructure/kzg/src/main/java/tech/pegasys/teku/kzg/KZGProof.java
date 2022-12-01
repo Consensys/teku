@@ -50,6 +50,10 @@ public final class KZGProof {
     return new KZGProof(bytes);
   }
 
+  public static KZGProof fromArray(final byte[] bytes) {
+    return fromBytesCompressed(Bytes48.wrap(bytes));
+  }
+
   private final Bytes48 bytesCompressed;
 
   public KZGProof(final Bytes48 bytesCompressed) {
@@ -57,9 +61,9 @@ public final class KZGProof {
   }
 
   /**
-   * Returns the SSZ serialization of the <em>compressed</em> form of the commitment
+   * Returns the SSZ serialization of the <em>compressed</em> form of the proof
    *
-   * @return the serialization of the compressed form of the commitment.
+   * @return the serialization of the compressed form of the proof.
    */
   public Bytes toSSZBytes() {
     return SSZ.encode(writer -> writer.writeFixedBytes(getBytesCompressed()));
@@ -67,6 +71,10 @@ public final class KZGProof {
 
   public Bytes48 getBytesCompressed() {
     return bytesCompressed;
+  }
+
+  public byte[] toArray() {
+    return bytesCompressed.toArray();
   }
 
   public String toAbbreviatedString() {
@@ -96,7 +104,7 @@ public final class KZGProof {
       return false;
     }
 
-    KZGProof other = (KZGProof) obj;
+    final KZGProof other = (KZGProof) obj;
     return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 

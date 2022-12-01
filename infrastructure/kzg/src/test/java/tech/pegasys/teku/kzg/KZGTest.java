@@ -27,11 +27,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.kzg.impl.KzgException;
+import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
 public final class KZGTest {
+
   private static final String MAINNET_TRUSTED_SETUP_TEST = "trusted_setups/test_mainnet.txt";
   private static final BigInteger BLS_MODULUS =
       new BigInteger(
@@ -40,27 +41,28 @@ public final class KZGTest {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  @BeforeEach
-  public void setup() {
-    KZG.resetTrustedSetup();
-  }
+  private final KZG kzg = CKZG4844.createOrGetInstance();
 
-  @Test
-  public void testKzgDoubleResetDoNotThrow() {
-    KZG.resetTrustedSetup();
-    KZG.resetTrustedSetup();
-  }
-
-  @Test
-  public void testKzgLoadTrustedSetup() {
-    loadTrustedSetup();
-    KZG.resetTrustedSetup();
+  @AfterEach
+  public void cleanUpIfNeeded() {
+    try {
+      kzg.freeTrustedSetup();
+    } catch (final KZGException ex) {
+      // NOOP
+    }
   }
 
   @Test
   public void testKzgLoadTrustedSetupTwice_shouldThrowException() {
     loadTrustedSetup();
-    assertThrows(KzgException.class, this::loadTrustedSetup);
+    assertThrows(KZGException.class, this::loadTrustedSetup);
+  }
+
+  @Test
+  public void testKzgFreeTrustedSetupTwice_shouldThrowException() {
+    loadTrustedSetup();
+    kzg.freeTrustedSetup();
+    assertThrows(KZGException.class, kzg::freeTrustedSetup);
   }
 
   @Test
@@ -69,15 +71,15 @@ public final class KZGTest {
     final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
     assertThrows(
-        KzgException.class,
+        KZGException.class,
         () ->
-            KZG.verifyAggregateKzgProof(
+            kzg.verifyAggregateKzgProof(
                 Collections.emptyList(), Collections.emptyList(), kzgProof));
-    assertThrows(KzgException.class, () -> KZG.blobToKzgCommitment(Bytes.EMPTY));
-    assertThrows(KzgException.class, () -> KZG.computeAggregateKzgProof(Collections.emptyList()));
+    assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY));
+    assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList()));
     assertThrows(
-        KzgException.class,
-        () -> KZG.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof));
+        KZGException.class,
+        () -> kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof));
   }
 
   @Test
@@ -89,15 +91,15 @@ public final class KZGTest {
             .mapToObj(__ -> getSampleBlob())
             .collect(Collectors.toList());
     final List<KZGCommitment> kzgCommitments =
-        blobs.stream().map(KZG::blobToKzgCommitment).collect(Collectors.toList());
-    final KZGProof kzgProof = KZG.computeAggregateKzgProof(blobs);
-    assertThat(KZG.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
+        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+    final KZGProof kzgProof = kzg.computeAggregateKzgProof(blobs);
+    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
     assertThat(
-            KZG.verifyAggregateKzgProof(
+            kzg.verifyAggregateKzgProof(
                 blobs.subList(0, 2), kzgCommitments.subList(0, 2), kzgProof))
         .isFalse();
-    final KZGProof invalidProof = KZG.computeAggregateKzgProof(blobs.subList(0, 2));
-    assertThat(KZG.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
+    final KZGProof invalidProof = kzg.computeAggregateKzgProof(blobs.subList(0, 2));
+    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
   }
 
   @Test
@@ -106,19 +108,19 @@ public final class KZGTest {
     final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
     final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
-    assertThat(KZG.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
-    assertThat(KZG.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
+    assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
+    assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
     assertThat(
-            KZG.blobToKzgCommitment(Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE])))
+            kzg.blobToKzgCommitment(Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE])))
         .isEqualTo(kzgCommitment);
     assertThat(
-            KZG.verifyAggregateKzgProof(Collections.emptyList(), Collections.emptyList(), kzgProof))
+            kzg.verifyAggregateKzgProof(Collections.emptyList(), Collections.emptyList(), kzgProof))
         .isTrue();
   }
 
   private void loadTrustedSetup() {
-    final URL resourceUrl = KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST);
-    KZG.loadTrustedSetup(resourceUrl);
+    final URL trustedSetup = KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST);
+    kzg.loadTrustedSetup(trustedSetup);
   }
 
   private BigInteger randomBigIntegerInModulus(final BigInteger modulus, final Random rnd) {
@@ -135,6 +137,6 @@ public final class KZGTest {
         .mapToObj(__ -> randomBigIntegerInModulus(BLS_MODULUS, RND))
         .map(bi -> (Bytes) UInt256.valueOf(bi).toBytes())
         .reduce(Bytes::wrap)
-        .get();
+        .orElse(Bytes.EMPTY);
   }
 }

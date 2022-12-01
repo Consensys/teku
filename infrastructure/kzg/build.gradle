@@ -1,12 +1,8 @@
-repositories {
-  maven { url "https://artifacts.consensys.net/public/maven/maven/" }
-}
-
 dependencies {
+  implementation project(':infrastructure:io')
+
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation("tech.pegasys:jc-kzg-4844:develop")
+  implementation 'tech.pegasys:jc-kzg-4844'
   implementation 'commons-io:commons-io'
-
-  implementation project(":infrastructure:io")
 }

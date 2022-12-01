@@ -105,6 +105,10 @@ public class AcceptanceTestBase {
     return addNode(BesuNode.create(network, version, configOptions));
   }
 
+  protected GenesisGenerator createGenesisGenerator() {
+    return new GenesisGenerator();
+  }
+
   private <T extends Node> T addNode(final T node) {
     nodes.add(node);
     return node;

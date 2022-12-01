@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
@@ -82,7 +82,7 @@ public class Predicates {
    * @return true if the validator has an "eth1" withdrawal credential, false otherwise
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
-    return validator.getWithdrawalCredentials().slice(0, 1).equals(ETH1_ADDRESS_WITHDRAWAL_PREFIX);
+    return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
   }
 
   /**
@@ -97,7 +97,12 @@ public class Predicates {
   public boolean isFullyWithdrawableValidator(
       final Validator validator, final UInt64 balance, final UInt64 epoch) {
     return hasEth1WithdrawalCredential(validator)
-        && validator.getWithdrawableEpoch().isLessThanOrEqualTo(epoch)
+        && isFullyWithdrawableValidatorEth1CredentialsChecked(validator, balance, epoch);
+  }
+
+  public boolean isFullyWithdrawableValidatorEth1CredentialsChecked(
+      final Validator validator, final UInt64 balance, final UInt64 epoch) {
+    return validator.getWithdrawableEpoch().isLessThanOrEqualTo(epoch)
         && balance.isGreaterThan(UInt64.ZERO);
   }
 
@@ -110,11 +115,17 @@ public class Predicates {
    * @return true if the validator can partially withdraw their funds, false otherwise
    */
   public boolean isPartiallyWithdrawableValidator(final Validator validator, final UInt64 balance) {
+    return hasEth1WithdrawalCredential(validator)
+        && isPartiallyWithdrawableValidatorEth1CredentialsChecked(validator, balance);
+  }
+
+  public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+      final Validator validator, final UInt64 balance) {
     final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
     final boolean hasMaxEffectiveBalance =
         validator.getEffectiveBalance().equals(maxEffectiveBalance);
     final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);
 
-    return hasEth1WithdrawalCredential(validator) && hasMaxEffectiveBalance && hasExcessBalance;
+    return hasMaxEffectiveBalance && hasExcessBalance;
   }
 }

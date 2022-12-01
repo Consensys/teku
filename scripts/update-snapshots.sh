@@ -51,16 +51,16 @@ require_command "ssh"
 
 echo $'\nStarting download of deposit tree snapshots...'
 OUT=$(echo "$OUT" | sed 's:/*$::')
-download_snapshot() {
-  echo ""
-  echo "Downloading $2"
-  ssh -f -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${1}" sleep 1
-  "${SNAPSHOT_DOWNLOAD_SCRIPT}" http://localhost:"${LOCAL_REST_API_BINDING_PORT}" true "${OUT}/${2}"
+
+downloader() {
+  echo "Downloading $1 snapshot" >&2
+  ssh -f -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${2}" sleep 1
+  curl -s --show-error --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/teku/v1/beacon/deposit_snapshot -o "${OUT}/${1}.ssz" >&2
 }
 
-download_snapshot "${SERVER_GOERLI_URL}" "goerli.json"
-download_snapshot "${SERVER_SEPOLIA_URL}" "sepolia.json"
-download_snapshot "${SERVER_GNOSIS_URL}" "gnosis.json"
-download_snapshot "${SERVER_MAINNET_URL}" "mainnet.json"
+downloader "goerli" "${SERVER_GOERLI_URL}"
+downloader "sepolia" "${SERVER_SEPOLIA_URL}"
+downloader "gnosis" "${SERVER_GNOSIS_URL}"
+downloader "mainnet" "${SERVER_MAINNET_URL}"
 
-echo $'\nAll done! Commit changes manually'
+echo $'\nAll done! Run verification tests and commit changes manually'

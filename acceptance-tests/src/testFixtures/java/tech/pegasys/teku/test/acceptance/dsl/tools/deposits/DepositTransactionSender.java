@@ -18,6 +18,7 @@ import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -26,7 +27,6 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.teku.beacon.pow.contract.DepositContract;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,12 +62,10 @@ class DepositTransactionSender {
   }
 
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
-      BLSKeyPair validatorKeyPair,
-      final BLSPublicKey withdrawalPublicKey,
-      final UInt64 amountInGwei) {
+      BLSKeyPair validatorKeyPair, final Bytes32 withdrawalCredentials, final UInt64 amountInGwei) {
 
     final DepositData depositData =
-        depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalPublicKey);
+        depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalCredentials);
 
     final SafeFuture<TransactionReceipt> safeFuture = sendDepositTransaction(depositData);
 

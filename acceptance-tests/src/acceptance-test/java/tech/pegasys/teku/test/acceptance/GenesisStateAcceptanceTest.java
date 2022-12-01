@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
@@ -51,7 +50,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     int numberOfValidators = 4;
 
     final TekuDepositSender depositSender = createTekuDepositSender(Config.DEFAULT_NETWORK_NAME);
-    final List<ValidatorKeys> validatorKeys =
+    final ValidatorKeystores validatorKeys =
         depositSender.generateValidatorKeys(numberOfValidators);
     depositSender.sendValidatorDeposits(
         eth1Node, validatorKeys, depositSender.getMinDepositAmount());

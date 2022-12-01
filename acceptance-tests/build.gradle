@@ -21,6 +21,7 @@ dependencies {
   testFixturesImplementation project(':teku')
 
   testFixturesImplementation project(':infrastructure:crypto')
+  testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation 'tech.pegasys.signers.internal:bls-keystore'
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'
