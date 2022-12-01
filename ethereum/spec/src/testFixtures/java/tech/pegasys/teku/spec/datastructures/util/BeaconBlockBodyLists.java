@@ -59,8 +59,7 @@ public class BeaconBlockBodyLists {
       SignedBlsToExecutionChange... blsToExecutionChanges) {
     return blockBodySchema
         .toVersionCapella()
-        .orElseThrow()
-        .getBlsToExecutionChangesSchema()
-        .of(blsToExecutionChanges);
+        .map(schema -> schema.getBlsToExecutionChangesSchema().of(blsToExecutionChanges))
+        .orElse(null);
   }
 }

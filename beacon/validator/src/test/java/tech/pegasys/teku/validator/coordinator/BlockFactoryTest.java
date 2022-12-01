@@ -71,6 +71,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
+
   private static final Eth1Data ETH1_DATA = new Eth1Data();
 
   final AggregatingAttestationPool attestationsPool = mock(AggregatingAttestationPool.class);
@@ -317,8 +318,7 @@ class BlockFactoryTest {
     when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
-    when(blsToExecutionChangePool.getItemsForBlock(any(), any(), any()))
-        .thenReturn(blsToExecutionChanges);
+    when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(
@@ -354,10 +354,16 @@ class BlockFactoryTest {
     assertThat(block.getBody().getAttesterSlashings()).isEqualTo(attesterSlashings);
     assertThat(block.getBody().getProposerSlashings()).isEqualTo(proposerSlashings);
     assertThat(block.getBody().getVoluntaryExits()).isEqualTo(voluntaryExits);
-    assertThat(block.getBody().getOptionalBlsToExecutionChanges())
-        .isPresent()
-        .hasValue(blsToExecutionChanges);
     assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
+
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      assertThat(block.getBody().getOptionalBlsToExecutionChanges())
+          .isPresent()
+          .hasValue(blsToExecutionChanges);
+    } else {
+      assertThat(block.getBody().getOptionalBlsToExecutionChanges()).isEmpty();
+    }
+
     return block;
   }
 
