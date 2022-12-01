@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
@@ -66,6 +67,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
     return taskQueue.queueTask(() -> delegate.getPayloadV2(payloadId));
+  }
+
+  @Override
+  public SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(final Bytes8 payloadId) {
+    return taskQueue.queueTask(() -> delegate.getBlobsBundleV1(payloadId));
   }
 
   @Override

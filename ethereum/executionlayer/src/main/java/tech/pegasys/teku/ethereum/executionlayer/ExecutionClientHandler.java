@@ -16,10 +16,12 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -28,19 +30,23 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public interface ExecutionClientHandler {
 
-  SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash);
+  SafeFuture<Optional<PowBlock>> eth1GetPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> eth1GetPowChainHead();
 
   SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState,
-      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
+      ForkChoiceState forkChoiceState,
+      Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
   SafeFuture<ExecutionPayload> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot);
+      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
-  SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload);
+  default SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {
+    return SafeFuture.failedFuture(new RuntimeException("Not implemented"));
+  }
+
+  SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration);
+      TransitionConfiguration transitionConfiguration);
 }
