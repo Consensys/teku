@@ -17,5 +17,6 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class WithdrawalPrefixes {
   public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
-  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x01");
+  public static final byte ETH1_ADDRESS_WITHDRAWAL_BYTE = 0x01;
+  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
 }

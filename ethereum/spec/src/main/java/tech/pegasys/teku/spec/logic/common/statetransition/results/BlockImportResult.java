@@ -34,6 +34,9 @@ public interface BlockImportResult {
   BlockImportResult FAILED_DESCENDANT_OF_INVALID_BLOCK =
       new FailedBlockImportResult(FailureReason.DESCENDANT_OF_INVALID_BLOCK, Optional.empty());
 
+  BlockImportResult FAILED_BLOBS_AVAILABILITY_CHECK =
+      new FailedBlockImportResult(FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK, Optional.empty());
+
   static BlockImportResult failedExecutionPayloadExecution(final Throwable cause) {
     return new FailedBlockImportResult(
         FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION, Optional.of(cause));
@@ -70,6 +73,7 @@ public interface BlockImportResult {
     FAILED_EXECUTION_PAYLOAD_EXECUTION,
     FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
     DESCENDANT_OF_INVALID_BLOCK,
+    FAILED_BLOBS_AVAILABILITY_CHECK,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
