@@ -14,16 +14,17 @@
 package tech.pegasys.teku.services.powchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -45,14 +46,9 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class DepositSnapshotsBundleTest {
   private static final Spec SPEC = TestSpecFactory.createDefault();
   private static final String INFURA_KEY_ENV = "INFURA_KEY";
-  public static final Map<Eth2Network, String> SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES =
-      Map.of(
-          Eth2Network.PRATER, "goerli",
-          Eth2Network.MAINNET, "mainnet",
-          Eth2Network.SEPOLIA, "sepolia");
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getSupportedNetworks")
+  @EnumSource(Eth2Network.class)
   public void shouldCreateCorrectDepositTreeSnapshotFromEachBundleSnapshot(
       final Eth2Network eth2Network) {
     final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
@@ -61,24 +57,27 @@ public class DepositSnapshotsBundleTest {
         .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
-    if (powchainConfiguration.getDepositSnapshotPath().isEmpty()) {
-      return;
-    }
+    assumeThat(powchainConfiguration.getDepositSnapshotPath())
+        .describedAs("No built-in snapshot for network %s", eth2Network)
+        .isPresent();
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(
-            Optional.of(powchainConfiguration.getDepositSnapshotPath().get()));
+        new DepositSnapshotFileLoader(powchainConfiguration.getDepositSnapshotPath());
     final DepositTreeSnapshot depositTreeSnapshot =
-        depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().get();
+        depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
     assertThat(depositTree.getDepositCount()).isGreaterThan(0);
-    assertThat(depositTree.getSnapshot().get()).isEqualTo(depositTreeSnapshot);
+    assertThat(depositTree.getSnapshot()).contains(depositTreeSnapshot);
   }
 
-  @Disabled("Executed for manual verification, slow for CI")
   @ParameterizedTest(name = "{0}")
   @MethodSource("getSupportedNetworks")
-  public void shouldValidateSnapshotViaRemoteAPI(final Eth2Network eth2Network) throws Exception {
+  public void shouldValidateSnapshotViaRemoteAPI(
+      final Eth2Network eth2Network, final String rpcEndpoint) throws Exception {
+    final String infuraKey = System.getenv(INFURA_KEY_ENV);
+    assumeThat(infuraKey)
+        .describedAs("Infura key must be specified via INFURA_KEY env var")
+        .isNotNull();
     final PowchainConfiguration.Builder powchainConfigBuilder = PowchainConfiguration.builder();
     powchainConfigBuilder
         .specProvider(SPEC)
@@ -86,7 +85,7 @@ public class DepositSnapshotsBundleTest {
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
 
-    final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().get();
+    final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
         new DepositSnapshotFileLoader(Optional.of(depositSnapshotPath));
 
@@ -98,16 +97,8 @@ public class DepositSnapshotsBundleTest {
         Eth2NetworkConfiguration.builder(eth2Network).build();
     final OkHttpClient httpClient =
         new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
-    final String infuraKey = System.getenv(INFURA_KEY_ENV);
-    if (infuraKey == null) {
-      throw new RuntimeException("Configure Infura key with environmental variable INFURA_KEY");
-    }
-    final String endpoint =
-        "https://"
-            + SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES.get(eth2Network)
-            + ".infura.io/v3/"
-            + infuraKey;
-    final Web3j web3j = Web3j.build(new HttpService(endpoint, httpClient));
+    final Web3j web3j =
+        Web3j.build(new HttpService(rpcEndpoint.replace("%INFURA_KEY%", infuraKey), httpClient));
     final DepositContract depositContract =
         DepositContract.load(
             networkConfig.getEth1DepositContractAddress().toHexString(),
@@ -142,7 +133,11 @@ public class DepositSnapshotsBundleTest {
         .isEqualTo(depositTreeSnapshot.getExecutionBlockHash().toHexString());
   }
 
-  public static Stream<Eth2Network> getSupportedNetworks() {
-    return SUPPORTED_REMOTE_VERIFICATION_NETWORK_PREFIXES.keySet().stream();
+  public static Stream<Arguments> getSupportedNetworks() {
+    return Stream.of(
+        Arguments.of(Eth2Network.GNOSIS, "https://rpc.ankr.com/gnosis"),
+        Arguments.of(Eth2Network.PRATER, "https://goerli.infura.io/v3/%INFURA_KEY%"),
+        Arguments.of(Eth2Network.MAINNET, "https://mainnet.infura.io/v3/%INFURA_KEY%"),
+        Arguments.of(Eth2Network.SEPOLIA, "https://sepolia.infura.io/v3/%INFURA_KEY%"));
   }
 }
