@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -197,7 +198,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
       throw new BlockProcessingException(
           "Expected "
-              + expectedWithdrawals
+              + expectedWithdrawals.hashTreeRoot()
               + " withdrawals root, but withdrawals root was "
               + (payloadSummary.getOptionalWithdrawalsRoot().isPresent()
                   ? payloadSummary.getOptionalWithdrawalsRoot().get()
@@ -230,31 +231,39 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     final List<Withdrawal> expectedWithdrawals = new ArrayList<>();
     final WithdrawalSchema withdrawalSchema = schemaDefinitionsCapella.getWithdrawalSchema();
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(preState.getSlot());
-    final int validatorCount = preState.getValidators().size();
+    final SszList<Validator> validators = preState.getValidators();
+    final SszUInt64List balances = preState.getBalances();
+    final int validatorCount = validators.size();
+    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
     int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
     for (int i = 0;
-        i < validatorCount
-            && expectedWithdrawals.size() < specConfigCapella.getMaxWithdrawalsPerPayload();
+        i < validatorCount && expectedWithdrawals.size() < maxWithdrawalsPerPayload;
         i++) {
-      final Validator validator = preState.getValidators().get(validatorIndex);
-      final UInt64 balance = preState.getBalances().get(validatorIndex).get();
-      if (predicates.isFullyWithdrawableValidator(validator, balance, epoch)) {
-        expectedWithdrawals.add(
-            withdrawalSchema.create(
-                withdrawalIndex,
-                UInt64.valueOf(validatorIndex),
-                new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                balance));
-        withdrawalIndex = withdrawalIndex.increment();
-      } else if (predicates.isPartiallyWithdrawableValidator(validator, balance)) {
-        expectedWithdrawals.add(
-            withdrawalSchema.create(
-                withdrawalIndex,
-                UInt64.valueOf(validatorIndex),
-                new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                balance.minus(specConfig.getMaxEffectiveBalance())));
-        withdrawalIndex = withdrawalIndex.increment();
+
+      final Validator validator = validators.get(validatorIndex);
+      if (predicates.hasEth1WithdrawalCredential(validator)) {
+        final UInt64 balance = balances.get(validatorIndex).get();
+
+        if (predicates.isFullyWithdrawableValidatorEth1CredentialsChecked(
+            validator, balance, epoch)) {
+          expectedWithdrawals.add(
+              withdrawalSchema.create(
+                  withdrawalIndex,
+                  UInt64.valueOf(validatorIndex),
+                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  balance));
+          withdrawalIndex = withdrawalIndex.increment();
+        } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+            validator, balance)) {
+          expectedWithdrawals.add(
+              withdrawalSchema.create(
+                  withdrawalIndex,
+                  UInt64.valueOf(validatorIndex),
+                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  balance.minus(specConfig.getMaxEffectiveBalance())));
+          withdrawalIndex = withdrawalIndex.increment();
+        }
       }
 
       validatorIndex = incrementValidatorIndex(validatorIndex, validatorCount);
