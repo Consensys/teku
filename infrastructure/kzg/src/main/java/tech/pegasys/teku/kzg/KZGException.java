@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.impl;
+package tech.pegasys.teku.kzg;
 
-public class KzgException extends IllegalArgumentException {
+public class KZGException extends RuntimeException {
 
-  public KzgException(String message) {
+  public KZGException(String message) {
     super(message);
   }
 
-  public KzgException(String message, Throwable cause) {
+  public KZGException(String message, Throwable cause) {
     super(message, cause);
   }
 }

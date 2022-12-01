@@ -22,7 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
 
-  public static final int KZG_PROOF_SIZE = 48;
+  public static final int KZG_PROOF_BYTES = 48;
 
   /**
    * Creates 0x00..00 for point-at-infinity
@@ -39,15 +39,19 @@ public final class KZGProof {
 
   public static KZGProof fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_PROOF_SIZE,
-        "Expected " + KZG_PROOF_SIZE + " bytes but received %s.",
+        bytes.size() == KZG_PROOF_BYTES,
+        "Expected " + KZG_PROOF_BYTES + " bytes but received %d.",
         bytes.size());
     return SSZ.decode(
-        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_SIZE))));
+        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_BYTES))));
   }
 
   public static KZGProof fromBytesCompressed(final Bytes48 bytes) throws IllegalArgumentException {
     return new KZGProof(bytes);
+  }
+
+  public static KZGProof fromArray(final byte[] bytes) {
+    return fromBytesCompressed(Bytes48.wrap(bytes));
   }
 
   private final Bytes48 bytesCompressed;
@@ -57,9 +61,9 @@ public final class KZGProof {
   }
 
   /**
-   * Returns the SSZ serialization of the <em>compressed</em> form of the commitment
+   * Returns the SSZ serialization of the <em>compressed</em> form of the proof
    *
-   * @return the serialization of the compressed form of the commitment.
+   * @return the serialization of the compressed form of the proof.
    */
   public Bytes toSSZBytes() {
     return SSZ.encode(writer -> writer.writeFixedBytes(getBytesCompressed()));
@@ -67,6 +71,10 @@ public final class KZGProof {
 
   public Bytes48 getBytesCompressed() {
     return bytesCompressed;
+  }
+
+  public byte[] toArray() {
+    return bytesCompressed.toArray();
   }
 
   public String toAbbreviatedString() {
@@ -96,7 +104,7 @@ public final class KZGProof {
       return false;
     }
 
-    KZGProof other = (KZGProof) obj;
+    final KZGProof other = (KZGProof) obj;
     return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 

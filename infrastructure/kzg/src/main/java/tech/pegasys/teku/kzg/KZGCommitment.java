@@ -22,7 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGCommitment {
 
-  public static final int KZG_COMMITMENT_SIZE = 48;
+  public static final int KZG_COMMITMENT_BYTES = 48;
 
   /**
    * Creates 0x00..00 for point-at-infinity
@@ -39,17 +39,20 @@ public final class KZGCommitment {
 
   public static KZGCommitment fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_COMMITMENT_SIZE,
-        "Expected " + KZG_COMMITMENT_SIZE + " bytes but received %s.",
+        bytes.size() == KZG_COMMITMENT_BYTES,
+        "Expected " + KZG_COMMITMENT_BYTES + " bytes but received %d.",
         bytes.size());
     return SSZ.decode(
         bytes,
-        reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_SIZE))));
+        reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_BYTES))));
   }
 
-  public static KZGCommitment fromBytesCompressed(final Bytes48 bytes)
-      throws IllegalArgumentException {
+  public static KZGCommitment fromBytesCompressed(final Bytes48 bytes) {
     return new KZGCommitment(bytes);
+  }
+
+  public static KZGCommitment fromArray(final byte[] bytes) {
+    return fromBytesCompressed(Bytes48.wrap(bytes));
   }
 
   private final Bytes48 bytesCompressed;
@@ -69,6 +72,10 @@ public final class KZGCommitment {
 
   public Bytes48 getBytesCompressed() {
     return bytesCompressed;
+  }
+
+  public byte[] toArray() {
+    return bytesCompressed.toArray();
   }
 
   public String toAbbreviatedString() {
@@ -98,7 +105,7 @@ public final class KZGCommitment {
       return false;
     }
 
-    KZGCommitment other = (KZGCommitment) obj;
+    final KZGCommitment other = (KZGCommitment) obj;
     return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 
