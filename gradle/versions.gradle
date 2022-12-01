@@ -41,6 +41,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.8'
+    dependency 'tech.pegasys:jc-kzg-4844:develop'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 

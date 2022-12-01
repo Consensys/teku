@@ -47,9 +47,12 @@ public final class KZGCommitment {
         reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_SIZE))));
   }
 
-  public static KZGCommitment fromBytesCompressed(final Bytes48 bytes)
-      throws IllegalArgumentException {
+  public static KZGCommitment fromBytesCompressed(final Bytes48 bytes) {
     return new KZGCommitment(bytes);
+  }
+
+  public static KZGCommitment fromArray(final byte[] bytes) {
+    return fromBytesCompressed(Bytes48.wrap(bytes));
   }
 
   private final Bytes48 bytesCompressed;
@@ -69,6 +72,10 @@ public final class KZGCommitment {
 
   public Bytes48 getBytesCompressed() {
     return bytesCompressed;
+  }
+
+  public byte[] toArray() {
+    return bytesCompressed.toArray();
   }
 
   public String toAbbreviatedString() {
@@ -98,7 +105,7 @@ public final class KZGCommitment {
       return false;
     }
 
-    KZGCommitment other = (KZGCommitment) obj;
+    final KZGCommitment other = (KZGCommitment) obj;
     return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 

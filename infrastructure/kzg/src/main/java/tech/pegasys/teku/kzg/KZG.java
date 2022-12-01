@@ -13,119 +13,66 @@
 
 package tech.pegasys.teku.kzg;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.kzg.impl.KZG4844;
-import tech.pegasys.teku.kzg.impl.KzgException;
-import tech.pegasys.teku.kzg.impl.ckzg.CkzgLoader;
 
 /**
- * Implements the standard KZG functions needed for the EIP-4844 specification.
- *
- * <p>This package strives to implement the KZG standard as used in the Eth2 specification and is
- * the entry-point for all KZG operations in Teku. Do not rely on any of the classes used by this
- * one conforming to the specification or standard.
+ * This interface specifies all the KZG functions needed for the EIP-4844 specification and is the
+ * entry-point for all KZG operations in Teku.
  */
-public final class KZG {
-  private static final Logger LOG = LogManager.getLogger();
-  private static final String FILE_SCHEME = "file";
+public interface KZG {
 
-  private static KZG4844 kzgImpl;
+  KZG NOOP =
+      new KZG() {
+        @Override
+        public void loadTrustedSetup(final URL trustedSetup) throws KZGException {}
 
-  static {
-    resetKzgImplementation();
-  }
+        @Override
+        public void freeTrustedSetup() throws KZGException {}
 
-  public static void setKzgImplementation(final KZG4844 kzgImpl) {
-    KZG.kzgImpl = kzgImpl;
-  }
+        @Override
+        public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
+          return KZGProof.infinity();
+        }
 
-  public static void resetKzgImplementation() {
-    if (CkzgLoader.INSTANCE.isPresent()) {
-      kzgImpl = CkzgLoader.INSTANCE.get();
-      LOG.info("KZG: loaded CKZG library");
-    } else {
-      throw new KzgException("Failed to load CKZG library.");
-    }
-  }
+        @Override
+        public boolean verifyAggregateKzgProof(
+            final List<Bytes> blobs,
+            final List<KZGCommitment> kzgCommitments,
+            final KZGProof kzgProof)
+            throws KZGException {
+          return true;
+        }
 
-  public static KZG4844 getKzgImpl() {
-    return kzgImpl;
-  }
+        @Override
+        public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
+          return KZGCommitment.infinity();
+        }
 
-  public static void resetTrustedSetup() {
-    try {
-      kzgImpl.resetTrustedSetup();
-    } catch (final KzgException ex) {
-      LOG.trace("Trying to reset KZG trusted setup which is not loaded");
-    }
-  }
+        @Override
+        public boolean verifyKzgProof(
+            final KZGCommitment kzgCommitment,
+            final Bytes32 z,
+            final Bytes32 y,
+            final KZGProof kzgProof)
+            throws KZGException {
+          return true;
+        }
+      };
 
-  public static void loadTrustedSetup(final URL url) {
-    final String filePath;
-    try {
-      filePath = copyResourceToTempFileIfNeeded(url);
-    } catch (final IOException ex) {
-      throw new KzgException(
-          String.format("Failed to copy trusted setup '%s' to temporary file", url), ex);
-    }
-    kzgImpl.loadTrustedSetup(filePath);
-  }
+  void loadTrustedSetup(URL trustedSetup) throws KZGException;
 
-  public static KZGProof computeAggregateKzgProof(final List<Bytes> blobs) {
-    return kzgImpl.computeAggregateKzgProof(blobs);
-  }
+  void freeTrustedSetup() throws KZGException;
 
-  public static boolean verifyAggregateKzgProof(
-      final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof) {
-    return kzgImpl.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof);
-  }
+  KZGProof computeAggregateKzgProof(List<Bytes> blobs) throws KZGException;
 
-  public static KZGCommitment blobToKzgCommitment(final Bytes blob) {
-    return kzgImpl.blobToKzgCommitment(blob);
-  }
+  boolean verifyAggregateKzgProof(
+      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof) throws KZGException;
 
-  public static boolean verifyKzgProof(
-      final KZGCommitment kzgCommitment,
-      final Bytes32 z,
-      final Bytes32 y,
-      final KZGProof kzgProof) {
-    return kzgImpl.verifyKzgProof(kzgCommitment, z, y, kzgProof);
-  }
+  KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
 
-  private static String copyResourceToTempFileIfNeeded(final URL url) throws IOException {
-    try {
-      if (url.toURI().getScheme().equals(FILE_SCHEME)) {
-        // Platform-agnostic safe way to get path
-        return Paths.get(url.toURI()).toFile().getPath();
-      }
-    } catch (final URISyntaxException ex) {
-      throw new KzgException(String.format("%s is incorrect file path", url), ex);
-    }
-
-    final Bytes resource =
-        ResourceLoader.urlOrFile("application/octet-stream")
-            .loadBytes(url.toExternalForm())
-            .orElseThrow(() -> new FileNotFoundException("Not found"));
-
-    File temp = File.createTempFile("resource", ".tmp");
-    temp.deleteOnExit();
-
-    try (final FileOutputStream out = new FileOutputStream(temp)) {
-      out.write(resource.toArray());
-    }
-
-    return temp.getAbsolutePath();
-  }
+  boolean verifyKzgProof(KZGCommitment kzgCommitment, Bytes32 z, Bytes32 y, KZGProof kzgProof)
+      throws KZGException;
 }
