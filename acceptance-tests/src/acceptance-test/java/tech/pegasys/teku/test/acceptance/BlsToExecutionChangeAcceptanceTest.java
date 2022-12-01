@@ -39,7 +39,7 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
     final Eth1Address executionAddress =
         Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
-    final UInt64 capellaActivationEpoch = UInt64.valueOf(1);
+    final UInt64 capellaActivationEpoch = UInt64.ONE;
 
     TekuNode primaryNode =
         createTekuNode(
@@ -50,8 +50,8 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
               c.withInteropValidators(0, 8);
               c.withStubExecutionEngine();
               c.withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString());
-              c.withAltairEpoch(UInt64.valueOf(0));
-              c.withBellatrixEpoch(UInt64.valueOf(0));
+              c.withAltairEpoch(UInt64.ZERO);
+              c.withBellatrixEpoch(UInt64.ZERO);
               c.withCapellaEpoch(capellaActivationEpoch);
             });
     primaryNode.start();

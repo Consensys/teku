@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 
 public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
 
@@ -28,10 +29,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             c -> {
               c.withRealNetwork();
               c.withStartupTargetPeerCount(0);
-              c.withStubExecutionEngine();
-              c.withAltairEpoch(UInt64.valueOf(1));
-              c.withBellatrixEpoch(UInt64.valueOf(2));
-              c.withCapellaEpoch(UInt64.valueOf(3));
+              applyMilestoneConfig(c);
             });
 
     primaryNode.start();
@@ -47,13 +45,17 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
               c.withRealNetwork();
               c.withPeers(primaryNode);
               c.withInteropValidators(0, 0);
-              c.withStubExecutionEngine();
-              c.withAltairEpoch(UInt64.valueOf(1));
-              c.withBellatrixEpoch(UInt64.valueOf(2));
-              c.withCapellaEpoch(UInt64.valueOf(3));
+              applyMilestoneConfig(c);
             });
 
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
+  }
+
+  private static void applyMilestoneConfig(final Config c) {
+    c.withAltairEpoch(UInt64.ZERO);
+    c.withBellatrixEpoch(UInt64.ZERO);
+    c.withCapellaEpoch(UInt64.ONE);
+    c.withStubExecutionEngine();
   }
 }
