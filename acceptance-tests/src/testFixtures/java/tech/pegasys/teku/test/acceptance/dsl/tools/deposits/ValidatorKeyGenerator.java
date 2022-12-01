@@ -13,28 +13,28 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
+import static tech.pegasys.teku.spec.datastructures.util.DepositGenerator.createWithdrawalCredentials;
+
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeyGenerator {
-  private final int validatorCount;
-  private final SecureRandom srng;
+  private final SecureRandom srng = SecureRandomProvider.createSecureRandom();
 
-  public ValidatorKeyGenerator(final int validatorCount) {
-    this.validatorCount = validatorCount;
-    this.srng = SecureRandomProvider.createSecureRandom();
+  public Stream<ValidatorKeys> generateKeysStream(final int validatorCount) {
+    return IntStream.range(0, validatorCount)
+        .mapToObj(ignore -> new ValidatorKeys(BLSKeyPair.random(srng), BLSKeyPair.random(srng)));
   }
 
-  public Stream<ValidatorKeys> generateKeysStream() {
-    return IntStream.range(0, validatorCount).mapToObj(ignore -> generateKey());
-  }
-
-  private ValidatorKeys generateKey() {
-    final BLSKeyPair validatorKey = BLSKeyPair.random(srng);
-    final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
-    return new ValidatorKeys(validatorKey, withdrawalKey);
+  public Stream<ValidatorKeys> generateKeysStream(
+      final int validatorCount, final Bytes20 eth1WithdrawalAddress) {
+    final Bytes32 withdrawalCredentials = createWithdrawalCredentials(eth1WithdrawalAddress);
+    return IntStream.range(0, validatorCount)
+        .mapToObj(__ -> new ValidatorKeys(BLSKeyPair.random(srng), withdrawalCredentials));
   }
 }

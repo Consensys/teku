@@ -82,6 +82,10 @@ public class ValidatorKeystores {
         .collect(Collectors.toList());
   }
 
+  public List<ValidatorKeys> getValidatorKeys() {
+    return validatorKeys;
+  }
+
   public List<String> getPasswords() {
     return validatorKeys.stream().map((__) -> VALIDATOR_KEYS_PASSWORD).collect(Collectors.toList());
   }
