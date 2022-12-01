@@ -36,7 +36,7 @@ public final class CKZG4844 implements KZG {
     try {
       LOG.info("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {
-      throw new KZGException("Failed to load C-KZG-4844 library");
+      throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
   }
 
@@ -45,6 +45,7 @@ public final class CKZG4844 implements KZG {
     try {
       final String file = KZGUtils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
       CKzg4844JNI.loadTrustedSetup(file);
+      LOG.info("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
     }
@@ -66,7 +67,7 @@ public final class CKZG4844 implements KZG {
       final byte[] proof = CKzg4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
-      throw new KZGException("Failed to compute aggregated KZG Proof for Blobs", ex);
+      throw new KZGException("Failed to compute aggregated KZG proof for blobs", ex);
     }
   }
 
@@ -83,8 +84,7 @@ public final class CKZG4844 implements KZG {
           blobsBytes, commitmentsBytes, blobs.size(), kzgProof.toArray());
     } catch (final Exception ex) {
       throw new KZGException(
-          String.format("Failed to verify blobs and commitments against KZG Proof %s", kzgProof),
-          ex);
+          "Failed to verify blobs and commitments against KZG proof " + kzgProof, ex);
     }
   }
 
@@ -94,8 +94,7 @@ public final class CKZG4844 implements KZG {
       final byte[] commitmentBytes = CKzg4844JNI.blobToKzgCommitment(blob.toArray());
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
-      throw new KZGException(
-          String.format("Failed to produce KZG Commitment from Blob %s", blob), ex);
+      throw new KZGException("Failed to produce KZG commitment from blob " + blob, ex);
     }
   }
 
@@ -109,7 +108,7 @@ public final class CKZG4844 implements KZG {
     } catch (final Exception ex) {
       throw new KZGException(
           String.format(
-              "Failed to verify KZG Commitment %s against KZG Proof %s", kzgCommitment, kzgProof),
+              "Failed to verify KZG commitment %s against KZG proof %s", kzgCommitment, kzgProof),
           ex);
     }
   }
