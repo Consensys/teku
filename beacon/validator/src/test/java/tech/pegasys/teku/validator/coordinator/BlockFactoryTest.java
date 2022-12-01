@@ -77,6 +77,8 @@ class BlockFactoryTest {
   final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
+      mock(OperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
@@ -275,6 +277,8 @@ class BlockFactoryTest {
     final SszList<AttesterSlashing> attesterSlashings = blockBodyLists.createAttesterSlashings();
     final SszList<ProposerSlashing> proposerSlashings = blockBodyLists.createProposerSlashings();
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
+        blockBodyLists.createBlsToExecutionChanges();
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       if (postMerge) {
@@ -300,6 +304,7 @@ class BlockFactoryTest {
                 attesterSlashingPool,
                 proposerSlashingPool,
                 voluntaryExitPool,
+                blsToExecutionChangePool,
                 syncCommitteeContributionPool,
                 depositProvider,
                 eth1DataCache,
@@ -312,6 +317,8 @@ class BlockFactoryTest {
     when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
+    when(blsToExecutionChangePool.getItemsForBlock(any(), any(), any()))
+        .thenReturn(blsToExecutionChanges);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(
@@ -347,6 +354,9 @@ class BlockFactoryTest {
     assertThat(block.getBody().getAttesterSlashings()).isEqualTo(attesterSlashings);
     assertThat(block.getBody().getProposerSlashings()).isEqualTo(proposerSlashings);
     assertThat(block.getBody().getVoluntaryExits()).isEqualTo(voluntaryExits);
+    assertThat(block.getBody().getOptionalBlsToExecutionChanges())
+        .isPresent()
+        .hasValue(blsToExecutionChanges);
     assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
     return block;
   }
@@ -410,6 +420,7 @@ class BlockFactoryTest {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
+            blsToExecutionChangePool,
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,

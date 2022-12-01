@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public class BeaconBlockBodyLists {
@@ -52,5 +53,14 @@ public class BeaconBlockBodyLists {
 
   public SszList<SignedVoluntaryExit> createVoluntaryExits(SignedVoluntaryExit... voluntaryExits) {
     return blockBodySchema.getVoluntaryExitsSchema().of(voluntaryExits);
+  }
+
+  public SszList<SignedBlsToExecutionChange> createBlsToExecutionChanges(
+      SignedBlsToExecutionChange... blsToExecutionChanges) {
+    return blockBodySchema
+        .toVersionCapella()
+        .orElseThrow()
+        .getBlsToExecutionChangesSchema()
+        .of(blsToExecutionChanges);
   }
 }
