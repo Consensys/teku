@@ -40,7 +40,7 @@ public final class KZGProof {
   public static KZGProof fromSSZBytes(final Bytes bytes) {
     checkArgument(
         bytes.size() == KZG_PROOF_BYTES,
-        "Expected " + KZG_PROOF_BYTES + " bytes but received %d.",
+        "Expected " + KZG_PROOF_BYTES + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
         bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_BYTES))));

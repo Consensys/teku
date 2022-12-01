@@ -40,7 +40,7 @@ public final class KZGCommitment {
   public static KZGCommitment fromSSZBytes(final Bytes bytes) {
     checkArgument(
         bytes.size() == KZG_COMMITMENT_BYTES,
-        "Expected " + KZG_COMMITMENT_BYTES + " bytes but received %d.",
+        "Expected " + KZG_COMMITMENT_BYTES + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
         bytes,
