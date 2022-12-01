@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -21,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844Impl;
@@ -87,6 +90,14 @@ public class BeaconBlockBodyEip4844Impl
   BeaconBlockBodyEip4844Impl(
       final BeaconBlockBodySchemaEip4844Impl type, final TreeNode backingNode) {
     super(type, backingNode);
+  }
+
+  public static BeaconBlockBodyEip4844Impl required(final BeaconBlockBody body) {
+    checkArgument(
+        body instanceof BeaconBlockBodyEip4844Impl,
+        "Expected EIP-4844 block body but got %s",
+        body.getClass());
+    return (BeaconBlockBodyEip4844Impl) body;
   }
 
   @Override
