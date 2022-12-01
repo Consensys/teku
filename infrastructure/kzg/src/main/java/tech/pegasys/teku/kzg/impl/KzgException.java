@@ -11,12 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.kzg.impl;
 
-import org.apache.tuweni.bytes.Bytes;
+public class KzgException extends IllegalArgumentException {
 
-public class WithdrawalPrefixes {
-  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
-  public static final byte ETH1_ADDRESS_WITHDRAWAL_BYTE = 0x01;
-  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
+  public KzgException(String message) {
+    super(message);
+  }
+
+  public KzgException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }
