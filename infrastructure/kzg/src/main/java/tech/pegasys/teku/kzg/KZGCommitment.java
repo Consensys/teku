@@ -22,7 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGCommitment {
 
-  public static final int KZG_COMMITMENT_BYTES = 48;
+  public static final int KZG_COMMITMENT_SIZE = 48;
 
   /**
    * Creates 0x00..00 for point-at-infinity
@@ -39,12 +39,12 @@ public final class KZGCommitment {
 
   public static KZGCommitment fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_COMMITMENT_BYTES,
-        "Expected " + KZG_COMMITMENT_BYTES + " bytes but received %s.",
+        bytes.size() == KZG_COMMITMENT_SIZE,
+        "Expected " + KZG_COMMITMENT_SIZE + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
         bytes,
-        reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_BYTES))));
+        reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_SIZE))));
   }
 
   public static KZGCommitment fromBytesCompressed(final Bytes48 bytes) {

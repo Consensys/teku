@@ -22,7 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
 
-  public static final int KZG_PROOF_BYTES = 48;
+  public static final int KZG_PROOF_SIZE = 48;
 
   /**
    * Creates 0x00..00 for point-at-infinity
@@ -39,11 +39,11 @@ public final class KZGProof {
 
   public static KZGProof fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_PROOF_BYTES,
-        "Expected " + KZG_PROOF_BYTES + " bytes but received %s.",
+        bytes.size() == KZG_PROOF_SIZE,
+        "Expected " + KZG_PROOF_SIZE + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
-        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_BYTES))));
+        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_SIZE))));
   }
 
   public static KZGProof fromBytesCompressed(final Bytes48 bytes) throws IllegalArgumentException {
