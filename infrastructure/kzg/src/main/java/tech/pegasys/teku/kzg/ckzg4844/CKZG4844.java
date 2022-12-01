@@ -57,7 +57,7 @@ public final class CKZG4844 implements KZG {
     try {
       final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
       CKzg4844JNI.loadTrustedSetup(file);
-      LOG.info("Loaded trusted setup from {}", file);
+      LOG.debug("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
     }
@@ -107,7 +107,7 @@ public final class CKZG4844 implements KZG {
       final byte[] commitmentBytes = CKzg4844JNI.blobToKzgCommitment(blob.toArray());
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
-      throw new KZGException("Failed to produce KZG commitment from blob " + blob, ex);
+      throw new KZGException("Failed to produce KZG commitment from blob", ex);
     }
   }
 

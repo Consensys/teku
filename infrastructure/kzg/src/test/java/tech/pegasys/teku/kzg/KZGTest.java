@@ -59,6 +59,13 @@ public final class KZGTest {
   }
 
   @Test
+  public void testKzgFreeTrustedSetupTwice_shouldThrowException() {
+    loadTrustedSetup();
+    kzg.freeTrustedSetup();
+    assertThrows(KZGException.class, kzg::freeTrustedSetup);
+  }
+
+  @Test
   public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() {
     final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
     final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
