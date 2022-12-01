@@ -17,9 +17,8 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -30,17 +29,14 @@ public class BlockHeaderData {
   private final boolean canonical;
   private final SignedBeaconBlockHeader header;
 
-  private static final DeserializableTypeDefinition<BlockHeaderData> HEADER_DATA_TYPE =
-      DeserializableTypeDefinition.object(BlockHeaderData.class, Builder.class)
-          .initializer(Builder::new)
-          .finisher(Builder::build)
-          .withField("root", BYTES32_TYPE, BlockHeaderData::getRoot, Builder::root)
-          .withField("canonical", BOOLEAN_TYPE, BlockHeaderData::isCanonical, Builder::canonical)
+  private static final SerializableTypeDefinition<BlockHeaderData> HEADER_DATA_TYPE =
+      SerializableTypeDefinition.object(BlockHeaderData.class)
+          .withField("root", BYTES32_TYPE, BlockHeaderData::getRoot)
+          .withField("canonical", BOOLEAN_TYPE, BlockHeaderData::isCanonical)
           .withField(
               "header",
               SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
-              BlockHeaderData::getHeader,
-              Builder::header)
+              BlockHeaderData::getHeader)
           .build();
 
   public BlockHeaderData(
@@ -79,7 +75,7 @@ public class BlockHeaderData {
     return header;
   }
 
-  public static DeserializableTypeDefinition<BlockHeaderData> getJsonTypeDefinition() {
+  public static SerializableTypeDefinition<BlockHeaderData> getJsonTypeDefinition() {
     return HEADER_DATA_TYPE;
   }
 
@@ -112,32 +108,5 @@ public class BlockHeaderData {
         + ", header="
         + header
         + '}';
-  }
-
-  static class Builder {
-    private Optional<Bytes32> root;
-    private Optional<Boolean> canonical;
-    private Optional<SignedBeaconBlockHeader> header;
-
-    private Builder() {}
-
-    public Builder root(final Bytes32 root) {
-      this.root = Optional.of(root);
-      return this;
-    }
-
-    public Builder canonical(final boolean canonical) {
-      this.canonical = Optional.of(canonical);
-      return this;
-    }
-
-    public Builder header(final SignedBeaconBlockHeader header) {
-      this.header = Optional.of(header);
-      return this;
-    }
-
-    public BlockHeaderData build() {
-      return new BlockHeaderData(root.orElseThrow(), canonical.orElseThrow(), header.orElseThrow());
-    }
   }
 }
