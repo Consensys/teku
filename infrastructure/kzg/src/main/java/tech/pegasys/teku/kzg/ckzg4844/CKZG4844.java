@@ -46,7 +46,7 @@ public final class CKZG4844 implements KZG {
 
   private CKZG4844() {
     try {
-      LOG.info("Loaded C-KZG-4844 library");
+      LOG.debug("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
