@@ -14,12 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderSchemaEip4844;
 
 public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
     extends SszContainerSchema<T> {
@@ -38,15 +35,6 @@ public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
    */
   LongList getBlindedNodeGeneralizedIndices();
 
-  default Optional<ExecutionPayloadHeaderSchemaBellatrix> toVersionBellatrix() {
-    return Optional.empty();
-  }
-
-  default Optional<ExecutionPayloadHeaderSchemaCapella> toVersionCapella() {
-    return Optional.empty();
-  }
-
-  default Optional<ExecutionPayloadHeaderSchemaEip4844> toVersionEip4844() {
-    return Optional.empty();
-  }
+  ExecutionPayloadHeader createExecutionPayloadHeader(
+      Consumer<ExecutionPayloadHeaderBuilder> builderConsumer);
 }

@@ -116,7 +116,7 @@ public class BeaconStateBuilderCapella
             schema.getInactivityScoresSchema(), defaultItemsInSSZLists);
     currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
-    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeaderCapella();
+    latestExecutionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
 
     this.nextWithdrawalIndex = UInt64.ZERO;
     this.nextWithdrawalValidatorIndex =

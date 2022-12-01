@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -70,7 +71,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 class BlockOperationSelectorFactoryTest {
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -87,6 +88,10 @@ class BlockOperationSelectorFactoryTest {
 
   @SuppressWarnings("unchecked")
   private final OperationValidator<SignedVoluntaryExit> voluntaryExitValidator =
+      mock(OperationValidator.class);
+
+  @SuppressWarnings("unchecked")
+  private final OperationValidator<SignedBlsToExecutionChange> blsToExecutionChangeValidator =
       mock(OperationValidator.class);
 
   private final SignedContributionAndProofValidator contributionValidator =
@@ -114,6 +119,14 @@ class BlockOperationSelectorFactoryTest {
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
           voluntaryExitValidator);
+
+  private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
+      new OperationPool<>(
+          "bls_to_execution_Change",
+          metricsSystem,
+          beaconBlockSchemaSupplier.andThen(
+              s -> s.toVersionCapella().get().getBlsToExecutionChangesSchema()),
+          blsToExecutionChangeValidator);
   private final SyncCommitteeContributionPool contributionPool =
       new SyncCommitteeContributionPool(spec, contributionValidator);
 
@@ -149,6 +162,7 @@ class BlockOperationSelectorFactoryTest {
           attesterSlashingPool,
           proposerSlashingPool,
           voluntaryExitPool,
+          blsToExecutionChangePool,
           contributionPool,
           depositProvider,
           eth1DataCache,
@@ -167,6 +181,8 @@ class BlockOperationSelectorFactoryTest {
     when(proposerSlashingValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(voluntaryExitValidator.validateForGossip(any()))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+    when(blsToExecutionChangeValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
@@ -187,6 +203,7 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.syncAggregate.getSyncCommitteeBits().getBitCount()).isZero();
     assertThat(bodyBuilder.syncAggregate.getSyncCommitteeSignature().getSignature().isInfinity())
         .isTrue();
+    assertThat(bodyBuilder.blsToExecutionChanges).isEmpty();
   }
 
   @Test
@@ -198,10 +215,13 @@ class BlockOperationSelectorFactoryTest {
     final AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     final SignedContributionAndProof contribution =
         dataStructureUtil.randomSignedContributionAndProof(1, parentRoot);
+    final SignedBlsToExecutionChange blsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
     addToPool(voluntaryExitPool, voluntaryExit);
     addToPool(proposerSlashingPool, proposerSlashing);
     addToPool(attesterSlashingPool, attesterSlashing);
     assertThat(contributionPool.addLocal(contribution)).isCompletedWithValue(ACCEPT);
+    addToPool(blsToExecutionChangePool, blsToExecutionChange);
 
     factory
         .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
@@ -216,6 +236,7 @@ class BlockOperationSelectorFactoryTest {
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
                 .createSyncAggregate(List.of(contribution.getMessage().getContribution())));
+    assertThat(bodyBuilder.blsToExecutionChanges).containsOnly(blsToExecutionChange);
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
@@ -246,6 +267,10 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomAttesterSlashing(UInt64.valueOf(62));
     final SignedContributionAndProof contribution =
         dataStructureUtil.randomSignedContributionAndProof(1, parentRoot);
+    final SignedBlsToExecutionChange blsToExecutionChange1 =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final SignedBlsToExecutionChange blsToExecutionChange2 =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
     addToPool(voluntaryExitPool, voluntaryExit1);
     addToPool(voluntaryExitPool, voluntaryExit2);
     addToPool(voluntaryExitPool, voluntaryExit3);
@@ -256,6 +281,8 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing3);
     assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
+    addToPool(blsToExecutionChangePool, blsToExecutionChange1);
+    addToPool(blsToExecutionChangePool, blsToExecutionChange2);
 
     when(proposerSlashingValidator.validateForBlockInclusion(blockSlotState, proposerSlashing2))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE));
@@ -263,6 +290,9 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(Optional.of(ExitInvalidReason.invalidSignature()));
     when(attesterSlashingValidator.validateForBlockInclusion(blockSlotState, attesterSlashing2))
         .thenReturn(Optional.of(AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE));
+    when(blsToExecutionChangeValidator.validateForBlockInclusion(
+            blockSlotState, blsToExecutionChange2))
+        .thenReturn(Optional.of(BlsToExecutionChangeInvalidReason.invalidValidatorIndex()));
 
     factory
         .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
@@ -272,11 +302,13 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.graffiti).isEqualTo(defaultGraffiti);
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
     assertThat(bodyBuilder.attesterSlashings).containsOnly(attesterSlashing1);
-    assertThat(bodyBuilder.voluntaryExits).containsOnly(voluntaryExit3);
+    // Both exit 3 or 4 are valid, but you can't include two exits for the same validator
+    assertThat(bodyBuilder.voluntaryExits).hasSize(1).containsAnyOf(voluntaryExit3, voluntaryExit4);
     assertThat(bodyBuilder.syncAggregate)
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
                 .createSyncAggregate(List.of(contribution.getMessage().getContribution())));
+    assertThat(bodyBuilder.blsToExecutionChanges).containsOnly(blsToExecutionChange1);
   }
 
   @Test
@@ -392,6 +424,7 @@ class BlockOperationSelectorFactoryTest {
     protected SszList<ProposerSlashing> proposerSlashings;
     protected SszList<AttesterSlashing> attesterSlashings;
     protected SszList<SignedVoluntaryExit> voluntaryExits;
+    protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
     protected SyncAggregate syncAggregate;
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
@@ -477,7 +510,7 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder blsToExecutionChanges(
         Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
-      // do nothing
+      this.blsToExecutionChanges = blsToExecutionChanges.get();
       return this;
     }
 

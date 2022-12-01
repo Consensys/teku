@@ -36,7 +36,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class BeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
@@ -113,10 +112,6 @@ public class BeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
-
-    final ExecutionPayloadSchemaEip4844 executionPayloadSchemaEip4844 =
-        getBeaconBlockBodySchema(spec).getExecutionPayloadSchema().toVersionEip4844().orElseThrow();
-
     final SszListSchema<
             tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
         blsToExecutionChangesSchema =
@@ -127,30 +122,7 @@ public class BeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
         spec,
         (builder) -> {
           builder.executionPayload(
-              () ->
-                  SafeFuture.completedFuture(
-                      executionPayloadSchemaEip4844.create(
-                          executionPayload.parentHash,
-                          executionPayload.feeRecipient,
-                          executionPayload.stateRoot,
-                          executionPayload.receiptsRoot,
-                          executionPayload.logsBloom,
-                          executionPayload.prevRandao,
-                          executionPayload.blockNumber,
-                          executionPayload.gasLimit,
-                          executionPayload.gasUsed,
-                          executionPayload.timestamp,
-                          executionPayload.extraData,
-                          executionPayload.baseFeePerGas,
-                          executionPayload.excessBlobs,
-                          executionPayload.blockHash,
-                          executionPayload.transactions,
-                          executionPayload.withdrawals.stream()
-                              .map(
-                                  withdrawal ->
-                                      withdrawal.asInternalWithdrawal(
-                                          executionPayloadSchemaEip4844.getWithdrawalSchema()))
-                              .collect(toList()))));
+              () -> SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
           builder.blsToExecutionChanges(
               () ->
                   this.blsToExecutionChanges.stream()

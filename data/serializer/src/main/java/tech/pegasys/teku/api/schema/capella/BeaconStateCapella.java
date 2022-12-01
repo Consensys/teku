@@ -144,22 +144,24 @@ public class BeaconStateCapella extends BeaconStateAltair {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
     state.setLatestExecutionPayloadHeader(
-        executionPayloadHeaderSchema.create(
-            instance.latestExecutionPayloadHeader.parentHash,
-            instance.latestExecutionPayloadHeader.feeRecipient,
-            instance.latestExecutionPayloadHeader.stateRoot,
-            instance.latestExecutionPayloadHeader.receiptsRoot,
-            instance.latestExecutionPayloadHeader.logsBloom,
-            instance.latestExecutionPayloadHeader.prevRandao,
-            instance.latestExecutionPayloadHeader.blockNumber,
-            instance.latestExecutionPayloadHeader.gasLimit,
-            instance.latestExecutionPayloadHeader.gasUsed,
-            instance.latestExecutionPayloadHeader.timestamp,
-            instance.latestExecutionPayloadHeader.extraData,
-            instance.latestExecutionPayloadHeader.baseFeePerGas,
-            instance.latestExecutionPayloadHeader.blockHash,
-            instance.latestExecutionPayloadHeader.transactionsRoot,
-            instance.latestExecutionPayloadHeader.withdrawalsRoot));
+        executionPayloadHeaderSchema.createExecutionPayloadHeader(
+            builder ->
+                builder
+                    .parentHash(instance.latestExecutionPayloadHeader.parentHash)
+                    .feeRecipient(instance.latestExecutionPayloadHeader.feeRecipient)
+                    .stateRoot(instance.latestExecutionPayloadHeader.stateRoot)
+                    .receiptsRoot(instance.latestExecutionPayloadHeader.receiptsRoot)
+                    .logsBloom(instance.latestExecutionPayloadHeader.logsBloom)
+                    .prevRandao(instance.latestExecutionPayloadHeader.prevRandao)
+                    .blockNumber(instance.latestExecutionPayloadHeader.blockNumber)
+                    .gasLimit(instance.latestExecutionPayloadHeader.gasLimit)
+                    .gasUsed(instance.latestExecutionPayloadHeader.gasUsed)
+                    .timestamp(instance.latestExecutionPayloadHeader.timestamp)
+                    .extraData(instance.latestExecutionPayloadHeader.extraData)
+                    .baseFeePerGas(instance.latestExecutionPayloadHeader.baseFeePerGas)
+                    .blockHash(instance.latestExecutionPayloadHeader.blockHash)
+                    .transactionsRoot(instance.latestExecutionPayloadHeader.transactionsRoot)
+                    .withdrawalsRoot(() -> instance.latestExecutionPayloadHeader.withdrawalsRoot)));
 
     state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);

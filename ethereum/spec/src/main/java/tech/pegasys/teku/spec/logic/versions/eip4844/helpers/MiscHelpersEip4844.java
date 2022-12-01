@@ -59,6 +59,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
         blobsSidecar.getBlobs(), kzgCommitments, blobsSidecar.getKZGAggregatedProof());
   }
 
+  @Override
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
@@ -103,6 +104,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     return transaction.getBytes().get(0) == BLOB_TX_TYPE.get(0);
   }
 
+  @Override
   public boolean verifyKZGCommitmentsAgainstTransactions(
       final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
     final List<VersionedHash> transactionsVersionedHashes =

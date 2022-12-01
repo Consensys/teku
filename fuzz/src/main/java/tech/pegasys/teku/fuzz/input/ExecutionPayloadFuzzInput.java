@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionPayloadFuzzInput
@@ -32,7 +33,7 @@ public class ExecutionPayloadFuzzInput
         (BeaconBlockBodySchemaBellatrix<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        beaconBlockBodySchema.getExecutionPayloadSchema().toVersionBellatrix().orElseThrow(),
+        (ExecutionPayloadSchemaBellatrix) beaconBlockBodySchema.getExecutionPayloadSchema(),
         ExecutionPayloadFuzzInput::new);
   }
 

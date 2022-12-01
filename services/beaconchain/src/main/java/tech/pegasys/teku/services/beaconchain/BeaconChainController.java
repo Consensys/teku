@@ -647,6 +647,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 attesterSlashingPool,
                 proposerSlashingPool,
                 voluntaryExitPool,
+                blsToExecutionChangePool,
                 syncCommitteeContributionPool,
                 depositProvider,
                 eth1DataCache,

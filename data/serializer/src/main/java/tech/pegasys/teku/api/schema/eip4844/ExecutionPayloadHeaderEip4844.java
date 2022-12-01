@@ -25,11 +25,12 @@ import tech.pegasys.teku.api.schema.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella {
 
-  @JsonProperty("excess_blobs")
-  public final UInt64 excessBlobs;
+  @JsonProperty("excess_data_gas")
+  public final UInt256 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadHeaderEip4844(
@@ -45,7 +46,7 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
       @JsonProperty("timestamp") final UInt64 timestamp,
       @JsonProperty("extra_data") final Bytes extraData,
       @JsonProperty("base_fee_per_gas") final UInt256 baseFeePerGas,
-      @JsonProperty("excess_blobs") final UInt64 excessBlobs,
+      @JsonProperty("excess_data_gas") final UInt256 excessDataGas,
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot) {
@@ -65,7 +66,7 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
         blockHash,
         transactionsRoot,
         withdrawalsRoot);
-    this.excessBlobs = excessBlobs;
+    this.excessDataGas = excessDataGas;
   }
 
   public ExecutionPayloadHeaderEip4844(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -85,7 +86,31 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
         executionPayloadHeader.getBlockHash(),
         executionPayloadHeader.getTransactionsRoot(),
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow());
-    this.excessBlobs = executionPayloadHeader.toVersionEip4844().orElseThrow().getExcessBlobs();
+    this.excessDataGas = executionPayloadHeader.toVersionEip4844().orElseThrow().getExcessDataGas();
+  }
+
+  @Override
+  public ExecutionPayloadHeader asInternalExecutionPayloadHeader(
+      final ExecutionPayloadHeaderSchema<?> schema) {
+    return schema.createExecutionPayloadHeader(
+        payloadBuilder ->
+            payloadBuilder
+                .parentHash(parentHash)
+                .feeRecipient(feeRecipient)
+                .stateRoot(stateRoot)
+                .receiptsRoot(receiptsRoot)
+                .logsBloom(logsBloom)
+                .prevRandao(prevRandao)
+                .blockNumber(blockNumber)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
+                .timestamp(timestamp)
+                .extraData(extraData)
+                .baseFeePerGas(baseFeePerGas)
+                .blockHash(blockHash)
+                .transactionsRoot(transactionsRoot)
+                .withdrawalsRoot(() -> withdrawalsRoot)
+                .excessDataGas(() -> excessDataGas));
   }
 
   @Override
@@ -105,12 +130,12 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
       return false;
     }
     final ExecutionPayloadHeaderEip4844 that = (ExecutionPayloadHeaderEip4844) o;
-    return Objects.equals(excessBlobs, that.excessBlobs);
+    return Objects.equals(excessDataGas, that.excessDataGas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), excessBlobs);
+    return Objects.hash(super.hashCode(), excessDataGas);
   }
 
   @Override
@@ -128,7 +153,7 @@ public class ExecutionPayloadHeaderEip4844 extends ExecutionPayloadHeaderCapella
         .add("timestamp", timestamp)
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
-        .add("excessBlobs", excessBlobs)
+        .add("excessDataGas", excessDataGas)
         .add("blockHash", blockHash)
         .add("transactionsRoot", transactionsRoot)
         .add("withdrawalsRoot", withdrawalsRoot)

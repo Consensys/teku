@@ -14,10 +14,11 @@
 package tech.pegasys.teku.ethereum.pow.api.schema;
 
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 
-public class LoadDepositSnapshotResult {
+public class LoadDepositSnapshotResult implements Comparable<LoadDepositSnapshotResult> {
   public static final LoadDepositSnapshotResult EMPTY =
       new LoadDepositSnapshotResult(Optional.empty(), ReplayDepositsResult.empty());
 
@@ -52,5 +53,31 @@ public class LoadDepositSnapshotResult {
 
   public ReplayDepositsResult getReplayDepositsResult() {
     return replayDepositsResult;
+  }
+
+  @Override
+  public int compareTo(final LoadDepositSnapshotResult o) {
+    return replayDepositsResult
+        .getLastProcessedBlockNumber()
+        .subtract(o.replayDepositsResult.getLastProcessedBlockNumber())
+        .signum();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final LoadDepositSnapshotResult that = (LoadDepositSnapshotResult) o;
+    return Objects.equals(depositTreeSnapshot, that.depositTreeSnapshot)
+        && Objects.equals(replayDepositsResult, that.replayDepositsResult);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(depositTreeSnapshot, replayDepositsResult);
   }
 }

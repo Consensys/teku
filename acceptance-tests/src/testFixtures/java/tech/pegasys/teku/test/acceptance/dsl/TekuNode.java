@@ -56,6 +56,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
@@ -82,8 +83,8 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -100,8 +101,7 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
-    Consumer<SpecConfigBuilder> specConfigModifier =
-        config.getSpecConfigModifier().orElse(__ -> {});
+    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier();
     this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
@@ -116,24 +116,13 @@ public class TekuNode extends Node {
   }
 
   public static TekuNode create(
-      final Network network,
-      final DockerVersion version,
-      final Consumer<Config> configOptions,
-      final GenesisStateGenerator genesisStateGenerator)
+      final Network network, final DockerVersion version, final Consumer<Config> configOptions)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(network, version, config);
-
-    if (config.getGenesisStateConfig().isPresent()) {
-      final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
-      File genesisFile = genesisStateGenerator.generateState(genesisConfig);
-      node.copyFileToContainer(genesisFile, genesisConfig.getPath());
-    }
-
-    return node;
+    return new TekuNode(network, version, config);
   }
 
   public void start() throws Exception {
@@ -331,17 +320,28 @@ public class TekuNode extends Node {
                   .getMessage()
                   .getBody()
                   .executionPayload
-                  .toVersionBellatrix()
-                  .orElseThrow()
-                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot)
-                  .orElseThrow();
-
-          assertThat(executionPayload.isDefault()).isFalse();
+                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
+          assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
           LOG.debug(
               "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
         },
         5,
         MINUTES);
+  }
+
+  public void waitForGenesisWithNonDefaultExecutionPayload() {
+    LOG.debug("Wait for genesis block containing a non default execution payload");
+
+    waitFor(
+        () -> {
+          final Optional<BeaconState> maybeState = fetchState("genesis");
+          assertThat(maybeState).isPresent();
+          assertThat(maybeState.get().toVersionBellatrix()).isPresent();
+          final BeaconStateBellatrix genesisState = maybeState.get().toVersionBellatrix().get();
+          assertThat(genesisState.getLatestExecutionPayloadHeader().isDefault())
+              .describedAs("Is latest execution payload header a default payload header")
+              .isFalse();
+        });
   }
 
   public void waitForFullSyncCommitteeAggregate() {
@@ -447,7 +447,11 @@ public class TekuNode extends Node {
   }
 
   private Optional<SignedBlock> fetchHeadBlock() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
+    return fetchBlock("head");
+  }
+
+  private Optional<SignedBlock> fetchBlock(final String blockId) throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
@@ -456,10 +460,14 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
+    return fetchState("head");
+  }
+
+  private Optional<BeaconState> fetchState(final String stateId) throws IOException {
     final Bytes result =
         httpClient.getAsBytes(
             getRestApiUrl(),
-            "/eth/v2/debug/beacon/states/head",
+            "/eth/v2/debug/beacon/states/" + stateId,
             Map.of("Accept", "application/octet-stream"));
     if (result.isEmpty()) {
       return Optional.empty();
@@ -620,9 +628,11 @@ public class TekuNode extends Node {
   public static class Config {
     public static final String DEFAULT_NETWORK_NAME = "swift";
     public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
+    private static final String INITIAL_STATE_FILE = "/state.ssz";
 
     private Optional<URL> maybeNetworkYaml = Optional.empty();
     private Optional<URL> maybeJwtFile = Optional.empty();
+    private Optional<InitialStateData> maybeInitialState = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -632,8 +642,7 @@ public class TekuNode extends Node {
     private final Map<String, Object> configMap = new HashMap<>();
     private final List<File> tarballsToCopy = new ArrayList<>();
 
-    private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
-    private Optional<Consumer<SpecConfigBuilder>> specConfigModifier = Optional.empty();
+    private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
     public Config() {
       configMap.put("network", networkName);
@@ -659,7 +668,6 @@ public class TekuNode extends Node {
       configMap.put("metrics-host-allowlist", "*");
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
-      configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
       configMap.put("rest-api-host-allowlist", "*");
     }
@@ -701,6 +709,7 @@ public class TekuNode extends Node {
     }
 
     public Config withValidatorKeystores(final ValidatorKeystores keystores) {
+      configMap.put("Xinterop-enabled", false);
       tarballsToCopy.add(keystores.getTarball());
       configMap.put(
           "validator-keys",
@@ -730,23 +739,56 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withAltairEpoch(final UInt64 altairSlot) {
-      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
+    public Config withAltairEpoch(final UInt64 altairForkEpoch) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.altairBuilder(
+                      altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
       return this;
     }
 
     public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
       configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
       specConfigModifier =
-          Optional.of(
+          specConfigModifier.andThen(
               specConfigBuilder ->
                   specConfigBuilder.bellatrixBuilder(
                       bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
       return this;
     }
 
-    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
-      configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+    public Config withCapellaEpoch(final UInt64 capellaForkEpoch) {
+      configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.capellaBuilder(
+                      capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+      return this;
+    }
+
+    public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
+      return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
+    }
+
+    public Config withTotalTerminalDifficulty(final UInt256 totalTerminalDifficulty) {
+      configMap.put(
+          "Xnetwork-total-terminal-difficulty-override",
+          totalTerminalDifficulty.toBigInteger().toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder ->
+                          bellatrixBuilder.terminalTotalDifficulty(totalTerminalDifficulty)));
+      return this;
+    }
+
+    public Config withInitialState(final InitialStateData initialState) {
+      configMap.put("initial-state", INITIAL_STATE_FILE);
+      this.maybeInitialState = Optional.of(initialState);
       return this;
     }
 
@@ -757,8 +799,8 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withExecutionEngineEndpoint(final String eeEndpoint) {
-      configMap.put("ee-endpoint", eeEndpoint);
+    public Config withExecutionEngine(final BesuNode node) {
+      configMap.put("ee-endpoint", node.getInternalEngineJsonRpcUrl());
       return this;
     }
 
@@ -795,11 +837,7 @@ public class TekuNode extends Node {
       return peerId.toBase58();
     }
 
-    public Optional<GenesisStateConfig> getGenesisStateConfig() {
-      return genesisStateConfig;
-    }
-
-    public Optional<Consumer<SpecConfigBuilder>> getSpecConfigModifier() {
+    public Consumer<SpecConfigBuilder> getSpecConfigModifier() {
       return specConfigModifier;
     }
 
@@ -816,6 +854,12 @@ public class TekuNode extends Node {
       }
       if (maybeJwtFile.isPresent()) {
         configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
+      }
+      if (maybeInitialState.isPresent()) {
+        final InitialStateData initialStateData = maybeInitialState.get();
+        final File initialStateFile =
+            copyToTmpFile(initialStateData.writeToTempFile().toURI().toURL());
+        configFiles.put(initialStateFile, INITIAL_STATE_FILE);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");

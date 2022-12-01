@@ -13,22 +13,38 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
+import static tech.pegasys.teku.spec.datastructures.util.DepositGenerator.createWithdrawalCredentials;
+
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class ValidatorKeys {
   private final BLSKeyPair validatorKey;
-  private final BLSKeyPair withdrawalKey;
+  private final Bytes32 withdrawalCredentials;
+  private final Optional<BLSKeyPair> withdrawalKey;
 
   public ValidatorKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey) {
     this.validatorKey = validatorKey;
-    this.withdrawalKey = withdrawalKey;
+    this.withdrawalCredentials = createWithdrawalCredentials(withdrawalKey.getPublicKey());
+    this.withdrawalKey = Optional.of(withdrawalKey);
+  }
+
+  public ValidatorKeys(final BLSKeyPair validatorKey, final Bytes32 withdrawalCredentials) {
+    this.validatorKey = validatorKey;
+    this.withdrawalCredentials = withdrawalCredentials;
+    this.withdrawalKey = Optional.empty();
   }
 
   public BLSKeyPair getValidatorKey() {
     return validatorKey;
   }
 
-  public BLSKeyPair getWithdrawalKey() {
+  public Bytes32 getWithdrawalCredentials() {
+    return withdrawalCredentials;
+  }
+
+  public Optional<BLSKeyPair> getWithdrawalKey() {
     return withdrawalKey;
   }
 }

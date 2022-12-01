@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
@@ -90,40 +93,23 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
   }
 
   @Override
-  public ExecutionPayload asInternalExecutionPayload(
-      ExecutionPayloadSchema<?> executionPayloadSchema) {
-    if (withdrawals == null) {
-      return super.asInternalExecutionPayload(executionPayloadSchema);
-    }
-    return executionPayloadSchema
-        .toVersionCapella()
-        .orElseThrow()
-        .create(
-            parentHash,
-            feeRecipient,
-            stateRoot,
-            receiptsRoot,
-            logsBloom,
-            prevRandao,
-            blockNumber,
-            gasLimit,
-            gasUsed,
-            timestamp,
-            extraData,
-            baseFeePerGas,
-            blockHash,
-            transactions,
-            withdrawals.stream()
-                .map(withdrawalV1 -> createInternalWithdrawal(withdrawalV1, executionPayloadSchema))
-                .collect(Collectors.toList()));
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return super.applyToBuilder(executionPayloadSchema, builder)
+        .withdrawals(
+            () ->
+                checkNotNull(withdrawals, "Withdrawals not provided when required").stream()
+                    .map(
+                        withdrawalV1 ->
+                            createInternalWithdrawal(withdrawalV1, executionPayloadSchema))
+                    .collect(Collectors.toList()));
   }
 
   private Withdrawal createInternalWithdrawal(
       final WithdrawalV1 withdrawalV1, ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        .toVersionCapella()
-        .orElseThrow()
-        .getWithdrawalSchema()
+        .getWithdrawalSchemaRequired()
         .create(
             withdrawalV1.index,
             withdrawalV1.validatorIndex,

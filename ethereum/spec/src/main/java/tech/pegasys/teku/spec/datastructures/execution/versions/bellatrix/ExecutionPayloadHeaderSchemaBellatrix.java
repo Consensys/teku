@@ -29,10 +29,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -44,9 +41,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaBellatrix
@@ -98,39 +96,6 @@ public class ExecutionPayloadHeaderSchemaBellatrix
     this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
 
-  public ExecutionPayloadHeaderBellatrix create(
-      Bytes32 parentHash,
-      Bytes20 feeRecipient,
-      Bytes32 stateRoot,
-      Bytes32 receiptsRoot,
-      Bytes logsBloom,
-      Bytes32 prevRandao,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      Bytes32 blockHash,
-      Bytes32 transactionsRoot) {
-    return new ExecutionPayloadHeaderBellatrix(
-        this,
-        SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
-        SszBytes32.of(stateRoot),
-        SszBytes32.of(receiptsRoot),
-        SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(prevRandao),
-        SszUInt64.of(blockNumber),
-        SszUInt64.of(gasLimit),
-        SszUInt64.of(gasUsed),
-        SszUInt64.of(timestamp),
-        getExtraDataSchema().fromBytes(extraData),
-        SszUInt256.of(baseFeePerGas),
-        SszBytes32.of(blockHash),
-        SszBytes32.of(transactionsRoot));
-  }
-
   @Override
   public ExecutionPayloadHeaderBellatrix createFromExecutionPayload(
       final ExecutionPayload executionPayload) {
@@ -173,11 +138,15 @@ public class ExecutionPayloadHeaderSchemaBellatrix
   }
 
   @Override
-  public Optional<ExecutionPayloadHeaderSchemaBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
+  public ExecutionPayloadHeader createExecutionPayloadHeader(
+      final Consumer<ExecutionPayloadHeaderBuilder> builderConsumer) {
+    final ExecutionPayloadHeaderBuilderBellatrix builder =
+        new ExecutionPayloadHeaderBuilderBellatrix().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
-  private SszByteListSchema<?> getExtraDataSchema() {
+  public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
   }
 }

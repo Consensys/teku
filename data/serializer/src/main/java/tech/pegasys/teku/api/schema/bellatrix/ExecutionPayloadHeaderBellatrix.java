@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.ExecutionPayloadHeader;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
     implements ExecutionPayloadHeader {
@@ -105,6 +106,28 @@ public class ExecutionPayloadHeaderBellatrix extends ExecutionPayloadCommon
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash());
     this.transactionsRoot = executionPayload.getTransactions().hashTreeRoot();
+  }
+
+  @Override
+  public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
+      asInternalExecutionPayloadHeader(final ExecutionPayloadHeaderSchema<?> schema) {
+    return schema.createExecutionPayloadHeader(
+        payloadBuilder ->
+            payloadBuilder
+                .parentHash(parentHash)
+                .feeRecipient(feeRecipient)
+                .stateRoot(stateRoot)
+                .receiptsRoot(receiptsRoot)
+                .logsBloom(logsBloom)
+                .prevRandao(prevRandao)
+                .blockNumber(blockNumber)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
+                .timestamp(timestamp)
+                .extraData(extraData)
+                .baseFeePerGas(baseFeePerGas)
+                .blockHash(blockHash)
+                .transactionsRoot(transactionsRoot));
   }
 
   @Override

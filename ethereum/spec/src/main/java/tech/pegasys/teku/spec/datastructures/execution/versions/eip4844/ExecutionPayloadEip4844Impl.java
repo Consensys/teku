@@ -47,7 +47,7 @@ public class ExecutionPayloadEip4844Impl
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt64,
+        SszUInt256,
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>>
@@ -68,7 +68,7 @@ public class ExecutionPayloadEip4844Impl
               SszUInt64,
               SszByteList,
               SszUInt256,
-              SszUInt64,
+              SszUInt256,
               SszBytes32,
               SszList<Transaction>,
               SszList<Withdrawal>>
@@ -84,14 +84,14 @@ public class ExecutionPayloadEip4844Impl
       SszBytes32 stateRoot,
       SszBytes32 receiptsRoot,
       SszByteVector logsBloom,
-      SszBytes32 random,
+      SszBytes32 prevRandao,
       SszUInt64 blockNumber,
       SszUInt64 gasLimit,
       SszUInt64 gasUsed,
       SszUInt64 timestamp,
       SszByteList extraData,
       SszUInt256 baseFeePerGas,
-      SszUInt64 excessBlobs,
+      SszUInt256 excessDataGas,
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals) {
@@ -102,14 +102,14 @@ public class ExecutionPayloadEip4844Impl
         stateRoot,
         receiptsRoot,
         logsBloom,
-        random,
+        prevRandao,
         blockNumber,
         gasLimit,
         gasUsed,
         timestamp,
         extraData,
         baseFeePerGas,
-        excessBlobs,
+        excessDataGas,
         blockHash,
         transactions,
         withdrawals);
@@ -191,7 +191,7 @@ public class ExecutionPayloadEip4844Impl
   }
 
   @Override
-  public UInt64 getExcessBlobs() {
+  public UInt256 getExcessDataGas() {
     return getField12().get();
   }
 

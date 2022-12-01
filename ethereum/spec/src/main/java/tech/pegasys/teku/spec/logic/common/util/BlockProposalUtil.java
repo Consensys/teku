@@ -32,6 +32,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BlockProposalUtil {
@@ -94,7 +96,9 @@ public class BlockProposalUtil {
                       block,
                       IndexedAttestationCache.NOOP,
                       BLSSignatureVerifier.NO_OP,
-                      Optional.empty());
+                      Optional.empty(),
+                      KzgCommitmentsProcessor.NOOP,
+                      BlobsSidecarAvailabilityChecker.NOOP);
 
               final Bytes32 stateRoot = newState.hashTreeRoot();
               final BeaconBlock newCompleteBlock = block.withStateRoot(stateRoot);

@@ -1,5 +1,8 @@
 dependencies {
+  implementation project(':infrastructure:io')
+
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'tech.pegasys:jc-kzg-4844'
   implementation 'commons-io:commons-io'
 }

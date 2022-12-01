@@ -30,6 +30,9 @@ import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -93,39 +96,45 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
             .collect(Collectors.toList());
   }
 
-  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
+  public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
       asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
+    return asInternalExecutionPayload(spec.atSlot(slot));
+  }
 
+  public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
+      asInternalExecutionPayload(final SpecVersion spec) {
     final Optional<SchemaDefinitionsBellatrix> maybeSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
+        spec.getSchemaDefinitions().toVersionBellatrix();
 
     if (maybeSchema.isEmpty()) {
-      final String message =
-          String.format("Could not create execution payload at non-bellatrix slot %s", slot);
-      throw new IllegalArgumentException(message);
+      throw new IllegalArgumentException(
+          "Could not create execution payload at pre-bellatrix slot");
     }
 
-    return maybeSchema.map(
-        schema ->
-            schema
-                .getExecutionPayloadSchema()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .create(
-                    parentHash,
-                    feeRecipient,
-                    stateRoot,
-                    receiptsRoot,
-                    logsBloom,
-                    prevRandao,
-                    blockNumber,
-                    gasLimit,
-                    gasUsed,
-                    timestamp,
-                    extraData,
-                    baseFeePerGas,
-                    blockHash,
-                    transactions));
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
+        maybeSchema.get().getExecutionPayloadSchema();
+    return executionPayloadSchema.createExecutionPayload(
+        builder -> applyToBuilder(executionPayloadSchema, builder));
+  }
+
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return builder
+        .parentHash(parentHash)
+        .feeRecipient(feeRecipient)
+        .stateRoot(stateRoot)
+        .receiptsRoot(receiptsRoot)
+        .logsBloom(logsBloom)
+        .prevRandao(prevRandao)
+        .blockNumber(blockNumber)
+        .gasLimit(gasLimit)
+        .gasUsed(gasUsed)
+        .timestamp(timestamp)
+        .extraData(extraData)
+        .baseFeePerGas(baseFeePerGas)
+        .blockHash(blockHash)
+        .transactions(transactions);
   }
 
   @Override
