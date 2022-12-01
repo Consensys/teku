@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 
 public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
@@ -45,18 +46,29 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             c -> {
               c.withNetwork(NETWORK_NAME);
+              c.withRealNetwork();
               c.withStartupTargetPeerCount(0);
-              c.withInteropNumberOfValidators(8);
-              c.withInteropValidators(0, 8);
               c.withStubExecutionEngine();
               c.withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString());
-              c.withAltairEpoch(UInt64.ZERO);
-              c.withBellatrixEpoch(UInt64.ZERO);
-              c.withCapellaEpoch(capellaActivationEpoch);
+              applyMilestoneConfig(c, capellaActivationEpoch);
             });
     primaryNode.start();
-    primaryNode.waitForOwnedValidatorCount(8);
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
+
+    UInt64 genesisTime = primaryNode.getGenesisTime();
+
+    TekuNode lateJoiningNode =
+        createTekuNode(
+            c -> {
+              c.withGenesisTime(genesisTime.intValue());
+              c.withNetwork(NETWORK_NAME);
+              c.withRealNetwork();
+              c.withPeers(primaryNode);
+              c.withInteropValidators(0, 0);
+              applyMilestoneConfig(c, capellaActivationEpoch);
+            });
+    lateJoiningNode.start();
+    lateJoiningNode.waitUntilInSyncWith(primaryNode);
 
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
         new BlsToExecutionChangeCreator(
@@ -68,10 +80,17 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
                 validatorKeyPair.getSecretKey(),
                 capellaActivationEpoch);
 
-    primaryNode.submitBlsToExecutionChange(signedBlsToExecutionChange);
+    lateJoiningNode.submitBlsToExecutionChange(signedBlsToExecutionChange);
 
-    primaryNode.waitForValidatorWithCredentials(
+    lateJoiningNode.waitForValidatorWithCredentials(
         validatorIndex,
         BlockProcessorCapella.getWithdrawalAddressFromEth1Address(executionAddress));
+  }
+
+  private static void applyMilestoneConfig(final Config c, final UInt64 capellaForkEpoch) {
+    c.withAltairEpoch(UInt64.ZERO);
+    c.withBellatrixEpoch(UInt64.ZERO);
+    c.withCapellaEpoch(capellaForkEpoch);
+    c.withStubExecutionEngine();
   }
 }
