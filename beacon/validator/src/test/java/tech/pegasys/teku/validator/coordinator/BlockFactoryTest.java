@@ -71,7 +71,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
-
   private static final Eth1Data ETH1_DATA = new Eth1Data();
 
   final AggregatingAttestationPool attestationsPool = mock(AggregatingAttestationPool.class);
