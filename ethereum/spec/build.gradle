@@ -35,10 +35,16 @@ dependencies {
     testFixturesApi project(':infrastructure:ssz')
     testFixturesApi project(':infrastructure:unsigned')
 
+    testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testFixturesImplementation 'net.jqwik:jqwik'
     testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
     testFixturesImplementation 'org.apache.tuweni:tuweni-units'
     testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
+    testFixturesImplementation 'org.hyperledger.besu.internal:core'
+    testFixturesImplementation 'org.hyperledger.besu.internal:config'
+    testFixturesImplementation 'org.hyperledger.besu:besu-datatypes'
+    testFixturesImplementation 'org.hyperledger.besu:evm'
+    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
     testFixturesImplementation project(':ethereum:execution-types')
     testFixturesImplementation project(':infrastructure:async')

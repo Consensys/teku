@@ -37,7 +37,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 4);
     final ValidatorKeystores extraKeys =
-        new ValidatorKeystores(createTekuDepositSender(networkName).generateValidatorKeys(1));
+        createTekuDepositSender(networkName).generateValidatorKeys(1);
 
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));

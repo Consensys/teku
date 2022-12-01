@@ -79,14 +79,14 @@ public class DepositGenerator {
     return new DepositData(depositMessage, signature);
   }
 
-  private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {
+  public static Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {
     final Bytes publicKeyHash = Hash.sha256(withdrawalPublicKey.toBytesCompressed());
     final Bytes credentials =
         Bytes.wrap(WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
     return Bytes32.wrap(credentials);
   }
 
-  private static Bytes32 createWithdrawalCredentials(final Bytes20 withdrawalAddress) {
+  public static Bytes32 createWithdrawalCredentials(final Bytes20 withdrawalAddress) {
     final MutableBytes32 mutableBytes32 = MutableBytes32.create();
     mutableBytes32.set(Bytes32.SIZE - Bytes20.SIZE, withdrawalAddress.getWrappedBytes());
     mutableBytes32.set(0, ETH1_ADDRESS_WITHDRAWAL_PREFIX);

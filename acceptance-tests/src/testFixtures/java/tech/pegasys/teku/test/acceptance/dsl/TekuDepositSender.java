@@ -31,12 +31,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositSenderService;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
+  private final ValidatorKeyGenerator validatorKeyGenerator = new ValidatorKeyGenerator();
 
   public TekuDepositSender(final Network network, final Spec spec) {
     super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, DockerVersion.LOCAL_BUILD, LOG);
@@ -57,36 +57,43 @@ public class TekuDepositSender extends Node {
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
     try (final DepositGenerator depositGenerator =
         new DepositGenerator(
-            spec,
-            eth1Node.getExternalJsonRpcUrl(),
-            eth1Address,
-            eth1Credentials,
-            numberOfValidators,
-            amount)) {
-      final SafeFuture<Void> future = depositGenerator.generate();
+            spec, eth1Node.getExternalJsonRpcUrl(), eth1Address, eth1Credentials, amount)) {
+      final ValidatorKeystores validatorKeystores = generateValidatorKeys(numberOfValidators);
+      final SafeFuture<Void> future = depositGenerator.sendDeposits(validatorKeystores);
       Waiter.waitFor(future, Duration.ofMinutes(2));
-      return new ValidatorKeystores(depositGenerator.getKeys());
+      return validatorKeystores;
     }
   }
 
   public void sendValidatorDeposits(
-      final BesuNode eth1Node, final List<ValidatorKeys> validatorKeys, UInt64 amount)
+      final BesuNode eth1Node, final ValidatorKeystores validatorKeys, UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = eth1Node.getDepositContractAddress();
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
-    final DepositSenderService depositSenderService =
+    try (final DepositSenderService depositSenderService =
         new DepositSenderService(
-            spec, eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount);
-    final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-        validatorKeys.stream().map(depositSenderService::sendDeposit).collect(Collectors.toList());
-    final SafeFuture<Void> future =
-        SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
-    Waiter.waitFor(future, Duration.ofMinutes(2));
+            spec, eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount)) {
+      final List<SafeFuture<TransactionReceipt>> transactionReceipts =
+          validatorKeys.getValidatorKeys().stream()
+              .map(depositSenderService::sendDeposit)
+              .collect(Collectors.toList());
+      final SafeFuture<Void> future =
+          SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
+      Waiter.waitFor(future, Duration.ofMinutes(2));
+    }
   }
 
-  public List<ValidatorKeys> generateValidatorKeys(int numberOfValidators) {
-    final ValidatorKeyGenerator generator = new ValidatorKeyGenerator(numberOfValidators);
-    return generator.generateKeysStream().collect(Collectors.toList());
+  public ValidatorKeystores generateValidatorKeys(
+      int numberOfValidators, final Eth1Address withdrawalAddress) {
+    return new ValidatorKeystores(
+        validatorKeyGenerator
+            .generateKeysStream(numberOfValidators, withdrawalAddress)
+            .collect(Collectors.toList()));
+  }
+
+  public ValidatorKeystores generateValidatorKeys(int numberOfValidators) {
+    return new ValidatorKeystores(
+        validatorKeyGenerator.generateKeysStream(numberOfValidators).collect(Collectors.toList()));
   }
 
   public UInt64 getMinDepositAmount() {
