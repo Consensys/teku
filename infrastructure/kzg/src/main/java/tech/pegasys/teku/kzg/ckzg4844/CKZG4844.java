@@ -35,13 +35,15 @@ public final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static CKZG4844 INSTANCE;
+  private static CKZG4844 instance;
 
   public static CKZG4844 createOrGetInstance() {
-    if (INSTANCE == null) {
-      INSTANCE = new CKZG4844();
+    synchronized (CKZG4844.class) {
+      if (instance == null) {
+        instance = new CKZG4844();
+      }
+      return instance;
     }
-    return INSTANCE;
   }
 
   private CKZG4844() {
