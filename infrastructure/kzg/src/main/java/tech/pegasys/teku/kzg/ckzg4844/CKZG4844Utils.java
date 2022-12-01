@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.kzg.KZGException;
 
 public class CKZG4844Utils {
 
@@ -48,7 +47,8 @@ public class CKZG4844Utils {
         return Paths.get(trustedSetup.toURI()).toFile().getPath();
       }
     } catch (final URISyntaxException ex) {
-      throw new KZGException(String.format("%s is incorrect file path", trustedSetup), ex);
+      throw new IllegalArgumentException(
+          String.format("%s is incorrect file path", trustedSetup), ex);
     }
 
     final InputStream resource =
