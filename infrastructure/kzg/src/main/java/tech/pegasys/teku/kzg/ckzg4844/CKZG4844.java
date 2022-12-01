@@ -26,12 +26,25 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
 
-/** Wrapper around jc-kzg-4844 */
+/**
+ * Wrapper around jc-kzg-4844
+ *
+ * <p>This class should be a singleton
+ */
 public final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public CKZG4844() {
+  private static CKZG4844 INSTANCE;
+
+  public static CKZG4844 createOrGetInstance() {
+    if (INSTANCE == null) {
+      INSTANCE = new CKZG4844();
+    }
+    return INSTANCE;
+  }
+
+  private CKZG4844() {
     try {
       LOG.info("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {

@@ -41,7 +41,7 @@ public final class KZGTest {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  private final KZG kzg = new CKZG4844();
+  private final KZG kzg = CKZG4844.createOrGetInstance();
 
   @AfterEach
   public void cleanUpIfNeeded() {
