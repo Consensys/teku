@@ -37,13 +37,11 @@ public final class CKZG4844 implements KZG {
 
   private static CKZG4844 instance;
 
-  public static CKZG4844 createOrGetInstance() {
-    synchronized (CKZG4844.class) {
-      if (instance == null) {
-        instance = new CKZG4844();
-      }
-      return instance;
+  public static synchronized CKZG4844 createOrGetInstance() {
+    if (instance == null) {
+      instance = new CKZG4844();
     }
+    return instance;
   }
 
   private CKZG4844() {
