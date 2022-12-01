@@ -17,7 +17,6 @@ import java.net.URL;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 
 /**
  * This interface specifies all the KZG functions needed for the EIP-4844 specification and is the
@@ -28,31 +27,36 @@ public interface KZG {
   KZG NOOP =
       new KZG() {
         @Override
-        public void loadTrustedSetup(URL trustedSetup) throws KZGException {}
+        public void loadTrustedSetup(final URL trustedSetup) throws KZGException {}
 
         @Override
         public void freeTrustedSetup() throws KZGException {}
 
         @Override
-        public KZGProof computeAggregateKzgProof(List<Bytes> blobs) throws KZGException {
-          return KZGProof.fromBytesCompressed(Bytes48.ZERO);
+        public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
+          return KZGProof.infinity();
         }
 
         @Override
         public boolean verifyAggregateKzgProof(
-            List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof)
+            final List<Bytes> blobs,
+            final List<KZGCommitment> kzgCommitments,
+            final KZGProof kzgProof)
             throws KZGException {
           return true;
         }
 
         @Override
-        public KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException {
-          return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
+        public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
+          return KZGCommitment.infinity();
         }
 
         @Override
         public boolean verifyKzgProof(
-            KZGCommitment kzgCommitment, Bytes32 z, Bytes32 y, KZGProof kzgProof)
+            final KZGCommitment kzgCommitment,
+            final Bytes32 z,
+            final Bytes32 y,
+            final KZGProof kzgProof)
             throws KZGException {
           return true;
         }
