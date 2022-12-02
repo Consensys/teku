@@ -66,6 +66,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eip4844ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
+  private final Optional<String> trustedSetup;
 
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
@@ -84,6 +85,7 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
+      final Optional<String> trustedSetup,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
@@ -110,6 +112,7 @@ public class Eth2NetworkConfiguration {
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    this.trustedSetup = trustedSetup;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
@@ -174,6 +177,10 @@ public class Eth2NetworkConfiguration {
     return eth1DepositContractDeployBlock;
   }
 
+  public Optional<String> getTrustedSetup() {
+    return trustedSetup;
+  }
+
   public boolean isForkChoiceUpdateHeadOnBlockImportEnabled() {
     return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
@@ -224,6 +231,7 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+    private Optional<String> trustedSetup = Optional.empty();
     private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
@@ -290,6 +298,7 @@ public class Eth2NetworkConfiguration {
           discoveryBootnodes,
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
+          trustedSetup,
           forkChoiceUpdateHeadOnBlockImportEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
@@ -372,6 +381,17 @@ public class Eth2NetworkConfiguration {
     public Builder eth1DepositContractDeployBlock(final long eth1DepositContractDeployBlock) {
       this.eth1DepositContractDeployBlock =
           Optional.of(UInt64.valueOf(eth1DepositContractDeployBlock));
+      return this;
+    }
+
+    public Builder trustedSetup(final String trustedSetup) {
+      this.trustedSetup = Optional.of(trustedSetup);
+      return this;
+    }
+
+    public Builder trustedSetupFromClasspath(final String filename) {
+      this.genesisState =
+          Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
       return this;
     }
 
@@ -472,6 +492,7 @@ public class Eth2NetworkConfiguration {
       discoveryBootnodes = new ArrayList<>();
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
+      trustedSetup = Optional.empty();
       progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
       return this;
     }
@@ -497,6 +518,7 @@ public class Eth2NetworkConfiguration {
           .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .genesisStateFromClasspath("mainnet-genesis.ssz")
+          .trustedSetupFromClasspath("mainnet-trusted-setup.txt")
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(

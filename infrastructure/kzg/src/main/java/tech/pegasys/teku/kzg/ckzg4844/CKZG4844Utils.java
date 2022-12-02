@@ -13,52 +13,54 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 class CKZG4844Utils {
 
-  private static final String FILE_SCHEME = "file";
-
-  public static byte[] flattenBytesListToArray(final List<Bytes> bytes) {
-    return flattenBytesStreamToArray(bytes.stream());
+  public static byte[] flattenBytesList(final List<Bytes> bytes) {
+    return flattenBytesStream(bytes.stream());
   }
 
-  public static byte[] flattenBytesStreamToArray(final Stream<Bytes> bytes) {
+  public static byte[] flattenBytesStream(final Stream<Bytes> bytes) {
     return bytes.reduce(Bytes::wrap).orElse(Bytes.EMPTY).toArray();
   }
 
-  public static String copyTrustedSetupToTempFileIfNeeded(final URL trustedSetup)
+  public static String copyTrustedSetupToTempFileIfNeeded(final String trustedSetup)
       throws IOException {
-    try {
-      if (trustedSetup.toURI().getScheme().equals(FILE_SCHEME)) {
-        // Platform-agnostic safe way to get path
-        return Paths.get(trustedSetup.toURI()).toFile().getPath();
-      }
-    } catch (final URISyntaxException ex) {
-      throw new IllegalArgumentException(trustedSetup + " is incorrect file path", ex);
+    final Optional<Path> trustedSetupFile = tryGetFile(trustedSetup);
+    if (trustedSetupFile.isPresent()) {
+      // Platform-agnostic safe way to get path
+      return trustedSetupFile.get().toFile().getPath();
     }
-
+    final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetup);
     final InputStream resource =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .load(trustedSetup.toExternalForm())
-            .orElseThrow(() -> new FileNotFoundException(trustedSetup + " is not found"));
+            .load(sanitizedTrustedSetup)
+            .orElseThrow(() -> new IllegalStateException(sanitizedTrustedSetup + " is not found"));
 
     final Path temp = Files.createTempFile("trusted_setup", ".tmp");
     temp.toFile().deleteOnExit();
     Files.copy(resource, temp, StandardCopyOption.REPLACE_EXISTING);
 
     return temp.toFile().getAbsolutePath();
+  }
+
+  private static Optional<Path> tryGetFile(final String resource) {
+    try {
+      return Optional.of(Paths.get(resource));
+    } catch (final Exception __) {
+      return Optional.empty();
+    }
   }
 }
