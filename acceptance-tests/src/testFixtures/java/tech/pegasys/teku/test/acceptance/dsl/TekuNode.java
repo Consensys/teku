@@ -127,11 +127,6 @@ public class TekuNode extends Node {
                 .withStartupTimeout(Duration.ofMinutes(2)))
         .withCommand("--config-file", CONFIG_FILE_PATH);
   }
-
-  public Spec getSpec() {
-    return spec;
-  }
-
   public static TekuNode create(
       final Network network, final DockerVersion version, final Consumer<Config> configOptions)
       throws TimeoutException, IOException {
