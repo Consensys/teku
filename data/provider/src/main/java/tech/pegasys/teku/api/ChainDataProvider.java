@@ -523,6 +523,10 @@ public class ChainDataProvider {
                 .map(SignedBeaconBlock::getRoot));
   }
 
+  public SpecMilestone getMilestoneAtHead() {
+    return spec.atSlot(recentChainData.getHeadSlot()).getMilestone();
+  }
+
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
       final String slotParameter, final Function<SignedBeaconBlock, T> mapper) {
     return defaultBlockSelectorFactory
