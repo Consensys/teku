@@ -114,13 +114,17 @@ public abstract class Node {
     final AtomicInteger actualEpoch = new AtomicInteger();
     waitFor(
         () -> {
-          final int currentEpoch = (int) getMetricValue("beacon_epoch");
+          final int currentEpoch = getCurrentEpoch();
           assertThat(currentEpoch).isGreaterThanOrEqualTo(epoch);
           actualEpoch.set(currentEpoch);
         },
         2,
         TimeUnit.MINUTES);
     return actualEpoch.get();
+  }
+
+  protected int getCurrentEpoch() {
+    return (int) getMetricValue("beacon_epoch");
   }
 
   public void waitForNextEpoch() {

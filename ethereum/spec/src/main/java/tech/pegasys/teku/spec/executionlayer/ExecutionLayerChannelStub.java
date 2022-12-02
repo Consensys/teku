@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.executionlayer;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -232,7 +231,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .blockHash(Bytes32.random())
                         .transactions(
                             List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
-                        .withdrawals(Collections::emptyList)
+                        .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
     lastValidBlock =
