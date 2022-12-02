@@ -232,7 +232,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .blockHash(Bytes32.random())
                         .transactions(
                             List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
-                        .withdrawals(Collections::emptyList)
+                        .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
     lastValidBlock =
