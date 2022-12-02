@@ -52,9 +52,9 @@ public class Eip4844ExecutionClientHandler extends CapellaExecutionClientHandler
         .thenPeek(
             blobsBundle ->
                 LOG.trace(
-                    "engineGetBlobsBundle(payloadId={}, slot={}) -> {}",
-                    payloadId,
-                    slot,
-                    blobsBundle.toBriefBlobsString()));
+                    () ->
+                        String.format(
+                            "engineGetBlobsBundle(payloadId=%s, slot=%s) -> %s",
+                            payloadId, slot, blobsBundle.toBriefBlobsString())));
   }
 }
