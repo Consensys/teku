@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844;
 
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
-public class SignedBeaconBlockBlinderBellatrix extends AbstractSignedBeaconBlockBlinder {
+public class SignedBeaconBlockBlinderEip4844 extends AbstractSignedBeaconBlockBlinder {
 
-  public SignedBeaconBlockBlinderBellatrix(final SchemaDefinitionsBellatrix schemaDefinitions) {
-    super(schemaDefinitions.toVersionBellatrix().orElseThrow());
+  public SignedBeaconBlockBlinderEip4844(final SchemaDefinitionsEip4844 schemaDefinitions) {
+    super(schemaDefinitions.toVersionEip4844().orElseThrow());
   }
 }
