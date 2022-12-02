@@ -19,6 +19,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class SignedBeaconBlockBlinderBellatrix extends AbstractSignedBeaconBlockBlinder {
 
   public SignedBeaconBlockBlinderBellatrix(final SchemaDefinitionsBellatrix schemaDefinitions) {
-    super(schemaDefinitions);
+    super(schemaDefinitions.toVersionBellatrix().orElseThrow());
   }
 }

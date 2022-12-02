@@ -19,6 +19,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 public class SignedBeaconBlockBlinderEip4844 extends AbstractSignedBeaconBlockBlinder {
 
   public SignedBeaconBlockBlinderEip4844(final SchemaDefinitionsEip4844 schemaDefinitions) {
-    super(schemaDefinitions);
+    super(schemaDefinitions.toVersionEip4844().orElseThrow());
   }
 }
