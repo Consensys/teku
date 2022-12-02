@@ -23,9 +23,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.EIP4844})
@@ -44,7 +42,7 @@ class BlindBlockUtilTest {
   }
 
   @TestTemplate
-  void shouldBlindAndUnblindBlock(final SpecContext specContext) {
+  void shouldBlindAndUnblindBlock() {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
     assertThat(signedBeaconBlock.isBlinded()).isFalse();
     final SignedBeaconBlock blindSignedBeaconBlock =
@@ -59,23 +57,7 @@ class BlindBlockUtilTest {
     final SafeFuture<SignedBeaconBlock> signedBeaconBlockSafeFuture =
         blindBlockUtil.unblindSignedBeaconBlock(
             blindSignedBeaconBlock,
-            unblinder -> {
-              final BeaconBlock block = unblinder.getSignedBlindedBeaconBlock().getMessage();
-
-              if (block
-                  .getBody()
-                  .getOptionalExecutionPayloadHeader()
-                  .orElseThrow()
-                  .isHeaderOfDefaultPayload()) {
-                // Terminal block not reached, provide default payload
-                unblinder.setExecutionPayloadSupplier(
-                    () ->
-                        SafeFuture.completedFuture(
-                            SchemaDefinitionsBellatrix.required(
-                                    spec.atSlot(block.getSlot()).getSchemaDefinitions())
-                                .getExecutionPayloadSchema()
-                                .getDefault()));
-              } else {
+            unblinder ->
                 unblinder.setExecutionPayloadSupplier(
                     () ->
                         SafeFuture.completedFuture(
@@ -84,9 +66,7 @@ class BlindBlockUtilTest {
                                 .orElseThrow()
                                 .getBody()
                                 .getOptionalExecutionPayload()
-                                .orElseThrow()));
-              }
-            });
+                                .orElseThrow())));
 
     final SignedBeaconBlock unblindedSignedBeaconBlock =
         signedBeaconBlockSafeFuture.getImmediately();
