@@ -27,13 +27,11 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     TekuNode primaryNode =
         createTekuNode(
             c -> {
-              c.withRealNetwork();
-              c.withStartupTargetPeerCount(0);
+              c.withRealNetwork().withStartupTargetPeerCount(0);
               applyMilestoneConfig(c);
             });
 
     primaryNode.start();
-    primaryNode.waitForNewFinalization();
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
     UInt64 genesisTime = primaryNode.getGenesisTime();
@@ -41,10 +39,10 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     TekuNode lateJoiningNode =
         createTekuNode(
             c -> {
-              c.withGenesisTime(genesisTime.intValue());
-              c.withRealNetwork();
-              c.withPeers(primaryNode);
-              c.withInteropValidators(0, 0);
+              c.withGenesisTime(genesisTime.intValue())
+                  .withRealNetwork()
+                  .withPeers(primaryNode)
+                  .withInteropValidators(0, 0);
               applyMilestoneConfig(c);
             });
 

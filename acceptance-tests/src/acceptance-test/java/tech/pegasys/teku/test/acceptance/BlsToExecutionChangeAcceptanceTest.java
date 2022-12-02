@@ -18,14 +18,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
-import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 
 public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
 
@@ -40,51 +36,43 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
     final Eth1Address executionAddress =
         Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
-    final UInt64 capellaActivationEpoch = UInt64.ONE;
+    final UInt64 capellaActivationEpoch = UInt64.ZERO;
 
-    TekuNode primaryNode =
-        createTekuNode(
-            c -> {
-              c.withNetwork(NETWORK_NAME);
-              c.withRealNetwork();
-              c.withStartupTargetPeerCount(0);
-              c.withStubExecutionEngine();
-              c.withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString());
-              applyMilestoneConfig(c, capellaActivationEpoch);
-            });
+    final TekuNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
     primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
-    UInt64 genesisTime = primaryNode.getGenesisTime();
-
-    TekuNode lateJoiningNode =
-        createTekuNode(
-            c -> {
-              c.withGenesisTime(genesisTime.intValue());
-              c.withNetwork(NETWORK_NAME);
-              c.withRealNetwork();
-              c.withPeers(primaryNode);
-              c.withInteropValidators(0, 0);
-              applyMilestoneConfig(c, capellaActivationEpoch);
-            });
+    final TekuNode lateJoiningNode =
+        createLateJoiningNode(capellaActivationEpoch, primaryNode, primaryNode.getGenesisTime());
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
 
-    final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        new BlsToExecutionChangeCreator(
-                primaryNode.getSpec(), primaryNode.getGenesisValidatorsRoot())
-            .createAndSign(
-                UInt64.valueOf(validatorIndex),
-                validatorKeyPair.getPublicKey(),
-                executionAddress,
-                validatorKeyPair.getSecretKey(),
-                capellaActivationEpoch);
+    lateJoiningNode.submitBlsToExecutionChange(validatorIndex, validatorKeyPair, executionAddress);
+    lateJoiningNode.waitForValidatorWithCredentials(validatorIndex, executionAddress);
+  }
 
-    lateJoiningNode.submitBlsToExecutionChange(signedBlsToExecutionChange);
+  private TekuNode createPrimaryNode(
+      final Eth1Address executionAddress, final UInt64 capellaActivationEpoch) {
+    return createTekuNode(
+        c -> {
+          c.withNetwork(NETWORK_NAME)
+              .withRealNetwork()
+              .withStartupTargetPeerCount(0)
+              .withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString());
+          applyMilestoneConfig(c, capellaActivationEpoch);
+        });
+  }
 
-    lateJoiningNode.waitForValidatorWithCredentials(
-        validatorIndex,
-        BlockProcessorCapella.getWithdrawalAddressFromEth1Address(executionAddress));
+  private TekuNode createLateJoiningNode(
+      final UInt64 capellaActivationEpoch, final TekuNode primaryNode, final UInt64 genesisTime) {
+    return createTekuNode(
+        c -> {
+          c.withGenesisTime(genesisTime.intValue())
+              .withNetwork(NETWORK_NAME)
+              .withRealNetwork()
+              .withPeers(primaryNode)
+              .withInteropValidators(0, 0);
+          applyMilestoneConfig(c, capellaActivationEpoch);
+        });
   }
 
   private static void applyMilestoneConfig(final Config c, final UInt64 capellaForkEpoch) {

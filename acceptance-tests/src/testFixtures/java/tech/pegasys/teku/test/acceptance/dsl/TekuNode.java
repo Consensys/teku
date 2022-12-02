@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -69,6 +68,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
@@ -77,6 +77,8 @@ import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -88,10 +90,13 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
+import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -264,9 +269,21 @@ public class TekuNode extends Node {
   }
 
   public void submitBlsToExecutionChange(
-      final SignedBlsToExecutionChange signedBlsToExecutionChange) throws Exception {
-
+      final int validatorIndex,
+      final BLSKeyPair validatorKeyPair,
+      final Eth1Address executionAddress)
+      throws Exception {
     final int currentEpoch = getCurrentEpoch();
+
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        new BlsToExecutionChangeCreator(spec, getGenesisValidatorsRoot())
+            .createAndSign(
+                UInt64.valueOf(validatorIndex),
+                validatorKeyPair.getPublicKey(),
+                executionAddress,
+                validatorKeyPair.getSecretKey(),
+                UInt64.valueOf(currentEpoch));
+
     final DeserializableTypeDefinition<SignedBlsToExecutionChange> jsonTypeDefinition =
         SchemaDefinitionsCapella.required(
                 spec.atEpoch(UInt64.valueOf(currentEpoch)).getSchemaDefinitions())
@@ -338,17 +355,8 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  public void waitForMilestone(SpecMilestone expectedMilestone) {
-    waitFor(
-        () -> {
-          final int currentEpoch = (int) getMetricValue("beacon_epoch");
-          final SpecMilestone currentMilestone =
-              spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(currentEpoch));
-          assertThat(currentMilestone).isEqualTo(expectedMilestone);
-          waitForNewFinalization();
-        },
-        2,
-        TimeUnit.MINUTES);
+  public void waitForMilestone(final SpecMilestone expectedMilestone) {
+    waitForLogMessageContaining("Activating network upgrade: " + expectedMilestone.name());
   }
 
   public void waitForNonDefaultExecutionPayload() {
@@ -523,6 +531,22 @@ public class TekuNode extends Node {
     }
   }
 
+  private Optional<Validator> fetchValidator(final String stateId, final int validatorId)
+      throws IOException {
+    final String result =
+        httpClient.get(
+            getRestApiUrl(),
+            "/eth/v1/beacon/states/" + stateId + "/validators/" + validatorId,
+            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final GetStateValidatorResponse response =
+          JSON_PROVIDER.jsonToObject(result, GetStateValidatorResponse.class);
+      return Optional.of(response.data.validator.asInternalValidator());
+    }
+  }
+
   public void waitForValidators(int numberOfValidators) {
     waitFor(
         () -> {
@@ -533,15 +557,17 @@ public class TekuNode extends Node {
         });
   }
 
-  public void waitForValidatorWithCredentials(int validatorIndex, Bytes32 expectedCredentials) {
+  public void waitForValidatorWithCredentials(
+      final int validatorIndex, final Eth1Address executionAddress) {
     waitFor(
         () -> {
-          Optional<BeaconState> maybeState = fetchHeadState();
-          assertThat(maybeState).isPresent();
-          BeaconState state = maybeState.get();
-          final Bytes32 withdrawalCredentials =
-              state.getValidators().get(validatorIndex).getWithdrawalCredentials();
-          assertThat(withdrawalCredentials).isEqualTo(expectedCredentials);
+          final Optional<Validator> maybeValidator = fetchValidator("head", validatorIndex);
+          assertThat(maybeValidator).isPresent();
+          Validator validator = maybeValidator.get();
+          final Bytes32 withdrawalCredentials = validator.getWithdrawalCredentials();
+          assertThat(withdrawalCredentials)
+              .isEqualTo(
+                  BlockProcessorCapella.getWithdrawalAddressFromEth1Address(executionAddress));
         });
   }
 
