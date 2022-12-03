@@ -96,6 +96,8 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsManagerImpl;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -224,6 +226,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
+  protected volatile BlobsManager blobsManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -381,6 +384,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAll() {
     initKeyValueStore();
     initExecutionLayer();
+    initBlobsManager();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -420,6 +424,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
+  }
+
+  protected void initBlobsManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      final BlobsManagerImpl blobsManagerImpl = new BlobsManagerImpl(spec, recentChainData);
+      blobsManager = blobsManagerImpl;
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, blobsManagerImpl);
+    } else {
+      blobsManager = BlobsManager.NOOP;
+    }
   }
 
   protected void initMergeMonitors() {
@@ -572,6 +586,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
+            blobsManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -928,6 +943,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlockManager(
             recentChainData,
             blockImporter,
+            blobsManager,
             pendingBlocks,
             futureBlocks,
             blockValidator,

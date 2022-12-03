@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -78,13 +77,12 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
-    return importBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty());
+    return importBlockAndBlobsSidecar(block, Optional.empty());
   }
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlockAndBlobsSidecar(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
 
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
@@ -101,8 +99,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(
-            __ -> forkChoice.onBlock(block, blobsSidecar, blockImportPerformance, executionLayer))
+        .thenCompose(__ -> forkChoice.onBlock(block, blockImportPerformance, executionLayer))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

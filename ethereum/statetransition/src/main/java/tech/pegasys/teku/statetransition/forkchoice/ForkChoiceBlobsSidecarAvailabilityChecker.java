@@ -27,13 +27,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.B
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAvailabilityChecker {
   private SpecVersion specVersion;
   private RecentChainData recentChainData;
   private SignedBeaconBlock block;
-  private Optional<BlobsSidecar> blobsSidecar;
+  private BlobsManager blobsManager;
 
   private Optional<SafeFuture<BlobsSidecarAndValidationResult>> validationResult = Optional.empty();
 
@@ -41,16 +42,20 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
       final SpecVersion specVersion,
       final RecentChainData recentChainData,
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar) {
+      final BlobsManager blobsManager) {
     this.specVersion = specVersion;
     this.recentChainData = recentChainData;
     this.block = block;
-    this.blobsSidecar = blobsSidecar;
+    this.blobsManager = blobsManager;
   }
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    validationResult = Optional.of(SafeFuture.of(this::validateBlobsSidecar));
+    validationResult =
+        Optional.of(
+            blobsManager
+                .getBlobsByBlockRoot(block.getRoot())
+                .thenApply(this::validateBlobsSidecar));
     return true;
   }
 
@@ -59,7 +64,8 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
     return validationResult.orElse(NOT_REQUIRED_RESULT_FUTURE);
   }
 
-  private BlobsSidecarAndValidationResult validateBlobsSidecar() {
+  private BlobsSidecarAndValidationResult validateBlobsSidecar(
+      final Optional<BlobsSidecar> blobsSidecar) {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
     // so if we have it we do want to validate it regardless

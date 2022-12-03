@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.S
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -46,6 +47,7 @@ public class BlockManager extends Service
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
+  private final BlobsManager blobsManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
@@ -67,6 +69,7 @@ public class BlockManager extends Service
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
+      final BlobsManager blobsManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final BlockValidator validator,
@@ -75,6 +78,7 @@ public class BlockManager extends Service
       final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
+    this.blobsManager = blobsManager;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.validator = validator;
@@ -96,7 +100,7 @@ public class BlockManager extends Service
   @Override
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
-    return doImportBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty());
+    return doImportBlockAndBlobsSidecar(block, Optional.empty());
   }
 
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
@@ -138,7 +142,16 @@ public class BlockManager extends Service
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlockAndBlobsSidecar(block, blobsSidecar, blockImportPerformance)
+            final SafeFuture<Void> blobsImport;
+            if (blobsSidecar.isPresent()) {
+              blobsImport = blobsManager.importBlobs(blobsSidecar.get());
+            } else {
+              blobsImport = SafeFuture.COMPLETE;
+            }
+            // for now, we want to be sure that blobs are available in the manager before continue
+            // block import
+            blobsImport
+                .thenCompose(__ -> doImportBlockAndBlobsSidecar(block, blockImportPerformance))
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -177,19 +190,17 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty())
-        .ifExceptionGetsHereRaiseABug();
+    doImportBlockAndBlobsSidecar(block, Optional.empty()).ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlockAndBlobsSidecar(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockAndBlobsSidecarImport(block, blobsSidecar, blockImportPerformance)
+                handleBlockAndBlobsSidecarImport(block, blockImportPerformance)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -235,10 +246,9 @@ public class BlockManager extends Service
 
   private SafeFuture<BlockImportResult> handleBlockAndBlobsSidecarImport(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance) {
     return blockImporter
-        .importBlockAndBlobsSidecar(block, blobsSidecar, blockImportPerformance)
+        .importBlockAndBlobsSidecar(block, blockImportPerformance)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {

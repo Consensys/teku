@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -107,6 +108,7 @@ public class SyncingNodeManager {
             spec,
             new InlineEventThread(),
             recentChainData,
+            BlobsManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
     BlockImporter blockImporter =
@@ -116,7 +118,8 @@ public class SyncingNodeManager {
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
-            new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+            new ExecutionLayerChannelStub(spec, false, Optional.empty()),
+            BlobsManager.NOOP);
 
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks =
@@ -127,6 +130,7 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
+            BlobsManager.NOOP,
             pendingBlocks,
             futureBlocks,
             blockValidator,
