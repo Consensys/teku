@@ -40,8 +40,11 @@ public class BlobsManagerImpl implements BlobsManager, FinalizedCheckpointChanne
 
   @Override
   public SafeFuture<Void> importBlobs(BlobsSidecar blobsSidecar) {
-    blobsSidecarByBlockRoot.put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
-    return SafeFuture.COMPLETE;
+    return SafeFuture.of(
+        () -> {
+          blobsSidecarByBlockRoot.put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
+          return null;
+        });
   }
 
   @Override
@@ -51,8 +54,11 @@ public class BlobsManagerImpl implements BlobsManager, FinalizedCheckpointChanne
 
   @Override
   public SafeFuture<Void> discardBlobsByBlockRoot(Bytes32 blockRoot) {
-    blobsSidecarByBlockRoot.remove(blockRoot);
-    return SafeFuture.COMPLETE;
+    return SafeFuture.of(
+        () -> {
+          blobsSidecarByBlockRoot.remove(blockRoot);
+          return null;
+        });
   }
 
   @Override
