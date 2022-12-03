@@ -291,12 +291,18 @@ public class BlockManager extends Service
                     //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
                     //  contains a valid block but the BlobsSidecar validation fails.
                     //  Should be similar to what we do with pendingBlocks.
+                    blobsManager
+                        .discardBlobsByBlockRoot(block.getRoot())
+                        .ifExceptionGetsHereRaiseABug();
                     break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
                         result.getFailureReason(),
                         block);
+                    blobsManager
+                        .discardBlobsByBlockRoot(block.getRoot())
+                        .ifExceptionGetsHereRaiseABug();
                     dropInvalidBlock(block, result);
                 }
               }
