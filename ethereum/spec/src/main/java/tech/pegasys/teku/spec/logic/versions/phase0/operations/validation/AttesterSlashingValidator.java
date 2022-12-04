@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.operations.validation;
+package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 
 public class AttesterSlashingValidator

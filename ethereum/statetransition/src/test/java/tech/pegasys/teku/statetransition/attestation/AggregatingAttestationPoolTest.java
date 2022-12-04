@@ -40,8 +40,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AggregatingAttestationPoolTest {
