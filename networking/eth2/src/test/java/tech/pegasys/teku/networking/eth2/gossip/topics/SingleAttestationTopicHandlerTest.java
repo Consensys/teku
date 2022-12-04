@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -39,13 +38,13 @@ public class SingleAttestationTopicHandlerTest
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
 
   @Override
-  protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
+  protected Eth2TopicHandler<?> createHandler() {
     return SingleAttestationTopicHandler.createHandler(
         recentChainData,
         asyncRunner,
         processor,
         gossipEncoding,
-        forkDigest,
+        forkInfo,
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
         SUBNET_ID,
@@ -67,6 +66,24 @@ public class SingleAttestationTopicHandlerTest
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
+  }
+
+  @Test
+  public void handleMessage_invalid_wrongFork() {
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
+    final StateAndBlockSummary blockAndState =
+        storageSystem.chainBuilder().getBlockAndStateAtSlot(wrongForkSlot);
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromNetwork(
+            spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
+    when(processor.process(attestation))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
+
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
 
   @Test
@@ -132,19 +149,8 @@ public class SingleAttestationTopicHandlerTest
 
   @Test
   public void returnProperTopicName() {
-    final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final String topicName = GossipTopicName.getAttestationSubnetTopicName(0);
-    Eth2TopicHandler<?> topicHandler =
-        SingleAttestationTopicHandler.createHandler(
-            recentChainData,
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkDigest,
-            topicName,
-            spec.getGenesisSchemaDefinitions().getAttestationSchema(),
-            0,
-            GOSSIP_MAX_SIZE);
-    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
+    assertThat(topicHandler.getTopic())
+        .isEqualTo(
+            "/eth2/" + forkDigest.toUnprefixedHexString() + "/beacon_attestation_1/ssz_snappy");
   }
 }

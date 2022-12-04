@@ -18,37 +18,36 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.BlockOperationMilestoneValidator;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeaconBlock> {
 
   @Override
-  protected Eth2TopicHandler<SignedBeaconBlock> createHandler(final Bytes4 forkDigest) {
-    return new Eth2TopicHandler<>(
-        recentChainData,
-        asyncRunner,
-        processor,
-        gossipEncoding,
-        forkDigest,
-        GossipTopicName.BEACON_BLOCK,
-        Optional.empty(),
-        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-        GOSSIP_MAX_SIZE);
+  protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
+    return new BlockGossipManager(
+            recentChainData,
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            GOSSIP_MAX_SIZE)
+        .getTopicHandler();
   }
 
   @Test
   public void handleMessage_validBlock() throws Exception {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
@@ -63,7 +62,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Test
   public void handleMessage_validFutureBlock() throws Exception {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
@@ -77,7 +76,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
 
   @Test
   public void handleMessage_invalidBlock_unknownPreState() {
-    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(validSlot);
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
@@ -91,24 +90,11 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
 
   @Test
   public void handleMessage_invalidBlock_wrongFork() {
-    final Eth2TopicHandler<SignedBeaconBlock> blockHandler =
-        new Eth2TopicHandler<>(
-            recentChainData,
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkDigest,
-            GossipTopicName.BEACON_BLOCK,
-            Optional.of(
-                new BlockOperationMilestoneValidator(
-                    spec, recentChainData.getForkInfo(UInt64.ONE).orElseThrow())),
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-            GOSSIP_MAX_SIZE);
-    SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
-    Bytes serialized = gossipEncoding.encode(block);
+    final SignedBeaconBlock prevForkBlock =
+        storageSystem.chainBuilder().getBlockAtSlot(wrongForkSlot);
+    Bytes serialized = gossipEncoding.encode(prevForkBlock);
     final SafeFuture<ValidationResult> result =
-        blockHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -126,9 +112,12 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Test
   public void handleMessage_invalidBlock_wrongProposer() throws Exception {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlotFromInvalidProposer(nextSlot);
+    final SignedBeaconBlock block =
+        chainBuilder
+            .generateBlockAtSlot(nextSlot, BlockOptions.create().setWrongProposer(true))
+            .getBlock();
     Bytes serialized = gossipEncoding.encode(block);
-    beaconChainUtil.setSlot(nextSlot);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -138,18 +127,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
 
   @Test
   public void returnProperTopicName() {
-    final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
-        new Eth2TopicHandler<>(
-            recentChainData,
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkDigest,
-            GossipTopicName.BEACON_BLOCK,
-            Optional.empty(),
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-            GOSSIP_MAX_SIZE);
-    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
+    assertThat(topicHandler.getTopic())
+        .isEqualTo("/eth2/" + forkDigest.toUnprefixedHexString() + "/beacon_block/ssz_snappy");
   }
 }
