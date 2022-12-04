@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochP
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
@@ -99,8 +100,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    // specific operation validator from spec so that things can hapepn like rejecting bls to
+    // execution change
     final OperationValidator operationValidator =
-        OperationValidator.create(
+        new OperationValidatorPhase0(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
