@@ -33,6 +33,7 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -46,7 +47,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
   public void setup() {
     spec = TestSpecFactory.createMinimalCapella();
     dataStructureUtil = new DataStructureUtil(spec);
-    setHandler(new PostBlsToExecutionChanges(provider, schemaDefinitionCache));
+    setHandler(new PostBlsToExecutionChanges(provider, chainDataProvider, schemaDefinitionCache));
   }
 
   @Test
@@ -54,6 +55,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
     final SignedBlsToExecutionChange blsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
     request.setRequestBody(blsToExecutionChange);
+    when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
     when(provider.postBlsToExecutionChange(any(SignedBlsToExecutionChange.class)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
@@ -70,6 +72,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
     final SignedBlsToExecutionChange blsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
     request.setRequestBody(blsToExecutionChange);
+    when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
     when(provider.postBlsToExecutionChange(blsToExecutionChange))
         .thenReturn(
             SafeFuture.completedFuture(InternalValidationResult.reject("Operation invalid")));
@@ -78,6 +81,22 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
     final HttpErrorResponse expectedBody =
         new HttpErrorResponse(SC_BAD_REQUEST, "Operation invalid");
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody()).isEqualTo(expectedBody);
+  }
+
+  @Test
+  void shouldRejectPostBlsToExecutionChangesBeforeCapellaFork() throws JsonProcessingException {
+    final SignedBlsToExecutionChange blsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    request.setRequestBody(blsToExecutionChange);
+    when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.BELLATRIX);
+
+    handler.handleRequest(request);
+    final HttpErrorResponse expectedBody =
+        new HttpErrorResponse(
+            SC_BAD_REQUEST,
+            "The beacon node is not currently ready to accept bls_to_execution_change operations.");
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }

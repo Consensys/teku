@@ -273,7 +273,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
 
   @VisibleForTesting
-  static Bytes32 getWithdrawalAddressFromEth1Address(final Bytes20 toExecutionAddress) {
+  public static Bytes32 getWithdrawalAddressFromEth1Address(final Bytes20 toExecutionAddress) {
     return Bytes32.wrap(
         Bytes.concatenate(ETH1_WITHDRAWAL_KEY_PREFIX, toExecutionAddress.getWrappedBytes()));
   }

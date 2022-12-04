@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -21,5 +24,18 @@ public abstract class AbstractSignedBeaconBlockBlinder implements SignedBeaconBl
 
   public AbstractSignedBeaconBlockBlinder(final SchemaDefinitions schemaDefinitions) {
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  @Override
+  public SignedBeaconBlock blind(SignedBeaconBlock signedUnblindedBock) {
+    final SignedBeaconBlock blindedSignedBeaconBlock = signedUnblindedBock.blind(schemaDefinitions);
+    checkState(
+        blindedSignedBeaconBlock
+            .getMessage()
+            .hashTreeRoot()
+            .equals(signedUnblindedBock.getMessage().hashTreeRoot()),
+        "blinded block root do not match original unblinded block root");
+
+    return blindedSignedBeaconBlock;
   }
 }
