@@ -40,13 +40,13 @@ public final class CKZG4844 implements KZG {
 
   public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
     if (instance == null) {
-      instance = new CKZG4844(fieldElementsPerBlob);
+      instance = new CKZG4844();
       initializedFieldElementsPerBlob = fieldElementsPerBlob;
       return instance;
     }
     if (initializedFieldElementsPerBlob != fieldElementsPerBlob) {
       throw new KZGException(
-          "Can't reinitialize C-KZG-4844 library with a different value for FIELD_ELEMENTS_PER_BLOB.");
+          "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
     }
     return instance;
   }
@@ -58,9 +58,9 @@ public final class CKZG4844 implements KZG {
     return instance;
   }
 
-  private CKZG4844(final int fieldElementsPerBlob) {
+  private CKZG4844() {
     try {
-      LOG.debug("Loaded C-KZG-4844 library");
+      LOG.debug("Loaded C-KZG-4844");
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
