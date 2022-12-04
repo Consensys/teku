@@ -40,6 +40,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class HistoricalBlockSyncServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
@@ -76,7 +79,7 @@ public class HistoricalBlockSyncServiceTest {
       Optional.of("https://example.com/state.ssz");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
       new ReconstructHistoricalStatesService(
-          storageUpdateChannel, chainData, spec, metricsSystem, genesisStateResource);
+          storageUpdateChannel, chainData, spec, timeProvider, metricsSystem, genesisStateResource);
 
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =

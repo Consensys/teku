@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -116,6 +117,7 @@ public class HistoricalBlockSyncService extends Service {
 
   public static HistoricalBlockSyncService create(
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
@@ -128,7 +130,12 @@ public class HistoricalBlockSyncService extends Service {
     ReconstructHistoricalStatesService reconstructHistoricalStatesService =
         reconstructHistoricStatesEnabled
             ? new ReconstructHistoricalStatesService(
-                storageUpdateChannel, chainData, spec, metricsSystem, genesisStateResource)
+                storageUpdateChannel,
+                chainData,
+                spec,
+                timeProvider,
+                metricsSystem,
+                genesisStateResource)
             : null;
 
     return new HistoricalBlockSyncService(

@@ -28,6 +28,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
@@ -56,12 +57,14 @@ public class ReconstructHistoricalStatesService extends Service {
       final StorageUpdateChannel storageUpdateChannel,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final Optional<String> genesisStateResource) {
     this(
         storageUpdateChannel,
         chainDataClient,
         spec,
+        timeProvider,
         metricsSystem,
         genesisStateResource,
         STATUS_LOG);
@@ -71,6 +74,7 @@ public class ReconstructHistoricalStatesService extends Service {
       final StorageUpdateChannel storageUpdateChannel,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final Optional<String> genesisStateResource,
       final StatusLogger statusLogger) {
@@ -79,7 +83,7 @@ public class ReconstructHistoricalStatesService extends Service {
     this.spec = spec;
     this.genesisStateResource = genesisStateResource;
     this.statusLogger = statusLogger;
-    this.progressLogger = new ProgressLogger(metricsSystem, statusLogger);
+    this.progressLogger = new ProgressLogger(metricsSystem, statusLogger, timeProvider);
   }
 
   @Override

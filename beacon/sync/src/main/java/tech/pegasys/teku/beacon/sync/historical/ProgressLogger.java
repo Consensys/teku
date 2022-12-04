@@ -13,26 +13,25 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ProgressLogger {
   private final SettableGauge reconstructGauge;
-  private Instant lastLogged;
+  private final TimeProvider timeProvider;
+  private UInt64 lastLogged;
   private final StatusLogger statusLogger;
 
-  protected ProgressLogger(final MetricsSystem metricsSystem, final StatusLogger statusLogger) {
-    this(metricsSystem, statusLogger, Instant.now());
-  }
-
   protected ProgressLogger(
-      final MetricsSystem metricsSystem, final StatusLogger statusLogger, final Instant time) {
+      final MetricsSystem metricsSystem,
+      final StatusLogger statusLogger,
+      final TimeProvider timeProvider) {
     this.reconstructGauge =
         SettableGauge.create(
             metricsSystem,
@@ -40,7 +39,8 @@ public class ProgressLogger {
             "reconstruct_historical_states_slot",
             "The slot the reconstruct historical states service has last saved");
 
-    this.lastLogged = time;
+    this.timeProvider = timeProvider;
+    this.lastLogged = timeProvider.getTimeInSeconds();
     this.statusLogger = statusLogger;
   }
 
@@ -48,8 +48,8 @@ public class ProgressLogger {
     final UInt64 currentSlot = block.getSlot();
     reconstructGauge.set(currentSlot.doubleValue());
 
-    final Instant now = Instant.now();
-    if (lastLogged.plus(5, ChronoUnit.MINUTES).isBefore(now)) {
+    final UInt64 now = timeProvider.getTimeInSeconds();
+    if (now.isGreaterThanOrEqualTo(lastLogged.plus(Duration.ofMinutes(5).toSeconds()))) {
       statusLogger.reconstructedHistoricalBlocks(currentSlot, anchorSlot);
       lastLogged = now;
     }

@@ -19,12 +19,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -35,14 +36,32 @@ public class ProgressLoggerTest {
   private ProgressLogger progressLogger;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final StatusLogger statusLogger = mock(StatusLogger.class);
+  private StubTimeProvider timeProvider;
 
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
+  @BeforeEach
+  public void setup() {
+    timeProvider = StubTimeProvider.withTimeInSeconds(0);
+    progressLogger = new ProgressLogger(metricsSystem, statusLogger, timeProvider);
+  }
+
   @Test
   public void shouldLogUpdatedStatusAfter5Minutes() {
-    final Instant lastLogged = Instant.now().minus(6, ChronoUnit.MINUTES);
-    progressLogger = new ProgressLogger(metricsSystem, statusLogger, lastLogged);
+    timeProvider.advanceTimeBy(Duration.ofMinutes(6));
+
+    final UInt64 currentSlot = UInt64.valueOf(3);
+    final UInt64 anchorSlot = UInt64.valueOf(10);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+    progressLogger.update(block, anchorSlot);
+
+    verify(statusLogger, times(1)).reconstructedHistoricalBlocks(eq(currentSlot), eq(anchorSlot));
+  }
+
+  @Test
+  public void shouldLogUpdatedStatusAt5Minutes() {
+    timeProvider.advanceTimeBy(Duration.ofMinutes(5));
 
     final UInt64 currentSlot = UInt64.valueOf(3);
     final UInt64 anchorSlot = UInt64.valueOf(10);
@@ -54,8 +73,7 @@ public class ProgressLoggerTest {
 
   @Test
   public void shouldNotLogUpdatedStatusBefore5Minutes() {
-    final Instant lastLogged = Instant.now().minus(4, ChronoUnit.MINUTES);
-    progressLogger = new ProgressLogger(metricsSystem, statusLogger, lastLogged);
+    timeProvider.advanceTimeBy(Duration.ofMinutes(4));
 
     final UInt64 currentSlot = UInt64.valueOf(3);
     final UInt64 anchorSlot = UInt64.valueOf(10);

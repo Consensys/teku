@@ -37,6 +37,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -230,6 +231,7 @@ public class ReconstructHistoricalStatesServiceTest {
             storageUpdateChannel,
             chainDataClient,
             spec,
+            StubTimeProvider.withTimeInSeconds(0),
             metricsSystem,
             genesisStateResource,
             statusLogger);
