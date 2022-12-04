@@ -27,6 +27,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.ROPSTEN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -329,7 +330,8 @@ public class Eth2NetworkConfiguration {
 
     public Builder initialStateFromClasspath(final String filename) {
       this.initialState =
-          Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+          Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
+              .map(URL::toExternalForm);
       return this;
     }
 
@@ -340,7 +342,8 @@ public class Eth2NetworkConfiguration {
 
     public Builder genesisStateFromClasspath(final String filename) {
       this.genesisState =
-          Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+          Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
+              .map(URL::toExternalForm);
       return this;
     }
 
@@ -391,8 +394,8 @@ public class Eth2NetworkConfiguration {
 
     public Builder trustedSetupFromClasspath(final String filename) {
       this.trustedSetup =
-          Optional.ofNullable(
-              Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+          Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
+              .map(URL::toExternalForm);
       return this;
     }
 

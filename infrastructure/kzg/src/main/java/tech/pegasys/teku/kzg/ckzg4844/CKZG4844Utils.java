@@ -57,7 +57,7 @@ public class CKZG4844Utils {
   private static boolean isFileOnFileSystem(final String resource) {
     try {
       return Files.exists(Paths.get(resource));
-    } catch (Exception __) {
+    } catch (final Exception __) {
       return false;
     }
   }
