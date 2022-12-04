@@ -15,17 +15,21 @@ package tech.pegasys.teku.kzg.ckzg4844;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class CKZG4844Utils {
+
+  private static final String FILE_SCHEME = "file";
 
   public static byte[] flattenBytesList(final List<Bytes> bytes) {
     return flattenBytesStream(bytes.stream());
@@ -37,9 +41,9 @@ public class CKZG4844Utils {
 
   public static String copyTrustedSetupToTempFileIfNeeded(final String trustedSetup)
       throws IOException {
-    if (isFileOnFileSystem(trustedSetup)) {
-      // Platform-agnostic safe way to get path
-      return Paths.get(trustedSetup).toFile().getPath();
+    final Optional<Path> maybeFile = getFileOnFileSystemOrClasspath(trustedSetup);
+    if (maybeFile.isPresent()) {
+      return maybeFile.get().toFile().getPath();
     }
     final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetup);
     final InputStream resource =
@@ -54,11 +58,26 @@ public class CKZG4844Utils {
     return temp.toFile().getAbsolutePath();
   }
 
-  private static boolean isFileOnFileSystem(final String resource) {
+  private static Optional<Path> getFileOnFileSystemOrClasspath(final String resource) {
+    return getFileOnFileSystem(resource).or(() -> getFileOnClasspath(resource));
+  }
+
+  private static Optional<Path> getFileOnFileSystem(final String resource) {
     try {
-      return Files.exists(Paths.get(resource));
+      return Optional.of(Paths.get(resource)).filter(Files::exists);
     } catch (final Exception __) {
-      return false;
+      return Optional.empty();
+    }
+  }
+
+  private static Optional<Path> getFileOnClasspath(final String resource) {
+    try {
+      return Optional.of(new URL(resource).toURI())
+          .filter(resourceUri -> resourceUri.getScheme().equals(FILE_SCHEME))
+          .map(Paths::get)
+          .filter(Files::exists);
+    } catch (final Exception __) {
+      return Optional.empty();
     }
   }
 }
