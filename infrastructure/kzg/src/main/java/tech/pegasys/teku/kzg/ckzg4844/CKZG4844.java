@@ -44,7 +44,7 @@ public final class CKZG4844 implements KZG {
       initializedFieldElementsPerBlob = fieldElementsPerBlob;
       return instance;
     }
-    if (initializedFieldElementsPerBlob != fieldElementsPerBlob) {
+    if (fieldElementsPerBlob != initializedFieldElementsPerBlob) {
       throw new KZGException(
           "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
     }
