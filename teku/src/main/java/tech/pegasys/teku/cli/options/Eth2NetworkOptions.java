@@ -63,6 +63,7 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--Xtrusted-setup"},
+      hidden = true,
       paramLabel = "<STRING>",
       description =
           "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This value should be a file or URL pointing to a trusted setup.",
