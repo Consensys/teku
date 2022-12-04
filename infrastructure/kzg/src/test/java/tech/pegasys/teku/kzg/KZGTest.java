@@ -40,7 +40,7 @@ public final class KZGTest {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  private final KZG kzg = CKZG4844.createOrGetInstance();
+  private static final KZG kzg = CKZG4844.createInstance(FIELD_ELEMENTS_PER_BLOB);
 
   @AfterEach
   public void cleanUpIfNeeded() {

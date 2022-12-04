@@ -36,14 +36,29 @@ public final class CKZG4844 implements KZG {
 
   private static CKZG4844 instance;
 
-  public static synchronized CKZG4844 createOrGetInstance() {
+  private static int initializedFieldElementsPerBlob = -1;
+
+  public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
     if (instance == null) {
-      instance = new CKZG4844();
+      instance = new CKZG4844(fieldElementsPerBlob);
+      initializedFieldElementsPerBlob = fieldElementsPerBlob;
+      return instance;
+    }
+    if (initializedFieldElementsPerBlob != fieldElementsPerBlob) {
+      throw new KZGException(
+          "Can't reinitialize C-KZG-4844 library with a different value for FIELD_ELEMENTS_PER_BLOB.");
     }
     return instance;
   }
 
-  private CKZG4844() {
+  public static CKZG4844 getInstance() {
+    if (instance == null) {
+      throw new KZGException("C-KZG-4844 library hasn't been initialized.");
+    }
+    return instance;
+  }
+
+  private CKZG4844(final int fieldElementsPerBlob) {
     try {
       LOG.debug("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {
@@ -56,7 +71,7 @@ public final class CKZG4844 implements KZG {
     try {
       final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
       CKzg4844JNI.loadTrustedSetup(file);
-      LOG.debug("Loaded trusted setup from {}", trustedSetup);
+      LOG.debug("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
     }

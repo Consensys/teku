@@ -390,8 +390,9 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder trustedSetupFromClasspath(final String filename) {
-      this.genesisState =
-          Optional.of(Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
+      this.trustedSetup =
+          Optional.ofNullable(
+              Eth2NetworkConfiguration.class.getResource(filename).toExternalForm());
       return this;
     }
 

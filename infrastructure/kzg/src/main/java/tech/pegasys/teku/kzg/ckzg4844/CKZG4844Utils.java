@@ -20,13 +20,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
-class CKZG4844Utils {
+public class CKZG4844Utils {
 
   public static byte[] flattenBytesList(final List<Bytes> bytes) {
     return flattenBytesStream(bytes.stream());
@@ -38,15 +37,14 @@ class CKZG4844Utils {
 
   public static String copyTrustedSetupToTempFileIfNeeded(final String trustedSetup)
       throws IOException {
-    final Optional<Path> trustedSetupFile = tryGetFile(trustedSetup);
-    if (trustedSetupFile.isPresent()) {
+    if (isFileOnFileSystem(trustedSetup)) {
       // Platform-agnostic safe way to get path
-      return trustedSetupFile.get().toFile().getPath();
+      return Paths.get(trustedSetup).toFile().getPath();
     }
     final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetup);
     final InputStream resource =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .load(sanitizedTrustedSetup)
+            .load(trustedSetup)
             .orElseThrow(() -> new IllegalStateException(sanitizedTrustedSetup + " is not found"));
 
     final Path temp = Files.createTempFile("trusted_setup", ".tmp");
@@ -56,11 +54,11 @@ class CKZG4844Utils {
     return temp.toFile().getAbsolutePath();
   }
 
-  private static Optional<Path> tryGetFile(final String resource) {
+  private static boolean isFileOnFileSystem(final String resource) {
     try {
-      return Optional.of(Paths.get(resource));
-    } catch (final Exception __) {
-      return Optional.empty();
+      return Files.exists(Paths.get(resource));
+    } catch (Exception __) {
+      return false;
     }
   }
 }

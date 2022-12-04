@@ -1051,9 +1051,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
               .orElseThrow(
                   () ->
                       new InvalidConfigurationException(
-                          "Trusted setup should be configured for milestones >= "
-                              + SpecMilestone.EIP4844));
-      kzg = CKZG4844.createOrGetInstance();
+                          "Trusted setup should be configured for milestones >= EIP4844"));
+      final int fieldElementsPerBlob =
+          spec.forMilestone(SpecMilestone.EIP4844)
+              .getConfig()
+              .toVersionEip4844()
+              .orElseThrow()
+              .getFieldElementsPerBlob();
+      kzg = CKZG4844.createInstance(fieldElementsPerBlob);
       kzg.loadTrustedSetup(trustedSetup);
     } else {
       kzg = KZG.NOOP;
