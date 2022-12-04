@@ -32,12 +32,12 @@ import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.eip4844.block.BlockProcessorEip4844;
 import tech.pegasys.teku.spec.logic.versions.eip4844.forktransition.Eip4844StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.logic.versions.eip4844.util.BlindBlockUtilEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class SpecLogicEip4844 extends AbstractSpecLogic {
@@ -147,7 +147,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
+    final BlindBlockUtilEip4844 blindBlockUtil = new BlindBlockUtilEip4844(schemaDefinitions);
 
     // State upgrade
     final Eip4844StateUpgrade stateUpgrade =

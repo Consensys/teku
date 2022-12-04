@@ -11,14 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
+package tech.pegasys.teku.ethereum.executionclient.serialization;
 
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class SignedBeaconBlockBlinderBellatrix extends AbstractSignedBeaconBlockBlinder {
+public class Bytes48Deserializer extends JsonDeserializer<Bytes48> {
 
-  public SignedBeaconBlockBlinderBellatrix(final SchemaDefinitionsBellatrix schemaDefinitions) {
-    super(schemaDefinitions.toVersionBellatrix().orElseThrow());
+  @Override
+  public Bytes48 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
+    return Bytes48.fromHexStringStrict(p.getValueAsString());
   }
 }

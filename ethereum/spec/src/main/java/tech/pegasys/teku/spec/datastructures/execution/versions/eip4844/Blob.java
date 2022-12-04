@@ -31,4 +31,8 @@ public class Blob extends SszByteVectorImpl {
   public BlobSchema getSchema() {
     return (BlobSchema) super.getSchema();
   }
+
+  public String toBriefString() {
+    return getBytes().slice(0, 7).toUnprefixedHexString();
+  }
 }

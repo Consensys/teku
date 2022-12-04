@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
+import tech.pegasys.teku.api.schema.eip4844.BeaconStateEip4844;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 @Schema(
@@ -24,6 +25,7 @@ import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
       BeaconStatePhase0.class,
       BeaconStateAltair.class,
       BeaconStateBellatrix.class,
-      BeaconStateCapella.class
+      BeaconStateCapella.class,
+      BeaconStateEip4844.class
     })
 public interface State {}
