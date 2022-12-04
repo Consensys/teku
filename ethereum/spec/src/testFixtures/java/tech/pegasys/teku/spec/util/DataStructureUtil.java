@@ -104,6 +104,7 @@ import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -1723,6 +1724,20 @@ public final class DataStructureUtil {
             .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
             .collect(toList()),
         randomBytes48());
+  }
+
+  public BlobsBundle randomBlobsBundle() {
+    final BlobSchema blobSchema =
+        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
+
+    return new BlobsBundle(
+        randomBytes32(),
+        randomSszKzgCommitmentList().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .collect(toList()),
+        IntStream.range(0, randomInt((int) blobSchema.getMaxLength()))
+            .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
+            .collect(toList()));
   }
 
   public SignedBeaconBlockAndBlobsSidecar randomSignedBeaconBlockAndBlobsSidecar() {
