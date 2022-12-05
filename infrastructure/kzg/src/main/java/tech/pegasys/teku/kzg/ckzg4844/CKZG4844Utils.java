@@ -41,7 +41,7 @@ public class CKZG4844Utils {
 
   public static String copyTrustedSetupToTempFileIfNeeded(final String trustedSetup)
       throws IOException {
-    final Optional<Path> maybeFile = getFileOnFileSystemOrClasspath(trustedSetup);
+    final Optional<Path> maybeFile = getFileOnFileSystemOrLocalClasspath(trustedSetup);
     if (maybeFile.isPresent()) {
       return maybeFile.get().toFile().getPath();
     }
@@ -58,8 +58,8 @@ public class CKZG4844Utils {
     return temp.toFile().getAbsolutePath();
   }
 
-  private static Optional<Path> getFileOnFileSystemOrClasspath(final String resource) {
-    return getFileOnFileSystem(resource).or(() -> getFileOnClasspath(resource));
+  private static Optional<Path> getFileOnFileSystemOrLocalClasspath(final String resource) {
+    return getFileOnFileSystem(resource).or(() -> getFileOnLocalClasspath(resource));
   }
 
   private static Optional<Path> getFileOnFileSystem(final String resource) {
@@ -70,7 +70,7 @@ public class CKZG4844Utils {
     }
   }
 
-  private static Optional<Path> getFileOnClasspath(final String resource) {
+  private static Optional<Path> getFileOnLocalClasspath(final String resource) {
     try {
       return Optional.of(new URL(resource).toURI())
           .filter(resourceUri -> resourceUri.getScheme().equals(FILE_SCHEME))

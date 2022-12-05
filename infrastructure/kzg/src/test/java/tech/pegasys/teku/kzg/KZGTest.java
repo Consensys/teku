@@ -52,6 +52,15 @@ public final class KZGTest {
   }
 
   @Test
+  public void testCreatingInstanceWithDifferentFieldElementsPerBlob_shouldThrowException() {
+    final KZGException exception =
+        assertThrows(KZGException.class, () -> CKZG4844.createInstance(4));
+    assertThat(exception)
+        .hasMessage(
+            "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
+  }
+
+  @Test
   public void testKzgLoadTrustedSetupTwice_shouldThrowException() {
     loadTrustedSetup();
     assertThrows(KZGException.class, this::loadTrustedSetup);
