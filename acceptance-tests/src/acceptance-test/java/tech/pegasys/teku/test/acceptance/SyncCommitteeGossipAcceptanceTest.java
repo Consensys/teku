@@ -26,7 +26,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private static final int NODE_VALIDATORS = 8;
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
-  private final String network = "less-swift";
+  private final String network = "swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private TekuNode primaryNode;

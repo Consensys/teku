@@ -13,12 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -30,41 +25,32 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
-  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
     final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
-    final URL networkYaml =
-        Resources.getResource("tech/pegasys/teku/spec/config/configs/less-swift.yaml");
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
 
     final TekuNode beaconNode =
-        createTekuNode(
-            config -> config.withNetwork(networkYaml, networkName).withDepositsFrom(eth1Node));
+        createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
     final Web3SignerNode web3SignerNode =
-        createWeb3SignerNode(config -> config.withNetwork(networkYaml));
+        createWeb3SignerNode(config -> config.withNetwork(networkName));
     web3SignerNode.start();
     final ValidatorKeysApi signerApi = web3SignerNode.getValidatorKeysApi();
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config -> {
-              try {
+            config ->
                 config
-                    .withNetwork(networkYaml.openStream())
+                    .withNetwork(networkName)
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()
-                    .withBeaconNode(beaconNode);
-              } catch (IOException e) {
-                LOG.error("VC configuration failed", e);
-              }
-            });
+                    .withBeaconNode(beaconNode));
 
     beaconNode.start();
     validatorClient.start();

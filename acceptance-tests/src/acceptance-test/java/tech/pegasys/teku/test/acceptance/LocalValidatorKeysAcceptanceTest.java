@@ -32,7 +32,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
     final BesuNode eth1Node =
         createBesuNode(
             config ->
