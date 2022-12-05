@@ -330,13 +330,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor)
       throws BlockProcessingException {
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
     final SignedBlsToExecutionChange blsToExecutionChange =
-        loadSsz(
-            testDefinition,
-            dataFileName,
-            schemaDefinitionsCapella.getSignedBlsToExecutionChangeSchema());
+        loadBlsToExecutionChange(testDefinition);
     processor.processBlsToExecutionChange(state, blsToExecutionChange);
   }
 
