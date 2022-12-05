@@ -23,7 +23,7 @@ MIN_GENESIS_TIME: 1578009600
 # Highest byte set to 0x01 to avoid collisions with mainnet versioning
 GENESIS_FORK_VERSION: 0x00000001
 # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
-GENESIS_DELAY: 300
+GENESIS_DELAY: 30
 
 
 # Forking
@@ -55,7 +55,7 @@ SECONDS_PER_ETH1_BLOCK: 1
 # 2**8 (= 256) epochs
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
-SHARD_COMMITTEE_PERIOD: 64
+SHARD_COMMITTEE_PERIOD: 3
 # [customized] process deposits more quickly, but insecure
 ETH1_FOLLOW_DISTANCE: 16
 
@@ -71,7 +71,7 @@ EJECTION_BALANCE: 16000000000
 # 2**2 (= 4)
 MIN_PER_EPOCH_CHURN_LIMIT: 4
 # 2**16 (= 65,536)
-CHURN_LIMIT_QUOTIENT: 65536
+CHURN_LIMIT_QUOTIENT: 32
 
 
 # Fork choice
