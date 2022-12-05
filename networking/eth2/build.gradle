@@ -46,6 +46,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':infrastructure:bytes')
   testFixturesImplementation testFixtures(project(':infrastructure:events'))
+  testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testFixturesImplementation testFixtures(project(':infrastructure:time'))
   testFixturesImplementation testFixtures(project(':storage'))
   testFixturesImplementation project(':infrastructure:subscribers')
