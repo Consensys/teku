@@ -29,7 +29,9 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
@@ -40,9 +42,21 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
 
   final KZG kzg;
 
-  public MiscHelpersEip4844(final SpecConfig specConfig, final KZG kzg) {
+  public MiscHelpersEip4844(final SpecConfigEip4844 specConfig) {
     super(specConfig);
-    this.kzg = kzg;
+    this.kzg = initKZG(specConfig);
+  }
+
+  private static KZG initKZG(final SpecConfigEip4844 config) {
+    final KZG kzg;
+    if (!config.getEip4844ForkEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH) && !config.isKZGNoop()) {
+      kzg = CKZG4844.createInstance(config.getFieldElementsPerBlob());
+      kzg.loadTrustedSetup(config.getTrustedSetupPath().orElseThrow());
+    } else {
+      kzg = KZG.NOOP;
+    }
+
+    return kzg;
   }
 
   public void validateBlobSidecar(

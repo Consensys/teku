@@ -14,9 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.eip4844;
 
 import java.util.Optional;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -88,8 +85,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
       final SpecConfigEip4844 config, final SchemaDefinitionsEip4844 schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
-    final KZG kzg = initKZG(config);
-    final MiscHelpersEip4844 miscHelpers = new MiscHelpersEip4844(config, kzg);
+    final MiscHelpersEip4844 miscHelpers = new MiscHelpersEip4844(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
@@ -175,18 +171,6 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
         blindBlockUtil,
         syncCommitteeUtil,
         stateUpgrade);
-  }
-
-  private static KZG initKZG(final SpecConfigEip4844 config) {
-    final KZG kzg;
-    if (!config.getEip4844ForkEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH) && !config.isKZGNoop()) {
-      kzg = CKZG4844.createInstance(config.getFieldElementsPerBlob());
-      kzg.loadTrustedSetup(config.getTrustedSetupPath().orElseThrow());
-    } else {
-      kzg = KZG.NOOP;
-    }
-
-    return kzg;
   }
 
   @Override
