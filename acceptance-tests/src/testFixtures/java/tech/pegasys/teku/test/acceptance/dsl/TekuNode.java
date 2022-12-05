@@ -207,7 +207,7 @@ public class TekuNode extends Node {
 
   public void waitForBlockAtOrAfterSlot(final long slot) {
     if (maybeEventStreamListener.isEmpty()) {
-      startEventListener(List.of(EventType.head));
+      startEventListener(EventType.head);
     }
     waitFor(
         () ->
