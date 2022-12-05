@@ -118,6 +118,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
     return HistoricalBlockSyncService.create(
         spec,
+        timeProvider,
         metrics,
         storageUpdateChannel,
         asyncRunner,

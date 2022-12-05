@@ -180,6 +180,14 @@ public class StatusLogger {
     log.info("Initializing storage");
   }
 
+  public void reconstructedHistoricalBlocks(
+      final UInt64 numberRecorded, final UInt64 totalToRecord) {
+    log.info(
+        "ReconstructHistoricalStatesService recorded {} of {} historical blocks",
+        numberRecorded,
+        totalToRecord);
+  }
+
   public void fatalErrorInitialisingStorage(Throwable err) {
     log.debug("Failed to initialize storage", err);
     log.fatal(
