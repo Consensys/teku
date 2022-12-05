@@ -22,41 +22,58 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
+import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractTopicHandlerTest<T> {
+
+  public static final UInt64 BELLATRIX_FORK_EPOCH = UInt64.valueOf(2);
   protected final Spec spec =
-      TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ONE, UInt64.valueOf(2));
+      TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(
+          UInt64.ONE, BELLATRIX_FORK_EPOCH);
+  protected final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  protected final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
+  protected final StorageSystem storageSystem = createStorageSystem();
+
+  protected final ChainBuilder chainBuilder = storageSystem.chainBuilder();
+
+  protected final RecentChainData recentChainData = storageSystem.recentChainData();
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  protected final BeaconChainUtil beaconChainUtil = createBeaconChainUtil();
 
   @SuppressWarnings("unchecked")
   protected final OperationProcessor<T> processor = mock(OperationProcessor.class);
 
   protected Eth2TopicHandler<?> topicHandler;
+
+  protected ForkInfo forkInfo;
   protected Bytes4 forkDigest;
+  protected UInt64 validSlot = spec.computeStartSlotAtEpoch(BELLATRIX_FORK_EPOCH);
+  protected UInt64 wrongForkSlot = UInt64.ONE;
 
   @BeforeEach
-  public void setup() {
-    beaconChainUtil.initializeStorage();
-    this.forkDigest = recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
-    this.topicHandler = createHandler(forkDigest);
+  public void setup() throws Exception {
+    storageSystem.chainUpdater().initializeGenesis();
+    storageSystem
+        .chainUpdater()
+        .updateBestBlock(storageSystem.chainUpdater().advanceChainUntil(validSlot));
+    this.forkInfo = recentChainData.getForkInfo(BELLATRIX_FORK_EPOCH).orElseThrow();
+    this.forkDigest = forkInfo.getForkDigest(spec);
+    this.topicHandler = createHandler();
   }
 
-  protected abstract Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest);
+  protected abstract Eth2TopicHandler<?> createHandler();
 
-  protected BeaconChainUtil createBeaconChainUtil() {
-    return BeaconChainUtil.create(spec, 2, recentChainData);
+  protected StorageSystem createStorageSystem() {
+    return InMemoryStorageSystemBuilder.buildDefault(spec);
   }
 
   protected StateAndBlockSummary getChainHead() {

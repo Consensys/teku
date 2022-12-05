@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
@@ -95,7 +96,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final AttestationUtil attestationUtil =
         new AttestationUtilPhase0(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
-        OperationValidator.create(
+        new OperationValidatorPhase0(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
