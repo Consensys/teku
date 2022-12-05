@@ -38,18 +38,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -70,6 +77,15 @@ class ActiveKeyManagerTest {
   private final Signer signer = mock(Signer.class);
   private final ValidatorTimingChannel channel = mock(ValidatorTimingChannel.class);
   private final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader, channel);
+  private final DoppelgangerDetector doppelgangerDetector = mock(DoppelgangerDetector.class);
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
+      mock(DoppelgangerDetectionAction.class);
+  private final BLSPublicKey doppelgangerPublicKey =
+      BLSPublicKey.fromSSZBytes(
+          Bytes.fromHexString(
+              "0x9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));
+
+  private final LogCaptor logCaptor = LogCaptor.forClass(ActiveKeyManager.class);
 
   @Test
   void shouldReturnNotFoundIfSlashingProtectionNotFound() {
@@ -270,6 +286,154 @@ class ActiveKeyManagerTest {
     final List<ExternalValidator> activeValidatorList = keyManager.getActiveRemoteValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
+  }
+
+  @Test
+  void shouldDetectDoppelgangersAndRemoveLocalKeys(@TempDir Path tempDir)
+      throws IOException, URISyntaxException {
+    final String data = getKeystore();
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
+        .thenReturn(Pair.of(Optional.of(doppelgangerPublicKey), PostKeyResult.success()));
+    when(doppelgangerDetector.performDoppelgangerDetection(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Map.ofEntries(Map.entry(UInt64.valueOf(5), doppelgangerPublicKey))));
+
+    final Validator activeValidator = mock(Validator.class);
+    when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
+    when(activeValidator.isReadOnly()).thenReturn(false);
+    when(activeValidator.getSigner()).thenReturn(signer);
+    when(exporter.addPublicKeyToExport(eq(doppelgangerPublicKey), any()))
+        .thenReturn(Optional.empty());
+    when(validatorLoader.deleteLocalMutableValidator(doppelgangerPublicKey))
+        .thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    when(ownedValidators.removeValidator(doppelgangerPublicKey))
+        .thenReturn(Optional.of(activeValidator));
+    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
+
+    keyManager.importValidators(
+        List.of(data),
+        List.of("testpassword"),
+        Optional.empty(),
+        Optional.of(doppelgangerDetector),
+        Optional.of(doppelgangerDetectionAction),
+        tempDir);
+
+    verify(channel, never()).onValidatorsAdded();
+    verify(validatorLoader).deleteLocalMutableValidator(doppelgangerPublicKey);
+    verify(ownedValidators).removeValidator(doppelgangerPublicKey);
+    verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction, never()).shutDown();
+    verify(doppelgangerDetectionAction).alert(Set.of(doppelgangerPublicKey));
+    logCaptor.assertInfoLog(String.format("Removed validator: %s", doppelgangerPublicKey));
+  }
+
+  @Test
+  void shouldAddLocalKeysWhenDoppelgangerDetectionException(@TempDir Path tempDir)
+      throws IOException, URISyntaxException {
+    final String data = getKeystore();
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
+        .thenReturn(Pair.of(Optional.of(doppelgangerPublicKey), PostKeyResult.success()));
+    when(doppelgangerDetector.performDoppelgangerDetection(any()))
+        .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
+
+    final Validator activeValidator = mock(Validator.class);
+    when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
+    when(activeValidator.isReadOnly()).thenReturn(false);
+    when(activeValidator.getSigner()).thenReturn(signer);
+    when(exporter.addPublicKeyToExport(eq(doppelgangerPublicKey), any()))
+        .thenReturn(Optional.empty());
+    when(validatorLoader.deleteLocalMutableValidator(doppelgangerPublicKey))
+        .thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
+
+    keyManager.importValidators(
+        List.of(data),
+        List.of("testpassword"),
+        Optional.empty(),
+        Optional.of(doppelgangerDetector),
+        Optional.of(doppelgangerDetectionAction),
+        tempDir);
+
+    verify(channel).onValidatorsAdded();
+    verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);
+    verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction, never()).shutDown();
+    verify(doppelgangerDetectionAction, never()).alert(any());
+    logCaptor.assertErrorLog("Failed to perform doppelganger detection");
+  }
+
+  @Test
+  void shouldDetectDoppelgangersAndRemoveExternalKeys() {
+    when(validatorLoader.loadExternalMutableValidator(any(), any()))
+        .thenReturn(Pair.of(doppelgangerPublicKey, PostKeyResult.success()));
+    when(doppelgangerDetector.performDoppelgangerDetection(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Map.ofEntries(Map.entry(UInt64.valueOf(5), doppelgangerPublicKey))));
+
+    final Validator activeValidator = mock(Validator.class);
+    when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
+    when(activeValidator.isReadOnly()).thenReturn(false);
+    when(activeValidator.getSigner()).thenReturn(signer);
+    when(validatorLoader.deleteExternalMutableValidator(any()))
+        .thenReturn(DeleteKeyResult.success());
+    when(exporter.addPublicKeyToExport(eq(doppelgangerPublicKey), any()))
+        .thenReturn(Optional.empty());
+    when(validatorLoader.deleteLocalMutableValidator(doppelgangerPublicKey))
+        .thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
+    final ExternalValidator externalValidator = mock(ExternalValidator.class);
+
+    keyManager.importExternalValidators(
+        List.of(externalValidator),
+        Optional.of(doppelgangerDetector),
+        Optional.of(doppelgangerDetectionAction));
+
+    verify(channel, never()).onValidatorsAdded();
+    verify(signer).delete();
+    verify(ownedValidators).removeValidator(doppelgangerPublicKey);
+    verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction, never()).shutDown();
+    verify(doppelgangerDetectionAction).alert(Set.of(doppelgangerPublicKey));
+    logCaptor.assertInfoLog(String.format("Removed remote validator: %s", doppelgangerPublicKey));
+  }
+
+  @Test
+  void shouldAddExternalKeysWhenDoppelgangerDetectionException() {
+    when(validatorLoader.loadExternalMutableValidator(any(), any()))
+        .thenReturn(Pair.of(doppelgangerPublicKey, PostKeyResult.success()));
+    when(doppelgangerDetector.performDoppelgangerDetection(any()))
+        .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
+
+    final Validator activeValidator = mock(Validator.class);
+    when(activeValidator.getPublicKey()).thenReturn(publicKey);
+    when(activeValidator.isReadOnly()).thenReturn(false);
+    when(activeValidator.getSigner()).thenReturn(signer);
+    when(validatorLoader.deleteExternalMutableValidator(any()))
+        .thenReturn(DeleteKeyResult.success());
+    when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
+    when(validatorLoader.deleteLocalMutableValidator(publicKey))
+        .thenReturn(DeleteKeyResult.success());
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
+    final ExternalValidator externalValidator = mock(ExternalValidator.class);
+
+    keyManager.importExternalValidators(
+        List.of(externalValidator),
+        Optional.of(doppelgangerDetector),
+        Optional.of(doppelgangerDetectionAction));
+
+    verify(channel).onValidatorsAdded();
+    verify(signer, never()).delete();
+    verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);
+    verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction, never()).shutDown();
+    verify(doppelgangerDetectionAction, never()).alert(any());
+    logCaptor.assertErrorLog("Failed to perform doppelganger detection");
   }
 
   private String getKeystore() throws IOException, URISyntaxException {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.doppelganger;
 
-import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -34,7 +34,7 @@ public class DoppelgangerDetectionAlert implements DoppelgangerDetectionAction {
   public void shutDown() {}
 
   @Override
-  public void alert(Collection<BLSPublicKey> doppelgangers) {
+  public void alert(Set<BLSPublicKey> doppelgangers) {
     statusLog.doppelgangerDetectionAlert(
         doppelgangers.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
   }

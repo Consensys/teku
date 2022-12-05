@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.client.doppelganger;
 
-import java.util.Collection;
+import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionAction {
   @Override
-  public void alert(Collection<BLSPublicKey> doppelgangers) {}
+  public void alert(Set<BLSPublicKey> doppelgangers) {}
 }

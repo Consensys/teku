@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +31,6 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
@@ -234,26 +234,31 @@ public class ActiveKeyManager implements KeyManager {
       }
     }
     if (reloadRequired) {
-      maybeDoppelgangerDetector
-          .map(
-              doppelgangerDetector ->
-                  doppelgangerDetector
-                      .performDoppelgangerDetection(filterImportedPubKeys(importResults))
-                      .thenAccept(
-                          doppelgangerDetected -> {
-                            if (!doppelgangerDetected.isEmpty()) {
-                              maybeDoppelgangerDetectionAction.ifPresent(
-                                  action -> action.alert(doppelgangerDetected.values()));
-                              deleteValidators(
-                                  new ArrayList<>(doppelgangerDetected.values()),
-                                  slashingProtectionPath);
-                            } else {
-                              validatorTimingChannel.onValidatorsAdded();
-                            }
-                          }))
-          .orElse(SafeFuture.COMPLETE)
-          .thenAccept(__ -> validatorTimingChannel.onValidatorsAdded())
-          .ifExceptionGetsHereRaiseABug();
+      if (maybeDoppelgangerDetector.isPresent()) {
+        maybeDoppelgangerDetector
+            .get()
+            .performDoppelgangerDetection(filterImportedPubKeys(importResults))
+            .thenAccept(
+                doppelgangerDetected -> {
+                  if (!doppelgangerDetected.isEmpty()) {
+                    maybeDoppelgangerDetectionAction.ifPresent(
+                        action -> action.alert(new HashSet<>(doppelgangerDetected.values())));
+                    deleteValidators(
+                        new ArrayList<>(doppelgangerDetected.values()), slashingProtectionPath);
+                  } else {
+                    validatorTimingChannel.onValidatorsAdded();
+                  }
+                })
+            .exceptionally(
+                throwable -> {
+                  LOG.error("Failed to perform doppelganger detection", throwable);
+                  validatorTimingChannel.onValidatorsAdded();
+                  return null;
+                })
+            .ifExceptionGetsHereRaiseABug();
+      } else {
+        validatorTimingChannel.onValidatorsAdded();
+      }
     }
     return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
   }
@@ -314,25 +319,30 @@ public class ActiveKeyManager implements KeyManager {
       }
     }
     if (reloadRequired) {
-      maybeDoppelgangerDetector
-          .map(
-              doppelgangerDetector ->
-                  doppelgangerDetector
-                      .performDoppelgangerDetection(filterExternallyImportedPubKeys(importResults))
-                      .thenAccept(
-                          doppelgangerDetected -> {
-                            if (!doppelgangerDetected.isEmpty()) {
-                              maybeDoppelgangerDetectionAction.ifPresent(
-                                  action -> action.alert(doppelgangerDetected.values()));
-                              deleteExternalValidators(
-                                  new ArrayList<>(doppelgangerDetected.values()));
-                            } else {
-                              validatorTimingChannel.onValidatorsAdded();
-                            }
-                          }))
-          .orElse(SafeFuture.COMPLETE)
-          .thenAccept(__ -> validatorTimingChannel.onValidatorsAdded())
-          .ifExceptionGetsHereRaiseABug();
+      if (maybeDoppelgangerDetector.isPresent()) {
+        maybeDoppelgangerDetector
+            .get()
+            .performDoppelgangerDetection(filterExternallyImportedPubKeys(importResults))
+            .thenAccept(
+                doppelgangerDetected -> {
+                  if (!doppelgangerDetected.isEmpty()) {
+                    maybeDoppelgangerDetectionAction.ifPresent(
+                        action -> action.alert(new HashSet<>(doppelgangerDetected.values())));
+                    deleteExternalValidators(new ArrayList<>(doppelgangerDetected.values()));
+                  } else {
+                    validatorTimingChannel.onValidatorsAdded();
+                  }
+                })
+            .exceptionally(
+                throwable -> {
+                  LOG.error("Failed to perform doppelganger detection", throwable);
+                  validatorTimingChannel.onValidatorsAdded();
+                  return null;
+                })
+            .ifExceptionGetsHereRaiseABug();
+      } else {
+        validatorTimingChannel.onValidatorsAdded();
+      }
     }
     return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
   }
