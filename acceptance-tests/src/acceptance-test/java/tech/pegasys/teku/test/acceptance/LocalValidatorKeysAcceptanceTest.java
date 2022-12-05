@@ -21,7 +21,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -33,20 +33,19 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "swift";
-    final BesuNode eth1Node =
-        createBesuNode(
-            config ->
-                config
-                    .withMiningEnabled(true)
-                    .withMergeSupport(true)
-                    .withGenesisFile("besu/preMergeGenesis.json")
-                    .withJwtTokenAuthorization(JWT_FILE));
-    eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
+        createTekuDepositSender(networkName).generateValidatorKeys(8);
     final ValidatorKeystores extraKeys =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
+        createTekuDepositSender(networkName).generateValidatorKeys(1);
+
+    final InitialStateData genesis =
+        createGenesisGenerator()
+            .network(networkName)
+            .withAltairEpoch(UInt64.ZERO)
+            .withBellatrixEpoch(UInt64.ZERO)
+            .validatorKeys(validatorKeystores, extraKeys)
+            .generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
     final TekuNode beaconNode =
@@ -54,11 +53,11 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withNetwork(networkName)
-                    .withDepositsFrom(eth1Node)
-                    .withBellatrixEpoch(UInt64.ONE)
-                    .withTotalTerminalDifficulty(10001)
+                    .withInitialState(genesis)
+                    .withAltairEpoch(UInt64.ZERO)
+                    .withBellatrixEpoch(UInt64.ZERO)
+                    .withStubExecutionEngine()
                     .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withExecutionEngine(eth1Node)
                     .withJwtSecretFile(JWT_FILE));
 
     final TekuValidatorNode validatorClient =
@@ -118,10 +117,5 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     // remove the same validator again
     api.removeLocalValidatorAndCheckStatus(removedPubkey, "not_active");
-
-    validatorClient.stop();
-
-    beaconNode.stop();
-    eth1Node.stop();
   }
 }
