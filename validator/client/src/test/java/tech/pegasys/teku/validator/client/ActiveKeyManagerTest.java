@@ -81,24 +81,36 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldCallValidatorsAddedOnSuccessfulImport() throws URISyntaxException, IOException {
+  void shouldCallValidatorsAddedOnSuccessfulImport(@TempDir final Path tempDir)
+      throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
         .thenReturn(Pair.of(Optional.empty(), PostKeyResult.success()));
     keyManager.importValidators(
-        List.of(data), List.of("testpassword"), Optional.empty(), Optional.empty());
+        List.of(data),
+        List.of("testpassword"),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        tempDir);
     verify(channel, times(1)).onValidatorsAdded();
   }
 
   @Test
-  void shouldNotCallValidatorsAddedOnUnsuccessfulImport() throws URISyntaxException, IOException {
+  void shouldNotCallValidatorsAddedOnUnsuccessfulImport(@TempDir final Path tempDir)
+      throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
         .thenReturn(Pair.of(Optional.empty(), PostKeyResult.duplicate()));
     keyManager.importValidators(
-        List.of(data), List.of("testpassword"), Optional.empty(), Optional.empty());
+        List.of(data),
+        List.of("testpassword"),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        tempDir);
     verify(channel, never()).onValidatorsAdded();
   }
 

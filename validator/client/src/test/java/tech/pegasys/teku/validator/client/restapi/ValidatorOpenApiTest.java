@@ -55,6 +55,7 @@ class ValidatorOpenApiTest {
             Optional.of(proposerConfigManager),
             keyManager,
             dataDirLayout,
+            Optional.empty(),
             Optional.empty());
     final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();

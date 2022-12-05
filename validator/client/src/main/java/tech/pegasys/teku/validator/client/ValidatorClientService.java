@@ -44,6 +44,9 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -80,6 +83,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
+  private final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction;
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
@@ -98,7 +102,8 @@ public class ValidatorClientService extends Service {
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -108,10 +113,13 @@ public class ValidatorClientService extends Service {
     this.validatorRegistrator = validatorRegistrator;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
+    this.maybeDoppelgangerDetectionAction = maybeDoppelgangerDetectionAction;
   }
 
   public static ValidatorClientService create(
-      final ServiceConfig services, final ValidatorClientConfiguration config) {
+      final ServiceConfig services,
+      final ValidatorClientConfiguration config,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 
@@ -183,7 +191,8 @@ public class ValidatorClientService extends Service {
             beaconProposerPreparer,
             validatorRegistrator,
             config.getSpec(),
-            services.getMetricsSystem());
+            services.getMetricsSystem(),
+            maybeDoppelgangerDetectionAction);
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
@@ -264,7 +273,8 @@ public class ValidatorClientService extends Service {
             proposerConfigManager,
             activeKeyManager,
             dataDirLayout,
-            maybeDoppelgangerDetector);
+            maybeDoppelgangerDetector,
+            Optional.of(new DoppelgangerDetectionAlert()));
     maybeValidatorRestApi = Optional.of(validatorRestApi);
   }
 
@@ -468,7 +478,8 @@ public class ValidatorClientService extends Service {
                               .thenAccept(
                                   doppelgangerDetected -> {
                                     if (!doppelgangerDetected.isEmpty()) {
-                                      System.exit(1);
+                                      maybeDoppelgangerDetectionAction.ifPresent(
+                                          DoppelgangerDetectionAction::shutDown);
                                     }
                                   }))
                   .orElse(SafeFuture.COMPLETE);

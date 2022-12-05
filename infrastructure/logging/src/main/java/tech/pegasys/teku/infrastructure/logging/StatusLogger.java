@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -174,7 +175,7 @@ public class StatusLogger {
 
   public void doppelgangerCheck(long epoch, long slot, Set<String> publicKeys) {
     log.info(
-        "Performing doppelganger check. Epoch {}, Slot {}, PubKeys {}",
+        "Performing doppelganger check. Epoch {}, Slot {}, Public keys {}",
         epoch,
         slot,
         String.join(", ", publicKeys));
@@ -193,6 +194,13 @@ public class StatusLogger {
             .collect(Collectors.joining("\n", "\n", "\n"));
     log.fatal(
         "Detected {} validators doppelganger: {}", doppelgangersInfo.size(), doppelgangersLogInfo);
+  }
+
+  public void doppelgangerDetectionAlert(final Collection<String> doppelgangerPublicKeys) {
+    log.fatal(
+        "Detected {} validators doppelganger. Removing public keys: {}",
+        doppelgangerPublicKeys.stream(),
+        String.join(", ", doppelgangerPublicKeys));
   }
 
   public void beginInitializingChainData() {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.doppelganger;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
@@ -95,7 +95,7 @@ public class DoppelgangerDetector {
     this.maxEpochs = maxEpochs;
   }
 
-  protected SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
+  public SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
       final Set<BLSPublicKey> pubKeys) {
     if (pubKeys.isEmpty()) {
       LOG.info("Skipping doppelganger detection: No public keys to check");

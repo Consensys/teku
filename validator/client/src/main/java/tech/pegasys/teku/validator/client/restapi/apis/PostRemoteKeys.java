@@ -23,8 +23,9 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
@@ -36,9 +37,12 @@ public class PostRemoteKeys extends RestApiEndpoint {
   private final KeyManager keyManager;
 
   private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
+  private final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction;
 
   public PostRemoteKeys(
-      final KeyManager keyManager, final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final KeyManager keyManager,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportRemoteKeys")
@@ -52,6 +56,7 @@ public class PostRemoteKeys extends RestApiEndpoint {
             .build());
     this.keyManager = keyManager;
     this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
+    this.maybeDoppelgangerDetectionAction = maybeDoppelgangerDetectionAction;
   }
 
   @Override
@@ -64,6 +69,8 @@ public class PostRemoteKeys extends RestApiEndpoint {
     }
 
     List<ExternalValidator> validators = body.getExternalValidators();
-    request.respondOk(keyManager.importExternalValidators(validators, maybeDoppelgangerDetector));
+    request.respondOk(
+        keyManager.importExternalValidators(
+            validators, maybeDoppelgangerDetector, maybeDoppelgangerDetectionAction));
   }
 }

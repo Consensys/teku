@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
@@ -52,14 +54,17 @@ public class NoOpKeyManager implements KeyManager {
       final List<String> keystores,
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction,
+      final Path slashingProtectionPath) {
     return Collections.emptyList();
   }
 
   @Override
   public List<PostKeyResult> importExternalValidators(
       List<ExternalValidator> validators,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerdetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 }

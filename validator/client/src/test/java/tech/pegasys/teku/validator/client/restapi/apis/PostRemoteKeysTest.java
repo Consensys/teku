@@ -37,7 +37,8 @@ public class PostRemoteKeysTest {
 
   @Test
   void emptyRequest_shouldGiveEmptySuccess() throws JsonProcessingException {
-    final PostRemoteKeys endpoint = new PostRemoteKeys(keyManager, Optional.empty());
+    final PostRemoteKeys endpoint =
+        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
     final PostRemoteKeysRequest body = new PostRemoteKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
@@ -48,7 +49,8 @@ public class PostRemoteKeysTest {
   @Test
   void validResponse_shouldGiveValidPostKeyResults()
       throws JsonProcessingException, MalformedURLException {
-    final PostRemoteKeys endpoint = new PostRemoteKeys(keyManager, Optional.empty());
+    final PostRemoteKeys endpoint =
+        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
 
     List<ExternalValidator> externalValidators =
         List.of(
@@ -60,7 +62,8 @@ public class PostRemoteKeysTest {
     when(request.getRequestBody()).thenReturn(body);
 
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.success());
-    when(keyManager.importExternalValidators(externalValidators, Optional.empty()))
+    when(keyManager.importExternalValidators(
+            externalValidators, Optional.empty(), Optional.empty()))
         .thenReturn(results);
 
     endpoint.handleRequest(request);
@@ -70,7 +73,8 @@ public class PostRemoteKeysTest {
   @Test
   void duplicate_shouldGiveDuplicateResponse()
       throws JsonProcessingException, MalformedURLException {
-    final PostRemoteKeys endpoint = new PostRemoteKeys(keyManager, Optional.empty());
+    final PostRemoteKeys endpoint =
+        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
 
     BLSPublicKey publicKey = BLSTestUtil.randomKeyPair(1).getPublicKey();
     URL url = new URL("http://host.com");
@@ -83,7 +87,8 @@ public class PostRemoteKeysTest {
     when(request.getRequestBody()).thenReturn(body);
 
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.duplicate());
-    when(keyManager.importExternalValidators(externalValidators, Optional.empty()))
+    when(keyManager.importExternalValidators(
+            externalValidators, Optional.empty(), Optional.empty()))
         .thenReturn(results);
 
     endpoint.handleRequest(request);

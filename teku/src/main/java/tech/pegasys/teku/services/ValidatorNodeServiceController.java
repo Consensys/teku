@@ -13,14 +13,20 @@
 
 package tech.pegasys.teku.services;
 
+import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
 
 public class ValidatorNodeServiceController extends ServiceController {
 
   public ValidatorNodeServiceController(
       final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
-    this.services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
+    this.services.add(
+        ValidatorClientService.create(
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            Optional.of(new DoppelgangerDetectionShutDown())));
   }
 }

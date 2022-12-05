@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 
 public class DoppelgangerDetectorTest {
   private final StatusLogger statusLog = mock(StatusLogger.class);

@@ -33,6 +33,8 @@ import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
@@ -218,7 +220,9 @@ public class ActiveKeyManager implements KeyManager {
       final List<String> keystores,
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction,
+      final Path slashingProtectionPath) {
     final List<Pair<Optional<BLSPublicKey>, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
@@ -238,7 +242,13 @@ public class ActiveKeyManager implements KeyManager {
                       .thenAccept(
                           doppelgangerDetected -> {
                             if (!doppelgangerDetected.isEmpty()) {
-                              System.exit(1);
+                              maybeDoppelgangerDetectionAction.ifPresent(
+                                  action -> action.alert(doppelgangerDetected.values()));
+                              deleteValidators(
+                                  new ArrayList<>(doppelgangerDetected.values()),
+                                  slashingProtectionPath);
+                            } else {
+                              validatorTimingChannel.onValidatorsAdded();
                             }
                           }))
           .orElse(SafeFuture.COMPLETE)
@@ -287,7 +297,8 @@ public class ActiveKeyManager implements KeyManager {
   @Override
   public List<PostKeyResult> importExternalValidators(
       final List<ExternalValidator> validators,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     final List<Pair<BLSPublicKey, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (ExternalValidator v : validators) {
@@ -311,7 +322,12 @@ public class ActiveKeyManager implements KeyManager {
                       .thenAccept(
                           doppelgangerDetected -> {
                             if (!doppelgangerDetected.isEmpty()) {
-                              System.exit(1);
+                              maybeDoppelgangerDetectionAction.ifPresent(
+                                  action -> action.alert(doppelgangerDetected.values()));
+                              deleteExternalValidators(
+                                  new ArrayList<>(doppelgangerDetected.values()));
+                            } else {
+                              validatorTimingChannel.onValidatorsAdded();
                             }
                           }))
           .orElse(SafeFuture.COMPLETE)

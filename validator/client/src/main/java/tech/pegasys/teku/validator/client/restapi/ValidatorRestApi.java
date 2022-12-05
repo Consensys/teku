@@ -27,10 +27,11 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
@@ -54,7 +55,8 @@ public class ValidatorRestApi {
       final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
       final DataDirLayout dataDirLayout,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
     return new RestApiBuilder()
@@ -88,9 +90,16 @@ public class ValidatorRestApi {
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager, slashingProtectionPath))
-        .endpoint(new PostKeys(keyManager, slashingProtectionPath, maybeDoppelgangerDetector))
+        .endpoint(
+            new PostKeys(
+                keyManager,
+                slashingProtectionPath,
+                maybeDoppelgangerDetector,
+                maybeDoppelgangerDetectionAction))
         .endpoint(new GetRemoteKeys(keyManager))
-        .endpoint(new PostRemoteKeys(keyManager, maybeDoppelgangerDetector))
+        .endpoint(
+            new PostRemoteKeys(
+                keyManager, maybeDoppelgangerDetector, maybeDoppelgangerDetectionAction))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(proposerConfigManager))
         .endpoint(new GetGasLimit(proposerConfigManager))

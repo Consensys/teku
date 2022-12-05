@@ -30,8 +30,9 @@ import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
@@ -40,11 +41,13 @@ public class PostKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/keystores";
   private final Path slashingProtectionPath;
   private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
+  private final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction;
 
   public PostKeys(
       final KeyManager keyManager,
       final Path slashingProtectionPath,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportKeystores")
@@ -59,6 +62,7 @@ public class PostKeys extends RestApiEndpoint {
     this.keyManager = keyManager;
     this.slashingProtectionPath = slashingProtectionPath;
     this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
+    this.maybeDoppelgangerDetectionAction = maybeDoppelgangerDetectionAction;
   }
 
   @Override
@@ -82,7 +86,12 @@ public class PostKeys extends RestApiEndpoint {
 
     request.respondOk(
         keyManager.importValidators(
-            body.getKeystores(), body.getPasswords(), slashingData, maybeDoppelgangerDetector));
+            body.getKeystores(),
+            body.getPasswords(),
+            slashingData,
+            maybeDoppelgangerDetector,
+            maybeDoppelgangerDetectionAction,
+            slashingProtectionPath));
   }
 
   private Optional<SlashingProtectionImporter> readSlashingProtectionDataIfPresent(
