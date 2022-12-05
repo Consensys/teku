@@ -41,13 +41,13 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
 
     final TekuNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
     primaryNode.start();
-    primaryNode.startEventListener(List.of(EventType.bls_to_execution_change));
+    primaryNode.startEventListener(EventType.bls_to_execution_change);
 
     final TekuNode lateJoiningNode =
         createLateJoiningNode(capellaActivationEpoch, primaryNode, primaryNode.getGenesisTime());
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
-    lateJoiningNode.startEventListener(List.of(EventType.bls_to_execution_change));
+    lateJoiningNode.startEventListener(EventType.bls_to_execution_change);
 
     lateJoiningNode.submitBlsToExecutionChange(validatorIndex, validatorKeyPair, executionAddress);
     lateJoiningNode.waitForValidatorWithCredentials(validatorIndex, executionAddress);

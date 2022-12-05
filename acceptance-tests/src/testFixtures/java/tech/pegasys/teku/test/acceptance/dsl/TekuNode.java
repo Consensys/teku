@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
@@ -154,8 +155,9 @@ public class TekuNode extends Node {
     container.start();
   }
 
-  public void startEventListener(final List<EventType> eventTypes) {
-    maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
+  public void startEventListener(final EventType... eventTypes) {
+    maybeEventStreamListener =
+        Optional.of(new EventStreamListener(getEventUrl(List.of(eventTypes))));
   }
 
   public void waitForContributionAndProofEvent() {
@@ -294,7 +296,8 @@ public class TekuNode extends Node {
 
   public void waitForBlsToExecutionChangeEventForValidator(int validatorIndex) {
     if (maybeEventStreamListener.isEmpty()) {
-      startEventListener(List.of(EventType.bls_to_execution_change));
+      fail(
+          "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
     }
 
     waitFor(
