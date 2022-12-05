@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -81,6 +82,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
+    nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -145,6 +147,17 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final boolean fromNetwork) {
     final VoluntaryExitEvent voluntaryExitEvent = new VoluntaryExitEvent(exit);
     notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
+  }
+
+  protected void onNewBlsToExecutionChange(
+      final SignedBlsToExecutionChange blsToExecutionChange,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      final BlsToExecutionChangeEvent blsToExecutionChangeEvent =
+          new BlsToExecutionChangeEvent(blsToExecutionChange);
+      notifySubscribersOfEvent(EventType.bls_to_execution_change, blsToExecutionChangeEvent);
+    }
   }
 
   protected void onSyncCommitteeContribution(

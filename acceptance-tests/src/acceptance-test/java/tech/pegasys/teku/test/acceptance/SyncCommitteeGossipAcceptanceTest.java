@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -69,7 +68,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.start();
     validatorClient.start();
     watcherNode.start();
-    watcherNode.startEventListener(List.of(EventType.contribution_and_proof));
+    watcherNode.startEventListener(EventType.contribution_and_proof);
 
     primaryNode.waitForEpochAtOrAbove(1);
 
