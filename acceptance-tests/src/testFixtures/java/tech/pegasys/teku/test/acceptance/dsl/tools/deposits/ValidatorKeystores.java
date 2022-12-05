@@ -59,6 +59,12 @@ public class ValidatorKeystores {
     this.validatorKeys = validatorKeys;
   }
 
+  public static ValidatorKeystores add(final ValidatorKeystores a, final ValidatorKeystores b) {
+    final List<ValidatorKeys> combinedKeys = new ArrayList<>(a.validatorKeys);
+    combinedKeys.addAll(b.validatorKeys);
+    return new ValidatorKeystores(combinedKeys);
+  }
+
   public List<String> getKeystores(final Path tempDir) {
     return validatorKeys.stream()
         .map(
