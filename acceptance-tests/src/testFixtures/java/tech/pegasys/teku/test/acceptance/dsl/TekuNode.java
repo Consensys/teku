@@ -307,7 +307,7 @@ public class TekuNode extends Node {
           final Optional<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
               eventForValidator =
                   blsToExecutionChanges.stream()
-                      .filter(m -> m.message.validatorIndex == UInt64.valueOf(validatorIndex))
+                      .filter(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex))
                       .findFirst();
           assertThat(eventForValidator).isPresent();
         });
