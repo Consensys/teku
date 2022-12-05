@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
@@ -354,6 +355,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
   }
 
+  private SignedBlsToExecutionChange loadBlsToExecutionChange(final TestDefinition testDefinition) {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
+    return loadSsz(
+        testDefinition,
+        dataFileName,
+        schemaDefinitionsCapella.getSignedBlsToExecutionChangeSchema());
+  }
+
   public void checkBlockInclusionValidation(
       final TestDefinition testDefinition, final BeaconState state, final boolean expectInclusion) {
     final Spec spec = testDefinition.getSpec();
@@ -377,13 +387,20 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         checkValidationForBlockInclusion(
             voluntaryExitValidator, state, voluntaryExit, expectInclusion);
         break;
+      case BLS_TO_EXECUTION_CHANGE:
+        final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
+            new SignedBlsToExecutionChangeValidator(spec, null);
+        final SignedBlsToExecutionChange blsToExecutionChange =
+            loadBlsToExecutionChange(testDefinition);
+        checkValidationForBlockInclusion(
+            blsToExecutionChangeValidator, state, blsToExecutionChange, expectInclusion);
+        break;
 
       case PROCESS_BLOCK_HEADER:
       case DEPOSIT:
       case ATTESTATION:
       case SYNC_AGGREGATE:
       case EXECUTION_PAYLOAD:
-      case BLS_TO_EXECUTION_CHANGE:
       case WITHDRAWAL:
         // Not yet testing inclusion rules
         break;
