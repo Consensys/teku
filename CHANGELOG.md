@@ -24,6 +24,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Updated REST API to use Javalin 5
 - Tightened validation of the fork for gossip messages
-- Updated third party libraries..
+- Updated third party libraries.
 
 ### Bug Fixes
