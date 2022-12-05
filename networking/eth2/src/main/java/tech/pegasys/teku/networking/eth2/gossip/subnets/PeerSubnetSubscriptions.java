@@ -26,6 +26,7 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
@@ -55,42 +56,69 @@ public class PeerSubnetSubscriptions {
       final AttestationSubnetTopicProvider attestationTopicProvider,
       final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final int targetSubnetSubscriberCount) {
+      final int targetSubnetSubscriberCount,
+      final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
 
-    return builder(currentSchemaDefinitions)
-        .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
-        .attestationSubnetSubscriptions(
-            b ->
-                // Track all attestation subnets
-                streamAllAttestationSubnetIds(currentSchemaDefinitions)
-                    .forEach(
-                        attestationSubnet -> {
-                          b.addRelevantSubnet(attestationSubnet);
-                          subscribersByTopic
-                              .getOrDefault(
-                                  attestationTopicProvider.getTopicForSubnet(attestationSubnet),
-                                  Collections.emptySet())
-                              .forEach(
-                                  subscriber -> b.addSubscriber(attestationSubnet, subscriber));
-                        }))
-        .syncCommitteeSubnetSubscriptions(
-            b ->
-                // Only track sync committee subnets that we're subscribed to
-                syncCommitteeSubnetService
-                    .getSubnets()
-                    .forEach(
-                        syncCommitteeSubnet -> {
-                          b.addRelevantSubnet(syncCommitteeSubnet);
-                          subscribersByTopic
-                              .getOrDefault(
-                                  syncCommitteeSubnetTopicProvider.getTopicForSubnet(
-                                      syncCommitteeSubnet),
-                                  Collections.emptySet())
-                              .forEach(
-                                  subscriber -> b.addSubscriber(syncCommitteeSubnet, subscriber));
-                        }))
-        .build();
+    final PeerSubnetSubscriptions subscriptions =
+        builder(currentSchemaDefinitions)
+            .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
+            .attestationSubnetSubscriptions(
+                b ->
+                    // Track all attestation subnets
+                    streamAllAttestationSubnetIds(currentSchemaDefinitions)
+                        .forEach(
+                            attestationSubnet -> {
+                              b.addRelevantSubnet(attestationSubnet);
+                              subscribersByTopic
+                                  .getOrDefault(
+                                      attestationTopicProvider.getTopicForSubnet(attestationSubnet),
+                                      Collections.emptySet())
+                                  .forEach(
+                                      subscriber -> b.addSubscriber(attestationSubnet, subscriber));
+                            }))
+            .syncCommitteeSubnetSubscriptions(
+                b ->
+                    // Only track sync committee subnets that we're subscribed to
+                    syncCommitteeSubnetService
+                        .getSubnets()
+                        .forEach(
+                            syncCommitteeSubnet -> {
+                              b.addRelevantSubnet(syncCommitteeSubnet);
+                              subscribersByTopic
+                                  .getOrDefault(
+                                      syncCommitteeSubnetTopicProvider.getTopicForSubnet(
+                                          syncCommitteeSubnet),
+                                      Collections.emptySet())
+                                  .forEach(
+                                      subscriber ->
+                                          b.addSubscriber(syncCommitteeSubnet, subscriber));
+                            }))
+            .build();
+    updateMetrics(subnetPeerCountGauge, subscriptions);
+    return subscriptions;
+  }
+
+  private static void updateMetrics(
+      final SettableLabelledGauge subnetPeerCountGauge,
+      final PeerSubnetSubscriptions subscriptions) {
+    updateMetrics(
+        subnetPeerCountGauge, subscriptions.attestationSubnetSubscriptions, "attestation_");
+    updateMetrics(
+        subnetPeerCountGauge, subscriptions.syncCommitteeSubnetSubscriptions, "sync_committee_");
+  }
+
+  private static void updateMetrics(
+      final SettableLabelledGauge subnetPeerCountGauge,
+      final SubnetSubscriptions subnetSubscriptions,
+      final String prefix) {
+    subnetSubscriptions
+        .streamRelevantSubnets()
+        .forEach(
+            subnetId ->
+                subnetPeerCountGauge.set(
+                    subnetSubscriptions.subscriberCountBySubnetId.getOrDefault(subnetId, 0),
+                    prefix + subnetId));
   }
 
   private static IntStream streamAllAttestationSubnetIds(
