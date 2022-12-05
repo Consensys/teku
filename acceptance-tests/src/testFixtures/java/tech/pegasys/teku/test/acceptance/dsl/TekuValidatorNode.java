@@ -255,12 +255,6 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withNetwork(final InputStream stream) {
-      this.maybeNetworkYaml = Optional.of(stream);
-      configMap.put("network", NETWORK_FILE_PATH);
-      return this;
-    }
-
     public TekuValidatorNode.Config withInteropValidators(
         final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);

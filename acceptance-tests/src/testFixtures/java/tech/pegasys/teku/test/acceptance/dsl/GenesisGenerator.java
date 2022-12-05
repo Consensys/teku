@@ -16,8 +16,10 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -83,8 +85,10 @@ public class GenesisGenerator {
     return this;
   }
 
-  public GenesisGenerator validatorKeys(final ValidatorKeystores validatorKeys) {
-    this.validatorKeys = validatorKeys;
+  public GenesisGenerator validatorKeys(final ValidatorKeystores... validatorKeys) {
+    this.validatorKeys =
+        Stream.of(validatorKeys)
+            .reduce(new ValidatorKeystores(Collections.emptyList()), ValidatorKeystores::add);
     return this;
   }
 
