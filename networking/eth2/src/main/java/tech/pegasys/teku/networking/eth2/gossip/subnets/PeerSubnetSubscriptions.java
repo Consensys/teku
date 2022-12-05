@@ -95,35 +95,38 @@ public class PeerSubnetSubscriptions {
                                           b.addSubscriber(syncCommitteeSubnet, subscriber));
                             }))
             .build();
-    updateMetrics(subnetPeerCountGauge, subscriptions);
+    updateMetrics(currentSchemaDefinitions, subnetPeerCountGauge, subscriptions);
     return subscriptions;
   }
 
   private static void updateMetrics(
+      final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SettableLabelledGauge subnetPeerCountGauge,
       final PeerSubnetSubscriptions subscriptions) {
-    updateMetrics(
-        subnetPeerCountGauge, subscriptions.attestationSubnetSubscriptions, "attestation_");
-    updateMetrics(
-        subnetPeerCountGauge, subscriptions.syncCommitteeSubnetSubscriptions, "sync_committee_");
-  }
-
-  private static void updateMetrics(
-      final SettableLabelledGauge subnetPeerCountGauge,
-      final SubnetSubscriptions subnetSubscriptions,
-      final String prefix) {
-    subnetSubscriptions
-        .streamRelevantSubnets()
+    streamAllAttestationSubnetIds(currentSchemaDefinitions)
         .forEach(
             subnetId ->
                 subnetPeerCountGauge.set(
-                    subnetSubscriptions.subscriberCountBySubnetId.getOrDefault(subnetId, 0),
-                    prefix + subnetId));
+                    subscriptions.attestationSubnetSubscriptions.subscriberCountBySubnetId
+                        .getOrDefault(subnetId, 0),
+                    "attestation_" + subnetId));
+    streamAllSyncCommitteeSubnetIds(currentSchemaDefinitions)
+        .forEach(
+            subnetId ->
+                subnetPeerCountGauge.set(
+                    subscriptions.syncCommitteeSubnetSubscriptions.subscriberCountBySubnetId
+                        .getOrDefault(subnetId, 0),
+                    "sync_committee_" + subnetId));
   }
 
   private static IntStream streamAllAttestationSubnetIds(
       final SchemaDefinitionsSupplier currentSchemaDefinitions) {
     return IntStream.range(0, currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength());
+  }
+
+  private static IntStream streamAllSyncCommitteeSubnetIds(
+      final SchemaDefinitionsSupplier currentSchemaDefinitions) {
+    return IntStream.range(0, currentSchemaDefinitions.getSyncnetsENRFieldSchema().getLength());
   }
 
   static Builder builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
