@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -50,7 +51,6 @@ public class ProgressLoggerTest {
   @Test
   public void shouldLogUpdatedStatusAfter5Minutes() {
     timeProvider.advanceTimeBy(Duration.ofMinutes(6));
-
     final UInt64 currentSlot = UInt64.valueOf(3);
     final UInt64 anchorSlot = UInt64.valueOf(10);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
@@ -62,7 +62,6 @@ public class ProgressLoggerTest {
   @Test
   public void shouldLogUpdatedStatusAt5Minutes() {
     timeProvider.advanceTimeBy(Duration.ofMinutes(5));
-
     final UInt64 currentSlot = UInt64.valueOf(3);
     final UInt64 anchorSlot = UInt64.valueOf(10);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
@@ -73,13 +72,15 @@ public class ProgressLoggerTest {
 
   @Test
   public void shouldNotLogUpdatedStatusBefore5Minutes() {
-    timeProvider.advanceTimeBy(Duration.ofMinutes(4));
-
-    final UInt64 currentSlot = UInt64.valueOf(3);
     final UInt64 anchorSlot = UInt64.valueOf(10);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+    timeProvider.advanceTimeBy(Duration.ofMinutes(4));
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(3));
     progressLogger.update(block, anchorSlot);
 
-    verify(statusLogger, never()).reconstructedHistoricalBlocks(eq(currentSlot), eq(anchorSlot));
+    timeProvider.advanceTimeBy(Duration.ofSeconds(59));
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(4));
+    progressLogger.update(block2, anchorSlot);
+
+    verify(statusLogger, never()).reconstructedHistoricalBlocks(any(), any());
   }
 }
