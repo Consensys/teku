@@ -48,7 +48,7 @@ EIP4844_FORK_EPOCH: 18446744073709551615
 # Time parameters
 # ---------------------------------------------------------------
 # [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 3
+SECONDS_PER_SLOT: 2
 # 14 (estimate from Eth1 mainnet)
 # [ customized] faster for testing
 SECONDS_PER_ETH1_BLOCK: 1
