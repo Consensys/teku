@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.eip4844.types.VersionedHash;
 
 public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
 
-  final KZG kzg;
+  private final KZG kzg;
 
   public MiscHelpersEip4844(final SpecConfigEip4844 specConfig) {
     super(specConfig);
@@ -138,5 +138,9 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
             .map(this::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
     return transactionsVersionedHashes.equals(commitmentsVersionedHashes);
+  }
+
+  public KZG getKzg() {
+    return kzg;
   }
 }
