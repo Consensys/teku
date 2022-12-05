@@ -97,8 +97,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldCallValidatorsAddedOnSuccessfulImport(@TempDir final Path tempDir)
-      throws URISyntaxException, IOException {
+  void shouldCallValidatorsAddedOnSuccessfulImport() throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
@@ -108,14 +107,12 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty(),
-        tempDir);
+        Optional.empty());
     verify(channel, times(1)).onValidatorsAdded();
   }
 
   @Test
-  void shouldNotCallValidatorsAddedOnUnsuccessfulImport(@TempDir final Path tempDir)
-      throws URISyntaxException, IOException {
+  void shouldNotCallValidatorsAddedOnUnsuccessfulImport() throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
@@ -125,8 +122,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty(),
-        tempDir);
+        Optional.empty());
     verify(channel, never()).onValidatorsAdded();
   }
 
@@ -289,8 +285,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldDetectDoppelgangersAndRemoveLocalKeys(@TempDir Path tempDir)
-      throws IOException, URISyntaxException {
+  void shouldDetectDoppelgangersAndRemoveLocalKeys() throws IOException, URISyntaxException {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
         .thenReturn(Pair.of(Optional.of(doppelgangerPublicKey), PostKeyResult.success()));
@@ -317,20 +312,22 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction),
-        tempDir);
+        Optional.of(doppelgangerDetectionAction));
 
-    verify(channel, never()).onValidatorsAdded();
+    verify(channel, times(1)).onValidatorsAdded();
     verify(validatorLoader).deleteLocalMutableValidator(doppelgangerPublicKey);
     verify(ownedValidators).removeValidator(doppelgangerPublicKey);
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(Set.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Removed validator: %s", doppelgangerPublicKey));
+    logCaptor.assertInfoLog(
+        String.format(
+            "Removed validator doppelgangers public key %s",
+            doppelgangerPublicKey.toAbbreviatedString()));
   }
 
   @Test
-  void shouldAddLocalKeysWhenDoppelgangerDetectionException(@TempDir Path tempDir)
+  void shouldAddLocalKeysWhenDoppelgangerDetectionException()
       throws IOException, URISyntaxException {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
@@ -354,8 +351,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction),
-        tempDir);
+        Optional.of(doppelgangerDetectionAction));
 
     verify(channel).onValidatorsAdded();
     verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);
@@ -396,13 +392,16 @@ class ActiveKeyManagerTest {
         Optional.of(doppelgangerDetector),
         Optional.of(doppelgangerDetectionAction));
 
-    verify(channel, never()).onValidatorsAdded();
+    verify(channel, times(1)).onValidatorsAdded();
     verify(signer).delete();
     verify(ownedValidators).removeValidator(doppelgangerPublicKey);
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(Set.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Removed remote validator: %s", doppelgangerPublicKey));
+    logCaptor.assertInfoLog(
+        String.format(
+            "Removed validator doppelgangers public key %s",
+            doppelgangerPublicKey.toAbbreviatedString()));
   }
 
   @Test

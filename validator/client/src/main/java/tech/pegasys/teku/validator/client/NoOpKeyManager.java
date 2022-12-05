@@ -55,8 +55,7 @@ public class NoOpKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction,
-      final Path slashingProtectionPath) {
+      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 
