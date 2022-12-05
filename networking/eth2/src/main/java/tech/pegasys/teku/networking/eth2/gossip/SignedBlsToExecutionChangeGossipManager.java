@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -45,7 +44,9 @@ public class SignedBlsToExecutionChangeGossipManager
         forkInfo,
         processor,
         schemaDefinitions.getSignedBlsToExecutionChangeSchema(),
-        Optional.empty(),
+        // BLS changes don't have a fork they apply to so are always considered to match the fork
+        // of the topic they arrived on (ie disable fork checking at this level)
+        message -> forkInfo.getFork().getEpoch(),
         maxMessageSize);
   }
 

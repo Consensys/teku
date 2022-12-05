@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -78,7 +78,10 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
-        Optional.empty(),
+        new OperationMilestoneValidator<>(
+            recentChainData.getSpec(),
+            forkInfo.getFork(),
+            message -> spec.computeEpochAtSlot(message.getSlot())),
         schemaDefinitions.getSyncCommitteeMessageSchema(),
         maxMessageSize);
   }

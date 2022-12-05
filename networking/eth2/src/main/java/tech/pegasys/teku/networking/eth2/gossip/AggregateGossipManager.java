@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -50,7 +49,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),
-        Optional.empty(),
+        message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
         maxMessageSize);
   }
 

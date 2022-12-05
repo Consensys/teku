@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
@@ -32,7 +35,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
 
-  private final Eth2TopicHandler<?> topicHandler;
+  private final Eth2TopicHandler<T> topicHandler;
 
   private Optional<TopicChannel> channel = Optional.empty();
 
@@ -45,7 +48,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final SszSchema<T> gossipType,
-      final Optional<OperationMilestoneValidator<T>> validator,
+      final Function<T, UInt64> getEpochForMessage,
       final int maxMessageSize) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
@@ -56,10 +59,16 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             gossipEncoding,
             forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
-            validator,
+            new OperationMilestoneValidator<>(
+                recentChainData.getSpec(), forkInfo.getFork(), getEpochForMessage),
             gossipType,
             maxMessageSize);
     this.gossipEncoding = gossipEncoding;
+  }
+
+  @VisibleForTesting
+  public Eth2TopicHandler<T> getTopicHandler() {
+    return topicHandler;
   }
 
   protected void publishMessage(T message) {
