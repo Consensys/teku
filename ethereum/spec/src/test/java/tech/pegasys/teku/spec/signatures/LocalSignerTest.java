@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+// Note: Changes to the order items are created in DataStructureUtil are created will often cause
+// failures in this test. If there are no changes to signing code, just update the expected result.
 class LocalSignerTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -115,8 +117,8 @@ class LocalSignerTest {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
-            Bytes.fromBase64String(
-                "kHbIuvFcS/kDppbCj0ILOU27ZjSU1P2wPsOKBBwGaz1uvXQxtUXQAdbybN1zotZqCs6pstChIIxDS/WgAZH2z4yX2cM/cM/iKayT2rZZJuu31V2uxP1AYVcyHLEMtF07"));
+            Bytes.fromHexString(
+                "0xb80875d8c01900883874ff5dff6c0f2b00f0ba3841c82e787712d8fc5fcb98a673f4150fff04c17816bab09c9f8265a11151c9ed9800cc6a0511e016fd5a7753574571889bd454de641e169a2d00dd7e72a2a06088faf77cffd575e2f8c90019"));
 
     final SafeFuture<BLSSignature> result = signer.signAggregateAndProof(aggregateAndProof, fork);
     asyncRunner.executeQueuedActions();

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.operations.validation;
+package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
@@ -23,6 +23,8 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateTransitionValidator;
 
 public class AttestationDataValidator
     implements OperationStateTransitionValidator<AttestationData> {

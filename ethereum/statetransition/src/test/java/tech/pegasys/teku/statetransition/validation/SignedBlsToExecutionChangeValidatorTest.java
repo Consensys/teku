@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -48,6 +50,7 @@ class SignedBlsToExecutionChangeValidatorTest {
   @BeforeEach
   public void beforeEach() {
     Mockito.reset(spec, recentChainData);
+    when(recentChainData.getHeadSlot()).thenReturn(UInt64.ONE);
     when(recentChainData.getBestState())
         .thenReturn(Optional.of(SafeFuture.completedFuture(mock(BeaconState.class))));
     validator = new SignedBlsToExecutionChangeValidator(spec, recentChainData);
@@ -122,6 +125,20 @@ class SignedBlsToExecutionChangeValidatorTest {
         validator.validateForBlockInclusion(mock(BeaconState.class), signedBlsToExecutionChange);
 
     assertThat(maybeOperationInvalidReason).isEmpty();
+  }
+
+  @Test
+  void validateForGossipShouldIgnoreGossipBeforeCapella() {
+    final Spec localSpec = TestSpecFactory.createMinimalBellatrix();
+    validator = new SignedBlsToExecutionChangeValidator(localSpec, recentChainData);
+    SignedBlsToExecutionChange change = dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    final SafeFuture<InternalValidationResult> future = validator.validateForGossip(change);
+    assertThat(future)
+        .isCompletedWithValue(
+            InternalValidationResult.create(
+                IGNORE,
+                "BlsToExecutionChange arrived before Capella and was ignored for validator 272337."));
   }
 
   private void assertValidationResult(

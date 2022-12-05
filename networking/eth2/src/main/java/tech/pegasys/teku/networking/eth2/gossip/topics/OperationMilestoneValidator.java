@@ -13,8 +13,27 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public interface OperationMilestoneValidator<T> {
-  boolean isValid(T message, Bytes4 forkDigest);
+public class OperationMilestoneValidator<T> {
+
+  private final Spec spec;
+  private final Fork expectedFork;
+  private final Function<T, UInt64> getEpochForMessage;
+
+  public OperationMilestoneValidator(
+      final Spec spec, final Fork expectedFork, final Function<T, UInt64> getEpochForMessage) {
+    this.spec = spec;
+    this.expectedFork = expectedFork;
+    this.getEpochForMessage = getEpochForMessage;
+  }
+
+  public boolean isValid(T message) {
+    final UInt64 messageEpoch = getEpochForMessage.apply(message);
+    final Fork actualFork = spec.getForkSchedule().getFork(messageEpoch);
+    return expectedFork.equals(actualFork);
+  }
 }
