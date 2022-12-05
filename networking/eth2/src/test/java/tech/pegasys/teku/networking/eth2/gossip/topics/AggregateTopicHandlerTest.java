@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
@@ -62,8 +63,6 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(wrongForkSlot));
-    when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
@@ -71,6 +70,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
                 gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
   }
 
   @Test

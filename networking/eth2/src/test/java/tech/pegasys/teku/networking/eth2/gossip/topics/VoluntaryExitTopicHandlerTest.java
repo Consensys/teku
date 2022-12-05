@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
@@ -72,13 +73,12 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
     final SignedVoluntaryExit exit =
         exitGenerator.withEpoch(
             getBestState(), spec.computeEpochAtSlot(wrongForkSlot).intValue(), 3);
-    when(processor.process(exit))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
   }
 
   @Test

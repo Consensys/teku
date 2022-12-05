@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
@@ -45,7 +46,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   }
 
   @Test
-  public void handleMessage_validBlock() throws Exception {
+  public void handleMessage_validBlock() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
@@ -60,7 +61,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   }
 
   @Test
-  public void handleMessage_validFutureBlock() throws Exception {
+  public void handleMessage_validFutureBlock() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
@@ -97,6 +98,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
   }
 
   @Test
@@ -110,7 +112,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   }
 
   @Test
-  public void handleMessage_invalidBlock_wrongProposer() throws Exception {
+  public void handleMessage_invalidBlock_wrongProposer() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block =
         chainBuilder

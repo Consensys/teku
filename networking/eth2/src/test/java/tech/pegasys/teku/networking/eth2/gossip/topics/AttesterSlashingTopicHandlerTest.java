@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
@@ -58,13 +59,12 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_invalidSlashing_wrongFork() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(wrongForkSlot);
-    when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
   }
 
   @Test

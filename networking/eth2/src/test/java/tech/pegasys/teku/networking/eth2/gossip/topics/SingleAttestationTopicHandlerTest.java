@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
@@ -76,14 +77,13 @@ public class SingleAttestationTopicHandlerTest
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
-    when(processor.process(attestation))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
   }
 
   @Test
