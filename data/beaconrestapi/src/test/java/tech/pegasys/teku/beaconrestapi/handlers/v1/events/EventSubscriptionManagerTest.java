@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -53,7 +54,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -95,7 +96,8 @@ public class EventSubscriptionManagerTest {
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
-
+  private final SignedBlsToExecutionChange sampleBlsToExecutionChange =
+      data.randomSignedBlsToExecutionChange();
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);
@@ -274,8 +276,32 @@ public class EventSubscriptionManagerTest {
     assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
+  @Test
+  void shouldPropagateBlsToExecutionChanges() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=bls_to_execution_change");
+    manager.registerClient(client1);
+
+    triggerBlsToExecutionChangeEvent(InternalValidationResult.ACCEPT);
+    checkEvent(
+        "bls_to_execution_change", new BlsToExecutionChangeEvent(sampleBlsToExecutionChange));
+  }
+
+  @Test
+  void shouldNotPropagateInvalidBlsToExecutionChanges() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=bls_to_execution_change");
+    manager.registerClient(client1);
+
+    triggerBlsToExecutionChangeEvent(InternalValidationResult.reject("invalid"));
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerBlsToExecutionChangeEvent(final InternalValidationResult validationResult) {
+    manager.onNewBlsToExecutionChange(sampleBlsToExecutionChange, validationResult, false);
     asyncRunner.executeQueuedActions();
   }
 

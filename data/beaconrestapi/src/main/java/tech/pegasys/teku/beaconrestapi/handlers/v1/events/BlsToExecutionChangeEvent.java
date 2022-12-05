@@ -11,24 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
-@SuppressWarnings("JavaCase")
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof,
-  bls_to_execution_change;
+public class BlsToExecutionChangeEvent extends Event<SignedBlsToExecutionChange> {
 
-  public static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+  BlsToExecutionChangeEvent(final SignedBlsToExecutionChange blsToExecutionChange) {
+    super(blsToExecutionChange.getSchema().getJsonTypeDefinition(), blsToExecutionChange);
   }
 }
