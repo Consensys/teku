@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
@@ -31,16 +31,16 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "less-swift";
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
-    eth1Node.start();
-
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 4);
+        createTekuDepositSender(networkName).generateValidatorKeys(4);
     final ValidatorKeystores extraKeys =
         createTekuDepositSender(networkName).generateValidatorKeys(1);
 
+    final InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
+
     final TekuNode beaconNode =
-        createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
+        createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
 
     final TekuVoluntaryExit voluntaryExitProcessFailing =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
@@ -67,15 +67,14 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
 
-    beaconNode.waitForLogMessageContaining("Epoch: 1");
+    beaconNode.waitForEpochAtOrAbove(1);
     voluntaryExitProcessFailing.start();
 
-    beaconNode.waitForLogMessageContaining("Epoch: 3");
+    beaconNode.waitForEpochAtOrAbove(3);
     voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
     final List<Integer> validatorIds =
-        Arrays.asList(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
-            .stream()
+        Arrays.stream(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
             .filter(s -> s.contains("Validator cannot exit until epoch 3"))
             .map(s -> Integer.parseInt(s.substring(19, 20)))
             .collect(Collectors.toList());
