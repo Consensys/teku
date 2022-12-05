@@ -227,7 +227,7 @@ public class TestSpecFactory {
                     z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                         .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                         .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO)));
+                        .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true)));
         break;
       default:
         throw new IllegalStateException("unsupported milestone");
