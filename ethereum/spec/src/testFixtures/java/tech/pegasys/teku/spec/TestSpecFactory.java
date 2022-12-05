@@ -324,7 +324,7 @@ public class TestSpecFactory {
             z.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .eip4844Builder(d -> d.eip4844ForkEpoch(eip4844ForkEpoch)));
+                .eip4844Builder(d -> d.eip4844ForkEpoch(eip4844ForkEpoch).kzgNoop(true)));
   }
 
   private static SpecConfigEip4844 getEip4844SpecConfig(
@@ -337,7 +337,7 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO));
+                  .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true));
               configAdapter.accept(builder);
             }));
   }

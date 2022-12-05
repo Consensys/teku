@@ -27,18 +27,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.eip4844.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.eip4844.util.KZGUtilEip4844;
 
 public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
 
-  public MiscHelpersEip4844(final SpecConfig specConfig) {
+  final KZG kzg;
+
+  public MiscHelpersEip4844(final SpecConfig specConfig, final KZG kzg) {
     super(specConfig);
+    this.kzg = kzg;
   }
 
   public void validateBlobSidecar(
@@ -55,8 +59,10 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     checkArgument(
         kzgCommitments.size() == blobsSidecar.getBlobs().size(),
         "Number of kzgCommitments should match number of blobs");
-    KZGUtilEip4844.verifyAggregateKZGProof(
-        blobsSidecar.getBlobs(), kzgCommitments, blobsSidecar.getKZGAggregatedProof());
+    kzg.verifyAggregateKzgProof(
+        blobsSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList()),
+        kzgCommitments,
+        blobsSidecar.getKZGAggregatedProof());
   }
 
   @Override

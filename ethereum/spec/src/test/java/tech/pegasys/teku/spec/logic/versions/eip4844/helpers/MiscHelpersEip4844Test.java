@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,7 +44,10 @@ class MiscHelpersEip4844Test {
 
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final MiscHelpersEip4844 miscHelpersEip4844 =
-      new MiscHelpersEip4844(spec.getGenesisSpecConfig());
+      new MiscHelpersEip4844(spec.getGenesisSpecConfig(), KZG.NOOP);
+
+  @BeforeAll
+  public static void setup() {}
 
   @Test
   public void versionedHash() {
