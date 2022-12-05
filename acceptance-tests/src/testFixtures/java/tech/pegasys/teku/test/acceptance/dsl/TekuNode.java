@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -95,6 +96,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -288,6 +290,51 @@ public class TekuNode extends Node {
     final String body = JsonUtil.serialize(signedBlsToExecutionChange, jsonTypeDefinition);
 
     httpClient.post(getRestApiUrl(), "/eth/v1/beacon/pool/bls_to_execution_changes", body);
+  }
+
+  public void waitForBlsToExecutionChangeEventForValidator(int validatorIndex) {
+    if (maybeEventStreamListener.isEmpty()) {
+      startEventListener(List.of(EventType.bls_to_execution_change));
+    }
+
+    waitFor(
+        () -> {
+          final List<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
+              blsToExecutionChanges =
+                  getEventsOfTypeFromEventStream(
+                      EventType.bls_to_execution_change, this::mapBlsToExecutionChangeFromEvent);
+
+          final Optional<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
+              eventForValidator =
+                  blsToExecutionChanges.stream()
+                      .filter(m -> m.message.validatorIndex == UInt64.valueOf(validatorIndex))
+                      .findFirst();
+          assertThat(eventForValidator).isPresent();
+        });
+  }
+
+  private <T> List<T> getEventsOfTypeFromEventStream(
+      final EventType type, final Function<PackedMessage, T> mapperFn) {
+    if (maybeEventStreamListener.isEmpty()) {
+      return List.of();
+    }
+
+    return maybeEventStreamListener.get().getMessages().stream()
+        .filter(packedMessage -> packedMessage.getEvent().equals(type.name()))
+        .map(mapperFn)
+        .collect(toList());
+  }
+
+  private tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange
+      mapBlsToExecutionChangeFromEvent(final Eth2EventHandler.PackedMessage packedMessage) {
+    try {
+      return JSON_PROVIDER.jsonToObject(
+          packedMessage.getMessageEvent().getData(),
+          tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange.class);
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to process bls_to_execution_change event", e);
+      return null;
+    }
   }
 
   private String getValidatorLivenessUrl(final UInt64 epoch) {

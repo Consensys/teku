@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,14 +41,19 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
 
     final TekuNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
     primaryNode.start();
+    primaryNode.startEventListener(List.of(EventType.bls_to_execution_change));
 
     final TekuNode lateJoiningNode =
         createLateJoiningNode(capellaActivationEpoch, primaryNode, primaryNode.getGenesisTime());
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
+    lateJoiningNode.startEventListener(List.of(EventType.bls_to_execution_change));
 
     lateJoiningNode.submitBlsToExecutionChange(validatorIndex, validatorKeyPair, executionAddress);
     lateJoiningNode.waitForValidatorWithCredentials(validatorIndex, executionAddress);
+
+    primaryNode.waitForBlsToExecutionChangeEventForValidator(0);
+    lateJoiningNode.waitForBlsToExecutionChangeEventForValidator(0);
   }
 
   private TekuNode createPrimaryNode(
