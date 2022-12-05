@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.kzg;
 
-import java.net.URL;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,7 +26,7 @@ public interface KZG {
   KZG NOOP =
       new KZG() {
         @Override
-        public void loadTrustedSetup(final URL trustedSetup) throws KZGException {}
+        public void loadTrustedSetup(final String trustedSetup) throws KZGException {}
 
         @Override
         public void freeTrustedSetup() throws KZGException {}
@@ -62,7 +61,7 @@ public interface KZG {
         }
       };
 
-  void loadTrustedSetup(URL trustedSetup) throws KZGException;
+  void loadTrustedSetup(String trustedSetup) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
 
