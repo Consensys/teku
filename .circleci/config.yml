@@ -386,7 +386,7 @@ jobs:
             - ./eth-reference-tests/
 
   referenceTests:
-    parallelism: 4
+    parallelism: 6
     executor: large_executor
     steps:
       - prepare
