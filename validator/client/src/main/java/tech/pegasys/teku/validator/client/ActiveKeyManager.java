@@ -251,7 +251,14 @@ public class ActiveKeyManager implements KeyManager {
                 })
             .exceptionally(
                 throwable -> {
-                  LOG.error("Failed to perform doppelganger detection", throwable);
+                  LOG.error(
+                      "Failed to perform doppelganger detection for public keys {}",
+                      String.join(
+                          ", ",
+                          filterImportedPubKeys(importResults).stream()
+                              .map(BLSPublicKey::toAbbreviatedString)
+                              .collect(Collectors.toSet())),
+                      throwable);
                   validatorTimingChannel.onValidatorsAdded();
                   return null;
                 })
@@ -335,7 +342,14 @@ public class ActiveKeyManager implements KeyManager {
                 })
             .exceptionally(
                 throwable -> {
-                  LOG.error("Failed to perform doppelganger detection", throwable);
+                  LOG.error(
+                      "Failed to perform doppelganger detection for public keys {}",
+                      String.join(
+                          ", ",
+                          filterExternallyImportedPubKeys(importResults).stream()
+                              .map(BLSPublicKey::toAbbreviatedString)
+                              .collect(Collectors.toSet())),
+                      throwable);
                   validatorTimingChannel.onValidatorsAdded();
                   return null;
                 })

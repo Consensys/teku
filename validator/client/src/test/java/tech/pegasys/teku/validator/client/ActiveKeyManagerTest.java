@@ -362,7 +362,10 @@ class ActiveKeyManagerTest {
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction, never()).alert(any());
-    logCaptor.assertErrorLog("Failed to perform doppelganger detection");
+    logCaptor.assertErrorLog(
+        String.format(
+            "Failed to perform doppelganger detection for public keys %s",
+            doppelgangerPublicKey.toAbbreviatedString()));
   }
 
   @Test
@@ -433,7 +436,10 @@ class ActiveKeyManagerTest {
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction, never()).alert(any());
-    logCaptor.assertErrorLog("Failed to perform doppelganger detection");
+    logCaptor.assertErrorLog(
+        String.format(
+            "Failed to perform doppelganger detection for public keys %s",
+            doppelgangerPublicKey.toAbbreviatedString()));
   }
 
   private String getKeystore() throws IOException, URISyntaxException {
