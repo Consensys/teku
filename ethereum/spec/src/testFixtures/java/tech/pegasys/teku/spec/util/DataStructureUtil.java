@@ -659,21 +659,33 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final long slot) {
+    return randomAttestation(UInt64.valueOf(slot));
+  }
+
+  public Attestation randomAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
+        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
+    return randomAggregateAndProof(randomUInt64());
+  }
+
+  public AggregateAndProof randomAggregateAndProof(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAggregateAndProofSchema()
-        .create(randomUInt64(), randomAttestation(), randomSignature());
+        .create(randomUInt64(), randomAttestation(slot), randomSignature());
   }
 
   public SignedAggregateAndProof randomSignedAggregateAndProof() {
+    return randomSignedAggregateAndProof(randomUInt64());
+  }
+
+  public SignedAggregateAndProof randomSignedAggregateAndProof(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getSignedAggregateAndProofSchema()
-        .create(randomAggregateAndProof(), randomSignature());
+        .create(randomAggregateAndProof(slot), randomSignature());
   }
 
   public VoteTracker randomVoteTracker() {
@@ -694,6 +706,15 @@ public final class DataStructureUtil {
       final PendingAttestationSchema pendingAttestationSchema) {
     return pendingAttestationSchema.create(
         randomBitlist(), randomAttestationData(), randomUInt64(), randomUInt64());
+  }
+
+  public AttesterSlashing randomAttesterSlashingAtSlot(final UInt64 slot) {
+    final UInt64[] attestingIndices = {randomUInt64(), randomUInt64(), randomUInt64()};
+    return spec.getGenesisSchemaDefinitions()
+        .getAttesterSlashingSchema()
+        .create(
+            randomIndexedAttestation(randomAttestationData(slot), attestingIndices),
+            randomIndexedAttestation(randomAttestationData(slot), attestingIndices));
   }
 
   public AttesterSlashing randomAttesterSlashing() {

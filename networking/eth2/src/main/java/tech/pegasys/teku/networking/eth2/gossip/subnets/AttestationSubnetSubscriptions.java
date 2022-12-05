@@ -93,7 +93,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         asyncRunner,
         processor,
         gossipEncoding,
-        forkInfo.getForkDigest(spec),
+        forkInfo,
         topicName,
         attestationSchema,
         subnetId,
