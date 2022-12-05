@@ -133,6 +133,11 @@ public class NodeDataProvider {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
+  public void subscribeToNewBlsToExecutionChanges(
+      OperationPool.OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+    blsToExecutionChangePool.subscribeOperationAdded(listener);
+  }
+
   public void subscribeToSyncCommitteeContributions(
       OperationPool.OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);

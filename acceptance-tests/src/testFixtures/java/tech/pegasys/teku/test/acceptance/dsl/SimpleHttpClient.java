@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -62,12 +63,12 @@ public class SimpleHttpClient {
     final Request.Builder builder = new Request.Builder().url(baseUrl.resolve(path).toURL()).get();
     headers.forEach(builder::header);
     final Response response = httpClient.newCall(builder.build()).execute();
-    assertThat(response.isSuccessful())
-        .describedAs(
-            "Received unsuccessful response from %s: %s %s",
-            url, response.code(), response.message())
-        .isTrue();
     final ResponseBody body = response.body();
+    if (!response.isSuccessful()) {
+      fail(
+          "Received unsuccessful response from %s: %s %s %s",
+          url, response.code(), response.message(), body != null ? body.string() : "null");
+    }
     assertThat(body).isNotNull();
     return body;
   }
