@@ -20,7 +20,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Breaking Changes
 
-
 ### Additions and Improvements
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 
