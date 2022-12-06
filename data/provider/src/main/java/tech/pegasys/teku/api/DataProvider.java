@@ -176,8 +176,8 @@ public class DataProvider {
     }
 
     public Builder blsToExecutionChangePool(
-        final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePoolExitPool) {
-      this.blsToExecutionChangePool = blsToExecutionChangePoolExitPool;
+        final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool) {
+      this.blsToExecutionChangePool = blsToExecutionChangePool;
       return this;
     }
 

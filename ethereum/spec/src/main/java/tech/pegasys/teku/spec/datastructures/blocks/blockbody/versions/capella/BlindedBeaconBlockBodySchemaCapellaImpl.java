@@ -126,8 +126,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                signedBlsToExecutionChangeSchema,
-                specConfig.getMaxBlsToExecutionChanges().longValue())));
+                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
   }
 
   @Override

@@ -279,8 +279,10 @@ public class Eth2NetworkConfiguration {
                       capellaBuilder ->
                           capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.eip4844Builder(
-                      eip4844Builder ->
-                          eip4844ForkEpoch.ifPresent(eip4844Builder::eip4844ForkEpoch));
+                      eip4844Builder -> {
+                        eip4844ForkEpoch.ifPresent(eip4844Builder::eip4844ForkEpoch);
+                        trustedSetup.ifPresent(eip4844Builder::trustedSetupPath);
+                      });
                 });
       }
       // if the deposit contract was not set, default from constants

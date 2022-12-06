@@ -131,8 +131,7 @@ public class BlindedBeaconBlockBodySchemaEip4844Impl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                signedBlsToExecutionChangeSchema,
-                specConfig.getMaxBlsToExecutionChanges().longValue())),
+                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
         namedSchema(
             BlockBodyFields.BLOB_KZG_COMMITMENTS,
             SszListSchema.create(
