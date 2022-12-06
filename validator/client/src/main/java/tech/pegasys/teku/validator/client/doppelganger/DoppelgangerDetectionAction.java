@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.validator.client.doppelganger;
 
-import java.util.Set;
+import java.util.List;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public interface DoppelgangerDetectionAction {
 
   void shutDown();
-  void alert(Set<BLSPublicKey> doppelgangers);
+
+  void alert(List<BLSPublicKey> doppelgangers);
 }

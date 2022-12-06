@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -108,26 +107,10 @@ public class ActiveKeyManager implements KeyManager {
   @Override
   public synchronized DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
-    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(slashingProtectionPath);
-    for (final BLSPublicKey publicKey : validators) {
-      Optional<Validator> maybeValidator =
-          validatorLoader.getOwnedValidators().getValidator(publicKey);
-
-      // read-only check in a non-destructive manner
-      if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
-        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
-        continue;
-      }
-      // delete validator from owned validators list
-      maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
-      if (maybeValidator.isPresent()) {
-        deletionResults.add(deleteValidator(maybeValidator.get(), exporter));
-      } else {
-        deletionResults.add(attemptToGetSlashingDataForInactiveValidator(publicKey, exporter));
-      }
-    }
+    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
+        removeValidators(validators, exporter);
     String exportedData;
     try {
       exportedData = exporter.finalise();
@@ -135,61 +118,69 @@ public class ActiveKeyManager implements KeyManager {
       LOG.error("Failed to serialize slashing export data", e);
       exportedData = EXPORT_FAILED;
     }
-    return new DeleteKeysResponse(deletionResults, exportedData);
+    return new DeleteKeysResponse(
+        deletionResults.stream().map(Pair::getRight).collect(Collectors.toList()), exportedData);
   }
 
-  @Override
-  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
-    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
-    for (final BLSPublicKey publicKey : validators) {
+  private List<Pair<BLSPublicKey, DeleteKeyResult>> removeValidators(
+      final List<BLSPublicKey> publicKeys, final SlashingProtectionIncrementalExporter exporter) {
+    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults = new ArrayList<>();
+    for (final BLSPublicKey publicKey : publicKeys) {
       Optional<Validator> maybeValidator =
           validatorLoader.getOwnedValidators().getValidator(publicKey);
 
       // read-only check in a non-destructive manner
       if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
-        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
+        deletionResults.add(
+            Pair.of(publicKey, DeleteKeyResult.error("Cannot remove read-only validator")));
+        continue;
+      }
+      // delete validator from owned validators list
+      maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
+      if (maybeValidator.isPresent()) {
+        deletionResults.add(Pair.of(publicKey, deleteValidator(maybeValidator.get(), exporter)));
+      } else {
+        deletionResults.add(
+            Pair.of(publicKey, attemptToGetSlashingDataForInactiveValidator(publicKey, exporter)));
+      }
+    }
+    return deletionResults;
+  }
+
+  @Override
+  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
+    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
+        removeExternalValidators(validators);
+    return new DeleteRemoteKeysResponse(
+        deletionResults.stream().map(Pair::getRight).collect(Collectors.toList()));
+  }
+
+  private List<Pair<BLSPublicKey, DeleteKeyResult>> removeExternalValidators(
+      final List<BLSPublicKey> publicKeys) {
+    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults = new ArrayList<>();
+    for (final BLSPublicKey publicKey : publicKeys) {
+      Optional<Validator> maybeValidator =
+          validatorLoader.getOwnedValidators().getValidator(publicKey);
+
+      // read-only check in a non-destructive manner
+      if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
+        deletionResults.add(
+            Pair.of(publicKey, DeleteKeyResult.error("Cannot remove read-only validator")));
         continue;
       }
       // delete validator from owned validators list
       maybeValidator = validatorLoader.getOwnedValidators().getValidator(publicKey);
       if (maybeValidator.isPresent()) {
         DeleteKeyResult result = deleteExternalValidator(maybeValidator.get());
-        deletionResults.add(result);
+        deletionResults.add(Pair.of(publicKey, result));
         if (result.equals(DeleteKeyResult.success())) {
           validatorLoader.getOwnedValidators().removeValidator(publicKey);
         }
       } else {
-        deletionResults.add(DeleteKeyResult.notFound());
+        deletionResults.add(Pair.of(publicKey, DeleteKeyResult.notFound()));
       }
     }
-    return new DeleteRemoteKeysResponse(deletionResults);
-  }
-
-  private void deleteExternalDoppelgangers(final Set<BLSPublicKey> publicKeys) {
-    for (BLSPublicKey publicKey : publicKeys) {
-      Optional<Validator> maybeOwnedValidator =
-          validatorLoader.getOwnedValidators().getValidator(publicKey);
-      if (maybeOwnedValidator.isPresent()) {
-        if (maybeOwnedValidator.get().isReadOnly()) {
-          LOG.warn("Unable remove read only validator doppelganger.");
-          continue;
-        }
-        final Signer signer = maybeOwnedValidator.get().getSigner();
-        signer.delete();
-        DeleteKeyResult deleteKeyResult = validatorLoader.deleteExternalMutableValidator(publicKey);
-        if (deleteKeyResult.equals(DeleteKeyResult.success())) {
-          validatorLoader.getOwnedValidators().removeValidator(publicKey);
-          LOG.info(
-              "Removed validator doppelgangers public key {}", publicKey.toAbbreviatedString());
-
-        } else {
-          LOG.warn(
-              String.format(
-                  "Unable to remove validator doppelganger public key %s. %s",
-                  publicKey.toAbbreviatedString(), deleteKeyResult.getMessage().orElse("")));
-        }
-      }
-    }
+    return deletionResults;
   }
 
   @VisibleForTesting
@@ -200,31 +191,6 @@ public class ActiveKeyManager implements KeyManager {
       return error.map(DeleteKeyResult::error).orElseGet(DeleteKeyResult::notActive);
     } else {
       return DeleteKeyResult.notFound();
-    }
-  }
-
-  private void deleteDoppelgangers(final Set<BLSPublicKey> publicKeys) {
-    for (BLSPublicKey publicKey : publicKeys) {
-      Optional<Validator> maybeOwnedValidator =
-          validatorLoader.getOwnedValidators().getValidator(publicKey);
-      if (maybeOwnedValidator.isPresent()) {
-        final Signer signer = maybeOwnedValidator.get().getSigner();
-        signer.delete();
-        final Optional<Validator> maybeValidator =
-            validatorLoader.getOwnedValidators().removeValidator(publicKey);
-        if (maybeValidator.isPresent()) {
-          DeleteKeyResult deleteKeyResult = validatorLoader.deleteLocalMutableValidator(publicKey);
-          if (!deleteKeyResult.getStatus().equals(DeletionStatus.DELETED)) {
-            LOG.warn(
-                String.format(
-                    "Unable to remove validator doppelganger public key %s. %s",
-                    publicKey.toAbbreviatedString(), deleteKeyResult.getMessage().orElse("")));
-          } else {
-            LOG.info(
-                "Removed validator doppelgangers public key {}", publicKey.toAbbreviatedString());
-          }
-        }
-      }
     }
   }
 
@@ -273,7 +239,8 @@ public class ActiveKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final Path slashingProtectionPath) {
     final List<Pair<Optional<BLSPublicKey>, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
@@ -290,10 +257,15 @@ public class ActiveKeyManager implements KeyManager {
             .get()
             .performDoppelgangerDetection(filterImportedPubKeys(importResults))
             .thenAccept(
-                doppelgangerDetected -> {
-                  if (!doppelgangerDetected.isEmpty()) {
-                    doppelgangerDetectionAction.alert(new HashSet<>(doppelgangerDetected.values()));
-                    deleteDoppelgangers(new HashSet<>(doppelgangerDetected.values()));
+                doppelgangers -> {
+                  if (!doppelgangers.isEmpty()) {
+                    List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+                    doppelgangerDetectionAction.alert(doppelgangerList);
+                    final SlashingProtectionIncrementalExporter exporter =
+                        new SlashingProtectionIncrementalExporter(slashingProtectionPath);
+                    List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
+                        removeValidators(doppelgangerList, exporter);
+                    reportDoppelgangersRemoval(deletionResults);
                   }
                   validatorTimingChannel.onValidatorsAdded();
                 })
@@ -379,10 +351,13 @@ public class ActiveKeyManager implements KeyManager {
             .get()
             .performDoppelgangerDetection(filterExternallyImportedPubKeys(importResults))
             .thenAccept(
-                doppelgangerDetected -> {
-                  if (!doppelgangerDetected.isEmpty()) {
-                    doppelgangerDetectionAction.alert(new HashSet<>(doppelgangerDetected.values()));
-                    deleteExternalDoppelgangers(new HashSet<>(doppelgangerDetected.values()));
+                doppelgangers -> {
+                  if (!doppelgangers.isEmpty()) {
+                    doppelgangerDetectionAction.alert(new ArrayList<>(doppelgangers.values()));
+                    List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+                    List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
+                        removeExternalValidators(doppelgangerList);
+                    reportDoppelgangersRemoval(deletionResults);
                   }
                   validatorTimingChannel.onValidatorsAdded();
                 })
@@ -405,5 +380,20 @@ public class ActiveKeyManager implements KeyManager {
       }
     }
     return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
+  }
+
+  private void reportDoppelgangersRemoval(
+      List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults) {
+    deletionResults.forEach(
+        deletionResult -> {
+          if (deletionResult.getRight().getStatus().equals(DeletionStatus.DELETED)) {
+            LOG.info("Removed doppelganger: {}", deletionResult.getLeft());
+          } else {
+            LOG.error(
+                "Unable to remove validator doppelganger public key {}. {}",
+                deletionResult.getLeft(),
+                deletionResult.getRight().getMessage().orElse(""));
+          }
+        });
   }
 }
