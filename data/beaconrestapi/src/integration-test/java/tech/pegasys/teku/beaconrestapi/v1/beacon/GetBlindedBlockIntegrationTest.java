@@ -69,9 +69,10 @@ public class GetBlindedBlockIntegrationTest extends AbstractDataBackedRestAPIInt
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    final SignedBeaconBlock result = spec.getGenesisSchemaDefinitions()
-        .getSignedBlindedBeaconBlockSchema()
-        .sszDeserialize(Bytes.of(response.body().bytes()));
+    final SignedBeaconBlock result =
+        spec.getGenesisSchemaDefinitions()
+            .getSignedBlindedBeaconBlockSchema()
+            .sszDeserialize(Bytes.of(response.body().bytes()));
     assertThat(result.isBlinded()).isTrue();
     assertThat(result.hashTreeRoot()).isEqualTo(created.get(0).getBlock().hashTreeRoot());
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.bellatrix.name());
