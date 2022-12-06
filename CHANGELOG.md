@@ -28,3 +28,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 
 ### Bug Fixes
+- Fixed issue which could cause command line options to be parsed incorrectly
