@@ -65,6 +65,7 @@ import tech.pegasys.teku.cli.subcommand.internal.InternalToolsCommand;
 import tech.pegasys.teku.cli.util.AdditionalParamsProvider;
 import tech.pegasys.teku.cli.util.CascadingParamsProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableParamsProvider;
+import tech.pegasys.teku.cli.util.MixinSectionOptionRenderer;
 import tech.pegasys.teku.cli.util.YamlConfigFileParamsProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;

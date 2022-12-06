@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli;
+package tech.pegasys.teku.cli.util;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,7 +23,7 @@ import picocli.CommandLine.IHelpSectionRenderer;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 
-class MixinSectionOptionRenderer implements IHelpSectionRenderer {
+public class MixinSectionOptionRenderer implements IHelpSectionRenderer {
 
   public static final String STANDARD_HELP_OPTIONS_MIXIN_NAME = "mixinStandardHelpOptions";
 
