@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.operations.validation;
+package tech.pegasys.teku.spec.logic.versions.capella.operations.validation;
 
-import static tech.pegasys.teku.spec.logic.common.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.invalidValidatorIndex;
-import static tech.pegasys.teku.spec.logic.common.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.publicKeyNotMatchingCredentials;
-import static tech.pegasys.teku.spec.logic.common.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.validatorWithoutWithdrawalCredentials;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
+import static tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.invalidValidatorIndex;
+import static tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.publicKeyNotMatchingCredentials;
+import static tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason.validatorWithoutWithdrawalCredentials;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateTransitionValidator;
 
 public class BlsToExecutionChangesValidator
     implements OperationStateTransitionValidator<BlsToExecutionChange> {

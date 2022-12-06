@@ -25,7 +25,8 @@ public enum EventType {
   finalized_checkpoint,
   chain_reorg,
   sync_state,
-  contribution_and_proof;
+  contribution_and_proof,
+  bls_to_execution_change;
 
   public static List<EventType> getTopics(List<String> topics) {
     return topics.stream().map(EventType::valueOf).collect(Collectors.toList());

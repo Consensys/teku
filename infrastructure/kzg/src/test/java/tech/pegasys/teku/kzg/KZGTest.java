@@ -17,7 +17,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -41,7 +40,7 @@ public final class KZGTest {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  private final KZG kzg = CKZG4844.createOrGetInstance();
+  private final KZG kzg = CKZG4844.createInstance(FIELD_ELEMENTS_PER_BLOB);
 
   @AfterEach
   public void cleanUpIfNeeded() {
@@ -50,6 +49,15 @@ public final class KZGTest {
     } catch (final KZGException ex) {
       // NOOP
     }
+  }
+
+  @Test
+  public void testCreatingInstanceWithDifferentFieldElementsPerBlob_shouldThrowException() {
+    final KZGException exception =
+        assertThrows(KZGException.class, () -> CKZG4844.createInstance(4));
+    assertThat(exception)
+        .hasMessage(
+            "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
   }
 
   @Test
@@ -119,7 +127,8 @@ public final class KZGTest {
   }
 
   private void loadTrustedSetup() {
-    final URL trustedSetup = KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST);
+    final String trustedSetup =
+        KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST).toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 

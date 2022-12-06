@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -46,6 +47,7 @@ class PeerSubnetSubscriptionsTest {
   private static final int TARGET_SUBSCRIBER_COUNT = 2;
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final SettableLabelledGauge subnetPeerCountGauge = mock(SettableLabelledGauge.class);
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -201,7 +203,8 @@ class PeerSubnetSubscriptionsTest {
         attestationTopicProvider,
         syncCommitteeTopicProvider,
         syncnetSubscriptions,
-        TARGET_SUBSCRIBER_COUNT);
+        TARGET_SUBSCRIBER_COUNT,
+        subnetPeerCountGauge);
   }
 
   private void withSubscriberCountForAllSubnets(int subscriberCount) {

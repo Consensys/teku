@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.BlockAndBlobsSidecarOperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -50,7 +48,7 @@ public class BlockAndBlobsSidecarGossipManager
             .toVersionEip4844()
             .orElseThrow()
             .getSignedBeaconBlockAndBlobsSidecarSchema(),
-        Optional.of(new BlockAndBlobsSidecarOperationMilestoneValidator(spec, forkInfo)),
+        message -> spec.computeEpochAtSlot(message.getSignedBeaconBlock().getSlot()),
         maxMessageSize);
   }
 

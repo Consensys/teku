@@ -29,6 +29,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -327,6 +329,13 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
+    final SettableLabelledGauge subnetPeerCountGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.NETWORK,
+            "subnet_peer_count",
+            "Number of currently connected peers subscribed to each subnet",
+            "subnet");
     return createDiscoveryNetworkBuilder()
         .metricsSystem(metricsSystem)
         .asyncRunner(asyncRunner)
@@ -342,7 +351,8 @@ public class Eth2P2PNetworkBuilder {
                         attestationSubnetTopicProvider,
                         syncCommitteeSubnetTopicProvider,
                         syncCommitteeSubnetService,
-                        config.getTargetSubnetSubscriberCount()),
+                        config.getTargetSubnetSubscriberCount(),
+                        subnetPeerCountGauge),
                 reputationManager,
                 Collections::shuffle))
         .discoveryConfig(discoConfig)

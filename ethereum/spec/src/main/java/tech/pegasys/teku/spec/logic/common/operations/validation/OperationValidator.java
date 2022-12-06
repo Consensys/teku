@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -22,88 +21,27 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.SlashedIndicesCaptor;
-import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttesterSlashingValidator;
 
-public class OperationValidator {
+public interface OperationValidator {
+  Optional<OperationInvalidReason> validateAttestationData(
+      Fork fork, BeaconState state, AttestationData data);
 
-  private final AttestationDataValidator attestationDataValidator;
-  private final AttesterSlashingValidator attesterSlashingValidator;
-  private final ProposerSlashingValidator proposerSlashingValidator;
-  private final VoluntaryExitValidator voluntaryExitValidator;
+  Optional<OperationInvalidReason> validateAttesterSlashing(
+      Fork fork, BeaconState state, AttesterSlashing attesterSlashing);
 
-  private final BlsToExecutionChangesValidator blsToExecutionChangesValidator;
+  Optional<OperationInvalidReason> validateAttesterSlashing(
+      Fork fork,
+      BeaconState state,
+      AttesterSlashing attesterSlashing,
+      AttesterSlashingValidator.SlashedIndicesCaptor slashedIndicesCaptor);
 
-  private OperationValidator(
-      final AttestationDataValidator attestationDataValidator,
-      final AttesterSlashingValidator attesterSlashingValidator,
-      final ProposerSlashingValidator proposerSlashingValidator,
-      final VoluntaryExitValidator voluntaryExitValidator,
-      final BlsToExecutionChangesValidator blsToExecutionChangesValidator) {
-    this.attestationDataValidator = attestationDataValidator;
-    this.attesterSlashingValidator = attesterSlashingValidator;
-    this.proposerSlashingValidator = proposerSlashingValidator;
-    this.voluntaryExitValidator = voluntaryExitValidator;
-    this.blsToExecutionChangesValidator = blsToExecutionChangesValidator;
-  }
+  Optional<OperationInvalidReason> validateProposerSlashing(
+      Fork fork, BeaconState state, ProposerSlashing proposerSlashing);
 
-  public static OperationValidator create(
-      final SpecConfig specConfig,
-      final Predicates predicates,
-      final MiscHelpers miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors,
-      final AttestationUtil attestationUtil) {
-    final AttestationDataValidator attestationDataValidator =
-        new AttestationDataValidator(specConfig, miscHelpers, beaconStateAccessors);
-    final AttesterSlashingValidator attesterSlashingValidator =
-        new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
-    final ProposerSlashingValidator proposerSlashingValidator =
-        new ProposerSlashingValidator(predicates, beaconStateAccessors);
-    final VoluntaryExitValidator voluntaryExitValidator =
-        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
-    final BlsToExecutionChangesValidator blsToExecutionChangesValidator =
-        new BlsToExecutionChangesValidator();
-    return new OperationValidator(
-        attestationDataValidator,
-        attesterSlashingValidator,
-        proposerSlashingValidator,
-        voluntaryExitValidator,
-        blsToExecutionChangesValidator);
-  }
+  Optional<OperationInvalidReason> validateVoluntaryExit(
+      Fork fork, BeaconState state, SignedVoluntaryExit signedExit);
 
-  public Optional<OperationInvalidReason> validateAttestationData(
-      final Fork fork, final BeaconState state, final AttestationData data) {
-    return attestationDataValidator.validate(fork, state, data);
-  }
-
-  public Optional<OperationInvalidReason> validateAttesterSlashing(
-      final Fork fork, final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return attesterSlashingValidator.validate(fork, state, attesterSlashing);
-  }
-
-  public Optional<OperationInvalidReason> validateAttesterSlashing(
-      final Fork fork,
-      final BeaconState state,
-      final AttesterSlashing attesterSlashing,
-      SlashedIndicesCaptor slashedIndicesCaptor) {
-    return attesterSlashingValidator.validate(fork, state, attesterSlashing, slashedIndicesCaptor);
-  }
-
-  public Optional<OperationInvalidReason> validateProposerSlashing(
-      final Fork fork, final BeaconState state, final ProposerSlashing proposerSlashing) {
-    return proposerSlashingValidator.validate(fork, state, proposerSlashing);
-  }
-
-  public Optional<OperationInvalidReason> validateVoluntaryExit(
-      final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
-    return voluntaryExitValidator.validate(fork, state, signedExit);
-  }
-
-  public Optional<OperationInvalidReason> validateBlsToExecutionChange(
-      final Fork fork, final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
-    return blsToExecutionChangesValidator.validate(fork, state, blsToExecutionChange);
-  }
+  Optional<OperationInvalidReason> validateBlsToExecutionChange(
+      Fork fork, BeaconState state, BlsToExecutionChange blsToExecutionChange);
 }
