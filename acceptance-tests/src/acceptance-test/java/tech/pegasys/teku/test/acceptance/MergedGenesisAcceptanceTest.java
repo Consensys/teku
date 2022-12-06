@@ -27,7 +27,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
 
-  private static final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   public static final Eth1Address WITHDRAWAL_ADDRESS =
       Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");

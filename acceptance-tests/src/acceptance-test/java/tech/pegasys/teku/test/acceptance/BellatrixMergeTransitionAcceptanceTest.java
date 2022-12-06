@@ -26,7 +26,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
 
-  private static final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();

@@ -23,7 +23,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldLoadAdditionalValidatorsWithoutRestart() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
 
     final ValidatorKeystores initialKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(2);

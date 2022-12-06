@@ -1,0 +1,34 @@
+
+teku [OPTIONS]
+
+Description:
+
+Run the Teku beacon chain client and validator
+
+Options:
+      --beacon-node-api-endpoint, --beacon-node-api-endpoints=<ENDPOINT>[,
+        <ENDPOINT>...]...
+                          Beacon Node REST API endpoint(s). If more than one
+                            endpoint is defined, the first node will be used as
+                            a primary and others as failovers.
+  -c, --config-file=<configFile>
+                          Set a config file
+  -h, --help              Show this help message and exit.
+  -V, --version           Print version information and exit.
+      --Xsentry-config-file=<FILE>
+                          Config file with sentry node configuration
+
+First Mixin
+      --value1=<value1>   Set a value with a really quite long description
+                            given that it doesn't actually say anything. Some
+                            people would think I'm just testing the wrapping
+                            behaviour or something...
+      --value2=<value2>   Set a second value
+
+Actual Arg Group      --beacon-node-api-endpoint, --beacon-node-api-endpoints=<ENDPOINT>[,
+        <ENDPOINT>...]...
+                          Beacon Node REST API endpoint(s). If more than one
+                            endpoint is defined, the first node will be used as
+                            a primary and others as failovers.
+
+Teku is licensed under the Apache License 2.0
