@@ -14,9 +14,9 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.io.PrintWriter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
@@ -51,9 +51,9 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
   @Override
   public void run() {
     final CommandSpec commandSpec = helpCommandLine.getParent().getCommandSpec();
-    final Map<String, List<OptionSpec>> optionsByModuleName = new TreeMap<>();
-    commandSpec
-        .argGroups()
+    final Map<String, List<OptionSpec>> optionsByModuleName = new LinkedHashMap<>();
+    commandSpec.argGroups().stream()
+        .filter(argSpec -> argSpec.heading() != null)
         .forEach(
             argSpec ->
                 optionsByModuleName.put(

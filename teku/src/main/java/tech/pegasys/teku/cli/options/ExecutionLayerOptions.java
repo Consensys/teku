@@ -19,15 +19,14 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 
-import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerOptions {
 
-  @CommandLine.ArgGroup(validate = false)
-  private DepositOptions depositOptions = new DepositOptions();
+  @Mixin private DepositOptions depositOptions = new DepositOptions();
 
   @Option(
       names = {"--ee-endpoint"},
