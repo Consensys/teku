@@ -20,6 +20,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -29,11 +30,9 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
-  @CommandLine.ArgGroup(validate = false)
-  private ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
+  @Mixin private ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
 
-  @CommandLine.ArgGroup(validate = false)
-  private ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
+  @Mixin private ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
 
   @Option(
       names = {"--validators-graffiti"},
