@@ -46,8 +46,8 @@ class MixinSectionOptionRendererTest {
     final String expected =
         Resources.toString(
             Resources.getResource(MixinSectionOptionRendererTest.class, "TestOptionsHelp.txt"),
-            StandardCharsets.UTF_8).replaceAll("\n", System.getProperty("line.separator"));
-    assertThat(result).isEqualTo(expected);
+            StandardCharsets.UTF_8);
+    assertThat(result).isEqualToNormalizingNewlines(expected);
   }
 
   @Command(
