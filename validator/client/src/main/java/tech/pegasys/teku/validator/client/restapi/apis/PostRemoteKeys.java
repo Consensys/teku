@@ -37,12 +37,12 @@ public class PostRemoteKeys extends RestApiEndpoint {
   private final KeyManager keyManager;
 
   private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
-  private final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction;
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
 
   public PostRemoteKeys(
       final KeyManager keyManager,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportRemoteKeys")
@@ -56,7 +56,7 @@ public class PostRemoteKeys extends RestApiEndpoint {
             .build());
     this.keyManager = keyManager;
     this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
-    this.maybeDoppelgangerDetectionAction = maybeDoppelgangerDetectionAction;
+    this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
   @Override
@@ -71,6 +71,6 @@ public class PostRemoteKeys extends RestApiEndpoint {
     List<ExternalValidator> validators = body.getExternalValidators();
     request.respondOk(
         keyManager.importExternalValidators(
-            validators, maybeDoppelgangerDetector, maybeDoppelgangerDetectionAction));
+            validators, maybeDoppelgangerDetector, doppelgangerDetectionAction));
   }
 }

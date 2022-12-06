@@ -40,10 +40,10 @@ public interface KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> doppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction);
+      final DoppelgangerDetectionAction doppelgangerDetectionAction);
 
   List<PostKeyResult> importExternalValidators(
       final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> doppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction);
+      final DoppelgangerDetectionAction doppelgangerDetectionAction);
 }

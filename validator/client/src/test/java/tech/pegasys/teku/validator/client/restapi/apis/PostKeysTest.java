@@ -30,16 +30,20 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
 public class PostKeysTest {
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
+      mock(DoppelgangerDetectionAction.class);
 
   @Test
   void shouldRespondBadRequestIfPasswordsAndKeystoresMisMatch(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty(), Optional.empty());
+    final PostKeys endpoint =
+        new PostKeys(keyManager, tempDir, Optional.empty(), doppelgangerDetectionAction);
     final PostKeysRequest body = new PostKeysRequest();
     body.setKeystores(List.of("{}"));
     body.setPasswords(List.of());
@@ -54,7 +58,8 @@ public class PostKeysTest {
   @Test
   void shouldNotImportSlashingProtectionWithoutKeysPresent(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty(), Optional.empty());
+    final PostKeys endpoint =
+        new PostKeys(keyManager, tempDir, Optional.empty(), doppelgangerDetectionAction);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
     when(request.getRequestBody()).thenReturn(body);
@@ -66,7 +71,8 @@ public class PostKeysTest {
   @Test
   void emptyRequest_shouldGiveEmptySuccess(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty(), Optional.empty());
+    final PostKeys endpoint =
+        new PostKeys(keyManager, tempDir, Optional.empty(), doppelgangerDetectionAction);
     final PostKeysRequest body = new PostKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
@@ -77,7 +83,8 @@ public class PostKeysTest {
   @Test
   void shouldRespondBadRequestIfSlashingProtectionImportFails(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final PostKeys endpoint = new PostKeys(keyManager, tempDir, Optional.empty(), Optional.empty());
+    final PostKeys endpoint =
+        new PostKeys(keyManager, tempDir, Optional.empty(), doppelgangerDetectionAction);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
     body.setPasswords(List.of("pass"));

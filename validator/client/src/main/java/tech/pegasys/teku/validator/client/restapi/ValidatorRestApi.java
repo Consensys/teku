@@ -56,7 +56,7 @@ public class ValidatorRestApi {
       final KeyManager keyManager,
       final DataDirLayout dataDirLayout,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
     return new RestApiBuilder()
@@ -95,11 +95,10 @@ public class ValidatorRestApi {
                 keyManager,
                 slashingProtectionPath,
                 maybeDoppelgangerDetector,
-                maybeDoppelgangerDetectionAction))
+                doppelgangerDetectionAction))
         .endpoint(new GetRemoteKeys(keyManager))
         .endpoint(
-            new PostRemoteKeys(
-                keyManager, maybeDoppelgangerDetector, maybeDoppelgangerDetectionAction))
+            new PostRemoteKeys(keyManager, maybeDoppelgangerDetector, doppelgangerDetectionAction))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(proposerConfigManager))
         .endpoint(new GetGasLimit(proposerConfigManager))

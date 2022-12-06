@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
@@ -34,11 +35,13 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequ
 public class PostRemoteKeysTest {
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
+      mock(DoppelgangerDetectionAction.class);
 
   @Test
   void emptyRequest_shouldGiveEmptySuccess() throws JsonProcessingException {
     final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
+        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
     final PostRemoteKeysRequest body = new PostRemoteKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
@@ -50,7 +53,7 @@ public class PostRemoteKeysTest {
   void validResponse_shouldGiveValidPostKeyResults()
       throws JsonProcessingException, MalformedURLException {
     final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
+        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
     List<ExternalValidator> externalValidators =
         List.of(
@@ -63,7 +66,7 @@ public class PostRemoteKeysTest {
 
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.success());
     when(keyManager.importExternalValidators(
-            externalValidators, Optional.empty(), Optional.empty()))
+            externalValidators, Optional.empty(), doppelgangerDetectionAction))
         .thenReturn(results);
 
     endpoint.handleRequest(request);
@@ -74,7 +77,7 @@ public class PostRemoteKeysTest {
   void duplicate_shouldGiveDuplicateResponse()
       throws JsonProcessingException, MalformedURLException {
     final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), Optional.empty());
+        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
     BLSPublicKey publicKey = BLSTestUtil.randomKeyPair(1).getPublicKey();
     URL url = new URL("http://host.com");
@@ -88,7 +91,7 @@ public class PostRemoteKeysTest {
 
     List<PostKeyResult> results = List.of(PostKeyResult.success(), PostKeyResult.duplicate());
     when(keyManager.importExternalValidators(
-            externalValidators, Optional.empty(), Optional.empty()))
+            externalValidators, Optional.empty(), doppelgangerDetectionAction))
         .thenReturn(results);
 
     endpoint.handleRequest(request);

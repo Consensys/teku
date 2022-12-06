@@ -41,13 +41,13 @@ public class PostKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/keystores";
   private final Path slashingProtectionPath;
   private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
-  private final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction;
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
 
   public PostKeys(
       final KeyManager keyManager,
       final Path slashingProtectionPath,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportKeystores")
@@ -62,7 +62,7 @@ public class PostKeys extends RestApiEndpoint {
     this.keyManager = keyManager;
     this.slashingProtectionPath = slashingProtectionPath;
     this.maybeDoppelgangerDetector = maybeDoppelgangerDetector;
-    this.maybeDoppelgangerDetectionAction = maybeDoppelgangerDetectionAction;
+    this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
   @Override
@@ -90,7 +90,7 @@ public class PostKeys extends RestApiEndpoint {
             body.getPasswords(),
             slashingData,
             maybeDoppelgangerDetector,
-            maybeDoppelgangerDetectionAction));
+            doppelgangerDetectionAction));
   }
 
   private Optional<SlashingProtectionImporter> readSlashingProtectionDataIfPresent(

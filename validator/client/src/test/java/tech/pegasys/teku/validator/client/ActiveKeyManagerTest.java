@@ -107,7 +107,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty());
+        doppelgangerDetectionAction);
     verify(channel, times(1)).onValidatorsAdded();
   }
 
@@ -122,7 +122,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty());
+        doppelgangerDetectionAction);
     verify(channel, never()).onValidatorsAdded();
   }
 
@@ -312,7 +312,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction));
+        doppelgangerDetectionAction);
 
     verify(channel, times(1)).onValidatorsAdded();
     verify(validatorLoader).deleteLocalMutableValidator(doppelgangerPublicKey);
@@ -351,7 +351,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction));
+        doppelgangerDetectionAction);
 
     verify(channel).onValidatorsAdded();
     verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);
@@ -388,9 +388,7 @@ class ActiveKeyManagerTest {
     final ExternalValidator externalValidator = mock(ExternalValidator.class);
 
     keyManager.importExternalValidators(
-        List.of(externalValidator),
-        Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction));
+        List.of(externalValidator), Optional.of(doppelgangerDetector), doppelgangerDetectionAction);
 
     verify(channel, times(1)).onValidatorsAdded();
     verify(signer).delete();
@@ -425,9 +423,7 @@ class ActiveKeyManagerTest {
     final ExternalValidator externalValidator = mock(ExternalValidator.class);
 
     keyManager.importExternalValidators(
-        List.of(externalValidator),
-        Optional.of(doppelgangerDetector),
-        Optional.of(doppelgangerDetectionAction));
+        List.of(externalValidator), Optional.of(doppelgangerDetector), doppelgangerDetectionAction);
 
     verify(channel).onValidatorsAdded();
     verify(signer, never()).delete();

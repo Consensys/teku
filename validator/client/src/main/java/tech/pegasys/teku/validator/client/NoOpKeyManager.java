@@ -55,7 +55,7 @@ public class NoOpKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 
@@ -63,7 +63,7 @@ public class NoOpKeyManager implements KeyManager {
   public List<PostKeyResult> importExternalValidators(
       List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 }

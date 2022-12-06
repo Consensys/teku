@@ -273,7 +273,7 @@ public class ActiveKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final List<Pair<Optional<BLSPublicKey>, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
@@ -292,8 +292,7 @@ public class ActiveKeyManager implements KeyManager {
             .thenAccept(
                 doppelgangerDetected -> {
                   if (!doppelgangerDetected.isEmpty()) {
-                    maybeDoppelgangerDetectionAction.ifPresent(
-                        action -> action.alert(new HashSet<>(doppelgangerDetected.values())));
+                    doppelgangerDetectionAction.alert(new HashSet<>(doppelgangerDetected.values()));
                     deleteDoppelgangers(new HashSet<>(doppelgangerDetected.values()));
                   }
                   validatorTimingChannel.onValidatorsAdded();
@@ -359,7 +358,7 @@ public class ActiveKeyManager implements KeyManager {
   public List<PostKeyResult> importExternalValidators(
       final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final Optional<DoppelgangerDetectionAction> maybeDoppelgangerDetectionAction) {
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final List<Pair<BLSPublicKey, PostKeyResult>> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (ExternalValidator v : validators) {
@@ -382,8 +381,7 @@ public class ActiveKeyManager implements KeyManager {
             .thenAccept(
                 doppelgangerDetected -> {
                   if (!doppelgangerDetected.isEmpty()) {
-                    maybeDoppelgangerDetectionAction.ifPresent(
-                        action -> action.alert(new HashSet<>(doppelgangerDetected.values())));
+                    doppelgangerDetectionAction.alert(new HashSet<>(doppelgangerDetected.values()));
                     deleteExternalDoppelgangers(new HashSet<>(doppelgangerDetected.values()));
                   }
                   validatorTimingChannel.onValidatorsAdded();
