@@ -87,9 +87,17 @@ public class SignedBlsToExecutionChangeValidator
                 return InternalValidationResult.reject(
                     "BlsToExecutionChange for validator %s is invalid: %s",
                     validatorIndex, maybeFailureReason.get().describe());
-              } else {
-                seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex);
+              }
+
+              if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
                 return InternalValidationResult.ACCEPT;
+              } else {
+                final String logMessage =
+                    String.format(
+                        "BlsToExecutionChange is not the first one for validator %s.",
+                        validatorIndex);
+                LOG.trace(logMessage);
+                return InternalValidationResult.create(IGNORE, logMessage);
               }
             });
   }
