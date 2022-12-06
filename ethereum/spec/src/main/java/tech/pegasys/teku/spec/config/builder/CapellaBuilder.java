@@ -28,7 +28,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   private Bytes4 capellaForkVersion;
   private UInt64 capellaForkEpoch;
 
-  private UInt64 maxBlsToExecutionChanges;
+  private int maxBlsToExecutionChanges;
   private int maxWithdrawalsPerPayload;
 
   CapellaBuilder() {}
@@ -55,7 +55,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
-  public CapellaBuilder maxBlsToExecutionChanges(final UInt64 maxBlsToExecutionChanges) {
+  public CapellaBuilder maxBlsToExecutionChanges(final int maxBlsToExecutionChanges) {
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     return this;
   }
