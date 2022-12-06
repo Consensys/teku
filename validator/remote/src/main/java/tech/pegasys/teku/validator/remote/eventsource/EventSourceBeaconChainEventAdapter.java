@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -123,7 +124,7 @@ public class EventSourceBeaconChainEventAdapter
   private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
     return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
-        .maxReconnectTime(MAX_RECONNECT_TIME)
+        .maxReconnectTime(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS)
         .connectionErrorHandler(
             __ -> {
               switchToFailoverEventStreamIfAvailable();
