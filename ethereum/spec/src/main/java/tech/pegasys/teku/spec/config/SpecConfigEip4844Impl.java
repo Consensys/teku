@@ -26,18 +26,24 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
 
   private final int fieldElementsPerBlob;
   private final int maxBlobsPerBlock;
+  private final Optional<String> trustedSetupPath;
+  private final boolean kzgNoop;
 
   public SpecConfigEip4844Impl(
       final SpecConfigCapella specConfig,
       final Bytes4 eip4844ForkVersion,
       final UInt64 eip4844ForkEpoch,
       final int fieldElementsPerBlob,
-      final int maxBlobsPerBlock) {
+      final int maxBlobsPerBlock,
+      final Optional<String> trustedSetupPath,
+      final boolean kzgNoop) {
     super(specConfig);
     this.eip4844ForkVersion = eip4844ForkVersion;
     this.eip4844ForkEpoch = eip4844ForkEpoch;
     this.fieldElementsPerBlob = fieldElementsPerBlob;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
+    this.trustedSetupPath = trustedSetupPath;
+    this.kzgNoop = kzgNoop;
   }
 
   @Override
@@ -48,6 +54,31 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
   @Override
   public UInt64 getEip4844ForkEpoch() {
     return eip4844ForkEpoch;
+  }
+
+  @Override
+  public int getFieldElementsPerBlob() {
+    return fieldElementsPerBlob;
+  }
+
+  @Override
+  public int getMaxBlobsPerBlock() {
+    return maxBlobsPerBlock;
+  }
+
+  @Override
+  public Optional<String> getTrustedSetupPath() {
+    return trustedSetupPath;
+  }
+
+  @Override
+  public boolean isKZGNoop() {
+    return kzgNoop;
+  }
+
+  @Override
+  public Optional<SpecConfigEip4844> toVersionEip4844() {
+    return Optional.of(this);
   }
 
   @Override
@@ -63,27 +94,20 @@ public class SpecConfigEip4844Impl extends DelegatingSpecConfigCapella
         && Objects.equals(eip4844ForkVersion, that.eip4844ForkVersion)
         && Objects.equals(eip4844ForkEpoch, that.eip4844ForkEpoch)
         && fieldElementsPerBlob == that.fieldElementsPerBlob
-        && maxBlobsPerBlock == that.maxBlobsPerBlock;
+        && maxBlobsPerBlock == that.maxBlobsPerBlock
+        && Objects.equals(trustedSetupPath, that.trustedSetupPath)
+        && kzgNoop == that.kzgNoop;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        specConfig, eip4844ForkVersion, eip4844ForkEpoch, fieldElementsPerBlob, maxBlobsPerBlock);
-  }
-
-  @Override
-  public int getFieldElementsPerBlob() {
-    return fieldElementsPerBlob;
-  }
-
-  @Override
-  public int getMaxBlobsPerBlock() {
-    return maxBlobsPerBlock;
-  }
-
-  @Override
-  public Optional<SpecConfigEip4844> toVersionEip4844() {
-    return Optional.of(this);
+        specConfig,
+        eip4844ForkVersion,
+        eip4844ForkEpoch,
+        fieldElementsPerBlob,
+        maxBlobsPerBlock,
+        trustedSetupPath,
+        kzgNoop);
   }
 }
