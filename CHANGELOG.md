@@ -27,3 +27,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated third party libraries.
 
 ### Bug Fixes
+- Fixed issue which could cause command line options to be parsed incorrectly
