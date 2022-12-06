@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -87,6 +88,8 @@ public class SpecConfigEip4844Test {
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
-        dataStructureUtil.randomPositiveInt());
+        dataStructureUtil.randomPositiveInt(),
+        Optional.empty(),
+        true);
   }
 }

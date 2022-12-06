@@ -41,6 +41,10 @@ public interface SpecConfigEip4844 extends SpecConfigCapella {
 
   int getMaxBlobsPerBlock();
 
+  Optional<String> getTrustedSetupPath();
+
+  boolean isKZGNoop();
+
   @Override
   Optional<SpecConfigEip4844> toVersionEip4844();
 }

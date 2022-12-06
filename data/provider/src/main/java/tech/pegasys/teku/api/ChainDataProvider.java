@@ -132,6 +132,18 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getBlock();
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlindedBlock(
+      final String slotParameter) {
+    return getBlock(slotParameter)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    blockAndData ->
+                        blockAndData.map(
+                            block ->
+                                block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()))));
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
       final String slotParameter) {
     return fromBlock(slotParameter, signedBeaconBlock -> signedBeaconBlock);
