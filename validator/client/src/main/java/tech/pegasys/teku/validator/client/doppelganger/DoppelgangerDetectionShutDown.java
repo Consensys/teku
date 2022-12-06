@@ -18,5 +18,10 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionAction {
   @Override
+  public void shutDown() {
+    System.exit(1);
+  }
+
+  @Override
   public void alert(Set<BLSPublicKey> doppelgangers) {}
 }
