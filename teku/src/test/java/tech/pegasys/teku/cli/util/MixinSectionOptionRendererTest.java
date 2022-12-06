@@ -30,6 +30,7 @@ import picocli.CommandLine.Model.UsageMessageSpec;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
+@SuppressWarnings("unused")
 class MixinSectionOptionRendererTest {
 
   @Test
