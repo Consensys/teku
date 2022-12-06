@@ -31,6 +31,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.OptionSpec;
+import picocli.CommandLine.Model.UsageMessageSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParseResult;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.cli.subcommand.internal.InternalToolsCommand;
 import tech.pegasys.teku.cli.util.AdditionalParamsProvider;
 import tech.pegasys.teku.cli.util.CascadingParamsProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableParamsProvider;
+import tech.pegasys.teku.cli.util.MixinSectionOptionRenderer;
 import tech.pegasys.teku.cli.util.YamlConfigFileParamsProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -137,28 +139,28 @@ public class BeaconNodeCommand implements Callable<Integer> {
       scope = ScopeType.INHERIT)
   private File configFile;
 
-  @CommandLine.ArgGroup(validate = false, heading = "Network%n")
+  @Mixin(name = "Network")
   private Eth2NetworkOptions eth2NetworkOptions = new Eth2NetworkOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "P2P%n")
+  @Mixin(name = "P2P")
   private P2POptions p2POptions = new P2POptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Validator%n")
+  @Mixin(name = "Validator")
   private ValidatorOptions validatorOptions = new ValidatorOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Execution Layer%n")
+  @Mixin(name = "Execution Layer")
   private ExecutionLayerOptions executionLayerOptions = new ExecutionLayerOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Data Storage%n")
+  @Mixin(name = "Data Storage")
   private BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Beacon REST API%n")
+  @Mixin(name = "Beacon REST API")
   private BeaconRestApiOptions beaconRestApiOptions = new BeaconRestApiOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Validator REST API%n")
+  @Mixin(name = "Validator REST API")
   private ValidatorRestApiOptions validatorRestApiOptions = new ValidatorRestApiOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Weak Subjectivity%n")
+  @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions = new WeakSubjectivityOptions();
 
   @Mixin(name = "Interop")
@@ -167,10 +169,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Store")
   private final StoreOptions storeOptions = new StoreOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Logging%n")
+  @Mixin(name = "Logging")
   private final LoggingOptions loggingOptions = new LoggingOptions();
 
-  @CommandLine.ArgGroup(validate = false, heading = "Metrics%n")
+  @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions = new MetricsOptions();
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
@@ -195,10 +197,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine configureCommandLine(final CommandLine commandLine) {
-    return commandLine
+    commandLine
         .registerConverter(MetricCategory.class, metricCategoryConverter)
         .registerConverter(UInt64.class, UInt64::valueOf)
         .setUnmatchedOptionsAllowedAsOptionParameters(false);
+
+    commandLine
+        .getHelpSectionMap()
+        .put(UsageMessageSpec.SECTION_KEY_OPTION_LIST, new MixinSectionOptionRenderer());
+
+    return commandLine;
   }
 
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
