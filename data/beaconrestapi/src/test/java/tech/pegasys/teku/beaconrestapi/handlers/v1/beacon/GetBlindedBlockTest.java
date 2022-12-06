@@ -79,7 +79,7 @@ class GetBlindedBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetBlindedBlockTest.class, "getBlock.json"), UTF_8);
+            Resources.getResource(GetBlindedBlockTest.class, "getBlindedBlock.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }
