@@ -30,7 +30,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(4);
     final ValidatorKeystores extraKeys =

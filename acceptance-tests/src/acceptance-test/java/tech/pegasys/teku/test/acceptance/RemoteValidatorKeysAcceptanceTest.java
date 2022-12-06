@@ -28,7 +28,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldMaintainValidatorsInMutableClient() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(8);
 

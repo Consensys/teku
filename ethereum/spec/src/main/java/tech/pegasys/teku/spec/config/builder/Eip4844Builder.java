@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,12 +32,21 @@ public class Eip4844Builder implements ForkConfigBuilder<SpecConfigCapella, Spec
   private int fieldElementsPerBlob;
   private int maxBlobsPerBlock;
 
+  private Optional<String> trustedSetupPath = Optional.empty();
+  private boolean kzgNoop = false;
+
   Eip4844Builder() {}
 
   @Override
   public SpecConfigEip4844 build(final SpecConfigCapella specConfig) {
     return new SpecConfigEip4844Impl(
-        specConfig, eip4844ForkVersion, eip4844ForkEpoch, fieldElementsPerBlob, maxBlobsPerBlock);
+        specConfig,
+        eip4844ForkVersion,
+        eip4844ForkEpoch,
+        fieldElementsPerBlob,
+        maxBlobsPerBlock,
+        trustedSetupPath,
+        kzgNoop);
   }
 
   public Eip4844Builder eip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
@@ -61,6 +71,16 @@ public class Eip4844Builder implements ForkConfigBuilder<SpecConfigCapella, Spec
     return this;
   }
 
+  public Eip4844Builder trustedSetupPath(final String trustedSetupPath) {
+    this.trustedSetupPath = Optional.of(trustedSetupPath);
+    return this;
+  }
+
+  public Eip4844Builder kzgNoop(final boolean kzgNoop) {
+    this.kzgNoop = kzgNoop;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (eip4844ForkEpoch == null) {
@@ -71,6 +91,9 @@ public class Eip4844Builder implements ForkConfigBuilder<SpecConfigCapella, Spec
     SpecBuilderUtil.validateConstant("eip4844ForkVersion", eip4844ForkVersion);
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
     SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
+    if (!eip4844ForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
+      SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
+    }
   }
 
   @Override

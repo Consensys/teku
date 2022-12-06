@@ -25,7 +25,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase {
-  private static final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode eth1Node;

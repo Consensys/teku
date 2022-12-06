@@ -24,7 +24,7 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
-  private static final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "swift";
   private static final Integer SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 8;
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   private static final int VALIDATORS = 64;

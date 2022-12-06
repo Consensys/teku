@@ -60,8 +60,6 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
@@ -74,7 +72,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.timer.TimerService;
@@ -234,7 +231,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
   protected volatile StorageUpdateChannel storageUpdateChannel;
-  protected volatile KZG kzg;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -415,7 +411,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
-    initKZG();
   }
 
   private void initKeyValueStore() {
@@ -1040,29 +1035,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             recentChainData,
             proposersDataManager);
-  }
-
-  private void initKZG() {
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
-      final Eth2NetworkConfiguration networkConfig = beaconConfig.eth2NetworkConfig();
-      final String trustedSetup =
-          networkConfig
-              .getTrustedSetup()
-              .orElseThrow(
-                  () ->
-                      new InvalidConfigurationException(
-                          "Trusted setup should be configured for milestones >= EIP4844"));
-      final int fieldElementsPerBlob =
-          spec.forMilestone(SpecMilestone.EIP4844)
-              .getConfig()
-              .toVersionEip4844()
-              .orElseThrow()
-              .getFieldElementsPerBlob();
-      kzg = CKZG4844.createInstance(fieldElementsPerBlob);
-      kzg.loadTrustedSetup(trustedSetup);
-    } else {
-      kzg = KZG.NOOP;
-    }
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {
