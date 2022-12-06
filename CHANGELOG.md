@@ -25,5 +25,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated REST API to use Javalin 5
 - Tightened validation of the fork for gossip messages
 - Updated third party libraries.
+- Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
 
 ### Bug Fixes
