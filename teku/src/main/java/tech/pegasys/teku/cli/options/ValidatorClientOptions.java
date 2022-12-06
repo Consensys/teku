@@ -129,7 +129,7 @@ public class ValidatorClientOptions {
     List<URI> beaconNodeApiEndpoints;
 
     @Option(
-        names = {"--Xsentry-config-file"},
+        names = {"--sentry-config-file"},
         paramLabel = "<FILE>",
         description = "Config file with sentry node configuration",
         hidden = true,

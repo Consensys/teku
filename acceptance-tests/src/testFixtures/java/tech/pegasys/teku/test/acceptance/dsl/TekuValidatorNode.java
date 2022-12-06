@@ -276,7 +276,7 @@ public class TekuValidatorNode extends Node {
       }
       configFileMap.put(sentryNodesConfigFile, SENTRY_NODE_CONFIG_FILE_PATH);
 
-      configMap.put("Xsentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
+      configMap.put("sentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
       isUsingSentryNodeConfig = true;
 
       return this;
