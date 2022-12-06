@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 
 ### Bug Fixes
