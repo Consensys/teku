@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -100,6 +101,7 @@ public class ProfilingRun {
               spec,
               new InlineEventThread(),
               recentChainData,
+              BlobsManager.NOOP,
               new StubForkChoiceNotifier(),
               transitionBlockValidator);
       BeaconChainUtil localChain =
@@ -194,6 +196,7 @@ public class ProfilingRun {
               spec,
               new InlineEventThread(),
               recentChainData,
+              BlobsManager.NOOP,
               new StubForkChoiceNotifier(),
               transitionBlockValidator);
       BlockImporter blockImporter =

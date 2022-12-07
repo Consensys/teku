@@ -49,4 +49,6 @@ public interface MutableStore extends ReadOnlyStore {
   void removeProposerBoostRoot();
 
   void removeFinalizedOptimisticTransitionPayload();
+
+  void setConfirmHotBlocksBlobs(boolean confirmHotBlocksBlobs);
 }

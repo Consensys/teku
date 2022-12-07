@@ -39,6 +39,7 @@ public class StorageUpdate {
   private final Set<Bytes32> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final boolean confirmHotBlocksBlobs;
   private final boolean isEmpty;
 
   public StorageUpdate(
@@ -51,7 +52,8 @@ public class StorageUpdate {
       final Set<Bytes32> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final boolean confirmHotBlocksBlobs) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -62,6 +64,7 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.confirmHotBlocksBlobs = confirmHotBlocksBlobs;
     checkArgument(
         optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
         "Can't have optimisticTransitionBlockRoot present but not set");
@@ -138,5 +141,9 @@ public class StorageUpdate {
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
     return stateRoots;
+  }
+
+  public boolean isConfirmHotBlocksBlobs() {
+    return confirmHotBlocksBlobs;
   }
 }

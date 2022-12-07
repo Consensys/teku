@@ -16,10 +16,11 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SlotAndBlockRoot {
+public class SlotAndBlockRoot implements Comparable<SlotAndBlockRoot> {
   private final UInt64 slot;
   private final Bytes32 blockRoot;
 
@@ -50,6 +51,11 @@ public class SlotAndBlockRoot {
     }
     final SlotAndBlockRoot that = (SlotAndBlockRoot) o;
     return Objects.equals(slot, that.slot) && Objects.equals(blockRoot, that.blockRoot);
+  }
+
+  @Override
+  public int compareTo(@NotNull SlotAndBlockRoot o) {
+    return this.slot.compareTo(o.slot);
   }
 
   @Override

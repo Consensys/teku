@@ -52,10 +52,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public boolean initiateDataAvailabilityCheck() {
     validationResult =
-        Optional.of(
-            blobsManager
-                .getBlobsByBlockRoot(block.getRoot())
-                .thenApply(this::validateBlobsSidecar));
+        Optional.of(blobsManager.getBlobsByBlockRoot(block).thenApply(this::validateBlobsSidecar));
     return true;
   }
 

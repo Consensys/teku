@@ -144,7 +144,7 @@ public class BlockManager extends Service
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
             final SafeFuture<Void> blobsImport;
             if (blobsSidecar.isPresent()) {
-              blobsImport = blobsManager.importBlobs(blobsSidecar.get());
+              blobsImport = blobsManager.storeUnconfirmedBlobs(blobsSidecar.get());
             } else {
               blobsImport = SafeFuture.COMPLETE;
             }
@@ -291,18 +291,14 @@ public class BlockManager extends Service
                     //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
                     //  contains a valid block but the BlobsSidecar validation fails.
                     //  Should be similar to what we do with pendingBlocks.
-                    blobsManager
-                        .discardBlobsByBlockRoot(block.getRoot())
-                        .ifExceptionGetsHereRaiseABug();
+                    blobsManager.discardBlobsByBlock(block).ifExceptionGetsHereRaiseABug();
                     break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
                         result.getFailureReason(),
                         block);
-                    blobsManager
-                        .discardBlobsByBlockRoot(block.getRoot())
-                        .ifExceptionGetsHereRaiseABug();
+                    blobsManager.discardBlobsByBlock(block).ifExceptionGetsHereRaiseABug();
                     dropInvalidBlock(block, result);
                 }
               }

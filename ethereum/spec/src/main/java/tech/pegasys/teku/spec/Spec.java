@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -302,6 +303,17 @@ public class Spec {
             () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
         .getExecutionPayloadSchema()
         .sszDeserialize(serializedPayload);
+  }
+
+  public BlobsSidecar deserializeBlobsSidecar(
+      final Bytes serializedBlobsSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionEip4844()
+        .orElseThrow(
+            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
+        .getBlobsSidecarSchema()
+        .sszDeserialize(serializedBlobsSidecar);
   }
 
   public ExecutionPayloadHeader deserializeJsonExecutionPayloadHeader(

@@ -326,6 +326,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     throw new UnsupportedOperationException("Not implemented");
   }
 
+  @Override
+  public void setConfirmHotBlocksBlobs(boolean confirmHotBlocksBlobs) {
+    // NOOP
+  }
+
   private class TestReadOnlyForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
 
     @Override

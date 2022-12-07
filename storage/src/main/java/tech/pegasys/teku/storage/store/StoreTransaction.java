@@ -70,6 +70,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+  boolean confirmHotBlocksBlobs = false;
 
   StoreTransaction(
       final Spec spec,
@@ -150,6 +151,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void removeFinalizedOptimisticTransitionPayload() {
     this.clearFinalizedOptimisticTransitionPayload = true;
+  }
+
+  @Override
+  public void setConfirmHotBlocksBlobs(final boolean confirmHotBlocksBlobs) {
+    this.confirmHotBlocksBlobs = confirmHotBlocksBlobs;
   }
 
   @CheckReturnValue

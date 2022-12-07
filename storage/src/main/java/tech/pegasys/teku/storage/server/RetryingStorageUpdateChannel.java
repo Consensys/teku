@@ -17,7 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +27,8 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -78,55 +80,73 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<UpdateResult> onStorageUpdate(final StorageUpdate event) {
-    return retry(delegate::onStorageUpdate, event);
+    return retry(() -> delegate.onStorageUpdate(event));
   }
 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
-    return retry(delegate::onFinalizedBlocks, finalizedBlocks);
+    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks));
   }
 
   @Override
   public SafeFuture<Void> onFinalizedState(
       final BeaconState finalizedState, final Bytes32 blockRoot) {
-    return this.retry(__ -> delegate.onFinalizedState(finalizedState, blockRoot), null);
+    return this.retry(() -> delegate.onFinalizedState(finalizedState, blockRoot));
   }
 
   @Override
   public SafeFuture<Void> onReconstructedFinalizedState(
       BeaconState finalizedState, Bytes32 blockRoot) {
-    return this.retry(
-        __ -> delegate.onReconstructedFinalizedState(finalizedState, blockRoot), null);
+    return this.retry(() -> delegate.onReconstructedFinalizedState(finalizedState, blockRoot));
   }
 
   @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
-    return retry(delegate::onWeakSubjectivityUpdate, weakSubjectivityUpdate);
+    return retry(() -> delegate.onWeakSubjectivityUpdate(weakSubjectivityUpdate));
   }
 
   @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
-    return retry(delegate::onFinalizedDepositSnapshot, depositTreeSnapshot);
+    return retry(() -> delegate.onFinalizedDepositSnapshot(depositTreeSnapshot));
   }
 
   @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     this.retry(
-            __ -> {
+            () -> {
               delegate.onChainInitialized(initialAnchor);
               return SafeFuture.COMPLETE;
-            },
-            null)
+            })
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private <I, O> SafeFuture<O> retry(final Function<I, SafeFuture<O>> method, final I arg) {
+  @Override
+  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+    return retry(() -> delegate.onBlobsSidecar(blobsSidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+    return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+    return retry(() -> delegate.onBlobsSidecarPruning(endSlot, pruneLimit));
+  }
+
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+    return retry(() -> delegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit));
+  }
+
+  private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {
     final UInt64 startTime = timeProvider.getTimeInMillis();
     while (!aborting.get()) {
       try {
-        final SafeFuture<O> result = method.apply(arg);
+        final SafeFuture<O> result = method.get();
         result.join();
         return result;
       } catch (final Throwable t) {

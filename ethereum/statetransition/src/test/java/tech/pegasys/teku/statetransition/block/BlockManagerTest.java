@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -106,6 +107,7 @@ public class BlockManagerTest {
           spec,
           new InlineEventThread(),
           localRecentChainData,
+          BlobsManager.NOOP,
           forkChoiceNotifier,
           transitionBlockValidator);
 
@@ -125,6 +127,7 @@ public class BlockManagerTest {
       new BlockManager(
           localRecentChainData,
           blockImporter,
+          BlobsManager.NOOP,
           pendingBlocks,
           futureBlocks,
           blockValidator,
@@ -268,6 +271,7 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
+            BlobsManager.NOOP,
             pendingBlocks,
             futureBlocks,
             mock(BlockValidator.class),
@@ -285,17 +289,14 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlockAndBlobsSidecar(
-            nextNextBlock, Optional.empty(), Optional.empty()))
+    when(blockImporter.importBlockAndBlobsSidecar(nextNextBlock, Optional.empty()))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
     incrementSlot();
     incrementSlot();
     blockManager.importBlock(nextNextBlock);
-    ignoreFuture(
-        verify(blockImporter)
-            .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty(), Optional.empty()));
+    ignoreFuture(verify(blockImporter).importBlockAndBlobsSidecar(nextNextBlock, Optional.empty()));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
@@ -304,7 +305,7 @@ public class BlockManagerTest {
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
     ignoreFuture(
         verify(blockImporter, times(2))
-            .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty(), Optional.empty()));
+            .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }

@@ -428,7 +428,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobsManager() {
     if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
-      final BlobsManagerImpl blobsManagerImpl = new BlobsManagerImpl(spec, recentChainData);
+      final BlobsManagerImpl blobsManagerImpl =
+          new BlobsManagerImpl(spec, recentChainData, storageQueryChannel, storageUpdateChannel);
       blobsManager = blobsManagerImpl;
       eventChannels.subscribe(FinalizedCheckpointChannel.class, blobsManagerImpl);
     } else {

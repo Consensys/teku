@@ -14,27 +14,27 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public interface BlobsManager {
   BlobsManager NOOP =
       new BlobsManager() {
         @Override
-        public SafeFuture<Void> importBlobs(BlobsSidecar blobsSidecar) {
+        public SafeFuture<Void> storeUnconfirmedBlobs(BlobsSidecar blobsSidecar) {
           return SafeFuture.COMPLETE;
         }
 
         @Override
-        public SafeFuture<Optional<BlobsSidecar>> getBlobsByBlockRoot(Bytes32 root) {
+        public SafeFuture<Optional<BlobsSidecar>> getBlobsByBlockRoot(SignedBeaconBlock block) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
-        public SafeFuture<Void> discardBlobsByBlockRoot(Bytes32 blockRoot) {
+        public SafeFuture<Void> discardBlobsByBlock(SignedBeaconBlock block) {
           return SafeFuture.COMPLETE;
         }
 
@@ -42,15 +42,20 @@ public interface BlobsManager {
         public BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block) {
           return BlobsSidecarAvailabilityChecker.NOOP;
         }
+
+        @Override
+        public void onBlockImport(StoreTransaction transaction) {}
       };
 
-  SafeFuture<Void> importBlobs(BlobsSidecar blobsSidecar);
+  SafeFuture<Void> storeUnconfirmedBlobs(BlobsSidecar blobsSidecar);
 
-  SafeFuture<Optional<BlobsSidecar>> getBlobsByBlockRoot(Bytes32 root);
+  SafeFuture<Optional<BlobsSidecar>> getBlobsByBlockRoot(SignedBeaconBlock block);
 
-  SafeFuture<Void> discardBlobsByBlockRoot(Bytes32 blockRoot);
+  SafeFuture<Void> discardBlobsByBlock(SignedBeaconBlock block);
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
+
+  void onBlockImport(StoreTransaction transaction);
 
   enum BlobsSidecarValidationResult {
     NOT_REQUIRED,
