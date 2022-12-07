@@ -54,7 +54,7 @@ public final class KZGTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  public void cleanUpIfNeeded() {
     try {
       kzg.freeTrustedSetup();
     } catch (final KZGException ex) {
@@ -103,9 +103,7 @@ public final class KZGTest {
 
   @Test
   public void testVerifyKzgProof() {
-
     loadTrustedSetup();
-
     final int blobsNumber = 4;
     final List<Bytes> blobs =
         IntStream.range(0, blobsNumber)
@@ -125,13 +123,10 @@ public final class KZGTest {
 
   @Test
   public void testVerifyPointEvaluationPrecompile() {
-
     loadTrustedSetup();
-
     final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
     final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
-
     assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
     assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
   }
