@@ -113,17 +113,13 @@ public final class KZGTest {
   @Test
   public void testVerifyPointEvaluationPrecompile() {
     loadTrustedSetup();
+
     final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
     final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
+
     assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
     assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
-    assertThat(
-            kzg.blobToKzgCommitment(Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE])))
-        .isEqualTo(kzgCommitment);
-    assertThat(
-            kzg.verifyAggregateKzgProof(Collections.emptyList(), Collections.emptyList(), kzgProof))
-        .isTrue();
   }
 
   private void loadTrustedSetup() {
