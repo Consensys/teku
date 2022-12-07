@@ -35,7 +35,6 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -80,7 +79,7 @@ public class AggregatingSignatureVerificationServiceBenchmark {
   @TearDown
   public void tearDown() {
     service.stop().join();
-    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+    asyncRunnerFactory.shutdown();
   }
 
   @SuppressWarnings("unchecked")

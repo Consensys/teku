@@ -110,6 +110,11 @@ public abstract class Node {
     container.stop();
   }
 
+  public void waitForExit() {
+    Waiter.waitFor(
+        () -> assertThat(container.isRunning()).describedAs("Container is running").isFalse());
+  }
+
   public int waitForEpochAtOrAbove(final int epoch) {
     final AtomicInteger actualEpoch = new AtomicInteger();
     waitFor(
