@@ -130,6 +130,7 @@ public class VoluntaryExitCommand implements Runnable {
       fallbackValue = "true",
       arity = "0..1")
   private boolean includeKeyManagerKeys = false;
+
   private AsyncRunnerFactory asyncRunnerFactory;
 
   @Override
@@ -150,7 +151,7 @@ public class VoluntaryExitCommand implements Runnable {
       }
       System.exit(1);
     } finally {
-      if (asyncRunnerFactory != null ){
+      if (asyncRunnerFactory != null) {
         asyncRunnerFactory.shutdown();
       }
     }
@@ -253,7 +254,8 @@ public class VoluntaryExitCommand implements Runnable {
                   .collect(Collectors.toList()));
     }
     config = tekuConfiguration();
-    asyncRunnerFactory = AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
+    asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary_exits", 8);
 
     apiClient =
