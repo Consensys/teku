@@ -99,8 +99,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldCallValidatorsAddedOnSuccessfulImport(@TempDir final Path tempDir)
-      throws URISyntaxException, IOException {
+  void shouldCallValidatorsAddedOnSuccessfulImport() throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
@@ -112,14 +111,12 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        doppelgangerDetectionAction,
-        tempDir);
+        doppelgangerDetectionAction);
     verify(channel, times(1)).onValidatorsAdded();
   }
 
   @Test
-  void shouldNotCallValidatorsAddedOnUnsuccessfulImport(@TempDir final Path tempDir)
-      throws URISyntaxException, IOException {
+  void shouldNotCallValidatorsAddedOnUnsuccessfulImport() throws URISyntaxException, IOException {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
@@ -131,8 +128,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.empty(),
-        doppelgangerDetectionAction,
-        tempDir);
+        doppelgangerDetectionAction);
     verify(channel, never()).onValidatorsAdded();
   }
 
@@ -295,8 +291,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldDetectDoppelgangersAndRemoveLocalKeys(@TempDir final Path tempDir)
-      throws IOException, URISyntaxException {
+  void shouldDetectDoppelgangersAndRemoveLocalKeys() throws IOException, URISyntaxException {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
         .thenReturn(
@@ -326,8 +321,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        doppelgangerDetectionAction,
-        tempDir);
+        doppelgangerDetectionAction);
 
     verify(channel, times(1)).onValidatorsAdded();
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
@@ -336,7 +330,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldAddLocalKeysWhenDoppelgangerDetectionException(@TempDir final Path tempDir)
+  void shouldAddLocalKeysWhenDoppelgangerDetectionException()
       throws IOException, URISyntaxException {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
@@ -363,8 +357,7 @@ class ActiveKeyManagerTest {
         List.of("testpassword"),
         Optional.empty(),
         Optional.of(doppelgangerDetector),
-        doppelgangerDetectionAction,
-        tempDir);
+        doppelgangerDetectionAction);
 
     verify(channel).onValidatorsAdded();
     verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);

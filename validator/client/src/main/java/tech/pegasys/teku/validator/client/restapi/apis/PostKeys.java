@@ -90,8 +90,7 @@ public class PostKeys extends RestApiEndpoint {
             body.getPasswords(),
             slashingData,
             maybeDoppelgangerDetector,
-            doppelgangerDetectionAction,
-            slashingProtectionPath));
+            doppelgangerDetectionAction));
   }
 
   private Optional<SlashingProtectionImporter> readSlashingProtectionDataIfPresent(
