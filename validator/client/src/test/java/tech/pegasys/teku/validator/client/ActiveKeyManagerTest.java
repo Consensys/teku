@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
@@ -101,8 +103,10 @@ class ActiveKeyManagerTest {
       throws URISyntaxException, IOException {
     final String data = getKeystore();
 
-    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(Pair.of(Optional.empty(), PostKeyResult.success()));
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
+        .thenReturn(
+            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
+                .build());
     keyManager.importValidators(
         List.of(data),
         List.of("testpassword"),
@@ -118,8 +122,10 @@ class ActiveKeyManagerTest {
       throws URISyntaxException, IOException {
     final String data = getKeystore();
 
-    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(Pair.of(Optional.empty(), PostKeyResult.duplicate()));
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
+        .thenReturn(
+            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.duplicate(), "")
+                .build());
     keyManager.importValidators(
         List.of(data),
         List.of("testpassword"),
@@ -292,8 +298,11 @@ class ActiveKeyManagerTest {
   void shouldDetectDoppelgangersAndRemoveLocalKeys(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final String data = getKeystore();
-    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(Pair.of(Optional.of(doppelgangerPublicKey), PostKeyResult.success()));
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
+        .thenReturn(
+            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
+                .publicKey(Optional.of(doppelgangerPublicKey))
+                .build());
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -321,20 +330,20 @@ class ActiveKeyManagerTest {
         tempDir);
 
     verify(channel, times(1)).onValidatorsAdded();
-    verify(validatorLoader).deleteLocalMutableValidator(doppelgangerPublicKey);
-    verify(ownedValidators).removeValidator(doppelgangerPublicKey);
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Removed validator: %s", doppelgangerPublicKey));
   }
 
   @Test
   void shouldAddLocalKeysWhenDoppelgangerDetectionException(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final String data = getKeystore();
-    when(validatorLoader.loadLocalMutableValidator(any(), any(), any()))
-        .thenReturn(Pair.of(Optional.of(doppelgangerPublicKey), PostKeyResult.success()));
+    when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
+        .thenReturn(
+            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
+                .publicKey(Optional.of(doppelgangerPublicKey))
+                .build());
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
 

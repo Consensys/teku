@@ -197,7 +197,7 @@ public class StatusLogger {
 
   public void doppelgangerDetectionAlert(final Set<String> doppelgangerPublicKeys) {
     log.error(
-        "Detected {} validators doppelganger. Removing public keys: {}",
+        "Detected {} validators doppelganger. The following public keys will be ignored: {}",
         doppelgangerPublicKeys.stream(),
         String.join(", ", doppelgangerPublicKeys));
   }

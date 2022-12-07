@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
+import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -112,13 +113,17 @@ public class ValidatorLoader {
     return mutableLocalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized Pair<Optional<BLSPublicKey>, PostKeyResult> loadLocalMutableValidator(
+  public synchronized ValidatorImportResult loadLocalMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final boolean addToOwnedValidators) {
 
     if (!canAddValidator(mutableLocalValidatorSource)) {
-      return Pair.of(Optional.empty(), PostKeyResult.error("Not able to add validator"));
+      return new ValidatorImportResult.ValidatorImportResultBuilder(
+              PostKeyResult.error("Not able to add validator"), password)
+          .keyStoreData(Optional.ofNullable(keyStoreData))
+          .build();
     }
 
     final BLSPublicKey publicKey =
@@ -128,21 +133,48 @@ public class ValidatorLoader {
       final Optional<String> errorString =
           slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
       if (errorString.isPresent()) {
-        return Pair.of(Optional.of(publicKey), PostKeyResult.error(errorString.get()));
+        return new ValidatorImportResult.ValidatorImportResultBuilder(
+                PostKeyResult.error(errorString.get()), password)
+            .publicKey(Optional.of(publicKey))
+            .keyStoreData(Optional.of(keyStoreData))
+            .build();
       }
     }
     if (ownedValidators.hasValidator(publicKey)) {
-      return Pair.of(Optional.of(publicKey), PostKeyResult.duplicate());
+      return new ValidatorImportResult.ValidatorImportResultBuilder(
+              PostKeyResult.duplicate(), password)
+          .publicKey(Optional.of(publicKey))
+          .keyStoreData(Optional.of(keyStoreData))
+          .build();
     }
 
+    if (addToOwnedValidators) {
+      return loadValidator(keyStoreData, password, publicKey);
+    } else {
+      return new ValidatorImportResult.ValidatorImportResultBuilder(
+              PostKeyResult.success(), password)
+          .publicKey(Optional.of(publicKey))
+          .keyStoreData(Optional.of(keyStoreData))
+          .build();
+    }
+  }
+
+  public ValidatorImportResult loadValidator(
+      KeyStoreData keyStoreData, String password, BLSPublicKey publicKey) {
     final AddValidatorResult validatorAddResult =
         mutableLocalValidatorSource.get().addValidator(keyStoreData, password, publicKey);
-
     if (validatorAddResult.getSigner().isEmpty()) {
-      return Pair.of(Optional.of(publicKey), validatorAddResult.getResult());
+      return new ValidatorImportResult.ValidatorImportResultBuilder(
+              validatorAddResult.getResult(), password)
+          .publicKey(Optional.of(publicKey))
+          .keyStoreData(Optional.of(keyStoreData))
+          .build();
     }
-    addValidator(validatorAddResult.getSigner().get(), publicKey);
-    return Pair.of(Optional.of(publicKey), PostKeyResult.success());
+    addToOwnedValidators(validatorAddResult.getSigner().get(), publicKey);
+    return new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), password)
+        .publicKey(Optional.of(publicKey))
+        .keyStoreData(Optional.of(keyStoreData))
+        .build();
   }
 
   public DeleteKeyResult deleteExternalMutableValidator(final BLSPublicKey publicKey) {
@@ -168,14 +200,13 @@ public class ValidatorLoader {
     if (validatorAddResult.getSigner().isEmpty()) {
       return Pair.of(publicKey, validatorAddResult.getResult());
     }
-    addValidator(validatorAddResult.getSigner().get(), publicKey);
+    addToOwnedValidators(validatorAddResult.getSigner().get(), publicKey);
     return Pair.of(publicKey, PostKeyResult.success());
   }
 
-  private void addValidator(final Signer signer, final BLSPublicKey publicKey) {
+  private void addToOwnedValidators(final Signer signer, final BLSPublicKey publicKey) {
     ownedValidators.addValidator(
         new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
-
     LOG.info("Added validator: {}", publicKey.toString());
   }
 
