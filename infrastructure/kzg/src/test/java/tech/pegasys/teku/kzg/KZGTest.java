@@ -129,6 +129,10 @@ public final class KZGTest {
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
     assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
     assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
+    final Bytes blob = Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE]);
+    assertThat(kzg.blobToKzgCommitment(blob)).isEqualTo(kzgCommitment);
+    assertThat(kzg.verifyAggregateKzgProof(List.of(blob), List.of(kzgCommitment), kzgProof))
+        .isTrue();
   }
 
   private void loadTrustedSetup() {
