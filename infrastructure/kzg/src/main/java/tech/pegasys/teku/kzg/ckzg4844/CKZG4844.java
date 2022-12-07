@@ -76,7 +76,7 @@ public final class CKZG4844 implements KZG {
   private CKZG4844(final Preset preset) {
     try {
       CKZG4844JNI.loadNativeLibrary(preset);
-      LOG.debug("Loaded C-KZG-4844");
+      LOG.debug("Loaded C-KZG-4844 with {} preset", preset);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
