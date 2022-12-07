@@ -116,7 +116,9 @@ public class BlockProposalTestUtil {
                                 dataStructureUtil::emptySignedBlsToExecutionChangesList))
                     .blobKzgCommitments(
                         () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)),
+                            SafeFuture.completedFuture(
+                                kzgCommitments.orElseGet(
+                                    dataStructureUtil::emptySszKzgCommitmentList))),
             false)
         .thenApply(
             newBlockAndState -> {
@@ -184,7 +186,9 @@ public class BlockProposalTestUtil {
                                 dataStructureUtil::emptySignedBlsToExecutionChangesList))
                     .blobKzgCommitments(
                         () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)))
+                            SafeFuture.completedFuture(
+                                kzgCommitments.orElseGet(
+                                    dataStructureUtil::emptySszKzgCommitmentList))))
         .thenApply(
             blockBody -> {
               final BeaconBlock block =

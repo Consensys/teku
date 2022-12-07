@@ -46,15 +46,18 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -68,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -110,6 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
   private final BlockGossipChannel blockGossipChannel;
+  private final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
@@ -131,6 +136,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
+      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -150,6 +156,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
     this.blockGossipChannel = blockGossipChannel;
+    this.blockAndBlobsSidecarGossipChannel = blockAndBlobsSidecarGossipChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
@@ -553,32 +560,43 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(
       final SignedBeaconBlock block) {
+    // TODO: block+sidecar persistence
     performanceTracker.saveProducedBlock(block);
-    blockGossipChannel.publishBlock(block);
-    return blockImportChannel
-        .importBlock(block)
-        .thenApply(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace("Successfully imported proposed block: {}", block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.success(block.getRoot());
-              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-                LOG.debug(
-                    "Delayed processing proposed block {} because it is from the future",
-                    block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              } else {
-                VALIDATOR_LOGGER.proposedBlockImportFailed(
-                    result.getFailureReason().toString(),
-                    block.getSlot(),
-                    block.getRoot(),
-                    result.getFailureCause());
+    final SafeFuture<BlockImportResult> importResultFuture;
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
+          blockFactory.supplementBlockWithSidecar(block);
+      blockAndBlobsSidecarGossipChannel.publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
+      importResultFuture =
+          blockImportChannel.importBlock(
+              blockAndBlobsSidecar.getSignedBeaconBlock(),
+              Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    } else {
+      blockGossipChannel.publishBlock(block);
+      importResultFuture = blockImportChannel.importBlock(block, Optional.empty());
+    }
+    return importResultFuture.thenApply(
+        result -> {
+          if (result.isSuccessful()) {
+            LOG.trace("Successfully imported proposed block: {}", block::toLogString);
+            dutyMetrics.onBlockPublished(block.getMessage().getSlot());
+            return SendSignedBlockResult.success(block.getRoot());
+          } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+            LOG.debug(
+                "Delayed processing proposed block {} because it is from the future",
+                block::toLogString);
+            dutyMetrics.onBlockPublished(block.getMessage().getSlot());
+            return SendSignedBlockResult.notImported(result.getFailureReason().name());
+          } else {
+            VALIDATOR_LOGGER.proposedBlockImportFailed(
+                result.getFailureReason().toString(),
+                block.getSlot(),
+                block.getRoot(),
+                result.getFailureCause());
 
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              }
-            });
+            return SendSignedBlockResult.notImported(result.getFailureReason().name());
+          }
+        });
   }
 
   @Override

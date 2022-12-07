@@ -143,10 +143,11 @@ public class BlindedBeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
                       .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
               () ->
-                  this.blobKZGCommitments.stream()
-                      .map(KZGCommitment::asInternalKZGCommitment)
-                      .map(SszKZGCommitment::new)
-                      .collect(blobKZGCommitmentsSchema.collector()));
+                  SafeFuture.completedFuture(
+                      this.blobKZGCommitments.stream()
+                          .map(KZGCommitment::asInternalKZGCommitment)
+                          .map(SszKZGCommitment::new)
+                          .collect(blobKZGCommitmentsSchema.collector())));
         });
   }
 }

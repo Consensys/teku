@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -33,7 +34,7 @@ public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella
 
   private BeaconBlockBodySchemaEip4844Impl schema;
   private BlindedBeaconBlockBodySchemaEip4844Impl blindedSchema;
-  private SszList<SszKZGCommitment> blobKzgCommitments;
+  private SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
 
   public BeaconBlockBodyBuilderEip4844 schema(final BeaconBlockBodySchemaEip4844Impl schema) {
     this.schema = schema;
@@ -50,7 +51,7 @@ public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      final Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments.get();
     return this;
   }
@@ -78,38 +79,46 @@ public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella
   public SafeFuture<BeaconBlockBody> build() {
     validate();
     if (isBlinded()) {
-      return executionPayloadHeader.thenApply(
-          header ->
-              new BlindedBeaconBlockBodyEip4844Impl(
-                  blindedSchema,
-                  new SszSignature(randaoReveal),
-                  eth1Data,
-                  SszBytes32.of(graffiti),
-                  proposerSlashings,
-                  attesterSlashings,
-                  attestations,
-                  deposits,
-                  voluntaryExits,
-                  syncAggregate,
-                  (ExecutionPayloadHeaderEip4844Impl) header.toVersionEip4844().orElseThrow(),
-                  getBlsToExecutionChanges(),
-                  blobKzgCommitments));
+      return executionPayloadHeader
+          .thenCompose(
+              header -> blobKzgCommitments.thenApply(commitments -> Pair.of(header, commitments)))
+          .thenApply(
+              headerWithCommitments ->
+                  new BlindedBeaconBlockBodyEip4844Impl(
+                      blindedSchema,
+                      new SszSignature(randaoReveal),
+                      eth1Data,
+                      SszBytes32.of(graffiti),
+                      proposerSlashings,
+                      attesterSlashings,
+                      attestations,
+                      deposits,
+                      voluntaryExits,
+                      syncAggregate,
+                      (ExecutionPayloadHeaderEip4844Impl)
+                          headerWithCommitments.getLeft().toVersionEip4844().orElseThrow(),
+                      getBlsToExecutionChanges(),
+                      headerWithCommitments.getRight()));
     }
-    return executionPayload.thenApply(
-        payload ->
-            new BeaconBlockBodyEip4844Impl(
-                schema,
-                new SszSignature(randaoReveal),
-                eth1Data,
-                SszBytes32.of(graffiti),
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits,
-                syncAggregate,
-                (ExecutionPayloadEip4844Impl) payload.toVersionEip4844().orElseThrow(),
-                getBlsToExecutionChanges(),
-                blobKzgCommitments));
+    return executionPayload
+        .thenCompose(
+            payload -> blobKzgCommitments.thenApply(commitments -> Pair.of(payload, commitments)))
+        .thenApply(
+            payloadWithCommitments ->
+                new BeaconBlockBodyEip4844Impl(
+                    schema,
+                    new SszSignature(randaoReveal),
+                    eth1Data,
+                    SszBytes32.of(graffiti),
+                    proposerSlashings,
+                    attesterSlashings,
+                    attestations,
+                    deposits,
+                    voluntaryExits,
+                    syncAggregate,
+                    (ExecutionPayloadEip4844Impl)
+                        payloadWithCommitments.getLeft().toVersionEip4844().orElseThrow(),
+                    getBlsToExecutionChanges(),
+                    payloadWithCommitments.getRight()));
   }
 }

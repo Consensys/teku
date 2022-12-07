@@ -63,6 +63,7 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
@@ -90,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -125,6 +127,7 @@ import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.BlobsBundleValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
@@ -282,7 +285,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribeBlockFetched(
             (block) ->
                 blockManager
-                    .importBlock(block)
+                    .importBlock(block, Optional.empty())
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
@@ -638,6 +641,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
+    final Optional<BlobsBundleValidator> blobsBundleValidator;
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      // FIXME: maybe do toVersionEIP4844 and similar in all MiscHelpers?
+      blobsBundleValidator =
+          Optional.of(
+              new BlobsBundleValidator(
+                  (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers()));
+    } else {
+      blobsBundleValidator = Optional.empty();
+    }
     final BlockFactory blockFactory =
         new BlockFactory(
             spec,
@@ -652,6 +665,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 depositProvider,
                 eth1DataCache,
                 VersionProvider.getDefaultGraffiti(),
+                blobsBundleValidator,
                 forkChoiceNotifier,
                 executionLayer));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
@@ -662,6 +676,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
         eventChannels.getPublisher(BlockGossipChannel.class);
+    final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel =
+        eventChannels.getPublisher(BlockAndBlobsSidecarGossipChannel.class);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
@@ -671,6 +687,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
+            blockAndBlobsSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,

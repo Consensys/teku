@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
@@ -138,6 +139,15 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
             .map(this::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
     return transactionsVersionedHashes.equals(commitmentsVersionedHashes);
+  }
+
+  // FIXME: should we move it to interface?
+  public KZGCommitment blobToKzgCommitment(final Blob blob) {
+    return kzg.blobToKzgCommitment(blob.getBytes());
+  }
+
+  public KZGProof computeAggregatedKzgProof(final List<Bytes> blobs) {
+    return kzg.computeAggregateKzgProof(blobs);
   }
 
   public KZG getKzg() {

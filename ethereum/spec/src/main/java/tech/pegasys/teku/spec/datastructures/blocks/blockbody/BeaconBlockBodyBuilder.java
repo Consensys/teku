@@ -64,7 +64,8 @@ public interface BeaconBlockBodyBuilder {
       Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges);
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder blobKzgCommitments(Supplier<SszList<SszKZGCommitment>> blobKzgCommitments);
+  BeaconBlockBodyBuilder blobKzgCommitments(
+      Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments);
 
   default Boolean isBlinded() {
     return false;

@@ -94,7 +94,8 @@ public class BlockManager extends Service
   }
 
   @Override
-  public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
+  public SafeFuture<BlockImportResult> importBlock(
+      final SignedBeaconBlock block, final Optional<BlobsSidecar> blobsSidecar) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
     return doImportBlockAndBlobsSidecar(block, Optional.empty(), Optional.empty());
   }

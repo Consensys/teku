@@ -1017,7 +1017,8 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 randomExecutionPayloadHeader(spec.atSlot(slotNum))))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
-                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
+                    .blobKzgCommitments(
+                        () -> SafeFuture.completedFuture(randomSszKzgCommitmentList())))
         .join();
   }
 
@@ -1052,7 +1053,8 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 randomExecutionPayload(spec.atSlot(slotNum))))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
-                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
+                    .blobKzgCommitments(
+                        () -> SafeFuture.completedFuture(randomSszKzgCommitmentList())))
         .join();
   }
 
@@ -1086,7 +1088,8 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 randomExecutionPayload(spec.getGenesisSpec())))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
-                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
+                    .blobKzgCommitments(
+                        () -> SafeFuture.completedFuture(randomSszKzgCommitmentList())))
         .join();
   }
 
@@ -1120,7 +1123,8 @@ public final class DataStructureUtil {
                             SafeFuture.completedFuture(
                                 randomExecutionPayload(spec.getGenesisSpec())))
                     .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
-                    .blobKzgCommitments(this::randomSszKzgCommitmentList))
+                    .blobKzgCommitments(
+                        () -> SafeFuture.completedFuture(randomSszKzgCommitmentList())))
         .join();
   }
 

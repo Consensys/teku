@@ -131,7 +131,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments) {
     // No BlobKzgCommitments in phase 0
     return this;
   }

@@ -43,6 +43,7 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -138,10 +140,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker) {
-    final ExecutionClientHandler executionClientHandler =
-        spec.isMilestoneSupported(SpecMilestone.CAPELLA)
-            ? new CapellaExecutionClientHandler(spec, executionEngineClient)
-            : new BellatrixExecutionClientHandler(spec, executionEngineClient);
+    final ExecutionClientHandler executionClientHandler;
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      executionClientHandler = new Eip4844ExecutionClientHandler(spec, executionEngineClient);
+    } else if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
+      executionClientHandler = new CapellaExecutionClientHandler(spec, executionEngineClient);
+    } else {
+      executionClientHandler = new BellatrixExecutionClientHandler(spec, executionEngineClient);
+    }
 
     return create(
         eventLogger,
@@ -265,6 +272,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration) {
     return executionClientHandler.engineExchangeTransitionConfiguration(transitionConfiguration);
+  }
+
+  @Override
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final Bytes8 payloadId, final UInt64 slot) {
+    return executionClientHandler.engineGetBlobsBundle(payloadId, slot);
   }
 
   @Override

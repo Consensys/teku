@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -285,6 +288,29 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         transitionConfiguration,
         transitionConfigurationResponse);
     return SafeFuture.completedFuture(transitionConfigurationResponse);
+  }
+
+  @Override
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final Bytes8 payloadId, final UInt64 slot) {
+    final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
+
+    if (schemaDefinitionsEip4844.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new UnsupportedOperationException(
+              "getBlobsBundle not supported for pre-EIP4844 milestones"));
+    }
+
+    final BlobsBundle blobsBundle =
+        new BlobsBundle(
+            lastValidBlock.orElseThrow().getBlockHash(),
+            Collections.emptyList(),
+            Collections.emptyList());
+
+    LOG.info(
+        "getBlobsBundle: payloadId: {} slot: {} -> blobsBundle: {}", payloadId, slot, blobsBundle);
+
+    return SafeFuture.completedFuture(blobsBundle);
   }
 
   @Override
