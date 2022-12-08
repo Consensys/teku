@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -27,17 +27,20 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
 class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -54,33 +57,36 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
   void shouldReturnSuccessWhenValidOperationIsSubmittedToThePool() throws Exception {
     final SignedBlsToExecutionChange blsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
-    request.setRequestBody(blsToExecutionChange);
+    request.setRequestBody(List.of(blsToExecutionChange));
     when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
-    when(provider.postBlsToExecutionChange(any(SignedBlsToExecutionChange.class)))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    when(provider.postBlsToExecutionChanges(anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isNull();
 
-    verify(provider).postBlsToExecutionChange(eq(blsToExecutionChange));
+    verify(provider).postBlsToExecutionChanges(eq(List.of(blsToExecutionChange)));
   }
 
   @Test
   void shouldReturnBadRequestWhenInvalidOperationIsSubmittedToThePool() throws Exception {
     final SignedBlsToExecutionChange blsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
-    request.setRequestBody(blsToExecutionChange);
+    request.setRequestBody(List.of(blsToExecutionChange));
     when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
-    when(provider.postBlsToExecutionChange(blsToExecutionChange))
+    when(provider.postBlsToExecutionChanges(List.of(blsToExecutionChange)))
         .thenReturn(
-            SafeFuture.completedFuture(InternalValidationResult.reject("Operation invalid")));
+            SafeFuture.completedFuture(
+                List.of(new SubmitDataError(UInt64.ZERO, "Operation invalid"))));
 
     handler.handleRequest(request);
 
-    final HttpErrorResponse expectedBody =
-        new HttpErrorResponse(SC_BAD_REQUEST, "Operation invalid");
+    final ErrorListBadRequest expectedBody =
+        new ErrorListBadRequest(
+            "Some items failed to publish, refer to errors for details",
+            List.of(new SubmitDataError(UInt64.ZERO, "Operation invalid")));
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
