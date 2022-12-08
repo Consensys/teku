@@ -67,6 +67,10 @@ public class LogCaptor implements AutoCloseable {
     assertThat(getMessages(level)).contains(message);
   }
 
+  public List<String> getInfoLogs() {
+    return getMessages(Level.INFO).collect(Collectors.toList());
+  }
+
   public List<String> getWarnLogs() {
     return getMessages(Level.WARN).collect(Collectors.toList());
   }
