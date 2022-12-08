@@ -109,6 +109,6 @@ public class BlockSelectorFactoryTest {
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {
-    return new BlockAndMetaData(block, milestone, false, true);
+    return new BlockAndMetaData(block, milestone, false, true, client.isFinalized(block.getSlot()));
   }
 }

@@ -75,7 +75,7 @@ class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
   void metadata_shouldHandle200() throws IOException {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     StateAndMetaData responseData =
-        new StateAndMetaData(beaconState, SpecMilestone.BELLATRIX, false, true);
+        new StateAndMetaData(beaconState, SpecMilestone.BELLATRIX, false, true, false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =

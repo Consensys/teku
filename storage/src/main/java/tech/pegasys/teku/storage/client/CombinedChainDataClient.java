@@ -576,7 +576,8 @@ public class CombinedChainDataClient {
                                 block,
                                 chainHead,
                                 isCanonicalBlockCalculated(
-                                    block.getSlot(), block.getRoot(), chainHead.getRoot())))
+                                    block.getSlot(), block.getRoot(), chainHead.getRoot()),
+                                isFinalized(block.getSlot())))
                     .collect(Collectors.toList()));
   }
 
@@ -587,21 +588,25 @@ public class CombinedChainDataClient {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
     final List<BlockAndMetaData> result =
         signedBeaconBlocks.stream()
-            .map(block -> toBlockAndMetaData(block, chainHead, false))
+            .map(block -> toBlockAndMetaData(block, chainHead, false, false))
             .collect(Collectors.toList());
-    canonicalBlock.ifPresent(block -> result.add(toBlockAndMetaData(block, chainHead, true)));
+    canonicalBlock.ifPresent(
+        block ->
+            result.add(toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))));
     return result;
   }
 
   private BlockAndMetaData toBlockAndMetaData(
       final SignedBeaconBlock signedBeaconBlock,
       final ChainHead chainHead,
-      final boolean canonical) {
+      final boolean canonical,
+      final boolean finalized) {
     return new BlockAndMetaData(
         signedBeaconBlock,
         spec.atSlot(signedBeaconBlock.getSlot()).getMilestone(),
         chainHead.isOptimistic() || isOptimisticBlock(signedBeaconBlock.getRoot()),
-        canonical);
+        canonical,
+        finalized);
   }
 
   private boolean isOptimistic(

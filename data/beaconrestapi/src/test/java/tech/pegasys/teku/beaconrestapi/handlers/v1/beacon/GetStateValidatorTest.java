@@ -64,7 +64,8 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChai
             ValidatorStatus.active_ongoing,
             beaconState.getValidators().get(1));
 
-    responseData = new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, true);
+    responseData =
+        new ObjectAndMetaData<>(data, spec.getGenesisSpec().getMilestone(), false, true, false);
   }
 
   @Test
