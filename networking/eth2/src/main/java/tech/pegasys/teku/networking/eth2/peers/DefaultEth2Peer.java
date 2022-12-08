@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
@@ -226,6 +227,14 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         blocksByRange,
         new BeaconBlocksByRangeRequestMessage(startSlot, count, ONE),
         new BlocksByRangeListenerWrapper(this, listener, startSlot, count));
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override

@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -206,6 +207,14 @@ public class RespondingEth2Peer implements Eth2Peer {
                     .map(SignedBlockAndState::getBlock)
                     .collect(Collectors.toList()));
     return createPendingRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override
