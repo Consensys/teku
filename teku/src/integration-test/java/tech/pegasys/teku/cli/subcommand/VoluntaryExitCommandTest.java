@@ -253,7 +253,7 @@ public class VoluntaryExitCommandTest {
   private void setUserInput(final String confirmationText) {
     String userInput =
         String.format(confirmationText, System.lineSeparator(), System.lineSeparator());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(userInput.getBytes());
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(userInput.getBytes(UTF_8));
     System.setIn(inputStream);
   }
 
