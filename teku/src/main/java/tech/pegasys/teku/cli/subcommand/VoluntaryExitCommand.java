@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -84,6 +85,11 @@ public class VoluntaryExitCommand implements Runnable {
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
+
+  static final String WITHDRAWALS_PERMANENT_MESASGE =
+      "These validators won't be able to be re-activated once this operation is complete.";
+  static final String WITHDRAWALS_NOT_ACTIVE =
+      "NOTE: Withdrawals will not be possible until the Capella network fork.";
 
   private Optional<List<BLSPublicKey>> maybePubKeysToExit = Optional.empty();
 
@@ -137,7 +143,9 @@ public class VoluntaryExitCommand implements Runnable {
     try {
       initialise();
       if (confirmationEnabled) {
-        confirmExits();
+        if (!confirmExits()) {
+          return;
+        }
       }
       getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
@@ -151,21 +159,24 @@ public class VoluntaryExitCommand implements Runnable {
     }
   }
 
-  private void confirmExits() {
+  private boolean confirmExits() {
     SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
     SUB_COMMAND_LOG.display("Epoch: " + epoch.toString());
     SUB_COMMAND_LOG.display("");
-    SUB_COMMAND_LOG.display(
-        "These validators won't be able to be re-activated, and withdrawals aren't likely to be possible until Phase 2 of eth2 Mainnet.");
+    SUB_COMMAND_LOG.display(WITHDRAWALS_PERMANENT_MESASGE);
+    if (!spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
+      SUB_COMMAND_LOG.display(WITHDRAWALS_NOT_ACTIVE);
+    }
     SUB_COMMAND_LOG.display("Are you sure you wish to continue (yes/no)? ");
-    Scanner scanner = new Scanner(System.in, Charset.defaultCharset().name());
+    Scanner scanner = new Scanner(System.in, Charset.defaultCharset());
     final String confirmation = scanner.next();
 
     if (!confirmation.equalsIgnoreCase("yes")) {
       SUB_COMMAND_LOG.display("Cancelled sending voluntary exit.");
-      System.exit(1);
+      return false;
     }
+    return true;
   }
 
   private String getValidatorAbbreviatedKeys() {
