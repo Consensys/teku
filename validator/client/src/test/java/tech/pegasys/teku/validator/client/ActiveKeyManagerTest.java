@@ -55,7 +55,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
@@ -103,9 +102,7 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
-        .thenReturn(
-            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
-                .build());
+        .thenReturn(new LocalValidatorImportResult.Builder(PostKeyResult.success(), "").build());
     keyManager.importValidators(
         List.of(data),
         List.of("testpassword"),
@@ -120,9 +117,7 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
 
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
-        .thenReturn(
-            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.duplicate(), "")
-                .build());
+        .thenReturn(new LocalValidatorImportResult.Builder(PostKeyResult.duplicate(), "").build());
     keyManager.importValidators(
         List.of(data),
         List.of("testpassword"),
@@ -295,7 +290,7 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
         .thenReturn(
-            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
+            new LocalValidatorImportResult.Builder(PostKeyResult.success(), "")
                 .publicKey(Optional.of(doppelgangerPublicKey))
                 .build());
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
@@ -335,7 +330,7 @@ class ActiveKeyManagerTest {
     final String data = getKeystore();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
         .thenReturn(
-            new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), "")
+            new LocalValidatorImportResult.Builder(PostKeyResult.success(), "")
                 .publicKey(Optional.of(doppelgangerPublicKey))
                 .build());
     when(doppelgangerDetector.performDoppelgangerDetection(any()))

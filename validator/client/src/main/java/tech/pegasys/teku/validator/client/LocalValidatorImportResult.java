@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator;
+package tech.pegasys.teku.validator.client;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -19,34 +19,22 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
-public class ValidatorImportResult {
-
-  private final Optional<BLSPublicKey> maybePublicKey;
-  private final Optional<KeyStoreData> maybeKeystoreData;
-  private final PostKeyResult postKeyResult;
+public class LocalValidatorImportResult extends ValidatorImportResult {
   private final String password;
-
-  public Optional<BLSPublicKey> getPublicKey() {
-    return this.maybePublicKey;
-  }
+  private final Optional<KeyStoreData> maybeKeystoreData;
 
   public Optional<KeyStoreData> getKeyStoreData() {
     return this.maybeKeystoreData;
-  }
-
-  public PostKeyResult getPostKeyResult() {
-    return this.postKeyResult;
   }
 
   public String getPassword() {
     return this.password;
   }
 
-  private ValidatorImportResult(ValidatorImportResultBuilder builder) {
-    this.maybePublicKey = builder.maybePublicKey;
-    this.maybeKeystoreData = builder.maybeKeystoreData;
-    this.postKeyResult = builder.postKeyResult;
+  private LocalValidatorImportResult(final Builder builder) {
+    super(builder.maybePublicKey, builder.postKeyResult);
     this.password = builder.password;
+    this.maybeKeystoreData = builder.maybeKeystoreData;
   }
 
   @Override
@@ -57,42 +45,40 @@ public class ValidatorImportResult {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final ValidatorImportResult validatorImportResult = (ValidatorImportResult) o;
-    return maybePublicKey.equals(validatorImportResult.maybePublicKey)
-        && maybeKeystoreData.equals(validatorImportResult.maybeKeystoreData)
-        && postKeyResult.equals(validatorImportResult.postKeyResult)
-        && password.equals(validatorImportResult.password);
+    final LocalValidatorImportResult localValidatorImportResult = (LocalValidatorImportResult) o;
+    return super.equals(o)
+        && maybeKeystoreData.equals(localValidatorImportResult.maybeKeystoreData)
+        && password.equals(localValidatorImportResult.password);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maybePublicKey, maybeKeystoreData, postKeyResult, password);
+    return Objects.hash(super.hashCode(), password, maybeKeystoreData);
   }
 
-  public static class ValidatorImportResultBuilder {
+  public static class Builder {
     private Optional<BLSPublicKey> maybePublicKey = Optional.empty();
-    private Optional<KeyStoreData> maybeKeystoreData = Optional.empty();
     private final PostKeyResult postKeyResult;
-
     private final String password;
+    private Optional<KeyStoreData> maybeKeystoreData = Optional.empty();
 
-    public ValidatorImportResultBuilder(final PostKeyResult postKeyResult, final String password) {
+    public Builder(final PostKeyResult postKeyResult, final String password) {
       this.postKeyResult = postKeyResult;
       this.password = password;
     }
 
-    public ValidatorImportResultBuilder publicKey(Optional<BLSPublicKey> publicKey) {
+    public Builder publicKey(final Optional<BLSPublicKey> publicKey) {
       this.maybePublicKey = publicKey;
       return this;
     }
 
-    public ValidatorImportResultBuilder keyStoreData(Optional<KeyStoreData> keystoreData) {
-      this.maybeKeystoreData = keystoreData;
+    public Builder keyStoreData(final Optional<KeyStoreData> keyStoreData) {
+      this.maybeKeystoreData = keyStoreData;
       return this;
     }
 
-    public ValidatorImportResult build() {
-      return new ValidatorImportResult(this);
+    public LocalValidatorImportResult build() {
+      return new LocalValidatorImportResult(this);
     }
   }
 }

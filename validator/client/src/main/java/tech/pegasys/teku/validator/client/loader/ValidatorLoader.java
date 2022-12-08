@@ -36,10 +36,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
-import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -113,14 +113,14 @@ public class ValidatorLoader {
     return mutableLocalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized ValidatorImportResult loadLocalMutableValidator(
+  public synchronized LocalValidatorImportResult loadLocalMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final boolean addToOwnedValidators) {
 
     if (!canAddValidator(mutableLocalValidatorSource)) {
-      return new ValidatorImportResult.ValidatorImportResultBuilder(
+      return new LocalValidatorImportResult.Builder(
               PostKeyResult.error("Not able to add validator"), password)
           .keyStoreData(Optional.ofNullable(keyStoreData))
           .build();
@@ -133,7 +133,7 @@ public class ValidatorLoader {
       final Optional<String> errorString =
           slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
       if (errorString.isPresent()) {
-        return new ValidatorImportResult.ValidatorImportResultBuilder(
+        return new LocalValidatorImportResult.Builder(
                 PostKeyResult.error(errorString.get()), password)
             .publicKey(Optional.of(publicKey))
             .keyStoreData(Optional.of(keyStoreData))
@@ -141,37 +141,34 @@ public class ValidatorLoader {
       }
     }
     if (ownedValidators.hasValidator(publicKey)) {
-      return new ValidatorImportResult.ValidatorImportResultBuilder(
-              PostKeyResult.duplicate(), password)
+      return new LocalValidatorImportResult.Builder(PostKeyResult.duplicate(), password)
           .publicKey(Optional.of(publicKey))
           .keyStoreData(Optional.of(keyStoreData))
           .build();
     }
 
     if (addToOwnedValidators) {
-      return loadValidator(keyStoreData, password, publicKey);
+      return addValidator(keyStoreData, password, publicKey);
     } else {
-      return new ValidatorImportResult.ValidatorImportResultBuilder(
-              PostKeyResult.success(), password)
+      return new LocalValidatorImportResult.Builder(PostKeyResult.success(), password)
           .publicKey(Optional.of(publicKey))
           .keyStoreData(Optional.of(keyStoreData))
           .build();
     }
   }
 
-  public ValidatorImportResult loadValidator(
+  public LocalValidatorImportResult addValidator(
       KeyStoreData keyStoreData, String password, BLSPublicKey publicKey) {
     final AddValidatorResult validatorAddResult =
         mutableLocalValidatorSource.get().addValidator(keyStoreData, password, publicKey);
     if (validatorAddResult.getSigner().isEmpty()) {
-      return new ValidatorImportResult.ValidatorImportResultBuilder(
-              validatorAddResult.getResult(), password)
+      return new LocalValidatorImportResult.Builder(validatorAddResult.getResult(), password)
           .publicKey(Optional.of(publicKey))
           .keyStoreData(Optional.of(keyStoreData))
           .build();
     }
     addToOwnedValidators(validatorAddResult.getSigner().get(), publicKey);
-    return new ValidatorImportResult.ValidatorImportResultBuilder(PostKeyResult.success(), password)
+    return new LocalValidatorImportResult.Builder(PostKeyResult.success(), password)
         .publicKey(Optional.of(publicKey))
         .keyStoreData(Optional.of(keyStoreData))
         .build();

@@ -56,11 +56,12 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.ValidatorImportResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
@@ -670,11 +671,11 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final ValidatorImportResult result =
+    final LocalValidatorImportResult result =
         validatorLoader.loadLocalMutableValidator(null, "", Optional.empty(), true);
     assertThat(result)
         .isEqualTo(
-            new ValidatorImportResult.ValidatorImportResultBuilder(
+            new LocalValidatorImportResult.Builder(
                     PostKeyResult.error("Not able to add validator"), "")
                 .build());
   }

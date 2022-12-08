@@ -31,7 +31,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
 import tech.pegasys.teku.spec.signatures.Signer;
-import tech.pegasys.teku.validator.ValidatorImportResult;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
@@ -241,7 +240,7 @@ public class ActiveKeyManager implements KeyManager {
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
-    final List<ValidatorImportResult> importResults = new ArrayList<>();
+    final List<LocalValidatorImportResult> importResults = new ArrayList<>();
     boolean reloadRequired;
 
     if (maybeDoppelgangerDetector.isPresent()) {
@@ -268,7 +267,7 @@ public class ActiveKeyManager implements KeyManager {
                         .forEach(
                             validatorImportResult -> {
                               ValidatorImportResult importResult =
-                                  validatorLoader.loadValidator(
+                                  validatorLoader.addValidator(
                                       validatorImportResult.getKeyStoreData().get(),
                                       validatorImportResult.getPassword(),
                                       validatorImportResult.getPublicKey().get());
@@ -320,21 +319,22 @@ public class ActiveKeyManager implements KeyManager {
       final List<String> keystores,
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
-      final List<ValidatorImportResult> importResults,
+      final List<LocalValidatorImportResult> importResults,
       final boolean addToOwnedValidators) {
     boolean reloadRequired = false;
     for (int i = 0; i < keystores.size(); i++) {
       final Optional<KeyStoreData> maybeKeystoreData =
           getKeyStoreData(importResults, keystores.get(i), passwords.get(i));
       if (maybeKeystoreData.isPresent()) {
-        ValidatorImportResult validatorImportResult =
+        LocalValidatorImportResult localValidatorImportResult =
             validatorLoader.loadLocalMutableValidator(
                 maybeKeystoreData.get(),
                 passwords.get(i),
                 slashingProtectionImporter,
                 addToOwnedValidators);
-        importResults.add(validatorImportResult);
-        if (validatorImportResult.getPostKeyResult().getImportStatus() == ImportStatus.IMPORTED) {
+        importResults.add(localValidatorImportResult);
+        if (localValidatorImportResult.getPostKeyResult().getImportStatus()
+            == ImportStatus.IMPORTED) {
           reloadRequired = true;
         }
       }
@@ -343,7 +343,7 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private Optional<KeyStoreData> getKeyStoreData(
-      final List<ValidatorImportResult> importResults,
+      final List<LocalValidatorImportResult> importResults,
       final String keystoreString,
       final String password) {
     final KeyStoreData keyStoreData = KeyStoreLoader.loadFromString(keystoreString);
@@ -351,8 +351,7 @@ public class ActiveKeyManager implements KeyManager {
       keyStoreData.validate();
     } catch (KeyStoreValidationException ex) {
       importResults.add(
-          new ValidatorImportResult.ValidatorImportResultBuilder(
-                  PostKeyResult.error(ex.getMessage()), password)
+          new LocalValidatorImportResult.Builder(PostKeyResult.error(ex.getMessage()), password)
               .build());
       return Optional.empty();
     }
@@ -360,7 +359,7 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private Set<BLSPublicKey> filterImportedPubKeys(
-      List<ValidatorImportResult> validatorImportResults) {
+      List<LocalValidatorImportResult> validatorImportResults) {
     return validatorImportResults.stream()
         .filter(
             validatorImportResult ->
