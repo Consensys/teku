@@ -24,9 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -98,7 +100,7 @@ public class DoppelgangerDetector {
   public SafeFuture<Map<UInt64, BLSPublicKey>> performDoppelgangerDetection(
       final Set<BLSPublicKey> pubKeys) {
     if (pubKeys.isEmpty()) {
-      LOG.info("Skipping doppelganger detection: No public keys to check");
+      LOG.info("Skipping doppelganger detection: No public keys provided to check");
       return SafeFuture.completedFuture(new HashMap<>());
     }
     DoppelgangerDetectionTask doppelgangerDetectionTask =
@@ -123,7 +125,7 @@ public class DoppelgangerDetector {
     protected synchronized SafeFuture<Map<UInt64, BLSPublicKey>>
         performDoppelgangerDetectionTask() {
       statusLog.doppelgangerDetectionStart(
-          pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
+          mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
       doppelgangerCheckFinished = Optional.of(new SafeFuture<>());
       epochAtStart = Optional.empty();
       doppelgangerDetectionTask =
@@ -133,12 +135,18 @@ public class DoppelgangerDetector {
               checkDelay,
               throwable ->
                   LOG.error(
-                      "Error while checking validators doppelganger. The check could not be performed correctly.",
+                      "Error while checking validators doppelgangers for keys {}. The check could not be performed correctly.",
+                      mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
                       throwable));
       return doppelgangerCheckFinished.get();
     }
 
-    private synchronized SafeFuture<Void> stopDoppelgangerDetector(
+    @NotNull
+    private Stream<String> mapToAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {
+      return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
+    }
+
+    private synchronized SafeFuture<Void> stopDoppelgangerDetectorTask(
         final Map<UInt64, BLSPublicKey> detectedDoppelgangers) {
       if (doppelgangerCheckFinished.isEmpty()) {
         throw new RuntimeException("Doppelganger Detection is already stopped");
@@ -155,8 +163,8 @@ public class DoppelgangerDetector {
           .getTimeInSeconds()
           .minus(startTime)
           .isGreaterThanOrEqualTo(timeout.toSeconds())) {
-        LOG.warn("Doppelganger Detection timeout");
-        return stopDoppelgangerDetector(new HashMap<>());
+        statusLog.doppelgangerTimeout(mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+        return stopDoppelgangerDetectorTask(new HashMap<>());
       }
 
       return genesisDataProvider
@@ -166,54 +174,63 @@ public class DoppelgangerDetector {
                 final UInt64 currentSlot =
                     spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
                 final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-
-                if (epochAtStart.isEmpty()) {
-                  epochAtStart = Optional.of(currentEpoch);
-                }
-
-                if (currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs)) {
-                  statusLog.doppelgangerDetectionEnd(
-                      pubKeys.stream()
-                          .map(BLSPublicKey::toAbbreviatedString)
-                          .collect(Collectors.toSet()));
-                  return stopDoppelgangerDetector(new HashMap<>());
-                }
-
-                statusLog.doppelgangerCheck(
-                    currentEpoch.longValue(),
-                    currentSlot.longValue(),
-                    pubKeys.stream()
-                        .map(BLSPublicKey::toAbbreviatedString)
-                        .collect(Collectors.toSet()));
-
-                return validatorApiChannel
-                    .getValidatorIndices(pubKeys)
-                    .thenCompose(
-                        validatorIndicesByPubKeys ->
-                            checkValidatorsLivenessAtEpoch(
-                                currentEpoch,
-                                validatorIndicesByPubKeys.entrySet().stream()
-                                    .collect(
-                                        Collectors.toMap(
-                                            Map.Entry::getKey, e -> UInt64.valueOf(e.getValue())))))
-                    .orTimeout(checkDelay)
-                    .exceptionally(
-                        throwable -> {
-                          LOG.error(
-                              "Unable to check validators doppelganger. Unable to get validators indices: {}",
-                              extractErrorMessage(throwable));
-                          return null;
-                        })
-                    .toVoid();
+                return checkDoppelgangerAtEpoch(pubKeys, currentSlot, currentEpoch);
               })
           .orTimeout(checkDelay)
           .exceptionally(
               throwable -> {
                 LOG.error(
-                    "Unable to check validators doppelganger. Unable to get genesis time to calculate the current epoch: {}",
+                    "Unable to check validators doppelgangers for keys {}. Unable to get genesis time to calculate the current epoch: {}",
+                    mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
                     extractErrorMessage(throwable));
                 return null;
               });
+    }
+
+    private SafeFuture<Void> checkDoppelgangerAtEpoch(
+        Set<BLSPublicKey> pubKeys, UInt64 currentSlot, UInt64 currentEpoch) {
+      captureEpochAtstart(currentEpoch);
+      if (maxEpochsReached(currentEpoch)) {
+        statusLog.doppelgangerDetectionEnd(
+            mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+        return stopDoppelgangerDetectorTask(new HashMap<>());
+      }
+
+      statusLog.doppelgangerCheck(
+          currentEpoch.longValue(),
+          currentSlot.longValue(),
+          mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+
+      return validatorApiChannel
+          .getValidatorIndices(pubKeys)
+          .thenCompose(
+              validatorIndicesByPubKeys ->
+                  checkValidatorsLivenessAtEpoch(
+                      currentEpoch,
+                      validatorIndicesByPubKeys.entrySet().stream()
+                          .collect(
+                              Collectors.toMap(
+                                  Map.Entry::getKey, e -> UInt64.valueOf(e.getValue())))))
+          .orTimeout(checkDelay)
+          .exceptionally(
+              throwable -> {
+                LOG.error(
+                    "Unable to check validators doppelgangers for keys {}. Unable to get validators indices: {}",
+                    mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
+                    extractErrorMessage(throwable));
+                return null;
+              })
+          .toVoid();
+    }
+
+    private void captureEpochAtstart(UInt64 currentEpoch) {
+      if (epochAtStart.isEmpty()) {
+        epochAtStart = Optional.of(currentEpoch);
+      }
+    }
+
+    private boolean maxEpochsReached(UInt64 currentEpoch) {
+      return currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs);
     }
 
     private SafeFuture<Void> checkValidatorsLivenessAtEpoch(
@@ -227,7 +244,8 @@ public class DoppelgangerDetector {
           .exceptionally(
               throwable -> {
                 LOG.error(
-                    "Unable to check validators doppelganger. Unable to get validators liveness: {}",
+                    "Unable to check validators doppelgangers for keys {}. Unable to get validators liveness: {}",
+                    mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
                     extractErrorMessage(throwable));
                 return null;
               })
@@ -243,7 +261,7 @@ public class DoppelgangerDetector {
         LOG.fatal("Doppelganger detected. Shutting down Validator Client.");
         statusLog.validatorsDoppelgangerDetected(
             mapLivenessAtEpochToIndicesByPubKeyStrings(doppelgangers));
-        stopDoppelgangerDetector(mapLivenessAtEpochToIndicesByPubKey(doppelgangers))
+        stopDoppelgangerDetectorTask(mapLivenessAtEpochToIndicesByPubKey(doppelgangers))
             .ifExceptionGetsHereRaiseABug();
       }
     }
