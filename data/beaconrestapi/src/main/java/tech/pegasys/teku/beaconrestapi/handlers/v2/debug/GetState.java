@@ -19,6 +19,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
@@ -95,6 +96,7 @@ public class GetState extends RestApiEndpoint {
         .name("GetStateV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
         .withField(
             "data",
             getSchemaDefinitionForAllMilestones(

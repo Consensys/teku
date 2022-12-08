@@ -1,1 +1,1 @@
-{"execution_optimistic":false,"data":{"previous_justified":{"epoch":"2","root":"%s"},"current_justified":{"epoch":"3","root":"%s"},"finalized":{"epoch":"2","root":"%s"}}}
+{"execution_optimistic":false,"finalized":false,"data":{"previous_justified":{"epoch":"2","root":"%s"},"current_justified":{"epoch":"3","root":"%s"},"finalized":{"epoch":"2","root":"%s"}}}

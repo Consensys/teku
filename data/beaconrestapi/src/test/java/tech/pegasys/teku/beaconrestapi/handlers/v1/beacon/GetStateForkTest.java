@@ -99,6 +99,6 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
 
     assertThat(data)
         .isEqualTo(
-            "{\"execution_optimistic\":false,\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
+            "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
   }
 }

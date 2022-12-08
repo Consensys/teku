@@ -54,6 +54,13 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return new SignedBeaconBlock(signedBeaconBlockSchema, message, signature);
   }
 
+  public SignedBeaconBlockHeader asHeader() {
+    return new SignedBeaconBlockHeader(
+        new BeaconBlockHeader(
+            getSlot(), getProposerIndex(), getParentRoot(), getStateRoot(), getBodyRoot()),
+        getSignature());
+  }
+
   public SignedBeaconBlock blind(final SchemaDefinitions schemaDefinitions) {
     if (getMessage().getBody().isBlinded()) {
       return this;

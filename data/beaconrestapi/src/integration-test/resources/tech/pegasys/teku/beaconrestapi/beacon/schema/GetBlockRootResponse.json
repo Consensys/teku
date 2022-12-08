@@ -1,7 +1,7 @@
 {
   "title" : "GetBlockRootResponse",
   "type" : "object",
-  "required" : [ "data", "execution_optimistic" ],
+  "required" : [ "data", "execution_optimistic", "finalized" ],
   "properties" : {
     "data" : {
       "type" : "object",
@@ -16,6 +16,9 @@
       }
     },
     "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
       "type" : "boolean"
     }
   }

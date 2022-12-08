@@ -19,6 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.STATUS_PARAMETE
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator.STATE_VALIDATOR_DATA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -50,6 +51,7 @@ public class GetStateValidators extends RestApiEndpoint {
               .name("GetStateValidatorsResponse")
               .withField(
                   EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
               .withField("data", listOf(STATE_VALIDATOR_DATA_TYPE), ObjectAndMetaData::getData)
               .build();
 

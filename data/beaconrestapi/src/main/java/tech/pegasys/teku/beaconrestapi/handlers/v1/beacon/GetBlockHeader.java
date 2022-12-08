@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
@@ -42,6 +43,7 @@ public class GetBlockHeader extends RestApiEndpoint {
           .name("GetBlockHeaderResponse")
           .withField("data", BlockHeaderData.getJsonTypeDefinition(), BlockHeaderData::new)
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+          .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
           .build();
 
   public GetBlockHeader(final DataProvider dataProvider) {
