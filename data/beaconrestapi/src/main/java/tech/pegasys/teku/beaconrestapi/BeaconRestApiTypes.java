@@ -42,6 +42,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
@@ -60,6 +61,8 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
@@ -178,5 +181,15 @@ public class BeaconRestApiTypes {
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
       SerializableTypeDefinition.object(Bytes32.class)
           .withField("root", BYTES32_TYPE, Function.identity())
+          .build();
+
+  public static final SerializableTypeDefinition<BlockAndMetaData> BLOCK_HEADER_TYPE =
+      SerializableTypeDefinition.object(BlockAndMetaData.class)
+          .withField("root", BYTES32_TYPE, block -> block.getData().getRoot())
+          .withField("canonical", BOOLEAN_TYPE, BlockAndMetaData::isCanonical)
+          .withField(
+              "header",
+              SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
+              data -> data.getData().asHeader())
           .build();
 }

@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOCK_HEADER_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -40,8 +42,9 @@ public class GetBlockHeader extends RestApiEndpoint {
   private static final SerializableTypeDefinition<BlockAndMetaData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(BlockAndMetaData.class)
           .name("GetBlockHeaderResponse")
-          .withField("data", BlockHeaderData.getJsonTypeDefinition(), BlockHeaderData::new)
+          .withField("data", BLOCK_HEADER_TYPE, Function.identity())
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+          .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
           .build();
 
   public GetBlockHeader(final DataProvider dataProvider) {
