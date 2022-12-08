@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
@@ -40,7 +41,17 @@ public final class KZGTest {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  private final KZG kzg = CKZG4844.createInstance(FIELD_ELEMENTS_PER_BLOB);
+  private static KZG kzg;
+
+  @BeforeAll
+  public static void setUp() {
+    // test initializing with invalid fieldElementsPerBlob
+    final KZGException exception =
+        assertThrows(KZGException.class, () -> CKZG4844.createInstance(5));
+    assertThat(exception)
+        .hasMessage("C-KZG-4844 library can't be initialized with 5 fieldElementsPerBlob.");
+    kzg = CKZG4844.createInstance(FIELD_ELEMENTS_PER_BLOB);
+  }
 
   @AfterEach
   public void cleanUpIfNeeded() {
@@ -118,11 +129,9 @@ public final class KZGTest {
     final KZGProof kzgProof = new KZGProof(emptyCommitment);
     assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
     assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
-    assertThat(
-            kzg.blobToKzgCommitment(Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE])))
-        .isEqualTo(kzgCommitment);
-    assertThat(
-            kzg.verifyAggregateKzgProof(Collections.emptyList(), Collections.emptyList(), kzgProof))
+    final Bytes blob = Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE]);
+    assertThat(kzg.blobToKzgCommitment(blob)).isEqualTo(kzgCommitment);
+    assertThat(kzg.verifyAggregateKzgProof(List.of(blob), List.of(kzgCommitment), kzgProof))
         .isTrue();
   }
 
