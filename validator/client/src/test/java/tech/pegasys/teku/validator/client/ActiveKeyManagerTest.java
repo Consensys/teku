@@ -45,6 +45,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.infrastructure.logging.LogCaptor;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -80,6 +81,7 @@ class ActiveKeyManagerTest {
   private final DoppelgangerDetector doppelgangerDetector = mock(DoppelgangerDetector.class);
   private final DoppelgangerDetectionAction doppelgangerDetectionAction =
       mock(DoppelgangerDetectionAction.class);
+  private final KeyStoreData keyStoreData = mock(KeyStoreData.class);
   private final BLSPublicKey doppelgangerPublicKey =
       BLSPublicKey.fromSSZBytes(
           Bytes.fromHexString(
@@ -287,11 +289,14 @@ class ActiveKeyManagerTest {
   @Test
   void shouldDetectDoppelgangersAndRemoveLocalKeys() throws IOException, URISyntaxException {
     final String data = getKeystore();
+    LocalValidatorImportResult localValidatorImportResult =
+        new LocalValidatorImportResult.Builder(PostKeyResult.success(), "")
+            .publicKey(Optional.of(doppelgangerPublicKey))
+            .keyStoreData(Optional.of(keyStoreData))
+            .build();
     when(validatorLoader.loadLocalMutableValidator(any(), any(), any(), anyBoolean()))
-        .thenReturn(
-            new LocalValidatorImportResult.Builder(PostKeyResult.success(), "")
-                .publicKey(Optional.of(doppelgangerPublicKey))
-                .build());
+        .thenReturn(localValidatorImportResult);
+    when(validatorLoader.addValidator(any(), any(), any())).thenReturn(localValidatorImportResult);
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -321,6 +326,7 @@ class ActiveKeyManagerTest {
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
+    logCaptor.assertInfoLog(String.format("Added validator %s", doppelgangerPublicKey));
   }
 
   @Test
@@ -371,7 +377,9 @@ class ActiveKeyManagerTest {
                 PostKeyResult.success(), signer.getSigningServiceUrl())
             .publicKey(Optional.of(doppelgangerPublicKey))
             .build();
-    when(validatorLoader.loadExternalMutableValidator(any(), any()))
+    when(validatorLoader.loadExternalMutableValidator(any(), any(), anyBoolean()))
+        .thenReturn(externalValidatorImportResult);
+    when(validatorLoader.addExternalValidator(any(), any()))
         .thenReturn(externalValidatorImportResult);
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(
@@ -396,13 +404,10 @@ class ActiveKeyManagerTest {
         List.of(externalValidator), Optional.of(doppelgangerDetector), doppelgangerDetectionAction);
 
     verify(channel, times(1)).onValidatorsAdded();
-    verify(signer).delete();
-    verify(ownedValidators).removeValidator(doppelgangerPublicKey);
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Removed remote validator: %s", doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Removed doppelganger: %s", doppelgangerPublicKey));
+    logCaptor.assertInfoLog(String.format("Added validator %s", doppelgangerPublicKey));
   }
 
   @Test
@@ -412,7 +417,7 @@ class ActiveKeyManagerTest {
                 PostKeyResult.success(), signer.getSigningServiceUrl())
             .publicKey(Optional.of(doppelgangerPublicKey))
             .build();
-    when(validatorLoader.loadExternalMutableValidator(any(), any()))
+    when(validatorLoader.loadExternalMutableValidator(any(), any(), anyBoolean()))
         .thenReturn(externalValidatorImportResult);
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));

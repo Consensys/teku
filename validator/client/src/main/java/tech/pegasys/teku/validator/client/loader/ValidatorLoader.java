@@ -183,7 +183,9 @@ public class ValidatorLoader {
   }
 
   public synchronized ExternalValidatorImportResult loadExternalMutableValidator(
-      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
+      final BLSPublicKey publicKey,
+      final Optional<URL> signerUrl,
+      final boolean addToOwnedValidators) {
     if (!canAddValidator(mutableExternalValidatorSource)) {
       return new ExternalValidatorImportResult.Builder(
               PostKeyResult.error("Not able to add validator"), signerUrl)
@@ -196,6 +198,16 @@ public class ValidatorLoader {
           .build();
     }
 
+    if (addToOwnedValidators) {
+      return addExternalValidator(signerUrl, publicKey);
+    }
+    return new ExternalValidatorImportResult.Builder(PostKeyResult.success(), signerUrl)
+        .publicKey(Optional.of(publicKey))
+        .build();
+  }
+
+  public ExternalValidatorImportResult addExternalValidator(
+      Optional<URL> signerUrl, BLSPublicKey publicKey) {
     final AddValidatorResult validatorAddResult =
         mutableExternalValidatorSource.get().addValidator(publicKey, signerUrl);
 
@@ -205,7 +217,8 @@ public class ValidatorLoader {
           .build();
     }
     addToOwnedValidators(validatorAddResult.getSigner().get(), publicKey);
-    return new ExternalValidatorImportResult.Builder(PostKeyResult.success(), signerUrl)
+    return new ExternalValidatorImportResult.Builder(
+            PostKeyResult.success(), validatorAddResult.getSigner().get().getSigningServiceUrl())
         .publicKey(Optional.of(publicKey))
         .build();
   }
