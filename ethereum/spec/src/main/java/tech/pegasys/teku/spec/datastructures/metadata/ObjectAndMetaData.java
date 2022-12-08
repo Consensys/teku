@@ -60,6 +60,10 @@ public class ObjectAndMetaData<T> {
     return canonical;
   }
 
+  public boolean isFinalized() {
+    return finalized;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
