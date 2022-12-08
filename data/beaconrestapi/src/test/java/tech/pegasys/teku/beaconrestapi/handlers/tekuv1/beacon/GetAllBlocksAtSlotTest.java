@@ -46,7 +46,7 @@ public class GetAllBlocksAtSlotTest extends AbstractMigratedBeaconHandlerTest {
   final AllBlocksAtSlotData responseData = new AllBlocksAtSlotData(specMilestone, List.of(block));
 
   final List<BlockAndMetaData> blocksAtSlot =
-      List.of(new BlockAndMetaData(block, specMilestone, false, true));
+      List.of(new BlockAndMetaData(block, specMilestone, false, true, false));
 
   @BeforeEach
   void setup() {
