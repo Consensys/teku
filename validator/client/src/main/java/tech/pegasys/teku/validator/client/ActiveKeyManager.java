@@ -373,12 +373,16 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private Set<BLSPublicKey> filterExternallyImportedPubKeys(
-      List<Pair<BLSPublicKey, PostKeyResult>> importResults) {
-    return importResults.stream()
+      List<ExternalValidatorImportResult> externalValidatorImportResults) {
+    return externalValidatorImportResults.stream()
         .filter(
-            pubKeyPostKeyResultPair ->
-                pubKeyPostKeyResultPair.getValue().getImportStatus().equals(ImportStatus.IMPORTED))
-        .map(Pair::getKey)
+            externalValidatorImportResult ->
+                externalValidatorImportResult.getPublicKey().isPresent()
+                    && externalValidatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED))
+        .map(externalValidatorImportResult -> externalValidatorImportResult.getPublicKey().get())
         .collect(Collectors.toSet());
   }
 
@@ -387,18 +391,22 @@ public class ActiveKeyManager implements KeyManager {
       final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
-    final List<Pair<BLSPublicKey, PostKeyResult>> importResults = new ArrayList<>();
+    final List<ExternalValidatorImportResult> importResults = new ArrayList<>();
     boolean reloadRequired = false;
     for (ExternalValidator v : validators) {
       try {
         importResults.add(
             validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
-        if (importResults.get(importResults.size() - 1).getValue().getImportStatus()
+        if (importResults.get(importResults.size() - 1).getPostKeyResult().getImportStatus()
             == ImportStatus.IMPORTED) {
           reloadRequired = true;
         }
       } catch (Exception e) {
-        importResults.add(Pair.of(v.getPublicKey(), PostKeyResult.error(e.getMessage())));
+        importResults.add(
+            new ExternalValidatorImportResult.Builder(
+                    PostKeyResult.error(e.getMessage()), v.getUrl())
+                .publicKey(Optional.of(v.getPublicKey()))
+                .build());
       }
     }
     if (reloadRequired) {
@@ -435,7 +443,9 @@ public class ActiveKeyManager implements KeyManager {
         validatorTimingChannel.onValidatorsAdded();
       }
     }
-    return importResults.stream().map(Pair::getValue).collect(Collectors.toList());
+    return importResults.stream()
+        .map(ValidatorImportResult::getPostKeyResult)
+        .collect(Collectors.toList());
   }
 
   private void reportDoppelgangersRemoval(

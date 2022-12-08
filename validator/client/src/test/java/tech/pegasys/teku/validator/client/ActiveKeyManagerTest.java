@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -367,8 +366,13 @@ class ActiveKeyManagerTest {
 
   @Test
   void shouldDetectDoppelgangersAndRemoveExternalKeys() {
+    ExternalValidatorImportResult externalValidatorImportResult =
+        new ExternalValidatorImportResult.Builder(
+                PostKeyResult.success(), signer.getSigningServiceUrl())
+            .publicKey(Optional.of(doppelgangerPublicKey))
+            .build();
     when(validatorLoader.loadExternalMutableValidator(any(), any()))
-        .thenReturn(Pair.of(doppelgangerPublicKey, PostKeyResult.success()));
+        .thenReturn(externalValidatorImportResult);
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -403,8 +407,13 @@ class ActiveKeyManagerTest {
 
   @Test
   void shouldAddExternalKeysWhenDoppelgangerDetectionException() {
+    ExternalValidatorImportResult externalValidatorImportResult =
+        new ExternalValidatorImportResult.Builder(
+                PostKeyResult.success(), signer.getSigningServiceUrl())
+            .publicKey(Optional.of(doppelgangerPublicKey))
+            .build();
     when(validatorLoader.loadExternalMutableValidator(any(), any()))
-        .thenReturn(Pair.of(doppelgangerPublicKey, PostKeyResult.success()));
+        .thenReturn(externalValidatorImportResult);
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
 

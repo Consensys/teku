@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes48;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.ExternalValidatorImportResult;
 import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
@@ -182,23 +182,32 @@ public class ValidatorLoader {
     return mutableExternalValidatorSource.get().deleteValidator(publicKey);
   }
 
-  public synchronized Pair<BLSPublicKey, PostKeyResult> loadExternalMutableValidator(
+  public synchronized ExternalValidatorImportResult loadExternalMutableValidator(
       final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     if (!canAddValidator(mutableExternalValidatorSource)) {
-      return Pair.of(publicKey, PostKeyResult.error("Not able to add validator"));
+      return new ExternalValidatorImportResult.Builder(
+              PostKeyResult.error("Not able to add validator"), signerUrl)
+          .publicKey(Optional.of(publicKey))
+          .build();
     }
     if (ownedValidators.hasValidator(publicKey)) {
-      return Pair.of(publicKey, PostKeyResult.duplicate());
+      return new ExternalValidatorImportResult.Builder(PostKeyResult.duplicate(), signerUrl)
+          .publicKey(Optional.of(publicKey))
+          .build();
     }
 
     final AddValidatorResult validatorAddResult =
         mutableExternalValidatorSource.get().addValidator(publicKey, signerUrl);
 
     if (validatorAddResult.getSigner().isEmpty()) {
-      return Pair.of(publicKey, validatorAddResult.getResult());
+      return new ExternalValidatorImportResult.Builder(validatorAddResult.getResult(), signerUrl)
+          .publicKey(Optional.of(publicKey))
+          .build();
     }
     addToOwnedValidators(validatorAddResult.getSigner().get(), publicKey);
-    return Pair.of(publicKey, PostKeyResult.success());
+    return new ExternalValidatorImportResult.Builder(PostKeyResult.success(), signerUrl)
+        .publicKey(Optional.of(publicKey))
+        .build();
   }
 
   private void addToOwnedValidators(final Signer signer, final BLSPublicKey publicKey) {
