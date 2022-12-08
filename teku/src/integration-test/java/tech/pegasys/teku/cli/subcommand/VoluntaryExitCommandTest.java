@@ -59,7 +59,11 @@ public class VoluntaryExitCommandTest {
 
   private final BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(
-          outputWriter, errorWriter, Collections.emptyMap(), mock(BeaconNodeCommand.StartAction.class), mock(LoggingConfigurator.class));
+          outputWriter,
+          errorWriter,
+          Collections.emptyMap(),
+          mock(BeaconNodeCommand.StartAction.class),
+          mock(LoggingConfigurator.class));
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
