@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -52,8 +53,10 @@ class CombinedChainDataClientTest {
   @BeforeEach
   void setUp() {
     when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(forkChoiceStrategy.isOptimistic(any())).thenReturn(Optional.of(true));
     when(chainHead.isOptimistic()).thenReturn(false);
+    when(chainHead.getSlot()).thenReturn(UInt64.valueOf(8428924L));
   }
 
   @Test

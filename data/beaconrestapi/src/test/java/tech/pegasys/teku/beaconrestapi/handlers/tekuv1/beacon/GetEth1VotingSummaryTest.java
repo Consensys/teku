@@ -72,7 +72,8 @@ public class GetEth1VotingSummaryTest extends AbstractMigratedBeaconHandlerTest 
     when(chainDataProvider.getBeaconStateAndMetadata(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new StateAndMetaData(beaconState, SpecMilestone.PHASE0, false, true))));
+                Optional.of(
+                    new StateAndMetaData(beaconState, SpecMilestone.PHASE0, false, true, false))));
     when(eth1DataProvider.getVotingPeriodInfo(any())).thenReturn(VOTING_PERIOD_INFO);
     List<Pair<Eth1Data, UInt64>> eth1Votes = new ArrayList<>();
     eth1Votes.add(Pair.of(ETH1_DATA, UInt64.valueOf(20)));

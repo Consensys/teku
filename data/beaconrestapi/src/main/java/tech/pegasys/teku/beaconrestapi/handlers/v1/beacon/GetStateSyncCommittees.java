@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -39,16 +38,11 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateSyncCommittees extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/sync_committees";
   private final ChainDataProvider chainDataProvider;
-
-  private static final ObjectAndMetaData<StateSyncCommitteesData> EMPTY_RESPONSE =
-      new ObjectAndMetaData<>(
-          new StateSyncCommitteesData(List.of(), List.of()), SpecMilestone.PHASE0, false, true);
 
   private static final SerializableTypeDefinition<StateSyncCommitteesData> DATA_TYPE =
       SerializableTypeDefinition.object(StateSyncCommitteesData.class)
@@ -90,13 +84,6 @@ public class GetStateSyncCommittees extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
-
-    if (!chainDataProvider.stateParameterMaySupportAltair(
-        request.getPathParameter(PARAMETER_STATE_ID))) {
-      request.respondOk(EMPTY_RESPONSE);
-      return;
-    }
-
     final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         chainDataProvider.getStateSyncCommittees(
             request.getPathParameter(PARAMETER_STATE_ID), epoch);

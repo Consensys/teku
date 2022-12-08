@@ -24,20 +24,24 @@ public class ObjectAndMetaData<T> {
   private final SpecMilestone milestone;
   private final boolean executionOptimistic;
   private final boolean canonical;
+  private final boolean finalized;
 
   public ObjectAndMetaData(
       final T data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
-      final boolean canonical) {
+      final boolean canonical,
+      final boolean finalized) {
     this.data = data;
     this.milestone = milestone;
     this.executionOptimistic = executionOptimistic;
     this.canonical = canonical;
+    this.finalized = finalized;
   }
 
   public <X> ObjectAndMetaData<X> map(final Function<T, X> mapper) {
-    return new ObjectAndMetaData<>(mapper.apply(data), milestone, executionOptimistic, canonical);
+    return new ObjectAndMetaData<>(
+        mapper.apply(data), milestone, executionOptimistic, canonical, finalized);
   }
 
   public T getData() {
@@ -54,6 +58,10 @@ public class ObjectAndMetaData<T> {
 
   public boolean isCanonical() {
     return canonical;
+  }
+
+  public boolean isFinalized() {
+    return finalized;
   }
 
   @Override

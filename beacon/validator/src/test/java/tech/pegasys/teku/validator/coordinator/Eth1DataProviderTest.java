@@ -57,7 +57,7 @@ public class Eth1DataProviderTest {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel =
       mock(Eth1DepositStorageChannel.class);
   private final StateAndMetaData stateAndMetaData =
-      new StateAndMetaData(state, SpecMilestone.PHASE0, false, true);
+      new StateAndMetaData(state, SpecMilestone.PHASE0, false, true, false);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private Eth1DataProvider eth1DataProvider;
