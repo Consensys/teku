@@ -26,3 +26,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly
+- Fixed issue where the voluntary-exit subcommand did not exit immediately after completion
