@@ -163,7 +163,8 @@ public class DoppelgangerDetector {
           .getTimeInSeconds()
           .minus(startTime)
           .isGreaterThanOrEqualTo(timeout.toSeconds())) {
-        statusLog.doppelgangerTimeout(mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+        statusLog.doppelgangerDetectionTimeout(
+            mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
         return stopDoppelgangerDetectorTask(new HashMap<>());
       }
 

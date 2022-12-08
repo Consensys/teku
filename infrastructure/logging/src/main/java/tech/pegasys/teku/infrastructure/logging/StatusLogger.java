@@ -166,7 +166,7 @@ public class StatusLogger {
     log.info("Starting doppelganger detection for public keys: {}", String.join(", ", publicKeys));
   }
 
-  public void doppelgangerTimeout(Set<String> publicKeys) {
+  public void doppelgangerDetectionTimeout(Set<String> publicKeys) {
     log.warn(
         "Doppelganger Detection for public keys {} stopped due to a timeout. "
             + "The doppelganger check couldn't be performed correctly due to "

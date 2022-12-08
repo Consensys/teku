@@ -275,7 +275,7 @@ public class DoppelgangerDetectorTest {
         String.format(
             "Unable to check validators doppelgangers for keys %s. Unable to get validators indices: java.lang.Exception: %s",
             pubKey3.toAbbreviatedString(), validatorIndicesException.getMessage()));
-    verify(statusLog).doppelgangerTimeout(Set.of(pubKey3.toAbbreviatedString()));
+    verify(statusLog).doppelgangerDetectionTimeout(Set.of(pubKey3.toAbbreviatedString()));
     assertThat(secondDoppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -297,7 +297,8 @@ public class DoppelgangerDetectorTest {
             "Unable to check validators doppelgangers for keys %s. Unable to get genesis time to calculate the current epoch: java.lang.Exception: Genesis Time Exception",
             toAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")));
     logCaptor.assertErrorLog(expectedErrorLog);
-    verify(statusLog).doppelgangerTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+    verify(statusLog)
+        .doppelgangerDetectionTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -325,7 +326,8 @@ public class DoppelgangerDetectorTest {
             "Unable to check validators doppelgangers for keys %s. Unable to get validators indices: java.lang.Exception: %s",
             toAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
             validatorIndicesException.getMessage()));
-    verify(statusLog).doppelgangerTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+    verify(statusLog)
+        .doppelgangerDetectionTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
@@ -348,7 +350,8 @@ public class DoppelgangerDetectorTest {
             "Unable to check validators doppelgangers for keys %s. Unable to get validators liveness: java.lang.Exception: %s",
             toAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
             validatorLivenessException.getMessage()));
-    verify(statusLog).doppelgangerTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+    verify(statusLog)
+        .doppelgangerDetectionTimeout(toAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
