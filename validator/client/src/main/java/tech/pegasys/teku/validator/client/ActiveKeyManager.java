@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
@@ -111,8 +110,7 @@ public class ActiveKeyManager implements KeyManager {
       final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(slashingProtectionPath);
-    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
-        removeValidators(validators, exporter);
+    final List<DeleteKeyResult> deletionResults = removeValidators(validators, exporter);
     String exportedData;
     try {
       exportedData = exporter.finalise();
@@ -120,30 +118,27 @@ public class ActiveKeyManager implements KeyManager {
       LOG.error("Failed to serialize slashing export data", e);
       exportedData = EXPORT_FAILED;
     }
-    return new DeleteKeysResponse(
-        deletionResults.stream().map(Pair::getRight).collect(Collectors.toList()), exportedData);
+    return new DeleteKeysResponse(deletionResults, exportedData);
   }
 
-  private List<Pair<BLSPublicKey, DeleteKeyResult>> removeValidators(
+  private List<DeleteKeyResult> removeValidators(
       final List<BLSPublicKey> publicKeys, final SlashingProtectionIncrementalExporter exporter) {
-    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults = new ArrayList<>();
+    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
     for (final BLSPublicKey publicKey : publicKeys) {
       Optional<Validator> maybeValidator =
           validatorLoader.getOwnedValidators().getValidator(publicKey);
 
       // read-only check in a non-destructive manner
       if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
-        deletionResults.add(
-            Pair.of(publicKey, DeleteKeyResult.error("Cannot remove read-only validator")));
+        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
         continue;
       }
       // delete validator from owned validators list
       maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
       if (maybeValidator.isPresent()) {
-        deletionResults.add(Pair.of(publicKey, deleteValidator(maybeValidator.get(), exporter)));
+        deletionResults.add(deleteValidator(maybeValidator.get(), exporter));
       } else {
-        deletionResults.add(
-            Pair.of(publicKey, attemptToGetSlashingDataForInactiveValidator(publicKey, exporter)));
+        deletionResults.add(attemptToGetSlashingDataForInactiveValidator(publicKey, exporter));
       }
     }
     return deletionResults;
@@ -151,35 +146,31 @@ public class ActiveKeyManager implements KeyManager {
 
   @Override
   public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
-    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults =
-        removeExternalValidators(validators);
-    return new DeleteRemoteKeysResponse(
-        deletionResults.stream().map(Pair::getRight).collect(Collectors.toList()));
+    final List<DeleteKeyResult> deletionResults = removeExternalValidators(validators);
+    return new DeleteRemoteKeysResponse(deletionResults);
   }
 
-  private List<Pair<BLSPublicKey, DeleteKeyResult>> removeExternalValidators(
-      final List<BLSPublicKey> publicKeys) {
-    final List<Pair<BLSPublicKey, DeleteKeyResult>> deletionResults = new ArrayList<>();
+  private List<DeleteKeyResult> removeExternalValidators(final List<BLSPublicKey> publicKeys) {
+    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
     for (final BLSPublicKey publicKey : publicKeys) {
       Optional<Validator> maybeValidator =
           validatorLoader.getOwnedValidators().getValidator(publicKey);
 
       // read-only check in a non-destructive manner
       if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
-        deletionResults.add(
-            Pair.of(publicKey, DeleteKeyResult.error("Cannot remove read-only validator")));
+        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
         continue;
       }
       // delete validator from owned validators list
       maybeValidator = validatorLoader.getOwnedValidators().getValidator(publicKey);
       if (maybeValidator.isPresent()) {
         DeleteKeyResult result = deleteExternalValidator(maybeValidator.get());
-        deletionResults.add(Pair.of(publicKey, result));
+        deletionResults.add(result);
         if (result.equals(DeleteKeyResult.success())) {
           validatorLoader.getOwnedValidators().removeValidator(publicKey);
         }
       } else {
-        deletionResults.add(Pair.of(publicKey, DeleteKeyResult.notFound()));
+        deletionResults.add(DeleteKeyResult.notFound());
       }
     }
     return deletionResults;
