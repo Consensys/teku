@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -75,7 +76,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
-public class VoluntaryExitCommand implements Runnable {
+public class VoluntaryExitCommand implements Callable<Integer> {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorRestApiClient apiClient;
@@ -140,29 +141,33 @@ public class VoluntaryExitCommand implements Runnable {
   private AsyncRunnerFactory asyncRunnerFactory;
 
   @Override
-  public void run() {
+  public Integer call() {
     SUB_COMMAND_LOG.display("Loading configuration...");
     try {
       initialise();
       if (confirmationEnabled) {
         if (!confirmExits()) {
-          return;
+          return 1;
         }
       }
       getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
-      if (ex instanceof InvalidConfigurationException
-          && Throwables.getRootCause(ex) instanceof ConnectException) {
-        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+      if (ex instanceof InvalidConfigurationException) {
+        if (Throwables.getRootCause(ex) instanceof ConnectException) {
+          SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+        } else {
+          SUB_COMMAND_LOG.error(ex.getMessage());
+        }
       } else {
         SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
       }
-      System.exit(1);
+      return 1;
     } finally {
       if (asyncRunnerFactory != null) {
         asyncRunnerFactory.shutdown();
       }
     }
+    return 0;
   }
 
   private boolean confirmExits() {
@@ -285,8 +290,8 @@ public class VoluntaryExitCommand implements Runnable {
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
     if (maybeRoot.isEmpty()) {
-      SUB_COMMAND_LOG.error("Unable to fetch genesis data, cannot generate an exit.");
-      System.exit(1);
+      throw new InvalidConfigurationException(
+          "Unable to fetch genesis data, cannot generate an exit.");
     }
     genesisRoot = maybeRoot.get();
 
@@ -313,30 +318,25 @@ public class VoluntaryExitCommand implements Runnable {
             metricsSystem,
             dataDirLayout);
 
-    try {
-      validatorLoader.loadValidators();
-      final Map<BLSPublicKey, Validator> activeValidators =
-          validatorLoader.getOwnedValidators().getActiveValidators().stream()
-              .collect(Collectors.toMap(Validator::getPublicKey, validator -> validator));
-      if (maybePubKeysToExit.isPresent()) {
-        validatorsMap = new HashMap<>();
-        List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
-        activeValidators.keySet().stream()
-            .filter(pubKeysToExit::contains)
-            .forEach(
-                validatorPubKey ->
-                    validatorsMap.putIfAbsent(
-                        validatorPubKey, activeValidators.get(validatorPubKey)));
-      } else {
-        validatorsMap = activeValidators;
-      }
-    } catch (InvalidConfigurationException ex) {
-      SUB_COMMAND_LOG.error(ex.getMessage());
-      System.exit(1);
+    validatorLoader.loadValidators();
+    final Map<BLSPublicKey, Validator> activeValidators =
+        validatorLoader.getOwnedValidators().getActiveValidators().stream()
+            .collect(Collectors.toMap(Validator::getPublicKey, validator -> validator));
+    if (maybePubKeysToExit.isPresent()) {
+      validatorsMap = new HashMap<>();
+      List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
+      activeValidators.keySet().stream()
+          .filter(pubKeysToExit::contains)
+          .forEach(
+              validatorPubKey ->
+                  validatorsMap.putIfAbsent(
+                      validatorPubKey, activeValidators.get(validatorPubKey)));
+    } else {
+      validatorsMap = activeValidators;
     }
+
     if (validatorsMap.isEmpty()) {
-      SUB_COMMAND_LOG.error("No validators were found to exit.");
-      System.exit(1);
+      throw new InvalidConfigurationException("No validators were found to exit");
     }
   }
 
@@ -345,17 +345,15 @@ public class VoluntaryExitCommand implements Runnable {
 
     if (epoch == null) {
       if (maybeEpoch.isEmpty()) {
-        SUB_COMMAND_LOG.error(
+        throw new InvalidConfigurationException(
             "Could not calculate epoch from latest block header, please specify --epoch");
-        System.exit(1);
       }
       epoch = maybeEpoch.orElseThrow();
     } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
-      SUB_COMMAND_LOG.error(
+      throw new InvalidConfigurationException(
           String.format(
               "The specified epoch %s is greater than current epoch %s, cannot continue.",
               epoch, maybeEpoch.get()));
-      System.exit(1);
     }
   }
 

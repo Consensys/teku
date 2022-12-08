@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class VoluntaryExitCommandTest {
   private InputStream originalSystemIn;
   private PrintStream originalSystemOut;
+  private PrintStream originalSytstemErr;
   private final StringWriter stringWriter = new StringWriter();
   private final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   private final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
@@ -66,6 +67,8 @@ public class VoluntaryExitCommandTest {
           mock(LoggingConfigurator.class));
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+
+  private final ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
 
   private final String keyManagerPubKey1 =
       "0x8b0f19f3306930d8a1e85a8084ef2caea044066dedfd3de0c22f28473dd07606da5d205ae09ee20072dc9f9e4fd32d79";
@@ -93,7 +96,9 @@ public class VoluntaryExitCommandTest {
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
     originalSystemIn = System.in;
     originalSystemOut = System.out;
+    originalSytstemErr = System.err;
     System.setOut(new PrintStream(stdOut));
+    System.setErr(new PrintStream(stdErr));
 
     commandArgs =
         List.of(
@@ -118,6 +123,7 @@ public class VoluntaryExitCommandTest {
     mockBeaconServer.reset();
     System.setOut(originalSystemOut);
     System.setIn(originalSystemIn);
+    System.setErr(originalSytstemErr);
   }
 
   @Test
@@ -199,7 +205,7 @@ public class VoluntaryExitCommandTest {
 
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
-    assertThat(parseResult).isEqualTo(0);
+    assertThat(parseResult).isEqualTo(1);
     assertThat(stdOut.toString()).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESASGE);
     assertThat(stdOut.toString()).doesNotContain(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
     assertValidatorsNotExited(
@@ -215,12 +221,33 @@ public class VoluntaryExitCommandTest {
 
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
-    assertThat(parseResult).isEqualTo(0);
+    assertThat(parseResult).isEqualTo(1);
 
     assertThat(stdOut.toString()).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESASGE);
     assertThat(stdOut.toString()).contains(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
     assertValidatorsNotExited(
         validatorPubKey1, validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
+  }
+
+  @Test
+  void shouldExitFailureWithNoValidatorKeysFound() {
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = commandArgs.subList(0, 5);
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString()).contains("No validators were found to exit");
+  }
+
+  @Test
+  void shouldExitFailureFutureEpoch() {
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString())
+        .contains("The specified epoch 1024 is greater than current epoch");
   }
 
   private void setUserInput(final String confirmationText) {
