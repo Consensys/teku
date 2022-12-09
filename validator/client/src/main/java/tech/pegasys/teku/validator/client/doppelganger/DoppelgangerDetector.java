@@ -274,7 +274,7 @@ public class DoppelgangerDetector {
     private Map<UInt64, BLSPublicKey> mapLivenessAtEpochToIndicesByPubKey(
         final List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> doppelgangers) {
       return doppelgangers.stream()
-          .collect(Collectors.toMap(e -> e.getRight().getIndex(), e -> e.getLeft()));
+          .collect(Collectors.toMap(e -> e.getRight().getIndex(), Pair::getLeft));
     }
 
     private List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> filterLiveValidators(
