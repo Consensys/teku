@@ -16,9 +16,13 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import com.google.common.io.Resources;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +34,9 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.interop.MergedGenesisTestBuilder;
 
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -145,6 +152,17 @@ public class BesuNode extends Node {
 
   public String getRichBenefactorKey() {
     return "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
+  }
+
+  public ExecutionPayloadHeader createGenesisExecutionPayload(final Spec spec) {
+    try {
+      final String genesisConfig =
+          Resources.toString(Resources.getResource(config.genesisFilePath), StandardCharsets.UTF_8);
+      return MergedGenesisTestBuilder.createPayloadForBesuGenesis(
+          spec.getGenesisSchemaDefinitions(), genesisConfig);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   @SuppressWarnings("unused")

@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.BlindedBlockCapella;
+import tech.pegasys.teku.api.schema.eip4844.BlindedBlockEip4844;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
 @Schema(
@@ -24,6 +25,7 @@ import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
       BeaconBlockPhase0.class,
       BeaconBlockAltair.class,
       BlindedBlockBellatrix.class,
-      BlindedBlockCapella.class
+      BlindedBlockCapella.class,
+      BlindedBlockEip4844.class
     })
 public interface UnsignedBlindedBlock {}

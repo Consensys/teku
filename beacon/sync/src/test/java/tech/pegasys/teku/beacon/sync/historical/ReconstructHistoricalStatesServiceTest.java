@@ -29,12 +29,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -54,6 +57,7 @@ public class ReconstructHistoricalStatesServiceTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private ReconstructHistoricalStatesService service;
   private final StatusLogger statusLogger = mock(StatusLogger.class);
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
   @BeforeEach
   void setup() {
@@ -224,6 +228,12 @@ public class ReconstructHistoricalStatesServiceTest {
   private void createService(final Optional<String> genesisStateResource) {
     service =
         new ReconstructHistoricalStatesService(
-            storageUpdateChannel, chainDataClient, spec, genesisStateResource, statusLogger);
+            storageUpdateChannel,
+            chainDataClient,
+            spec,
+            StubTimeProvider.withTimeInSeconds(0),
+            metricsSystem,
+            genesisStateResource,
+            statusLogger);
   }
 }

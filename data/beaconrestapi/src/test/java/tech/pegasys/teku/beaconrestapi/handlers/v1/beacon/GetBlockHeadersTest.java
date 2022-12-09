@@ -29,10 +29,10 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
@@ -67,9 +67,9 @@ class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlockHeaderData> headers =
+    final List<BlockAndMetaData> headers =
         List.of(generateBlockHeaderData(), generateBlockHeaderData());
-    final BlockHeadersResponse responseData = new BlockHeadersResponse(headers, true);
+    final BlockHeadersResponse responseData = new BlockHeadersResponse(true, false, headers);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
@@ -78,8 +78,8 @@ class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     assertThat(data).isEqualTo(expected);
   }
 
-  private BlockHeaderData generateBlockHeaderData() {
-    return new BlockHeaderData(
-        dataStructureUtil.randomBytes32(), true, dataStructureUtil.randomSignedBeaconBlockHeader());
+  private BlockAndMetaData generateBlockHeaderData() {
+    return new BlockAndMetaData(
+        dataStructureUtil.randomSignedBeaconBlock(1), SpecMilestone.PHASE0, true, true, false);
   }
 }

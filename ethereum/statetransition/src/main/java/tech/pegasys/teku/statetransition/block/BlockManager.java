@@ -276,6 +276,12 @@ public class BlockManager extends Service
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
+                  case FAILED_BLOBS_AVAILABILITY_CHECK:
+                    // TODO:
+                    //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
+                    //  contains a valid block but the BlobsSidecar validation fails.
+                    //  Should be similar to what we do with pendingBlocks.
+                    break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",

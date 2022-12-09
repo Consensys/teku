@@ -374,12 +374,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     if (blobsSidecarAndValidationResult.isFailure()) {
-      LOG.error("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
-      // TODO: fail block import
+      LOG.error(
+          "blobsSidecar validation result: {}",
+          blobsSidecarAndValidationResult.getValidationResult());
+      return BlockImportResult.FAILED_BLOBS_AVAILABILITY_CHECK;
     } else if (blobsSidecarAndValidationResult.isNotRequired()) {
-      LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+      LOG.debug(
+          "blobsSidecar validation result: {}",
+          blobsSidecarAndValidationResult.getValidationResult());
     } else if (blobsSidecarAndValidationResult.isValid()) {
-      LOG.debug("blobs are " + blobsSidecarAndValidationResult.getValidationResult());
+      LOG.debug(
+          "blobsSidecar validation result: {}",
+          blobsSidecarAndValidationResult.getValidationResult());
       // TODO: store blobs
     }
 

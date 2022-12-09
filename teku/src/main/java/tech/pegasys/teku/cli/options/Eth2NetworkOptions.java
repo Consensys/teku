@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLO
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
@@ -37,7 +36,7 @@ public class Eth2NetworkOptions {
       arity = "1")
   private String network = "mainnet";
 
-  @CommandLine.Option(
+  @Option(
       names = {"--initial-state"},
       paramLabel = "<STRING>",
       description =
@@ -45,7 +44,7 @@ public class Eth2NetworkOptions {
       arity = "1")
   private String initialState;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xgenesis-state"},
       hidden = true,
       paramLabel = "<STRING>",
@@ -61,6 +60,15 @@ public class Eth2NetworkOptions {
           "Contract address for the deposit contract. Only required when creating a custom network.",
       arity = "1")
   private String eth1DepositContractAddress = null; // Depends on network configuration
+
+  @Option(
+      names = {"--Xtrusted-setup"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description =
+          "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This value should be a file or URL pointing to a trusted setup.",
+      arity = "1")
+  private String trustedSetup = null; // Depends on network configuration
 
   @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
@@ -220,6 +228,9 @@ public class Eth2NetworkOptions {
     }
     if (progressiveBalancesMode != null) {
       builder.progressiveBalancesEnabled(progressiveBalancesMode);
+    }
+    if (trustedSetup != null) {
+      builder.trustedSetup(trustedSetup);
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)

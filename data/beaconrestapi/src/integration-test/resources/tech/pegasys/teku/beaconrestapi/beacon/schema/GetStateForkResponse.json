@@ -2,9 +2,12 @@
   "title" : "GetStateForkResponse",
   "description" : "Returns [Fork](https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/beacon-chain.md#fork) object for state with given 'stateId'.",
   "type" : "object",
-  "required" : [ "execution_optimistic", "data" ],
+  "required" : [ "execution_optimistic", "finalized", "data" ],
   "properties" : {
     "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
       "type" : "boolean"
     },
     "data" : {

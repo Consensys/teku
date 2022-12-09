@@ -59,6 +59,12 @@ public class ValidatorKeystores {
     this.validatorKeys = validatorKeys;
   }
 
+  public static ValidatorKeystores add(final ValidatorKeystores a, final ValidatorKeystores b) {
+    final List<ValidatorKeys> combinedKeys = new ArrayList<>(a.validatorKeys);
+    combinedKeys.addAll(b.validatorKeys);
+    return new ValidatorKeystores(combinedKeys);
+  }
+
   public List<String> getKeystores(final Path tempDir) {
     return validatorKeys.stream()
         .map(
@@ -82,6 +88,10 @@ public class ValidatorKeystores {
         .collect(Collectors.toList());
   }
 
+  public List<ValidatorKeys> getValidatorKeys() {
+    return validatorKeys;
+  }
+
   public List<String> getPasswords() {
     return validatorKeys.stream().map((__) -> VALIDATOR_KEYS_PASSWORD).collect(Collectors.toList());
   }
@@ -99,7 +109,7 @@ public class ValidatorKeystores {
             maybeTarball = Optional.of(createValidatorKeystoresTarBall());
             return maybeTarball.get();
           } catch (Exception e) {
-            throw new IllegalStateException("Unable to create validator tarball");
+            throw new IllegalStateException("Unable to create validator tarball", e);
           }
         });
   }

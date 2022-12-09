@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.List;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
+import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -29,19 +33,25 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostBlsToExecutionChanges extends RestApiEndpoint {
-
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
   private final NodeDataProvider nodeDataProvider;
+  private final ChainDataProvider chainDataProvider;
 
   public PostBlsToExecutionChanges(
-      final NodeDataProvider provider, final SchemaDefinitionCache schemaCache) {
+      final NodeDataProvider provider,
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
     this.nodeDataProvider = provider;
+    this.chainDataProvider = chainDataProvider;
+  }
+
+  public PostBlsToExecutionChanges(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
+    this(dataProvider.getNodeDataProvider(), dataProvider.getChainDataProvider(), schemaCache);
   }
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
@@ -53,39 +63,42 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
                 + " to network.")
         .tags(TAG_BEACON)
         .requestBodyType(
-            schemaCache
-                .getSchemaDefinition(SpecMilestone.CAPELLA)
-                .toVersionCapella()
-                .orElseThrow()
-                .getSignedBlsToExecutionChangeSchema()
-                .getJsonTypeDefinition())
-        .response(SC_OK, "BLS to execution change is stored in node and broadcasted to network")
+            DeserializableTypeDefinition.listOf(
+                schemaCache
+                    .getSchemaDefinition(SpecMilestone.CAPELLA)
+                    .toVersionCapella()
+                    .orElseThrow()
+                    .getSignedBlsToExecutionChangeSchema()
+                    .getJsonTypeDefinition()))
+        .response(SC_OK, "BLS to execution change is stored in node and broadcast to network")
+        .response(
+            SC_BAD_REQUEST,
+            "Errors with one or more BLS to execution changes",
+            ErrorListBadRequest.getJsonTypeDefinition())
         .build();
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SignedBlsToExecutionChange blsToExecutionChange = request.getRequestBody();
-    final SafeFuture<InternalValidationResult> future =
-        nodeDataProvider.postBlsToExecutionChange(blsToExecutionChange);
+    if (!chainDataProvider.getMilestoneAtHead().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      request.respondError(
+          SC_BAD_REQUEST,
+          "The beacon node is not currently ready to accept bls_to_execution_change operations.");
+      return;
+    }
+    final List<SignedBlsToExecutionChange> blsToExecutionChanges = request.getRequestBody();
+    final SafeFuture<List<SubmitDataError>> future =
+        nodeDataProvider.postBlsToExecutionChanges(blsToExecutionChanges);
 
     request.respondAsync(
         future.thenApply(
-            internalValidationResult -> {
-              if (internalValidationResult.code().equals(ValidationResultCode.IGNORE)
-                  || internalValidationResult.code().equals(ValidationResultCode.REJECT)) {
-                LOG.debug(
-                    "BlsToExecutionChange failed status {} {}",
-                    internalValidationResult.code(),
-                    internalValidationResult.getDescription().orElse(""));
-                return AsyncApiResponse.respondWithError(
-                    SC_BAD_REQUEST,
-                    internalValidationResult
-                        .getDescription()
-                        .orElse(
-                            "Invalid BlsToExecutionChange, it will never pass validation so it's rejected"));
+            errors -> {
+              if (errors.isEmpty()) {
+                return AsyncApiResponse.respondWithCode(SC_OK);
               }
-              return AsyncApiResponse.respondWithCode(SC_OK);
+              final ErrorListBadRequest data =
+                  ErrorListBadRequest.convert(PARTIAL_PUBLISH_FAILURE_MESSAGE, errors);
+              return AsyncApiResponse.respondWithObject(SC_BAD_REQUEST, data);
             }));
   }
 }

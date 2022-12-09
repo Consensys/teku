@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -42,9 +45,10 @@ import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class NodeDataProvider {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
@@ -115,9 +119,40 @@ public class NodeDataProvider {
     return new ArrayList<>(blsToExecutionChangePool.getAll());
   }
 
-  public SafeFuture<InternalValidationResult> postBlsToExecutionChange(
-      final SignedBlsToExecutionChange blsToExecutionChange) {
-    return blsToExecutionChangePool.addLocal(blsToExecutionChange);
+  public SafeFuture<List<SubmitDataError>> postBlsToExecutionChanges(
+      final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
+    final List<SafeFuture<Optional<SubmitDataError>>> maybeFutureErrors = new ArrayList<>();
+
+    for (int i = 0; i < blsToExecutionChanges.size(); i++) {
+      maybeFutureErrors.add(addBlsToExecutionChange(i, blsToExecutionChanges.get(i)));
+    }
+
+    return SafeFuture.collectAll(maybeFutureErrors.stream())
+        .thenApply(
+            entries -> entries.stream().flatMap(Optional::stream).collect(Collectors.toList()));
+  }
+
+  private SafeFuture<Optional<SubmitDataError>> addBlsToExecutionChange(
+      final int index, final SignedBlsToExecutionChange signedBlsToExecutionChange) {
+    return blsToExecutionChangePool
+        .addLocal(signedBlsToExecutionChange)
+        .thenApply(
+            internalValidationResult -> {
+              if (internalValidationResult.isAccept()) {
+                return Optional.empty();
+              }
+              LOG.debug(
+                  "BlsToExecutionChange failed status {} {}",
+                  internalValidationResult.code(),
+                  internalValidationResult.getDescription().orElse(""));
+              return Optional.of(
+                  new SubmitDataError(
+                      UInt64.valueOf(index),
+                      internalValidationResult
+                          .getDescription()
+                          .orElse(
+                              "Invalid BlsToExecutionChange, it will never pass validation so it's rejected")));
+            });
   }
 
   public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
@@ -131,6 +166,11 @@ public class NodeDataProvider {
   public void subscribeToNewVoluntaryExits(
       OperationPool.OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToNewBlsToExecutionChanges(
+      OperationPool.OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+    blsToExecutionChangePool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToSyncCommitteeContributions(

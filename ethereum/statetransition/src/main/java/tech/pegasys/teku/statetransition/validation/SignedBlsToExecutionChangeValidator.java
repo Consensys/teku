@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -57,6 +58,17 @@ public class SignedBlsToExecutionChangeValidator
      [IGNORE] The signed_bls_to_execution_change is the first valid signed bls to execution change received for the
      validator with index signed_bls_to_execution_change.message.validator_index.
     */
+    if (!spec.atSlot(recentChainData.getHeadSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      final String logMessage =
+          String.format(
+              "BlsToExecutionChange arrived before Capella and was ignored for validator %s.",
+              validatorIndex);
+      LOG.trace(logMessage);
+      return SafeFuture.completedFuture(InternalValidationResult.create(IGNORE, logMessage));
+    }
+
     if (!isFirstBlsToExecutionChangeForValidator(blsToExecutionChange)) {
       final String logMessage =
           String.format(
@@ -75,9 +87,17 @@ public class SignedBlsToExecutionChangeValidator
                 return InternalValidationResult.reject(
                     "BlsToExecutionChange for validator %s is invalid: %s",
                     validatorIndex, maybeFailureReason.get().describe());
-              } else {
-                seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex);
+              }
+
+              if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
                 return InternalValidationResult.ACCEPT;
+              } else {
+                final String logMessage =
+                    String.format(
+                        "BlsToExecutionChange is not the first one for validator %s.",
+                        validatorIndex);
+                LOG.trace(logMessage);
+                return InternalValidationResult.create(IGNORE, logMessage);
               }
             });
   }

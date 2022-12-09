@@ -8,22 +8,25 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/SignedBLSToExecutionChange"
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignedBLSToExecutionChange"
+            }
           }
         }
       }
     },
     "responses" : {
       "200" : {
-        "description" : "BLS to execution change is stored in node and broadcasted to network",
+        "description" : "BLS to execution change is stored in node and broadcast to network",
         "content" : { }
       },
       "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
+        "description" : "Errors with one or more BLS to execution changes",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
             }
           }
         }

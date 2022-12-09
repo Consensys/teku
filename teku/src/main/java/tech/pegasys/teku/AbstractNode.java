@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -159,7 +158,7 @@ public abstract class AbstractNode implements Node {
     counterMaintainer.ifPresent(Cancellable::cancel);
 
     // Stop async actions
-    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+    asyncRunnerFactory.shutdown();
 
     // Stop services. This includes closing the database.
     getServiceController()

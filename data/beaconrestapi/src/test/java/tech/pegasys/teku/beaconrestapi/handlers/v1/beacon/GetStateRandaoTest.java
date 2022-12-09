@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateRandaoTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private final GetStateRandao getStateRandaoHandler = new GetStateRandao(chainDataProvider);
@@ -57,11 +58,16 @@ public class GetStateRandaoTest extends AbstractMigratedBeaconHandlerWithChainDa
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final Bytes32 bytes = dataStructureUtil.randomBytes32();
+    final Bytes32 randao = dataStructureUtil.randomBytes32();
+    final ObjectAndMetaData<Bytes32> responseData =
+        new ObjectAndMetaData<>(randao, SpecMilestone.PHASE0, false, true, false);
     // get response string given the state provided
-    final String data = getResponseStringFromMetadata(handler, SC_OK, bytes);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
 
-    String expected = String.format("{\"data\":{\"randao\":\"%s\"}}", bytes);
+    String expected =
+        String.format(
+            "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"randao\":\"%s\"}}",
+            randao);
     assertThat(data).isEqualTo(expected);
   }
 }

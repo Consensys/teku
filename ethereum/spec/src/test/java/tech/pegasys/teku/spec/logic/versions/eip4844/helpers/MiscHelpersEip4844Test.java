@@ -42,7 +42,7 @@ class MiscHelpersEip4844Test {
 
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final MiscHelpersEip4844 miscHelpersEip4844 =
-      new MiscHelpersEip4844(spec.getGenesisSpecConfig());
+      new MiscHelpersEip4844(spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow());
 
   @Test
   public void versionedHash() {

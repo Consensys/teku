@@ -17,10 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -114,7 +112,6 @@ public class Web3SignerNode extends Node {
   public static class Config {
     private Map<String, Object> configMap = new HashMap<>();
     private final Map<File, String> configFileMap = new HashMap<>();
-    private Optional<URL> maybeNetworkYaml = Optional.empty();
 
     public Config() {
       configMap.put("logging", "debug");
@@ -124,10 +121,8 @@ public class Web3SignerNode extends Node {
       configMap.put("eth2.key-manager-api-enabled", true);
     }
 
-    public Web3SignerNode.Config withNetwork(final URL yamlUrl) {
-      // TODO just specify less-swift rather than NETWORK_FILE_PATH
-      this.maybeNetworkYaml = Optional.of(yamlUrl);
-      configMap.put("eth2.network", NETWORK_FILE_PATH);
+    public Web3SignerNode.Config withNetwork(final String network) {
+      configMap.put("eth2.network", network);
       return this;
     }
 
@@ -141,10 +136,6 @@ public class Web3SignerNode extends Node {
       configFile.deleteOnExit();
       writeConfigFileTo(configFile);
       configFileMap.put(configFile, CONFIG_FILE_PATH);
-      if (maybeNetworkYaml.isPresent()) {
-        final File networkFile = copyToTmpFile(maybeNetworkYaml.get());
-        configFileMap.put(networkFile, NETWORK_FILE_PATH);
-      }
     }
 
     private void writeConfigFileTo(final File configFile) throws Exception {

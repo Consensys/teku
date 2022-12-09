@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
@@ -48,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,6 +58,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
@@ -63,9 +66,11 @@ import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
@@ -74,19 +79,31 @@ import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
+import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
+
   private static final Logger LOG = LogManager.getLogger();
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   private final Config config;
@@ -100,8 +117,7 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
-    Consumer<SpecConfigBuilder> specConfigModifier =
-        config.getSpecConfigModifier().orElse(__ -> {});
+    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier();
     this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
 
     container
@@ -116,24 +132,13 @@ public class TekuNode extends Node {
   }
 
   public static TekuNode create(
-      final Network network,
-      final DockerVersion version,
-      final Consumer<Config> configOptions,
-      final GenesisStateGenerator genesisStateGenerator)
+      final Network network, final DockerVersion version, final Consumer<Config> configOptions)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(network, version, config);
-
-    if (config.getGenesisStateConfig().isPresent()) {
-      final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
-      File genesisFile = genesisStateGenerator.generateState(genesisConfig);
-      node.copyFileToContainer(genesisFile, genesisConfig.getPath());
-    }
-
-    return node;
+    return new TekuNode(network, version, config);
   }
 
   public void start() throws Exception {
@@ -150,8 +155,9 @@ public class TekuNode extends Node {
     container.start();
   }
 
-  public void startEventListener(final List<EventType> eventTypes) {
-    maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
+  public void startEventListener(final EventType... eventTypes) {
+    maybeEventStreamListener =
+        Optional.of(new EventStreamListener(getEventUrl(List.of(eventTypes))));
   }
 
   public void waitForContributionAndProofEvent() {
@@ -201,7 +207,7 @@ public class TekuNode extends Node {
 
   public void waitForBlockAtOrAfterSlot(final long slot) {
     if (maybeEventStreamListener.isEmpty()) {
-      startEventListener(List.of(EventType.head));
+      startEventListener(EventType.head);
     }
     waitFor(
         () ->
@@ -262,6 +268,79 @@ public class TekuNode extends Node {
     return output;
   }
 
+  public void submitBlsToExecutionChange(
+      final int validatorIndex,
+      final BLSKeyPair validatorKeyPair,
+      final Eth1Address executionAddress)
+      throws Exception {
+    final int currentEpoch = getCurrentEpoch();
+
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        new BlsToExecutionChangeCreator(spec, getGenesisValidatorsRoot())
+            .createAndSign(
+                UInt64.valueOf(validatorIndex),
+                validatorKeyPair.getPublicKey(),
+                executionAddress,
+                validatorKeyPair.getSecretKey(),
+                UInt64.valueOf(currentEpoch));
+
+    final DeserializableTypeDefinition<List<SignedBlsToExecutionChange>> jsonTypeDefinition =
+        DeserializableTypeDefinition.listOf(
+            SchemaDefinitionsCapella.required(
+                    spec.atEpoch(UInt64.valueOf(currentEpoch)).getSchemaDefinitions())
+                .getSignedBlsToExecutionChangeSchema()
+                .getJsonTypeDefinition());
+    final String body = JsonUtil.serialize(List.of(signedBlsToExecutionChange), jsonTypeDefinition);
+
+    httpClient.post(getRestApiUrl(), "/eth/v1/beacon/pool/bls_to_execution_changes", body);
+  }
+
+  public void waitForBlsToExecutionChangeEventForValidator(int validatorIndex) {
+    if (maybeEventStreamListener.isEmpty()) {
+      fail(
+          "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
+    }
+
+    waitFor(
+        () -> {
+          final List<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
+              blsToExecutionChanges =
+                  getEventsOfTypeFromEventStream(
+                      EventType.bls_to_execution_change, this::mapBlsToExecutionChangeFromEvent);
+
+          final Optional<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
+              eventForValidator =
+                  blsToExecutionChanges.stream()
+                      .filter(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex))
+                      .findFirst();
+          assertThat(eventForValidator).isPresent();
+        });
+  }
+
+  private <T> List<T> getEventsOfTypeFromEventStream(
+      final EventType type, final Function<PackedMessage, T> mapperFn) {
+    if (maybeEventStreamListener.isEmpty()) {
+      return List.of();
+    }
+
+    return maybeEventStreamListener.get().getMessages().stream()
+        .filter(packedMessage -> packedMessage.getEvent().equals(type.name()))
+        .map(mapperFn)
+        .collect(toList());
+  }
+
+  private tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange
+      mapBlsToExecutionChangeFromEvent(final Eth2EventHandler.PackedMessage packedMessage) {
+    try {
+      return JSON_PROVIDER.jsonToObject(
+          packedMessage.getMessageEvent().getData(),
+          tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange.class);
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to process bls_to_execution_change event", e);
+      return null;
+    }
+  }
+
   private String getValidatorLivenessUrl(final UInt64 epoch) {
     return LOCAL_VALIDATOR_LIVENESS_URL.replace("{epoch}", epoch.toString());
   }
@@ -279,16 +358,24 @@ public class TekuNode extends Node {
     return getRestApiUrl() + "/eth/v1/events" + eventTypes;
   }
 
-  private UInt64 fetchGenesisTime() throws IOException {
+  private GenesisData fetchGenesis() throws IOException {
     String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
     final GetGenesisResponse response =
         JSON_PROVIDER.jsonToObject(genesisTime, GetGenesisResponse.class);
-    return response.data.genesisTime;
+    return response.data;
+  }
+
+  private UInt64 fetchGenesisTime() throws IOException {
+    return fetchGenesis().genesisTime;
   }
 
   public UInt64 getGenesisTime() throws IOException {
     waitForGenesis();
     return fetchGenesisTime();
+  }
+
+  public Bytes32 getGenesisValidatorsRoot() throws IOException {
+    return fetchGenesis().getGenesisValidatorsRoot();
   }
 
   public void waitForNewBlock() {
@@ -315,6 +402,10 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
+  public void waitForMilestone(final SpecMilestone expectedMilestone) {
+    waitForLogMessageContaining("Activating network upgrade: " + expectedMilestone.name());
+  }
+
   public void waitForNonDefaultExecutionPayload() {
     LOG.debug("Wait for a block containing a non default execution payload");
 
@@ -332,13 +423,27 @@ public class TekuNode extends Node {
                   .getBody()
                   .executionPayload
                   .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
-
-          assertThat(executionPayload.isDefault()).isFalse();
+          assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
           LOG.debug(
               "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
         },
         5,
         MINUTES);
+  }
+
+  public void waitForGenesisWithNonDefaultExecutionPayload() {
+    LOG.debug("Wait for genesis block containing a non default execution payload");
+
+    waitFor(
+        () -> {
+          final Optional<BeaconState> maybeState = fetchState("genesis");
+          assertThat(maybeState).isPresent();
+          assertThat(maybeState.get().toVersionBellatrix()).isPresent();
+          final BeaconStateBellatrix genesisState = maybeState.get().toVersionBellatrix().get();
+          assertThat(genesisState.getLatestExecutionPayloadHeader().isDefault())
+              .describedAs("Is latest execution payload header a default payload header")
+              .isFalse();
+        });
   }
 
   public void waitForFullSyncCommitteeAggregate() {
@@ -444,7 +549,11 @@ public class TekuNode extends Node {
   }
 
   private Optional<SignedBlock> fetchHeadBlock() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
+    return fetchBlock("head");
+  }
+
+  private Optional<SignedBlock> fetchBlock(final String blockId) throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
@@ -453,15 +562,35 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
+    return fetchState("head");
+  }
+
+  private Optional<BeaconState> fetchState(final String stateId) throws IOException {
     final Bytes result =
         httpClient.getAsBytes(
             getRestApiUrl(),
-            "/eth/v2/debug/beacon/states/head",
+            "/eth/v2/debug/beacon/states/" + stateId,
             Map.of("Accept", "application/octet-stream"));
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
       return Optional.of(spec.deserializeBeaconState(result));
+    }
+  }
+
+  private Optional<Validator> fetchValidator(final String stateId, final int validatorId)
+      throws IOException {
+    final String result =
+        httpClient.get(
+            getRestApiUrl(),
+            "/eth/v1/beacon/states/" + stateId + "/validators/" + validatorId,
+            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final GetStateValidatorResponse response =
+          JSON_PROVIDER.jsonToObject(result, GetStateValidatorResponse.class);
+      return Optional.of(response.data.validator.asInternalValidator());
     }
   }
 
@@ -472,6 +601,20 @@ public class TekuNode extends Node {
           assertThat(maybeState).isPresent();
           BeaconState state = maybeState.get();
           assertThat(state.getValidators().size()).isEqualTo(numberOfValidators);
+        });
+  }
+
+  public void waitForValidatorWithCredentials(
+      final int validatorIndex, final Eth1Address executionAddress) {
+    waitFor(
+        () -> {
+          final Optional<Validator> maybeValidator = fetchValidator("head", validatorIndex);
+          assertThat(maybeValidator).isPresent();
+          Validator validator = maybeValidator.get();
+          final Bytes32 withdrawalCredentials = validator.getWithdrawalCredentials();
+          assertThat(withdrawalCredentials)
+              .isEqualTo(
+                  BlockProcessorCapella.getWithdrawalAddressFromEth1Address(executionAddress));
         });
   }
 
@@ -552,7 +695,6 @@ public class TekuNode extends Node {
    * Copies data directory from node into a temporary directory.
    *
    * @return A file containing the data directory.
-   * @throws Exception
    */
   public File getDataDirectoryFromContainer() throws Exception {
     File dbTar = File.createTempFile("database", ".tar");
@@ -615,11 +757,14 @@ public class TekuNode extends Node {
   }
 
   public static class Config {
+
     public static final String DEFAULT_NETWORK_NAME = "swift";
     public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
+    private static final String INITIAL_STATE_FILE = "/state.ssz";
 
     private Optional<URL> maybeNetworkYaml = Optional.empty();
     private Optional<URL> maybeJwtFile = Optional.empty();
+    private Optional<InitialStateData> maybeInitialState = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -629,8 +774,7 @@ public class TekuNode extends Node {
     private final Map<String, Object> configMap = new HashMap<>();
     private final List<File> tarballsToCopy = new ArrayList<>();
 
-    private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
-    private Optional<Consumer<SpecConfigBuilder>> specConfigModifier = Optional.empty();
+    private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
     public Config() {
       configMap.put("network", networkName);
@@ -656,7 +800,6 @@ public class TekuNode extends Node {
       configMap.put("metrics-host-allowlist", "*");
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
-      configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
       configMap.put("rest-api-host-allowlist", "*");
     }
@@ -698,6 +841,7 @@ public class TekuNode extends Node {
     }
 
     public Config withValidatorKeystores(final ValidatorKeystores keystores) {
+      configMap.put("Xinterop-enabled", false);
       tarballsToCopy.add(keystores.getTarball());
       configMap.put(
           "validator-keys",
@@ -727,23 +871,56 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withAltairEpoch(final UInt64 altairSlot) {
-      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
+    public Config withAltairEpoch(final UInt64 altairForkEpoch) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.altairBuilder(
+                      altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
       return this;
     }
 
     public Config withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
       configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
       specConfigModifier =
-          Optional.of(
+          specConfigModifier.andThen(
               specConfigBuilder ->
                   specConfigBuilder.bellatrixBuilder(
                       bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
       return this;
     }
 
-    public Config withTotalTerminalDifficulty(final String totalTerminalDifficulty) {
-      configMap.put("Xnetwork-total-terminal-difficulty-override", totalTerminalDifficulty);
+    public Config withCapellaEpoch(final UInt64 capellaForkEpoch) {
+      configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.capellaBuilder(
+                      capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+      return this;
+    }
+
+    public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
+      return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
+    }
+
+    public Config withTotalTerminalDifficulty(final UInt256 totalTerminalDifficulty) {
+      configMap.put(
+          "Xnetwork-total-terminal-difficulty-override",
+          totalTerminalDifficulty.toBigInteger().toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.bellatrixBuilder(
+                      bellatrixBuilder ->
+                          bellatrixBuilder.terminalTotalDifficulty(totalTerminalDifficulty)));
+      return this;
+    }
+
+    public Config withInitialState(final InitialStateData initialState) {
+      configMap.put("initial-state", INITIAL_STATE_FILE);
+      this.maybeInitialState = Optional.of(initialState);
       return this;
     }
 
@@ -754,8 +931,13 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withExecutionEngineEndpoint(final String eeEndpoint) {
-      configMap.put("ee-endpoint", eeEndpoint);
+    public Config withExecutionEngine(final BesuNode node) {
+      configMap.put("ee-endpoint", node.getInternalEngineJsonRpcUrl());
+      return this;
+    }
+
+    public Config withStubExecutionEngine() {
+      configMap.put("ee-endpoint", "unsafe-test-stub");
       return this;
     }
 
@@ -792,11 +974,7 @@ public class TekuNode extends Node {
       return peerId.toBase58();
     }
 
-    public Optional<GenesisStateConfig> getGenesisStateConfig() {
-      return genesisStateConfig;
-    }
-
-    public Optional<Consumer<SpecConfigBuilder>> getSpecConfigModifier() {
+    public Consumer<SpecConfigBuilder> getSpecConfigModifier() {
       return specConfigModifier;
     }
 
@@ -813,6 +991,12 @@ public class TekuNode extends Node {
       }
       if (maybeJwtFile.isPresent()) {
         configFiles.put(copyToTmpFile(maybeJwtFile.get()), JWT_SECRET_FILE_PATH);
+      }
+      if (maybeInitialState.isPresent()) {
+        final InitialStateData initialStateData = maybeInitialState.get();
+        final File initialStateFile =
+            copyToTmpFile(initialStateData.writeToTempFile().toURI().toURL());
+        configFiles.put(initialStateFile, INITIAL_STATE_FILE);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");

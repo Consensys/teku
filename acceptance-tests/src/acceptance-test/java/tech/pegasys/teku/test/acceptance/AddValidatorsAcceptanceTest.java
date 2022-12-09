@@ -15,7 +15,7 @@ package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
@@ -23,22 +23,26 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldLoadAdditionalValidatorsWithoutRestart() throws Exception {
-    final String networkName = "less-swift";
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
-    eth1Node.start();
+    final String networkName = "swift";
 
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
+        createTekuDepositSender(networkName).generateValidatorKeys(2);
 
     final ValidatorKeystores additionalKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
+        createTekuDepositSender(networkName).generateValidatorKeys(2);
+
+    final InitialStateData genesis =
+        createGenesisGenerator()
+            .network(networkName)
+            .validatorKeys(initialKeystores, additionalKeystores)
+            .generate();
 
     final TekuNode node =
         createTekuNode(
             config ->
                 config
                     .withNetwork(networkName)
-                    .withDepositsFrom(eth1Node)
+                    .withInitialState(genesis)
                     .withValidatorKeystores(initialKeystores));
     node.start();
 
@@ -53,7 +57,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
     // Check loading new validators a second time still works and that they don't have to be active
     final ValidatorKeystores evenMoreKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
+        createTekuDepositSender(networkName).generateValidatorKeys(1);
     node.addValidators(evenMoreKeystores);
     node.waitForOwnedValidatorCount(5);
   }

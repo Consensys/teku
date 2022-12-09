@@ -17,16 +17,27 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositSnapshotFileLoader {
+
+  public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
+      Map.of(
+          Eth2Network.GNOSIS, "gnosis.ssz",
+          Eth2Network.PRATER, "goerli.ssz",
+          Eth2Network.MAINNET, "mainnet.ssz",
+          Eth2Network.SEPOLIA, "sepolia.ssz");
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Optional<String> depositSnapshotResource;
@@ -44,11 +55,11 @@ public class DepositSnapshotFileLoader {
   private Optional<DepositTreeSnapshot> loadDepositSnapshot(
       final Optional<String> depositSnapshotResource) {
     return depositSnapshotResource.map(
-        snapshotResource -> {
-          final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(snapshotResource);
+        snapshotPath -> {
+          final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(snapshotPath);
           try {
             STATUS_LOG.loadingDepositSnapshot(sanitizedResource);
-            final DepositTreeSnapshot depositSnapshot = loadFromResource(snapshotResource);
+            final DepositTreeSnapshot depositSnapshot = loadFromUrl(snapshotPath);
             STATUS_LOG.loadedDepositSnapshotResource(
                 depositSnapshot.getDepositCount(), depositSnapshot.getExecutionBlockHash());
             return depositSnapshot;
@@ -63,10 +74,13 @@ public class DepositSnapshotFileLoader {
         });
   }
 
-  private DepositTreeSnapshot loadFromResource(final String source) throws IOException {
-    return DepositTreeSnapshot.fromBytes(
+  private DepositTreeSnapshot loadFromUrl(final String path) throws IOException {
+    final Bytes snapshotData =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Not found")));
+            .loadBytes(path)
+            .orElseThrow(
+                () -> new FileNotFoundException(String.format("File '%s' not found", path)));
+
+    return DepositTreeSnapshot.fromBytes(snapshotData);
   }
 }

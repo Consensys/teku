@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -30,8 +30,7 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
 
-  @CommandLine.ArgGroup(validate = false)
-  private NatOptions natOptions = new NatOptions();
+  @Mixin private NatOptions natOptions = new NatOptions();
 
   @Option(
       names = {"--p2p-enabled"},

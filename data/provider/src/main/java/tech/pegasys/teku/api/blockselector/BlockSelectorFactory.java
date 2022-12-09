@@ -159,7 +159,8 @@ public class BlockSelectorFactory {
 
   private Optional<BlockAndMetaData> lookupCanonicalBlockData(
       final Optional<SignedBeaconBlock> maybeBlock, final boolean isOptimistic) {
-    return maybeBlock.map(block -> lookupBlockData(block, isOptimistic, true));
+    return maybeBlock.map(
+        block -> lookupBlockData(block, isOptimistic, true, client.isFinalized(block.getSlot())));
   }
 
   private BlockAndMetaData lookupBlockData(
@@ -168,12 +169,16 @@ public class BlockSelectorFactory {
         block,
         // If the chain head is optimistic that will "taint" whether the block is canonical
         chainHead.isOptimistic() || client.isOptimisticBlock(block.getRoot()),
-        client.isCanonicalBlock(block.getSlot(), block.getRoot(), chainHead.getRoot()));
+        client.isCanonicalBlock(block.getSlot(), block.getRoot(), chainHead.getRoot()),
+        client.isFinalized(block.getSlot()));
   }
 
   private BlockAndMetaData lookupBlockData(
-      final SignedBeaconBlock block, final boolean isOptimistic, final boolean isCanonical) {
+      final SignedBeaconBlock block,
+      final boolean isOptimistic,
+      final boolean isCanonical,
+      final boolean finalized) {
     return new BlockAndMetaData(
-        block, spec.atSlot(block.getSlot()).getMilestone(), isOptimistic, isCanonical);
+        block, spec.atSlot(block.getSlot()).getMilestone(), isOptimistic, isCanonical, finalized);
   }
 }

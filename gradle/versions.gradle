@@ -23,7 +23,7 @@ dependencyManagement {
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.3'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:2.7.1'
+    dependency 'com.launchdarkly:okhttp-eventsource:3.0.0'
 
     dependency 'com.squareup.okhttp3:okhttp:4.9.3'
     dependency 'com.squareup.okhttp3:mockwebserver:4.9.3'
@@ -32,7 +32,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.0'
 
-    dependencySet(group: 'io.javalin', version: '5.1.4') {
+    dependencySet(group: 'io.javalin', version: '5.2.0') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
@@ -41,6 +41,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.8'
+    dependency 'tech.pegasys:jc-kzg-4844:0.1.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -50,17 +51,17 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.14.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.4') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.7') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder
-    dependency 'org.webjars:swagger-ui:4.10.3'
-    dependency 'org.thymeleaf:thymeleaf:3.1.0.M1'
-    dependency 'io.github.classgraph:classgraph:4.8.149'
-    dependency 'com.github.oshi:oshi-core-java11:6.3.1'
+    dependency 'org.webjars:swagger-ui:4.15.5'
+    dependency 'org.thymeleaf:thymeleaf:3.1.0.RELEASE'
+    dependency 'io.github.classgraph:classgraph:4.8.151'
+    dependency 'com.github.oshi:oshi-core-java11:6.4.0'
 
     dependencySet(group: 'io.netty', version: '4.1.71.Final') {
       entry('netty-all') {
@@ -69,19 +70,19 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '4.3.4') {
+    dependencySet(group: 'io.vertx', version: '4.3.5') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.4.24'
+    dependency 'io.projectreactor:reactor-core:3.5.0'
 
     dependency 'it.unimi.dsi:fastutil:8.5.9'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '2.3.0') {
+    dependencySet(group: 'org.apache.tuweni', version: '2.3.1') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-junit'
@@ -118,12 +119,12 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '4.8.1') {
+    dependencySet(group: 'org.mockito', version: '4.9.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
 
-    dependencySet(group: "org.openjdk.jmh", version: "1.35") {
+    dependencySet(group: "org.openjdk.jmh", version: "1.36") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
@@ -143,15 +144,21 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.7.7') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.10.2') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
+      entry('core')
+      entry('config')
     }
-    dependency 'org.hyperledger.besu:plugin-api:22.7.7'
+    dependencySet(group: 'org.hyperledger.besu', version: '22.10.2') {
+      entry('besu-datatypes')
+      entry('evm')
+      entry('plugin-api')
+    }
 
-    dependencySet(group: 'org.testcontainers', version: '1.17.5') {
+    dependencySet(group: 'org.testcontainers', version: '1.17.6') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -175,6 +182,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.7.0'
+    dependency 'net.jqwik:jqwik:1.7.1'
   }
 }

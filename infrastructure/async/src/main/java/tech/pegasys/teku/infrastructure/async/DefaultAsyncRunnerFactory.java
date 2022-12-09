@@ -35,7 +35,7 @@ public class DefaultAsyncRunnerFactory implements AsyncRunnerFactory {
   }
 
   @Override
-  public Collection<AsyncRunner> getAsyncRunners() {
-    return asyncRunners;
+  public void shutdown() {
+    asyncRunners.forEach(AsyncRunner::shutdown);
   }
 }

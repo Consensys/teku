@@ -14,15 +14,15 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -30,22 +30,23 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<AttesterSlashing> {
 
   @Override
-  protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
-    return new Eth2TopicHandler<>(
-        recentChainData,
-        asyncRunner,
-        processor,
-        gossipEncoding,
-        forkDigest,
-        GossipTopicName.ATTESTER_SLASHING,
-        Optional.empty(),
-        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema(),
-        GOSSIP_MAX_SIZE);
+  protected Eth2TopicHandler<?> createHandler() {
+    final AttesterSlashingGossipManager gossipManager =
+        new AttesterSlashingGossipManager(
+            spec,
+            recentChainData,
+            asyncRunner,
+            null,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            GOSSIP_MAX_SIZE);
+    return gossipManager.getTopicHandler();
   }
 
   @Test
   public void handleMessage_validSlashing() {
-    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
     when(processor.process(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
@@ -56,8 +57,19 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   }
 
   @Test
+  public void handleMessage_invalidSlashing_wrongFork() {
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(wrongForkSlot);
+    Bytes serialized = gossipEncoding.encode(slashing);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    verifyNoInteractions(processor);
+  }
+
+  @Test
   public void handleMessage_ignoredSlashing() {
-    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
     when(processor.process(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
@@ -69,7 +81,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
 
   @Test
   public void handleMessage_rejectedSlashing() {
-    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
     when(processor.process(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
@@ -91,18 +103,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
 
   @Test
   public void returnProperTopicName() {
-    final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    Eth2TopicHandler<AttesterSlashing> topicHandler =
-        new Eth2TopicHandler<>(
-            recentChainData,
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkDigest,
-            GossipTopicName.ATTESTER_SLASHING,
-            Optional.empty(),
-            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema(),
-            GOSSIP_MAX_SIZE);
-    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
+    assertThat(topicHandler.getTopic())
+        .isEqualTo("/eth2/" + forkDigest.toUnprefixedHexString() + "/attester_slashing/ssz_snappy");
   }
 }

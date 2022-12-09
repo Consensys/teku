@@ -132,6 +132,18 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getBlock();
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlindedBlock(
+      final String slotParameter) {
+    return getBlock(slotParameter)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    blockAndData ->
+                        blockAndData.map(
+                            block ->
+                                block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()))));
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
       final String slotParameter) {
     return fromBlock(slotParameter, signedBeaconBlock -> signedBeaconBlock);
@@ -286,17 +298,21 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(new BlockHeadersResponse(false, emptyList()));
+      return SafeFuture.completedFuture(new BlockHeadersResponse(false, false, emptyList()));
     }
 
+    final UInt64 actualSlot = slot.orElse(combinedChainDataClient.getHeadSlot());
     return defaultBlockSelectorFactory
-        .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .nonCanonicalBlocksSelector(actualSlot)
         .getBlocks()
         .thenApply(
             blockAndMetadataList -> {
               final boolean executionOptimistic =
                   blockAndMetadataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
-              return new BlockHeadersResponse(executionOptimistic, blockAndMetadataList);
+              return new BlockHeadersResponse(
+                  executionOptimistic,
+                  combinedChainDataClient.isFinalized(actualSlot),
+                  blockAndMetadataList);
             });
   }
 
@@ -521,6 +537,10 @@ public class ChainDataProvider {
             maybeFinalizedBlock
                 .filter(block -> block.getSlot().equals(slot))
                 .map(SignedBeaconBlock::getRoot));
+  }
+
+  public SpecMilestone getMilestoneAtHead() {
+    return spec.atSlot(recentChainData.getHeadSlot()).getMilestone();
   }
 
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(

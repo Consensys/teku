@@ -29,13 +29,16 @@ import org.testcontainers.containers.Network;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
+  static {
+    // Disable libsodium in tuweni Hash because the check for its presence can be very slow.
+    System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
+  }
+
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
-  private final GenesisStateGenerator genesisStateGenerator = new GenesisStateGenerator();
 
   @AfterEach
   final void shutdownNodes() {
@@ -54,7 +57,7 @@ public class AcceptanceTestBase {
   protected TekuNode createTekuNode(
       final DockerVersion version, final Consumer<TekuNode.Config> configOptions) {
     try {
-      return addNode(TekuNode.create(network, version, configOptions, genesisStateGenerator));
+      return addNode(TekuNode.create(network, version, configOptions));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -100,6 +103,10 @@ public class AcceptanceTestBase {
   protected BesuNode createBesuNode(
       final BesuDockerVersion version, final Consumer<BesuNode.Config> configOptions) {
     return addNode(BesuNode.create(network, version, configOptions));
+  }
+
+  protected GenesisGenerator createGenesisGenerator() {
+    return new GenesisGenerator();
   }
 
   private <T extends Node> T addNode(final T node) {

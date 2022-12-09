@@ -87,7 +87,14 @@ public class StateSelectorFactory {
       final ChainHead chainHead = maybeChainHead.get();
       return chainHead
           .getState()
-          .thenApply(state -> Optional.of(addMetaData(state, chainHead.isOptimistic(), true)));
+          .thenApply(
+              state ->
+                  Optional.of(
+                      addMetaData(
+                          state,
+                          chainHead.isOptimistic(),
+                          true,
+                          client.isFinalized(state.getSlot()))));
     };
   }
 
@@ -104,6 +111,7 @@ public class StateSelectorFactory {
                             // imported blocks at the head and if the head isn't optimistic, the
                             // finalized block can't be optimistic.
                             client.isChainHeadOptimistic(),
+                            true,
                             true)));
   }
 
@@ -117,14 +125,15 @@ public class StateSelectorFactory {
                         // The justified checkpoint may change because of optimistically
                         // imported blocks at the head and if the head isn't optimistic, the
                         // justified block can't be optimistic.
-                        state -> addMetaData(state, client.isChainHeadOptimistic(), true)));
+                        state -> addMetaData(state, client.isChainHeadOptimistic(), true, false)));
   }
 
   public StateSelector genesisSelector() {
     return () ->
         client
             .getStateAtSlotExact(GENESIS_SLOT)
-            .thenApply(maybeState -> maybeState.map(state -> addMetaData(state, false, true)));
+            .thenApply(
+                maybeState -> maybeState.map(state -> addMetaData(state, false, true, true)));
   }
 
   public StateSelector forSlot(final UInt64 slot) {
@@ -141,7 +150,12 @@ public class StateSelectorFactory {
                       .thenApply(
                           maybeState ->
                               maybeState.map(
-                                  state -> addMetaData(state, head.isOptimistic(), true)));
+                                  state ->
+                                      addMetaData(
+                                          state,
+                                          head.isOptimistic(),
+                                          true,
+                                          client.isFinalized(slot))));
                 })
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
@@ -166,13 +180,21 @@ public class StateSelectorFactory {
           addMetaData(
               state,
               chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot),
-              client.isCanonicalBlock(state.getSlot(), blockRoot, chainHead.getRoot())));
+              client.isCanonicalBlock(state.getSlot(), blockRoot, chainHead.getRoot()),
+              client.isFinalized(state.getSlot())));
     }
   }
 
   private StateAndMetaData addMetaData(
-      final BeaconState state, final boolean executionOptimistic, final boolean canonical) {
+      final BeaconState state,
+      final boolean executionOptimistic,
+      final boolean canonical,
+      final boolean finalized) {
     return new StateAndMetaData(
-        state, spec.atSlot(state.getSlot()).getMilestone(), executionOptimistic, canonical);
+        state,
+        spec.atSlot(state.getSlot()).getMilestone(),
+        executionOptimistic,
+        canonical,
+        finalized);
   }
 }

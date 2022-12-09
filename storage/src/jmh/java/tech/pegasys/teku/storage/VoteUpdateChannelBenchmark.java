@@ -31,7 +31,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
@@ -90,7 +89,7 @@ public class VoteUpdateChannelBenchmark {
   public void tearDown() throws Exception {
     eventThread.stop();
     storageSystem.close();
-    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+    asyncRunnerFactory.shutdown();
     FileUtils.deleteDirectory(tempDirectory.toFile());
   }
 

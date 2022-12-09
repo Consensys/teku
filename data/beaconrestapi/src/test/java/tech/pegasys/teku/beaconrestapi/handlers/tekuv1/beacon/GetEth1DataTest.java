@@ -58,7 +58,8 @@ public class GetEth1DataTest extends AbstractMigratedBeaconHandlerTest {
     when(chainDataProvider.getBeaconStateAtHead())
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new StateAndMetaData(beaconState, SpecMilestone.PHASE0, false, true))));
+                Optional.of(
+                    new StateAndMetaData(beaconState, SpecMilestone.PHASE0, false, true, false))));
     when(eth1DataProvider.getEth1Vote(any())).thenReturn(ETH1_DATA);
   }
 

@@ -17,7 +17,10 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -56,11 +59,13 @@ public class GetStateRandao extends RestApiEndpoint {
             .withField("randao", BYTES32_TYPE, Function.identity())
             .build();
 
-    final SerializableTypeDefinition<Bytes32> responseType =
-        SerializableTypeDefinition.object(Bytes32.class)
+    final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> responseType =
+        SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
             .name("GetStateRandaoResponse")
             .description("RANDAO mix for state with given 'stateId'.")
-            .withField("data", randaoType, Function.identity())
+            .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+            .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
+            .withField("data", randaoType, ObjectAndMetaData::getData)
             .build();
     return EndpointMetadata.get(ROUTE)
         .operationId("getStateRandao")
@@ -101,7 +106,7 @@ public class GetStateRandao extends RestApiEndpoint {
       return AsyncApiResponse.respondWithError(
           SC_BAD_REQUEST, "Epoch is out of range for the `randao_mixes` of the state");
     } else {
-      return AsyncApiResponse.respondOk(maybeRandao.get());
+      return AsyncApiResponse.respondOk(maybeObjectAndMetadata.map(Optional::orElseThrow));
     }
   }
 }

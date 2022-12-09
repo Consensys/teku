@@ -24,7 +24,7 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
-  private static final String NETWORK_NAME = "less-swift";
+  private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   private static final int VALIDATORS = 64;
 
@@ -91,11 +91,11 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     return config
         .withNetwork(NETWORK_NAME)
         .withBellatrixEpoch(UInt64.ZERO)
-        .withTotalTerminalDifficulty(UInt64.valueOf(10001).toString())
+        .withTotalTerminalDifficulty(10001)
         .withGenesisTime(genesisTime)
         .withRealNetwork()
         .withStartupTargetPeerCount(0)
-        .withExecutionEngineEndpoint(executionEngine.getInternalEngineJsonRpcUrl())
+        .withExecutionEngine(executionEngine)
         .withJwtSecretFile(JWT_FILE);
   }
 }

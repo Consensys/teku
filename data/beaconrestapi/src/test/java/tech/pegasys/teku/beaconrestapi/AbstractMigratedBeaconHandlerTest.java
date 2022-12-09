@@ -76,6 +76,6 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   }
 
   protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
-    return new ObjectAndMetaData<>(value, spec.getGenesisSpec().getMilestone(), false, true);
+    return new ObjectAndMetaData<>(value, spec.getGenesisSpec().getMilestone(), false, true, false);
   }
 }

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
 import java.util.function.Function;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -36,6 +37,11 @@ public class GetBlsToExecutionChanges extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
 
   private final NodeDataProvider nodeDataProvider;
+
+  public GetBlsToExecutionChanges(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
+    this(dataProvider.getNodeDataProvider(), schemaCache);
+  }
 
   public GetBlsToExecutionChanges(
       final NodeDataProvider nodeDataProvider, final SchemaDefinitionCache schemaCache) {

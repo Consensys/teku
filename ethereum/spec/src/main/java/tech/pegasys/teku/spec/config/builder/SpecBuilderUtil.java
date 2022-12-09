@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
 public class SpecBuilderUtil {
@@ -39,5 +40,9 @@ public class SpecBuilderUtil {
 
   static void validateNotNull(final String name, final Object value) {
     checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
+  }
+
+  static <T> void validateRequiredOptional(final String name, final Optional<T> value) {
+    checkArgument(value.isPresent(), "Missing value for required '%s'", name);
   }
 }

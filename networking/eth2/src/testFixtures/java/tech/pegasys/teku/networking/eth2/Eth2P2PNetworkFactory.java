@@ -40,6 +40,8 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -228,6 +230,13 @@ public class Eth2P2PNetworkFactory {
                 discoConfig.getMinRandomlySelectedPeers());
         final SchemaDefinitionsSupplier currentSchemaDefinitions =
             () -> config.getSpec().getGenesisSchemaDefinitions();
+        final SettableLabelledGauge subnetPeerCountGauge =
+            SettableLabelledGauge.create(
+                metricsSystem,
+                TekuMetricCategory.NETWORK,
+                "subnet_peer_count",
+                "Number of currently connected peers subscribed to each subnet",
+                "subnet");
         final DiscoveryNetwork<?> network =
             DiscoveryNetworkBuilder.create()
                 .metricsSystem(metricsSystem)
@@ -257,7 +266,8 @@ public class Eth2P2PNetworkFactory {
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,
-                                config.getTargetSubnetSubscriberCount()),
+                                config.getTargetSubnetSubscriberCount(),
+                                subnetPeerCountGauge),
                         reputationManager,
                         Collections::shuffle))
                 .discoveryConfig(config.getDiscoveryConfig())

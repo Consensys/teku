@@ -14,11 +14,18 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -105,5 +112,40 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-2.com:1234/path/",
             "http://example-3.com:1234/path/");
     assertThat(config.powchain().isEnabled()).isTrue();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "sepolia"})
+  public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
+    final String[] args = {"--network=" + network, "--Xdeposit-snapshot-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
+    assertThat(config.powchain().getDepositSnapshotPath())
+        .contains(
+            PowchainConfiguration.class
+                .getResource(
+                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
+                        Eth2Network.fromStringLenient(network).get()))
+                .toExternalForm());
+  }
+
+  @Test
+  public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
+    final String[] args = {"--network=swift", "--Xdeposit-snapshot-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
+    assertThat(config.powchain().getDepositSnapshotPath()).isEmpty();
+  }
+
+  @Test
+  public void shouldThrowErrorIfSnapshotPathProvidedWithBundleSnapshot() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
+                    .powchain(b -> b.depositSnapshotEnabled(true).depositSnapshotPath("/some/path"))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
   }
 }

@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +50,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final int maxMessageSize;
-  private final Optional<OperationMilestoneValidator<MessageT>> validator;
+  private final OperationMilestoneValidator<MessageT> forkValidator;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -60,7 +59,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
-      final Optional<OperationMilestoneValidator<MessageT>> validator,
+      final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final int maxMessageSize) {
     this.asyncRunner = asyncRunner;
@@ -70,7 +69,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.topicName = topicName;
     this.messageType = messageType;
     this.maxMessageSize = maxMessageSize;
-    this.validator = validator;
+    this.forkValidator = forkValidator;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
@@ -83,7 +82,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final GossipTopicName topicName,
-      final Optional<OperationMilestoneValidator<MessageT>> validator,
+      final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final int maxMessageSize) {
     this(
@@ -93,7 +92,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding,
         forkDigest,
         topicName.toString(),
-        validator,
+        forkValidator,
         messageType,
         maxMessageSize);
   }
@@ -103,7 +102,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
             deserialized -> {
-              if (validator.isPresent() && !validator.get().isValid(deserialized, forkDigest)) {
+              if (!forkValidator.isValid(deserialized)) {
                 return SafeFuture.completedFuture(
                     GossipSubValidationUtil.fromInternalValidationResult(
                         InternalValidationResult.reject("Incorrect spec milestone")));

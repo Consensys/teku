@@ -38,14 +38,19 @@ public class PostAttesterDutiesResponse {
   @JsonProperty("execution_optimistic")
   public final boolean executionOptimistic;
 
+  @JsonProperty(value = "finalized")
+  public final boolean finalized;
+
   @JsonCreator
   public PostAttesterDutiesResponse(
       @JsonProperty("dependent_root") final Bytes32 dependentRoot,
       @JsonProperty("data") final List<AttesterDuty> data,
-      @JsonProperty("execution_optimistic") final boolean executionOptimistic) {
+      @JsonProperty("execution_optimistic") final boolean executionOptimistic,
+      @JsonProperty("finalized") final boolean finalized) {
     this.dependentRoot = dependentRoot;
     this.data = data;
     this.executionOptimistic = executionOptimistic;
+    this.finalized = finalized;
   }
 
   @Override
@@ -57,12 +62,15 @@ public class PostAttesterDutiesResponse {
       return false;
     }
     final PostAttesterDutiesResponse that = (PostAttesterDutiesResponse) o;
-    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
+    return executionOptimistic == that.executionOptimistic
+        && finalized == that.finalized
+        && Objects.equals(dependentRoot, that.dependentRoot)
+        && Objects.equals(data, that.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(dependentRoot, data);
+    return Objects.hash(dependentRoot, data, executionOptimistic, finalized);
   }
 
   @Override
@@ -70,6 +78,8 @@ public class PostAttesterDutiesResponse {
     return MoreObjects.toStringHelper(this)
         .add("dependentRoot", dependentRoot)
         .add("data", data)
+        .add("executionOptimistic", executionOptimistic)
+        .add("finalized", finalized)
         .toString();
   }
 }

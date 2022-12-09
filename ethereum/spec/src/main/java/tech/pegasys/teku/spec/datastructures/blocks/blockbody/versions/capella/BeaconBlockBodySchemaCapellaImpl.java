@@ -127,7 +127,7 @@ public class BeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges().longValue())));
+                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
   }
 
   @Override

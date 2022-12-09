@@ -255,12 +255,6 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withNetwork(final InputStream stream) {
-      this.maybeNetworkYaml = Optional.of(stream);
-      configMap.put("network", NETWORK_FILE_PATH);
-      return this;
-    }
-
     public TekuValidatorNode.Config withInteropValidators(
         final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
@@ -282,7 +276,7 @@ public class TekuValidatorNode extends Node {
       }
       configFileMap.put(sentryNodesConfigFile, SENTRY_NODE_CONFIG_FILE_PATH);
 
-      configMap.put("Xsentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
+      configMap.put("sentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
       isUsingSentryNodeConfig = true;
 
       return this;

@@ -47,7 +47,7 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   }
 
   @Override
-  public UInt64 getMaxBlsToExecutionChanges() {
+  public int getMaxBlsToExecutionChanges() {
     return specConfigCapella.getMaxBlsToExecutionChanges();
   }
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -26,7 +25,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private static final int NODE_VALIDATORS = 8;
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
-  private final String network = "less-swift";
+  private final String network = "swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private TekuNode primaryNode;
@@ -69,7 +68,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.start();
     validatorClient.start();
     watcherNode.start();
-    watcherNode.startEventListener(List.of(EventType.contribution_and_proof));
+    watcherNode.startEventListener(EventType.contribution_and_proof);
 
     primaryNode.waitForEpochAtOrAbove(1);
 
