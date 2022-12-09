@@ -286,10 +286,10 @@ public class TekuNode extends Node {
 
     final DeserializableTypeDefinition<List<SignedBlsToExecutionChange>> jsonTypeDefinition =
         DeserializableTypeDefinition.listOf(
-        SchemaDefinitionsCapella.required(
-                spec.atEpoch(UInt64.valueOf(currentEpoch)).getSchemaDefinitions())
-            .getSignedBlsToExecutionChangeSchema()
-            .getJsonTypeDefinition());
+            SchemaDefinitionsCapella.required(
+                    spec.atEpoch(UInt64.valueOf(currentEpoch)).getSchemaDefinitions())
+                .getSignedBlsToExecutionChangeSchema()
+                .getJsonTypeDefinition());
     final String body = JsonUtil.serialize(List.of(signedBlsToExecutionChange), jsonTypeDefinition);
 
     httpClient.post(getRestApiUrl(), "/eth/v1/beacon/pool/bls_to_execution_changes", body);
