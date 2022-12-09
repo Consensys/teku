@@ -1,0 +1,30 @@
+{
+  "title" : "GetBlindedBlockResponse",
+  "type" : "object",
+  "required" : [ "version", "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "SignedBlindedBeaconBlock",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+      }, {
+        "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
+      }, {
+        "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
+      } ]
+    }
+  }
+}

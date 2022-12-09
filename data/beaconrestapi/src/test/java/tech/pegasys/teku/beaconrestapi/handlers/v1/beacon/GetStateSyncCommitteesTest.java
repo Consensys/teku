@@ -88,11 +88,12 @@ class GetStateSyncCommitteesTest extends AbstractMigratedBeaconHandlerWithChainD
             new StateSyncCommitteesData(validators, validatorAggregates),
             SpecMilestone.PHASE0,
             false,
-            true);
+            true,
+            false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     String expected =
-        "{\"execution_optimistic\":false,\"data\":{\"validators\":[\"2\",\"92\",\"37\"],\"validator_aggregates\":[[\"9\",\"89\"],[\"1\"]]}}";
+        "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"validators\":[\"2\",\"92\",\"37\"],\"validator_aggregates\":[[\"9\",\"89\"],[\"1\"]]}}";
     assertThat(data).isEqualTo(expected);
   }
 }

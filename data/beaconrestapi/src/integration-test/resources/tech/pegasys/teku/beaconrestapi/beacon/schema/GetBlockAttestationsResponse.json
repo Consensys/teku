@@ -1,9 +1,12 @@
 {
   "title" : "GetBlockAttestationsResponse",
   "type" : "object",
-  "required" : [ "execution_optimistic", "data" ],
+  "required" : [ "execution_optimistic", "finalized", "data" ],
   "properties" : {
     "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
       "type" : "boolean"
     },
     "data" : {

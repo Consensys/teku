@@ -23,7 +23,7 @@ dependencyManagement {
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.3'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:2.7.1'
+    dependency 'com.launchdarkly:okhttp-eventsource:3.0.0'
 
     dependency 'com.squareup.okhttp3:okhttp:4.9.3'
     dependency 'com.squareup.okhttp3:mockwebserver:4.9.3'
@@ -41,7 +41,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.8'
-    dependency 'tech.pegasys:jc-kzg-4844:develop'
+    dependency 'tech.pegasys:jc-kzg-4844:0.1.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 

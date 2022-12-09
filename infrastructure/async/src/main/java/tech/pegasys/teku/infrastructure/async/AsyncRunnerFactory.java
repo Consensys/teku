@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.Collection;
 import java.util.regex.Pattern;
 
 public interface AsyncRunnerFactory {
@@ -37,7 +36,7 @@ public interface AsyncRunnerFactory {
 
   AsyncRunner create(String name, int maxThreads, int maxQueueSize);
 
-  Collection<AsyncRunner> getAsyncRunners();
+  void shutdown();
 
   static DefaultAsyncRunnerFactory createDefault(
       final MetricTrackingExecutorFactory executorFactory) {

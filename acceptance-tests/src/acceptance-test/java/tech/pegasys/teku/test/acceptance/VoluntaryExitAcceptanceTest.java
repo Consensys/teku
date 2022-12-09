@@ -30,7 +30,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
-    final String networkName = "less-swift";
+    final String networkName = "swift";
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(4);
     final ValidatorKeystores extraKeys =
@@ -73,6 +73,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     beaconNode.waitForEpochAtOrAbove(3);
     voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
+    voluntaryExitProcessFailing.waitForExit();
+    voluntaryExitProcessSuccessful.waitForExit();
     final List<Integer> validatorIds =
         Arrays.stream(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
             .filter(s -> s.contains("Validator cannot exit until epoch 3"))

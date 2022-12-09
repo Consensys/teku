@@ -71,7 +71,11 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
   void metadata_shouldHandle200() throws IOException {
     final ObjectAndMetaData<Bytes32> responseData =
         new ObjectAndMetaData<>(
-            dataStructureUtil.randomBytes32(), spec.getGenesisSpec().getMilestone(), false, true);
+            dataStructureUtil.randomBytes32(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            true,
+            false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
