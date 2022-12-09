@@ -61,4 +61,13 @@ public class SubmitDataError {
         .withField("message", STRING_TYPE, SubmitDataError::getMessage)
         .build();
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("SubmitDataError{");
+    sb.append("index=").append(index);
+    sb.append(", message='").append(message).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }

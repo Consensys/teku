@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
+import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,8 +47,9 @@ public class PostBlsToExecutionChangesIntegrationTest
 
   @Test
   void postValidBlsToExecutionReturnsOk() throws IOException {
-    final SignedBlsToExecutionChange requestBody =
-        new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange());
+    final List<SignedBlsToExecutionChange> requestBody =
+        List.of(
+            new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange()));
 
     when(blsToExecutionChangePool.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -60,8 +62,9 @@ public class PostBlsToExecutionChangesIntegrationTest
 
   @Test
   void postInvalidBlsToExecutionReturnsBadRequest() throws IOException {
-    final SignedBlsToExecutionChange requestBody =
-        new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange());
+    final List<SignedBlsToExecutionChange> requestBody =
+        List.of(
+            new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange()));
 
     when(blsToExecutionChangePool.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Invalid!")));
