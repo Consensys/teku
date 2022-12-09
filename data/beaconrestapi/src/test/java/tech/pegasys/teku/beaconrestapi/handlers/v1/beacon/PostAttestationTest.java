@@ -98,7 +98,7 @@ public class PostAttestationTest extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_BAD_REQUEST, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(PostAttestationTest.class, "postAttestation.json"), UTF_8);
+            Resources.getResource(PostAttestationTest.class, "errorListBadRequest.json"), UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
