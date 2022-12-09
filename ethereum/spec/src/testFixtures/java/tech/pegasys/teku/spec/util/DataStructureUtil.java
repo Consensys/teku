@@ -1754,13 +1754,14 @@ public final class DataStructureUtil {
   public BlobsBundle randomBlobsBundle() {
     final BlobSchema blobSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
-
-    return new BlobsBundle(
-        randomBytes32(),
+    List<KZGCommitment> kzgs =
         randomSszKzgCommitmentList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
-            .collect(toList()),
-        IntStream.range(0, randomInt((int) blobSchema.getMaxLength()))
+            .collect(toList());
+    return new BlobsBundle(
+        randomBytes32(),
+        kzgs,
+        IntStream.range(0, kzgs.size())
             .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
             .collect(toList()));
   }
@@ -1778,10 +1779,11 @@ public final class DataStructureUtil {
             .toVersionEip4844()
             .orElseThrow()
             .getBlobKzgCommitmentsSchema();
-    final long maxKzgCommitments =
+    final int maxKzgCommitments =
         spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow().getMaxBlobsPerBlock();
 
-    return randomSszList(kzgCommitmentsSchema, maxKzgCommitments, this::randomSszKZGCommitment);
+    return randomSszList(
+        kzgCommitmentsSchema, randomInt(maxKzgCommitments) + 1, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {

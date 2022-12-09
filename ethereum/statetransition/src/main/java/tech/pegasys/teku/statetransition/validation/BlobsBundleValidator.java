@@ -26,7 +26,6 @@ public class BlobsBundleValidator {
     this.miscHelpers = miscHelpers;
   }
 
-  // FIXME: all is optional, should we?
   public InternalValidationResult validate(
       final BlobsBundle blobsBundle, final Optional<ExecutionPayload> executionPayloadOptional) {
 

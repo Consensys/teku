@@ -175,7 +175,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -188,7 +188,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
     verify(subscriber).onBlockImported(nextBlock, false);
   }
 
@@ -201,10 +201,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
     verify(subscriber).onBlockImported(nextBlock, false);
 
-    assertThatSafeFuture(blockManager.importBlock(nextBlock))
+    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()))
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
     verify(subscriber, times(2)).onBlockImported(nextBlock, false);
   }
@@ -219,10 +219,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
     verify(subscriber).onBlockImported(nextBlock, true);
 
-    assertThatSafeFuture(blockManager.importBlock(nextBlock))
+    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()))
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
     verify(subscriber, times(2)).onBlockImported(nextBlock, true);
   }
@@ -238,7 +238,7 @@ public class BlockManagerTest {
         validBlock.getSchema().create(validBlock.getMessage(), dataStructureUtil.randomSignature());
     incrementSlot();
 
-    assertThatSafeFuture(blockManager.importBlock(invalidBlock))
+    assertThatSafeFuture(blockManager.importBlock(invalidBlock, Optional.empty()))
         .isCompletedWithValueMatching(result -> !result.isSuccessful());
     verifyNoInteractions(subscriber);
   }
@@ -254,7 +254,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    safeJoin(blockManager.importBlock(nextNextBlock));
+    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -292,7 +292,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.importBlock(nextNextBlock);
+    blockManager.importBlock(nextNextBlock, Optional.empty());
     ignoreFuture(
         verify(blockImporter)
             .importBlockAndBlobsSidecar(nextNextBlock, Optional.empty(), Optional.empty()));
@@ -315,7 +315,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    safeJoin(blockManager.importBlock(nextBlock));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -331,7 +331,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
-    safeJoin(blockManager.importBlock(nextNextBlock));
+    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -344,7 +344,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+    assertThat(blockManager.importBlock(nextBlock, Optional.empty())).isCompleted();
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -354,7 +354,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
+    assertThat(blockManager.importBlock(nextBlock, Optional.empty())).isCompleted();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -371,7 +371,9 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
+    blocks
+        .subList(1, blockCount)
+        .forEach(block -> blockManager.importBlock(block, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
@@ -399,7 +401,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    invalidBlockDescendants.stream()
+    invalidBlockDescendants
         .forEach(
             invalidBlockDescendant ->
                 assertImportBlockWithResult(
@@ -411,7 +413,7 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream()
+    invalidBlockDescendants
         .forEach(
             invalidBlockDescendant ->
                 assertImportBlockWithResult(
@@ -439,7 +441,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first two
-    invalidBlockDescendants.subList(1, invalidChainDepth).stream()
+    invalidBlockDescendants.subList(1, invalidChainDepth)
         .forEach(
             invalidBlockDescendant ->
                 assertImportBlockWithResult(
@@ -476,7 +478,9 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
+    blocks
+        .subList(1, blockCount)
+        .forEach(block -> blockManager.importBlock(block, Optional.empty()));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
@@ -514,7 +518,8 @@ public class BlockManagerTest {
     executionLayer.setPayloadStatus(PayloadStatus.VALID);
 
     // Gossip all remaining blocks
-    blocks.subList(1, blockCount).stream()
+    blocks
+        .subList(1, blockCount)
         .forEach(
             block -> assertImportBlockWithResult(block, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
@@ -552,11 +557,11 @@ public class BlockManagerTest {
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
     // Gossip invalid block descendants, must reject with no actual validation
-    invalidBlockDescendants.stream()
+    invalidBlockDescendants
         .forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
 
     // If any invalid block is again imported, it should be ignored
-    invalidBlockDescendants.stream()
+    invalidBlockDescendants
         .forEach(
             invalidBlockDescendant ->
                 assertImportBlockWithResult(
@@ -632,13 +637,13 @@ public class BlockManagerTest {
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {
-    assertThat(blockManager.importBlock(block))
+    assertThat(blockManager.importBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
   private void assertImportBlockWithResult(
       SignedBeaconBlock block, BlockImportResult importResult) {
-    assertThat(blockManager.importBlock(block))
+    assertThat(blockManager.importBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(result -> result.equals(importResult));
   }
 
@@ -649,7 +654,7 @@ public class BlockManagerTest {
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {
-    assertThat(blockManager.importBlock(block))
+    assertThat(blockManager.importBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
   }
 
