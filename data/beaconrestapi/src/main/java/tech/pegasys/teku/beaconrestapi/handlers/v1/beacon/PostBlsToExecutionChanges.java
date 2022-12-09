@@ -20,8 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
