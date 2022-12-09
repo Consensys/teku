@@ -44,7 +44,10 @@ public interface BlobsManager {
         }
 
         @Override
-        public void onBlockImport(StoreTransaction transaction) {}
+        public void onBlockImportTransaction(StoreTransaction transaction) {}
+
+        @Override
+        public void onBlockImported(SignedBeaconBlock block) {}
       };
 
   SafeFuture<Void> storeUnconfirmedBlobs(BlobsSidecar blobsSidecar);
@@ -55,7 +58,9 @@ public interface BlobsManager {
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
-  void onBlockImport(StoreTransaction transaction);
+  void onBlockImportTransaction(StoreTransaction transaction);
+
+  void onBlockImported(SignedBeaconBlock block);
 
   enum BlobsSidecarValidationResult {
     NOT_REQUIRED,

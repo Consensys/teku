@@ -253,6 +253,7 @@ public class BlockManager extends Service
             result -> {
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
+                blobsManager.onBlockImported(block);
               } else {
                 switch (result.getFailureReason()) {
                   case UNKNOWN_PARENT:

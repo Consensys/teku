@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,8 +33,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public class BlobsManagerImpl
-    implements BlobsManager, FinalizedCheckpointChannel, SlotEventsChannel {
+public class BlobsManagerImpl implements BlobsManager, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int UNCONFIRMED_PRUNING_LIMIT = 64;
@@ -87,9 +85,29 @@ public class BlobsManagerImpl
   }
 
   @Override
-  public void onBlockImport(StoreTransaction transaction) {
+  public void onBlockImportTransaction(StoreTransaction transaction) {
     // enable blobs confirmation when storing hot blocks on DB
     transaction.setConfirmHotBlocksBlobs(true);
+  }
+
+  @Override
+  public void onBlockImported(SignedBeaconBlock block) {
+    final int slotsPerEpoch = spec.getSlotsPerEpoch(block.getSlot());
+
+    UInt64 oldestPrunableSlot =
+        block.getSlot().minusMinZero((long) MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS * slotsPerEpoch);
+
+    if (oldestPrunableSlot.isGreaterThan(UInt64.ZERO)) {
+      storageUpdateChannel
+          .onBlobsSidecarPruning(oldestPrunableSlot, CONFIRMED_PRUNING_LIMIT)
+          .thenRun(
+              () ->
+                  LOG.debug(
+                      "BlobsSidecars discarded up to slot {} (limit {})",
+                      oldestPrunableSlot,
+                      CONFIRMED_PRUNING_LIMIT))
+          .ifExceptionGetsHereRaiseABug();
+    }
   }
 
   @Override
@@ -110,29 +128,6 @@ public class BlobsManagerImpl
                       "Unconfirmed BlobsSidecars discarded up to slot {} (limit {})",
                       pruneUpToSlot,
                       UNCONFIRMED_PRUNING_LIMIT))
-          .ifExceptionGetsHereRaiseABug();
-    }
-  }
-
-  @Override
-  public void onSlot(UInt64 slot) {
-    final int slotsPerEpoch = spec.getSlotsPerEpoch(slot);
-    if (slot.mod(0).equals(UInt64.ZERO) || slot.mod(slotsPerEpoch - 1).equals(UInt64.ZERO)) {
-      // avoid last and first slot of an epoch
-      return;
-    }
-
-    UInt64 oldestPrunableSlot =
-        slot.minusMinZero((long) MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS * slotsPerEpoch);
-    if (oldestPrunableSlot.isGreaterThan(UInt64.ZERO)) {
-      storageUpdateChannel
-          .onBlobsSidecarPruning(oldestPrunableSlot, CONFIRMED_PRUNING_LIMIT)
-          .thenRun(
-              () ->
-                  LOG.debug(
-                      "BlobsSidecars discarded up to slot {} (limit {})",
-                      oldestPrunableSlot,
-                      CONFIRMED_PRUNING_LIMIT))
           .ifExceptionGetsHereRaiseABug();
     }
   }

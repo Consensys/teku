@@ -414,7 +414,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     // delegate blobs transaction to block manager
-    blobsManager.onBlockImport(transaction);
+    blobsManager.onBlockImportTransaction(transaction);
 
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
     // Note: not using thenRun here because we want to ensure each step is on the event thread
