@@ -382,10 +382,6 @@ class ActiveKeyManagerTest {
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
 
-    final Validator activeValidator = mock(Validator.class);
-    when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
-    when(activeValidator.getSigner()).thenReturn(signer);
-
     keyManager.importValidators(
         List.of(data),
         List.of(doppelgangerPassword),
@@ -437,11 +433,6 @@ class ActiveKeyManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Map.ofEntries(Map.entry(UInt64.valueOf(5), doppelgangerPublicKey))));
-
-    final Validator activeValidator = mock(Validator.class);
-
-    when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
-    when(activeValidator.getSigner()).thenReturn(signer);
 
     final ExternalValidator externalDoppelganger = mock(ExternalValidator.class);
     when(externalDoppelganger.getPublicKey()).thenReturn(doppelgangerPublicKey);
