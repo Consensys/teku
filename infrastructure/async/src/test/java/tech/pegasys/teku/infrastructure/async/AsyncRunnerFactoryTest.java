@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.Collection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -28,9 +27,7 @@ class AsyncRunnerFactoryTest {
         }
 
         @Override
-        public Collection<AsyncRunner> getAsyncRunners() {
-          return null;
-        }
+        public void shutdown() {}
       };
 
   @ParameterizedTest

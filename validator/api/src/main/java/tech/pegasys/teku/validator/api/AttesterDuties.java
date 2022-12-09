@@ -20,20 +20,27 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
   private final boolean executionOptimistic;
+  private final boolean finalized;
   private final Bytes32 dependentRoot;
   private final List<AttesterDuty> duties;
 
   public AttesterDuties(
       final boolean executionOptimistic,
+      final boolean finalized,
       final Bytes32 dependentRoot,
       final List<AttesterDuty> duties) {
     this.executionOptimistic = executionOptimistic;
+    this.finalized = finalized;
     this.dependentRoot = dependentRoot;
     this.duties = duties;
   }
 
   public boolean isExecutionOptimistic() {
     return executionOptimistic;
+  }
+
+  public boolean isFinalized() {
+    return finalized;
   }
 
   public Bytes32 getDependentRoot() {
@@ -53,17 +60,22 @@ public class AttesterDuties {
       return false;
     }
     final AttesterDuties that = (AttesterDuties) o;
-    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(duties, that.duties);
+    return executionOptimistic == that.executionOptimistic
+        && finalized == that.finalized
+        && Objects.equals(dependentRoot, that.dependentRoot)
+        && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(dependentRoot, duties);
+    return Objects.hash(executionOptimistic, finalized, dependentRoot, duties);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("executionOptimistic", executionOptimistic)
+        .add("finalized", finalized)
         .add("dependentRoot", dependentRoot)
         .add("duties", duties)
         .toString();

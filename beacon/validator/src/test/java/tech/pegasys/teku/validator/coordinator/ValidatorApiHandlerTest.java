@@ -1145,7 +1145,7 @@ class ValidatorApiHandlerTest {
             .collect(Collectors.toList());
 
     final ObjectAndMetaData<List<StateValidatorData>> stateValidators =
-        new ObjectAndMetaData<>(data, SpecMilestone.BELLATRIX, false, true);
+        new ObjectAndMetaData<>(data, SpecMilestone.BELLATRIX, false, true, false);
 
     final List<String> validators =
         validatorRegistrations.stream()

@@ -21,7 +21,10 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
+- Added `finalized` metadata field to applicable REST API responses
 
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly
+- Fixed issue where the voluntary-exit subcommand did not exit immediately after completion

@@ -157,6 +157,6 @@ public class StateSelectorFactoryTest {
   }
 
   private StateAndMetaData withMetaData(final BeaconState state) {
-    return new StateAndMetaData(state, milestone, false, true);
+    return new StateAndMetaData(state, milestone, false, true, true);
   }
 }

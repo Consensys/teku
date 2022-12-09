@@ -728,6 +728,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         combinedChainDataClient.isChainHeadOptimistic(),
+        combinedChainDataClient.isFinalizedEpoch(epoch),
         dependentRoot,
         validatorIndices
             .intStream()

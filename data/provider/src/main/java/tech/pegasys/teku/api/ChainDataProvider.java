@@ -298,17 +298,21 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     if (parentRoot.isPresent()) {
-      return SafeFuture.completedFuture(new BlockHeadersResponse(false, emptyList()));
+      return SafeFuture.completedFuture(new BlockHeadersResponse(false, false, emptyList()));
     }
 
+    final UInt64 actualSlot = slot.orElse(combinedChainDataClient.getHeadSlot());
     return defaultBlockSelectorFactory
-        .nonCanonicalBlocksSelector(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .nonCanonicalBlocksSelector(actualSlot)
         .getBlocks()
         .thenApply(
             blockAndMetadataList -> {
               final boolean executionOptimistic =
                   blockAndMetadataList.stream().anyMatch(BlockAndMetaData::isExecutionOptimistic);
-              return new BlockHeadersResponse(executionOptimistic, blockAndMetadataList);
+              return new BlockHeadersResponse(
+                  executionOptimistic,
+                  combinedChainDataClient.isFinalized(actualSlot),
+                  blockAndMetadataList);
             });
   }
 

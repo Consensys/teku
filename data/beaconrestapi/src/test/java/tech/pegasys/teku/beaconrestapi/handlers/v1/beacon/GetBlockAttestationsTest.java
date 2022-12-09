@@ -38,7 +38,8 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   private final List<Attestation> attestations =
       List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
   private final ObjectAndMetaData<List<Attestation>> responseData =
-      new ObjectAndMetaData<>(attestations, spec.getGenesisSpec().getMilestone(), false, true);
+      new ObjectAndMetaData<>(
+          attestations, spec.getGenesisSpec().getMilestone(), false, true, false);
 
   @BeforeEach
   void setUp() {

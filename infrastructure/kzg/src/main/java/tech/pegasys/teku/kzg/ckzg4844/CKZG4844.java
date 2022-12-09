@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
-import ethereum.ckzg4844.CKzg4844JNI;
+import ethereum.ckzg4844.CKZG4844JNI;
+import ethereum.ckzg4844.CKZG4844JNI.Preset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +42,8 @@ public final class CKZG4844 implements KZG {
 
   public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
     if (instance == null) {
-      instance = new CKZG4844();
+      final Preset preset = getPreset(fieldElementsPerBlob);
+      instance = new CKZG4844(preset);
       initializedFieldElementsPerBlob = fieldElementsPerBlob;
       return instance;
     }
@@ -58,9 +61,22 @@ public final class CKZG4844 implements KZG {
     return instance;
   }
 
-  private CKZG4844() {
+  private static Preset getPreset(final int fieldElementsPerBlob) {
+    return Arrays.stream(Preset.values())
+        .filter(preset -> preset.fieldElementsPerBlob == fieldElementsPerBlob)
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new KZGException(
+                    String.format(
+                        "C-KZG-4844 library can't be initialized with %d fieldElementsPerBlob.",
+                        fieldElementsPerBlob)));
+  }
+
+  private CKZG4844(final Preset preset) {
     try {
-      LOG.debug("Loaded C-KZG-4844");
+      CKZG4844JNI.loadNativeLibrary(preset);
+      LOG.debug("Loaded C-KZG-4844 with {} preset", preset);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
@@ -70,7 +86,7 @@ public final class CKZG4844 implements KZG {
   public void loadTrustedSetup(final String trustedSetup) throws KZGException {
     try {
       final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
-      CKzg4844JNI.loadTrustedSetup(file);
+      CKZG4844JNI.loadTrustedSetup(file);
       LOG.debug("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
@@ -80,7 +96,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public void freeTrustedSetup() throws KZGException {
     try {
-      CKzg4844JNI.freeTrustedSetup();
+      CKZG4844JNI.freeTrustedSetup();
     } catch (final Exception ex) {
       throw new KZGException("Failed to free trusted setup", ex);
     }
@@ -90,7 +106,7 @@ public final class CKZG4844 implements KZG {
   public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
     try {
       final byte[] blobsBytes = CKZG4844Utils.flattenBytesList(blobs);
-      final byte[] proof = CKzg4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
+      final byte[] proof = CKZG4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
       throw new KZGException("Failed to compute aggregated KZG proof for blobs", ex);
@@ -106,7 +122,7 @@ public final class CKZG4844 implements KZG {
       final Stream<Bytes> commitmentsBytesStream =
           kzgCommitments.stream().map(KZGCommitment::getBytesCompressed);
       final byte[] commitmentsBytes = CKZG4844Utils.flattenBytesStream(commitmentsBytesStream);
-      return CKzg4844JNI.verifyAggregateKzgProof(
+      return CKZG4844JNI.verifyAggregateKzgProof(
           blobsBytes, commitmentsBytes, blobs.size(), kzgProof.toArray());
     } catch (final Exception ex) {
       throw new KZGException(
@@ -117,7 +133,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
     try {
-      final byte[] commitmentBytes = CKzg4844JNI.blobToKzgCommitment(blob.toArray());
+      final byte[] commitmentBytes = CKZG4844JNI.blobToKzgCommitment(blob.toArray());
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
       throw new KZGException("Failed to produce KZG commitment from blob", ex);
@@ -129,7 +145,7 @@ public final class CKZG4844 implements KZG {
       final KZGCommitment kzgCommitment, final Bytes32 z, final Bytes32 y, final KZGProof kzgProof)
       throws KZGException {
     try {
-      return CKzg4844JNI.verifyKzgProof(
+      return CKZG4844JNI.verifyKzgProof(
           kzgCommitment.toArray(), z.toArray(), y.toArray(), kzgProof.toArray());
     } catch (final Exception ex) {
       throw new KZGException(

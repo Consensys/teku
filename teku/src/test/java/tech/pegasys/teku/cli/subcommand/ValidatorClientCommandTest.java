@@ -76,7 +76,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     final String sentryConfigPath = pathFor("sentry_node_config.json");
     final String[] argsWithSentryConfig =
         new String[] {
-          "vc", "--network", "minimal", "--Xsentry-config-file", sentryConfigPath,
+          "vc", "--network", "minimal", "--sentry-config-file", sentryConfigPath,
         };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
@@ -102,14 +102,14 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   public void sentryConfigOption_shouldFailWhenOptionIsMissingRequiredFileNameParam() {
     final String[] argsWithSentryConfigMissingParam =
         new String[] {
-          "vc", "--network", "minimal", "--Xsentry-config-file",
+          "vc", "--network", "minimal", "--sentry-config-file",
         };
 
     int parseResult = beaconNodeCommand.parse(argsWithSentryConfigMissingParam);
     assertThat(parseResult).isNotZero();
 
     String cmdOutput = getCommandLineOutput();
-    assertThat(cmdOutput).contains("Missing required parameter for option '--Xsentry-config-file'");
+    assertThat(cmdOutput).contains("Missing required parameter for option '--sentry-config-file'");
   }
 
   @Test
@@ -120,7 +120,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
       "minimal",
       "--beacon-node-api-endpoint",
       "http://127.0.0.1:1234",
-      "--Xsentry-config-file",
+      "--sentry-config-file",
       "/tmp/foo.json"
     };
 
@@ -130,7 +130,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains(
-            "Error: --beacon-node-api-endpoints=<ENDPOINT>, --Xsentry-config-file=<FILE> are "
+            "Error: --beacon-node-api-endpoints=<ENDPOINT>, --sentry-config-file=<FILE> are "
                 + "mutually exclusive (specify only one)");
   }
 
@@ -140,7 +140,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     final URI expectedBeaconNodeApiEndpoint = URI.create("http://duties:5051");
 
     final String[] args = {
-      "vc", "--network", "minimal", "--Xsentry-config-file", pathFor("sentry_node_config.json")
+      "vc", "--network", "minimal", "--sentry-config-file", pathFor("sentry_node_config.json")
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);

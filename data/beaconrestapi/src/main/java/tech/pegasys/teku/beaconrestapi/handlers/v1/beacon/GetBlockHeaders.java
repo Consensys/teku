@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOCK_HEADER_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARENT_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
@@ -29,7 +31,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -48,10 +49,8 @@ public class GetBlockHeaders extends RestApiEndpoint {
           .name("GetBlockHeadersResponse")
           .withField(
               EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlockHeadersResponse::isExecutionOptimistic)
-          .withField(
-              "data",
-              listOf(BlockHeaderData.getJsonTypeDefinition()),
-              BlockHeadersResponse::getData)
+          .withField(FINALIZED, BOOLEAN_TYPE, BlockHeadersResponse::isFinalized)
+          .withField("data", listOf(BLOCK_HEADER_TYPE), BlockHeadersResponse::getData)
           .build();
 
   public GetBlockHeaders(final DataProvider dataProvider) {

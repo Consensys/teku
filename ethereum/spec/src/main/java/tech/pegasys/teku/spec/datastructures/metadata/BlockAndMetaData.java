@@ -22,7 +22,8 @@ public class BlockAndMetaData extends ObjectAndMetaData<SignedBeaconBlock> {
       final SignedBeaconBlock data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
-      final boolean canonical) {
-    super(data, milestone, executionOptimistic, canonical);
+      final boolean canonical,
+      final boolean finalized) {
+    super(data, milestone, executionOptimistic, canonical, finalized);
   }
 }

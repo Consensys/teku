@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
@@ -28,12 +27,12 @@ public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
     return asyncRunner;
   }
 
-  @Override
-  public Collection<AsyncRunner> getAsyncRunners() {
-    return new ArrayList<>(runners);
-  }
-
   public List<StubAsyncRunner> getStubAsyncRunners() {
     return runners;
+  }
+
+  @Override
+  public void shutdown() {
+    runners.forEach(AsyncRunner::shutdown);
   }
 }

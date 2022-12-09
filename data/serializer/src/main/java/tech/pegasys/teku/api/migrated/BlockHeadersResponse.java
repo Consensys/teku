@@ -15,29 +15,31 @@ package tech.pegasys.teku.api.migrated;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 
 public class BlockHeadersResponse {
   private final boolean executionOptimistic;
-  private final List<BlockHeaderData> data;
-
-  public BlockHeadersResponse(final List<BlockHeaderData> data, final Boolean executionOptimistic) {
-    this.executionOptimistic = executionOptimistic;
-    this.data = data;
-  }
+  private final boolean isFinalized;
+  private final List<BlockAndMetaData> data;
 
   public BlockHeadersResponse(
-      final boolean executionOptimistic, final List<BlockAndMetaData> data) {
+      final boolean executionOptimistic,
+      final boolean isFinalized,
+      final List<BlockAndMetaData> data) {
     this.executionOptimistic = executionOptimistic;
-    this.data = data.stream().map(BlockHeaderData::new).collect(Collectors.toList());
+    this.isFinalized = isFinalized;
+    this.data = data;
   }
 
   public boolean isExecutionOptimistic() {
     return executionOptimistic;
   }
 
-  public List<BlockHeaderData> getData() {
+  public boolean isFinalized() {
+    return isFinalized;
+  }
+
+  public List<BlockAndMetaData> getData() {
     return data;
   }
 

@@ -43,7 +43,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
-import tech.pegasys.teku.api.migrated.BlockHeaderData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -216,7 +215,7 @@ public class ChainDataProviderTest {
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.empty()));
-    assertThat(results.getData().get(0).getRoot()).isEqualTo(block.getRoot());
+    assertThat(results.getData().get(0).getData().getRoot()).isEqualTo(block.getRoot());
   }
 
   @Test
@@ -226,7 +225,7 @@ public class ChainDataProviderTest {
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
     BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
-    assertThat(results.getData().get(0).getHeader().getMessage().getSlot()).isEqualTo(slot);
+    assertThat(results.getData().get(0).getData().getSlot()).isEqualTo(slot);
   }
 
   @Test
@@ -239,8 +238,8 @@ public class ChainDataProviderTest {
 
     final SafeFuture<BlockHeadersResponse> future =
         provider.getBlockHeaders(Optional.empty(), Optional.empty());
-    final BlockHeaderData header = safeJoin(future).getData().get(0);
-    assertThat(header.getHeader().getMessage().getSlot()).isEqualTo(headSlot);
+    final BlockAndMetaData header = safeJoin(future).getData().get(0);
+    assertThat(header.getData().getSlot()).isEqualTo(headSlot);
   }
 
   @Test
@@ -355,7 +354,8 @@ public class ChainDataProviderTest {
                 new StateSyncCommitteesData(committeeIndices, List.of(committeeIndices)),
                 SpecMilestone.ALTAIR,
                 false,
-                true));
+                true,
+                false));
   }
 
   @Test
@@ -577,6 +577,11 @@ public class ChainDataProviderTest {
   }
 
   private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {
-    return new ObjectAndMetaData<>(expected, spec.atSlot(slot).getMilestone(), false, true);
+    return new ObjectAndMetaData<>(
+        expected,
+        spec.atSlot(slot).getMilestone(),
+        false,
+        true,
+        combinedChainDataClient.isFinalized(slot));
   }
 }

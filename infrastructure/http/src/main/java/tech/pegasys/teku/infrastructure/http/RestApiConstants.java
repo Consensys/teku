@@ -124,6 +124,7 @@ public class RestApiConstants {
       "Customize syncing status instead of default status code (" + SC_PARTIAL_CONTENT + ")";
 
   public static final String EXECUTION_OPTIMISTIC = "execution_optimistic";
+  public static final String FINALIZED = "finalized";
   public static final String TARGET_PEER_COUNT = "target_peer_count";
   public static final String TARGET_PEER_COUNT_DESCRIPTION =
       "Returns "

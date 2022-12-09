@@ -54,7 +54,7 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
     LightClientBootstrap lightClientBootstrap =
         dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
     ObjectAndMetaData<LightClientBootstrap> responseData =
-        new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true);
+        new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true, false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =

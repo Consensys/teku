@@ -20,13 +20,18 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import com.google.common.io.Resources;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,30 +45,30 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 @ExtendWith(MockServerExtension.class)
 public class VoluntaryExitCommandTest {
-
+  private InputStream originalSystemIn;
+  private PrintStream originalSystemOut;
+  private PrintStream originalSytstemErr;
   private final StringWriter stringWriter = new StringWriter();
   private final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   private final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
-  private final LoggingConfigurator loggingConfigurator = mock(LoggingConfigurator.class);
-
-  private final BeaconNodeCommand.StartAction startAction =
-      mock(BeaconNodeCommand.StartAction.class);
-
-  private final Spec testSpec =
-      SpecFactory.create(
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
 
   private ClientAndServer mockBeaconServer;
 
   private final BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(
-          outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
+          outputWriter,
+          errorWriter,
+          Collections.emptyMap(),
+          mock(BeaconNodeCommand.StartAction.class),
+          mock(LoggingConfigurator.class));
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+
+  private final ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
 
   private final String keyManagerPubKey1 =
       "0x8b0f19f3306930d8a1e85a8084ef2caea044066dedfd3de0c22f28473dd07606da5d205ae09ee20072dc9f9e4fd32d79";
@@ -80,152 +85,188 @@ public class VoluntaryExitCommandTest {
 
   private final String exitSubmitted = "Exit for validator %s submitted.";
 
+  private List<String> commandArgs;
+
   @BeforeEach
   public void setup(ClientAndServer server) throws IOException {
     this.mockBeaconServer = server;
-    configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulHeadResponse(mockBeaconServer);
     configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulValidatorResponses(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    originalSystemIn = System.in;
+    originalSystemOut = System.out;
+    originalSytstemErr = System.err;
     System.setOut(new PrintStream(stdOut));
+    System.setErr(new PrintStream(stdErr));
+
+    commandArgs =
+        List.of(
+            "voluntary-exit",
+            "--beacon-node-api-endpoint",
+            getMockBeaconServerEndpoint(mockBeaconServer),
+            "--data-validator-path",
+            Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
+                .getPath(),
+            "--validator-keys",
+            Resources.getResource(
+                        "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
+                    .getPath()
+                + File.pathSeparator
+                + Resources.getResource(
+                        "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
+                    .getPath());
   }
 
   @AfterEach
   public void tearDown() {
     mockBeaconServer.reset();
-    System.setOut(System.out);
+    System.setOut(originalSystemOut);
+    System.setIn(originalSystemIn);
+    System.setErr(originalSytstemErr);
   }
 
   @Test
   public void shouldExitAllLoadedValidators() {
-    final String[] argsNetworkOptOnParent =
-        new String[] {
-          "voluntary-exit",
-          "--beacon-node-api-endpoint",
-          getMockBeaconServerEndpoint(mockBeaconServer),
-          "--confirmation-enabled",
-          "false",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
-          "--include-keymanager-keys",
-          "true",
-          "--validator-keys",
-          Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
-                  .getPath()
-              + File.pathSeparator
-              + Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
-                  .getPath()
-        };
-    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = getCommandArguments(true, false, List.of());
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
     assertThat(parseResult).isEqualTo(0);
-    assertValidatorExited(keyManagerPubKey1);
-    assertValidatorExited(keyManagerPubKey2);
-    assertValidatorExited(validatorPubKey1);
-    assertValidatorExited(validatorPubKey2);
+    assertValidatorsExited(
+        keyManagerPubKey1, keyManagerPubKey2, validatorPubKey1, validatorPubKey2);
+  }
+
+  @Test
+  public void shouldExitLoadedValidatorsUsingConfirmationMessage() {
+    setUserInput("yes");
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = getCommandArguments(true, true, List.of());
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(0);
+    assertValidatorsExited(
+        keyManagerPubKey1, keyManagerPubKey2, validatorPubKey1, validatorPubKey2);
   }
 
   @Test
   public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() {
-    final String[] argsNetworkOptOnParent =
-        new String[] {
-          "voluntary-exit",
-          "--beacon-node-api-endpoint",
-          getMockBeaconServerEndpoint(mockBeaconServer),
-          "--confirmation-enabled",
-          "false",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
-          "--include-keymanager-keys",
-          "true",
-          "--validator-keys",
-          Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
-                  .getPath()
-              + File.pathSeparator
-              + Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
-                  .getPath(),
-          "--validator-public-keys",
-          keyManagerPubKey2 + "," + nonExistingKey
-        };
-    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args =
+        getCommandArguments(
+            true,
+            false,
+            List.of("--validator-public-keys", keyManagerPubKey2 + "," + nonExistingKey));
+
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
     assertThat(parseResult).isEqualTo(0);
-    assertValidatorNotExited(keyManagerPubKey1);
-    assertValidatorExited(keyManagerPubKey2);
-    assertValidatorNotExited(validatorPubKey1);
-    assertValidatorNotExited(validatorPubKey2);
-    assertValidatorNotExited(nonExistingKey);
+    assertValidatorsExited(keyManagerPubKey2);
+    assertValidatorsNotExited(
+        keyManagerPubKey1, validatorPubKey1, validatorPubKey2, nonExistingKey);
   }
 
   @Test
   public void shouldExitValidatorWithPubKeyFromPathOnly() {
-    final String[] argsNetworkOptOnParent =
-        new String[] {
-          "voluntary-exit",
-          "--beacon-node-api-endpoint",
-          getMockBeaconServerEndpoint(mockBeaconServer),
-          "--confirmation-enabled",
-          "false",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
-          "--include-keymanager-keys",
-          "true",
-          "--validator-keys",
-          Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
-                  .getPath()
-              + File.pathSeparator
-              + Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
-                  .getPath(),
-          "--validator-public-keys",
-          validatorPubKey1 + "," + nonExistingKey
-        };
-    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args =
+        getCommandArguments(
+            true,
+            false,
+            List.of("--validator-public-keys", validatorPubKey1 + "," + nonExistingKey));
+
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
     assertThat(parseResult).isEqualTo(0);
-    assertValidatorExited(validatorPubKey1);
-    assertValidatorNotExited(validatorPubKey2);
-    assertValidatorNotExited(keyManagerPubKey1);
-    assertValidatorNotExited(keyManagerPubKey2);
-    assertValidatorNotExited(nonExistingKey);
+    assertValidatorsExited(validatorPubKey1);
+    assertValidatorsNotExited(
+        validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
   }
 
   @Test
   public void shouldSkipKeyManagerKeys() {
-    final String[] argsNetworkOptOnParent =
-        new String[] {
-          "voluntary-exit",
-          "--beacon-node-api-endpoint",
-          getMockBeaconServerEndpoint(mockBeaconServer),
-          "--confirmation-enabled",
-          "false",
-          "--data-validator-path",
-          Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
-              .getPath(),
-          "--validator-keys",
-          Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/keys")
-                  .getPath()
-              + File.pathSeparator
-              + Resources.getResource(
-                      "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-keys/passwords")
-                  .getPath(),
-          "--validator-public-keys",
-          keyManagerPubKey2 + "," + validatorPubKey1
-        };
-    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args =
+        getCommandArguments(
+            false,
+            false,
+            List.of("--validator-public-keys", validatorPubKey1 + "," + nonExistingKey));
+
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
     assertThat(parseResult).isEqualTo(0);
-    assertValidatorExited(validatorPubKey1);
-    assertValidatorNotExited(validatorPubKey2);
-    assertValidatorNotExited(keyManagerPubKey1);
-    assertValidatorNotExited(keyManagerPubKey2);
-    assertValidatorNotExited(nonExistingKey);
+    assertValidatorsExited(validatorPubKey1);
+    assertValidatorsNotExited(
+        validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
+  }
+
+  @Test
+  void shouldNotWarn_NotWithdrawableIfCapellaEnabled() {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final List<String> args = getCommandArguments(false, true, List.of());
+    setUserInput("no");
+
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdOut.toString(UTF_8)).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESASGE);
+    assertThat(stdOut.toString(UTF_8)).doesNotContain(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
+    assertValidatorsNotExited(
+        validatorPubKey1, validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
+  }
+
+  @Test
+  void shouldWarn_NotWithdrawablePreCapella() {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMainnetBellatrix());
+
+    final List<String> args = getCommandArguments(false, true, List.of());
+    setUserInput("no");
+
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+
+    assertThat(stdOut.toString(UTF_8)).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESASGE);
+    assertThat(stdOut.toString(UTF_8)).contains(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
+    assertValidatorsNotExited(
+        validatorPubKey1, validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
+  }
+
+  @Test
+  void shouldExitFailureWithNoValidatorKeysFound() {
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = commandArgs.subList(0, 5);
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("No validators were found to exit");
+  }
+
+  @Test
+  void shouldExitFailureFutureEpoch() {
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8))
+        .contains("The specified epoch 1024 is greater than current epoch");
+  }
+
+  private void setUserInput(final String confirmationText) {
+    String userInput =
+        String.format(confirmationText, System.lineSeparator(), System.lineSeparator());
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(userInput.getBytes(UTF_8));
+    System.setIn(inputStream);
+  }
+
+  private List<String> getCommandArguments(
+      final boolean includeKeyManagerKeys,
+      final boolean confirmationEnabled,
+      final List<String> extraArgs) {
+    final List<String> args = new ArrayList<>(commandArgs);
+    args.add("--include-keymanager-keys=" + includeKeyManagerKeys);
+    args.add("--confirmation-enabled=" + confirmationEnabled);
+
+    args.addAll(extraArgs);
+    return args;
   }
 
   private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
@@ -233,9 +274,14 @@ public class VoluntaryExitCommandTest {
   }
 
   private void configureSuccessfulSpecResponse(final ClientAndServer mockBeaconServer) {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalBellatrix());
+  }
+
+  private void configureSuccessfulSpecResponse(
+      final ClientAndServer mockBeaconServer, final Spec spec) {
     mockBeaconServer
         .when(request().withPath("/eth/v1/config/spec"))
-        .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
+        .respond(response().withStatusCode(200).withBody(getTestSpecResponse(spec)));
   }
 
   private void configureSuccessfulHeadResponse(final ClientAndServer mockBeaconServer)
@@ -342,21 +388,29 @@ public class VoluntaryExitCommandTest {
         .respond(response().withStatusCode(200));
   }
 
-  private String getTestSpecResponse() {
-    return JsonBody.json(new ConfigProvider(testSpec).getConfig()).toString();
+  private String getTestSpecResponse(final Spec spec) {
+    return JsonBody.json(new ConfigProvider(spec).getConfig()).toString();
   }
 
   private String extractValidatorId(String pubKey) {
     return pubKey.substring(2, 9);
   }
 
-  private void assertValidatorExited(String pubKey) {
-    assertThat(stdOut.toString(UTF_8))
-        .contains(String.format(exitSubmitted, extractValidatorId(pubKey)));
+  private void assertValidatorsExited(String... args) {
+    Arrays.stream(args)
+        .forEach(
+            arg -> {
+              assertThat(stdOut.toString(UTF_8))
+                  .contains(String.format(exitSubmitted, extractValidatorId(arg)));
+            });
   }
 
-  private void assertValidatorNotExited(String pubKey) {
-    assertThat(stdOut.toString(UTF_8))
-        .doesNotContain(String.format(exitSubmitted, extractValidatorId(pubKey)));
+  private void assertValidatorsNotExited(String... args) {
+    Arrays.stream(args)
+        .forEach(
+            arg -> {
+              assertThat(stdOut.toString(UTF_8))
+                  .doesNotContain(String.format(exitSubmitted, extractValidatorId(arg)));
+            });
   }
 }

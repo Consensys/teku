@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,7 +35,7 @@ class AsyncRunnerEventThreadTest {
   @AfterEach
   void tearDown() {
     eventThread.stop();
-    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+    asyncRunnerFactory.shutdown();
   }
 
   @Test
