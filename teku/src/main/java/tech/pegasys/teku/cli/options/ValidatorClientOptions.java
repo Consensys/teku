@@ -57,10 +57,9 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
 
   @Option(
-      names = {"--Xbeacon-node-ssz-blocks-enabled"},
+      names = {"--beacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use SSZ encoding for API block requests",
-      hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
