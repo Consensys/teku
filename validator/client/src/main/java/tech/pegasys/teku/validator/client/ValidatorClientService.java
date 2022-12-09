@@ -262,12 +262,12 @@ public class ValidatorClientService extends Service {
   }
 
   private void initializeValidatorRestApi(
-      ValidatorRestApiConfig validatorRestApiConfig,
-      Optional<ProposerConfigManager> proposerConfigManager,
-      ActiveKeyManager activeKeyManager,
-      DataDirLayout dataDirLayout,
-      Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
-    RestApi validatorRestApi =
+      final ValidatorRestApiConfig validatorRestApiConfig,
+      final Optional<ProposerConfigManager> proposerConfigManager,
+      final ActiveKeyManager activeKeyManager,
+      final DataDirLayout dataDirLayout,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+    final RestApi validatorRestApi =
         ValidatorRestApi.create(
             validatorRestApiConfig,
             proposerConfigManager,

@@ -20,5 +20,5 @@ public interface DoppelgangerDetectionAction {
 
   void shutDown();
 
-  void alert(List<BLSPublicKey> doppelgangers);
+  void alert(final List<BLSPublicKey> doppelgangers);
 }

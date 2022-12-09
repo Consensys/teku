@@ -162,11 +162,11 @@ public class StatusLogger {
     }
   }
 
-  public void doppelgangerDetectionStart(Set<String> publicKeys) {
+  public void doppelgangerDetectionStart(final Set<String> publicKeys) {
     log.info("Starting doppelganger detection for public keys: {}", String.join(", ", publicKeys));
   }
 
-  public void doppelgangerDetectionTimeout(Set<String> publicKeys) {
+  public void doppelgangerDetectionTimeout(final Set<String> publicKeys) {
     log.warn(
         "Doppelganger Detection for public keys {} stopped due to a timeout. "
             + "The doppelganger check couldn't be performed correctly due to "
@@ -176,7 +176,7 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
-  public void doppelgangerDetectionEnd(Set<String> publicKeys) {
+  public void doppelgangerDetectionEnd(final Set<String> publicKeys) {
     log.info(
         "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
         String.join(", ", publicKeys));

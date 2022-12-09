@@ -23,5 +23,5 @@ public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionActio
   }
 
   @Override
-  public void alert(List<BLSPublicKey> doppelgangers) {}
+  public void alert(final List<BLSPublicKey> doppelgangers) {}
 }

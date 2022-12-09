@@ -145,14 +145,9 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   @Override
-  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
-    final List<DeleteKeyResult> deletionResults = removeExternalValidators(validators);
-    return new DeleteRemoteKeysResponse(deletionResults);
-  }
-
-  private List<DeleteKeyResult> removeExternalValidators(final List<BLSPublicKey> publicKeys) {
+  public DeleteRemoteKeysResponse deleteExternalValidators(final List<BLSPublicKey> validators) {
     final List<DeleteKeyResult> deletionResults = new ArrayList<>();
-    for (final BLSPublicKey publicKey : publicKeys) {
+    for (final BLSPublicKey publicKey : validators) {
       Optional<Validator> maybeValidator =
           validatorLoader.getOwnedValidators().getValidator(publicKey);
 
@@ -173,7 +168,7 @@ public class ActiveKeyManager implements KeyManager {
         deletionResults.add(DeleteKeyResult.notFound());
       }
     }
-    return deletionResults;
+    return new DeleteRemoteKeysResponse(deletionResults);
   }
 
   @VisibleForTesting
@@ -269,10 +264,10 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private void handleValidatorDoppelgangers(
-      DoppelgangerDetectionAction doppelgangerDetectionAction,
-      List<LocalValidatorImportResult> importResults,
-      Map<UInt64, BLSPublicKey> doppelgangers) {
-    List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final List<LocalValidatorImportResult> importResults,
+      final Map<UInt64, BLSPublicKey> doppelgangers) {
+    final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
     if (!doppelgangerList.isEmpty()) {
       doppelgangerDetectionAction.alert(doppelgangerList);
       importEligibleLocalValidators(importResults, doppelgangerList);
@@ -280,7 +275,8 @@ public class ActiveKeyManager implements KeyManager {
     validatorTimingChannel.onValidatorsAdded();
   }
 
-  private void logFailedDoppelgangerCheck(Set<BLSPublicKey> importResults, Throwable throwable) {
+  private void logFailedDoppelgangerCheck(
+      final Set<BLSPublicKey> importResults, final Throwable throwable) {
     LOG.error(
         "Failed to perform doppelganger detection for public keys {}",
         importResults.stream()
@@ -289,7 +285,7 @@ public class ActiveKeyManager implements KeyManager {
         throwable);
   }
 
-  private void loadLocalValidators(List<LocalValidatorImportResult> importResults) {
+  private void loadLocalValidators(final List<LocalValidatorImportResult> importResults) {
     importResults.stream()
         .filter(
             validatorImportResult ->
@@ -306,7 +302,8 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private void reportValidatorImport(
-      ValidatorImportResult importResult, Optional<BLSPublicKey> validatorImportResult) {
+      final ValidatorImportResult importResult,
+      final Optional<BLSPublicKey> validatorImportResult) {
     if (importResult.getPostKeyResult().getImportStatus().equals(ImportStatus.IMPORTED)) {
       LOG.info("Added validator {}", validatorImportResult.get());
     } else {
@@ -361,7 +358,7 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private Set<BLSPublicKey> filterImportedPubKeys(
-      List<? extends ValidatorImportResult> validatorImportResults) {
+      final List<? extends ValidatorImportResult> validatorImportResults) {
     return validatorImportResults.stream()
         .filter(
             validatorImportResult ->
@@ -375,7 +372,7 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private Set<BLSPublicKey> filterExternallyImportedPubKeys(
-      List<ExternalValidatorImportResult> externalValidatorImportResults) {
+      final List<ExternalValidatorImportResult> externalValidatorImportResults) {
     return externalValidatorImportResults.stream()
         .filter(
             externalValidatorImportResult ->
@@ -460,10 +457,10 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private void handleExternalValidatorDoppelgangers(
-      DoppelgangerDetectionAction doppelgangerDetectionAction,
-      List<ExternalValidatorImportResult> importResults,
-      Map<UInt64, BLSPublicKey> doppelgangers) {
-    List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final List<ExternalValidatorImportResult> importResults,
+      final Map<UInt64, BLSPublicKey> doppelgangers) {
+    final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
     if (!doppelgangerList.isEmpty()) {
       doppelgangerDetectionAction.alert(doppelgangerList);
       importEligibleExternalValidators(importResults, doppelgangerList);
@@ -472,7 +469,8 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private void importEligibleLocalValidators(
-      List<LocalValidatorImportResult> importResults, List<BLSPublicKey> doppelgangerList) {
+      final List<LocalValidatorImportResult> importResults,
+      final List<BLSPublicKey> doppelgangerList) {
     importResults.stream()
         .filter(
             validatorImportResult ->
@@ -483,8 +481,8 @@ public class ActiveKeyManager implements KeyManager {
             });
   }
 
-  private void importEligibleValidator(LocalValidatorImportResult validatorImportResult) {
-    ValidatorImportResult importResult =
+  private void importEligibleValidator(final LocalValidatorImportResult validatorImportResult) {
+    final ValidatorImportResult importResult =
         validatorLoader.addValidator(
             validatorImportResult.getKeyStoreData().get(),
             validatorImportResult.getPassword(),
@@ -493,7 +491,8 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private boolean isValidatorNotDoppelganger(
-      List<BLSPublicKey> doppelgangerList, LocalValidatorImportResult validatorImportResult) {
+      final List<BLSPublicKey> doppelgangerList,
+      final LocalValidatorImportResult validatorImportResult) {
     return validatorImportResult.getPostKeyResult().getImportStatus().equals(ImportStatus.IMPORTED)
         && validatorImportResult.getKeyStoreData().isPresent()
         && validatorImportResult.getPublicKey().isPresent()
@@ -501,7 +500,8 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   private void importEligibleExternalValidators(
-      List<ExternalValidatorImportResult> importResults, List<BLSPublicKey> doppelgangerList) {
+      final List<ExternalValidatorImportResult> importResults,
+      final List<BLSPublicKey> doppelgangerList) {
     importResults.stream()
         .filter(
             validatorImportResult ->
@@ -521,7 +521,7 @@ public class ActiveKeyManager implements KeyManager {
             });
   }
 
-  private void loadExternalValidators(List<ExternalValidatorImportResult> importResults) {
+  private void loadExternalValidators(final List<ExternalValidatorImportResult> importResults) {
     importResults.stream()
         .filter(
             validatorImportResult ->

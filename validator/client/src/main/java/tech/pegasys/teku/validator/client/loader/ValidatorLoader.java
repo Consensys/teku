@@ -158,7 +158,7 @@ public class ValidatorLoader {
   }
 
   public LocalValidatorImportResult addValidator(
-      KeyStoreData keyStoreData, String password, BLSPublicKey publicKey) {
+      final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
     final AddValidatorResult validatorAddResult =
         mutableLocalValidatorSource.get().addValidator(keyStoreData, password, publicKey);
     if (validatorAddResult.getSigner().isEmpty()) {
@@ -207,7 +207,7 @@ public class ValidatorLoader {
   }
 
   public ExternalValidatorImportResult addExternalValidator(
-      Optional<URL> signerUrl, BLSPublicKey publicKey) {
+      final Optional<URL> signerUrl, final BLSPublicKey publicKey) {
     final AddValidatorResult validatorAddResult =
         mutableExternalValidatorSource.get().addValidator(publicKey, signerUrl);
 
@@ -229,7 +229,7 @@ public class ValidatorLoader {
     LOG.info("Added validator: {}", publicKey.toString());
   }
 
-  private boolean canAddValidator(Optional<ValidatorSource> validatorSource) {
+  private boolean canAddValidator(final Optional<ValidatorSource> validatorSource) {
     return validatorSource.isPresent()
         && validatorSource.get().canUpdateValidators()
         && maybeDataDirLayout.isPresent();

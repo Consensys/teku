@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -141,8 +140,7 @@ public class DoppelgangerDetector {
       return doppelgangerCheckFinished.get();
     }
 
-    @NotNull
-    private Stream<String> mapToAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {
+    private Stream<String> mapToAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
       return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
     }
 
@@ -175,7 +173,7 @@ public class DoppelgangerDetector {
                 final UInt64 currentSlot =
                     spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
                 final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-                return checkDoppelgangerAtEpoch(pubKeys, currentSlot, currentEpoch);
+                return checkDoppelgangersAtEpoch(pubKeys, currentSlot, currentEpoch);
               })
           .orTimeout(checkDelay)
           .exceptionally(
@@ -188,8 +186,8 @@ public class DoppelgangerDetector {
               });
     }
 
-    private SafeFuture<Void> checkDoppelgangerAtEpoch(
-        Set<BLSPublicKey> pubKeys, UInt64 currentSlot, UInt64 currentEpoch) {
+    private SafeFuture<Void> checkDoppelgangersAtEpoch(
+        final Set<BLSPublicKey> pubKeys, final UInt64 currentSlot, final UInt64 currentEpoch) {
       captureEpochAtstart(currentEpoch);
       if (maxEpochsReached(currentEpoch)) {
         statusLog.doppelgangerDetectionEnd(
@@ -224,13 +222,13 @@ public class DoppelgangerDetector {
           .toVoid();
     }
 
-    private void captureEpochAtstart(UInt64 currentEpoch) {
+    private void captureEpochAtstart(final UInt64 currentEpoch) {
       if (epochAtStart.isEmpty()) {
         epochAtStart = Optional.of(currentEpoch);
       }
     }
 
-    private boolean maxEpochsReached(UInt64 currentEpoch) {
+    private boolean maxEpochsReached(final UInt64 currentEpoch) {
       return currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs);
     }
 
