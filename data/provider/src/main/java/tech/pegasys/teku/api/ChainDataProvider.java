@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -485,6 +487,29 @@ public class ChainDataProvider {
       LOG.trace(e);
     }
     return true;
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBoostrap(
+      final Bytes32 blockRootParam) {
+    return defaultStateSelectorFactory
+        .forBlockRoot(blockRootParam)
+        .getState()
+        .thenApply(
+            maybeStateData ->
+                maybeStateData.map(
+                    stateAndMetadata ->
+                        stateAndMetadata.map(
+                            state -> {
+                              Optional<LightClientUtil> lightClientUtil =
+                                  spec.getLightClientUtil(state.getSlot());
+
+                              if (lightClientUtil.isEmpty()) {
+                                // No light client bootstrap pre-altair
+                                return null;
+                              }
+
+                              return lightClientUtil.get().getLightClientBootstrap(state);
+                            })));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(

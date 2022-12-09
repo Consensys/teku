@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,11 +59,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -342,7 +345,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getStateSyncCommittees_shouldGetCommittees() {
-    final ChainDataProvider provider = setupAltairState();
+    final ChainDataProvider provider = setupAltairState().getLeft();
     final List<UInt64> committeeIndices =
         List.of(UInt64.valueOf(6), UInt64.valueOf(9), UInt64.valueOf(0));
 
@@ -376,11 +379,94 @@ public class ChainDataProviderTest {
 
   @Test
   public void getStateSyncCommittees_shouldRejectFarFutureEpoch() {
-    final ChainDataProvider provider = setupAltairState();
+    final ChainDataProvider provider = setupAltairState().getLeft();
     final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWith(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getLightClientBootstrap_shouldGetBootstrap() {
+    final Pair<
+            ChainDataProvider, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+        altairState = setupAltairState();
+
+    final ChainDataProvider provider = altairState.getLeft();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        altairState.getRight();
+
+    BeaconBlockHeader latestBlockHeader = internalState.getLatestBlockHeader();
+    BeaconBlockHeader expectedBlockHeader =
+        new BeaconBlockHeader(
+            latestBlockHeader.getSlot(),
+            latestBlockHeader.getProposerIndex(),
+            latestBlockHeader.getParentRoot(),
+            internalState.hashTreeRoot(),
+            latestBlockHeader.getBodyRoot());
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
+        .thenReturn(completedFuture(Optional.of(internalState)));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+
+    LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
+
+    assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
+    assertThat(bootstrap.get(1))
+        .isEqualTo(internalState.toVersionAltair().get().getCurrentSyncCommittee());
+  }
+
+  @Test
+  public void getLightClientBootstrap_shouldReturnEmptyWhenBlockNotFound() {
+    final Pair<
+            ChainDataProvider, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+        altairState = setupAltairState();
+
+    final ChainDataProvider provider = altairState.getLeft();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        altairState.getRight();
+
+    BeaconBlockHeader latestBlockHeader = internalState.getLatestBlockHeader();
+    BeaconBlockHeader expectedBlockHeader =
+        new BeaconBlockHeader(
+            latestBlockHeader.getSlot(),
+            latestBlockHeader.getProposerIndex(),
+            latestBlockHeader.getParentRoot(),
+            internalState.hashTreeRoot(),
+            latestBlockHeader.getBodyRoot());
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getLightClientBootstrap_shouldReturnEmptyBeforeAltair() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        data.randomBeaconState();
+
+    BeaconBlockHeader latestBlockHeader = internalState.getLatestBlockHeader();
+    BeaconBlockHeader expectedBlockHeader =
+        new BeaconBlockHeader(
+            latestBlockHeader.getSlot(),
+            latestBlockHeader.getProposerIndex(),
+            latestBlockHeader.getParentRoot(),
+            internalState.hashTreeRoot(),
+            latestBlockHeader.getBodyRoot());
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
+        .thenReturn(completedFuture(Optional.of(internalState)));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
   @Test
@@ -455,7 +541,7 @@ public class ChainDataProviderTest {
 
   @Test
   void pathParamMaySupportAltair_shouldBeTrueIfAltairSupported() {
-    final ChainDataProvider provider = setupAltairState();
+    final ChainDataProvider provider = setupAltairState().getLeft();
     assertThat(provider.stateParameterMaySupportAltair("genesis")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("1")).isTrue();
     assertThat(provider.stateParameterMaySupportAltair("0x00")).isTrue();
@@ -552,7 +638,9 @@ public class ChainDataProviderTest {
     return args.stream();
   }
 
-  private ChainDataProvider setupAltairState() {
+  private Pair<
+          ChainDataProvider, tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+      setupAltairState() {
     final Spec altair = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(altair);
     final ChainDataProvider provider =
@@ -573,7 +661,7 @@ public class ChainDataProviderTest {
             .build();
     final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(internalState));
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
-    return provider;
+    return Pair.of(provider, internalState);
   }
 
   private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {

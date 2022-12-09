@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class SpecLogicEip4844 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+  private final Optional<LightClientUtil> lightClientUtil;
 
   private SpecLogicEip4844(
       final Predicates predicates,
@@ -60,6 +62,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
+      final LightClientUtil lightClientUtil,
       final Eip4844StateUpgrade stateUpgrade) {
     super(
         predicates,
@@ -79,6 +82,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.lightClientUtil = Optional.of(lightClientUtil);
   }
 
   public static SpecLogicEip4844 create(
@@ -127,6 +131,8 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
+    final LightClientUtil lightClientUtil =
+        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final BlockProcessorEip4844 blockProcessor =
         new BlockProcessorEip4844(
             config,
@@ -170,12 +176,18 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
+        lightClientUtil,
         stateUpgrade);
   }
 
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
+  }
+
+  @Override
+  public Optional<LightClientUtil> getLightClientUtil() {
+    return lightClientUtil;
   }
 
   @Override
