@@ -56,7 +56,7 @@ public class DoppelgangerDetectorTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private LogCaptor logCaptor;
-  private final String doppelgangerDetectedLog = "Doppelganger detected...";
+  private final String doppelgangerDetectedLog = "Validator doppelganger detected...";
 
   private final Duration checkDelay = Duration.ofSeconds(2);
   private final Duration timeout = Duration.ofMinutes(15);
@@ -155,7 +155,7 @@ public class DoppelgangerDetectorTest {
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));
     verify(statusLog)
-        .validatorsDoppelgangerDetected(
+        .validatorsDoppelgangersDetected(
             doppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
@@ -218,14 +218,14 @@ public class DoppelgangerDetectorTest {
     Map<UInt64, BLSPublicKey> firstlyDetectedDoppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1));
     verify(statusLog)
-        .validatorsDoppelgangerDetected(
+        .validatorsDoppelgangersDetected(
             firstlyDetectedDoppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     assertThat(firstDoppelgangerDetectorFuture).isCompletedWithValue(firstlyDetectedDoppelgangers);
     Map<UInt64, BLSPublicKey> secondlyDetectedDoppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(3), pubKey3));
     verify(statusLog)
-        .validatorsDoppelgangerDetected(
+        .validatorsDoppelgangersDetected(
             secondlyDetectedDoppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     assertThat(secondDoppelgangerDetectorFuture)
@@ -265,7 +265,7 @@ public class DoppelgangerDetectorTest {
     Map<UInt64, BLSPublicKey> firstlyDetectedDoppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1));
     verify(statusLog)
-        .validatorsDoppelgangerDetected(
+        .validatorsDoppelgangersDetected(
             firstlyDetectedDoppelgangers.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     assertThat(firstDoppelgangerDetectorFuture).isCompletedWithValue(firstlyDetectedDoppelgangers);

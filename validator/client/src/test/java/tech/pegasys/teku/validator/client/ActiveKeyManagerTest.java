@@ -357,12 +357,10 @@ class ActiveKeyManagerTest {
         .performDoppelgangerDetection(Set.of(validatorPublicKey, doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Added validator %s", validatorPublicKey));
-    assertThat(
-            logCaptor
-                .getInfoLogs()
-                .contains(String.format("Added validator %s", doppelgangerPublicKey)))
-        .isFalse();
+    verify(validatorLoader, times(1))
+        .addValidator(validatorKeyStoreData, validatorPassword, validatorPublicKey);
+    verify(validatorLoader, never())
+        .addValidator(doppelgangerKeyStoreData, doppelgangerPassword, doppelgangerPublicKey);
   }
 
   @Test
@@ -386,14 +384,7 @@ class ActiveKeyManagerTest {
 
     final Validator activeValidator = mock(Validator.class);
     when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
-    when(activeValidator.isReadOnly()).thenReturn(false);
     when(activeValidator.getSigner()).thenReturn(signer);
-    when(exporter.addPublicKeyToExport(eq(doppelgangerPublicKey), any()))
-        .thenReturn(Optional.empty());
-    when(validatorLoader.deleteLocalMutableValidator(doppelgangerPublicKey))
-        .thenReturn(DeleteKeyResult.success());
-    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
 
     keyManager.importValidators(
         List.of(data),
@@ -412,11 +403,15 @@ class ActiveKeyManagerTest {
         String.format(
             "Failed to perform doppelganger detection for public keys %s",
             doppelgangerPublicKey.toAbbreviatedString()));
-    logCaptor.assertInfoLog(String.format("Added validator %s", doppelgangerPublicKey));
+    verify(validatorLoader, times(1))
+        .addValidator(doppelgangerKeyStoreData, doppelgangerPassword, doppelgangerPublicKey);
   }
 
   @Test
-  void shouldDetectDoppelgangerAndIgnoreExternalKey() {
+  void shouldDetectDoppelgangerAndIgnoreExternalKey() throws MalformedURLException {
+
+    when(signer.getSigningServiceUrl()).thenReturn(Optional.of(new URL("https://url.test")));
+
     ExternalValidatorImportResult externalDoppelgangerImportResult =
         new ExternalValidatorImportResult.Builder(
                 PostKeyResult.success(), signer.getSigningServiceUrl())
@@ -425,40 +420,36 @@ class ActiveKeyManagerTest {
     when(validatorLoader.loadExternalMutableValidator(
             eq(doppelgangerPublicKey), any(), anyBoolean()))
         .thenReturn(externalDoppelgangerImportResult);
-    final BLSPublicKey validatorPubKey = dataStructureUtil.randomPublicKey();
+
     ExternalValidatorImportResult externalValidatorImportResult =
         new ExternalValidatorImportResult.Builder(
                 PostKeyResult.success(), signer.getSigningServiceUrl())
-            .publicKey(Optional.of(validatorPubKey))
+            .publicKey(Optional.of(validatorPublicKey))
             .build();
-    when(validatorLoader.loadExternalMutableValidator(eq(validatorPubKey), any(), anyBoolean()))
+
+    when(validatorLoader.loadExternalMutableValidator(eq(validatorPublicKey), any(), anyBoolean()))
         .thenReturn(externalValidatorImportResult);
-    when(validatorLoader.addExternalValidator(any(), any()))
+
+    when(validatorLoader.addExternalValidator(any(), eq(validatorPublicKey)))
         .thenReturn(externalDoppelgangerImportResult);
+
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Map.ofEntries(Map.entry(UInt64.valueOf(5), doppelgangerPublicKey))));
 
     final Validator activeValidator = mock(Validator.class);
+
     when(activeValidator.getPublicKey()).thenReturn(doppelgangerPublicKey);
-    when(activeValidator.isReadOnly()).thenReturn(false);
     when(activeValidator.getSigner()).thenReturn(signer);
-    when(validatorLoader.deleteExternalMutableValidator(any()))
-        .thenReturn(DeleteKeyResult.success());
-    when(exporter.addPublicKeyToExport(eq(doppelgangerPublicKey), any()))
-        .thenReturn(Optional.empty());
-    when(validatorLoader.deleteLocalMutableValidator(doppelgangerPublicKey))
-        .thenReturn(DeleteKeyResult.success());
-    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    when(ownedValidators.getValidator(any())).thenReturn(Optional.of(activeValidator));
+
     final ExternalValidator externalDoppelganger = mock(ExternalValidator.class);
     when(externalDoppelganger.getPublicKey()).thenReturn(doppelgangerPublicKey);
     Optional<URL> signerUrl = signer.getSigningServiceUrl();
     when(externalDoppelganger.getUrl()).thenReturn(signerUrl);
 
     final ExternalValidator externalValidator = mock(ExternalValidator.class);
-    when(externalValidator.getPublicKey()).thenReturn(validatorPubKey);
+    when(externalValidator.getPublicKey()).thenReturn(validatorPublicKey);
     when(externalValidator.getUrl()).thenReturn(signerUrl);
 
     keyManager.importExternalValidators(
@@ -468,58 +459,52 @@ class ActiveKeyManagerTest {
 
     verify(channel, times(1)).onValidatorsAdded();
     verify(doppelgangerDetector)
-        .performDoppelgangerDetection(Set.of(validatorPubKey, doppelgangerPublicKey));
+        .performDoppelgangerDetection(Set.of(validatorPublicKey, doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
-    logCaptor.assertInfoLog(String.format("Added validator %s", validatorPubKey));
-    assertThat(
-            logCaptor
-                .getInfoLogs()
-                .contains(String.format("Added validator %s", doppelgangerPublicKey)))
-        .isFalse();
+    verify(validatorLoader, never()).addExternalValidator(signerUrl, doppelgangerPublicKey);
+    verify(validatorLoader, times(1)).addExternalValidator(signerUrl, validatorPublicKey);
   }
 
   @Test
-  void shouldAddExternalKeysWhenDoppelgangerDetectionException() {
-    ExternalValidatorImportResult externalValidatorImportResult =
+  void shouldAddExternalKeysWhenDoppelgangerDetectionException() throws MalformedURLException {
+    when(signer.getSigningServiceUrl()).thenReturn(Optional.of(new URL("https://url.test")));
+
+    ExternalValidatorImportResult doppelgangerImportResult =
         new ExternalValidatorImportResult.Builder(
                 PostKeyResult.success(), signer.getSigningServiceUrl())
             .publicKey(Optional.of(doppelgangerPublicKey))
             .build();
+
     Optional<URL> signerUrl = signer.getSigningServiceUrl();
+
     when(validatorLoader.loadExternalMutableValidator(
             eq(doppelgangerPublicKey), eq(signerUrl), eq(false)))
-        .thenReturn(externalValidatorImportResult);
-    when(validatorLoader.addExternalValidator(any(), any()))
-        .thenReturn(externalValidatorImportResult);
+        .thenReturn(doppelgangerImportResult);
+
+    when(validatorLoader.addExternalValidator(any(), eq(doppelgangerPublicKey)))
+        .thenReturn(doppelgangerImportResult);
+
     when(doppelgangerDetector.performDoppelgangerDetection(any()))
         .thenReturn(SafeFuture.failedFuture(new Exception("Doppelganger Detection Exception")));
 
     final ExternalValidator doppelganger = mock(ExternalValidator.class);
+
     when(doppelganger.getPublicKey()).thenReturn(doppelgangerPublicKey);
-    when(doppelganger.isReadOnly()).thenReturn(false);
     when(doppelganger.getUrl()).thenReturn(signerUrl);
-    when(validatorLoader.deleteExternalMutableValidator(any()))
-        .thenReturn(DeleteKeyResult.success());
-    when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
-    when(validatorLoader.deleteLocalMutableValidator(publicKey))
-        .thenReturn(DeleteKeyResult.success());
-    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
 
     keyManager.importExternalValidators(
         List.of(doppelganger), Optional.of(doppelgangerDetector), doppelgangerDetectionAction);
 
     verify(channel).onValidatorsAdded();
-    verify(signer, never()).delete();
-    verify(ownedValidators, never()).removeValidator(doppelgangerPublicKey);
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
     verify(doppelgangerDetectionAction, never()).shutDown();
     verify(doppelgangerDetectionAction, never()).alert(any());
+    verify(validatorLoader, times(1)).addExternalValidator(signerUrl, doppelgangerPublicKey);
     logCaptor.assertErrorLog(
         String.format(
             "Failed to perform doppelganger detection for public keys %s",
             doppelgangerPublicKey.toAbbreviatedString()));
-    logCaptor.assertInfoLog(String.format("Added validator %s", doppelgangerPublicKey));
   }
 
   private String getKeystore(String fileName) throws IOException, URISyntaxException {

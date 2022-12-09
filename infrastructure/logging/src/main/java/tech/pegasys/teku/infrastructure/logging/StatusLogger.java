@@ -190,7 +190,7 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
-  public void validatorsDoppelgangerDetected(final Map<UInt64, String> doppelgangersInfo) {
+  public void validatorsDoppelgangersDetected(final Map<UInt64, String> doppelgangersInfo) {
     String doppelgangersLogInfo =
         doppelgangersInfo.entrySet().stream()
             .map(
