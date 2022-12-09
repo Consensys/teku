@@ -28,10 +28,9 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
-
-import com.google.common.io.Resources;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
