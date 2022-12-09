@@ -401,11 +401,10 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    invalidBlockDescendants
-        .forEach(
-            invalidBlockDescendant ->
-                assertImportBlockWithResult(
-                    invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
+    invalidBlockDescendants.forEach(
+        invalidBlockDescendant ->
+            assertImportBlockWithResult(
+                invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
@@ -413,11 +412,10 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants
-        .forEach(
-            invalidBlockDescendant ->
-                assertImportBlockWithResult(
-                    invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
+    invalidBlockDescendants.forEach(
+        invalidBlockDescendant ->
+            assertImportBlockWithResult(
+                invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -441,7 +439,8 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first two
-    invalidBlockDescendants.subList(1, invalidChainDepth)
+    invalidBlockDescendants
+        .subList(1, invalidChainDepth)
         .forEach(
             invalidBlockDescendant ->
                 assertImportBlockWithResult(
@@ -557,15 +556,13 @@ public class BlockManagerTest {
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
     // Gossip invalid block descendants, must reject with no actual validation
-    invalidBlockDescendants
-        .forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
+    invalidBlockDescendants.forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
 
     // If any invalid block is again imported, it should be ignored
-    invalidBlockDescendants
-        .forEach(
-            invalidBlockDescendant ->
-                assertImportBlockWithResult(
-                    invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
+    invalidBlockDescendants.forEach(
+        invalidBlockDescendant ->
+            assertImportBlockWithResult(
+                invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
 
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }

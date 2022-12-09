@@ -74,6 +74,6 @@ class BeaconBlockBodyEip4844Test extends AbstractBeaconBlockBodyTest<BeaconBlock
                     .syncAggregate(() -> syncAggregate)
                     .executionPayload(() -> SafeFuture.completedFuture(executionPayload))
                     .blsToExecutionChanges(() -> blsToExecutionChanges)
-                    .blobKzgCommitments(() -> blobKzgCommitments));
+                    .blobKzgCommitments(() -> SafeFuture.completedFuture(blobKzgCommitments)));
   }
 }

@@ -167,6 +167,7 @@ class BlockOperationSelectorFactoryTest {
           depositProvider,
           eth1DataCache,
           defaultGraffiti,
+          Optional.empty(),
           forkChoiceNotifier,
           executionLayer);
 
@@ -516,7 +517,7 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
-        Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+        Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments) {
       // do nothing
       return this;
     }
