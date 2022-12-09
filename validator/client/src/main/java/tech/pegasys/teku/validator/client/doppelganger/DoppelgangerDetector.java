@@ -257,7 +257,7 @@ public class DoppelgangerDetector {
       final List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> doppelgangers =
           filterLiveValidators(validatorLivenessAtEpoches, validatorsIndicesByPubKey);
       if (!doppelgangers.isEmpty()) {
-        LOG.fatal("Doppelganger detected. Shutting down Validator Client.");
+        LOG.fatal("Doppelganger detected...");
         statusLog.validatorsDoppelgangerDetected(
             mapLivenessAtEpochToIndicesByPubKeyStrings(doppelgangers));
         stopDoppelgangerDetectorTask(mapLivenessAtEpochToIndicesByPubKey(doppelgangers))

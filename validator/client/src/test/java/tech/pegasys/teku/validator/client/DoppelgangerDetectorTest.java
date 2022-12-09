@@ -56,8 +56,7 @@ public class DoppelgangerDetectorTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private LogCaptor logCaptor;
-  private final String doppelgangerDetectedLog =
-      "Doppelganger detected. Shutting down Validator Client.";
+  private final String doppelgangerDetectedLog = "Doppelganger detected...";
 
   private final Duration checkDelay = Duration.ofSeconds(2);
   private final Duration timeout = Duration.ofMinutes(15);
