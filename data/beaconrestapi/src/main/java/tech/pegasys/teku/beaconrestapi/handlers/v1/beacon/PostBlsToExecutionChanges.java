@@ -38,8 +38,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostBlsToExecutionChanges extends RestApiEndpoint {
-
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
   private final NodeDataProvider nodeDataProvider;
   private final ChainDataProvider chainDataProvider;
