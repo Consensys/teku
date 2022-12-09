@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
 
@@ -80,7 +79,7 @@ public class AttesterSlashingValidator
 
           for (UInt64 index : intersectingIndices) {
             if (predicates.isSlashableValidator(
-                state.getValidators().get(toIntExact(index.longValue())),
+                state.getValidators().get(index.intValue()),
                 beaconStateAccessors.getCurrentEpoch(state))) {
               slashedIndicesCaptor.captureSlashedValidatorIndex(index);
               slashedAny = true;
