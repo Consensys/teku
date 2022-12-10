@@ -555,7 +555,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SignedBeaconBlock maybeBlindedBlock) {
     return blockFactory
         .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
-        .thenCompose(this::sendUnblindedSignedBlock);
+        .thenCompose(this::sendUnblindedSignedBlock)
+        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
   }
 
   private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(

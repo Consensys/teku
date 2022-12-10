@@ -78,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -119,11 +120,7 @@ class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
-  private final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
-  private final UInt64 previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
@@ -150,31 +147,42 @@ class ValidatorApiHandlerTest {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
 
-  private final ValidatorApiHandler validatorApiHandler =
-      new ValidatorApiHandler(
-          chainDataProvider,
-          nodeDataProvider,
-          chainDataClient,
-          syncStateProvider,
-          blockFactory,
-          blockImportChannel,
-          blockGossipChannel,
-          blockAndBlobsSidecarGossipChannel,
-          attestationPool,
-          attestationManager,
-          attestationTopicSubscriptions,
-          activeValidatorTracker,
-          dutyMetrics,
-          performanceTracker,
-          spec,
-          forkChoiceTrigger,
-          proposersDataManager,
-          syncCommitteeMessagePool,
-          syncCommitteeContributionPool,
-          syncCommitteeSubscriptionManager);
+  private Spec spec;
+  private UInt64 epochStartSlot;
+  private UInt64 previousEpochStartSlot;
+
+  private DataStructureUtil dataStructureUtil;
+  private ValidatorApiHandler validatorApiHandler;
 
   @BeforeEach
   public void setUp() {
+    this.spec = TestSpecFactory.createMinimalAltair();
+    this.epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
+    this.previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            nodeDataProvider,
+            chainDataClient,
+            syncStateProvider,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockAndBlobsSidecarGossipChannel,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriptions,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager);
+
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
@@ -472,7 +480,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_shouldCreateBlock() throws Exception {
+  public void createUnsignedBlock_shouldCreateBlock() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
@@ -801,6 +809,101 @@ class ValidatorApiHandlerTest {
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, Optional.empty());
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertSuccessfulResultWithBlobsSidecar() {
+    setupEip4844();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
+        new SignedBeaconBlockAndBlobsSidecar(
+            spec.getGenesisSchemaDefinitions()
+                .toVersionEip4844()
+                .orElseThrow()
+                .getSignedBeaconBlockAndBlobsSidecarSchema(),
+            block,
+            dataStructureUtil.randomBlobsSidecar());
+    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
+    verifyNoInteractions(blockGossipChannel);
+    verify(blockImportChannel)
+        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertFailedResultWithBlobsSidecar() {
+    setupEip4844();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
+        new SignedBeaconBlockAndBlobsSidecar(
+            spec.getGenesisSchemaDefinitions()
+                .toVersionEip4844()
+                .orElseThrow()
+                .getSignedBeaconBlockAndBlobsSidecarSchema(),
+            block,
+            dataStructureUtil.randomBlobsSidecar());
+    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
+    verifyNoInteractions(blockGossipChannel);
+    verify(blockImportChannel)
+        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    assertThat(result)
+        .isCompletedWithValue(
+            SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertKnownBlockResultWithBlobsSidecar() {
+    setupEip4844();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
+        new SignedBeaconBlockAndBlobsSidecar(
+            spec.getGenesisSchemaDefinitions()
+                .toVersionEip4844()
+                .orElseThrow()
+                .getSignedBeaconBlockAndBlobsSidecarSchema(),
+            block,
+            dataStructureUtil.randomBlobsSidecar());
+    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
+    verifyNoInteractions(blockGossipChannel);
+    verify(blockImportChannel)
+        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldBeRejectedWhenBlobsSidecarCannotBeRetrieved() {
+    setupEip4844();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(blockFactory.supplementBlockWithSidecar(block))
+        .thenThrow(new IllegalArgumentException(""));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+    result.join();
+
+    verifyNoInteractions(blockGossipChannel);
+    verifyNoInteractions(blockAndBlobsSidecarGossipChannel);
+    verifyNoInteractions(blockImportChannel);
+    assertThat(result)
+        .isCompletedWithValueMatching(
+            res ->
+                !res.isPublished()
+                    && res.getRejectionReason()
+                        .orElseThrow()
+                        .contains("java.lang.IllegalArgumentException"));
   }
 
   @Test
@@ -1156,5 +1259,34 @@ class ValidatorApiHandlerTest {
 
     when(chainDataProvider.getStateValidators("head", validators, new HashSet<>()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(stateValidators)));
+  }
+
+  private void setupEip4844() {
+    this.spec = TestSpecFactory.createMinimalEip4844();
+    this.epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
+    this.previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            nodeDataProvider,
+            chainDataClient,
+            syncStateProvider,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockAndBlobsSidecarGossipChannel,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriptions,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager);
   }
 }
