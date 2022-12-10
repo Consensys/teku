@@ -73,7 +73,7 @@ public class BlockFactory {
     return SafeFuture.completedFuture(blindedSignedBeaconBlock);
   }
 
-  public SignedBeaconBlockAndBlobsSidecar supplementBlockWithSidecar(
+  public SafeFuture<SignedBeaconBlockAndBlobsSidecar> supplementBlockWithSidecar(
       final SignedBeaconBlock unblindedSignedBeaconBlock) {
     if (unblindedSignedBeaconBlock.isBlinded()) {
       throw new IllegalArgumentException("Block should be unblinded");

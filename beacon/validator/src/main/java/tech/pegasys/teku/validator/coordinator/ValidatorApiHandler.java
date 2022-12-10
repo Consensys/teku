@@ -565,13 +565,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     performanceTracker.saveProducedBlock(block);
     final SafeFuture<BlockImportResult> importResultFuture;
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
+      final SafeFuture<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsSidecarSafeFuture =
           blockFactory.supplementBlockWithSidecar(block);
-      blockAndBlobsSidecarGossipChannel.publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
       importResultFuture =
-          blockImportChannel.importBlock(
-              blockAndBlobsSidecar.getSignedBeaconBlock(),
-              Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+          blockAndBlobsSidecarSafeFuture
+              .thenPeek(blockAndBlobsSidecarGossipChannel::publishBlockAndBlobsSidecar)
+              .thenCompose(
+                  blockAndBlobsSidecar ->
+                      blockImportChannel.importBlock(
+                          blockAndBlobsSidecar.getSignedBeaconBlock(),
+                          Optional.of(blockAndBlobsSidecar.getBlobsSidecar())));
     } else {
       blockGossipChannel.publishBlock(block);
       importResultFuture = blockImportChannel.importBlock(block, Optional.empty());
