@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.S
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -73,7 +75,7 @@ public class BlockOperationSelectorFactory {
   private final Optional<BlobsBundleValidator> blobsBundleValidator;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerChannel executionLayerChannel;
-  private volatile Optional<BlobsSidecar> blobsSidecarCache;
+  private volatile Optional<Pair<BlobsSidecar, ExecutionPayloadSummary>> blobsSidecarCache;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -228,17 +230,24 @@ public class BlockOperationSelectorFactory {
                                           .validate(blobsBundle, payloadCache.executionPayload);
                                   if (validationResult.isAccept()) {
                                     // FIXME:how is it called? one thread or many, check
+                                    final ExecutionPayloadSummary executionPayloadSummary =
+                                        payloadCache.executionPayload.isPresent()
+                                            ? payloadCache.executionPayload.orElseThrow()
+                                            : payloadCache.executionPayloadHeader.orElseThrow();
                                     this.blobsSidecarCache =
                                         Optional.of(
-                                            new BlobsSidecar(
-                                                schemaDefinitionsEip4844.getBlobsSidecarSchema(),
-                                                Bytes32.ZERO,
-                                                blockSlotState.getSlot(),
-                                                blobsBundle.getBlobs(),
-                                                miscHelpers.computeAggregatedKzgProof(
-                                                    blobsBundle.getBlobs().stream()
-                                                        .map(Blob::getBytes)
-                                                        .collect(Collectors.toList()))));
+                                            Pair.of(
+                                                new BlobsSidecar(
+                                                    schemaDefinitionsEip4844
+                                                        .getBlobsSidecarSchema(),
+                                                    Bytes32.ZERO,
+                                                    blockSlotState.getSlot(),
+                                                    blobsBundle.getBlobs(),
+                                                    miscHelpers.computeAggregatedKzgProof(
+                                                        blobsBundle.getBlobs().stream()
+                                                            .map(Blob::getBytes)
+                                                            .collect(Collectors.toList()))),
+                                                executionPayloadSummary));
                                     return schemaDefinitionsEip4844
                                         .getBeaconBlockBodySchema()
                                         .toVersionEip4844()
@@ -302,17 +311,31 @@ public class BlockOperationSelectorFactory {
     };
   }
 
+  // FIXME: I don't like cache being there in Factory class
   public Function<SignedBeaconBlock, SignedBeaconBlockAndBlobsSidecar>
       createSidecarSupplementSelector() {
     return signedBeaconBlock -> {
       final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
           spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
       // FIXME: slot comparison is not enough
-      if (blobsSidecarCache
-          .orElseThrow()
-          .getBeaconBlockSlot()
-          .equals(signedBeaconBlock.getSlot())) {
-        throw new IllegalArgumentException("Slot of block and cache doesn't match");
+      if (!blobsSidecarCache
+              .orElseThrow()
+              .getLeft()
+              .getBeaconBlockSlot()
+              .equals(signedBeaconBlock.getSlot())
+          || !blobsSidecarCache
+              .orElseThrow()
+              .getRight()
+              .getBlockHash()
+              .equals(
+                  signedBeaconBlock
+                      .getMessage()
+                      .getBody()
+                      .getOptionalExecutionPayloadSummary()
+                      .orElseThrow()
+                      .getBlockHash())) {
+        // TODO: actually it means that we should try to retrieve it from Eth1 again
+        throw new IllegalArgumentException("There is no matching BlobsSidecar");
       }
       final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
           new SignedBeaconBlockAndBlobsSidecar(
@@ -322,8 +345,8 @@ public class BlockOperationSelectorFactory {
                   schemaDefinitionsEip4844.getBlobsSidecarSchema(),
                   signedBeaconBlock.getRoot(),
                   signedBeaconBlock.getSlot(),
-                  blobsSidecarCache.orElseThrow().getBlobs(),
-                  blobsSidecarCache.orElseThrow().getKZGAggregatedProof()));
+                  blobsSidecarCache.orElseThrow().getLeft().getBlobs(),
+                  blobsSidecarCache.orElseThrow().getLeft().getKZGAggregatedProof()));
       this.blobsSidecarCache = Optional.empty();
       return blockAndBlobsSidecar;
     };
@@ -333,5 +356,6 @@ public class BlockOperationSelectorFactory {
     private Optional<SafeFuture<?>> initializer;
     private Bytes8 payloadId;
     private Optional<ExecutionPayload> executionPayload;
+    private Optional<ExecutionPayloadHeader> executionPayloadHeader;
   }
 }
