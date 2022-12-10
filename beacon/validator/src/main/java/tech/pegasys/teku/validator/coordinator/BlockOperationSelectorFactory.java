@@ -317,7 +317,6 @@ public class BlockOperationSelectorFactory {
     return signedBeaconBlock -> {
       final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
           spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
-      // FIXME: slot comparison is not enough
       if (!blobsSidecarCache
               .orElseThrow()
               .getLeft()
