@@ -22,13 +22,18 @@ import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetLightClientBootstrapResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient.GetLightClientBootstrap;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class GetLightClientBootstrapIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
@@ -43,7 +48,9 @@ public class GetLightClientBootstrapIntegrationTest
   @Test
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
     BeaconState state =
-        safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead()).get().getData();
+        safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
+            .orElseThrow()
+            .getData();
     BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
     BeaconBlockHeader expectedHeader =
         new BeaconBlockHeader(
@@ -52,20 +59,21 @@ public class GetLightClientBootstrapIntegrationTest
             latestBlockHeader.getParentRoot(),
             state.hashTreeRoot(),
             latestBlockHeader.getBodyRoot());
-    SyncCommittee expectedSyncCommittee = state.toVersionAltair().get().getCurrentSyncCommittee();
+    SyncCommittee expectedSyncCommittee =
+        BeaconStateAltair.required(state).getCurrentSyncCommittee();
 
     final Response response = get(expectedHeader.getRoot());
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    final GetLightClientBootstrapResponse parsedBootstrapResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetLightClientBootstrapResponse.class);
-    final tech.pegasys.teku.api.schema.BeaconBlockHeader apiBlockHeader =
-        new tech.pegasys.teku.api.schema.BeaconBlockHeader(expectedHeader);
-    final tech.pegasys.teku.api.schema.altair.SyncCommittee apiSyncCommittee =
-        new tech.pegasys.teku.api.schema.altair.SyncCommittee(expectedSyncCommittee);
+    final LightClientBootstrapSchema lightClientBootstrapSchema =
+        SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
+            .getLightClientBootstrapSchema();
+    final LightClientBootstrap parsedBootstrapResponse =
+        JsonUtil.parse(
+            response.body().string(), SharedApiTypes.withDataWrapper(lightClientBootstrapSchema));
 
-    assertThat(parsedBootstrapResponse.data.header).isEqualTo(apiBlockHeader);
-    assertThat(parsedBootstrapResponse.data.currentSyncCommittee).isEqualTo(apiSyncCommittee);
+    assertThat(parsedBootstrapResponse.getBeaconBlockHeader()).isEqualTo(expectedHeader);
+    assertThat(parsedBootstrapResponse.getCurrentSyncCommittee()).isEqualTo(expectedSyncCommittee);
   }
 
   @Test
