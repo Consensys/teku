@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.VALID_ATTESTATION_DATA_SET_SIZE;
@@ -169,7 +168,7 @@ public class AggregateAttestationValidator {
                     reject(
                         "Rejecting aggregate because selection proof does not select validator as aggregator"));
               }
-              if (!beaconCommittee.contains(toIntExact(aggregateAndProof.getIndex().longValue()))) {
+              if (!beaconCommittee.contains(aggregateAndProof.getIndex().intValue())) {
                 return SafeFuture.completedFuture(
                     reject(
                         "Rejecting aggregate because attester is not in committee. Should have been one of %s",
