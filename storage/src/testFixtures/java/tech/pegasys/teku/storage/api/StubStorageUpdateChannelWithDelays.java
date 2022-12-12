@@ -18,7 +18,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -57,6 +60,26 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
 
   @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 

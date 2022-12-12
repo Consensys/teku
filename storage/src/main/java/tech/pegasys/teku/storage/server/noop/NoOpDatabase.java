@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -265,6 +266,41 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
+
+  @Override
+  public void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {}
+
+  @Override
+  public void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
+  public Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
+  public Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public void pruneOldestBlobsSidecar(UInt64 endSlot, int pruneLimit) {}
+
+  @Override
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public void pruneOldestUnconfirmedBlobsSidecar(UInt64 endSlot, int pruneLimit) {}
 
   @Override
   public void close() {}

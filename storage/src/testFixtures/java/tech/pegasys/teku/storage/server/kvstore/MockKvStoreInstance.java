@@ -121,8 +121,10 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final KvStoreColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);
-    return Optional.ofNullable(columnData.get(column).firstEntry())
-        .map(e -> columnEntry(column, e));
+    final NavigableMap<Bytes, Bytes> values = columnData.get(column);
+    return values.isEmpty()
+        ? Optional.empty()
+        : Optional.of(values.firstEntry()).map(e -> columnEntry(column, e));
   }
 
   @Override
@@ -192,7 +194,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   private <K, V> ColumnEntry<K, V> columnEntry(
       final KvStoreColumn<K, V> column, final Map.Entry<Bytes, Bytes> entry) {
     final K key = columnKey(column, entry.getKey());
-    final V value = columnValue(column, entry.getValue()).get();
+    final V value = columnValue(column, entry.getValue()).orElse(null);
     return ColumnEntry.create(key, value);
   }
 

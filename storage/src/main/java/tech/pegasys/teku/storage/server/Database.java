@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -53,6 +54,26 @@ public interface Database extends AutoCloseable {
   void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
+
+  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+
+  void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  void pruneOldestBlobsSidecar(UInt64 endSlot, int pruneLimit);
+
+  void pruneOldestUnconfirmedBlobsSidecar(UInt64 endSlot, int pruneLimit);
+
+  @MustBeClosed
+  Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Optional<OnDiskStoreData> createMemoryStore();
 
@@ -84,7 +105,7 @@ public interface Database extends AutoCloseable {
 
   Optional<Bytes32> getFinalizedBlockRootBySlot(UInt64 slot);
 
-  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, final UInt64 slot);
+  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, UInt64 slot);
 
   /**
    * Returns the latest finalized block at or prior to the given slot

@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -98,6 +99,26 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     updateDelegate.onChainInitialized(initialAnchor);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+    return updateDelegate.onBlobsSidecar(blobsSidecar);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+    return updateDelegate.onBlobsSidecarRemoval(blobsSidecar);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+    return updateDelegate.onBlobsSidecarPruning(endSlot, pruneLimit);
+  }
+
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+    return updateDelegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit);
   }
 
   @Override
@@ -193,5 +214,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return asyncRunner.runAsync(queryDelegate::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return asyncRunner.runAsync(() -> queryDelegate.getBlobsSidecar(slotAndBlockRoot));
   }
 }

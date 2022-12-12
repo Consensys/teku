@@ -60,6 +60,10 @@ public interface SchemaCombined extends Schema {
 
   KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot();
 
+  KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot();
+
+  KvStoreColumn<SlotAndBlockRoot, Void> getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot();
+
   KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot();
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
