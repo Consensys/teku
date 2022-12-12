@@ -1,0 +1,86 @@
+/*
+ * Copyright ConsenSys Software Inc., 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.storage.server.pruner;
+
+import java.time.Duration;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.server.Database;
+
+public class BlockPruner extends Service {
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final Spec spec;
+  private final Database database;
+  private final AsyncRunner asyncRunner;
+  private final Duration pruneInterval;
+  private final UInt64 epochsToKeep;
+
+  private Optional<Cancellable> scheduledPruner = Optional.empty();
+
+  public BlockPruner(
+      final Spec spec,
+      final Database database,
+      final AsyncRunner asyncRunner,
+      final Duration pruneInterval,
+      final UInt64 epochsToKeep) {
+    this.spec = spec;
+    this.database = database;
+    this.asyncRunner = asyncRunner;
+    this.pruneInterval = pruneInterval;
+    this.epochsToKeep = epochsToKeep;
+  }
+
+  @Override
+  protected synchronized SafeFuture<?> doStart() {
+    scheduledPruner =
+        Optional.of(
+            asyncRunner.runWithFixedDelay(
+                this::pruneBlocks,
+                pruneInterval,
+                error -> LOG.error("Failed to prune old blocks", error)));
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  protected synchronized SafeFuture<?> doStop() {
+    scheduledPruner.ifPresent(Cancellable::cancel);
+    return SafeFuture.COMPLETE;
+  }
+
+  private void pruneBlocks() {
+    final Optional<Checkpoint> finalizedCheckpoint = database.getFinalizedCheckpoint();
+    if (finalizedCheckpoint.isEmpty()) {
+      LOG.debug("Not pruning as no finalized checkpoint is available.");
+      return;
+    }
+    final UInt64 earliestEpochToKeep =
+        finalizedCheckpoint.get().getEpoch().minusMinZero(epochsToKeep);
+    final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
+    if (earliestSlotToKeep.isZero()) {
+      LOG.debug("Not pruning as epochs to keep includes genesis");
+      return;
+    }
+    LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
+    database.pruneFinalizedBlocks(UInt64.ZERO, earliestSlotToKeep.decrement());
+  }
+}

@@ -112,6 +112,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<Checkpoint> getFinalizedCheckpoint() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<Bytes32> getFinalizedBlockRootBySlot(final UInt64 slot) {
     return Optional.empty();
   }
@@ -218,6 +223,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
+
+  @Override
+  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {}
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}

@@ -446,6 +446,11 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
+  public Optional<Checkpoint> getFinalizedCheckpoint() {
+    return dao.getFinalizedCheckpoint();
+  }
+
+  @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return dao.getLatestAvailableFinalizedState(maxSlot);
   }

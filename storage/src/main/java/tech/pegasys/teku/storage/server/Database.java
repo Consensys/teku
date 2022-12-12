@@ -80,6 +80,8 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getLastAvailableFinalizedBlock();
 
+  Optional<Checkpoint> getFinalizedCheckpoint();
+
   Optional<Bytes32> getFinalizedBlockRootBySlot(UInt64 slot);
 
   Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, final UInt64 slot);
@@ -169,4 +171,6 @@ public interface Database extends AutoCloseable {
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
   void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
+
+  void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
 }
