@@ -15,14 +15,12 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import java.time.Duration;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -45,7 +43,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final ServiceConfig serviceConfig;
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
-  private volatile BlockPruner blockPruner;
+  private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
 
   public StorageService(
@@ -73,12 +71,19 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               database.migrate();
 
-              blockPruner =
-                  new BlockPruner(
-                      config.getSpec(),
-                      database,
-                      storageAsyncRunner,
-                      );
+              if (config.isBlockPruningEnabled()) {
+                blockPruner =
+                    Optional.of(
+                        new BlockPruner(
+                            config.getSpec(),
+                            database,
+                            storageAsyncRunner,
+                            config.getBlockPruningInterval(),
+                            config
+                                .getSpec()
+                                .getGenesisSpecConfig()
+                                .getMinEpochsForBlockRequests()));
+              }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage =
                   ChainStorage.create(
@@ -113,12 +118,15 @@ public class StorageService extends Service implements StorageServiceFacade {
                   .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
             })
-        .thenCompose(__ -> blockPruner.start());
+        .thenCompose(__ -> blockPruner.map(BlockPruner::start).orElseGet(SafeFuture::new));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return blockPruner.stop().thenCompose(__ -> SafeFuture.fromRunnable(database::close));
+    return blockPruner
+        .map(BlockPruner::stop)
+        .orElseGet(SafeFuture::new)
+        .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
   @Override

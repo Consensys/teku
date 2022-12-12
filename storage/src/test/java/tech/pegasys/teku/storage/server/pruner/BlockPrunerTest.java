@@ -35,7 +35,7 @@ import tech.pegasys.teku.storage.server.Database;
 class BlockPrunerTest {
 
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(26);
-  public static final UInt64 EPOCHS_TO_KEEP = UInt64.valueOf(5);
+  public static final int EPOCHS_TO_KEEP = 5;
   public static final int SLOTS_PER_EPOCH = 10;
   // Nice simple number of slots per epoch
   private final Spec spec =
@@ -82,7 +82,7 @@ class BlockPrunerTest {
 
   @Test
   void shouldPruneBlocksWhenFirstEpochIsPrunable() {
-    final UInt64 finalizedEpoch = EPOCHS_TO_KEEP.plus(1);
+    final int finalizedEpoch = EPOCHS_TO_KEEP + 1;
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(finalizedEpoch)));
     triggerNextPruning();

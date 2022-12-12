@@ -33,7 +33,7 @@ public class BlockPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private final UInt64 epochsToKeep;
+  private final int epochsToKeep;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -42,7 +42,7 @@ public class BlockPruner extends Service {
       final Database database,
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
-      final UInt64 epochsToKeep) {
+      final int epochsToKeep) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
