@@ -144,6 +144,10 @@ public interface SpecConfig {
 
   ProgressiveBalancesMode getProgressiveBalancesMode();
 
+  default int getMinEpochsForBlockRequests() {
+    return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
+  }
+
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }

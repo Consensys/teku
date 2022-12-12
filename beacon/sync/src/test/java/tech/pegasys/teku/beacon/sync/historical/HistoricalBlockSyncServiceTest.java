@@ -93,7 +93,8 @@ public class HistoricalBlockSyncServiceTest {
           syncStateProvider,
           signatureVerificationService,
           batchSize,
-          Optional.of(reconstructHistoricalStatesService));
+          Optional.of(reconstructHistoricalStatesService),
+          false);
   private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
       Subscribers.create(false);
 

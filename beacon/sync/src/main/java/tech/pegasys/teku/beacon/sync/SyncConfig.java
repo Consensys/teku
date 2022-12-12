@@ -19,18 +19,22 @@ public class SyncConfig {
 
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
   public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED = false;
+  public static final boolean DEFAULT_FETCH_ALL_HISTORIC_BLOCKS = true;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
   private final boolean reconstructHistoricStatesEnabled;
+  private final boolean fetchAllHistoricBlocks;
 
   private SyncConfig(
       final boolean isEnabled,
       final boolean isMultiPeerSyncEnabled,
-      final boolean reconstructHistoricStatesEnabled) {
+      final boolean reconstructHistoricStatesEnabled,
+      final boolean fetchAllHistoricBlocks) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
+    this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
   }
 
   public static Builder builder() {
@@ -49,16 +53,25 @@ public class SyncConfig {
     return reconstructHistoricStatesEnabled;
   }
 
+  public boolean fetchAllHistoricBlocks() {
+    return fetchAllHistoricBlocks;
+  }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
     private Boolean reconstructHistoricStatesEnabled = DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
+    private boolean fetchAllHistoricBlocks = DEFAULT_FETCH_ALL_HISTORIC_BLOCKS;
 
     private Builder() {}
 
     public SyncConfig build() {
       initMissingDefaults();
-      return new SyncConfig(isEnabled, isMultiPeerSyncEnabled, reconstructHistoricStatesEnabled);
+      return new SyncConfig(
+          isEnabled,
+          isMultiPeerSyncEnabled,
+          reconstructHistoricStatesEnabled,
+          fetchAllHistoricBlocks);
     }
 
     private void initMissingDefaults() {
@@ -86,10 +99,15 @@ public class SyncConfig {
       return this;
     }
 
-    public Builder isReconstructHistoricStatesEnabled(
+    public Builder reconstructHistoricStatesEnabled(
         final Boolean reconstructHistoricStatesEnabled) {
       checkNotNull(reconstructHistoricStatesEnabled);
       this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
+      return this;
+    }
+
+    public Builder fetchAllHistoricBlocks(final boolean fetchAllHistoricBlocks) {
+      this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
       return this;
     }
   }
