@@ -35,6 +35,9 @@ public class SignedBlsToExecutionChange
     super(type, backingNode);
   }
 
+  public static final SignedBlsToExecutionChangeSchema SSZ_SCHEMA =
+      new SignedBlsToExecutionChangeSchema();
+
   public BlsToExecutionChange getMessage() {
     return getField0();
   }
