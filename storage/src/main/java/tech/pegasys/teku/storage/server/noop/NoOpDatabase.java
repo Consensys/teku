@@ -268,21 +268,21 @@ public class NoOpDatabase implements Database {
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
 
   @Override
-  public void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {}
+  public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
   @Override
-  public void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {}
+  public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
-  public Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.empty();
   }
 
   @Override
-  public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {}
+  public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
-  public Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
 
@@ -292,15 +292,16 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void pruneOldestBlobsSidecar(UInt64 endSlot, int pruneLimit) {}
+  public void pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {}
 
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
 
   @Override
-  public void pruneOldestUnconfirmedBlobsSidecar(UInt64 endSlot, int pruneLimit) {}
+  public void pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {}
 
   @Override
   public void close() {}

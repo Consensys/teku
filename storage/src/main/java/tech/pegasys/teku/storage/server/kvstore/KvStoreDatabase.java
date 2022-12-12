@@ -547,7 +547,7 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdaterT updater = finalizedUpdater()) {
       updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
       updater.commit();
@@ -555,14 +555,14 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     final Optional<Bytes> maybePayload = dao.getBlobsSidecar(slotAndBlockRoot);
     return maybePayload.map(
         payload -> spec.deserializeBlobsSidecar(payload, slotAndBlockRoot.getSlot()));
   }
 
   @Override
-  public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdaterT updater = finalizedUpdater()) {
       updater.removeBlobsSidecar(slotAndBlockRoot);
       updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
@@ -571,7 +571,7 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public void pruneOldestBlobsSidecar(UInt64 endSlot, int pruneLimit) {
+  public void pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
     try (final Stream<BlobsSidecar> prunableBlobs = streamBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
       prunableBlobs
@@ -589,7 +589,7 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public void pruneOldestUnconfirmedBlobsSidecar(UInt64 endSlot, int pruneLimit) {
+  public void pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
             streamUnconfirmedBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
@@ -606,7 +606,7 @@ public abstract class KvStoreDatabase<
 
   @MustBeClosed
   @Override
-  public Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobsSidecar(startSlot, endSlot)
         .map(
             slotAndBlockRootBytesEntry ->
@@ -617,7 +617,8 @@ public abstract class KvStoreDatabase<
 
   @MustBeClosed
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
   }
 

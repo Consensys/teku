@@ -96,7 +96,7 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<Void> onReconstructedFinalizedState(
-      BeaconState finalizedState, Bytes32 blockRoot) {
+      final BeaconState finalizedState, final Bytes32 blockRoot) {
     return this.retry(() -> delegate.onReconstructedFinalizedState(finalizedState, blockRoot));
   }
 
@@ -123,22 +123,23 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return retry(() -> delegate.onBlobsSidecar(blobsSidecar));
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
     return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecar));
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
     return retry(() -> delegate.onBlobsSidecarPruning(endSlot, pruneLimit));
   }
 
   @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
     return retry(() -> delegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit));
   }
 

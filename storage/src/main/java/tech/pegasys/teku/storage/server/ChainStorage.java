@@ -175,7 +175,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return SafeFuture.of(
         () -> {
           database.storeUnconfirmedBlobsSidecar(blobsSidecar);
@@ -184,7 +184,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
     return SafeFuture.of(
         () -> {
           database.removeBlobsSidecar(blobsSidecar);
@@ -193,7 +193,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
     return SafeFuture.of(
         () -> {
           database.pruneOldestBlobsSidecar(endSlot, pruneLimit);
@@ -202,7 +202,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
     return SafeFuture.of(
         () -> {
           database.pruneOldestUnconfirmedBlobsSidecar(endSlot, pruneLimit);

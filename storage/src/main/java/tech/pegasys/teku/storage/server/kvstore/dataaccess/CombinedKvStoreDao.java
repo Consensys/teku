@@ -421,14 +421,14 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return db.get(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
   }
 
   @MustBeClosed
   @Override
   public Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
-      UInt64 startSlot, UInt64 endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(
             schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
             new SlotAndBlockRoot(startSlot, Bytes32.ZERO),
@@ -438,7 +438,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @MustBeClosed
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(
             schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
             new SlotAndBlockRoot(startSlot, Bytes32.ZERO),
@@ -866,7 +867,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addBlobsSidecar(BlobsSidecar blobsSidecar) {
+    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
       transaction.put(
           schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
           new SlotAndBlockRoot(
@@ -875,7 +876,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {
+    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
       transaction.put(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
           new SlotAndBlockRoot(
@@ -884,12 +885,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }

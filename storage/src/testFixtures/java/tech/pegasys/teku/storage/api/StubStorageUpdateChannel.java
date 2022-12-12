@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
-  public SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event) {
+  public SafeFuture<UpdateResult> onStorageUpdate(final StorageUpdate event) {
     return SafeFuture.completedFuture(UpdateResult.EMPTY);
   }
 
@@ -37,46 +37,50 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot) {
+  public SafeFuture<Void> onFinalizedState(
+      final BeaconState finalizedState, final Bytes32 blockRoot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
   public SafeFuture<Void> onReconstructedFinalizedState(
-      BeaconState finalizedState, Bytes32 blockRoot) {
+      final BeaconState finalizedState, final Bytes32 blockRoot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
+  public SafeFuture<Void> onWeakSubjectivityUpdate(
+      final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot) {
+  public SafeFuture<Void> onFinalizedDepositSnapshot(
+      final DepositTreeSnapshot depositTreeSnapshot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public void onChainInitialized(AnchorPoint initialAnchor) {}
+  public void onChainInitialized(final AnchorPoint initialAnchor) {}
 }

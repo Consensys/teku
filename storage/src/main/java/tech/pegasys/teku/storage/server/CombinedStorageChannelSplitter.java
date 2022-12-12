@@ -102,22 +102,23 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return updateDelegate.onBlobsSidecar(blobsSidecar);
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
     return updateDelegate.onBlobsSidecarRemoval(blobsSidecar);
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
     return updateDelegate.onBlobsSidecarPruning(endSlot, pruneLimit);
   }
 
   @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit) {
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
     return updateDelegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit);
   }
 
@@ -187,7 +188,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(final UInt64 slot) {
     return asyncRunner.runAsync(() -> queryDelegate.getLatestAvailableFinalizedState(slot));
   }
 

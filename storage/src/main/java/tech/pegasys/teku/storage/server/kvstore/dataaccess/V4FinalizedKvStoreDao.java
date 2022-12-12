@@ -169,7 +169,7 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 
-  public Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return db.get(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
   }
 
@@ -429,7 +429,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       stateStorageUpdater.addReconstructedFinalizedState(db, transaction, schema, state);
     }
 
@@ -457,7 +457,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {
+    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
       transaction.put(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
           new SlotAndBlockRoot(
@@ -466,12 +466,12 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }

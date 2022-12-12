@@ -308,20 +308,21 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getBlobsSidecar(slotAndBlockRoot);
   }
 
   @Override
   @MustBeClosed
   public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
-      UInt64 startSlot, UInt64 endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamBlobsSidecar(startSlot, endSlot);
   }
 
   @Override
   @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot) {
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
   }
 
@@ -517,22 +518,22 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addBlobsSidecar(BlobsSidecar blobsSidecar) {
+    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
       finalizedUpdater.addBlobsSidecar(blobsSidecar);
     }
 
     @Override
-    public void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {
+    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
       finalizedUpdater.addUnconfirmedBlobsSidecar(blobsSidecar);
     }
 
     @Override
-    public void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       finalizedUpdater.removeBlobsSidecar(slotAndBlockRoot);
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot) {
+    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       finalizedUpdater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
     }
 
