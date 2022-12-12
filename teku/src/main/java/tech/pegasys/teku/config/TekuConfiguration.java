@@ -239,10 +239,19 @@ public class TekuConfiguration {
             "Genesis state required when reconstructing historic states");
       }
 
-      if (syncConfig.isReconstructHistoricStatesEnabled()
-          && PRUNE.equals(storageConfiguration.getDataStorageMode())) {
+      if (syncConfig.isReconstructHistoricStatesEnabled()) {
+        if (PRUNE.equals(storageConfiguration.getDataStorageMode())) {
+          throw new InvalidConfigurationException(
+              "Cannot reconstruct historic states when using prune data storage mode");
+        }
+        if (storageConfiguration.isBlockPruningEnabled()) {
+          throw new InvalidConfigurationException(
+              "Cannot reconstruct historic states when block pruning is enabled");
+        }
+      }
+      if (storageConfiguration.isBlockPruningEnabled() == syncConfig.fetchAllHistoricBlocks()) {
         throw new InvalidConfigurationException(
-            "Cannot reconstruct historic states when using prune data storage mode");
+            "Cannot download all historic blocks with block pruning enabled");
       }
 
       return new TekuConfiguration(

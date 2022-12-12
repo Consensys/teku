@@ -127,7 +127,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         signatureVerifier,
         syncStateProvider,
         syncConfig.isReconstructHistoricStatesEnabled(),
-        genesisStateResource);
+        genesisStateResource,
+        syncConfig.fetchAllHistoricBlocks());
   }
 
   protected SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {

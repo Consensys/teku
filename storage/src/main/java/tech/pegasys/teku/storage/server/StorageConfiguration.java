@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import java.time.Duration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
@@ -26,6 +27,8 @@ public class StorageConfiguration {
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final int DEFAULT_BLOCK_MIGRATION_BATCH_SIZE = 25;
   public static final int DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS = 100;
+  public static final boolean DEFAULT_BLOCK_PRUNING_ENABLED = false;
+  public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofHours(1);
 
   private final Eth1Address eth1DepositContract;
 
@@ -38,6 +41,8 @@ public class StorageConfiguration {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
+  private final boolean blockPruningEnabled;
+  private final Duration blockPruningInterval;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -49,6 +54,8 @@ public class StorageConfiguration {
       final boolean storeBlockExecutionPayloadSeparately,
       final int blockMigrationBatchSize,
       final int blockMigrationBatchDelay,
+      final boolean blockPruningEnabled,
+      final Duration blockPruningInterval,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -59,6 +66,8 @@ public class StorageConfiguration {
     this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     this.blockMigrationBatchSize = blockMigrationBatchSize;
     this.blockMigrationBatchDelay = blockMigrationBatchDelay;
+    this.blockPruningEnabled = blockPruningEnabled;
+    this.blockPruningInterval = blockPruningInterval;
     this.spec = spec;
   }
 
@@ -102,6 +111,14 @@ public class StorageConfiguration {
     return blockMigrationBatchDelay;
   }
 
+  public boolean isBlockPruningEnabled() {
+    return blockPruningEnabled;
+  }
+
+  public Duration getBlockPruningInterval() {
+    return blockPruningInterval;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -118,6 +135,8 @@ public class StorageConfiguration {
     private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
     private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
     private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
+    private boolean blockPruningEnabled = DEFAULT_BLOCK_PRUNING_ENABLED;
+    private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
 
     private Builder() {}
 
@@ -171,6 +190,19 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder blockPruningEnabled(final boolean blockPruningEnabled) {
+      this.blockPruningEnabled = blockPruningEnabled;
+      return this;
+    }
+
+    public Builder blockPruningInterval(final Duration blockPruningInterval) {
+      if (blockPruningInterval.isNegative() || blockPruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Block pruning interval must be positive");
+      }
+      this.blockPruningInterval = blockPruningInterval;
+      return this;
+    }
+
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -182,6 +214,8 @@ public class StorageConfiguration {
           storeBlockExecutionPayloadSeparately,
           blockMigrationBatchSize,
           blockMigrationBatchDelay,
+          blockPruningEnabled,
+          blockPruningInterval,
           spec);
     }
 
