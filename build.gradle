@@ -8,7 +8,10 @@ import java.text.SimpleDateFormat
 buildscript {
   repositories {
     mavenCentral()
-    maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+    maven {
+      url "https://artifacts.consensys.net/public/maven/maven/"
+      content { includeGroupByRegex('tech\\.pegasys\\..*')}
+    }
   }
   dependencies {
     classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
@@ -133,9 +136,18 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://artifacts.consensys.net/public/maven/maven/" }
-    maven { url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/" }
-    maven { url "https://hyperledger.jfrog.io/artifactory/besu-maven/" }
+    maven {
+      url "https://artifacts.consensys.net/public/maven/maven/"
+      content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}
+    }
+    maven {
+      url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
+      content { includeGroupByRegex('io\\.libp2p($|\\..*)') }
+    }
+    maven {
+      url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
+      content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
+    }
   }
 
   dependencies {

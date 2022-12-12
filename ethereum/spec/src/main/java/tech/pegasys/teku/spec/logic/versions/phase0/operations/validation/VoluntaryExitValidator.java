@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
@@ -82,7 +81,7 @@ public class VoluntaryExitValidator
   }
 
   private Validator getValidator(BeaconState state, VoluntaryExit exit) {
-    return state.getValidators().get(toIntExact(exit.getValidatorIndex().longValue()));
+    return state.getValidators().get(exit.getValidatorIndex().intValue());
   }
 
   public static class ExitInvalidReason {

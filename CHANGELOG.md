@@ -24,6 +24,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 - Added `finalized` metadata field to applicable REST API responses
+- Use SSZ encoding for external validator client block creation requests by default. Can be disabled with `--beacon-node-ssz-blocks-enabled=false`.
 
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly

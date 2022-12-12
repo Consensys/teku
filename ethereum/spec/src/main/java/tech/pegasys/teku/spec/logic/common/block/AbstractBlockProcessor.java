@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -377,8 +376,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                   blockHeader.getBodyRoot()));
 
           // Only if we are processing blocks (not proposing them)
-          Validator proposer =
-              state.getValidators().get(toIntExact(blockHeader.getProposerIndex().longValue()));
+          Validator proposer = state.getValidators().get(blockHeader.getProposerIndex().intValue());
           checkArgument(
               !proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
         });
@@ -442,12 +440,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           final int expectedDepositCount =
               Math.min(
                   specConfig.getMaxDeposits(),
-                  toIntExact(
-                      state
-                          .getEth1Data()
-                          .getDepositCount()
-                          .minus(state.getEth1DepositIndex())
-                          .longValue()));
+                  state
+                      .getEth1Data()
+                      .getDepositCount()
+                      .minus(state.getEth1DepositIndex())
+                      .intValue());
           checkArgument(
               body.getDeposits().size() == expectedDepositCount,
               "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
@@ -491,9 +488,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
             beaconStateMutators.slashValidator(
-                state,
-                toIntExact(
-                    proposerSlashing.getHeader1().getMessage().getProposerIndex().longValue()));
+                state, proposerSlashing.getHeader1().getMessage().getProposerIndex().intValue());
           }
         });
   }
@@ -535,9 +530,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
             indicesToSlash.forEach(
-                indexToSlash ->
-                    beaconStateMutators.slashValidator(
-                        state, toIntExact(indexToSlash.longValue())));
+                indexToSlash -> beaconStateMutators.slashValidator(state, indexToSlash.intValue()));
           }
         });
   }
@@ -674,7 +667,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             deposit.getData().hashTreeRoot(),
             deposit.getProof(),
             specConfig.getDepositContractTreeDepth() + 1, // Add 1 for the List length mix-in
-            toIntExact(state.getEth1DepositIndex().longValue()),
+            state.getEth1DepositIndex().intValue(),
             state.getEth1Data().getDepositRoot()),
         "process_deposit: Verify the Merkle branch");
 
@@ -811,7 +804,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
             // - Run initiate_validator_exit(state, exit.validator_index)
             beaconStateMutators.initiateValidatorExit(
-                state, toIntExact(signedExit.getMessage().getValidatorIndex().longValue()));
+                state, signedExit.getMessage().getValidatorIndex().intValue());
           }
         });
   }
@@ -835,7 +828,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
     try {
       action.run();
-    } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+    } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
       LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
     }

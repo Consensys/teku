@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
 
@@ -64,7 +63,7 @@ public class ProposerSlashingValidator
         () ->
             check(
                 predicates.isSlashableValidator(
-                    state.getValidators().get(toIntExact(header1.getProposerIndex().longValue())),
+                    state.getValidators().get(header1.getProposerIndex().intValue()),
                     beaconStateAccessors.getCurrentEpoch(state)),
                 ProposerSlashingInvalidReason.PROPOSER_NOT_SLASHABLE));
   }

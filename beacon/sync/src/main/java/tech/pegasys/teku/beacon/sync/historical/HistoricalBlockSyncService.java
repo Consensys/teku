@@ -74,6 +74,7 @@ public class HistoricalBlockSyncService extends Service {
   final Set<NodeId> badPeerCache;
 
   private final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService;
+  private final boolean fetchAllHistoricBlocks;
 
   @VisibleForTesting
   protected HistoricalBlockSyncService(
@@ -86,7 +87,8 @@ public class HistoricalBlockSyncService extends Service {
       final SyncStateProvider syncStateProvider,
       final AsyncBLSSignatureVerifier signatureVerifier,
       final UInt64 batchSize,
-      final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService) {
+      final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService,
+      final boolean fetchAllHistoricBlocks) {
     this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
 
@@ -97,6 +99,7 @@ public class HistoricalBlockSyncService extends Service {
     this.batchSize = batchSize;
     this.signatureVerifier = signatureVerifier;
     this.reconstructHistoricalStatesService = reconstructHistoricalStatesService;
+    this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -126,17 +129,19 @@ public class HistoricalBlockSyncService extends Service {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final SyncStateProvider syncStateProvider,
       final boolean reconstructHistoricStatesEnabled,
-      final Optional<String> genesisStateResource) {
-    ReconstructHistoricalStatesService reconstructHistoricalStatesService =
+      final Optional<String> genesisStateResource,
+      final boolean fetchAllHistoricBlocks) {
+    Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService =
         reconstructHistoricStatesEnabled
-            ? new ReconstructHistoricalStatesService(
-                storageUpdateChannel,
-                chainData,
-                spec,
-                timeProvider,
-                metricsSystem,
-                genesisStateResource)
-            : null;
+            ? Optional.of(
+                new ReconstructHistoricalStatesService(
+                    storageUpdateChannel,
+                    chainData,
+                    spec,
+                    timeProvider,
+                    metricsSystem,
+                    genesisStateResource))
+            : Optional.empty();
 
     return new HistoricalBlockSyncService(
         spec,
@@ -148,7 +153,8 @@ public class HistoricalBlockSyncService extends Service {
         syncStateProvider,
         signatureVerifier,
         BATCH_SIZE,
-        Optional.ofNullable(reconstructHistoricalStatesService));
+        reconstructHistoricalStatesService,
+        fetchAllHistoricBlocks);
   }
 
   @Override
@@ -175,14 +181,33 @@ public class HistoricalBlockSyncService extends Service {
               this.earliestBlock =
                   beaconBlockSummary.orElseThrow(
                       () -> new IllegalStateException("Unable to retrieve earliest block"));
-              if (earliestBlock.getSlot().isGreaterThan(UInt64.ZERO)) {
+              final UInt64 terminalSlot = getTerminalSlot();
+              if (earliestBlock.getSlot().isGreaterThan(terminalSlot)) {
                 LOG.info(
-                    "Begin historical sync of blocks prior to slot {}", earliestBlock.getSlot());
+                    "Begin historical sync of blocks from slot {} to slot {}",
+                    earliestBlock.getSlot(),
+                    terminalSlot);
                 updateSyncMetrics();
               }
               syncStateSubscription.set(
                   syncStateProvider.subscribeToSyncStateChanges(__ -> fetchBlocks()));
             });
+  }
+
+  private UInt64 getTerminalSlot() {
+    if (fetchAllHistoricBlocks) {
+      return UInt64.ZERO;
+    } else {
+      final UInt64 earliestRequiredEpoch =
+          chainData
+              .getLatestFinalized()
+              .orElseThrow()
+              .getCheckpoint()
+              .getEpoch()
+              .minusMinZero(
+                  spec.getSpecConfig(chainData.getCurrentEpoch()).getMinEpochsForBlockRequests());
+      return spec.computeStartSlotAtEpoch(earliestRequiredEpoch).minusMinZero(1);
+    }
   }
 
   private void updateSyncMetrics() {
@@ -267,14 +292,17 @@ public class HistoricalBlockSyncService extends Service {
   }
 
   private boolean isSyncDone() {
-    return earliestBlock.getBeaconBlock().map(b -> b.getSlot().equals(UInt64.ZERO)).orElse(false);
+    return earliestBlock
+        .getBeaconBlock()
+        .map(b -> b.getSlot().isLessThanOrEqualTo(getTerminalSlot()))
+        .orElse(false);
   }
 
   private Optional<MaxMissingBlockParams> getMaxMissingBlockParams() {
     final UInt64 maxSlot;
     final Bytes32 lastBlockRoot;
     if (earliestBlock.getBeaconBlock().isPresent()) {
-      if (earliestBlock.getSlot().equals(UInt64.ZERO)) {
+      if (earliestBlock.getSlot().isLessThanOrEqualTo(getTerminalSlot())) {
         // Nothing left to request
         return Optional.empty();
       }

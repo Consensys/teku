@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -147,7 +148,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             createConfigBuilder()
                 .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
                 .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
-                .sync(b -> b.isReconstructHistoricStatesEnabled(true))
+                .sync(b -> b.reconstructHistoricStatesEnabled(true))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
@@ -160,7 +161,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                 createConfigBuilder()
                     .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MINIMAL))
                     .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
-                    .sync(b -> b.isReconstructHistoricStatesEnabled(true))
+                    .sync(b -> b.reconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Genesis state required when reconstructing historic states");
@@ -182,7 +183,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             createConfigBuilder()
                 .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
                 .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
-                .sync(b -> b.isReconstructHistoricStatesEnabled(true))
+                .sync(b -> b.reconstructHistoricStatesEnabled(true))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
@@ -195,9 +196,51 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                 createConfigBuilder()
                     .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
                     .storageConfiguration(b -> b.dataStorageMode(PRUNE))
-                    .sync(b -> b.isReconstructHistoricStatesEnabled(true))
+                    .sync(b -> b.reconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Cannot reconstruct historic states when using prune data storage mode");
+  }
+
+  @Test
+  void shouldSetBlockPruningOptions() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xdata-storage-block-pruning-enabled", "--Xdata-storage-block-pruning-interval=150");
+    assertThat(config.storageConfiguration().isBlockPruningEnabled()).isTrue();
+    assertThat(config.storageConfiguration().getBlockPruningInterval())
+        .isEqualTo(Duration.ofSeconds(150));
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(
+                    b -> b.blockPruningEnabled(true).blockPruningInterval(Duration.ofSeconds(150)))
+                .sync(b -> b.fetchAllHistoricBlocks(false))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
+  void shouldNotAllowPruningBlocksAndReconstructingStates() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .storageConfiguration(b -> b.blockPruningEnabled(true).dataStorageMode(ARCHIVE))
+                    .sync(b -> b.reconstructHistoricStatesEnabled(true))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Cannot reconstruct historic states when block pruning is enabled");
+  }
+
+  @Test
+  void shouldNotAllowPruningBlocksAndFetchingAllHistoricBlocks() {
+    assertThatThrownBy(
+            () ->
+                createConfigBuilder()
+                    .storageConfiguration(b -> b.blockPruningEnabled(true).dataStorageMode(ARCHIVE))
+                    .sync(b -> b.fetchAllHistoricBlocks(true))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Cannot download all historic blocks with block pruning enabled");
   }
 }
