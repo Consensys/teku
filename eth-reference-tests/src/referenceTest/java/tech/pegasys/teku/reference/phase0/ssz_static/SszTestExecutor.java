@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -193,6 +194,16 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/SigningData", new SszTestExecutor<>(__ -> SigningData.SSZ_SCHEMA))
           .put("ssz_static/Validator", new SszTestExecutor<>(__ -> Validator.SSZ_SCHEMA))
           .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(__ -> VoluntaryExit.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedBeaconBlockAndBlobsSidecar",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsEip4844.required(schemas)
+                          .getSignedBeaconBlockAndBlobsSidecarSchema()))
+          .put(
+              "ssz_static/BlobsSidecar",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsEip4844.required(schemas).getBlobsSidecarSchema()))
           .build();
 
   public SszTestExecutor(final SchemaProvider<T> sszType) {
