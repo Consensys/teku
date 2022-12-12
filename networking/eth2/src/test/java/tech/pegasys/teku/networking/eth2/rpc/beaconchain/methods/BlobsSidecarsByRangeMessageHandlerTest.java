@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecars
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-class BlobsSidecarsByRangeMessageHandlerTest {
+public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
