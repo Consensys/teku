@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 
 class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
@@ -38,6 +39,8 @@ class ValidatorOpenApiTest {
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
   private JsonNode jsonNode;
+  private DoppelgangerDetectionAction doppelgangerDetectionAction =
+      mock(DoppelgangerDetectionAction.class);
 
   @BeforeEach
   void setup() throws IOException {
@@ -51,7 +54,12 @@ class ValidatorOpenApiTest {
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
     final RestApi restApi =
         ValidatorRestApi.create(
-            config, Optional.of(proposerConfigManager), keyManager, dataDirLayout);
+            config,
+            Optional.of(proposerConfigManager),
+            keyManager,
+            dataDirLayout,
+            Optional.empty(),
+            doppelgangerDetectionAction);
     final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());

@@ -51,6 +51,10 @@ public class LogCaptor implements AutoCloseable {
     assertLogged(Level.INFO, message);
   }
 
+  public void assertWarnLog(final String message) {
+    assertLogged(Level.WARN, message);
+  }
+
   public void assertErrorLog(final String message) {
     assertLogged(Level.ERROR, message);
   }
@@ -61,6 +65,10 @@ public class LogCaptor implements AutoCloseable {
 
   public void assertLogged(final Level level, final String message) {
     assertThat(getMessages(level)).contains(message);
+  }
+
+  public List<String> getInfoLogs() {
+    return getMessages(Level.INFO).collect(Collectors.toList());
   }
 
   public List<String> getWarnLogs() {

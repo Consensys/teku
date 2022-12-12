@@ -44,6 +44,9 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
@@ -67,20 +70,21 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 public class ValidatorClientService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(12);
+  private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(5);
   private static final Duration DOPPELGANGER_DETECTOR_TIMEOUT = Duration.ofMinutes(15);
+  private static final int DOPPELGANGER_DETECTOR_MAX_EPOCHS = 2;
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
-  private final Optional<RestApi> validatorRestApi;
   private final ForkProvider forkProvider;
   private final Spec spec;
 
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
-
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
+  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
+  private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
 
@@ -93,27 +97,29 @@ public class ValidatorClientService extends Service {
       final EventChannels eventChannels,
       final ValidatorLoader validatorLoader,
       final BeaconNodeApi beaconNodeApi,
-      final Optional<RestApi> validatorRestApi,
       final ForkProvider forkProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
-    this.validatorRestApi = validatorRestApi;
     this.forkProvider = forkProvider;
     this.proposerConfigManager = proposerConfigManager;
     this.beaconProposerPreparer = beaconProposerPreparer;
     this.validatorRegistrator = validatorRegistrator;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
+    this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
   public static ValidatorClientService create(
-      final ServiceConfig services, final ValidatorClientConfiguration config) {
+      final ServiceConfig services,
+      final ValidatorClientConfiguration config,
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 
@@ -130,8 +136,7 @@ public class ValidatorClientService extends Service {
 
     final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
-    Optional<RestApi> validatorRestApi = Optional.empty();
-    Optional<ProposerConfigManager> proposerConfigManager = Optional.empty();
+    final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
     Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
     if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
@@ -172,32 +177,22 @@ public class ValidatorClientService extends Service {
                   new ValidatorRegistrationBatchSender(
                       validatorConfig.getBuilderRegistrationSendingBatchSize(),
                       validatorApiChannel)));
-    }
-    if (validatorApiConfig.isRestApiEnabled()) {
-      validatorRestApi =
-          Optional.of(
-              ValidatorRestApi.create(
-                  validatorApiConfig,
-                  proposerConfigManager,
-                  new ActiveKeyManager(
-                      validatorLoader,
-                      services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
-                  services.getDataDirLayout()));
     } else {
-      LOG.info("validator-api-enabled is false, not starting rest api.");
+      proposerConfigManager = Optional.empty();
     }
+
     ValidatorClientService validatorClientService =
         new ValidatorClientService(
             eventChannels,
             validatorLoader,
             beaconNodeApi,
-            validatorRestApi,
             forkProvider,
             proposerConfigManager,
             beaconProposerPreparer,
             validatorRegistrator,
             config.getSpec(),
-            services.getMetricsSystem());
+            services.getMetricsSystem(),
+            doppelgangerDetectionAction);
 
     validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
 
@@ -210,10 +205,25 @@ public class ValidatorClientService extends Service {
                 validatorClientService.initializeDoppelgangerDetector(
                     asyncRunner,
                     validatorApiChannel,
-                    validatorClientService.validatorIndexProvider,
                     validatorClientService.spec,
                     services.getTimeProvider(),
                     genesisDataProvider);
+              }
+              return SafeFuture.COMPLETE;
+            })
+        .thenCompose(
+            __ -> {
+              if (validatorApiConfig.isRestApiEnabled()) {
+                validatorClientService.initializeValidatorRestApi(
+                    validatorApiConfig,
+                    proposerConfigManager,
+                    new ActiveKeyManager(
+                        validatorLoader,
+                        services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
+                    services.getDataDirLayout(),
+                    validatorClientService.maybeDoppelgangerDetector);
+              } else {
+                LOG.info("validator-api-enabled is false, not starting rest api.");
               }
               return SafeFuture.COMPLETE;
             })
@@ -235,7 +245,6 @@ public class ValidatorClientService extends Service {
   private void initializeDoppelgangerDetector(
       AsyncRunner asyncRunner,
       ValidatorApiChannel validatorApiChannel,
-      ValidatorIndexProvider validatorIndexProvider,
       Spec spec,
       TimeProvider timeProvider,
       GenesisDataProvider genesisDataProvider) {
@@ -243,13 +252,30 @@ public class ValidatorClientService extends Service {
         new DoppelgangerDetector(
             asyncRunner,
             validatorApiChannel,
-            validatorIndexProvider,
             spec,
             timeProvider,
             genesisDataProvider,
             DOPPELGANGER_DETECTOR_CHECK_DELAY,
-            DOPPELGANGER_DETECTOR_TIMEOUT);
+            DOPPELGANGER_DETECTOR_TIMEOUT,
+            DOPPELGANGER_DETECTOR_MAX_EPOCHS);
     maybeDoppelgangerDetector = Optional.of(doppelgangerDetector);
+  }
+
+  private void initializeValidatorRestApi(
+      final ValidatorRestApiConfig validatorRestApiConfig,
+      final Optional<ProposerConfigManager> proposerConfigManager,
+      final ActiveKeyManager activeKeyManager,
+      final DataDirLayout dataDirLayout,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+    final RestApi validatorRestApi =
+        ValidatorRestApi.create(
+            validatorRestApiConfig,
+            proposerConfigManager,
+            activeKeyManager,
+            dataDirLayout,
+            maybeDoppelgangerDetector,
+            new DoppelgangerDetectionAlert());
+    maybeValidatorRestApi = Optional.of(validatorRestApi);
   }
 
   private static BeaconNodeApi createBeaconNodeApi(
@@ -439,18 +465,20 @@ public class ValidatorClientService extends Service {
                     .orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
-              validatorRestApi.ifPresent(restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
+              maybeValidatorRestApi.ifPresent(
+                  restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
               return maybeDoppelgangerDetector
                   .map(
                       doppelgangerDetector ->
                           doppelgangerDetector
-                              .performDoppelgangerDetection()
+                              .performDoppelgangerDetection(
+                                  validatorLoader.getOwnedValidators().getPublicKeys())
                               .thenAccept(
                                   doppelgangerDetected -> {
                                     if (!doppelgangerDetected.isEmpty()) {
-                                      System.exit(1);
+                                      doppelgangerDetectionAction.shutDown();
                                     }
                                   }))
                   .orElse(SafeFuture.COMPLETE);
@@ -475,7 +503,7 @@ public class ValidatorClientService extends Service {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(
             () ->
-                validatorRestApi.ifPresent(
+                maybeValidatorRestApi.ifPresent(
                     restApi -> restApi.stop().ifExceptionGetsHereRaiseABug())),
         beaconNodeApi.unsubscribeFromEvents());
   }

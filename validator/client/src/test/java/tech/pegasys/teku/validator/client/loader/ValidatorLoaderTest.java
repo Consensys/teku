@@ -58,8 +58,10 @@ import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.ValidatorImportResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
@@ -669,9 +671,13 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final PostKeyResult result =
-        validatorLoader.loadLocalMutableValidator(null, "", Optional.empty());
-    assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
+    final LocalValidatorImportResult result =
+        validatorLoader.loadLocalMutableValidator(null, "", Optional.empty(), true);
+    assertThat(result)
+        .isEqualTo(
+            new LocalValidatorImportResult.Builder(
+                    PostKeyResult.error("Not able to add validator"), "")
+                .build());
   }
 
   @Test
@@ -693,10 +699,10 @@ class ValidatorLoaderTest {
 
     final String keystoreString =
         Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
-    PostKeyResult result =
+    ValidatorImportResult result =
         validatorLoader.loadLocalMutableValidator(
-            KeyStoreLoader.loadFromString(keystoreString), "testpassword", Optional.empty());
-    assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+            KeyStoreLoader.loadFromString(keystoreString), "testpassword", Optional.empty(), true);
+    assertThat(result.getPostKeyResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
 
     final Optional<Validator> validator =
         validatorLoader.getOwnedValidators().getValidator(PUBLIC_KEY1);
