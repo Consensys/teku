@@ -14,11 +14,17 @@
 package tech.pegasys.teku.validator.client.doppelganger;
 
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionAction {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   @Override
   public void shutDown() {
+    LOG.info("Validator doppelganger detected. Shutting down...");
     System.exit(1);
   }
 
