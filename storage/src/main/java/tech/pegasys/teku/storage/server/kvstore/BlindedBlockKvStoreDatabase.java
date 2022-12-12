@@ -249,6 +249,14 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
+  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+    try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
+      updater.pruneFinalizedBlindedBlocks(firstSlotToPrune, lastSlotToPrune);
+      updater.commit();
+    }
+  }
+
+  @Override
   protected void addFinalizedBlock(
       final SignedBeaconBlock block,
       final boolean isRemovedFromHotBlocks,

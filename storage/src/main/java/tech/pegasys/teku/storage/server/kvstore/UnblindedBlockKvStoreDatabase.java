@@ -241,6 +241,14 @@ public class UnblindedBlockKvStoreDatabase
   }
 
   @Override
+  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      updater.pruneFinalizedUnblindedBlocks(firstSlotToPrune, lastSlotToPrune);
+      updater.commit();
+    }
+  }
+
+  @Override
   protected void updateHotBlocks(
       final HotUpdaterUnblinded updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,

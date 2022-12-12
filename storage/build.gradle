@@ -14,6 +14,7 @@ dependencies {
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:time')
   implementation project(':storage:api')

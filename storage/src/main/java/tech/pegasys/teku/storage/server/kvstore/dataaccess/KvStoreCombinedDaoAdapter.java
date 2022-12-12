@@ -593,6 +593,12 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
+    public void pruneFinalizedBlindedBlocks(
+        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      finalizedUpdater.pruneFinalizedBlindedBlocks(firstSlotToPrune, lastSlotToPrune);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addNonCanonicalBlock(block);
     }
@@ -605,6 +611,12 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       finalizedUpdater.deleteUnblindedNonCanonicalBlockOnly(blockRoot);
+    }
+
+    @Override
+    public void pruneFinalizedUnblindedBlocks(
+        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      finalizedUpdater.pruneFinalizedUnblindedBlocks(firstSlotToPrune, lastSlotToPrune);
     }
 
     @Override
