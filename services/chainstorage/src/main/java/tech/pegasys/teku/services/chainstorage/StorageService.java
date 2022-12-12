@@ -114,14 +114,18 @@ public class StorageService extends Service implements StorageServiceFacade {
                   .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
             })
-        .thenCompose(__ -> blockPruner.map(BlockPruner::start).orElseGet(SafeFuture::new));
+        .thenCompose(
+            __ ->
+                blockPruner
+                    .map(BlockPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     return blockPruner
         .map(BlockPruner::stop)
-        .orElseGet(SafeFuture::new)
+        .orElseGet(() -> SafeFuture.completedFuture(null))
         .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
