@@ -64,7 +64,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<BlobsSidecar> listener) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
   }
 
   @Override

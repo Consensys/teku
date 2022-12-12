@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -30,6 +32,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobsSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BlobsSidecarsByRangeRequestMessage, BlobsSidecar> {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -72,6 +76,13 @@ public class BlobsSidecarsByRangeMessageHandler
       final BlobsSidecarsByRangeRequestMessage message,
       final ResponseCallback<BlobsSidecar> callback) {
     // TODO: implement
+    LOG.trace(
+        "Peer {} requested {} BeaconBlocks starting at slot {}.",
+        peer.getId(),
+        message.getCount(),
+        message.getStartSlot());
+    requestCounter.labels("ok").inc();
+    totalBlobsSidecarsRequestedCounter.inc(message.getCount().longValue());
     callback.completeWithUnexpectedError(new UnsupportedOperationException("Not yet implemented"));
   }
 }
