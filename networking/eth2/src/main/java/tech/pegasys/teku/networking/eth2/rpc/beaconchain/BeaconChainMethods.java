@@ -301,7 +301,7 @@ public class BeaconChainMethods {
 
     final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
         new BlobsSidecarsByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOBS_SIDECARS);
+            metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOBS_SIDECARS);
 
     final BlobsSidecarsByRangeRequestMessageSchema requestType =
         BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA;

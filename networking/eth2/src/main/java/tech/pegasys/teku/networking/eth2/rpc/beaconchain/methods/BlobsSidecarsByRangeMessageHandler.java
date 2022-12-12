@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
@@ -34,8 +32,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandle
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -46,18 +42,15 @@ public class BlobsSidecarsByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobsSidecarsRequestedCounter;
 
   public BlobsSidecarsByRangeMessageHandler(
-      final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize) {
-    this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
     requestCounter =
@@ -76,16 +69,6 @@ public class BlobsSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobsSidecarsByRangeRequestMessage request) {
-    final UInt64 requestEpoch = spec.computeEpochAtSlot(request.getMaxSlot());
-    final SpecMilestone latestMilestoneRequested =
-        spec.getForkSchedule().getSpecMilestoneAtEpoch(requestEpoch);
-
-    if (!latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE, "Can't request blobs sidecars before the EIP4844 milestone."));
-    }
-
     return Optional.empty();
   }
 

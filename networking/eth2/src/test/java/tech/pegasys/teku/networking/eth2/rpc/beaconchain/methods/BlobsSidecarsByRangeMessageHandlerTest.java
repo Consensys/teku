@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.List;
@@ -73,27 +72,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final BlobsSidecarsByRangeMessageHandler handler =
       new BlobsSidecarsByRangeMessageHandler(
-          spec, metricsSystem, combinedChainDataClient, maxRequestSize);
-
-  @Test
-  public void validateRequest_requestBeforeEIP4844() {
-    final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(UInt64.valueOf(10));
-
-    final BlobsSidecarsByRangeMessageHandler handler =
-        new BlobsSidecarsByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
-
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            protocolId, new BlobsSidecarsByRangeRequestMessage(ZERO, maxRequestSize.increment()));
-    assertThat(result)
-        .hasValueSatisfying(
-            rpcException -> {
-              assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
-              assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("Can't request blobs sidecars before the EIP4844 milestone.");
-            });
-  }
+          metricsSystem, combinedChainDataClient, maxRequestSize);
 
   @Test
   public void validateRequest_validRequest() {
