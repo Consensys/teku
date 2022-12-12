@@ -18,7 +18,9 @@ import com.google.common.annotations.VisibleForTesting;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +30,11 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
@@ -103,10 +108,23 @@ public class ActiveKeyManager implements KeyManager {
   @Override
   public synchronized DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
-    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(slashingProtectionPath);
-    for (final BLSPublicKey publicKey : validators) {
+    final List<DeleteKeyResult> deletionResults = removeValidators(validators, exporter);
+    String exportedData;
+    try {
+      exportedData = exporter.finalise();
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to serialize slashing export data", e);
+      exportedData = EXPORT_FAILED;
+    }
+    return new DeleteKeysResponse(deletionResults, exportedData);
+  }
+
+  private List<DeleteKeyResult> removeValidators(
+      final List<BLSPublicKey> publicKeys, final SlashingProtectionIncrementalExporter exporter) {
+    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
+    for (final BLSPublicKey publicKey : publicKeys) {
       Optional<Validator> maybeValidator =
           validatorLoader.getOwnedValidators().getValidator(publicKey);
 
@@ -123,18 +141,11 @@ public class ActiveKeyManager implements KeyManager {
         deletionResults.add(attemptToGetSlashingDataForInactiveValidator(publicKey, exporter));
       }
     }
-    String exportedData;
-    try {
-      exportedData = exporter.finalise();
-    } catch (JsonProcessingException e) {
-      LOG.error("Failed to serialize slashing export data", e);
-      exportedData = EXPORT_FAILED;
-    }
-    return new DeleteKeysResponse(deletionResults, exportedData);
+    return deletionResults;
   }
 
   @Override
-  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
+  public DeleteRemoteKeysResponse deleteExternalValidators(final List<BLSPublicKey> validators) {
     final List<DeleteKeyResult> deletionResults = new ArrayList<>();
     for (final BLSPublicKey publicKey : validators) {
       Optional<Validator> maybeValidator =
@@ -214,57 +225,310 @@ public class ActiveKeyManager implements KeyManager {
   public List<PostKeyResult> importValidators(
       final List<String> keystores,
       final List<String> passwords,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
-    final List<PostKeyResult> importResults = new ArrayList<>();
-    boolean reloadRequired = false;
-    for (int i = 0; i < keystores.size(); i++) {
-      importResults.add(
-          importValidatorFromKeystore(
-              keystores.get(i), passwords.get(i), slashingProtectionImporter));
-      if (importResults.get(i).getImportStatus() == ImportStatus.IMPORTED) {
-        reloadRequired = true;
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+    final List<LocalValidatorImportResult> importResults = new ArrayList<>();
+    boolean reloadRequired;
+
+    if (maybeDoppelgangerDetector.isPresent()) {
+      reloadRequired =
+          importValidators(keystores, passwords, slashingProtectionImporter, importResults, false);
+      if (reloadRequired) {
+        maybeDoppelgangerDetector
+            .get()
+            .performDoppelgangerDetection(filterImportedPubKeys(importResults))
+            .thenAccept(
+                doppelgangers ->
+                    handleValidatorsDoppelgangers(
+                        doppelgangerDetectionAction, importResults, doppelgangers))
+            .exceptionally(
+                throwable -> {
+                  logFailedDoppelgangerCheck(filterImportedPubKeys(importResults), throwable);
+                  loadLocalValidators(importResults);
+                  validatorTimingChannel.onValidatorsAdded();
+                  return null;
+                })
+            .ifExceptionGetsHereRaiseABug();
+      }
+    } else {
+      reloadRequired =
+          importValidators(keystores, passwords, slashingProtectionImporter, importResults, true);
+      if (reloadRequired) {
+        validatorTimingChannel.onValidatorsAdded();
       }
     }
-    if (reloadRequired) {
-      validatorTimingChannel.onValidatorsAdded();
-    }
-    return importResults;
+    return importResults.stream()
+        .map(ValidatorImportResult::getPostKeyResult)
+        .collect(Collectors.toList());
   }
 
-  private PostKeyResult importValidatorFromKeystore(
+  private void handleValidatorsDoppelgangers(
+      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final List<LocalValidatorImportResult> importResults,
+      final Map<UInt64, BLSPublicKey> doppelgangers) {
+    final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+    if (!doppelgangerList.isEmpty()) {
+      doppelgangerDetectionAction.alert(doppelgangerList);
+    }
+    importEligibleLocalValidators(importResults, doppelgangerList);
+    validatorTimingChannel.onValidatorsAdded();
+  }
+
+  private void logFailedDoppelgangerCheck(
+      final Set<BLSPublicKey> importResults, final Throwable throwable) {
+    LOG.error(
+        "Failed to perform doppelganger detection for public keys {}",
+        importResults.stream()
+            .map(BLSPublicKey::toAbbreviatedString)
+            .collect(Collectors.joining(", ")),
+        throwable);
+  }
+
+  private void loadLocalValidators(final List<LocalValidatorImportResult> importResults) {
+    importResults.stream()
+        .filter(
+            validatorImportResult ->
+                validatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED)
+                    && validatorImportResult.getKeyStoreData().isPresent()
+                    && validatorImportResult.getPublicKey().isPresent())
+        .forEach(this::importEligibleValidator);
+  }
+
+  private void reportValidatorImport(
+      final ValidatorImportResult importResult,
+      final Optional<BLSPublicKey> validatorImportResult) {
+    if (!importResult.getPostKeyResult().getImportStatus().equals(ImportStatus.IMPORTED)) {
+      LOG.error(
+          "Unable to add validator {}. {}",
+          validatorImportResult.get(),
+          importResult.getPostKeyResult().getMessage().orElse(""));
+    }
+  }
+
+  private boolean importValidators(
+      final List<String> keystores,
+      final List<String> passwords,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter,
+      final List<LocalValidatorImportResult> importResults,
+      final boolean addToOwnedValidators) {
+    boolean reloadRequired = false;
+    for (int i = 0; i < keystores.size(); i++) {
+      final Optional<KeyStoreData> maybeKeystoreData =
+          getKeyStoreData(importResults, keystores.get(i), passwords.get(i));
+      if (maybeKeystoreData.isPresent()) {
+        LocalValidatorImportResult localValidatorImportResult =
+            validatorLoader.loadLocalMutableValidator(
+                maybeKeystoreData.get(),
+                passwords.get(i),
+                slashingProtectionImporter,
+                addToOwnedValidators);
+        importResults.add(localValidatorImportResult);
+        if (localValidatorImportResult.getPostKeyResult().getImportStatus()
+            == ImportStatus.IMPORTED) {
+          reloadRequired = true;
+        }
+      }
+    }
+    return reloadRequired;
+  }
+
+  private Optional<KeyStoreData> getKeyStoreData(
+      final List<LocalValidatorImportResult> importResults,
       final String keystoreString,
-      final String password,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+      final String password) {
     final KeyStoreData keyStoreData = KeyStoreLoader.loadFromString(keystoreString);
     try {
       keyStoreData.validate();
     } catch (KeyStoreValidationException ex) {
-      return PostKeyResult.error(ex.getMessage());
+      importResults.add(
+          new LocalValidatorImportResult.Builder(PostKeyResult.error(ex.getMessage()), password)
+              .build());
+      return Optional.empty();
     }
+    return Optional.of(keyStoreData);
+  }
 
-    return validatorLoader.loadLocalMutableValidator(
-        keyStoreData, password, slashingProtectionImporter);
+  private Set<BLSPublicKey> filterImportedPubKeys(
+      final List<? extends ValidatorImportResult> validatorImportResults) {
+    return validatorImportResults.stream()
+        .filter(
+            validatorImportResult ->
+                validatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED)
+                    && validatorImportResult.getPublicKey().isPresent())
+        .map(validatorImportResult -> validatorImportResult.getPublicKey().get())
+        .collect(Collectors.toSet());
+  }
+
+  private Set<BLSPublicKey> filterExternallyImportedPubKeys(
+      final List<ExternalValidatorImportResult> externalValidatorImportResults) {
+    return externalValidatorImportResults.stream()
+        .filter(
+            externalValidatorImportResult ->
+                externalValidatorImportResult.getPublicKey().isPresent()
+                    && externalValidatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED))
+        .map(externalValidatorImportResult -> externalValidatorImportResult.getPublicKey().get())
+        .collect(Collectors.toSet());
   }
 
   @Override
-  public List<PostKeyResult> importExternalValidators(final List<ExternalValidator> validators) {
-    final List<PostKeyResult> importResults = new ArrayList<>();
+  public List<PostKeyResult> importExternalValidators(
+      final List<ExternalValidator> validators,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+    final List<ExternalValidatorImportResult> importResults = new ArrayList<>();
     boolean reloadRequired = false;
-    for (ExternalValidator v : validators) {
-      try {
-        importResults.add(
-            validatorLoader.loadExternalMutableValidator(v.getPublicKey(), v.getUrl()));
-        if (importResults.get(importResults.size() - 1).getImportStatus()
-            == ImportStatus.IMPORTED) {
-          reloadRequired = true;
+
+    if (maybeDoppelgangerDetector.isPresent()) {
+      for (ExternalValidator externalValidator : validators) {
+        try {
+          importResults.add(
+              validatorLoader.loadExternalMutableValidator(
+                  externalValidator.getPublicKey(), externalValidator.getUrl(), false));
+          if (importResults.get(importResults.size() - 1).getPostKeyResult().getImportStatus()
+              == ImportStatus.IMPORTED) {
+            reloadRequired = true;
+          }
+        } catch (Exception e) {
+          importResults.add(
+              new ExternalValidatorImportResult.Builder(
+                      PostKeyResult.error(e.getMessage()), externalValidator.getUrl())
+                  .publicKey(Optional.of(externalValidator.getPublicKey()))
+                  .build());
         }
-      } catch (Exception e) {
-        importResults.add(PostKeyResult.error(e.getMessage()));
+      }
+      if (reloadRequired) {
+        maybeDoppelgangerDetector
+            .get()
+            .performDoppelgangerDetection(filterExternallyImportedPubKeys(importResults))
+            .thenAccept(
+                doppelgangers ->
+                    handleExternalValidatorDoppelgangers(
+                        doppelgangerDetectionAction, importResults, doppelgangers))
+            .exceptionally(
+                throwable -> {
+                  logFailedDoppelgangerCheck(filterImportedPubKeys(importResults), throwable);
+                  loadExternalValidators(importResults);
+                  validatorTimingChannel.onValidatorsAdded();
+                  return null;
+                })
+            .ifExceptionGetsHereRaiseABug();
+      }
+    } else {
+      for (ExternalValidator externalValidator : validators) {
+        try {
+          importResults.add(
+              validatorLoader.loadExternalMutableValidator(
+                  externalValidator.getPublicKey(), externalValidator.getUrl(), true));
+          if (importResults.get(importResults.size() - 1).getPostKeyResult().getImportStatus()
+              == ImportStatus.IMPORTED) {
+            reloadRequired = true;
+          }
+        } catch (Exception e) {
+          importResults.add(
+              new ExternalValidatorImportResult.Builder(
+                      PostKeyResult.error(e.getMessage()), externalValidator.getUrl())
+                  .publicKey(Optional.of(externalValidator.getPublicKey()))
+                  .build());
+        }
+      }
+      if (reloadRequired) {
+        validatorTimingChannel.onValidatorsAdded();
       }
     }
-    if (reloadRequired) {
-      validatorTimingChannel.onValidatorsAdded();
+
+    return importResults.stream()
+        .map(ValidatorImportResult::getPostKeyResult)
+        .collect(Collectors.toList());
+  }
+
+  private void handleExternalValidatorDoppelgangers(
+      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final List<ExternalValidatorImportResult> importResults,
+      final Map<UInt64, BLSPublicKey> doppelgangers) {
+    final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
+    if (!doppelgangerList.isEmpty()) {
+      doppelgangerDetectionAction.alert(doppelgangerList);
     }
-    return importResults;
+    importEligibleExternalValidators(importResults, doppelgangerList);
+    validatorTimingChannel.onValidatorsAdded();
+  }
+
+  private void importEligibleLocalValidators(
+      final List<LocalValidatorImportResult> importResults,
+      final List<BLSPublicKey> doppelgangerList) {
+    importResults.stream()
+        .filter(
+            validatorImportResult ->
+                isValidatorNotDoppelganger(doppelgangerList, validatorImportResult))
+        .forEach(this::importEligibleValidator);
+  }
+
+  private void importEligibleValidator(final LocalValidatorImportResult validatorImportResult) {
+    final ValidatorImportResult importResult =
+        validatorLoader.addValidator(
+            validatorImportResult.getKeyStoreData().get(),
+            validatorImportResult.getPassword(),
+            validatorImportResult.getPublicKey().get());
+    reportValidatorImport(importResult, validatorImportResult.getPublicKey());
+  }
+
+  private boolean isValidatorNotDoppelganger(
+      final List<BLSPublicKey> doppelgangerList,
+      final LocalValidatorImportResult validatorImportResult) {
+    return validatorImportResult.getKeyStoreData().isPresent()
+        && !doppelgangerList.contains(validatorImportResult.getPublicKey().get())
+        && validatorImportResult.getPostKeyResult().getImportStatus().equals(ImportStatus.IMPORTED)
+        && validatorImportResult.getPublicKey().isPresent();
+  }
+
+  private void importEligibleExternalValidators(
+      final List<ExternalValidatorImportResult> importResults,
+      final List<BLSPublicKey> doppelgangerList) {
+    importResults.stream()
+        .filter(
+            validatorImportResult ->
+                validatorImportResult.getPublicKey().isPresent()
+                    && !doppelgangerList.contains(validatorImportResult.getPublicKey().get())
+                    && validatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED))
+        .forEach(
+            validatorImportResult -> {
+              ValidatorImportResult importResult =
+                  validatorLoader.addExternalValidator(
+                      validatorImportResult.getSignerUrl(),
+                      validatorImportResult.getPublicKey().get());
+              reportValidatorImport(importResult, validatorImportResult.getPublicKey());
+            });
+  }
+
+  private void loadExternalValidators(final List<ExternalValidatorImportResult> importResults) {
+    importResults.stream()
+        .filter(
+            validatorImportResult ->
+                validatorImportResult
+                        .getPostKeyResult()
+                        .getImportStatus()
+                        .equals(ImportStatus.IMPORTED)
+                    && validatorImportResult.getPublicKey().isPresent())
+        .forEach(
+            validatorImportResult -> {
+              ValidatorImportResult importResult =
+                  validatorLoader.addExternalValidator(
+                      validatorImportResult.getSignerUrl(),
+                      validatorImportResult.getPublicKey().get());
+              reportValidatorImport(importResult, validatorImportResult.getPublicKey());
+            });
   }
 }

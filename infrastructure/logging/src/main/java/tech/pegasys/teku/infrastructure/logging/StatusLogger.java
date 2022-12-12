@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -161,19 +162,54 @@ public class StatusLogger {
     }
   }
 
-  public void validatorsDoppelgangerDetected(final Map<Integer, String> doppelgangersInfo) {
+  public void doppelgangerDetectionStart(final Set<String> publicKeys) {
+    log.info("Starting doppelganger detection for public keys: {}", String.join(", ", publicKeys));
+  }
+
+  public void doppelgangerDetectionTimeout(final Set<String> publicKeys) {
+    log.warn(
+        "Doppelganger Detection for public keys {} stopped due to a timeout. "
+            + "The doppelganger check couldn't be performed correctly due to "
+            + "epoch calculation errors. Some validators with the same keys could "
+            + "be active in the network. "
+            + "Please check the logs and consider running a new validator doppelgangers check",
+        String.join(", ", publicKeys));
+  }
+
+  public void doppelgangerDetectionEnd(final Set<String> publicKeys) {
+    log.info(
+        "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
+        String.join(", ", publicKeys));
+  }
+
+  public void doppelgangerCheck(long epoch, long slot, Set<String> publicKeys) {
+    log.info(
+        "Performing doppelganger check. Epoch {}, Slot {}, Public keys {}",
+        epoch,
+        slot,
+        String.join(", ", publicKeys));
+  }
+
+  public void validatorsDoppelgangersDetected(final Map<UInt64, String> doppelgangersInfo) {
     String doppelgangersLogInfo =
         doppelgangersInfo.entrySet().stream()
             .map(
                 doppelgangerInfo ->
                     StringUtils.isBlank(doppelgangerInfo.getValue())
-                        ? String.format("Index: %d", doppelgangerInfo.getKey())
+                        ? String.format("Index: %s", doppelgangerInfo.getKey())
                         : String.format(
-                            "Index: %d, Public key: %s",
+                            "Index: %s, Public key: %s",
                             doppelgangerInfo.getKey(), doppelgangerInfo.getValue()))
             .collect(Collectors.joining("\n", "\n", "\n"));
     log.fatal(
         "Detected {} validators doppelganger: {}", doppelgangersInfo.size(), doppelgangersLogInfo);
+  }
+
+  public void doppelgangerDetectionAlert(final Set<String> doppelgangerPublicKeys) {
+    log.error(
+        "Detected {} validators that appear to be already active. The following keys have been ignored: {}",
+        doppelgangerPublicKeys.stream(),
+        String.join(", ", doppelgangerPublicKeys));
   }
 
   public void beginInitializingChainData() {

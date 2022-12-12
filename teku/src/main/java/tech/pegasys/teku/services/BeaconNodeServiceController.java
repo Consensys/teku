@@ -23,6 +23,7 @@ import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
 
 public class BeaconNodeServiceController extends ServiceController {
 
@@ -50,7 +51,9 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.discovery().isDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
         .ifPresent(services::add);
-    services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
+    services.add(
+        ValidatorClientService.create(
+            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
   }
 
   private Optional<PowchainService> powchainService(
