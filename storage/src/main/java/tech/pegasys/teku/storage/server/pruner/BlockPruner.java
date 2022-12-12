@@ -33,7 +33,6 @@ public class BlockPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private final int epochsToKeep;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -41,13 +40,11 @@ public class BlockPruner extends Service {
       final Spec spec,
       final Database database,
       final AsyncRunner asyncRunner,
-      final Duration pruneInterval,
-      final int epochsToKeep) {
+      final Duration pruneInterval) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
-    this.epochsToKeep = epochsToKeep;
   }
 
   @Override
@@ -73,8 +70,8 @@ public class BlockPruner extends Service {
       LOG.debug("Not pruning as no finalized checkpoint is available.");
       return;
     }
-    final UInt64 earliestEpochToKeep =
-        finalizedCheckpoint.get().getEpoch().minusMinZero(epochsToKeep);
+    final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
+    final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(getEpochsToKeep(finalizedEpoch));
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Not pruning as epochs to keep includes genesis");
@@ -82,5 +79,9 @@ public class BlockPruner extends Service {
     }
     LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
     database.pruneFinalizedBlocks(UInt64.ZERO, earliestSlotToKeep.decrement());
+  }
+
+  private int getEpochsToKeep(final UInt64 finalizedEpoch) {
+    return spec.getSpecConfig(finalizedEpoch).getMinEpochsForBlockRequests();
   }
 }

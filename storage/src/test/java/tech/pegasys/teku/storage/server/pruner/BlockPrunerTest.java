@@ -35,21 +35,27 @@ import tech.pegasys.teku.storage.server.Database;
 class BlockPrunerTest {
 
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(26);
-  public static final int EPOCHS_TO_KEEP = 5;
+  public int epochsToKeep;
   public static final int SLOTS_PER_EPOCH = 10;
-  // Nice simple number of slots per epoch
   private final Spec spec =
-      TestSpecFactory.createDefault(builder -> builder.slotsPerEpoch(SLOTS_PER_EPOCH));
+      TestSpecFactory.createDefault(
+          builder ->
+              builder
+                  // Nice simple number of slots per epoch
+                  .slotsPerEpoch(SLOTS_PER_EPOCH)
+                  // Setup min epochs for block requests to be 5
+                  .minValidatorWithdrawabilityDelay(0)
+                  .churnLimitQuotient(10));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
 
-  private final BlockPruner pruner =
-      new BlockPruner(spec, database, asyncRunner, PRUNE_INTERVAL, EPOCHS_TO_KEEP);
+  private final BlockPruner pruner = new BlockPruner(spec, database, asyncRunner, PRUNE_INTERVAL);
 
   @BeforeEach
   void setUp() {
+    epochsToKeep = spec.getGenesisSpecConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
   }
 
@@ -63,7 +69,7 @@ class BlockPrunerTest {
   @Test
   void shouldNotPruneWhenFinalizedCheckpointBelowEpochsToKeep() {
     when(database.getFinalizedCheckpoint())
-        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(EPOCHS_TO_KEEP)));
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(epochsToKeep)));
     triggerNextPruning();
     verify(database, never()).pruneFinalizedBlocks(any(), any());
   }
@@ -82,7 +88,7 @@ class BlockPrunerTest {
 
   @Test
   void shouldPruneBlocksWhenFirstEpochIsPrunable() {
-    final int finalizedEpoch = EPOCHS_TO_KEEP + 1;
+    final int finalizedEpoch = epochsToKeep + 1;
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(finalizedEpoch)));
     triggerNextPruning();

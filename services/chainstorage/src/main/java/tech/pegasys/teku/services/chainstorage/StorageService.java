@@ -78,11 +78,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getSpec(),
                             database,
                             storageAsyncRunner,
-                            config.getBlockPruningInterval(),
-                            config
-                                .getSpec()
-                                .getGenesisSpecConfig()
-                                .getMinEpochsForBlockRequests()));
+                            config.getBlockPruningInterval()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage =
