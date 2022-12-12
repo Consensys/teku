@@ -13,19 +13,30 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+
+import com.google.common.base.Throwables;
+import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -65,7 +76,16 @@ public class BlobsSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobsSidecarsByRangeRequestMessage request) {
-    // TODO: implement
+    final UInt64 requestEpoch = spec.computeEpochAtSlot(request.getMaxSlot());
+    final SpecMilestone latestMilestoneRequested =
+        spec.getForkSchedule().getSpecMilestoneAtEpoch(requestEpoch);
+
+    if (!latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE, "Can't request blobs sidecars before the EIP4844 milestone."));
+    }
+
     return Optional.empty();
   }
 
@@ -75,14 +95,113 @@ public class BlobsSidecarsByRangeMessageHandler
       final Eth2Peer peer,
       final BlobsSidecarsByRangeRequestMessage message,
       final ResponseCallback<BlobsSidecar> callback) {
-    // TODO: implement
     LOG.trace(
-        "Peer {} requested {} BeaconBlocks starting at slot {}.",
+        "Peer {} requested {} blobs sidecars starting at slot {}.",
         peer.getId(),
         message.getCount(),
         message.getStartSlot());
     requestCounter.labels("ok").inc();
     totalBlobsSidecarsRequestedCounter.inc(message.getCount().longValue());
-    callback.completeWithUnexpectedError(new UnsupportedOperationException("Not yet implemented"));
+
+    final Bytes32 headBlockRoot =
+        combinedChainDataClient
+            .getBestBlockRoot()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Can't retrieve the block root chosen by fork choice."));
+
+    final RequestState initialState =
+        new RequestState(callback, headBlockRoot, message.getStartSlot(), message.getMaxSlot());
+
+    sendBlobsSidecars(initialState)
+        .finish(
+            requestState -> {
+              LOG.trace(
+                  "Sent {} blobs sidecars to peer {}.",
+                  requestState.sentBlobsSidecars.get(),
+                  peer.getId());
+              callback.completeSuccessfully();
+            },
+            error -> handleProcessingRequestError(error, callback));
+  }
+
+  private SafeFuture<RequestState> sendBlobsSidecars(final RequestState requestState) {
+    return requestState
+        .loadNextBlobsSidecar()
+        .thenCompose(
+            maybeSidecar ->
+                maybeSidecar.map(requestState::sendBlobsSidecar).orElse(SafeFuture.COMPLETE))
+        .thenCompose(
+            __ -> {
+              if (requestState.isComplete()) {
+                return SafeFuture.completedFuture(requestState);
+              } else {
+                requestState.incrementCurrentSlot();
+                return sendBlobsSidecars(requestState);
+              }
+            });
+  }
+
+  private void handleProcessingRequestError(
+      final Throwable error, final ResponseCallback<BlobsSidecar> callback) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof RpcException) {
+      LOG.trace("Rejecting blobs sidecars by range request", error);
+      callback.completeWithErrorResponse((RpcException) rootCause);
+    } else {
+      if (rootCause instanceof StreamClosedException
+          || rootCause instanceof ClosedChannelException) {
+        LOG.trace("Stream closed while sending requested blobs sidecars", error);
+      } else {
+        LOG.error("Failed to process blobs by sidecars request", error);
+      }
+      callback.completeWithUnexpectedError(error);
+    }
+  }
+
+  private class RequestState {
+
+    private final AtomicInteger sentBlobsSidecars = new AtomicInteger(0);
+
+    private final ResponseCallback<BlobsSidecar> callback;
+    private final Bytes32 headBlockRoot;
+    private final AtomicReference<UInt64> currentSlot;
+    private final UInt64 maxSlot;
+
+    RequestState(
+        final ResponseCallback<BlobsSidecar> callback,
+        final Bytes32 headBlockRoot,
+        final UInt64 currentSlot,
+        final UInt64 maxSlot) {
+      this.callback = callback;
+      this.headBlockRoot = headBlockRoot;
+      this.currentSlot = new AtomicReference<>(currentSlot);
+      this.maxSlot = maxSlot;
+    }
+
+    SafeFuture<Void> sendBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      return callback.respond(blobsSidecar).thenRun(sentBlobsSidecars::incrementAndGet);
+    }
+
+    SafeFuture<Optional<BlobsSidecar>> loadNextBlobsSidecar() {
+      return combinedChainDataClient
+          .getBlockAtSlotExact(currentSlot.get(), headBlockRoot)
+          .thenCompose(
+              block ->
+                  block
+                      .map(SignedBeaconBlock::getRoot)
+                      .map(combinedChainDataClient::getBlobsSidecarByBlockRoot)
+                      .orElse(SafeFuture.completedFuture(Optional.empty())));
+    }
+
+    boolean isComplete() {
+      return currentSlot.get().equals(maxSlot)
+          || maxRequestSize.isLessThanOrEqualTo(sentBlobsSidecars.get());
+    }
+
+    void incrementCurrentSlot() {
+      currentSlot.updateAndGet(UInt64::increment);
+    }
   }
 }

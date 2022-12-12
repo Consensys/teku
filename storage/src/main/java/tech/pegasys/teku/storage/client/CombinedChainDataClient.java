@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -418,16 +419,12 @@ public class CombinedChainDataClient {
     return Optional.ofNullable(recentChainData.getGenesisTime());
   }
 
-  /**
-   * @return The slot at which the chain head block was proposed
-   */
+  /** @return The slot at which the chain head block was proposed */
   public UInt64 getHeadSlot() {
     return this.recentChainData.getHeadSlot();
   }
 
-  /**
-   * @return The epoch in which the chain head block was proposed
-   */
+  /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
     final UInt64 headSlot = getHeadSlot();
     return spec.computeEpochAtSlot(headSlot);
@@ -437,16 +434,12 @@ public class CombinedChainDataClient {
     return recentChainData.getCurrentForkInfo();
   }
 
-  /**
-   * @return The current slot according to clock time
-   */
+  /** @return The current slot according to clock time */
   public UInt64 getCurrentSlot() {
     return this.recentChainData.getCurrentSlot().orElseGet(this::getHeadSlot);
   }
 
-  /**
-   * @return The current epoch according to clock time
-   */
+  /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
     final UInt64 headSlot = getCurrentSlot();
     return spec.computeEpochAtSlot(headSlot);
@@ -462,15 +455,9 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
-  /**
-   * @return The earliest available block's slot
-   */
+  /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return historicalChainData.getEarliestAvailableBlockSlot();
-  }
-
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
@@ -483,6 +470,11 @@ public class CombinedChainDataClient {
               }
               return historicalChainData.getBlockByBlockRoot(blockRoot);
             });
+  }
+
+  @SuppressWarnings("unused")
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   private boolean isRecentData(final UInt64 slot) {

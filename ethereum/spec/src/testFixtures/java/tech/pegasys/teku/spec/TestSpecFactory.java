@@ -132,6 +132,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.BELLATRIX);
   }
 
+  /**
+   * Create a spec that forks to EIP4844 at the provided epoch
+   *
+   * @param eip4844ForkEpoch The eip4844 fork epoch
+   * @return A spec with eip4844 enabled, forking to eip4844 at the given epoch
+   */
+  public static Spec createMinimalWithEip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
+    final SpecConfigEip4844 config =
+        getEip4844SpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip4844ForkEpoch);
+    return create(config, SpecMilestone.EIP4844);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
     return create(specConfig, SpecMilestone.PHASE0);
