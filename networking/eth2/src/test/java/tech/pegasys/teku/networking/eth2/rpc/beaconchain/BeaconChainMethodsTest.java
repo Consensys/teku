@@ -124,6 +124,25 @@ public class BeaconChainMethodsTest {
         .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_root/1/ssz_snappy");
   }
 
+  @Test
+  public void shouldNotCreateBlobsSidecarsByRangeWithEip4844Disabled() {
+    final BeaconChainMethods methods = getMethods();
+
+    assertThat(methods.blobsSidecarsByRange()).isEmpty();
+  }
+
+  @Test
+  public void shouldNotCreateBlobsSidecarsByRangeWithEip4844Enabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalEip4844());
+
+    assertThat(methods.blobsSidecarsByRange())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/blobs_sidecars_by_range/1/ssz_snappy"));
+  }
+
   private BeaconChainMethods getMethods() {
     return getMethods(TestSpecFactory.createMinimalPhase0());
   }

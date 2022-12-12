@@ -235,10 +235,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<BlobsSidecar> listener) {
-    final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar> sidecarsByRange =
-        rpcMethods.blobsSidecarsByRange();
-    return requestStream(
-        sidecarsByRange, new BlobsSidecarsByRangeRequestMessage(startSlot, count), listener);
+    return rpcMethods
+        .blobsSidecarsByRange()
+        .map(
+            method -> {
+              final BlobsSidecarsByRangeRequestMessage request =
+                  new BlobsSidecarsByRangeRequestMessage(startSlot, count);
+              return requestStream(method, request, listener);
+            })
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException("BlobsSidecarsByRange method is not available")));
   }
 
   @Override
