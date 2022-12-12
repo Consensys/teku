@@ -311,7 +311,7 @@ public class Spec {
         .getSchemaDefinitions()
         .toVersionEip4844()
         .orElseThrow(
-            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
+            () -> new RuntimeException("Eip4844 milestone is required to load execution payload"))
         .getBlobsSidecarSchema()
         .sszDeserialize(serializedBlobsSidecar);
   }
