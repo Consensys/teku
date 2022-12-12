@@ -30,6 +30,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
 
   private int maxBlsToExecutionChanges;
   private int maxWithdrawalsPerPayload;
+  private int maxValidatorsPerWithdrawalSweep;
 
   CapellaBuilder() {}
 
@@ -40,7 +41,8 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
         capellaForkVersion,
         capellaForkEpoch,
         maxBlsToExecutionChanges,
-        maxWithdrawalsPerPayload);
+        maxWithdrawalsPerPayload,
+        maxValidatorsPerWithdrawalSweep);
   }
 
   public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
@@ -65,6 +67,11 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
+  public CapellaBuilder maxValidatorsPerWithdrawalsSweep(final int maxValidatorsPerWithdrawalSweep) {
+    this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (capellaForkEpoch == null) {
@@ -78,6 +85,8 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     SpecBuilderUtil.validateConstant("capellaForkEpoch", capellaForkEpoch);
     SpecBuilderUtil.validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
     SpecBuilderUtil.validateConstant("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
+    SpecBuilderUtil.validateConstant(
+        "maxValidatorsPerWithdrawalSweep", maxValidatorsPerWithdrawalSweep);
   }
 
   @Override
