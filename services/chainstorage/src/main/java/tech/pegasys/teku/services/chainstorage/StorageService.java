@@ -33,7 +33,6 @@ import tech.pegasys.teku.storage.server.CombinedStorageChannelSplitter;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
-import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
@@ -72,7 +71,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               database.migrate();
 
-              if (config.getDataStorageMode() == StateStorageMode.MINIMAL) {
+              if (!config.getDataStorageMode().storesAllBlocks()) {
                 blockPruner =
                     Optional.of(
                         new BlockPruner(

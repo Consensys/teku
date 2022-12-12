@@ -1465,15 +1465,11 @@ public class DatabaseTest {
             .streamBlocksAndStates(0, 6)
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
 
-    switch (storageMode) {
-      case ARCHIVE:
-        assertFinalizedStatesAvailable(historicalStates);
-        break;
-      case PRUNE:
-      case MINIMAL:
-        assertStatesUnavailable(
-            historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
-        break;
+    if (storageMode.storesFinalizedStates()) {
+      assertFinalizedStatesAvailable(historicalStates);
+    } else {
+      assertStatesUnavailable(
+          historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
     }
   }
 
@@ -1841,22 +1837,18 @@ public class DatabaseTest {
         primaryChain.getBlockAtSlot(2),
         primaryChain.getBlockAtSlot(3));
 
-    switch (storageMode) {
-      case ARCHIVE:
-        // Finalized states should be available
-        final Map<Bytes32, BeaconState> expectedStates =
-            primaryChain
-                .streamBlocksAndStates(0, 7)
-                .collect(toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-        assertFinalizedStatesAvailable(expectedStates);
-        break;
-      case PRUNE:
-      case MINIMAL:
-        // Check pruned states
-        final List<UInt64> unavailableSlots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
-        assertStatesUnavailable(unavailableSlots);
-        break;
+    if (storageMode.storesFinalizedStates()) {
+      // Finalized states should be available
+      final Map<Bytes32, BeaconState> expectedStates =
+          primaryChain
+              .streamBlocksAndStates(0, 7)
+              .collect(toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+      assertFinalizedStatesAvailable(expectedStates);
+    } else {
+      // Check pruned states
+      final List<UInt64> unavailableSlots =
+          allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
+      assertStatesUnavailable(unavailableSlots);
     }
   }
 

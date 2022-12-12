@@ -23,4 +23,12 @@ public enum StateStorageMode {
   MINIMAL;
 
   public static final StateStorageMode DEFAULT_MODE = PRUNE;
+
+  public boolean storesFinalizedStates() {
+    return this == ARCHIVE;
+  }
+
+  public boolean storesAllBlocks() {
+    return this != MINIMAL;
+  }
 }

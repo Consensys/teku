@@ -157,7 +157,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
     builder.sync(
         b ->
-            b.fetchAllHistoricBlocks(dataStorageMode != StateStorageMode.MINIMAL)
+            b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
                 .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
