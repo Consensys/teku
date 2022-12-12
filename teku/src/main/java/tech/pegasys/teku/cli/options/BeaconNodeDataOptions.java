@@ -126,16 +126,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
   @CommandLine.Option(
-      names = {"--Xdata-storage-block-pruning-enabled"},
-      hidden = true,
-      paramLabel = "<BOOLEAN>",
-      description = "Prune finalized blocks prior to the required retention period",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1")
-  private boolean blockPruningEnabled = StorageConfiguration.DEFAULT_BLOCK_PRUNING_ENABLED;
-
-  @CommandLine.Option(
       names = {"--Xdata-storage-block-pruning-interval"},
       hidden = true,
       paramLabel = "<INTEGER>",
@@ -164,11 +154,10 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blockMigrationBatchSize(blockMigrationBatchSize)
                 .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
-                .blockPruningEnabled(blockPruningEnabled)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
     builder.sync(
         b ->
-            b.fetchAllHistoricBlocks(!blockPruningEnabled)
+            b.fetchAllHistoricBlocks(dataStorageMode != StateStorageMode.MINIMAL)
                 .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 

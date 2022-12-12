@@ -654,6 +654,7 @@ public abstract class KvStoreDatabase<
         break;
 
       case PRUNE:
+      case MINIMAL:
         updateFinalizedDataPruneMode(finalizedChildToParentMap, deletedHotBlocks, finalizedBlocks);
         break;
       default:
@@ -809,6 +810,7 @@ public abstract class KvStoreDatabase<
         updater.addFinalizedState(blockRoot, state);
         break;
       case PRUNE:
+      case MINIMAL:
         // Don't persist finalized state
         break;
       default:

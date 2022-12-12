@@ -1470,6 +1470,7 @@ public class DatabaseTest {
         assertFinalizedStatesAvailable(historicalStates);
         break;
       case PRUNE:
+      case MINIMAL:
         assertStatesUnavailable(
             historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
         break;
@@ -1850,6 +1851,7 @@ public class DatabaseTest {
         assertFinalizedStatesAvailable(expectedStates);
         break;
       case PRUNE:
+      case MINIMAL:
         // Check pruned states
         final List<UInt64> unavailableSlots =
             allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
