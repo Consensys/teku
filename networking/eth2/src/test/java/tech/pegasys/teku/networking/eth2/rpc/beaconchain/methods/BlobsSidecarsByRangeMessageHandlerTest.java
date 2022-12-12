@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -27,11 +28,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -57,7 +58,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final UInt64 maxRequestSize = UInt64.valueOf(8);
 
-  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
@@ -79,6 +80,28 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     final Optional<RpcException> result =
         handler.validateRequest(protocolId, new BlobsSidecarsByRangeRequestMessage(ZERO, ONE));
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void shouldNotSendBlobsSidecarsIfPeerIsRateLimited() {
+
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveBlobsSidecars(listener, 5)).thenReturn(false);
+
+    final UInt64 count = UInt64.valueOf(5);
+    final BlobsSidecarsByRangeRequestMessage request =
+        new BlobsSidecarsByRangeRequestMessage(ZERO, count);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final long rateLimitedCount =
+        metricsSystem
+            .getCounter(TekuMetricCategory.NETWORK, "rpc_blobs_sidecars_by_range_requests_total")
+            .getValue("rate_limited");
+
+    assertThat(rateLimitedCount).isOne();
+
+    verifyNoInteractions(listener);
   }
 
   @Test

@@ -83,6 +83,13 @@ public class BlobsSidecarsByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         message.getStartSlot());
+
+    if (!peer.wantToMakeRequest()
+        || !peer.wantToReceiveBlobsSidecars(
+            callback, maxRequestSize.min(message.getCount()).longValue())) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
     requestCounter.labels("ok").inc();
     totalBlobsSidecarsRequestedCounter.inc(message.getCount().longValue());
 

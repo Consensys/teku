@@ -43,6 +43,7 @@ class Eth2PeerTest {
       mock(MetadataMessagesFactory.class);
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final RateTracker blockRateTracker = mock(RateTracker.class);
+  private final RateTracker blobsSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
@@ -55,6 +56,7 @@ class Eth2PeerTest {
           metadataMessagesFactory,
           peerChainValidator,
           blockRateTracker,
+          blobsSidecarsRateTracker,
           rateTracker);
 
   @Test
