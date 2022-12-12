@@ -106,13 +106,15 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldSendToPeerRequestedNumberOfBlobsSidecars() {
-    final UInt64 count = UInt64.valueOf(5);
 
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
 
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveBlobsSidecars(listener, 5)).thenReturn(true);
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
+    final UInt64 count = UInt64.valueOf(5);
     final BlobsSidecarsByRangeRequestMessage request =
         new BlobsSidecarsByRangeRequestMessage(ZERO, count);
 
