@@ -181,6 +181,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     }
   }
 
+  // process_withdrawals
   @Override
   public void processWithdrawals(
       final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
@@ -192,34 +193,57 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             .getWithdrawalsSchemaRequired()
             .createFromElements(getExpectedWithdrawals(state));
 
-    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
-        || !expectedWithdrawals
-            .hashTreeRoot()
-            .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
-      throw new BlockProcessingException(
-          "Expected "
-              + expectedWithdrawals.hashTreeRoot()
-              + " withdrawals root, but withdrawals root was "
-              + (payloadSummary.getOptionalWithdrawalsRoot().isPresent()
-                  ? payloadSummary.getOptionalWithdrawalsRoot().get()
-                  : "MISSING"));
-    }
+    assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
+
     for (int i = 0; i < expectedWithdrawals.size(); i++) {
       final Withdrawal withdrawal = expectedWithdrawals.get(i);
       beaconStateMutators.decreaseBalance(
           state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
     }
 
-    if (expectedWithdrawals.size() > 0) {
+    if (expectedWithdrawals.size() != 0) {
+      final int validatorCount = genericState.getValidators().size();
+      final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
+      final int maxValidatorsPerWithdrawalsSweep =
+          specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
+
       final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
-      final int nextWithdrawalValidatorIndex =
-          incrementValidatorIndex(
-              latestWithdrawal.getValidatorIndex().intValue(), genericState.getValidators().size());
       state.setNextWithdrawalIndex(latestWithdrawal.getIndex().increment());
-      state.setNextWithdrawalValidatorIndex(UInt64.valueOf(nextWithdrawalValidatorIndex));
+
+      final int nextWithdrawalValidatorIndex;
+      if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
+        // Update the next validator index to start the next withdrawal sweep
+        nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
+      } else {
+        // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
+        nextWithdrawalValidatorIndex =
+            state.getNextWithdrawalValidatorIndex().intValue() + maxValidatorsPerWithdrawalsSweep;
+      }
+      state.setNextWithdrawalValidatorIndex(
+          UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
     }
   }
-  // process_withdrawals
+
+  private static void assertWithdrawalsInExecutionPayloadMatchExpected(
+      final ExecutionPayloadSummary payloadSummary, final SszList<Withdrawal> expectedWithdrawals)
+      throws BlockProcessingException {
+    // the spec does a element-to-element comparison but Teku is comparing the hash of the tree
+    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
+        || !expectedWithdrawals
+            .hashTreeRoot()
+            .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
+      final String msg =
+          String.format(
+              "Withdrawals in execution payload are different from expected (expected withdrawals root is %s but was "
+                  + "%s)",
+              expectedWithdrawals.hashTreeRoot(),
+              payloadSummary
+                  .getOptionalWithdrawalsRoot()
+                  .map(Bytes::toHexString)
+                  .orElse("MISSING"));
+      throw new BlockProcessingException(msg);
+    }
+  }
 
   @Override
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
@@ -235,12 +259,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     final SszUInt64List balances = preState.getBalances();
     final int validatorCount = validators.size();
     final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
+    final int maxValidatorsPerWithdrawalsSweep =
+        specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
+    final int bound = Math.min(validatorCount, maxValidatorsPerWithdrawalsSweep);
+
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
     int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
-    for (int i = 0;
-        i < validatorCount && expectedWithdrawals.size() < maxWithdrawalsPerPayload;
-        i++) {
 
+    for (int i = 0; i < bound; i++) {
       final Validator validator = validators.get(validatorIndex);
       if (predicates.hasEth1WithdrawalCredential(validator)) {
         final UInt64 balance = balances.get(validatorIndex).get();
@@ -264,9 +290,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                   balance.minus(specConfig.getMaxEffectiveBalance())));
           withdrawalIndex = withdrawalIndex.increment();
         }
+
+        if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
+          break;
+        }
       }
 
-      validatorIndex = incrementValidatorIndex(validatorIndex, validatorCount);
+      validatorIndex = (validatorIndex + 1) % validatorCount;
     }
 
     return expectedWithdrawals;
@@ -276,11 +306,6 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public static Bytes32 getWithdrawalAddressFromEth1Address(final Bytes20 toExecutionAddress) {
     return Bytes32.wrap(
         Bytes.concatenate(ETH1_WITHDRAWAL_KEY_PREFIX, toExecutionAddress.getWrappedBytes()));
-  }
-
-  @VisibleForTesting
-  static int incrementValidatorIndex(final int validatorIndex, final int validatorCount) {
-    return (validatorIndex + 1) % validatorCount;
   }
 
   @VisibleForTesting

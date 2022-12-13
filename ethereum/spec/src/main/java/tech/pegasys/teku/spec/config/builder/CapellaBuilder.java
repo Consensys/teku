@@ -67,7 +67,8 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
-  public CapellaBuilder maxValidatorsPerWithdrawalsSweep(final int maxValidatorsPerWithdrawalSweep) {
+  public CapellaBuilder maxValidatorsPerWithdrawalsSweep(
+      final int maxValidatorsPerWithdrawalSweep) {
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
     return this;
   }
