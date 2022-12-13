@@ -17,6 +17,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Base64;
@@ -26,13 +28,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class URLResourceLoader extends ResourceLoader {
+
   private static final Logger LOG = LogManager.getLogger();
+  public static final int DEFAULT_TIMEOUT_MS = 120_000;
   private final Optional<String> acceptHeader;
+  private final int timeoutMillis;
 
   protected URLResourceLoader(
       final Optional<String> acceptHeader, final Predicate<String> sourceFilter) {
+    this(acceptHeader, sourceFilter, DEFAULT_TIMEOUT_MS);
+  }
+
+  protected URLResourceLoader(
+      final Optional<String> acceptHeader,
+      final Predicate<String> sourceFilter,
+      final int timeoutMillis) {
     super(sourceFilter);
     this.acceptHeader = acceptHeader;
+    this.timeoutMillis = timeoutMillis;
   }
 
   @Override
@@ -45,6 +58,8 @@ public class URLResourceLoader extends ResourceLoader {
     try {
       final URL url = new URL(source);
       final URLConnection connection = url.openConnection();
+      connection.setConnectTimeout(timeoutMillis);
+      connection.setReadTimeout(timeoutMillis);
       acceptHeader.ifPresent(type -> connection.setRequestProperty("Accept", type));
       if (url.getUserInfo() != null) {
         final String credentials =
@@ -53,7 +68,9 @@ public class URLResourceLoader extends ResourceLoader {
       }
       connection.connect();
       return Optional.of(connection.getInputStream());
-    } catch (Exception e) {
+    } catch (final SocketTimeoutException | ConnectException e) {
+      throw e;
+    } catch (final Exception e) {
       LOG.debug("Failed to load resource as URL", e);
       return Optional.empty();
     }
