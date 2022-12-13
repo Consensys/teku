@@ -61,7 +61,22 @@ class BlockPrunerTest {
 
   @Test
   void shouldPruneWhenFirstStarted() {
+    when(database.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(50))));
+    asyncRunner.executeDueActions();
+    verify(database).pruneFinalizedBlocks(any());
+  }
 
+  @Test
+  void shouldPruneAfterInterval() {
+    when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
+    asyncRunner.executeDueActions();
+    verify(database, never()).pruneFinalizedBlocks(any());
+
+    when(database.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(52))));
+    triggerNextPruning();
+    verify(database).pruneFinalizedBlocks(any());
   }
 
   @Test
