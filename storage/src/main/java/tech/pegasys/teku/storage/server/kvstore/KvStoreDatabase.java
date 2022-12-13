@@ -647,17 +647,11 @@ public abstract class KvStoreDatabase<
     final Optional<SlotAndExecutionPayloadSummary> optimisticTransitionPayload =
         updateFinalizedOptimisticTransitionBlock(
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
-    switch (stateStorageMode) {
-      case ARCHIVE:
-        updateFinalizedDataArchiveMode(
-            finalizedChildToParentMap, finalizedBlocks, deletedHotBlocks, finalizedStates);
-        break;
-
-      case PRUNE:
-        updateFinalizedDataPruneMode(finalizedChildToParentMap, deletedHotBlocks, finalizedBlocks);
-        break;
-      default:
-        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
+    if (stateStorageMode.storesFinalizedStates()) {
+      updateFinalizedDataArchiveMode(
+          finalizedChildToParentMap, finalizedBlocks, deletedHotBlocks, finalizedStates);
+    } else {
+      updateFinalizedDataPruneMode(finalizedChildToParentMap, deletedHotBlocks, finalizedBlocks);
     }
 
     storeNonCanonicalBlocks(deletedHotBlocks, finalizedChildToParentMap);
@@ -804,15 +798,8 @@ public abstract class KvStoreDatabase<
 
   private void putFinalizedState(
       FinalizedUpdaterCommon updater, final Bytes32 blockRoot, final BeaconState state) {
-    switch (stateStorageMode) {
-      case ARCHIVE:
-        updater.addFinalizedState(blockRoot, state);
-        break;
-      case PRUNE:
-        // Don't persist finalized state
-        break;
-      default:
-        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
+    if (stateStorageMode.storesFinalizedStates()) {
+      updater.addFinalizedState(blockRoot, state);
     }
   }
 }

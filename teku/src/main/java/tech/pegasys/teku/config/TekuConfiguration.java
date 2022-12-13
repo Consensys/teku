@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -240,16 +238,14 @@ public class TekuConfiguration {
       }
 
       if (syncConfig.isReconstructHistoricStatesEnabled()) {
-        if (PRUNE.equals(storageConfiguration.getDataStorageMode())) {
+        if (!storageConfiguration.getDataStorageMode().storesFinalizedStates()
+            || !storageConfiguration.getDataStorageMode().storesAllBlocks()) {
           throw new InvalidConfigurationException(
-              "Cannot reconstruct historic states when using prune data storage mode");
-        }
-        if (storageConfiguration.isBlockPruningEnabled()) {
-          throw new InvalidConfigurationException(
-              "Cannot reconstruct historic states when block pruning is enabled");
+              "Cannot reconstruct historic states without using ARCHIVE data storage mode");
         }
       }
-      if (storageConfiguration.isBlockPruningEnabled() == syncConfig.fetchAllHistoricBlocks()) {
+      if (!storageConfiguration.getDataStorageMode().storesAllBlocks()
+          && syncConfig.fetchAllHistoricBlocks()) {
         throw new InvalidConfigurationException(
             "Cannot download all historic blocks with block pruning enabled");
       }
