@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.protoarray;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
-import static java.lang.Math.toIntExact;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
@@ -90,7 +89,7 @@ class ProtoArrayScoreCalculator {
       return;
     }
 
-    int validatorIndexInt = toIntExact(validatorIndex.longValue());
+    int validatorIndexInt = validatorIndex.intValue();
     // If the validator was not included in the oldBalances (i.e. it did not exist yet)
     // then say its balance was zero.
     UInt64 oldBalance =

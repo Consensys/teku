@@ -26,6 +26,7 @@ import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
+import tech.pegasys.teku.fuzz.input.BlsToExecutionChangeFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ExecutionPayloadFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
@@ -40,13 +41,14 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -59,7 +61,7 @@ public class FuzzUtil {
   // "FuzzHarness" interface
 
   private final Spec spec;
-  private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema;
   private final SpecVersion specVersion;
 
   // Size of ValidatorIndex returned by shuffle
@@ -71,11 +73,11 @@ public class FuzzUtil {
   public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
     spec =
         useMainnetConfig
-            ? TestSpecFactory.createMainnetBellatrix()
-            : TestSpecFactory.createMinimalBellatrix();
-    specVersion = spec.forMilestone(SpecMilestone.BELLATRIX);
+            ? TestSpecFactory.createMainnetCapella()
+            : TestSpecFactory.createMinimalCapella();
+    specVersion = spec.forMilestone(SpecMilestone.CAPELLA);
     beaconBlockBodySchema =
-        (BeaconBlockBodySchemaBellatrix<?>)
+        (BeaconBlockBodySchemaCapella<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
     this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
@@ -299,7 +301,7 @@ public class FuzzUtil {
     ExecutionPayloadHeader executionPayloadHeader =
         specVersion
             .getSchemaDefinitions()
-            .toVersionBellatrix()
+            .toVersionCapella()
             .orElseThrow()
             .getExecutionPayloadHeaderSchema()
             .createFromExecutionPayload(executionPayload);
@@ -316,6 +318,30 @@ public class FuzzUtil {
                               executionPayloadHeader,
                               Optional.of(executionPayload),
                               Optional.empty()));
+      Bytes output = postState.sszSerialize();
+      return Optional.of(output.toArrayUnsafe());
+    } catch (BlockProcessingException e) {
+      // "expected error"
+      return Optional.empty();
+    }
+  }
+
+  public Optional<byte[]> fuzzBlsToExecutionChange(final byte[] input) {
+    BlsToExecutionChangeFuzzInput structuredInput =
+        deserialize(input, BlsToExecutionChangeFuzzInput.createSchema(specVersion));
+    SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
+        beaconBlockBodySchema
+            .getBlsToExecutionChangesSchema()
+            .of(structuredInput.getBlsToExecutionChange());
+
+    try {
+      BeaconState postState =
+          structuredInput
+              .getState()
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processBlsToExecutionChanges(state, blsToExecutionChanges));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

@@ -35,6 +35,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
   private final StorageConfiguration config;
@@ -42,6 +43,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final ServiceConfig serviceConfig;
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
+  private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
 
   public StorageService(
@@ -56,56 +58,75 @@ public class StorageService extends Service implements StorageServiceFacade {
   @Override
   protected SafeFuture<?> doStart() {
     return SafeFuture.fromRunnable(
-        () -> {
-          final AsyncRunner storageAsyncRunner =
-              serviceConfig.createAsyncRunner("storageAsyncRunner");
-          final VersionedDatabaseFactory dbFactory =
-              new VersionedDatabaseFactory(
-                  serviceConfig.getMetricsSystem(),
-                  serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                  Optional.of(storageAsyncRunner),
-                  config);
-          database = dbFactory.createDatabase();
+            () -> {
+              final AsyncRunner storageAsyncRunner =
+                  serviceConfig.createAsyncRunner("storageAsyncRunner");
+              final VersionedDatabaseFactory dbFactory =
+                  new VersionedDatabaseFactory(
+                      serviceConfig.getMetricsSystem(),
+                      serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
+                      Optional.of(storageAsyncRunner),
+                      config);
+              database = dbFactory.createDatabase();
 
-          database.migrate();
+              database.migrate();
 
-          final EventChannels eventChannels = serviceConfig.getEventChannels();
-          chainStorage =
-              ChainStorage.create(
-                  database,
-                  Optional.of(
-                      eventChannels.getPublisher(ExecutionLayerChannel.class, storageAsyncRunner)),
-                  config.getSpec());
-          final DepositStorage depositStorage =
-              DepositStorage.create(
-                  eventChannels.getPublisher(Eth1EventsChannel.class),
-                  database,
-                  depositSnapshotStorageEnabled);
+              if (config.isBlockPruningEnabled()) {
+                blockPruner =
+                    Optional.of(
+                        new BlockPruner(
+                            config.getSpec(),
+                            database,
+                            storageAsyncRunner,
+                            config.getBlockPruningInterval()));
+              }
+              final EventChannels eventChannels = serviceConfig.getEventChannels();
+              chainStorage =
+                  ChainStorage.create(
+                      database,
+                      Optional.of(
+                          eventChannels.getPublisher(
+                              ExecutionLayerChannel.class, storageAsyncRunner)),
+                      config.getSpec());
+              final DepositStorage depositStorage =
+                  DepositStorage.create(
+                      eventChannels.getPublisher(Eth1EventsChannel.class),
+                      database,
+                      depositSnapshotStorageEnabled);
 
-          batchingVoteUpdateChannel =
-              new BatchingVoteUpdateChannel(
-                  chainStorage,
-                  new AsyncRunnerEventThread(
-                      "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
+              batchingVoteUpdateChannel =
+                  new BatchingVoteUpdateChannel(
+                      chainStorage,
+                      new AsyncRunnerEventThread(
+                          "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
 
-          eventChannels.subscribe(
-              CombinedStorageChannel.class,
-              new CombinedStorageChannelSplitter(
-                  serviceConfig.createAsyncRunner(
-                      "storage_query", STORAGE_QUERY_CHANNEL_PARALLELISM),
-                  new RetryingStorageUpdateChannel(chainStorage, serviceConfig.getTimeProvider()),
-                  chainStorage));
+              eventChannels.subscribe(
+                  CombinedStorageChannel.class,
+                  new CombinedStorageChannelSplitter(
+                      serviceConfig.createAsyncRunner(
+                          "storage_query", STORAGE_QUERY_CHANNEL_PARALLELISM),
+                      new RetryingStorageUpdateChannel(
+                          chainStorage, serviceConfig.getTimeProvider()),
+                      chainStorage));
 
-          eventChannels
-              .subscribe(Eth1DepositStorageChannel.class, depositStorage)
-              .subscribe(Eth1EventsChannel.class, depositStorage)
-              .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
-        });
+              eventChannels
+                  .subscribe(Eth1DepositStorageChannel.class, depositStorage)
+                  .subscribe(Eth1EventsChannel.class, depositStorage)
+                  .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
+            })
+        .thenCompose(
+            __ ->
+                blockPruner
+                    .map(BlockPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.fromRunnable(database::close);
+    return blockPruner
+        .map(BlockPruner::stop)
+        .orElseGet(() -> SafeFuture.completedFuture(null))
+        .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
   @Override

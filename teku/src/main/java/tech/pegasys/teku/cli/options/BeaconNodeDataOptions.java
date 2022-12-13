@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -124,6 +125,27 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private Boolean reconstructHistoricStates =
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-block-pruning-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Prune finalized blocks prior to the required retention period",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private boolean blockPruningEnabled = StorageConfiguration.DEFAULT_BLOCK_PRUNING_ENABLED;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-block-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between finalized block pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long blockPruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_BLOCK_PRUNING_INTERVAL.toSeconds();
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -141,8 +163,13 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
                 .blockMigrationBatchSize(blockMigrationBatchSize)
                 .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
-                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
-    builder.sync(b -> b.isReconstructHistoricStatesEnabled(reconstructHistoricStates));
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
+                .blockPruningEnabled(blockPruningEnabled)
+                .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
+    builder.sync(
+        b ->
+            b.fetchAllHistoricBlocks(!blockPruningEnabled)
+                .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
   private DatabaseVersion parseDatabaseVersion() {

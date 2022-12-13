@@ -262,6 +262,11 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withDoppelgangerDetectionEnabled() {
+      configMap.put("Xdoppelganger-detection-enabled", true);
+      return this;
+    }
+
     public TekuValidatorNode.Config withSentryNodes(final SentryNodesConfig sentryNodesConfig) {
       final File sentryNodesConfigFile;
       try {
