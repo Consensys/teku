@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -36,7 +35,7 @@ public class StorageUpdate {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
-  private final Set<Bytes32> deletedHotBlocks;
+  private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final boolean confirmHotBlocksBlobs;
@@ -49,7 +48,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Set<Bytes32> deletedHotBlocks,
+      final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
@@ -109,7 +108,7 @@ public class StorageUpdate {
     return hotStates;
   }
 
-  public Set<Bytes32> getDeletedHotBlocks() {
+  public Map<Bytes32, UInt64> getDeletedHotBlocks() {
     return deletedHotBlocks;
   }
 

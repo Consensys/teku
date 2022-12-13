@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -252,10 +253,20 @@ public class UnblindedBlockKvStoreDatabase
   protected void updateHotBlocks(
       final HotUpdaterUnblinded updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
-      final Set<Bytes32> deletedHotBlockRoots,
+      final Map<Bytes32, UInt64> deletedHotBlockRoots,
       final Set<Bytes32> finalizedBlockRoots) {
     updater.addHotBlocks(addedBlocks);
-    deletedHotBlockRoots.forEach(updater::deleteHotBlock);
+    try (final FinalizedUpdaterUnblinded finalizedUpdater = dao.finalizedUpdaterUnblinded()) {
+      deletedHotBlockRoots.forEach(
+          (root, slot) -> {
+            updater.deleteHotBlock(root);
+
+            // we may want the following to be activated if 4844 is on
+            final SlotAndBlockRoot blobsSidecarKey = new SlotAndBlockRoot(slot, root);
+            finalizedUpdater.removeBlobsSidecar(blobsSidecarKey);
+            finalizedUpdater.removeUnconfirmedBlobsSidecar(blobsSidecarKey);
+          });
+    }
   }
 
   @Override
@@ -268,10 +279,11 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   protected void storeNonCanonicalBlocks(
-      final Set<Bytes32> blockRoots, final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
+      final Map<Bytes32, UInt64> blockRoots,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
     if (storeNonCanonicalBlocks) {
       final Set<SignedBeaconBlock> nonCanonicalBlocks =
-          blockRoots.stream()
+          blockRoots.keySet().stream()
               .filter(root -> !finalizedChildToParentMap.containsKey(root))
               .flatMap(root -> getHotBlock(root).stream())
               .collect(Collectors.toSet());

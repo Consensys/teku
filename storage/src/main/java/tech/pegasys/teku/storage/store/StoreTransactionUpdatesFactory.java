@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.store;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,8 +46,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
-  private final Set<Bytes32> prunedHotBlockRoots =
-      Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -200,7 +198,7 @@ class StoreTransactionUpdatesFactory {
       final UInt64 slot,
       final Bytes32 parentRoot) {
     return (slot.isLessThanOrEqualTo(finalizedBlock.getSlot())
-            || prunedHotBlockRoots.contains(parentRoot))
+            || prunedHotBlockRoots.containsKey(parentRoot))
         // Keep the actual finalized block
         && !blockRoot.equals(finalizedBlock.getRoot());
   }
@@ -210,7 +208,7 @@ class StoreTransactionUpdatesFactory {
     baseStore.forkChoiceStrategy.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
           if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
-            prunedHotBlockRoots.add(blockRoot);
+            prunedHotBlockRoots.put(blockRoot, slot);
           }
         });
 
@@ -224,7 +222,9 @@ class StoreTransactionUpdatesFactory {
                     newBlockAndState.getRoot(),
                     newBlockAndState.getSlot(),
                     newBlockAndState.getParentRoot()))
-        .forEach(newBlockAndState -> prunedHotBlockRoots.add(newBlockAndState.getRoot()));
+        .forEach(
+            newBlockAndState ->
+                prunedHotBlockRoots.put(newBlockAndState.getRoot(), newBlockAndState.getSlot()));
   }
 
   private StoreTransactionUpdates createStoreTransactionUpdates(

@@ -271,7 +271,7 @@ public class BlindedBlockKvStoreDatabase
   protected void updateHotBlocks(
       final HotUpdaterBlinded updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
-      final Set<Bytes32> deletedHotBlockRoots,
+      final Map<Bytes32, UInt64> deletedHotBlockRoots,
       final Set<Bytes32> finalizedBlockRoots) {
     try (final FinalizedUpdaterBlinded finalizedUpdater = dao.finalizedUpdaterBlinded()) {
       addedBlocks
@@ -279,33 +279,46 @@ public class BlindedBlockKvStoreDatabase
           .forEach(
               block -> finalizedUpdater.addBlindedBlock(block.getBlock(), block.getRoot(), spec));
       if (!storeNonCanonicalBlocks) {
-        deletedHotBlockRoots.stream()
-            .filter(blockRoot -> !finalizedBlockRoots.contains(blockRoot))
-            .forEach(finalizedUpdater::deleteBlindedBlock);
+        deletedHotBlockRoots.entrySet().stream()
+            .filter(entry -> !finalizedBlockRoots.contains(entry.getKey()))
+            .forEach(
+                entry -> {
+                  finalizedUpdater.deleteBlindedBlock(entry.getKey());
+
+                  // we may want the following to be activated if 4844 is on
+                  final SlotAndBlockRoot blobsSidecarKey =
+                      new SlotAndBlockRoot(entry.getValue(), entry.getKey());
+                  finalizedUpdater.removeBlobsSidecar(blobsSidecarKey);
+                  finalizedUpdater.removeUnconfirmedBlobsSidecar(blobsSidecarKey);
+                });
       }
       finalizedUpdater.commit();
     }
     updater.addCheckpointEpochs(addedBlocks);
-    deletedHotBlockRoots.forEach(updater::pruneHotBlockContext);
+    deletedHotBlockRoots.forEach((blockRoot, __) -> updater.pruneHotBlockContext(blockRoot));
   }
 
   @Override
   protected void storeNonCanonicalBlocks(
-      final Set<Bytes32> blockRoots, final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
+      final Map<Bytes32, UInt64> blockRoots,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
     if (storeNonCanonicalBlocks) {
       final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
-      for (Bytes32 blockRoot : blockRoots) {
-        if (finalizedChildToParentMap.containsKey(blockRoot)) {
-          continue;
-        }
-        dao.getBlindedBlock(blockRoot)
-            .map(SignedBeaconBlock::getSlot)
-            .ifPresent(
-                slot ->
-                    nonCanonicalRootsBySlotBuffer
-                        .computeIfAbsent(slot, dao::getNonCanonicalBlockRootsAtSlot)
-                        .add(blockRoot));
-      }
+      blockRoots
+          .keySet()
+          .forEach(
+              blockRoot -> {
+                if (finalizedChildToParentMap.containsKey(blockRoot)) {
+                  return;
+                }
+                dao.getBlindedBlock(blockRoot)
+                    .map(SignedBeaconBlock::getSlot)
+                    .ifPresent(
+                        slot ->
+                            nonCanonicalRootsBySlotBuffer
+                                .computeIfAbsent(slot, dao::getNonCanonicalBlockRootsAtSlot)
+                                .add(blockRoot));
+              });
       try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
         nonCanonicalRootsBySlotBuffer.forEach(updater::addNonCanonicalRootAtSlot);
         updater.commit();
