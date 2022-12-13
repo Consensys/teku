@@ -35,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface KvStoreCombinedDaoCommon extends AutoCloseable {
+  Bytes32 MIN_BLOCK_ROOT = Bytes32.ZERO;
+  Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
   void ingest(KvStoreCombinedDaoCommon dao, int batchSize, Consumer<String> logger);
 

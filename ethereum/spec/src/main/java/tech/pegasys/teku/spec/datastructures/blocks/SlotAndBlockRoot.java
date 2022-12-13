@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
+import java.util.Comparator;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
@@ -55,12 +56,9 @@ public class SlotAndBlockRoot implements Comparable<SlotAndBlockRoot> {
 
   @Override
   public int compareTo(@NotNull SlotAndBlockRoot o) {
-    int slotComparison = this.slot.compareTo(o.slot);
-    if (slotComparison != 0) {
-      return slotComparison;
-    }
-
-    return this.blockRoot.compareTo(o.blockRoot);
+    return Comparator.comparing(SlotAndBlockRoot::getSlot)
+        .thenComparing(SlotAndBlockRoot::getBlockRoot)
+        .compare(this, o);
   }
 
   @Override

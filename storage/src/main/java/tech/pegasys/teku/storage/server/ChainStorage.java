@@ -184,10 +184,10 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
     return SafeFuture.of(
         () -> {
-          database.removeBlobsSidecar(blobsSidecar);
+          database.removeBlobsSidecar(blobsSidecarKey);
           return null;
         });
   }

@@ -254,7 +254,7 @@ public class DatabaseTest {
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar3));
-    // we all blobs except the first
+    // we have all blobs except the first
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune unconfirmed up to slot 1 (nothing will be pruned)
@@ -263,13 +263,13 @@ public class DatabaseTest {
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar3));
-    // we all blobs except the first
+    // we still have all blobs except the first
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune all unconfirmed
     database.pruneOldestUnconfirmedBlobsSidecar(UInt64.valueOf(3), 10);
     assertUnconfirmedBlobsStream();
-    // we still have blobsSidecar4
+    // we have blobsSidecar4
     assertBlobsStream(blobsSidecar4);
 
     // let's prune all up to a too old slot (nothing will be pruned)

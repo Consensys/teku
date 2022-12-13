@@ -128,8 +128,8 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecar) {
-    return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecar));
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
+    return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecarKey));
   }
 
   @Override

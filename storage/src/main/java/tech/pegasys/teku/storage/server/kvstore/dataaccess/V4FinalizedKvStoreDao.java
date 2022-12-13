@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MAX_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MIN_BLOCK_ROOT;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,7 +28,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -178,8 +180,8 @@ public class V4FinalizedKvStoreDao {
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(
             schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
-            new SlotAndBlockRoot(startSlot, Bytes32.ZERO),
-            new SlotAndBlockRoot(endSlot, UInt256.MAX_VALUE))
+            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
         .map(entry -> entry);
   }
 
@@ -188,8 +190,8 @@ public class V4FinalizedKvStoreDao {
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(
             schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
-            new SlotAndBlockRoot(startSlot, Bytes32.ZERO),
-            new SlotAndBlockRoot(endSlot, UInt256.MAX_VALUE))
+            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
         .map(ColumnEntry::getKey);
   }
 

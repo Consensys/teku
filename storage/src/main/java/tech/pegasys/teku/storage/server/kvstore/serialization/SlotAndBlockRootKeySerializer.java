@@ -19,6 +19,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
+/**
+ * This serializer is intended to be used as a Key so that it preserve slot ordering when we stream
+ * data. This is useful for values that are always looked up by root and slot, giving us the ability
+ * to quickly lookup most recent\oldest values by slot as well as perform pruning based on slot
+ */
 class SlotAndBlockRootKeySerializer implements KvStoreSerializer<SlotAndBlockRoot> {
   @Override
   public SlotAndBlockRoot deserialize(final byte[] data) {

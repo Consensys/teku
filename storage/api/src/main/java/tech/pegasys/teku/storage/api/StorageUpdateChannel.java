@@ -41,7 +41,7 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar);
 
-  SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecar);
+  SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecarKey);
 
   SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit);
 
