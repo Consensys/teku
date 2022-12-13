@@ -31,7 +31,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void shouldDetectDoppelgangerAndShutDown() throws Exception {
+  void shouldDetectDoppelgangerAndAlert() throws Exception {
     final String networkName = "less-swift";
     final BesuNode eth1Node =
         createBesuNode(
