@@ -97,5 +97,7 @@ public interface KvStoreCombinedDaoBlinded extends KvStoreCombinedDaoCommon {
     void deleteBlindedBlock(final Bytes32 root);
 
     void deleteExecutionPayload(final Bytes32 blockRoot);
+
+    void pruneFinalizedBlindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
   }
 }

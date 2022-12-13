@@ -30,6 +30,8 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
@@ -52,7 +54,9 @@ public class ValidatorRestApi {
       final ValidatorRestApiConfig config,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
-      final DataDirLayout dataDirLayout) {
+      final DataDirLayout dataDirLayout,
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
     return new RestApiBuilder()
@@ -86,9 +90,15 @@ public class ValidatorRestApi {
             (throwable) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager, slashingProtectionPath))
-        .endpoint(new PostKeys(keyManager, slashingProtectionPath))
+        .endpoint(
+            new PostKeys(
+                keyManager,
+                slashingProtectionPath,
+                maybeDoppelgangerDetector,
+                doppelgangerDetectionAction))
         .endpoint(new GetRemoteKeys(keyManager))
-        .endpoint(new PostRemoteKeys(keyManager))
+        .endpoint(
+            new PostRemoteKeys(keyManager, maybeDoppelgangerDetector, doppelgangerDetectionAction))
         .endpoint(new DeleteRemoteKeys(keyManager))
         .endpoint(new GetFeeRecipient(proposerConfigManager))
         .endpoint(new GetGasLimit(proposerConfigManager))

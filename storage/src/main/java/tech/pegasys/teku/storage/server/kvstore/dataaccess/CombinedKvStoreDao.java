@@ -741,6 +741,24 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void pruneFinalizedBlindedBlocks(
+        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      try (final Stream<ColumnEntry<UInt64, Bytes32>> stream =
+          db.stream(
+              schema.getColumnFinalizedBlockRootBySlot(), firstSlotToPrune, lastSlotToPrune)) {
+        stream.forEach(entry -> deleteBlindedBlock(entry.getValue()));
+      }
+      try (final Stream<ColumnEntry<UInt64, Set<Bytes32>>> stream =
+          db.stream(schema.getColumnNonCanonicalRootsBySlot())) {
+        stream.forEach(
+            entry -> {
+              entry.getValue().forEach(this::deleteBlindedBlock);
+              transaction.delete(schema.getColumnNonCanonicalRootsBySlot(), entry.getKey());
+            });
+      }
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -754,6 +772,24 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
+    }
+
+    @Override
+    public void pruneFinalizedUnblindedBlocks(
+        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      try (final Stream<ColumnEntry<UInt64, SignedBeaconBlock>> stream =
+          db.stream(schema.getColumnFinalizedBlocksBySlot(), firstSlotToPrune, lastSlotToPrune)) {
+        stream.forEach(
+            entry -> deleteUnblindedFinalizedBlock(entry.getKey(), entry.getValue().getRoot()));
+      }
+      try (final Stream<ColumnEntry<UInt64, Set<Bytes32>>> stream =
+          db.stream(schema.getColumnNonCanonicalRootsBySlot())) {
+        stream.forEach(
+            entry -> {
+              entry.getValue().forEach(this::deleteUnblindedNonCanonicalBlockOnly);
+              transaction.delete(schema.getColumnNonCanonicalRootsBySlot(), entry.getKey());
+            });
+      }
     }
 
     @Override

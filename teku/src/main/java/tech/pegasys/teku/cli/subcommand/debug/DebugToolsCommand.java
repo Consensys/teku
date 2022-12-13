@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.NoOpKeyManager;
+import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
@@ -134,7 +135,14 @@ public class DebugToolsCommand implements Runnable {
     DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new NoOpKeyManager();
-    RestApi api = ValidatorRestApi.create(config, Optional.empty(), keyManager, dataDirLayout);
+    RestApi api =
+        ValidatorRestApi.create(
+            config,
+            Optional.empty(),
+            keyManager,
+            dataDirLayout,
+            Optional.empty(),
+            new DoppelgangerDetectionAlert());
 
     if (api.getRestApiDocs().isPresent()) {
       final String docs = api.getRestApiDocs().get();
