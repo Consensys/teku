@@ -26,6 +26,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 - Added `finalized` metadata field to applicable REST API responses
 - Use SSZ encoding for external validator client block creation requests by default. Can be disabled with `--beacon-node-ssz-blocks-enabled=false`.
+- Added a timeout (5 minutes) when attempting to load the initial state from a URL
 
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly

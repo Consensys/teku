@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 public class URLResourceLoader extends ResourceLoader {
 
   private static final Logger LOG = LogManager.getLogger();
-  public static final int DEFAULT_TIMEOUT_MS = 120_000;
+  public static final int DEFAULT_TIMEOUT_MS = (int) TimeUnit.MINUTES.toMillis(5);
   private final Optional<String> acceptHeader;
   private final int timeoutMillis;
 
