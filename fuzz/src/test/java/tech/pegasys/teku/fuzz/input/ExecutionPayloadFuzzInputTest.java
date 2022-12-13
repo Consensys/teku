@@ -15,6 +15,7 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionPayloadFuzzInputTest
@@ -30,6 +31,8 @@ public class ExecutionPayloadFuzzInputTest
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     return new ExecutionPayloadFuzzInput(
-        spec, state, executionPayload.toVersionBellatrix().orElseThrow());
+        spec,
+        state,
+        (ExecutionPayloadCapellaImpl) executionPayload.toVersionCapella().orElseThrow());
   }
 }
