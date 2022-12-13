@@ -305,7 +305,8 @@ class FuzzUtilTest {
     final SignedBlsToExecutionChange data =
         loadSsz(
             testCaseDir.resolve("address_change.ssz_snappy"),
-            SignedBlsToExecutionChange.SSZ_SCHEMA);
+            SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
+                .getSignedBlsToExecutionChangeSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
