@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
+- Introduces the `MINIMAL` option for `--data-storage-mode` which prunes both finalized states and blocks prior to the retention period required by the beacon chain spec (~5 months of blocks).
 - Support for the `/eth/v1/beacon/blinded_blocks/{block_id}` REST API
 - Added `finalized` metadata field to applicable REST API responses
 - Use SSZ encoding for external validator client block creation requests by default. Can be disabled with `--beacon-node-ssz-blocks-enabled=false`.
