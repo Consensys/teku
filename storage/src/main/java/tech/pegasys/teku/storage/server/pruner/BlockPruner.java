@@ -53,6 +53,7 @@ public class BlockPruner extends Service {
         Optional.of(
             asyncRunner.runWithFixedDelay(
                 this::pruneBlocks,
+                Duration.ZERO,
                 pruneInterval,
                 error -> LOG.error("Failed to prune old blocks", error)));
     return SafeFuture.COMPLETE;

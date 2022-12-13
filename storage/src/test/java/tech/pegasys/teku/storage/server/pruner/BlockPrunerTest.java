@@ -60,6 +60,11 @@ class BlockPrunerTest {
   }
 
   @Test
+  void shouldPruneWhenFirstStarted() {
+
+  }
+
+  @Test
   void shouldNotPruneWhenFinalizedCheckpointNotSet() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     triggerNextPruning();
