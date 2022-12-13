@@ -266,6 +266,7 @@ public class UnblindedBlockKvStoreDatabase
             finalizedUpdater.removeBlobsSidecar(blobsSidecarKey);
             finalizedUpdater.removeUnconfirmedBlobsSidecar(blobsSidecarKey);
           });
+      finalizedUpdater.commit();
     }
   }
 
