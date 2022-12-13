@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -41,6 +42,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
+      final RateTracker blobsSidecarsRequestTracker,
       final RateTracker requestTracker) {
     return new DefaultEth2Peer(
         peer,
@@ -49,6 +51,7 @@ public interface Eth2Peer extends Peer, SyncSource {
         metadataMessagesFactory,
         peerChainValidator,
         blockRequestTracker,
+        blobsSidecarsRequestTracker,
         requestTracker);
   }
 
@@ -89,7 +92,10 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request);
 
-  boolean wantToReceiveObjects(ResponseCallback<SignedBeaconBlock> callback, long objectCount);
+  boolean wantToReceiveBlocks(ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
+
+  boolean wantToReceiveBlobsSidecars(
+      ResponseCallback<BlobsSidecar> callback, long blobsSidecarsCount);
 
   boolean wantToMakeRequest();
 

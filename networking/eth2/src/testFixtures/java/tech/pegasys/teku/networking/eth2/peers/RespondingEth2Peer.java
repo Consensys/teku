@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -209,6 +210,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  @Override
   public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
       throws RpcException {
@@ -264,8 +273,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public boolean wantToReceiveObjects(
-      final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
+  public boolean wantToReceiveBlocks(
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    return true;
+  }
+
+  @Override
+  public boolean wantToReceiveBlobsSidecars(
+      final ResponseCallback<BlobsSidecar> callback, final long blobsSidecarsCount) {
     return true;
   }
 
