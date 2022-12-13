@@ -97,7 +97,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @BeforeEach
   public void setup() {
     when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
+    when(peer.wantToReceiveBlocks(any(), anyLong())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(ZERO)));
   }

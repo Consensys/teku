@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
 public class StubSyncSource implements SyncSource {
 
@@ -55,6 +56,14 @@ public class StubSyncSource implements SyncSource {
     currentRequest = Optional.of(request);
     currentListener = Optional.of(listener);
     return request;
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override

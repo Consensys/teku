@@ -43,8 +43,10 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
@@ -68,6 +70,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
+  private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker requestTracker;
 
   DefaultEth2Peer(
@@ -77,6 +80,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
+      final RateTracker blobsSidecarsRequestTracker,
       final RateTracker requestTracker) {
     super(peer);
     this.rpcMethods = rpcMethods;
@@ -84,6 +88,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
     this.blockRequestTracker = blockRequestTracker;
+    this.blobsSidecarsRequestTracker = blobsSidecarsRequestTracker;
     this.requestTracker = requestTracker;
   }
 
@@ -229,15 +234,46 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    return rpcMethods
+        .blobsSidecarsByRange()
+        .map(
+            method -> {
+              final BlobsSidecarsByRangeRequestMessage request =
+                  new BlobsSidecarsByRangeRequestMessage(startSlot, count);
+              return requestStream(method, request, listener);
+            })
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException("BlobsSidecarsByRange method is not available")));
+  }
+
+  @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
 
   @Override
-  public boolean wantToReceiveObjects(
-      final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
-    if (blockRequestTracker.wantToRequestObjects(objectCount) == 0L) {
+  public boolean wantToReceiveBlocks(
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    if (blockRequestTracker.wantToRequestObjects(blocksCount) == 0L) {
       LOG.debug("Peer {} disconnected due to block rate limits", getId());
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean wantToReceiveBlobsSidecars(
+      final ResponseCallback<BlobsSidecar> callback, final long blobsSidecarsCount) {
+    if (blobsSidecarsRequestTracker.wantToRequestObjects(blobsSidecarsCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to blobs sidecars rate limits", getId());
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
