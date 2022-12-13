@@ -249,7 +249,7 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar1, blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune unconfirmed with limit to 1
-    database.pruneOldestUnconfirmedBlobsSidecar(UInt64.MAX_VALUE, 1);
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.MAX_VALUE, 1)).isTrue();
     assertUnconfirmedBlobsStream(
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
@@ -258,7 +258,7 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune unconfirmed up to slot 1 (nothing will be pruned)
-    database.pruneOldestUnconfirmedBlobsSidecar(ONE, 10);
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(ONE, 10)).isFalse();
     assertUnconfirmedBlobsStream(
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
@@ -267,17 +267,17 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune all unconfirmed
-    database.pruneOldestUnconfirmedBlobsSidecar(UInt64.valueOf(3), 10);
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.valueOf(3), 10)).isFalse();
     assertUnconfirmedBlobsStream();
     // we have blobsSidecar4
     assertBlobsStream(blobsSidecar4);
 
     // let's prune all up to a too old slot (nothing will be pruned)
-    database.pruneOldestBlobsSidecar(UInt64.valueOf(3), 10);
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.valueOf(3), 10)).isFalse();
     assertBlobsStream(blobsSidecar4);
 
     // let's prune all up slot 4
-    database.pruneOldestBlobsSidecar(UInt64.valueOf(4), 1);
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.valueOf(4), 1)).isTrue();
     // all empty now
     assertUnconfirmedBlobsStream();
     assertBlobsStream();
@@ -306,13 +306,13 @@ public class DatabaseTest {
     database.storeUnconfirmedBlobsSidecar(blobsSidecar4);
     database.storeUnconfirmedBlobsSidecar(blobsSidecar3);
 
-    database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 2);
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 2)).isTrue();
     assertUnconfirmedBlobsStream(
         blobsSidecarToSlotAndBlockRoot(blobsSidecar3),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
     assertBlobsStream(blobsSidecar3, blobsSidecar4);
 
-    database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 100);
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 100)).isFalse();
     assertUnconfirmedBlobsStream();
     assertBlobsStream();
   }

@@ -571,9 +571,10 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public void pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+  public boolean pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
     try (final Stream<BlobsSidecar> prunableBlobs = streamBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
+      final int[] counter = {0};
       prunableBlobs
           .limit(pruneLimit)
           .forEach(
@@ -583,24 +584,33 @@ public abstract class KvStoreDatabase<
                         blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
                 updater.removeBlobsSidecar(slotAndBlockRoot);
                 updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+
+                counter[0]++;
               });
       updater.commit();
+
+      return counter[0] == pruneLimit;
     }
   }
 
   @Override
-  public void pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+  public boolean pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
             streamUnconfirmedBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
+      final int[] counter = {0};
       prunableUnconfirmed
           .limit(pruneLimit)
           .forEach(
               slotAndBlockRoot -> {
                 updater.removeBlobsSidecar(slotAndBlockRoot);
                 updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+
+                counter[0]++;
               });
       updater.commit();
+
+      return counter[0] == pruneLimit;
     }
   }
 

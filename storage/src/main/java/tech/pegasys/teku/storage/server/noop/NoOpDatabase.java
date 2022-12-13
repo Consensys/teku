@@ -292,7 +292,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {}
+  public boolean pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+    return false;
+  }
 
   @Override
   public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
@@ -301,7 +303,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {}
+  public boolean pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+    return false;
+  }
 
   @Override
   public void close() {}
