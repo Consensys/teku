@@ -6,4 +6,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'tech.pegasys:jc-kzg-4844'
   implementation 'commons-io:commons-io'
+
+  testImplementation project(path: ':ethereum:spec')
+  testImplementation testFixtures(project(':ethereum:spec'))
 }
