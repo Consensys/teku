@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 public class URLResourceLoader extends ResourceLoader {
 
   private static final Logger LOG = LogManager.getLogger();
-  public static final int DEFAULT_TIMEOUT_MS = (int) TimeUnit.MINUTES.toMillis(5);
+  public static final int DEFAULT_TIMEOUT_MS = (int) TimeUnit.MINUTES.toMillis(2);
   private final Optional<String> acceptHeader;
   private final int timeoutMillis;
 
