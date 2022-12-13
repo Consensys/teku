@@ -42,6 +42,8 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public interface Database extends AutoCloseable {
 
+  int PRUNE_BATCH_SIZE = 10000;
+
   void storeInitialAnchor(AnchorPoint genesis);
 
   UpdateResult update(StorageUpdate event);
@@ -172,5 +174,5 @@ public interface Database extends AutoCloseable {
 
   void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 
-  void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
+  void pruneFinalizedBlocks(UInt64 lastSlotToPrune);
 }

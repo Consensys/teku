@@ -78,7 +78,7 @@ public class BlockPruner extends Service {
       return;
     }
     LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
-    database.pruneFinalizedBlocks(UInt64.ZERO, earliestSlotToKeep.decrement());
+    database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
   }
 
   private int getEpochsToKeep(final UInt64 finalizedEpoch) {
