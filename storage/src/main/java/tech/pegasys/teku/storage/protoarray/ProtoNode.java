@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoNode {
@@ -194,8 +195,9 @@ public class ProtoNode {
         parentRoot,
         stateRoot,
         executionBlockHash,
-        validationStatus == ProtoNodeValidationStatus.OPTIMISTIC,
-        checkpoints);
+        validationStatus,
+        checkpoints,
+        weight);
   }
 
   public Map<String, String> getData() {

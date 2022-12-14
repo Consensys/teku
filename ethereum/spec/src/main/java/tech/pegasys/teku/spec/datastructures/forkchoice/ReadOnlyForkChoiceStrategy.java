@@ -44,6 +44,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   List<Map<String, String>> getNodeData();
 
+  List<ProtoNodeData> getBlockData();
+
   boolean contains(Bytes32 blockRoot);
 
   Optional<Boolean> isOptimistic(Bytes32 blockRoot);

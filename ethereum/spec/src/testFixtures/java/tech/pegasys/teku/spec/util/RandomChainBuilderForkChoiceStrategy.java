@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.util;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +23,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
@@ -85,32 +88,31 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public List<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
     final Optional<Bytes32> maybeRoot = getBlock(slot).map(SignedBeaconBlock::getRoot);
-    if (maybeRoot.isEmpty()) {
-      return Collections.emptyList();
-    }
-    return List.of(maybeRoot.get());
+    return maybeRoot.map(List::of).orElse(Collections.emptyList());
   }
 
   @Override
   public List<ProtoNodeData> getChainHeads(final boolean includeNonViableHeads) {
     return chainBuilder
         .getChainHead()
-        .map(
-            h ->
-                List.of(
-                    new ProtoNodeData(
-                        h.getSlot(),
-                        h.getRoot(),
-                        h.getParentRoot(),
-                        h.getStateRoot(),
-                        h.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                        false,
-                        new BlockCheckpoints(
-                            h.getState().getCurrentJustifiedCheckpoint(),
-                            h.getState().getFinalizedCheckpoint(),
-                            h.getState().getCurrentJustifiedCheckpoint(),
-                            h.getState().getFinalizedCheckpoint()))))
+        .map(h -> List.of(asProtoNodeData(h)))
         .orElse(Collections.emptyList());
+  }
+
+  private static ProtoNodeData asProtoNodeData(final SignedBlockAndState blockAndState) {
+    return new ProtoNodeData(
+        blockAndState.getSlot(),
+        blockAndState.getRoot(),
+        blockAndState.getParentRoot(),
+        blockAndState.getStateRoot(),
+        blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+        ProtoNodeValidationStatus.VALID,
+        new BlockCheckpoints(
+            blockAndState.getState().getCurrentJustifiedCheckpoint(),
+            blockAndState.getState().getFinalizedCheckpoint(),
+            blockAndState.getState().getCurrentJustifiedCheckpoint(),
+            blockAndState.getState().getFinalizedCheckpoint()),
+        UInt64.ZERO);
   }
 
   @Override
@@ -121,6 +123,13 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public List<Map<String, String>> getNodeData() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public List<ProtoNodeData> getBlockData() {
+    return chainBuilder.getChain().stream()
+        .map(RandomChainBuilderForkChoiceStrategy::asProtoNodeData)
+        .collect(toList());
   }
 
   @Override
@@ -142,26 +151,7 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   public Optional<ProtoNodeData> getBlockData(final Bytes32 blockRoot) {
     return chainBuilder
         .getBlockAndState(blockRoot)
-        .map(
-            blockAndState ->
-                new ProtoNodeData(
-                    blockAndState.getSlot(),
-                    blockAndState.getRoot(),
-                    blockAndState.getParentRoot(),
-                    blockAndState.getStateRoot(),
-                    blockAndState
-                        .getBlock()
-                        .getMessage()
-                        .getBody()
-                        .getOptionalExecutionPayload()
-                        .map(ExecutionPayload::getBlockHash)
-                        .orElse(Bytes32.ZERO),
-                    false,
-                    new BlockCheckpoints(
-                        blockAndState.getState().getCurrentJustifiedCheckpoint(),
-                        blockAndState.getState().getFinalizedCheckpoint(),
-                        blockAndState.getState().getCurrentJustifiedCheckpoint(),
-                        blockAndState.getState().getFinalizedCheckpoint())));
+        .map(RandomChainBuilderForkChoiceStrategy::asProtoNodeData);
   }
 
   @Override

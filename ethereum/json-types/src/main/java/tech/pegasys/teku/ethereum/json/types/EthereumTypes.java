@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -25,12 +28,14 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class EthereumTypes {
 
@@ -66,6 +71,13 @@ public class EthereumTypes {
               "`BLSPublicKey Hex` The validator's BLS public key, uniquely identifying them. "
                   + "48-bytes, hex encoded with 0x prefix, case insensitive.")
           .format("string")
+          .build();
+
+  public static final SerializableTypeDefinition<Checkpoint> CHECKPOINT_TYPE =
+      SerializableTypeDefinition.object(Checkpoint.class)
+          .name("Checkpoint")
+          .withField("epoch", UINT64_TYPE, Checkpoint::getEpoch)
+          .withField("root", BYTES32_TYPE, Checkpoint::getRoot)
           .build();
 
   public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =

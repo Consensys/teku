@@ -32,7 +32,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSummary;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProtoArray;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetGlobalValidatorInclusion;
@@ -73,6 +72,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetForkChoice;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
@@ -286,6 +286,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
                 dataProvider, spec, schemaCache))
         .endpoint(new GetState(dataProvider, schemaCache))
+        .endpoint(new GetForkChoice(dataProvider))
         // Teku Specific Handlers
         .endpoint(new PutLogLevel())
         .endpoint(new GetStateByBlockRoot(dataProvider, spec))
@@ -293,7 +294,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         .endpoint(new Readiness(dataProvider, executionClientDataProvider))
         .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
         .endpoint(new GetPeersScore(dataProvider))
-        .endpoint(new GetProtoArray(dataProvider))
         .endpoint(new GetProposersData(dataProvider))
         .endpoint(new GetDeposits(eth1DataProvider))
         .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))

@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -130,8 +131,9 @@ public class ChainDataProviderTest {
                 bestBlock.getParentRoot(),
                 bestBlock.getStateRoot(),
                 bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                false,
-                spec.calculateBlockCheckpoints(bestBlock.getState())));
+                ProtoNodeValidationStatus.VALID,
+                spec.calculateBlockCheckpoints(bestBlock.getState()),
+                ZERO));
   }
 
   @Test

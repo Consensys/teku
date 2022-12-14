@@ -219,6 +219,19 @@ public class ChainDataProvider {
         .orElse(emptyList());
   }
 
+  public ForkChoiceData getForkChoiceData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return new ForkChoiceData(
+        recentChainData.getJustifiedCheckpoint().orElseThrow(),
+        recentChainData.getFinalizedCheckpoint().orElseThrow(),
+        recentChainData
+            .getForkChoiceStrategy()
+            .map(ReadOnlyForkChoiceStrategy::getBlockData)
+            .orElse(emptyList()));
+  }
+
   private Optional<Integer> validatorParameterToIndex(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final String validatorParameter) {
