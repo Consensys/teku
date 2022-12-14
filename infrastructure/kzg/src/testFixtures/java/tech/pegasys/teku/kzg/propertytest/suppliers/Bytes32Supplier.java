@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.suppliers;
+package tech.pegasys.teku.kzg.propertytest.suppliers;
 
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.ArbitrarySupplier;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class KZGCommitmentSupplier extends DataStructureUtilSupplier<KZGCommitment> {
-  public KZGCommitmentSupplier() {
-    super(DataStructureUtil::randomKZGCommitment, SpecMilestone.EIP4844);
+public class Bytes32Supplier implements ArbitrarySupplier<Bytes32> {
+  @Override
+  public Arbitrary<Bytes32> get() {
+    return Arbitraries.bytes().array(byte[].class).ofSize(32).map(Bytes32::wrap);
   }
 }

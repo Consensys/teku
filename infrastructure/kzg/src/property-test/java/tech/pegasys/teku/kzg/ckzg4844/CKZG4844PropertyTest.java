@@ -26,10 +26,10 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.suppliers.Bytes32Supplier;
-import tech.pegasys.teku.kzg.suppliers.BytesSupplier;
-import tech.pegasys.teku.kzg.suppliers.KZGCommitmentSupplier;
-import tech.pegasys.teku.kzg.suppliers.KZGProofSupplier;
+import tech.pegasys.teku.kzg.propertytest.suppliers.Bytes32Supplier;
+import tech.pegasys.teku.kzg.propertytest.suppliers.BytesSupplier;
+import tech.pegasys.teku.kzg.propertytest.suppliers.KZGCommitmentSupplier;
+import tech.pegasys.teku.kzg.propertytest.suppliers.KZGProofSupplier;
 
 public class CKZG4844PropertyTest {
   private static final String MAINNET_TRUSTED_SETUP_TEST = "../trusted_setups/test_mainnet.txt";

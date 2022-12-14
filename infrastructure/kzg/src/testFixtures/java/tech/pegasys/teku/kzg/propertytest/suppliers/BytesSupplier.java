@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.suppliers;
+package tech.pegasys.teku.kzg.propertytest.suppliers;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
 
-public class Bytes32Supplier implements ArbitrarySupplier<Bytes32> {
+public class BytesSupplier implements ArbitrarySupplier<Bytes> {
   @Override
-  public Arbitrary<Bytes32> get() {
-    return Arbitraries.bytes().array(byte[].class).ofSize(32).map(Bytes32::wrap);
+  public Arbitrary<Bytes> get() {
+    return Arbitraries.bytes().array(byte[].class).map(Bytes::wrap);
   }
 }
