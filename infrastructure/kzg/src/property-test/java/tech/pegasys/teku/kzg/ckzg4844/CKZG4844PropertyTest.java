@@ -77,7 +77,6 @@ public class CKZG4844PropertyTest {
   }
 }
 
-
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
  * trusted setup when property test finished. It will re-use the same KZG instance for all
@@ -108,7 +107,8 @@ class KzgResolver implements ResolveParameterHook {
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
     private static final String TRUSTED_SETUP =
         Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
-    private final KZG kzg = CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
+    private final KZG kzg =
+        CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
 
     private KzgAutoLoadFree() {
       kzg.loadTrustedSetup(TRUSTED_SETUP);
