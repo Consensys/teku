@@ -68,7 +68,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -494,22 +493,13 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .forBlockRoot(blockRootParam)
         .getState()
-        .thenApply(
-            maybeStateData ->
-                maybeStateData.map(
-                    stateAndMetadata ->
-                        stateAndMetadata.map(
-                            state -> {
-                              Optional<LightClientUtil> lightClientUtil =
-                                  spec.getLightClientUtil(state.getSlot());
+        .thenApply(maybeStateData -> maybeStateData.flatMap(this::getLightClientBootstrap));
+  }
 
-                              if (lightClientUtil.isEmpty()) {
-                                // No light client bootstrap pre-altair
-                                return null;
-                              }
-
-                              return lightClientUtil.get().getLightClientBootstrap(state);
-                            })));
+  private Optional<ObjectAndMetaData<LightClientBootstrap>> getLightClientBootstrap(
+      final StateAndMetaData stateAndMetaData) {
+    return spec.getLightClientUtil(stateAndMetaData.getData().getSlot())
+        .map(clientUtil -> stateAndMetaData.map(clientUtil::getLightClientBootstrap));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(

@@ -13,19 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
@@ -46,38 +40,19 @@ public class LightClientUtil {
 
   public LightClientBootstrap getLightClientBootstrap(final BeaconState state) {
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
-    final BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
 
     // Requires rehashing the state. See
     // https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/full-node.md#create_light_client_bootstrap
-    final BeaconBlockHeader bootstrapBlockHeader =
-        new BeaconBlockHeader(
-            latestBlockHeader.getSlot(),
-            latestBlockHeader.getProposerIndex(),
-            latestBlockHeader.getParentRoot(),
-            state.hashTreeRoot(),
-            latestBlockHeader.getBodyRoot());
+    final BeaconBlockHeader bootstrapBlockHeader = BeaconBlockHeader.fromState(state);
 
     final SyncCommittee currentSyncCommittee =
         syncCommitteeUtil.getSyncCommittee(state, currentEpoch);
 
-    final List<Bytes32> currentSyncCommitteeProof =
-        MerkleUtil.constructMerkleProof(
-            state.getBackingNode(),
-            state
-                .getSchema()
-                .getChildGeneralizedIndex(
-                    state.getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE)));
-
-    final SszBytes32Vector currentSyncCommitteeProofSsz =
-        SszBytes32VectorSchema.create(currentSyncCommitteeProof.size())
-            .createFromElements(
-                currentSyncCommitteeProof.stream()
-                    .map(bytes32 -> SszBytes32.of(bytes32))
-                    .collect(Collectors.toList()));
+    final SszBytes32Vector currentSyncCommitteeProof =
+        BeaconStateAltair.required(state).createCurrentSyncCommitteeProof();
 
     return schemaDefinitionsAltair
         .getLightClientBootstrapSchema()
-        .create(bootstrapBlockHeader, currentSyncCommittee, currentSyncCommitteeProofSsz);
+        .create(bootstrapBlockHeader, currentSyncCommittee, currentSyncCommitteeProof);
   }
 }

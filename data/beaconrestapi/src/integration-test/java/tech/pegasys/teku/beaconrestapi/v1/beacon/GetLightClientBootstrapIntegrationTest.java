@@ -51,14 +51,7 @@ public class GetLightClientBootstrapIntegrationTest
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
             .orElseThrow()
             .getData();
-    BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
-    BeaconBlockHeader expectedHeader =
-        new BeaconBlockHeader(
-            latestBlockHeader.getSlot(),
-            latestBlockHeader.getProposerIndex(),
-            latestBlockHeader.getParentRoot(),
-            state.hashTreeRoot(),
-            latestBlockHeader.getBodyRoot());
+    BeaconBlockHeader expectedHeader = BeaconBlockHeader.fromState(state);
     SyncCommittee expectedSyncCommittee =
         BeaconStateAltair.required(state).getCurrentSyncCommittee();
 
