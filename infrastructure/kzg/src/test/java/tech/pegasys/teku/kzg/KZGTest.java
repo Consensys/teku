@@ -36,7 +36,6 @@ import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 public final class KZGTest {
 
   private static final String MAINNET_TRUSTED_SETUP_TEST = "trusted_setups/test_mainnet.txt";
-
   private static final int FIELD_ELEMENTS_PER_BLOB = 4096;
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
@@ -139,8 +138,8 @@ public final class KZGTest {
 
   private Bytes getSampleBlob() {
     return IntStream.range(0, FIELD_ELEMENTS_PER_BLOB)
-        .mapToObj(__ -> randomBigIntegerInModulus())
-        .map(bi -> (Bytes) UInt256.valueOf(bi).toBytes())
+        .mapToObj(__ -> randomBLSFieldElement())
+        .map(fieldElement -> (Bytes) fieldElement.toBytes())
         .reduce(Bytes::wrap)
         .orElse(Bytes.EMPTY);
   }
@@ -155,11 +154,11 @@ public final class KZGTest {
     return kzg.blobToKzgCommitment(getSampleBlob());
   }
 
-  private BigInteger randomBigIntegerInModulus() {
+  private UInt256 randomBLSFieldElement() {
     while (true) {
       final BigInteger attempt = new BigInteger(BLS_MODULUS.bitLength(), RND);
       if (attempt.compareTo(BLS_MODULUS) < 0) {
-        return attempt;
+        return UInt256.valueOf(attempt);
       }
     }
   }
