@@ -154,7 +154,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // blobs sidecars should be available in the [4904(9000 - 4096), 9000] range, but they are
-    // available from epoch 5000
+    // available from epoch 5001
     ArgumentCaptor<RpcException> argumentCaptor = ArgumentCaptor.forClass(RpcException.class);
     verify(listener).completeWithErrorResponse(argumentCaptor.capture());
 
