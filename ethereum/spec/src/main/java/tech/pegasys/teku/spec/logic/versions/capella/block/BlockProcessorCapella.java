@@ -201,27 +201,27 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
           state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
     }
 
+    final int validatorCount = genericState.getValidators().size();
+    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
+    final int maxValidatorsPerWithdrawalsSweep =
+        specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
     if (expectedWithdrawals.size() != 0) {
-      final int validatorCount = genericState.getValidators().size();
-      final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
-      final int maxValidatorsPerWithdrawalsSweep =
-          specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
-
       final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
       state.setNextWithdrawalIndex(latestWithdrawal.getIndex().increment());
-
-      final int nextWithdrawalValidatorIndex;
-      if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
-        // Update the next validator index to start the next withdrawal sweep
-        nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
-      } else {
-        // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
-        nextWithdrawalValidatorIndex =
-            state.getNextWithdrawalValidatorIndex().intValue() + maxValidatorsPerWithdrawalsSweep;
-      }
-      state.setNextWithdrawalValidatorIndex(
-          UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
     }
+
+    final int nextWithdrawalValidatorIndex;
+    if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
+      // Update the next validator index to start the next withdrawal sweep
+      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
+      nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
+    } else {
+      // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
+      nextWithdrawalValidatorIndex =
+          state.getNextWithdrawalValidatorIndex().intValue() + maxValidatorsPerWithdrawalsSweep;
+    }
+    state.setNextWithdrawalValidatorIndex(
+        UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
   }
 
   private static void assertWithdrawalsInExecutionPayloadMatchExpected(
