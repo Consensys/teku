@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.CHECKPOINT_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class GetForkChoice extends RestApiEndpoint {
 
@@ -120,9 +120,13 @@ public class GetForkChoice extends RestApiEndpoint {
   private static final SerializableTypeDefinition<ForkChoiceData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(ForkChoiceData.class)
           .withField(
-              "justified_checkpoint", CHECKPOINT_TYPE, ForkChoiceData::getJustifiedCheckpoint)
+              "justified_checkpoint",
+              Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
+              ForkChoiceData::getJustifiedCheckpoint)
           .withField(
-              "finalized_checkpoint", CHECKPOINT_TYPE, ForkChoiceData::getFinalizedCheckpoint)
+              "finalized_checkpoint",
+              Checkpoint.SSZ_SCHEMA.getJsonTypeDefinition(),
+              ForkChoiceData::getFinalizedCheckpoint)
           .withField("fork_choice_nodes", NODES_TYPE, ForkChoiceData::getNodes)
           .withField(
               "extra_data",

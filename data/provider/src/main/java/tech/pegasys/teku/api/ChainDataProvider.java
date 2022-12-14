@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -210,13 +209,6 @@ public class ChainDataProvider {
                                 new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
                                 state.hashTreeRoot().toUnprefixedHexString(),
                                 spec.atSlot(state.getSlot()).getMilestone())));
-  }
-
-  public List<Map<String, String>> getProtoArrayData() {
-    return recentChainData
-        .getForkChoiceStrategy()
-        .map(ReadOnlyForkChoiceStrategy::getNodeData)
-        .orElse(emptyList());
   }
 
   public ForkChoiceData getForkChoiceData() {

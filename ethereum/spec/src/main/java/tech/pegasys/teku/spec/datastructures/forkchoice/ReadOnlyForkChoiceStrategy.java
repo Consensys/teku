@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,8 +40,6 @@ public interface ReadOnlyForkChoiceStrategy {
   List<ProtoNodeData> getChainHeads(boolean includeNonViableHeads);
 
   Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(Bytes32 head);
-
-  List<Map<String, String>> getNodeData();
 
   List<ProtoNodeData> getBlockData();
 

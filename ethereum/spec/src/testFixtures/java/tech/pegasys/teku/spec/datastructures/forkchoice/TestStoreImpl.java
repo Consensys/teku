@@ -396,11 +396,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public List<Map<String, String>> getNodeData() {
-      throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
     public List<ProtoNodeData> getBlockData() {
       throw new UnsupportedOperationException("Not implemented");
     }

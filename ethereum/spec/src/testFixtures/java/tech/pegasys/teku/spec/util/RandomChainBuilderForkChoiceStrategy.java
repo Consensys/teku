@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -118,11 +117,6 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   @Override
   public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
     return Optional.empty();
-  }
-
-  @Override
-  public List<Map<String, String>> getNodeData() {
-    return Collections.emptyList();
   }
 
   @Override
