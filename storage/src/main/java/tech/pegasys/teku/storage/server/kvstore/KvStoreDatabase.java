@@ -574,22 +574,21 @@ public abstract class KvStoreDatabase<
   public boolean pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
     try (final Stream<BlobsSidecar> prunableBlobs = streamBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
-      final int[] counter = {0};
-      prunableBlobs
-          .limit(pruneLimit)
-          .forEach(
-              blobsSidecar -> {
-                final SlotAndBlockRoot slotAndBlockRoot =
-                    new SlotAndBlockRoot(
-                        blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
-                updater.removeBlobsSidecar(slotAndBlockRoot);
-                updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
-
-                counter[0]++;
-              });
+      final long pruned =
+          prunableBlobs
+              .limit(pruneLimit)
+              .peek(
+                  blobsSidecar -> {
+                    final SlotAndBlockRoot slotAndBlockRoot =
+                        new SlotAndBlockRoot(
+                            blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
+                    updater.removeBlobsSidecar(slotAndBlockRoot);
+                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                  })
+              .count();
       updater.commit();
 
-      return counter[0] == pruneLimit;
+      return pruned == pruneLimit;
     }
   }
 
@@ -598,19 +597,18 @@ public abstract class KvStoreDatabase<
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
             streamUnconfirmedBlobsSidecar(UInt64.ZERO, endSlot);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
-      final int[] counter = {0};
-      prunableUnconfirmed
-          .limit(pruneLimit)
-          .forEach(
-              slotAndBlockRoot -> {
-                updater.removeBlobsSidecar(slotAndBlockRoot);
-                updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
-
-                counter[0]++;
-              });
+      final long pruned =
+          prunableUnconfirmed
+              .limit(pruneLimit)
+              .peek(
+                  slotAndBlockRoot -> {
+                    updater.removeBlobsSidecar(slotAndBlockRoot);
+                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                  })
+              .count();
       updater.commit();
 
-      return counter[0] == pruneLimit;
+      return pruned == pruneLimit;
     }
   }
 
