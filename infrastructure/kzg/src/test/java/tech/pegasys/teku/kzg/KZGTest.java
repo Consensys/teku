@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.kzg;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,9 +35,6 @@ import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 public final class KZGTest {
 
   private static final String MAINNET_TRUSTED_SETUP_TEST = "trusted_setups/test_mainnet.txt";
-  private static final BigInteger BLS_MODULUS =
-      new BigInteger(
-          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
   private static final int FIELD_ELEMENTS_PER_BLOB = 4096;
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
@@ -86,75 +84,88 @@ public final class KZGTest {
 
   @Test
   public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() {
-    final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
-    final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
-    final KZGProof kzgProof = new KZGProof(emptyCommitment);
-    assertThrows(
-        KZGException.class,
-        () ->
-            kzg.verifyAggregateKzgProof(
-                Collections.emptyList(), Collections.emptyList(), kzgProof));
-    assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY));
-    assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList()));
-    assertThrows(
-        KZGException.class,
-        () -> kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof));
+    final List<KZGException> exceptions =
+        List.of(
+            assertThrows(
+                KZGException.class,
+                () ->
+                    kzg.verifyAggregateKzgProof(
+                        Collections.emptyList(), Collections.emptyList(), KZGProof.infinity())),
+            assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
+            assertThrows(
+                KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList())));
+
+    assertThat(exceptions)
+        .allSatisfy(
+            exception -> assertThat(exception).cause().hasMessage("Trusted Setup is not loaded."));
   }
 
   @Test
-  public void testVerifyKzgProof() {
+  public void testComputingAndVerifyingProof() {
     loadTrustedSetup();
-    final int blobsNumber = 4;
-    final List<Bytes> blobs =
-        IntStream.range(0, blobsNumber)
-            .mapToObj(__ -> getSampleBlob())
-            .collect(Collectors.toList());
+    final int numberOfBlobs = 4;
+    final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
         blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
     final KZGProof kzgProof = kzg.computeAggregateKzgProof(blobs);
     assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
-    assertThat(
-            kzg.verifyAggregateKzgProof(
-                blobs.subList(0, 2), kzgCommitments.subList(0, 2), kzgProof))
+    assertThat(kzg.verifyAggregateKzgProof(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProof))
         .isFalse();
-    final KZGProof invalidProof = kzg.computeAggregateKzgProof(blobs.subList(0, 2));
+    assertThat(kzg.verifyAggregateKzgProof(blobs, getSampleCommitments(numberOfBlobs), kzgProof))
+        .isFalse();
+    final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
     assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
   }
 
   @Test
-  public void testVerifyPointEvaluationPrecompile() {
+  public void testComputingProofWithZeroLengthBlobs() {
     loadTrustedSetup();
-    final Bytes48 emptyCommitment = Bytes48.rightPad(Bytes.fromHexString("c0"));
-    final KZGCommitment kzgCommitment = new KZGCommitment(emptyCommitment);
-    final KZGProof kzgProof = new KZGProof(emptyCommitment);
-    assertThat(kzg.verifyKzgProof(kzgCommitment, Bytes32.ZERO, Bytes32.ZERO, kzgProof)).isTrue();
-    assertThat(kzg.computeAggregateKzgProof(Collections.emptyList())).isEqualTo(kzgProof);
-    final Bytes blob = Bytes.wrap(new byte[FIELD_ELEMENTS_PER_BLOB * Bytes32.SIZE]);
-    assertThat(kzg.blobToKzgCommitment(blob)).isEqualTo(kzgCommitment);
-    assertThat(kzg.verifyAggregateKzgProof(List.of(blob), List.of(kzgCommitment), kzgProof))
-        .isTrue();
+    final List<Bytes> blobs =
+        Stream.of(
+                "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
+                "0x",
+                "0x925668a49d06f4")
+            .map(Bytes::fromHexString)
+            .collect(Collectors.toList());
+    assertThat(kzg.computeAggregateKzgProof(blobs).getBytesCompressed())
+        .satisfies(proofBytes -> assertThat(proofBytes.isZero()).isFalse());
   }
 
   private void loadTrustedSetup() {
     final String trustedSetup =
-        KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST).toExternalForm();
+        Objects.requireNonNull(KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST))
+            .toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 
-  private BigInteger randomBigIntegerInModulus(final BigInteger modulus, final Random rnd) {
-    while (true) {
-      final BigInteger attempt = new BigInteger(modulus.bitLength(), rnd);
-      if (attempt.compareTo(modulus) < 0) {
-        return attempt;
-      }
-    }
+  private List<Bytes> getSampleBlobs(final int count) {
+    return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
   }
 
   private Bytes getSampleBlob() {
     return IntStream.range(0, FIELD_ELEMENTS_PER_BLOB)
-        .mapToObj(__ -> randomBigIntegerInModulus(BLS_MODULUS, RND))
-        .map(bi -> (Bytes) UInt256.valueOf(bi).toBytes())
+        .mapToObj(__ -> randomBLSFieldElement())
+        .map(fieldElement -> (Bytes) fieldElement.toBytes())
         .reduce(Bytes::wrap)
         .orElse(Bytes.EMPTY);
+  }
+
+  private List<KZGCommitment> getSampleCommitments(final int count) {
+    return IntStream.range(0, count)
+        .mapToObj(__ -> getSampleCommitment())
+        .collect(Collectors.toList());
+  }
+
+  private KZGCommitment getSampleCommitment() {
+    return kzg.blobToKzgCommitment(getSampleBlob());
+  }
+
+  private UInt256 randomBLSFieldElement() {
+    while (true) {
+      final BigInteger attempt = new BigInteger(BLS_MODULUS.bitLength(), RND);
+      if (attempt.compareTo(BLS_MODULUS) < 0) {
+        return UInt256.valueOf(attempt);
+      }
+    }
   }
 }
