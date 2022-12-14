@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
+import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,17 +28,20 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.kzg.KZGCommitment;
 
 public class CKZG4844Utils {
 
   private static final String FILE_SCHEME = "file";
 
-  public static byte[] flattenBytesList(final List<Bytes> bytes) {
-    return flattenBytesStream(bytes.stream());
+  public static byte[] flattenBlobs(final List<Bytes> blobs) {
+    return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
 
-  public static byte[] flattenBytesStream(final Stream<Bytes> bytes) {
-    return bytes.reduce(Bytes::wrap).orElse(Bytes.EMPTY).toArray();
+  public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
+    final Stream<Bytes> commitmentsBytes =
+        commitments.stream().map(KZGCommitment::getBytesCompressed);
+    return flattenBytes(commitmentsBytes, KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
   }
 
   public static String copyTrustedSetupToTempFileIfNeeded(final String trustedSetup)
@@ -79,5 +84,11 @@ public class CKZG4844Utils {
     } catch (final Exception __) {
       return Optional.empty();
     }
+  }
+
+  private static byte[] flattenBytes(final Stream<Bytes> bytes, final int capacity) {
+    final ByteBuffer buffer = ByteBuffer.allocate(capacity);
+    bytes.map(Bytes::toArray).forEach(buffer::put);
+    return buffer.array();
   }
 }
