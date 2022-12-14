@@ -571,8 +571,9 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public boolean pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
-    try (final Stream<BlobsSidecar> prunableBlobs = streamBlobsSidecar(UInt64.ZERO, endSlot);
+  public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    try (final Stream<BlobsSidecar> prunableBlobs =
+            streamBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
       final long pruned =
           prunableBlobs
@@ -593,9 +594,10 @@ public abstract class KvStoreDatabase<
   }
 
   @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+  public boolean pruneOldestUnconfirmedBlobsSidecar(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
-            streamUnconfirmedBlobsSidecar(UInt64.ZERO, endSlot);
+            streamUnconfirmedBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdaterT updater = finalizedUpdater()) {
       final long pruned =
           prunableUnconfirmed

@@ -292,7 +292,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+  public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
 
@@ -303,7 +303,8 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecar(final UInt64 endSlot, final int pruneLimit) {
+  public boolean pruneOldestUnconfirmedBlobsSidecar(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
 

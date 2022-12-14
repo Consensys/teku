@@ -65,25 +65,25 @@ public interface Database extends AutoCloseable {
 
   /**
    * this prune method will delete BlobsSidecars (including the unconfirmed ones) starting from the
-   * oldest BlobsSidecars (by slot) up to BlobsSidecars at {@code endSlot} (inclusive). The pruning
-   * process will be limited to maximum {@code pruneLimit} BlobsSidecars
+   * oldest BlobsSidecars (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The
+   * pruning process will be limited to maximum {@code pruneLimit} BlobsSidecars
    *
-   * @param endSlot
+   * @param lastSlotToPrune
    * @param pruneLimit
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
-  boolean pruneOldestBlobsSidecar(UInt64 endSlot, int pruneLimit);
+  boolean pruneOldestBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
 
   /**
    * this prune method will delete unconfirmed BlobsSidecars starting from the oldest BlobsSidecars
-   * (by slot) up to BlobsSidecars at {@code endSlot} (inclusive). The pruning process will be
-   * limited to maximum {@code pruneLimit} BlobsSidecars
+   * (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The pruning process will
+   * be limited to maximum {@code pruneLimit} BlobsSidecars
    *
-   * @param endSlot
+   * @param lastSlotToPrune
    * @param pruneLimit
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
-  boolean pruneOldestUnconfirmedBlobsSidecar(UInt64 endSlot, int pruneLimit);
+  boolean pruneOldestUnconfirmedBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
 
   @MustBeClosed
   Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
