@@ -24,6 +24,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
@@ -299,13 +300,8 @@ public class BeaconChainMethods {
       return Optional.empty();
     }
 
-    final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
-        new BlobsSidecarsByRangeMessageHandler(
-            metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOBS_SIDECARS);
-
     final BlobsSidecarsByRangeRequestMessageSchema requestType =
         BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA;
-    final boolean expectResponseToRequest = true;
 
     final BlobsSidecarSchema blobsSidecarSchema =
         spec.forMilestone(SpecMilestone.EIP4844)
@@ -317,6 +313,17 @@ public class BeaconChainMethods {
     final RpcContextCodec<Bytes, BlobsSidecar> noContextCodec =
         RpcContextCodec.noop(blobsSidecarSchema);
 
+    final UInt64 eip4844ForkEpoch =
+        spec.forMilestone(SpecMilestone.EIP4844)
+            .getConfig()
+            .toVersionEip4844()
+            .orElseThrow()
+            .getEip4844ForkEpoch();
+
+    final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
+        new BlobsSidecarsByRangeMessageHandler(
+            eip4844ForkEpoch, metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOBS_SIDECARS);
+
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
             asyncRunner,
@@ -324,7 +331,7 @@ public class BeaconChainMethods {
             1,
             rpcEncoding,
             requestType,
-            expectResponseToRequest,
+            true,
             noContextCodec,
             blobsSidecarsByRangeHandler,
             peerLookup));
