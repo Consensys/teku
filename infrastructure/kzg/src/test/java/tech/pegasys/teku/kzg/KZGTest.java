@@ -14,7 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -85,13 +84,20 @@ public final class KZGTest {
 
   @Test
   public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() {
-    assertThrows(
-        KZGException.class,
-        () ->
-            kzg.verifyAggregateKzgProof(
-                Collections.emptyList(), Collections.emptyList(), new KZGProof(Bytes48.ZERO)));
-    assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY));
-    assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList()));
+    final List<KZGException> exceptions =
+        List.of(
+            assertThrows(
+                KZGException.class,
+                () ->
+                    kzg.verifyAggregateKzgProof(
+                        Collections.emptyList(), Collections.emptyList(), KZGProof.infinity())),
+            assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
+            assertThrows(
+                KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList())));
+
+    assertThat(exceptions)
+        .allSatisfy(
+            exception -> assertThat(exception).cause().hasMessage("Trusted Setup is not loaded."));
   }
 
   @Test
