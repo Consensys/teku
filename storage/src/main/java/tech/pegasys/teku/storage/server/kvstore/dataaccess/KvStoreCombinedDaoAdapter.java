@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -307,6 +308,30 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
+  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    return finalizedDao.getBlobsSidecar(slotAndBlockRoot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamBlobsSidecar(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
+    return finalizedDao.getEarliestBlobsSidecarSlot();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlockRoots(startSlot, endSlot);
@@ -490,6 +515,26 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void addHotBlock(final BlockAndCheckpoints blockAndCheckpoints) {
       hotUpdater.addHotBlock(blockAndCheckpoints);
+    }
+
+    @Override
+    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      finalizedUpdater.addBlobsSidecar(blobsSidecar);
+    }
+
+    @Override
+    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      finalizedUpdater.addUnconfirmedBlobsSidecar(blobsSidecar);
+    }
+
+    @Override
+    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+      finalizedUpdater.removeBlobsSidecar(slotAndBlockRoot);
+    }
+
+    @Override
+    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+      finalizedUpdater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
     }
 
     @Override

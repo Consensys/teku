@@ -158,6 +158,7 @@ public class TekuNode extends Node {
   public void startEventListener(final EventType... eventTypes) {
     maybeEventStreamListener =
         Optional.of(new EventStreamListener(getEventUrl(List.of(eventTypes))));
+    waitFor(() -> assertThat(maybeEventStreamListener.get().isReady()).isTrue());
   }
 
   public void waitForContributionAndProofEvent() {

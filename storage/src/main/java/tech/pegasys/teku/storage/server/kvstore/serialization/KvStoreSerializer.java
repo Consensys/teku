@@ -49,6 +49,10 @@ public interface KvStoreSerializer<T> {
       new CompressedBranchInfoSerializer();
   KvStoreSerializer<VoteTracker> VOTE_TRACKER_SERIALIZER = new VoteTrackerSerializer();
 
+  KvStoreSerializer<Void> VOID_SERIALIZER = new VoidSerializer();
+  KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER =
+      new SlotAndBlockRootKeySerializer();
+
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);
   }

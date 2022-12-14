@@ -15,9 +15,9 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestServletOutputStream extends ServletOutputStream {
@@ -55,11 +55,9 @@ public class TestServletOutputStream extends ServletOutputStream {
   }
 
   public List<String> getEvents() {
-    final List<String> result = new ArrayList<>();
-    String[] splits = StringUtils.splitByWholeSeparator(getString(), "event: ");
-    for (String s : splits) {
-      result.add(String.format("event: %s", s));
-    }
-    return result;
+    return Arrays.stream(StringUtils.splitByWholeSeparator(getString(), "event: "))
+        .filter(s -> !s.startsWith(": ")) // remove SSE comments
+        .map(s -> String.format("event: %s", s))
+        .collect(Collectors.toList());
   }
 }
