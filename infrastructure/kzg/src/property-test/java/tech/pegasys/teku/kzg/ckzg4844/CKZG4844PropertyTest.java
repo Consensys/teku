@@ -38,7 +38,7 @@ public class CKZG4844PropertyTest {
 
   static {
     final String trustedSetup =
-        Resources.getResource(TrustedSetups.class, "test_mainnet.txt").toExternalForm();
+        Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 
