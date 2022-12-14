@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -123,6 +124,12 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
+      final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 }

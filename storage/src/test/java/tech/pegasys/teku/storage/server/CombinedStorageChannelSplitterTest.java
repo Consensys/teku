@@ -18,6 +18,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,7 +39,7 @@ class CombinedStorageChannelSplitterTest {
   @ParameterizedTest
   @MethodSource("updateChannelMethods")
   void shouldApplyUpdateMethodsSynchronously(final Method method) throws Exception {
-    final Object[] args = new Object[method.getParameterCount()];
+    final Object[] args = prepareArgs(method);
 
     method.invoke(splitter, args);
 
@@ -49,7 +50,7 @@ class CombinedStorageChannelSplitterTest {
   @ParameterizedTest
   @MethodSource("queryChannelMethods")
   void shouldApplyQueryMethodsAsynchronously(final Method method) throws Exception {
-    final Object[] args = new Object[method.getParameterCount()];
+    final Object[] args = prepareArgs(method);
 
     method.invoke(splitter, args);
 
@@ -58,6 +59,24 @@ class CombinedStorageChannelSplitterTest {
     asyncRunner.executeQueuedActions();
 
     method.invoke(verify(storageQueryChannel), args);
+  }
+
+  private Object[] prepareArgs(final Method method) {
+    return Arrays.stream(method.getParameters())
+        .map(
+            parameter -> {
+              if (parameter.getType().isPrimitive()) {
+                switch (parameter.getType().getName()) {
+                  case "int":
+                    return 0;
+                  default:
+                    throw new RuntimeException("unsupported primitive type");
+                }
+              } else {
+                return null;
+              }
+            })
+        .toArray();
   }
 
   static Stream<Arguments> updateChannelMethods() {
