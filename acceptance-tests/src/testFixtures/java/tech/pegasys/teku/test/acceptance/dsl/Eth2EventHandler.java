@@ -21,6 +21,9 @@ import java.util.List;
 public class Eth2EventHandler implements EventHandler {
   private final List<PackedMessage> eventList = new ArrayList<>();
 
+  // Using this as a way to assert that our EventSubscriber is ready
+  private boolean hasReceivedReadyComment = false;
+
   @Override
   public void onOpen() {}
 
@@ -37,7 +40,15 @@ public class Eth2EventHandler implements EventHandler {
   }
 
   @Override
-  public void onComment(final String comment) {}
+  public void onComment(final String comment) {
+    if (!hasReceivedReadyComment) {
+      hasReceivedReadyComment = comment.equals("ready");
+    }
+  }
+
+  public boolean hasReceivedComment() {
+    return hasReceivedReadyComment;
+  }
 
   @Override
   public void onError(final Throwable t) {}
