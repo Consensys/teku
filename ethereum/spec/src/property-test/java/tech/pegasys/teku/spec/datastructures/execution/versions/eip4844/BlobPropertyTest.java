@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip4844;
 
-import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
-import static tech.pegasys.teku.spec.datastructures.util.PropertyTestHelper.assertRoundTrip;
+import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
+import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.eip4844.BlobSupplier;
 
 public class BlobPropertyTest {
   @Property
