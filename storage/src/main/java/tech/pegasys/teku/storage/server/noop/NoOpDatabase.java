@@ -226,7 +226,7 @@ public class NoOpDatabase implements Database {
   public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {}
+  public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {}
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}

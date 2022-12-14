@@ -1840,11 +1840,16 @@ public class DatabaseTest {
     justifyAndFinalizeEpoch(
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
-    database.pruneFinalizedBlocks(UInt64.valueOf(2), UInt64.valueOf(5));
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isPresent();
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isPresent();
+    database.pruneFinalizedBlocks(UInt64.valueOf(3));
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(2))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(3))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+
+    database.pruneFinalizedBlocks(UInt64.valueOf(5));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();

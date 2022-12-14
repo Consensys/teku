@@ -249,10 +249,16 @@ public class BlindedBlockKvStoreDatabase
   }
 
   @Override
-  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-    try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
-      updater.pruneFinalizedBlindedBlocks(firstSlotToPrune, lastSlotToPrune);
-      updater.commit();
+  public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
+    final Optional<UInt64> earliestBlockSlot = dao.getEarliestBlindedBlockSlot();
+    for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
+        batchStart.isLessThanOrEqualTo(lastSlotToPrune);
+        batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
+      try (final FinalizedUpdaterBlinded updater = finalizedUpdater()) {
+        updater.pruneFinalizedBlindedBlocks(
+            batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
+        updater.commit();
+      }
     }
   }
 
