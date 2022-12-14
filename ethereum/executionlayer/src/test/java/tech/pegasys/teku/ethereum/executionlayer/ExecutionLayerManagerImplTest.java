@@ -30,10 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.FallbackReason;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -45,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -500,16 +499,23 @@ class ExecutionLayerManagerImplTest {
   public void engineGetBlobsBundle_shouldReturnBlobsBundleViaEngine() {
     spec = TestSpecFactory.createMinimalEip4844();
     dataStructureUtil = new DataStructureUtil(spec);
-    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
     executionLayerManager = createExecutionLayerChannelImpl(false, false);
 
-    when(executionClientHandler.engineGetBlobsBundle(payloadId, slot))
+    // BlobsBundle is requested after ExecutionPayload, so should warm-up
+    when(executionClientHandler.engineGetPayload(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(executionPayload));
+    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
+        .isCompletedWithValue(executionPayload);
+
+    when(executionClientHandler.engineGetBlobsBundle(executionPayloadContext.getPayloadId(), slot))
         .thenReturn(SafeFuture.completedFuture(blobsBundle));
 
-    assertThat(executionLayerManager.engineGetBlobsBundle(payloadId, slot))
-        .isCompletedWithValue(blobsBundle);
+    assertThat(executionLayerManager.engineGetBlobsBundle(slot)).isCompletedWithValue(blobsBundle);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -616,7 +622,8 @@ class ExecutionLayerManagerImplTest {
         builderValidatorEnabled
             ? new BuilderBidValidatorImpl(eventLogger)
             : BuilderBidValidator.NOOP,
-        builderCircuitBreaker);
+        builderCircuitBreaker,
+        BlobsBundleValidator.NOOP);
   }
 
   private void updateBuilderStatus(final SafeFuture<Response<Void>> builderClientResponse) {

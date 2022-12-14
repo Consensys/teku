@@ -291,7 +291,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final Bytes8 payloadId, final UInt64 slot) {
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final UInt64 slot) {
     final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
         spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
 
@@ -307,8 +307,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             Collections.emptyList(),
             Collections.emptyList());
 
-    LOG.info(
-        "getBlobsBundle: payloadId: {} slot: {} -> blobsBundle: {}", payloadId, slot, blobsBundle);
+    LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle);
 
     return SafeFuture.completedFuture(blobsBundle);
   }

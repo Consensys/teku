@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -70,7 +69,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {
+        public SafeFuture<BlobsBundle> engineGetBlobsBundle(UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -112,7 +111,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);
 
-  SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot);
+  SafeFuture<BlobsBundle> engineGetBlobsBundle(UInt64 slot);
 
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(

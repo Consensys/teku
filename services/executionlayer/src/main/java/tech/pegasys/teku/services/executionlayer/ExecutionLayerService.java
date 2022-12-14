@@ -31,6 +31,8 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidator;
+import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -42,7 +44,9 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
 public class ExecutionLayerService extends Service {
 
@@ -148,6 +152,12 @@ public class ExecutionLayerService extends Service {
                       timeProvider,
                       metricsSystem));
 
+      final BlobsBundleValidator blobsBundleValidator =
+          config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)
+              ? new BlobsBundleValidatorImpl(
+                  (MiscHelpersEip4844)
+                      config.getSpec().forMilestone(SpecMilestone.EIP4844).miscHelpers())
+              : BlobsBundleValidator.NOOP;
       executionLayerManager =
           ExecutionLayerManagerImpl.create(
               EVENT_LOG,
@@ -156,7 +166,8 @@ public class ExecutionLayerService extends Service {
               config.getSpec(),
               metricsSystem,
               new BuilderBidValidatorImpl(EVENT_LOG),
-              builderCircuitBreaker);
+              builderCircuitBreaker,
+              blobsBundleValidator);
     }
 
     return new ExecutionLayerService(

@@ -823,7 +823,8 @@ class ValidatorApiHandlerTest {
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
             dataStructureUtil.randomBlobsSidecar());
-    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockFactory.supplementBlockWithSidecar(block))
+        .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
     when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
@@ -847,7 +848,8 @@ class ValidatorApiHandlerTest {
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
             dataStructureUtil.randomBlobsSidecar());
-    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockFactory.supplementBlockWithSidecar(block))
+        .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
     when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
@@ -873,7 +875,8 @@ class ValidatorApiHandlerTest {
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
             dataStructureUtil.randomBlobsSidecar());
-    when(blockFactory.supplementBlockWithSidecar(block)).thenReturn(blockAndBlobsSidecar);
+    when(blockFactory.supplementBlockWithSidecar(block))
+        .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
     when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);

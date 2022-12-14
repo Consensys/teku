@@ -167,7 +167,6 @@ class BlockOperationSelectorFactoryTest {
           depositProvider,
           eth1DataCache,
           defaultGraffiti,
-          Optional.empty(),
           forkChoiceNotifier,
           executionLayer);
 

@@ -21,11 +21,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -37,12 +35,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -60,8 +54,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.validation.BlobsBundleValidator;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class BlockOperationSelectorFactory {
   private final Spec spec;
@@ -74,10 +66,8 @@ public class BlockOperationSelectorFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
-  private final Optional<BlobsBundleValidator> blobsBundleValidator;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerChannel executionLayerChannel;
-  private volatile Optional<Pair<BlobsSidecar, ExecutionPayloadSummary>> blobsSidecarCache;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -90,7 +80,6 @@ public class BlockOperationSelectorFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      final Optional<BlobsBundleValidator> blobsBundleValidator,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerChannel executionLayerChannel) {
     this.spec = spec;
@@ -103,7 +92,6 @@ public class BlockOperationSelectorFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
-    this.blobsBundleValidator = blobsBundleValidator;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerChannel = executionLayerChannel;
   }
@@ -161,10 +149,10 @@ public class BlockOperationSelectorFactory {
                       blockSlotState.getSlot(), parentRoot))
           .blsToExecutionChanges(() -> blsToExecutionChangePool.getItemsForBlock(blockSlotState));
 
-      final PayloadCache payloadCache = new PayloadCache();
       // execution payload handling
       if (bodyBuilder.isBlinded()) {
         // an execution payload header is required
+
         bodyBuilder.executionPayloadHeader(
             payloadProvider(
                 parentRoot,
@@ -174,19 +162,12 @@ public class BlockOperationSelectorFactory {
                             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                         .getExecutionPayloadHeaderSchema()
                         .getHeaderOfDefaultPayload(),
-                (executionPayloadContext) -> {
-                  final SafeFuture<ExecutionPayloadHeader> executionPayloadHeaderSafeFuture =
-                      executionLayerChannel
-                          .builderGetHeader(executionPayloadContext, blockSlotState)
-                          .thenApply(
-                              executionPayloadHeader -> {
-                                payloadCache.payloadId = executionPayloadContext.getPayloadId();
-                                return executionPayloadHeader;
-                              });
-                  payloadCache.initializer = Optional.of(executionPayloadHeaderSafeFuture);
-                  return executionPayloadHeaderSafeFuture;
-                }));
+                (executionPayloadContext) ->
+                    executionLayerChannel.builderGetHeader(
+                        executionPayloadContext, blockSlotState)));
+        return;
       } else {
+
         // non-blinded body requested: a full execution payload is required
         bodyBuilder.executionPayload(
             payloadProvider(
@@ -196,58 +177,28 @@ public class BlockOperationSelectorFactory {
                     SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
                         .getExecutionPayloadSchema()
                         .getDefault(),
-                (executionPayloadContext) -> {
-                  final SafeFuture<ExecutionPayload> executionPayloadSafeFuture =
-                      executionLayerChannel
-                          .engineGetPayload(executionPayloadContext, blockSlotState.getSlot())
-                          .thenApply(
-                              executionPayload -> {
-                                payloadCache.payloadId = executionPayloadContext.getPayloadId();
-                                payloadCache.executionPayload = Optional.of(executionPayload);
-                                return executionPayload;
-                              });
-                  payloadCache.initializer = Optional.of(executionPayloadSafeFuture);
-                  return executionPayloadSafeFuture;
-                }));
+                (executionPayloadContext) ->
+                    executionLayerChannel.engineGetPayload(
+                        executionPayloadContext, blockSlotState.getSlot())));
       }
 
       bodyBuilder.blobKzgCommitments(
           () -> {
             final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
                 spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
-            return payloadCache
-                .initializer
-                .orElseThrow()
-                .thenCompose(
-                    __ ->
-                        retrieveBlobsBundle(
-                            blockSlotState.getSlot(),
-                            payloadCache.payloadId,
-                            payloadCache.executionPayload))
+            return executionLayerChannel
+                .engineGetBlobsBundle(blockSlotState.getSlot())
                 .thenApply(
-                    blobsBundle -> {
-                      final ExecutionPayloadSummary executionPayloadSummary =
-                          payloadCache.executionPayload.isPresent()
-                              ? payloadCache.executionPayload.get()
-                              : payloadCache.executionPayloadHeader.orElseThrow();
-                      this.blobsSidecarCache =
-                          Optional.of(
-                              Pair.of(
-                                  createBlobsSidecar(
-                                      blockSlotState.getSlot(),
-                                      Bytes32.ZERO,
-                                      blobsBundle.getBlobs()),
-                                  executionPayloadSummary));
-                      return schemaDefinitionsEip4844
-                          .getBeaconBlockBodySchema()
-                          .toVersionEip4844()
-                          .orElseThrow()
-                          .getBlobKzgCommitmentsSchema()
-                          .createFromElements(
-                              blobsBundle.getKzgs().stream()
-                                  .map(SszKZGCommitment::new)
-                                  .collect(Collectors.toList()));
-                    });
+                    blobsBundle ->
+                        schemaDefinitionsEip4844
+                            .getBeaconBlockBodySchema()
+                            .toVersionEip4844()
+                            .orElseThrow()
+                            .getBlobKzgCommitmentsSchema()
+                            .createFromElements(
+                                blobsBundle.getKzgs().stream()
+                                    .map(SszKZGCommitment::new)
+                                    .collect(Collectors.toList())));
           });
     };
   }
@@ -297,80 +248,23 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  // FIXME: I don't like cache being there in Factory class
   public Function<SignedBeaconBlock, SafeFuture<SignedBeaconBlockAndBlobsSidecar>>
       createSidecarSupplementSelector() {
     return signedBeaconBlock -> {
       final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
           spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
-      if (!blobsSidecarCache
-              .orElseThrow()
-              .getLeft()
-              .getBeaconBlockSlot()
-              .equals(signedBeaconBlock.getSlot())
-          || !blobsSidecarCache
-              .orElseThrow()
-              .getRight()
-              .getBlockHash()
-              .equals(
-                  signedBeaconBlock
-                      .getMessage()
-                      .getBody()
-                      .getOptionalExecutionPayloadSummary()
-                      .orElseThrow()
-                      .getBlockHash())) {
-        return forkChoiceNotifier
-            .getPayloadId(signedBeaconBlock.getParentRoot(), signedBeaconBlock.getSlot())
-            .thenApply(Optional::orElseThrow)
-            .thenCompose(
-                payloadContext ->
-                    retrieveBlobsBundle(
-                        signedBeaconBlock.getSlot(),
-                        payloadContext.getPayloadId(),
-                        signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload()))
-            .thenApply(
-                blobsBundle ->
-                    new SignedBeaconBlockAndBlobsSidecar(
-                        schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema(),
-                        signedBeaconBlock,
-                        createBlobsSidecar(
-                            signedBeaconBlock.getSlot(),
-                            signedBeaconBlock.getRoot(),
-                            blobsBundle.getBlobs())));
-      }
-      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
-          new SignedBeaconBlockAndBlobsSidecar(
-              schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema(),
-              signedBeaconBlock,
-              new BlobsSidecar(
-                  schemaDefinitionsEip4844.getBlobsSidecarSchema(),
-                  signedBeaconBlock.getRoot(),
-                  signedBeaconBlock.getSlot(),
-                  blobsSidecarCache.orElseThrow().getLeft().getBlobs(),
-                  blobsSidecarCache.orElseThrow().getLeft().getKZGAggregatedProof()));
-      this.blobsSidecarCache = Optional.empty();
-      return SafeFuture.completedFuture(blockAndBlobsSidecar);
+      return executionLayerChannel
+          .engineGetBlobsBundle(signedBeaconBlock.getSlot())
+          .thenApply(
+              blobsBundle ->
+                  new SignedBeaconBlockAndBlobsSidecar(
+                      schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema(),
+                      signedBeaconBlock,
+                      createBlobsSidecar(
+                          signedBeaconBlock.getSlot(),
+                          signedBeaconBlock.getRoot(),
+                          blobsBundle.getBlobs())));
     };
-  }
-
-  private SafeFuture<BlobsBundle> retrieveBlobsBundle(
-      final UInt64 slot,
-      final Bytes8 payloadId,
-      final Optional<ExecutionPayload> executionPayloadOptional) {
-    return executionLayerChannel
-        .engineGetBlobsBundle(payloadId, slot)
-        .thenApply(
-            blobsBundle -> {
-              final InternalValidationResult validationResult =
-                  blobsBundleValidator
-                      .orElseThrow()
-                      .validate(blobsBundle, executionPayloadOptional);
-              if (validationResult.isAccept()) {
-                return blobsBundle;
-              } else {
-                throw new IllegalArgumentException("Blobs bundle validation failed");
-              }
-            });
   }
 
   private BlobsSidecar createBlobsSidecar(
@@ -386,12 +280,5 @@ public class BlockOperationSelectorFactory {
         blobs,
         miscHelpers.computeAggregatedKzgProof(
             blobs.stream().map(Blob::getBytes).collect(Collectors.toList())));
-  }
-
-  private static class PayloadCache {
-    private Optional<SafeFuture<?>> initializer;
-    private Bytes8 payloadId;
-    private Optional<ExecutionPayload> executionPayload;
-    private Optional<ExecutionPayloadHeader> executionPayloadHeader;
   }
 }

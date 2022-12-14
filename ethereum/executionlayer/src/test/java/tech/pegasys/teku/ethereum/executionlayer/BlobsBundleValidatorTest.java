@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,20 +38,22 @@ public class BlobsBundleValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final MiscHelpersEip4844 miscHelpers = mock(MiscHelpersEip4844.class);
-  private final BlobsBundleValidator blobsBundleValidator = new BlobsBundleValidator(miscHelpers);
+  private final BlobsBundleValidator blobsBundleValidator =
+      new BlobsBundleValidatorImpl(miscHelpers);
 
   @Test
-  public void shouldVerifyAgainstPayloadTransactions() {
+  public void shouldVerifyAgainstPayloadTransactions() throws Exception {
     final BlobsBundle blobsBundle =
         new BlobsBundle(
             dataStructureUtil.randomBytes32(), Collections.emptyList(), Collections.emptyList());
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(false);
-    assertThat(blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload)))
-        .matches(InternalValidationResult::isReject);
+    assertThatThrownBy(
+            () -> blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload)))
+        .isInstanceOf(BlobsBundleValidationException.class)
+        .hasMessage("KZG commitments doesn't match the versioned hashes in the transactions");
     when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
-    assertThat(blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload)))
-        .matches(InternalValidationResult::isAccept);
+    blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload));
   }
 
   @Test
@@ -62,31 +64,21 @@ public class BlobsBundleValidatorTest {
             dataStructureUtil.randomBytes32(),
             List.of(dataStructureUtil.randomKZGCommitment()),
             Collections.emptyList());
-    assertThat(blobsBundleValidator.validate(blobsBundle, Optional.empty()))
-        .matches(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .equals("KZG commitments size doesn't match blobs size"));
+    assertThatThrownBy(() -> blobsBundleValidator.validate(blobsBundle, Optional.empty()))
+        .isInstanceOf(BlobsBundleValidationException.class)
+        .hasMessage("KZG commitments size doesn't match blobs size");
   }
 
   @Test
-  public void shouldVerifyAllBlobsAgainstKzgCommitments() {
+  public void shouldVerifyAllBlobsAgainstKzgCommitments() throws Exception {
     final KZGCommitment commitment = new KZGCommitment(Bytes48.leftPad(Bytes.fromHexString("a0")));
     when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
     when(miscHelpers.blobToKzgCommitment(any())).thenReturn(commitment);
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-    assertThat(blobsBundleValidator.validate(blobsBundle, Optional.empty()))
-        .matches(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .equals("Blobs not matching KZG commitments"));
+    assertThatThrownBy(() -> blobsBundleValidator.validate(blobsBundle, Optional.empty()))
+        .isInstanceOf(BlobsBundleValidationException.class)
+        .hasMessage("Blobs not matching KZG commitments");
 
     final BlobsBundle blobsBundle2 =
         new BlobsBundle(
@@ -95,7 +87,6 @@ public class BlobsBundleValidatorTest {
                 .mapToObj(__ -> commitment)
                 .collect(Collectors.toList()),
             blobsBundle.getBlobs());
-    assertThat(blobsBundleValidator.validate(blobsBundle2, Optional.empty()))
-        .matches(InternalValidationResult::isAccept);
+    blobsBundleValidator.validate(blobsBundle2, Optional.empty());
   }
 }

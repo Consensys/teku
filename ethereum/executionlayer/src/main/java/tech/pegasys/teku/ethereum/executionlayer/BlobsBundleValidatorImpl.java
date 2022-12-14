@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -19,15 +19,17 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
-public class BlobsBundleValidator {
+public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
   private final MiscHelpersEip4844 miscHelpers;
 
-  public BlobsBundleValidator(final MiscHelpersEip4844 miscHelpers) {
+  public BlobsBundleValidatorImpl(final MiscHelpersEip4844 miscHelpers) {
     this.miscHelpers = miscHelpers;
   }
 
-  public InternalValidationResult validate(
-      final BlobsBundle blobsBundle, final Optional<ExecutionPayload> executionPayloadOptional) {
+  @Override
+  public void validate(
+      final BlobsBundle blobsBundle, final Optional<ExecutionPayload> executionPayloadOptional)
+      throws BlobsBundleValidationException {
 
     // Optionally sanity-check that the KZG commitments match the versioned hashes in the
     // transactions
@@ -37,14 +39,14 @@ public class BlobsBundleValidator {
                 miscHelpers.verifyKZGCommitmentsAgainstTransactions(
                     executionPayload.getTransactions().asList(), blobsBundle.getKzgs()))
         .orElse(true)) {
-      return InternalValidationResult.reject(
+      throw new BlobsBundleValidationException(
           "KZG commitments doesn't match the versioned hashes in the transactions");
     }
 
     // Optionally sanity-check that the KZG commitments match the blobs (as produced by the
     // execution engine
     if (blobsBundle.getKzgs().size() != blobsBundle.getBlobs().size()) {
-      return InternalValidationResult.reject("KZG commitments size doesn't match blobs size");
+      throw new BlobsBundleValidationException("KZG commitments size doesn't match blobs size");
     }
 
     if (IntStream.range(0, blobsBundle.getBlobs().size())
@@ -54,9 +56,7 @@ public class BlobsBundleValidator {
                     .blobToKzgCommitment(blobsBundle.getBlobs().get(i))
                     .equals(blobsBundle.getKzgs().get(i)))
         .anyMatch(result -> !result)) {
-      return InternalValidationResult.reject("Blobs not matching KZG commitments");
+      throw new BlobsBundleValidationException("Blobs not matching KZG commitments");
     }
-
-    return InternalValidationResult.ACCEPT;
   }
 }

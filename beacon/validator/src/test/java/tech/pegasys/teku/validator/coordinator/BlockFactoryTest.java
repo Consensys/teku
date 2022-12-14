@@ -309,7 +309,6 @@ class BlockFactoryTest {
                 depositProvider,
                 eth1DataCache,
                 graffiti,
-                Optional.empty(),
                 forkChoiceNotifier,
                 executionLayer));
 
@@ -431,7 +430,6 @@ class BlockFactoryTest {
             depositProvider,
             eth1DataCache,
             graffiti,
-            Optional.empty(),
             forkChoiceNotifier,
             executionLayer));
   }
