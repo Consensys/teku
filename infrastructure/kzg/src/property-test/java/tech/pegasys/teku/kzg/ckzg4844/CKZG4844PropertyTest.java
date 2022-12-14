@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg.ckzg4844;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.io.Resources;
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.List;
 import net.jqwik.api.ForAll;
@@ -30,14 +31,14 @@ import tech.pegasys.teku.kzg.propertytest.suppliers.Bytes32Supplier;
 import tech.pegasys.teku.kzg.propertytest.suppliers.BytesSupplier;
 import tech.pegasys.teku.kzg.propertytest.suppliers.KZGCommitmentSupplier;
 import tech.pegasys.teku.kzg.propertytest.suppliers.KZGProofSupplier;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
 public class CKZG4844PropertyTest {
-  private static final String MAINNET_TRUSTED_SETUP_TEST = "../trusted_setups/test_mainnet.txt";
   private static KZG kzg = CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
 
   static {
     final String trustedSetup =
-        CKZG4844PropertyTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST).toExternalForm();
+        Resources.getResource(TrustedSetups.class, "test_mainnet.txt").toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 
@@ -67,19 +68,6 @@ public class CKZG4844PropertyTest {
   void blobToKzgCommitmentThrowsExpected(@ForAll(supplier = BytesSupplier.class) final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(KZGException.class);
-    }
-  }
-
-  @Property
-  void verifyKzgProofThrowsExpected(
-      @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment,
-      @ForAll(supplier = Bytes32Supplier.class) final Bytes32 z,
-      @ForAll(supplier = Bytes32Supplier.class) final Bytes32 y,
-      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
-    try {
-      kzg.verifyKzgProof(commitment, z, y, proof);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }

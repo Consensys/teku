@@ -17,6 +17,8 @@ import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.io.Resources;
+import ethereum.ckzg4844.CKZG4844JNI;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
@@ -31,11 +33,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
 public final class KZGTest {
 
-  private static final String MAINNET_TRUSTED_SETUP_TEST = "trusted_setups/test_mainnet.txt";
-  private static final int FIELD_ELEMENTS_PER_BLOB = 4096;
+  private static final int FIELD_ELEMENTS_PER_BLOB =
+      CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob;
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
@@ -133,8 +136,7 @@ public final class KZGTest {
 
   private void loadTrustedSetup() {
     final String trustedSetup =
-        Objects.requireNonNull(KZGTest.class.getResource(MAINNET_TRUSTED_SETUP_TEST))
-            .toExternalForm();
+        Resources.getResource(TrustedSetups.class, "test_mainnet.txt").toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 
