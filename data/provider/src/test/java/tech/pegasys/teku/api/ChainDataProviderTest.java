@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -403,7 +404,7 @@ public class ChainDataProviderTest {
 
     assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
     assertThat(bootstrap.get(1))
-        .isEqualTo(internalState.toVersionAltair().get().getCurrentSyncCommittee());
+        .isEqualTo(BeaconStateAltair.required(internalState).getCurrentSyncCommittee());
   }
 
   @Test
