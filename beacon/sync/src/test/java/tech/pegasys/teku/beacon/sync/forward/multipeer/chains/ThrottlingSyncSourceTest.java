@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSid
 class ThrottlingSyncSourceTest {
 
   private static final int MAX_BLOCKS_PER_MINUTE = 100;
+  private static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 100;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final SyncSource delegate = mock(SyncSource.class);
@@ -43,10 +44,16 @@ class ThrottlingSyncSourceTest {
       mock(RpcResponseListener.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcResponseListener<BlobsSidecar> sidecarListener = mock(RpcResponseListener.class);
+  private final RpcResponseListener<BlobsSidecar> blobsSidecarsListener =
+      mock(RpcResponseListener.class);
 
   private final ThrottlingSyncSource source =
-      new ThrottlingSyncSource(asyncRunner, timeProvider, delegate, MAX_BLOCKS_PER_MINUTE);
+      new ThrottlingSyncSource(
+          asyncRunner,
+          timeProvider,
+          delegate,
+          MAX_BLOCKS_PER_MINUTE,
+          MAX_BLOBS_SIDECARS_PER_MINUTE);
 
   @Test
   void shouldDelegateDisconnectImmediately() {
@@ -72,6 +79,21 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
+  void shouldRequestBlobsSidecarsImmediatelyIfRateLimitNotExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE - 1);
+    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+    ignoreFuture(
+        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+
+    // Both requests happen immediately
+    ignoreFuture(
+        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+    ignoreFuture(
+        verify(delegate)
+            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+  }
+
+  @Test
   void shouldDelayRequestIfBlockLimitAlreadyExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
@@ -88,7 +110,27 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldContinueDelayingIfRequestStillExceeded() {
+  void shouldDelayRequestIfBlobsSidecarsLimitAlreadyExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE);
+    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+    ignoreFuture(
+        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+
+    // Both requests happen immediately
+    ignoreFuture(
+        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(61);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(
+        verify(delegate)
+            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+  }
+
+  @Test
+  void shouldContinueDelayingBlocksRequestIfRequestStillExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
@@ -107,11 +149,25 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldRequestBlobsSidecarsImmediately() {
+  void shouldContinueDelayingBlobsSidecarsRequestIfRequestStillExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE);
+    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
     ignoreFuture(
-        source.requestBlobsSidecarsByRange(UInt64.ZERO, UInt64.valueOf(100), sidecarListener));
+        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+
+    // Both requests happen immediately
+    ignoreFuture(
+        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(30);
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(31);
+    asyncRunner.executeQueuedActions();
     ignoreFuture(
         verify(delegate)
-            .requestBlobsSidecarsByRange(UInt64.ZERO, UInt64.valueOf(100), sidecarListener));
+            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
   }
 }
