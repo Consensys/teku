@@ -99,7 +99,7 @@ class KzgResolver implements ResolveParameterHook {
   }
 
   private KZG getKzgWithTrustedSetup() {
-    Store<KzgAutoLoadFree> kzgStore =
+    final Store<KzgAutoLoadFree> kzgStore =
         Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgAutoLoadFree::new);
     return kzgStore.get().kzg;
   }
