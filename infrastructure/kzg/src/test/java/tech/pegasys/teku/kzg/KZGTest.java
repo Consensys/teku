@@ -22,7 +22,6 @@ import ethereum.ckzg4844.CKZG4844JNI;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
