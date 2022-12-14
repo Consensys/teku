@@ -79,7 +79,7 @@ public class CKZG4844PropertyTest {
 
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
- * trusted setup when property test finished. It will re-use the same KZG instance for all
+ * trusted setup when the property test is finished. It will re-use the same KZG instance for all
  * iterations of the test, but it will create a new instance for each method. For a class with three
  * property test methods, you can expect it to load/free three times.
  */
