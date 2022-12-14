@@ -15,7 +15,6 @@ package tech.pegasys.teku.kzg;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 
 /**
  * This interface specifies all the KZG functions needed for the EIP-4844 specification and is the
@@ -49,16 +48,6 @@ public interface KZG {
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
           return KZGCommitment.infinity();
         }
-
-        @Override
-        public boolean verifyKzgProof(
-            final KZGCommitment kzgCommitment,
-            final Bytes32 z,
-            final Bytes32 y,
-            final KZGProof kzgProof)
-            throws KZGException {
-          return true;
-        }
       };
 
   void loadTrustedSetup(String trustedSetup) throws KZGException;
@@ -71,7 +60,4 @@ public interface KZG {
       List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof) throws KZGException;
 
   KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
-
-  boolean verifyKzgProof(KZGCommitment kzgCommitment, Bytes32 z, Bytes32 y, KZGProof kzgProof)
-      throws KZGException;
 }
