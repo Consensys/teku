@@ -17,7 +17,6 @@ import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import ethereum.ckzg4844.CKZG4844JNI;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844Utils;
 
 public final class KZGTest {
 
@@ -154,8 +152,7 @@ public final class KZGTest {
   }
 
   private KZGCommitment getSampleCommitment() {
-    final byte[] blob = CKZG4844Utils.flattenBlobs(List.of(getSampleBlob()));
-    return KZGCommitment.fromArray(CKZG4844JNI.blobToKzgCommitment(blob));
+    return kzg.blobToKzgCommitment(getSampleBlob());
   }
 
   private BigInteger randomBigIntegerInModulus() {
