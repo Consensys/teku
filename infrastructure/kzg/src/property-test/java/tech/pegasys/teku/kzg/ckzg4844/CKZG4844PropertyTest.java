@@ -42,7 +42,7 @@ public class CKZG4844PropertyTest {
     kzg.loadTrustedSetup(trustedSetup);
   }
 
-  @Property
+  @Property(tries = 100)
   void computeAggregateKzgProofThrowsExpected(
       @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs) {
     try {
@@ -64,7 +64,7 @@ public class CKZG4844PropertyTest {
     }
   }
 
-  @Property
+  @Property(tries = 100)
   void blobToKzgCommitmentThrowsExpected(@ForAll(supplier = BytesSupplier.class) final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);
