@@ -31,12 +31,12 @@ public class Eth2EventHandler implements EventHandler {
   public void onClosed() {}
 
   @Override
-  public void onMessage(final String event, final MessageEvent messageEvent) {
+  public synchronized void onMessage(final String event, final MessageEvent messageEvent) {
     eventList.add(new PackedMessage(event, messageEvent));
   }
 
-  public List<PackedMessage> getMessages() {
-    return eventList;
+  public synchronized List<PackedMessage> getMessages() {
+    return List.copyOf(eventList);
   }
 
   @Override
