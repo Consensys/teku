@@ -77,6 +77,13 @@ public class CKZG4844PropertyTest {
   }
 }
 
+
+/**
+ * This class provides a KZG instance with a loaded trusted setup that will automatically free the
+ * trusted setup when property test finished. It will re-use the same KZG instance for all
+ * iterations of the test, but it will create a new instance for each method. For a class with three
+ * property test methods, you can expect it to load/free three times.
+ */
 class KzgResolver implements ResolveParameterHook {
   public static final Tuple.Tuple2<Class<KzgAutoLoadFree>, String> STORE_IDENTIFIER =
       Tuple.of(KzgAutoLoadFree.class, "KZGs that automatically load & free");
@@ -84,7 +91,7 @@ class KzgResolver implements ResolveParameterHook {
   @Override
   public Optional<ParameterSupplier> resolve(
       final ParameterResolutionContext parameterContext, final LifecycleContext lifecycleContext) {
-    return Optional.of(optionalTry -> getKzg());
+    return Optional.of(optionalTry -> getKzgWithTrustedSetup());
   }
 
   @Override
@@ -92,16 +99,16 @@ class KzgResolver implements ResolveParameterHook {
     return PropagationMode.ALL_DESCENDANTS;
   }
 
-  private KZG getKzg() {
+  private KZG getKzgWithTrustedSetup() {
     Store<KzgAutoLoadFree> kzgStore =
-        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, () -> new KzgAutoLoadFree());
+        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgAutoLoadFree::new);
     return kzgStore.get().kzg;
   }
 
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
     private static final String TRUSTED_SETUP =
         Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
-    public final KZG kzg = CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
+    private final KZG kzg = CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
 
     private KzgAutoLoadFree() {
       kzg.loadTrustedSetup(TRUSTED_SETUP);
