@@ -67,7 +67,8 @@ public class MiscHelpersEip4844PropertyTest {
     try {
       miscHelpers.txPeekBlobVersionedHashes(transaction);
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
+      assertThat(e)
+          .isInstanceOfAny(IllegalArgumentException.class, IndexOutOfBoundsException.class);
     }
   }
 
@@ -78,7 +79,8 @@ public class MiscHelpersEip4844PropertyTest {
     try {
       miscHelpers.verifyKZGCommitmentsAgainstTransactions(transactions, commitments);
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
+      assertThat(e)
+          .isInstanceOfAny(IllegalArgumentException.class, IndexOutOfBoundsException.class);
     }
   }
 }

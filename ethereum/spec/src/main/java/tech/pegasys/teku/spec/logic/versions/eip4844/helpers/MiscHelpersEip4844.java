@@ -121,7 +121,6 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
   }
 
   private boolean isBlobTransaction(final Transaction transaction) {
-    checkArgument(transaction.getBytes().size() >= 1);
     return transaction.getBytes().get(0) == BLOB_TX_TYPE.get(0);
   }
 
