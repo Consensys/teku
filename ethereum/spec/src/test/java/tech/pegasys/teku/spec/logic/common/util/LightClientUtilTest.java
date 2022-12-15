@@ -36,8 +36,8 @@ public class LightClientUtilTest {
     BeaconBlockHeader expectedHeader = BeaconBlockHeader.fromState(state);
     LightClientBootstrap bootstrap = lightClientUtil.getLightClientBootstrap(state);
 
-    assertThat(bootstrap.get(0)).isEqualTo(expectedHeader);
-    assertThat(bootstrap.get(1))
+    assertThat(bootstrap.getBeaconBlockHeader()).isEqualTo(expectedHeader);
+    assertThat(bootstrap.getCurrentSyncCommittee())
         .isEqualTo(BeaconStateAltair.required(state).getCurrentSyncCommittee());
   }
 }
