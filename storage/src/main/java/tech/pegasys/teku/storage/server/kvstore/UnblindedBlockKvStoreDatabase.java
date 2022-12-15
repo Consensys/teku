@@ -243,16 +243,21 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
-    try (final Stream<SlotAndBlockRoot> blocksToDelete =
-        dao.streamFinalizedBlockSlotAndRoots(UInt64.ZERO, lastSlotToPrune)) {
-      final Iterator<SlotAndBlockRoot> blockIterator = blocksToDelete.iterator();
-      while (blockIterator.hasNext()) {
+    while (true) {
+      try (final Stream<SlotAndBlockRoot> blocksToDelete =
+          dao.streamFinalizedBlockSlotAndRoots(UInt64.ZERO, lastSlotToPrune)) {
+        final Iterator<SlotAndBlockRoot> blockIterator = blocksToDelete.iterator();
         try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
-          for (int i = 0; i < PRUNE_BATCH_SIZE && blockIterator.hasNext(); i++) {
+          for (int i = 0; i < PRUNE_BATCH_SIZE; i++) {
+            if (!blockIterator.hasNext()) {
+              LOG.info("Pruning complete");
+              return;
+            }
             final SlotAndBlockRoot blockToDelete = blockIterator.next();
             updater.deleteUnblindedFinalizedBlock(
                 blockToDelete.getSlot(), blockToDelete.getBlockRoot());
           }
+          LOG.info("Committing pruning batch");
           updater.commit();
         }
       }
