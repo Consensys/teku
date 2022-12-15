@@ -34,4 +34,16 @@ public class LightClientBootstrap
       final LightClientBootstrapSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
+
+  public BeaconBlockHeader getBeaconBlockHeader() {
+    return getField0();
+  }
+
+  public SyncCommittee getCurrentSyncCommittee() {
+    return getField1();
+  }
+
+  public SszBytes32Vector getSyncCommitteeBranch() {
+    return getField2();
+  }
 }

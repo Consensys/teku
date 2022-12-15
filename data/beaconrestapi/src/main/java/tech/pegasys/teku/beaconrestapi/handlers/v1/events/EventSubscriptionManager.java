@@ -86,7 +86,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   public void registerClient(final SseClient sseClient) {
-    LOG.trace("connected " + sseClient.hashCode());
+    LOG.trace("SSE client connected " + sseClient.hashCode());
     final List<String> allTopicsInContext =
         ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx().queryParamMap(), TOPICS);
     final EventSubscriber subscriber =
@@ -101,6 +101,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             timeProvider,
             maxPendingEvents);
     eventSubscribers.add(subscriber);
+    subscriber.sendReadyComment();
   }
 
   @Override

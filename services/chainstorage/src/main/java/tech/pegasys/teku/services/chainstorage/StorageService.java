@@ -71,7 +71,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               database.migrate();
 
-              if (config.isBlockPruningEnabled()) {
+              if (!config.getDataStorageMode().storesAllBlocks()) {
                 blockPruner =
                     Optional.of(
                         new BlockPruner(

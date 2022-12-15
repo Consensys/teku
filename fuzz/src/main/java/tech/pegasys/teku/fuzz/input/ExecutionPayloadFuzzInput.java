@@ -19,36 +19,39 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionPayloadFuzzInput
-    extends Container2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix> {
+    extends Container2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadCapellaImpl> {
 
-  public static ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix>
+  public static ContainerSchema2<
+          ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadCapellaImpl>
       createSchema(final SpecVersion spec) {
-    BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema =
-        (BeaconBlockBodySchemaBellatrix<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema =
+        spec.getSchemaDefinitions().getBeaconBlockBodySchema().toVersionCapella().orElseThrow();
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        (ExecutionPayloadSchemaBellatrix) beaconBlockBodySchema.getExecutionPayloadSchema(),
+        (ExecutionPayloadSchemaCapella) beaconBlockBodySchema.getExecutionPayloadSchema(),
         ExecutionPayloadFuzzInput::new);
   }
 
   public ExecutionPayloadFuzzInput(
-      ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadBellatrix> type,
+      ContainerSchema2<ExecutionPayloadFuzzInput, BeaconState, ExecutionPayloadCapellaImpl> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ExecutionPayloadFuzzInput(
-      final Spec spec, final BeaconState state, final ExecutionPayloadBellatrix executionPayload) {
+      final Spec spec,
+      final BeaconState state,
+      final ExecutionPayloadCapellaImpl executionPayload) {
     super(createSchema(spec.atSlot(state.getSlot())), state, executionPayload);
   }
 
-  public ExecutionPayloadBellatrix getExecutionPayload() {
+  public ExecutionPayloadCapellaImpl getExecutionPayload() {
     return getField1();
   }
 

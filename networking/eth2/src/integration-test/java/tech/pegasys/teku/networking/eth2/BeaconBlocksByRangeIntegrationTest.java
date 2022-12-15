@@ -36,9 +36,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 
 public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -214,6 +216,32 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get).hasCauseInstanceOf(DeserializationFailedException.class);
     }
+  }
+
+  @Test
+  public void testRequestingBlocksByRangeForEip4844() {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+    // Create blocks
+    final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
+    final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
+
+    peerStorage.chainUpdater().updateBestBlock(block2);
+
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    final SafeFuture<Void> res =
+        peer.requestBlocksByRange(
+            block1.getSlot(), UInt64.valueOf(2), RpcResponseListener.from(blocks::add));
+
+    waitFor(() -> assertThat(res).isDone());
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(res).isCompleted();
+    assertThat(blocks)
+        .containsExactly(block1.getBlock(), block2.getBlock())
+        .allSatisfy(
+            block ->
+                assertThat(block.getMessage().getBody())
+                    .isInstanceOf(BeaconBlockBodyEip4844.class));
   }
 
   public static Stream<Arguments> altairVersioningOptions() {

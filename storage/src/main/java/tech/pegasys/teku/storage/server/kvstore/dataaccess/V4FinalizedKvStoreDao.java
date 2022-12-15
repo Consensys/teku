@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MAX_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MIN_BLOCK_ROOT;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -165,6 +169,36 @@ public class V4FinalizedKvStoreDao {
 
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
+  }
+
+  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    return db.get(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
+  }
+
+  @MustBeClosed
+  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.stream(
+            schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
+            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
+        .map(entry -> entry);
+  }
+
+  @MustBeClosed
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.stream(
+            schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
+            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
+        .map(ColumnEntry::getKey);
+  }
+
+  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
+    return db.getFirstEntry(schema.getColumnBlobsSidecarBySlotAndBlockRoot())
+        .map(ColumnEntry::getKey)
+        .map(SlotAndBlockRoot::getSlot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -397,7 +431,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       stateStorageUpdater.addReconstructedFinalizedState(db, transaction, schema, state);
     }
 
@@ -413,6 +447,35 @@ public class V4FinalizedKvStoreDao {
       } else {
         transaction.delete(schema.getOptimisticTransitionBlockSlot());
       }
+    }
+
+    @Override
+    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      transaction.put(
+          schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
+          new SlotAndBlockRoot(
+              blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
+          blobsSidecar.sszSerialize());
+    }
+
+    @Override
+    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      transaction.put(
+          schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
+          new SlotAndBlockRoot(
+              blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
+          null);
+    }
+
+    @Override
+    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+      transaction.delete(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
+    }
+
+    @Override
+    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+      transaction.delete(
+          schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }
 
     @Override

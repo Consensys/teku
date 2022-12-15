@@ -382,8 +382,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                             .getOptionalExecutionPayload()
                             .map(ExecutionPayload::getBlockHash)
                             .orElse(Bytes32.ZERO),
-                        false,
-                        blockCheckpoints.get(root)));
+                        ProtoNodeValidationStatus.VALID,
+                        blockCheckpoints.get(root),
+                        UInt64.ZERO));
                 headsByRoot.remove(block.getParentRoot());
               });
       return new ArrayList<>(headsByRoot.values());
@@ -395,7 +396,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public List<Map<String, String>> getNodeData() {
+    public List<ProtoNodeData> getBlockData() {
       throw new UnsupportedOperationException("Not implemented");
     }
 

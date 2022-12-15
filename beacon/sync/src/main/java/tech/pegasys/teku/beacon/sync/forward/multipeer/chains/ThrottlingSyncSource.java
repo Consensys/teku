@@ -26,22 +26,26 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final SyncSource delegate;
 
-  private final RateTracker rateTracker;
+  private final RateTracker blocksRateTracker;
+  private final RateTracker blobsSidecarsRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final SyncSource delegate,
-      final int maxBlocksPerMinute) {
+      final int maxBlocksPerMinute,
+      final int maxBlobsSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    rateTracker = new RateTracker(maxBlocksPerMinute, 60, timeProvider);
+    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, 60, timeProvider);
+    this.blobsSidecarsRateTracker = new RateTracker(maxBlobsSidecarsPerMinute, 60, timeProvider);
   }
 
   @Override
@@ -49,12 +53,26 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    if (rateTracker.wantToRequestObjects(count.longValue()) > 0) {
+    if (blocksRateTracker.wantToRequestObjects(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
           () -> requestBlocksByRange(startSlot, count, listener), Duration.ofSeconds(3));
+    }
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobsSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobsSidecar> listener) {
+    if (blobsSidecarsRateTracker.wantToRequestObjects(count.longValue()) > 0) {
+      LOG.debug("Sending request for {} blobs sidecars", count);
+      return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
+    } else {
+      return asyncRunner.runAfterDelay(
+          () -> requestBlobsSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(3));
     }
   }
 

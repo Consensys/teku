@@ -17,11 +17,19 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOCK_ROOT_PARA
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -33,8 +41,16 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class GetLightClientBootstrap extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/light_client/bootstrap/{block_root}";
+  private final ChainDataProvider chainDataProvider;
 
-  public GetLightClientBootstrap(SchemaDefinitionCache schemaDefinitionCache) {
+  public GetLightClientBootstrap(
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getChainDataProvider(), schemaDefinitionCache);
+  }
+
+  public GetLightClientBootstrap(
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getLightClientBootstrap")
@@ -52,11 +68,27 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
             .withNotAcceptedResponse()
             .withNotImplementedResponse()
             .build());
+    this.chainDataProvider = chainDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    request.respondError(501, "Not implemented");
+    final Bytes32 blockRoot = request.getPathParameter(BLOCK_ROOT_PARAMETER);
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        chainDataProvider.getLightClientBoostrap(blockRoot);
+
+    request.respondAsync(
+        future.thenApply(
+            maybeLightClientBootstrap ->
+                maybeLightClientBootstrap
+                    .map(
+                        bootstrapAndMetadata -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(bootstrapAndMetadata.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(bootstrapAndMetadata);
+                        })
+                    .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>>

@@ -132,7 +132,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
-          recentChainData.getForkChoiceStrategy().orElseThrow().getNodeData().stream()
+          recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
               .map(Object::toString)
               .collect(Collectors.joining("\n"));
       throw new AssertionError(

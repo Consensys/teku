@@ -122,7 +122,7 @@ public class BeaconBlocksByRangeMessageHandler
       return;
     }
     if (!peer.wantToMakeRequest()
-        || !peer.wantToReceiveObjects(
+        || !peer.wantToReceiveBlocks(
             callback, maxRequestSize.min(message.getCount()).longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;

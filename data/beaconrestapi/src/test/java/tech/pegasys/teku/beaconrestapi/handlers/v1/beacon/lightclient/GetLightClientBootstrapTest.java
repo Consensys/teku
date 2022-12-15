@@ -14,6 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
@@ -27,9 +29,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -39,18 +44,34 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTest {
 
+  private final Bytes32 blockRoot =
+      Bytes32.fromHexString("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2");
+
   @BeforeEach
   void setup() {
-    setHandler(new GetLightClientBootstrap(schemaDefinitionCache));
-    request.setPathParameter(
-        "block_root", "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2");
+    setHandler(new GetLightClientBootstrap(chainDataProvider, schemaDefinitionCache));
+    dataStructureUtil = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+    request.setPathParameter("block_root", blockRoot.toHexString());
+  }
+
+  @Test
+  void shouldReturnLightClientBootstrap() throws Exception {
+    final LightClientBootstrap lightClientBootstrap =
+        dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
+    final ObjectAndMetaData<LightClientBootstrap> responseData =
+        new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true, false);
+
+    when(chainDataProvider.getLightClientBoostrap(eq(blockRoot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(responseData)));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(responseData);
   }
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final DataStructureUtil dataStructureUtil =
-        new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-
     LightClientBootstrap lightClientBootstrap =
         dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
     ObjectAndMetaData<LightClientBootstrap> responseData =

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.ReadyState;
 import java.net.URI;
 import java.util.List;
 
@@ -28,6 +29,10 @@ public class EventStreamListener {
 
   public List<Eth2EventHandler.PackedMessage> getMessages() {
     return handler.getMessages();
+  }
+
+  public boolean isReady() {
+    return eventSource.getState() == ReadyState.OPEN && handler.hasReceivedComment();
   }
 
   public void close() {

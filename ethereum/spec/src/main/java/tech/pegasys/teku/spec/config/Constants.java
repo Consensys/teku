@@ -29,7 +29,7 @@ public class Constants {
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   // EIP-4844 Blobs
-  public static final int MAX_REQUEST_BLOBS_SIDECARS = 128;
+  public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
 
   // Teku Networking Specific
@@ -66,7 +66,9 @@ public class Constants {
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
+  public static final UInt64 SYNC_BLOBS_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
+  public static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
