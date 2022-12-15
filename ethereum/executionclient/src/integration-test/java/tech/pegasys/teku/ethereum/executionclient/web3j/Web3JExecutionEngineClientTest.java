@@ -86,7 +86,7 @@ public class Web3JExecutionEngineClientTest {
             .timeProvider(timeProvider)
             .executionClientEventsPublisher(executionClientEventsPublisher)
             .build();
-    eeClient = new Web3JExecutionEngineClient(web3JClient);
+    eeClient = new Web3JExecutionEngineClient(web3JClient, true);
   }
 
   @AfterEach
