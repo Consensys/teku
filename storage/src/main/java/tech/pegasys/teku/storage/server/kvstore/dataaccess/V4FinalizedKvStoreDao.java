@@ -283,6 +283,7 @@ public class V4FinalizedKvStoreDao {
     return db.getRaw(schema.getColumnBlindedBlocksByRoot(), blockRoot);
   }
 
+  @MustBeClosed
   public Stream<SlotAndBlockRoot> streamFinalizedBlockAndSlotRoots(
       final UInt64 start, final UInt64 end) {
     return db.stream(schema.getColumnSlotsByFinalizedRoot())
