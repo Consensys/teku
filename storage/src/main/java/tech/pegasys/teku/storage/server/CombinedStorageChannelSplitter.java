@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -101,6 +102,27 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    return updateDelegate.onBlobsSidecar(blobsSidecar);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
+    return updateDelegate.onBlobsSidecarRemoval(blobsSidecarKey);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
+    return updateDelegate.onBlobsSidecarPruning(endSlot, pruneLimit);
+  }
+
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
+    return updateDelegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit);
+  }
+
+  @Override
   public SafeFuture<Optional<OnDiskStoreData>> onStoreRequest() {
     return asyncRunner.runAsync(queryDelegate::onStoreRequest);
   }
@@ -166,7 +188,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(final UInt64 slot) {
     return asyncRunner.runAsync(() -> queryDelegate.getLatestAvailableFinalizedState(slot));
   }
 
@@ -193,5 +215,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return asyncRunner.runAsync(queryDelegate::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return asyncRunner.runAsync(() -> queryDelegate.getBlobsSidecar(slotAndBlockRoot));
   }
 }

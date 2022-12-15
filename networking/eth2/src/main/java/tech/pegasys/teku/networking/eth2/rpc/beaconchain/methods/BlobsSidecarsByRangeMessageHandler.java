@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
@@ -31,7 +34,10 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -42,15 +48,21 @@ public class BlobsSidecarsByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
+  private final UInt64 eip4844ForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobsSidecarsRequestedCounter;
 
   public BlobsSidecarsByRangeMessageHandler(
+      final Spec spec,
+      final UInt64 eip4844ForkEpoch,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize) {
+    this.spec = spec;
+    this.eip4844ForkEpoch = eip4844ForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
     requestCounter =
@@ -69,6 +81,15 @@ public class BlobsSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobsSidecarsByRangeRequestMessage request) {
+    final UInt64 maxSlotRequested = request.getMaxSlot();
+    final SpecMilestone specMilestone =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(maxSlotRequested);
+    if (!specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Can't request blobs sidecars for slots before the EIP-4844 fork"));
+    }
     return Optional.empty();
   }
 
@@ -101,10 +122,21 @@ public class BlobsSidecarsByRangeMessageHandler
                     new IllegalStateException(
                         "Can't retrieve the block root chosen by fork choice."));
 
-    final RequestState initialState =
-        new RequestState(callback, headBlockRoot, message.getStartSlot(), message.getMaxSlot());
-
-    sendBlobsSidecars(initialState)
+    combinedChainDataClient
+        .getEarliestAvailableBlobsSidecarEpoch()
+        .thenCompose(
+            earliestAvailableEpoch -> {
+              final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+              if (!verifyBlobsSidecarsAreAvailable(earliestAvailableEpoch, currentEpoch)) {
+                return SafeFuture.failedFuture(
+                    new ResourceUnavailableException(
+                        "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range."));
+              }
+              final RequestState initialState =
+                  new RequestState(
+                      callback, headBlockRoot, message.getStartSlot(), message.getMaxSlot());
+              return sendBlobsSidecars(initialState);
+            })
         .finish(
             requestState -> {
               LOG.trace(
@@ -114,6 +146,21 @@ public class BlobsSidecarsByRangeMessageHandler
               callback.completeSuccessfully();
             },
             error -> handleProcessingRequestError(error, callback));
+  }
+
+  /**
+   * See <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#blobssidecarsbyrange-v1">BlobsSidecarsByRange
+   * v1</a>
+   */
+  private boolean verifyBlobsSidecarsAreAvailable(
+      final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 currentEpoch) {
+    if (earliestAvailableSidecarEpoch.isEmpty()) {
+      return false;
+    }
+    final UInt64 startEpoch =
+        eip4844ForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
+    return earliestAvailableSidecarEpoch.get().isLessThanOrEqualTo(startEpoch);
   }
 
   private SafeFuture<RequestState> sendBlobsSidecars(final RequestState requestState) {

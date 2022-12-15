@@ -63,6 +63,17 @@ public abstract class AbstractRpcMethodIntegrationTest {
     return createRemotePeerAndNetwork(enableAltairLocally, enableAltairRemotely).getPeer();
   }
 
+  /**
+   * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
+   * can send requests.
+   *
+   * @param spec The spec which the "local" and remote peer will use
+   * @return An Eth2Peer to which we can send requests
+   */
+  protected Eth2Peer createPeer(final Spec spec) {
+    return createRemotePeerAndNetwork(spec, spec).getPeer();
+  }
+
   protected PeerAndNetwork createRemotePeerAndNetwork() {
     return createRemotePeerAndNetwork(false, false);
   }
@@ -77,15 +88,26 @@ public abstract class AbstractRpcMethodIntegrationTest {
    */
   protected PeerAndNetwork createRemotePeerAndNetwork(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) {
-    // Set up remote peer storage
+    final Spec localSpec = enableAltairLocally ? altairEnabledSpec : phase0Spec;
     final Spec remoteSpec = enableAltairRemotely ? altairEnabledSpec : phase0Spec;
+    return createRemotePeerAndNetwork(localSpec, remoteSpec);
+  }
+
+  /**
+   * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
+   * can send requests along with the corresponding remote Eth2P2PNetwork.
+   *
+   * @param localSpec The spec which the "local" node will use
+   * @param remoteSpec The spec which the remote peer will use
+   * @return An Eth2Peer to which we can send requests along with its corresponding Eth2P2PNetwork
+   */
+  protected PeerAndNetwork createRemotePeerAndNetwork(final Spec localSpec, final Spec remoteSpec) {
+    // Set up remote peer storage
     if (peerStorage == null) {
       peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
       peerStorage.chainUpdater().initializeGenesis();
     }
-
     // Set up local storage
-    final Spec localSpec = enableAltairLocally ? altairEnabledSpec : phase0Spec;
     final StorageSystem localStorage =
         InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
     localStorage.chainUpdater().initializeGenesis();

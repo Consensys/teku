@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_GONE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -283,6 +284,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void assertGone(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_GONE);
     assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertBadRequest(final Response response) {
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   protected void assertNotFound(final Response response) throws IOException {

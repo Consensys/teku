@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -87,6 +88,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
@@ -164,6 +166,18 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Fork at slot " + slot + " does not support sync committees"));
+  }
+
+  public Optional<LightClientUtil> getLightClientUtil(final UInt64 slot) {
+    return atSlot(slot).getLightClientUtil();
+  }
+
+  public LightClientUtil getLightClientUtilRequired(final UInt64 slot) {
+    return getLightClientUtil(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Fork at slot " + slot + " does not support light clients"));
   }
 
   public SpecVersion getGenesisSpec() {
@@ -302,6 +316,17 @@ public class Spec {
             () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
         .getExecutionPayloadSchema()
         .sszDeserialize(serializedPayload);
+  }
+
+  public BlobsSidecar deserializeBlobsSidecar(
+      final Bytes serializedBlobsSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionEip4844()
+        .orElseThrow(
+            () -> new RuntimeException("Eip4844 milestone is required to load execution payload"))
+        .getBlobsSidecarSchema()
+        .sszDeserialize(serializedBlobsSidecar);
   }
 
   public ExecutionPayloadHeader deserializeJsonExecutionPayloadHeader(

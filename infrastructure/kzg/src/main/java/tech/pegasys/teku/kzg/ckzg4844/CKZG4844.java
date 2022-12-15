@@ -17,11 +17,9 @@ import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
@@ -105,7 +103,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
     try {
-      final byte[] blobsBytes = CKZG4844Utils.flattenBytesList(blobs);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
       final byte[] proof = CKZG4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
@@ -118,10 +116,8 @@ public final class CKZG4844 implements KZG {
       final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof)
       throws KZGException {
     try {
-      final byte[] blobsBytes = CKZG4844Utils.flattenBytesList(blobs);
-      final Stream<Bytes> commitmentsBytesStream =
-          kzgCommitments.stream().map(KZGCommitment::getBytesCompressed);
-      final byte[] commitmentsBytes = CKZG4844Utils.flattenBytesStream(commitmentsBytesStream);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
+      final byte[] commitmentsBytes = CKZG4844Utils.flattenCommitments(kzgCommitments);
       return CKZG4844JNI.verifyAggregateKzgProof(
           blobsBytes, commitmentsBytes, blobs.size(), kzgProof.toArray());
     } catch (final Exception ex) {
@@ -137,21 +133,6 @@ public final class CKZG4844 implements KZG {
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
       throw new KZGException("Failed to produce KZG commitment from blob", ex);
-    }
-  }
-
-  @Override
-  public boolean verifyKzgProof(
-      final KZGCommitment kzgCommitment, final Bytes32 z, final Bytes32 y, final KZGProof kzgProof)
-      throws KZGException {
-    try {
-      return CKZG4844JNI.verifyKzgProof(
-          kzgCommitment.toArray(), z.toArray(), y.toArray(), kzgProof.toArray());
-    } catch (final Exception ex) {
-      throw new KZGException(
-          String.format(
-              "Failed to verify KZG commitment %s against KZG proof %s", kzgCommitment, kzgProof),
-          ex);
     }
   }
 }

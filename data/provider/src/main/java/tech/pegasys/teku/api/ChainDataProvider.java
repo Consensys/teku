@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -60,6 +59,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
@@ -212,11 +212,17 @@ public class ChainDataProvider {
                                 spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public List<Map<String, String>> getProtoArrayData() {
-    return recentChainData
-        .getForkChoiceStrategy()
-        .map(ReadOnlyForkChoiceStrategy::getNodeData)
-        .orElse(emptyList());
+  public ForkChoiceData getForkChoiceData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return new ForkChoiceData(
+        recentChainData.getJustifiedCheckpoint().orElseThrow(),
+        recentChainData.getFinalizedCheckpoint().orElseThrow(),
+        recentChainData
+            .getForkChoiceStrategy()
+            .map(ReadOnlyForkChoiceStrategy::getBlockData)
+            .orElse(emptyList()));
   }
 
   private Optional<Integer> validatorParameterToIndex(
@@ -485,6 +491,20 @@ public class ChainDataProvider {
       LOG.trace(e);
     }
     return true;
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBoostrap(
+      final Bytes32 blockRootParam) {
+    return defaultStateSelectorFactory
+        .forBlockRoot(blockRootParam)
+        .getState()
+        .thenApply(maybeStateData -> maybeStateData.flatMap(this::getLightClientBootstrap));
+  }
+
+  private Optional<ObjectAndMetaData<LightClientBootstrap>> getLightClientBootstrap(
+      final StateAndMetaData stateAndMetaData) {
+    return spec.getLightClientUtil(stateAndMetaData.getData().getSlot())
+        .map(clientUtil -> stateAndMetaData.map(clientUtil::getLightClientBootstrap));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(

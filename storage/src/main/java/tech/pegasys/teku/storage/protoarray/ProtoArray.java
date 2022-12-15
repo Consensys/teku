@@ -16,9 +16,9 @@ package tech.pegasys.teku.storage.protoarray;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.INVALID;
-import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
-import static tech.pegasys.teku.storage.protoarray.ProtoNodeValidationStatus.VALID;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus.INVALID;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus.OPTIMISTIC;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus.VALID;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
