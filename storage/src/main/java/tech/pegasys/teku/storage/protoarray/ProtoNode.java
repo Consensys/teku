@@ -16,8 +16,6 @@ package tech.pegasys.teku.storage.protoarray;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,6 +23,7 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoNode {
@@ -194,24 +193,9 @@ public class ProtoNode {
         parentRoot,
         stateRoot,
         executionBlockHash,
-        validationStatus == ProtoNodeValidationStatus.OPTIMISTIC,
-        checkpoints);
-  }
-
-  public Map<String, String> getData() {
-    return ImmutableMap.<String, String>builder()
-        .put("slot", blockSlot.toString())
-        .put("blockRoot", blockRoot.toString())
-        .put("parentRoot", parentRoot.toString())
-        .put("stateRoot", stateRoot.toString())
-        .put("justifiedEpoch", getJustifiedCheckpoint().toString())
-        .put("finalizedEpoch", getFinalizedCheckpoint().toString())
-        .put("unrealizedJustifiedCheckpoint", getUnrealizedJustifiedCheckpoint().toString())
-        .put("unrealizedFinalizedCheckpoint", getUnrealizedFinalizedCheckpoint().toString())
-        .put("executionBlockHash", executionBlockHash.toString())
-        .put("validationStatus", validationStatus.name())
-        .put("weight", weight.toString())
-        .build();
+        validationStatus,
+        checkpoints,
+        weight);
   }
 
   @Override

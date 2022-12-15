@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -24,44 +24,54 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.ForkChoiceData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
-public class GetProtoArrayTest extends AbstractMigratedBeaconHandlerTest {
-  private final Map<String, String> responseMap =
-      ImmutableMap.<String, String>builder()
-          .put("slot", "0")
-          .put("blockRoot", "0x4cc1b500e2fc6df06d141972f1494f73c82f8e9d9b66321f7df1dfde969f8eee")
-          .put("parentRoot", "0x0000000000000000000000000000000000000000000000000000000000000000")
-          .put("stateRoot", "0x32342ef26d1db3869388444dfe62eeea91444d5242c43b3fed5c216c2d8c6a5b")
-          .put("justifiedEpoch", "0")
-          .put("finalizedEpoch", "0")
-          .put(
-              "executionBlockHash",
-              "0x0000000000000000000000000000000000000000000000000000000000000000")
-          .put("validationStatus", "VALID")
-          .put("weight", "409600000000")
-          .build();
+class GetForkChoiceTest extends AbstractMigratedBeaconHandlerTest {
+
+  private final ForkChoiceData responseMap =
+      new ForkChoiceData(
+          new Checkpoint(UInt64.ONE, Bytes32.fromHexString("0x1111")),
+          new Checkpoint(UInt64.ZERO, Bytes32.fromHexString("0x2222")),
+          List.of(
+              new ProtoNodeData(
+                  UInt64.valueOf(32),
+                  Bytes32.fromHexString("0x3333"),
+                  Bytes32.fromHexString("0x4444"),
+                  Bytes32.fromHexString("0x5555"),
+                  Bytes32.fromHexString("0x6666"),
+                  ProtoNodeValidationStatus.OPTIMISTIC,
+                  new BlockCheckpoints(
+                      new Checkpoint(UInt64.valueOf(10), Bytes32.fromHexString("0x7777")),
+                      new Checkpoint(UInt64.valueOf(11), Bytes32.fromHexString("0x8888")),
+                      new Checkpoint(UInt64.valueOf(12), Bytes32.fromHexString("0x9999")),
+                      new Checkpoint(UInt64.valueOf(13), Bytes32.fromHexString("0x0000"))),
+                  UInt64.valueOf(409600000000L))));
 
   @BeforeEach
   void setup() {
-    setHandler(new GetProtoArray(chainDataProvider));
+    setHandler(new GetForkChoice(chainDataProvider));
   }
 
   @Test
   public void shouldReturnProtoArrayInformation() throws JsonProcessingException {
-    when(chainDataProvider.getProtoArrayData()).thenReturn(List.of(responseMap));
+    when(chainDataProvider.getForkChoiceData()).thenReturn(responseMap);
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(List.of(responseMap));
+    assertThat(request.getResponseBody()).isEqualTo(responseMap);
   }
 
   @Test
@@ -81,9 +91,9 @@ public class GetProtoArrayTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, List.of(responseMap));
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseMap);
     final String expected =
-        Resources.toString(Resources.getResource(GetProtoArray.class, "getProtoArray.json"), UTF_8);
+        Resources.toString(Resources.getResource(GetForkChoice.class, "getForkChoice.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }

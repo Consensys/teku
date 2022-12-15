@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+  private final Optional<LightClientUtil> lightClientUtil;
 
   private SpecLogicAltair(
       final Predicates predicates,
@@ -57,6 +59,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
+      final LightClientUtil lightClientUtil,
       final AltairStateUpgrade stateUpgrade) {
     super(
         predicates,
@@ -76,6 +79,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         Optional.empty(),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.lightClientUtil = Optional.of(lightClientUtil);
   }
 
   public static SpecLogicAltair create(
@@ -126,6 +130,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
+    final LightClientUtil lightClientUtil =
+        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final BlockProcessorAltair blockProcessor =
         new BlockProcessorAltair(
             config,
@@ -166,12 +172,18 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         syncCommitteeUtil,
+        lightClientUtil,
         stateUpgrade);
   }
 
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
+  }
+
+  @Override
+  public Optional<LightClientUtil> getLightClientUtil() {
+    return lightClientUtil;
   }
 
   @Override
