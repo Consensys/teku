@@ -58,16 +58,19 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -384,6 +387,60 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getLightClientBootstrap_shouldGetBootstrap() {
+    final ChainDataProvider provider = setupAltairState();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        getHeadState();
+
+    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
+        .thenReturn(completedFuture(Optional.of(internalState)));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+
+    LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
+
+    assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
+    assertThat(bootstrap.get(1))
+        .isEqualTo(BeaconStateAltair.required(internalState).getCurrentSyncCommittee());
+  }
+
+  @Test
+  public void getLightClientBootstrap_shouldReturnEmptyWhenBlockNotFound() {
+    final ChainDataProvider provider = setupAltairState();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        getHeadState();
+
+    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getLightClientBootstrap_shouldReturnEmptyBeforeAltair() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        data.randomBeaconState();
+
+    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
+
+    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
+        .thenReturn(completedFuture(Optional.of(internalState)));
+
+    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
+        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
   public void getStateFork_shouldGetForkAtGenesis() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
@@ -574,6 +631,10 @@ public class ChainDataProviderTest {
     final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(internalState));
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
     return provider;
+  }
+
+  private tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState getHeadState() {
+    return safeJoin(mockCombinedChainDataClient.getChainHead().orElseThrow().getState());
   }
 
   private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {

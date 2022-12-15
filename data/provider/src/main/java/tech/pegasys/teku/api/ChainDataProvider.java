@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
@@ -485,6 +486,20 @@ public class ChainDataProvider {
       LOG.trace(e);
     }
     return true;
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBoostrap(
+      final Bytes32 blockRootParam) {
+    return defaultStateSelectorFactory
+        .forBlockRoot(blockRootParam)
+        .getState()
+        .thenApply(maybeStateData -> maybeStateData.flatMap(this::getLightClientBootstrap));
+  }
+
+  private Optional<ObjectAndMetaData<LightClientBootstrap>> getLightClientBootstrap(
+      final StateAndMetaData stateAndMetaData) {
+    return spec.getLightClientUtil(stateAndMetaData.getData().getSlot())
+        .map(clientUtil -> stateAndMetaData.map(clientUtil::getLightClientBootstrap));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> getStateSyncCommittees(

@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
@@ -55,6 +56,8 @@ public interface SpecLogic {
   Optional<BlindBlockUtil> getBlindBlockUtil();
 
   Optional<SyncCommitteeUtil> getSyncCommitteeUtil();
+
+  Optional<LightClientUtil> getLightClientUtil();
 
   ValidatorStatusFactory getValidatorStatusFactory();
 

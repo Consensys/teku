@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
@@ -148,6 +149,11 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
 
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<LightClientUtil> getLightClientUtil() {
     return Optional.empty();
   }
 
