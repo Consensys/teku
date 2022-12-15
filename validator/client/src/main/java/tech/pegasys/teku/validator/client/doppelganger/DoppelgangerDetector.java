@@ -210,6 +210,7 @@ public class DoppelgangerDetector {
               validatorIndicesByPubKeys ->
                   checkValidatorsLivenessAtEpoch(
                       epoch,
+                      pubKeys,
                       validatorIndicesByPubKeys.entrySet().stream()
                           .collect(
                               Collectors.toMap(
@@ -237,7 +238,19 @@ public class DoppelgangerDetector {
     }
 
     private SafeFuture<Void> checkValidatorsLivenessAtEpoch(
-        final UInt64 epoch, final Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
+        final UInt64 epoch,
+        final Set<BLSPublicKey> pubKeys,
+        final Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
+
+      if (validatorIndicesByPubKey.isEmpty()) {
+        LOG.info(
+            "Skipping validators doppelgangers check for public keys {}. No associated indices found. Public keys are inactive",
+            mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")));
+        return SafeFuture.COMPLETE;
+      }
+
+      logMissingIndices(pubKeys, validatorIndicesByPubKey);
+
       return validatorApiChannel
           .getValidatorsLiveness(new ArrayList<>(validatorIndicesByPubKey.values()), epoch)
           .thenAccept(
@@ -253,6 +266,22 @@ public class DoppelgangerDetector {
                 return null;
               })
           .thenApply(doppelgangerDetected -> null);
+    }
+
+    private void logMissingIndices(
+        Set<BLSPublicKey> pubKeys, Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
+      Set<BLSPublicKey> publicKeysWithoutIndices =
+          pubKeys.stream()
+              .filter(publicKey -> !validatorIndicesByPubKey.containsKey(publicKey))
+              .collect(Collectors.toSet());
+
+      if (!publicKeysWithoutIndices.isEmpty()) {
+        LOG.info(
+            "Skipping doppelganger check for public keys {}. No associated indices found. Public keys are inactive",
+            publicKeysWithoutIndices.stream()
+                .map(BLSPublicKey::toAbbreviatedString)
+                .collect(Collectors.joining(", ")));
+      }
     }
 
     private void checkValidatorDoppelgangers(

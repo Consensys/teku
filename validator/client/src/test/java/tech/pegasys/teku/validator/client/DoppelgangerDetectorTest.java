@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -301,11 +301,6 @@ public class DoppelgangerDetectorTest {
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
 
-  @NotNull
-  private Stream<String> toAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {
-    return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
-  }
-
   @Test
   public void shouldTimeoutDueToValidatorsIndicesException() {
     final Exception validatorIndicesException = new Exception("Validator Indices Exception");
@@ -355,10 +350,73 @@ public class DoppelgangerDetectorTest {
   }
 
   @Test
+  public void shouldSkipCheckWhenNoIndices() {
+    when(validatorApiChannel.getValidatorIndices(Set.of(pubKey1, pubKey2, pubKey3)))
+        .thenReturn(SafeFuture.completedFuture(new HashMap<>()));
+    Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
+    SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
+        doppelgangerDetector.performDoppelgangerDetection(pubKeys);
+    asyncRunner.executeQueuedActions();
+    timeProvider.advanceTimeBySeconds(120);
+    asyncRunner.executeQueuedActions();
+    Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
+    verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(0, 1, pubKeysStrings);
+    final String noIndices =
+        String.format(
+            "Skipping validators doppelgangers check for public keys %s. No associated indices found. Public keys are inactive",
+            toAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")));
+    logCaptor.assertInfoLog(noIndices);
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(new HashMap<>());
+  }
+
+  @Test
+  public void shouldSkipKeysWithoutIndex() {
+    Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
+    when(validatorApiChannel.getValidatorIndices(pubKeys))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Map.ofEntries(Map.entry(pubKey1, 1), Map.entry(pubKey2, 2))));
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    List.of(
+                        new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
+                        new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false)))));
+    SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
+        doppelgangerDetector.performDoppelgangerDetection(pubKeys);
+    asyncRunner.executeQueuedActions();
+    timeProvider.advanceTimeBySeconds(120);
+    asyncRunner.executeQueuedActions();
+    Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
+    verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(0, 1, pubKeysStrings);
+    final String noIndex =
+        String.format(
+            "Skipping doppelganger check for public keys %s. No associated indices found. Public keys are inactive",
+            pubKey3.toAbbreviatedString());
+    logCaptor.assertInfoLog(noIndex);
+    logCaptor.assertFatalLog(doppelgangerDetectedLog);
+    Map<UInt64, BLSPublicKey> doppelgangers = Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1));
+    verify(statusLog)
+        .validatorsDoppelgangersDetected(
+            doppelgangers.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
+  }
+
+  @Test
   public void shouldNotStartDoppelgangerDetectionWhenEmptyKeySet() {
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(new HashSet<>());
     logCaptor.assertInfoLog("Skipping doppelganger detection: No public keys provided to check");
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
+  }
+
+  private Stream<String> toAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {
+    return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
   }
 }
