@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SpecLogicBellatrix extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+  private final Optional<LightClientUtil> lightClientUtil;
 
   private final Optional<BellatrixTransitionHelpers> bellatrixTransitionHelpers;
 
@@ -61,6 +63,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
+      final LightClientUtil lightClientUtil,
       final BellatrixStateUpgrade stateUpgrade,
       final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
     super(
@@ -81,6 +84,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.lightClientUtil = Optional.of(lightClientUtil);
     this.bellatrixTransitionHelpers = Optional.of(bellatrixTransitionHelpers);
   }
 
@@ -130,6 +134,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
+    final LightClientUtil lightClientUtil =
+        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final BlockProcessorBellatrix blockProcessor =
         new BlockProcessorBellatrix(
             config,
@@ -176,6 +182,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
+        lightClientUtil,
         stateUpgrade,
         bellatrixTransitionHelpers);
   }
@@ -183,6 +190,11 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
+  }
+
+  @Override
+  public Optional<LightClientUtil> getLightClientUtil() {
+    return lightClientUtil;
   }
 
   @Override

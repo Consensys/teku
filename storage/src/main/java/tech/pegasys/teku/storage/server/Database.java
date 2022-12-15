@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -42,6 +43,8 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public interface Database extends AutoCloseable {
 
+  int PRUNE_BATCH_SIZE = 10000;
+
   void storeInitialAnchor(AnchorPoint genesis);
 
   UpdateResult update(StorageUpdate event);
@@ -53,6 +56,44 @@ public interface Database extends AutoCloseable {
   void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
+
+  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+
+  void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  /**
+   * this prune method will delete BlobsSidecars (including the unconfirmed ones) starting from the
+   * oldest BlobsSidecars (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The
+   * pruning process will be limited to maximum {@code pruneLimit} BlobsSidecars
+   *
+   * @param lastSlotToPrune
+   * @param pruneLimit
+   * @return true if number of pruned blobs reached the pruneLimit, false otherwise
+   */
+  boolean pruneOldestBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
+
+  /**
+   * this prune method will delete unconfirmed BlobsSidecars starting from the oldest BlobsSidecars
+   * (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The pruning process will
+   * be limited to maximum {@code pruneLimit} BlobsSidecars
+   *
+   * @param lastSlotToPrune
+   * @param pruneLimit
+   * @return true if number of pruned blobs reached the pruneLimit, false otherwise
+   */
+  boolean pruneOldestUnconfirmedBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
+
+  @MustBeClosed
+  Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Optional<OnDiskStoreData> createMemoryStore();
 
@@ -84,7 +125,7 @@ public interface Database extends AutoCloseable {
 
   Optional<Bytes32> getFinalizedBlockRootBySlot(UInt64 slot);
 
-  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, final UInt64 slot);
+  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, UInt64 slot);
 
   /**
    * Returns the latest finalized block at or prior to the given slot
@@ -172,5 +213,5 @@ public interface Database extends AutoCloseable {
 
   void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 
-  void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
+  void pruneFinalizedBlocks(UInt64 lastSlotToPrune);
 }

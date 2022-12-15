@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -533,6 +535,106 @@ public abstract class KvStoreDatabase<
       blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
       updater.commit();
     }
+  }
+
+  @Override
+  public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    try (final FinalizedUpdaterT updater = finalizedUpdater()) {
+      updater.addBlobsSidecar(blobsSidecar);
+      updater.addUnconfirmedBlobsSidecar(blobsSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final FinalizedUpdaterT updater = finalizedUpdater()) {
+      updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    final Optional<Bytes> maybePayload = dao.getBlobsSidecar(slotAndBlockRoot);
+    return maybePayload.map(
+        payload -> spec.deserializeBlobsSidecar(payload, slotAndBlockRoot.getSlot()));
+  }
+
+  @Override
+  public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final FinalizedUpdaterT updater = finalizedUpdater()) {
+      updater.removeBlobsSidecar(slotAndBlockRoot);
+      updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    try (final Stream<BlobsSidecar> prunableBlobs =
+            streamBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
+        final FinalizedUpdaterT updater = finalizedUpdater()) {
+      final long pruned =
+          prunableBlobs
+              .limit(pruneLimit)
+              .peek(
+                  blobsSidecar -> {
+                    final SlotAndBlockRoot slotAndBlockRoot =
+                        new SlotAndBlockRoot(
+                            blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
+                    updater.removeBlobsSidecar(slotAndBlockRoot);
+                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                  })
+              .count();
+      updater.commit();
+
+      return pruned == pruneLimit;
+    }
+  }
+
+  @Override
+  public boolean pruneOldestUnconfirmedBlobsSidecar(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
+    try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
+            streamUnconfirmedBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
+        final FinalizedUpdaterT updater = finalizedUpdater()) {
+      final long pruned =
+          prunableUnconfirmed
+              .limit(pruneLimit)
+              .peek(
+                  slotAndBlockRoot -> {
+                    updater.removeBlobsSidecar(slotAndBlockRoot);
+                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                  })
+              .count();
+      updater.commit();
+
+      return pruned == pruneLimit;
+    }
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamBlobsSidecar(startSlot, endSlot)
+        .map(
+            slotAndBlockRootBytesEntry ->
+                spec.deserializeBlobsSidecar(
+                    slotAndBlockRootBytesEntry.getValue(),
+                    slotAndBlockRootBytesEntry.getKey().getSlot()));
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
+    return dao.getEarliestBlobsSidecarSlot();
   }
 
   @Override

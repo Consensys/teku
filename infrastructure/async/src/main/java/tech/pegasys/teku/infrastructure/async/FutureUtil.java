@@ -28,6 +28,7 @@ public class FutureUtil {
       AsyncRunner runner,
       ExceptionThrowingRunnable runnable,
       Cancellable task,
+      final Duration initialDelay,
       final Duration duration,
       Consumer<Throwable> exceptionHandler) {
 
@@ -44,11 +45,11 @@ public class FutureUtil {
                     LOG.warn("Exception in exception handler", e);
                   }
                 } finally {
-                  runWithFixedDelay(runner, runnable, task, duration, exceptionHandler);
+                  runWithFixedDelay(runner, runnable, task, duration, duration, exceptionHandler);
                 }
               }
             },
-            duration)
+            initialDelay)
         .finish(() -> {}, exceptionHandler);
   }
 

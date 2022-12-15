@@ -16,10 +16,12 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -27,11 +29,14 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface KvStoreCombinedDaoCommon extends AutoCloseable {
+  Bytes32 MIN_BLOCK_ROOT = Bytes32.ZERO;
+  Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
   void ingest(KvStoreCombinedDaoCommon dao, int batchSize, Consumer<String> logger);
 
@@ -80,6 +85,16 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
   long countNonCanonicalSlots();
 
   Optional<UInt64> getOptimisticTransitionBlockSlot();
+
+  Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  @MustBeClosed
+  Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Map<String, Long> getColumnCounts();
 
@@ -149,6 +164,14 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
 
     void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
+
+    void addBlobsSidecar(BlobsSidecar blobsSidecar);
+
+    void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+
+    void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+    void removeUnconfirmedBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 
     void commit();
 

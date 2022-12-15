@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -171,6 +172,43 @@ public class ChainStorage
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot))
         .thenCompose(this::unblindBlock);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    return SafeFuture.of(
+        () -> {
+          database.storeUnconfirmedBlobsSidecar(blobsSidecar);
+          return null;
+        });
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
+    return SafeFuture.of(
+        () -> {
+          database.removeBlobsSidecar(blobsSidecarKey);
+          return null;
+        });
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
+    return SafeFuture.of(
+        () -> {
+          database.pruneOldestBlobsSidecar(endSlot, pruneLimit);
+          return null;
+        });
+  }
+
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
+    return SafeFuture.of(
+        () -> {
+          database.pruneOldestUnconfirmedBlobsSidecar(endSlot, pruneLimit);
+          return null;
+        });
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> unblindBlock(
@@ -317,5 +355,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return SafeFuture.of(database::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(() -> database.getBlobsSidecar(slotAndBlockRoot));
   }
 }

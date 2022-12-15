@@ -472,6 +472,10 @@ public class CombinedChainDataClient {
             });
   }
 
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarEpoch() {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
   @SuppressWarnings("unused")
   public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarByBlockRoot(final Bytes32 blockRoot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
