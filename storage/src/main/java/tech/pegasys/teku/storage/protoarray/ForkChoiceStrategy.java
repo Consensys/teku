@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -441,10 +440,12 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public List<Map<String, String>> getNodeData() {
+  public List<ProtoNodeData> getBlockData() {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getNodes().stream().map(ProtoNode::getData).collect(Collectors.toList());
+      return protoArray.getNodes().stream()
+          .map(ProtoNode::getBlockData)
+          .collect(Collectors.toList());
     } finally {
       protoArrayLock.readLock().unlock();
     }
