@@ -31,6 +31,7 @@ public class P2PConfig {
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
+  public static final int DEFAULT_MINIMUM_SUBNET_SUBSCRIPTIONS = 0;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
@@ -45,6 +46,7 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
+  private final int minimumSubnetSubscriptions;
   private final int peerRateLimit;
   private final int peerRequestLimit;
   private final int batchVerifyMaxThreads;
@@ -60,6 +62,7 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
+      final Integer minimumSubnetSubscriptions,
       final int peerRateLimit,
       final int peerRequestLimit,
       final int batchVerifyMaxThreads,
@@ -73,6 +76,7 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+    this.minimumSubnetSubscriptions = minimumSubnetSubscriptions;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
@@ -113,6 +117,10 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
+  public int getMinimumSubnetSubscriptions() {
+    return minimumSubnetSubscriptions;
+  }
+
   public int getPeerRateLimit() {
     return peerRateLimit;
   }
@@ -146,6 +154,7 @@ public class P2PConfig {
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+    private Integer minimumSubnetSubscriptions = DEFAULT_MINIMUM_SUBNET_SUBSCRIPTIONS;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
@@ -182,6 +191,7 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
+          minimumSubnetSubscriptions,
           peerRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
@@ -229,6 +239,16 @@ public class P2PConfig {
     public Builder subscribeAllSubnetsEnabled(final Boolean subscribeAllSubnetsEnabled) {
       checkNotNull(subscribeAllSubnetsEnabled);
       this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+      return this;
+    }
+
+    public Builder minimumSubnetSubscriptions(final Integer minimumSubnetSubscriptions) {
+      checkNotNull(minimumSubnetSubscriptions);
+      if (minimumSubnetSubscriptions < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid minimumSubnetSubscriptions: %d", minimumSubnetSubscriptions));
+      }
+      this.minimumSubnetSubscriptions = minimumSubnetSubscriptions;
       return this;
     }
 

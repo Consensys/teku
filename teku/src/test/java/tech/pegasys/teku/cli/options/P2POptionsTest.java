@@ -263,4 +263,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
+
+  @Test
+  public void minimumSubnetSubscriptions_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-minimum-subnet-subscriptions", "10");
+    final P2PConfig config = tekuConfiguration.p2p();
+    assertThat(config.getSpec()).isNotNull();
+    assertThat(tekuConfiguration.p2p().getMinimumSubnetSubscriptions()).isEqualTo(10);
+    assertThat(createConfigBuilder().p2p(b -> b.minimumSubnetSubscriptions(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
 }
