@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.List;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -84,7 +84,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final BlobsSidecarsByRangeMessageHandler handler =
       new BlobsSidecarsByRangeMessageHandler(
-          eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+          spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
 
   @BeforeEach
   public void setUp() {
@@ -93,17 +93,21 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_invalidRequestCount() {
+  public void validateRequest_preEip4844() {
+    final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(ONE);
+    final BlobsSidecarsByRangeMessageHandler handler =
+        new BlobsSidecarsByRangeMessageHandler(
+            spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
     final Optional<RpcException> result =
         handler.validateRequest(
-            protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, maxRequestSize.plus(1)));
-
+            protocolId, new BlobsSidecarsByRangeRequestMessage(ONE, ONE.plus(1)));
     assertThat(result)
         .hasValueSatisfying(
             rpcException -> {
-              assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
+              assertThat(rpcException.getResponseCode())
+                  .isEqualTo(RpcResponseStatus.INVALID_REQUEST_CODE);
               assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("Maximum of 8 blobs sidecars can be requested per request");
+                  .isEqualTo("Can't request blobs sidecars for slots before the EIP-4844 fork");
             });
   }
 

@@ -322,7 +322,11 @@ public class BeaconChainMethods {
 
     final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
         new BlobsSidecarsByRangeMessageHandler(
-            eip4844ForkEpoch, metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOBS_SIDECARS);
+            spec,
+            eip4844ForkEpoch,
+            metricsSystem,
+            combinedChainDataClient,
+            MAX_REQUEST_BLOBS_SIDECARS);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
