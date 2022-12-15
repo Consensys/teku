@@ -17,6 +17,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
-public interface BlockImporter {
+public interface BlockPublisher {
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock maybeBlindedBlock);
 }

@@ -120,7 +120,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
-  private final BlockImporterFactory blockImporterFactory;
+  private final BlockPublisherFactory blockImporterFactory;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -161,7 +161,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockImporterFactory =
-        new BlockImporterFactory(
+        new BlockPublisherFactory(
             spec,
             blockFactory,
             blockImportChannel,

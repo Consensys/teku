@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -26,12 +25,12 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-public class BlockImporterFactory {
+public class BlockPublisherFactory {
 
   private final Spec spec;
-  private final Map<SpecMilestone, BlockImporter> registeredImporters = new HashMap<>();
+  private final Map<SpecMilestone, BlockPublisher> registeredImporters = new HashMap<>();
 
-  public BlockImporterFactory(
+  public BlockPublisherFactory(
       final Spec spec,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -40,13 +39,16 @@ public class BlockImporterFactory {
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     this.spec = spec;
-    final BlockImporterPhase0 blockImporterImpl =
-        new BlockImporterPhase0(
+    final BlockPublisherPhase0 blockImporterImpl =
+        new BlockPublisherPhase0(
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
-    registeredImporters.put(SpecMilestone.PHASE0, blockImporterImpl);
+    for (final SpecMilestone specMilestone :
+        SpecMilestone.getAllPriorMilestones(SpecMilestone.EIP4844)) {
+      registeredImporters.put(specMilestone, blockImporterImpl);
+    }
     if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
-      final BlockImporterEip4844 blockAndBlobsSidecarImporter =
-          new BlockImporterEip4844(
+      final BlockPublisherEip4844 blockAndBlobsSidecarImporter =
+          new BlockPublisherEip4844(
               blockFactory,
               blockImportChannel,
               blockAndBlobsSidecarGossipChannel,
@@ -59,15 +61,6 @@ public class BlockImporterFactory {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
     SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
-    Optional<BlockImporter> blockImporter = Optional.empty();
-    while (blockImporter.isEmpty()) {
-      blockImporter = Optional.ofNullable(registeredImporters.get(blockMilestone));
-      if (blockImporter.isPresent()) {
-        break;
-      }
-      blockMilestone = SpecMilestone.getPriorMilestone(blockMilestone).orElseThrow();
-    }
-
-    return blockImporter.get().sendSignedBlock(maybeBlindedBlock);
+    return registeredImporters.get(blockMilestone).sendSignedBlock(maybeBlindedBlock);
   }
 }
