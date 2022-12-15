@@ -32,6 +32,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
@@ -95,13 +96,13 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
-    Request<?, ExecutionPayloadV2Web3jResponse> web3jRequest =
+  public SafeFuture<Response<GetPayloadV2Response>> getPayloadV2(final Bytes8 payloadId) {
+    Request<?, GetPayloadV2Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayloadV2",
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
-            ExecutionPayloadV2Web3jResponse.class);
+            GetPayloadV2Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
   }
 
@@ -179,8 +180,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
-  static class ExecutionPayloadV2Web3jResponse
-      extends org.web3j.protocol.core.Response<ExecutionPayloadV2> {}
+  static class GetPayloadV2Web3jResponse
+      extends org.web3j.protocol.core.Response<GetPayloadV2Response> {}
 
   static class BlobsBundleV1Web3jResponse extends org.web3j.protocol.core.Response<BlobsBundleV1> {}
 

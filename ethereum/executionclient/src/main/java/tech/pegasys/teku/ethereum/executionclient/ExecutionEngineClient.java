@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
@@ -38,7 +39,7 @@ public interface ExecutionEngineClient {
   // engine namespace
   SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(Bytes8 payloadId);
 
-  SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(Bytes8 payloadId);
+  SafeFuture<Response<GetPayloadV2Response>> getPayloadV2(Bytes8 payloadId);
 
   SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(Bytes8 payloadId);
 
