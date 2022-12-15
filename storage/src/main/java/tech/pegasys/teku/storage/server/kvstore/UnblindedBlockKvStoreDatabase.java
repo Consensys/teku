@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -243,25 +242,20 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
-    while (true) {
-      try (final Stream<SlotAndBlockRoot> blocksToDelete =
-          dao.streamFinalizedBlockSlotAndRoots(UInt64.ZERO, lastSlotToPrune)) {
-        final Iterator<SlotAndBlockRoot> blockIterator = blocksToDelete.iterator();
-        try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
-          for (int i = 0; i < PRUNE_BATCH_SIZE; i++) {
-            if (!blockIterator.hasNext()) {
-              LOG.info("Pruning complete");
-              return;
-            }
-            final SlotAndBlockRoot blockToDelete = blockIterator.next();
-            updater.deleteUnblindedFinalizedBlock(
-                blockToDelete.getSlot(), blockToDelete.getBlockRoot());
-          }
-          LOG.info("Committing pruning batch");
-          updater.commit();
-        }
+    final Optional<UInt64> earliestBlockSlot =
+        dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
+    for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
+        batchStart.isLessThanOrEqualTo(lastSlotToPrune);
+        batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
+      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+        final UInt64 end = lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE));
+        updater.pruneFinalizedUnblindedBlocks(
+            batchStart, end);
+        LOG.info("Committing pruning batch up to slot {}", end);
+        updater.commit();
       }
     }
+    LOG.info("Pruning complete");
   }
 
   @Override
