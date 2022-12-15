@@ -283,17 +283,6 @@ public class V4FinalizedKvStoreDao {
     return db.getRaw(schema.getColumnBlindedBlocksByRoot(), blockRoot);
   }
 
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamFinalizedBlockAndSlotRoots(
-      final UInt64 start, final UInt64 end) {
-    return db.stream(schema.getColumnSlotsByFinalizedRoot())
-        .filter(
-            entry ->
-                entry.getValue().isGreaterThanOrEqualTo(start)
-                    && entry.getValue().isLessThanOrEqualTo(end))
-        .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()));
-  }
-
   static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;

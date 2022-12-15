@@ -249,13 +249,14 @@ public class UnblindedBlockKvStoreDatabase
         batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
       try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
         final UInt64 end = lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE));
-        updater.pruneFinalizedUnblindedBlocks(
-            batchStart, end);
-        LOG.info("Committing pruning batch up to slot {}", end);
+        updater.pruneFinalizedUnblindedBlocks(batchStart, end);
         updater.commit();
+        if (end.isLessThan(lastSlotToPrune)) {
+          LOG.info("Finalized block pruning in progress. Pruned up to slot {}", end);
+        }
       }
     }
-    LOG.info("Pruning complete");
+    LOG.info("Completed pruning finalized blocks up to slot {}", lastSlotToPrune);
   }
 
   @Override

@@ -308,13 +308,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamFinalizedBlockSlotAndRoots(
-      final UInt64 start, final UInt64 end) {
-    return finalizedDao.streamFinalizedBlockAndSlotRoots(start, end);
-  }
-
-  @Override
   public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getBlobsSidecar(slotAndBlockRoot);
   }
