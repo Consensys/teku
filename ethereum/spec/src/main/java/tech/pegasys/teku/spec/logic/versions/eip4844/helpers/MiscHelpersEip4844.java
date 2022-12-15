@@ -59,7 +59,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     return kzg;
   }
 
-  public void validateBlobSidecar(
+  private void validateBlobSidecar(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
@@ -121,6 +121,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
   }
 
   private boolean isBlobTransaction(final Transaction transaction) {
+    checkArgument(transaction.getBytes().size() >= 1);
     return transaction.getBytes().get(0) == BLOB_TX_TYPE.get(0);
   }
 
