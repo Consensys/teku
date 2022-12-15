@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import com.google.common.base.Suppliers;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 public class BlockPublisherFactory {
 
   private final Spec spec;
-  private final Map<SpecMilestone, BlockPublisher> registeredImporters = new HashMap<>();
+  private final Map<SpecMilestone, BlockPublisher> registeredPublishers = new HashMap<>();
 
   public BlockPublisherFactory(
       final Spec spec,
@@ -39,28 +41,38 @@ public class BlockPublisherFactory {
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     this.spec = spec;
-    final BlockPublisherPhase0 blockImporterImpl =
+    final BlockPublisherPhase0 blockPublisherPhase0 =
         new BlockPublisherPhase0(
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
-    for (final SpecMilestone specMilestone :
-        SpecMilestone.getAllPriorMilestones(SpecMilestone.EIP4844)) {
-      registeredImporters.put(specMilestone, blockImporterImpl);
-    }
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
-      final BlockPublisherEip4844 blockAndBlobsSidecarImporter =
-          new BlockPublisherEip4844(
-              blockFactory,
-              blockImportChannel,
-              blockAndBlobsSidecarGossipChannel,
-              performanceTracker,
-              dutyMetrics);
-      registeredImporters.put(SpecMilestone.EIP4844, blockAndBlobsSidecarImporter);
-    }
+    // Not needed for all networks
+    final Supplier<BlockPublisherEip4844> blockAndBlobsSidecarPublisherSupplier =
+        Suppliers.memoize(
+            () ->
+                new BlockPublisherEip4844(
+                    blockFactory,
+                    blockImportChannel,
+                    blockAndBlobsSidecarGossipChannel,
+                    performanceTracker,
+                    dutyMetrics));
+    spec.getEnabledMilestones()
+        .forEach(
+            forkAndSpecMilestone -> {
+              if (forkAndSpecMilestone
+                  .getSpecMilestone()
+                  .isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+                registeredPublishers.put(
+                    forkAndSpecMilestone.getSpecMilestone(),
+                    blockAndBlobsSidecarPublisherSupplier.get());
+              } else {
+                registeredPublishers.put(
+                    forkAndSpecMilestone.getSpecMilestone(), blockPublisherPhase0);
+              }
+            });
   }
 
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
     SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
-    return registeredImporters.get(blockMilestone).sendSignedBlock(maybeBlindedBlock);
+    return registeredPublishers.get(blockMilestone).sendSignedBlock(maybeBlindedBlock);
   }
 }
