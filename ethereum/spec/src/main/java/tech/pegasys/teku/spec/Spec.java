@@ -88,6 +88,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
@@ -165,6 +166,18 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Fork at slot " + slot + " does not support sync committees"));
+  }
+
+  public Optional<LightClientUtil> getLightClientUtil(final UInt64 slot) {
+    return atSlot(slot).getLightClientUtil();
+  }
+
+  public LightClientUtil getLightClientUtilRequired(final UInt64 slot) {
+    return getLightClientUtil(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Fork at slot " + slot + " does not support light clients"));
   }
 
   public SpecVersion getGenesisSpec() {
