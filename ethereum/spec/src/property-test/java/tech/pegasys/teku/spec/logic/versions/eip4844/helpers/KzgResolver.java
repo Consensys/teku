@@ -11,71 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.ckzg4844;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 
 import com.google.common.io.Resources;
 import ethereum.ckzg4844.CKZG4844JNI;
-import java.util.List;
 import java.util.Optional;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.From;
-import net.jqwik.api.Property;
 import net.jqwik.api.Tuple;
-import net.jqwik.api.lifecycle.AddLifecycleHook;
 import net.jqwik.api.lifecycle.LifecycleContext;
 import net.jqwik.api.lifecycle.Lifespan;
 import net.jqwik.api.lifecycle.ParameterResolutionContext;
 import net.jqwik.api.lifecycle.PropagationMode;
 import net.jqwik.api.lifecycle.ResolveParameterHook;
 import net.jqwik.api.lifecycle.Store;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGException;
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.propertytest.suppliers.BytesSupplier;
-import tech.pegasys.teku.kzg.propertytest.suppliers.KZGCommitmentSupplier;
-import tech.pegasys.teku.kzg.propertytest.suppliers.KZGProofSupplier;
+import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
-
-@AddLifecycleHook(KzgResolver.class)
-public class CKZG4844PropertyTest {
-
-  @Property(tries = 100)
-  void computeAggregateKzgProofThrowsExpected(
-      final KZG kzg, @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs) {
-    try {
-      kzg.computeAggregateKzgProof(blobs);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(KZGException.class);
-    }
-  }
-
-  @Property(tries = 100)
-  void verifyAggregateKzgProofThrowsExpected(
-      final KZG kzg,
-      @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
-      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
-    try {
-      kzg.verifyAggregateKzgProof(blobs, commitments, proof);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(KZGException.class);
-    }
-  }
-
-  @Property(tries = 100)
-  void blobToKzgCommitmentThrowsExpected(
-      final KZG kzg, @ForAll(supplier = BytesSupplier.class) final Bytes blob) {
-    try {
-      kzg.blobToKzgCommitment(blob);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(KZGException.class);
-    }
-  }
-}
 
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
@@ -84,8 +34,8 @@ public class CKZG4844PropertyTest {
  * property test methods, you can expect it to load/free three times.
  */
 class KzgResolver implements ResolveParameterHook {
-  public static final Tuple.Tuple2<Class<KzgAutoLoadFree>, String> STORE_IDENTIFIER =
-      Tuple.of(KzgAutoLoadFree.class, "KZGs that automatically load & free");
+  public static final Tuple.Tuple2<Class<KzgResolver.KzgAutoLoadFree>, String> STORE_IDENTIFIER =
+      Tuple.of(KzgResolver.KzgAutoLoadFree.class, "KZGs that automatically load & free");
 
   @Override
   public Optional<ParameterSupplier> resolve(
@@ -99,8 +49,8 @@ class KzgResolver implements ResolveParameterHook {
   }
 
   private KZG getKzgWithTrustedSetup() {
-    final Store<KzgAutoLoadFree> kzgStore =
-        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgAutoLoadFree::new);
+    final Store<KzgResolver.KzgAutoLoadFree> kzgStore =
+        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgResolver.KzgAutoLoadFree::new);
     return kzgStore.get().kzg;
   }
 

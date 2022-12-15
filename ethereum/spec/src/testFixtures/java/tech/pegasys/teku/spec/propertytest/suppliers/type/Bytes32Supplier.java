@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.propertytest.suppliers;
+package tech.pegasys.teku.spec.propertytest.suppliers.type;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;

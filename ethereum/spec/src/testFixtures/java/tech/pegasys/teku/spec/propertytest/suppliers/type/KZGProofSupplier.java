@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.propertytest.suppliers;
+package tech.pegasys.teku.spec.propertytest.suppliers.type;
 
-import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class KZGCommitmentSupplier extends DataStructureUtilSupplier<KZGCommitment> {
-  public KZGCommitmentSupplier() {
-    super(DataStructureUtil::randomKZGCommitment, SpecMilestone.EIP4844);
+public class KZGProofSupplier extends DataStructureUtilSupplier<KZGProof> {
+  public KZGProofSupplier() {
+    super(DataStructureUtil::randomKZGProof, SpecMilestone.EIP4844);
   }
 }
