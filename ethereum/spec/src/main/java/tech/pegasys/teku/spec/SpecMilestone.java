@@ -51,6 +51,15 @@ public enum SpecMilestone {
     return allMilestones.subList(0, milestoneIndex);
   }
 
+  public static Optional<SpecMilestone> getPriorMilestone(SpecMilestone milestone) {
+    final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
+    final int milestoneIndex = allMilestones.indexOf(milestone);
+    if (milestoneIndex == 0) {
+      return Optional.empty();
+    }
+    return Optional.of(allMilestones.get(milestoneIndex - 1));
+  }
+
   /**
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones up to and included the specified milestone

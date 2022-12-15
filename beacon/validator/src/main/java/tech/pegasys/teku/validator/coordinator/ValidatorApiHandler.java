@@ -51,13 +51,11 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -71,8 +69,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -112,9 +108,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
-  private final BlockImportChannel blockImportChannel;
-  private final BlockGossipChannel blockGossipChannel;
-  private final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
@@ -127,6 +120,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
+  private final BlockImporterFactory blockImporterFactory;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -154,9 +148,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
-    this.blockImportChannel = blockImportChannel;
-    this.blockGossipChannel = blockGossipChannel;
-    this.blockAndBlobsSidecarGossipChannel = blockAndBlobsSidecarGossipChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
@@ -169,6 +160,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
+    this.blockImporterFactory =
+        new BlockImporterFactory(
+            spec,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockAndBlobsSidecarGossipChannel,
+            performanceTracker,
+            dutyMetrics);
   }
 
   @Override
@@ -553,54 +553,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
-    return blockFactory
-        .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
-        .thenCompose(this::sendUnblindedSignedBlock)
-        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
-  }
-
-  private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(
-      final SignedBeaconBlock block) {
-    // TODO: block+sidecar persistence
-    performanceTracker.saveProducedBlock(block);
-    final SafeFuture<BlockImportResult> importResultFuture;
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      final SafeFuture<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsSidecarSafeFuture =
-          blockFactory.supplementBlockWithSidecar(block);
-      importResultFuture =
-          blockAndBlobsSidecarSafeFuture
-              .thenPeek(blockAndBlobsSidecarGossipChannel::publishBlockAndBlobsSidecar)
-              .thenCompose(
-                  blockAndBlobsSidecar ->
-                      blockImportChannel.importBlock(
-                          blockAndBlobsSidecar.getSignedBeaconBlock(),
-                          Optional.of(blockAndBlobsSidecar.getBlobsSidecar())));
-    } else {
-      blockGossipChannel.publishBlock(block);
-      importResultFuture = blockImportChannel.importBlock(block, Optional.empty());
-    }
-    return importResultFuture.thenApply(
-        result -> {
-          if (result.isSuccessful()) {
-            LOG.trace("Successfully imported proposed block: {}", block::toLogString);
-            dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-            return SendSignedBlockResult.success(block.getRoot());
-          } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-            LOG.debug(
-                "Delayed processing proposed block {} because it is from the future",
-                block::toLogString);
-            dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-            return SendSignedBlockResult.notImported(result.getFailureReason().name());
-          } else {
-            VALIDATOR_LOGGER.proposedBlockImportFailed(
-                result.getFailureReason().toString(),
-                block.getSlot(),
-                block.getRoot(),
-                result.getFailureCause());
-
-            return SendSignedBlockResult.notImported(result.getFailureReason().name());
-          }
-        });
+    return blockImporterFactory.sendSignedBlock(maybeBlindedBlock);
   }
 
   @Override
