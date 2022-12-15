@@ -472,6 +472,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
+  public Stream<SlotAndBlockRoot> streamFinalizedBlockSlotAndRoots(
+      final UInt64 start, final UInt64 end) {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot())
+        .filter(
+            entry ->
+                entry.getValue().isGreaterThanOrEqualTo(start)
+                    && entry.getValue().isLessThanOrEqualTo(end))
+        .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()));
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlockRootBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -242,10 +243,19 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
-    // TODO: Very likely need to reapply batching here.
-    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
-      updater.pruneFinalizedUnblindedBlocks(UInt64.ZERO, lastSlotToPrune);
-      updater.commit();
+    try (final Stream<SlotAndBlockRoot> blocksToDelete =
+        dao.streamFinalizedBlockSlotAndRoots(UInt64.ZERO, lastSlotToPrune)) {
+      final Iterator<SlotAndBlockRoot> blockIterator = blocksToDelete.iterator();
+      while (blockIterator.hasNext()) {
+        try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+          for (int i = 0; i < PRUNE_BATCH_SIZE && blockIterator.hasNext(); i++) {
+            final SlotAndBlockRoot blockToDelete = blockIterator.next();
+            updater.deleteUnblindedFinalizedBlock(
+                blockToDelete.getSlot(), blockToDelete.getBlockRoot());
+          }
+          updater.commit();
+        }
+      }
     }
   }
 

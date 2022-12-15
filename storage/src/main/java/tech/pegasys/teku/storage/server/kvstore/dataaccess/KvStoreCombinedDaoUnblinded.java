@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
 
@@ -67,6 +68,9 @@ public interface KvStoreCombinedDaoUnblinded extends KvStoreCombinedDaoCommon {
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRoot> streamFinalizedBlockSlotAndRoots(UInt64 start, UInt64 end);
 
   interface CombinedUpdaterUnblinded
       extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded, CombinedUpdaterCommon {}
