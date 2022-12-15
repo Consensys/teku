@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,6 +39,8 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -56,6 +59,14 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
+  private final UInt64 eip4844ForkEpoch = UInt64.valueOf(1);
+
+  private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
+
+  private final UInt64 startSlot = eip4844ForkEpoch.increment().times(slotsPerEpoch);
+
+  private final UInt64 count = UInt64.valueOf(5);
+
   private final UInt64 maxRequestSize = UInt64.valueOf(8);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -73,24 +84,47 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final BlobsSidecarsByRangeMessageHandler handler =
       new BlobsSidecarsByRangeMessageHandler(
-          metricsSystem, combinedChainDataClient, maxRequestSize);
+          spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+
+  @BeforeEach
+  public void setUp() {
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveBlobsSidecars(listener, count.longValue())).thenReturn(true);
+  }
+
+  @Test
+  public void validateRequest_preEip4844() {
+    final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(ONE);
+    final BlobsSidecarsByRangeMessageHandler handler =
+        new BlobsSidecarsByRangeMessageHandler(
+            spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId, new BlobsSidecarsByRangeRequestMessage(ONE, ONE.plus(1)));
+    assertThat(result)
+        .hasValueSatisfying(
+            rpcException -> {
+              assertThat(rpcException.getResponseCode())
+                  .isEqualTo(RpcResponseStatus.INVALID_REQUEST_CODE);
+              assertThat(rpcException.getErrorMessageString())
+                  .isEqualTo("Can't request blobs sidecars for slots before the EIP-4844 fork");
+            });
+  }
 
   @Test
   public void validateRequest_validRequest() {
     final Optional<RpcException> result =
-        handler.validateRequest(protocolId, new BlobsSidecarsByRangeRequestMessage(ZERO, ONE));
+        handler.validateRequest(protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, ONE));
     assertThat(result).isEmpty();
   }
 
   @Test
   public void shouldNotSendBlobsSidecarsIfPeerIsRateLimited() {
 
-    when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveBlobsSidecars(listener, 5)).thenReturn(false);
 
-    final UInt64 count = UInt64.valueOf(5);
     final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(ZERO, count);
+        new BlobsSidecarsByRangeRequestMessage(startSlot, count);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -105,18 +139,50 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldSendResourceUnavailableIfBlobsSidecarsAreNotAvailable() {
+
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+
+    // earliest available sidecar epoch - 5001
+    when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(eip4844ForkEpoch.plus(5000))));
+
+    // current epoch - 9001
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.plus(9000));
+
+    // start slot in epoch 8500
+    final BlobsSidecarsByRangeRequestMessage request =
+        new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(8500).times(slotsPerEpoch), count);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // blobs sidecars should be available in the [4904(9000 - 4096), 9000] range, but they are
+    // available from epoch 5001
+    final ArgumentCaptor<RpcException> argumentCaptor = ArgumentCaptor.forClass(RpcException.class);
+    verify(listener).completeWithErrorResponse(argumentCaptor.capture());
+
+    final RpcException exception = argumentCaptor.getValue();
+
+    assertThat(exception).isInstanceOf(ResourceUnavailableException.class);
+    assertThat(exception.getErrorMessageString())
+        .isEqualTo(
+            "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range.");
+  }
+
+  @Test
   public void shouldSendToPeerRequestedNumberOfBlobsSidecars() {
 
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
 
-    when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveBlobsSidecars(listener, 5)).thenReturn(true);
+    when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
-    final UInt64 count = UInt64.valueOf(5);
     final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(ZERO, count);
+        new BlobsSidecarsByRangeRequestMessage(startSlot, count);
 
     final List<BlobsSidecar> expectedSent =
         UInt64.rangeClosed(request.getStartSlot(), request.getMaxSlot())
