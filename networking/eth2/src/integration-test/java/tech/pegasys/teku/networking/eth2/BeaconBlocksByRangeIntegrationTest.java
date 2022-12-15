@@ -219,7 +219,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
-  public void testRequestingEip4844Blocks() {
+  public void testRequestingBlocksByRangeForEip4844() {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
     // Create blocks
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
