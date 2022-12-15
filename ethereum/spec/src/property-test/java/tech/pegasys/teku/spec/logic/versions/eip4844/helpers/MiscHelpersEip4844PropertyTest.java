@@ -61,7 +61,7 @@ public class MiscHelpersEip4844PropertyTest {
     miscHelpers.kzgCommitmentToVersionedHash(commitment);
   }
 
-  @Property
+  @Property(tries = 100)
   void txPeekBlobVersionedHashesThrowsExpected(
       @ForAll(supplier = TransactionSupplier.class) final Transaction transaction) {
     try {
@@ -75,7 +75,7 @@ public class MiscHelpersEip4844PropertyTest {
     }
   }
 
-  @Property
+  @Property(tries = 100)
   void verifyKZGCommitmentsAgainstTransactionsThrowsExpected(
       @ForAll final List<@From(supplier = TransactionSupplier.class) Transaction> transactions,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments) {
