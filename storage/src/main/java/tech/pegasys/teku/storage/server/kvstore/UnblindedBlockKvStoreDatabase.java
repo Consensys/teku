@@ -242,16 +242,10 @@ public class UnblindedBlockKvStoreDatabase
 
   @Override
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
-    final Optional<UInt64> earliestBlockSlot =
-        dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
-    for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
-        batchStart.isLessThanOrEqualTo(lastSlotToPrune);
-        batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
-      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
-        updater.pruneFinalizedUnblindedBlocks(
-            batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
-        updater.commit();
-      }
+    // TODO: Very likely need to reapply batching here.
+    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      updater.pruneFinalizedUnblindedBlocks(UInt64.ZERO, lastSlotToPrune);
+      updater.commit();
     }
   }
 
