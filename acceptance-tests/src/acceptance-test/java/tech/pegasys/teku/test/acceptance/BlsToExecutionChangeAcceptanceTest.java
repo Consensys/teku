@@ -52,8 +52,8 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     lateJoiningNode.submitBlsToExecutionChange(validatorIndex, validatorKeyPair, executionAddress);
     lateJoiningNode.waitForValidatorWithCredentials(validatorIndex, executionAddress);
 
-    primaryNode.waitForBlsToExecutionChangeEventForValidator(0);
     lateJoiningNode.waitForBlsToExecutionChangeEventForValidator(0);
+    primaryNode.waitForBlsToExecutionChangeEventForValidator(0);
   }
 
   private TekuNode createPrimaryNode(
