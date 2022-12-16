@@ -42,8 +42,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao.V4Hot
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-public class KvStoreCombinedDaoAdapter
-    implements KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
+public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4MigratableSourceDao {
   private final V4HotKvStoreDao hotDao;
   private final V4FinalizedKvStoreDao finalizedDao;
 
@@ -126,11 +125,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public long countUnblindedHotBlocks() {
-    return hotDao.countUnblindedHotBlocks();
-  }
-
-  @Override
   public Map<UInt64, VoteTracker> getVotes() {
     return hotDao.getVotes();
   }
@@ -188,21 +182,10 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public long countNonCanonicalSlots() {
-    return finalizedDao.countNonCanonicalSlots();
-  }
-
-  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
-    return finalizedDao.streamUnblindedFinalizedBlocksRaw();
   }
 
   @Override
@@ -276,7 +259,7 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   public void ingest(
-      final KvStoreCombinedDaoCommon dao, final int batchSize, final Consumer<String> logger) {
+      final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
   }
 

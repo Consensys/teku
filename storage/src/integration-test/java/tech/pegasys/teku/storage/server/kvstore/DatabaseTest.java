@@ -84,7 +84,8 @@ import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterCommon;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -1341,7 +1342,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdaterCommon updater = hotUpdater()) {
       database.close();
       assertThatThrownBy(() -> updater.setGenesisTime(UInt64.ONE))
           .isInstanceOf(ShuttingDownException.class);
@@ -1349,7 +1350,7 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.HotUpdaterCommon hotUpdater() {
+  private HotUpdaterCommon hotUpdater() {
     return ((KvStoreDatabase<?, ?, ?, ?>) database).hotUpdater();
   }
 
@@ -1359,7 +1360,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedState(newBlock.getRoot(), newBlock.getState()))
@@ -1368,7 +1369,7 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.FinalizedUpdaterCommon finalizedUpdater() {
+  private FinalizedUpdaterCommon finalizedUpdater() {
     return ((KvStoreDatabase<?, ?, ?, ?>) database).finalizedUpdater();
   }
 
@@ -1378,7 +1379,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdaterCommon updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
@@ -1418,7 +1419,7 @@ public class DatabaseTest {
       createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+      try (final HotUpdaterCommon updater = hotUpdater()) {
         final Thread dbCloserThread =
             new Thread(
                 () -> {

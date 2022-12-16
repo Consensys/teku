@@ -27,18 +27,58 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface KvStoreCombinedDaoCommon extends AutoCloseable {
+public interface KvStoreCombinedDao extends AutoCloseable {
+
   Bytes32 MIN_BLOCK_ROOT = Bytes32.ZERO;
   Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
-  void ingest(KvStoreCombinedDaoCommon dao, int batchSize, Consumer<String> logger);
+  @MustBeClosed
+  HotUpdaterUnblinded hotUpdaterUnblinded();
+
+  @MustBeClosed
+  FinalizedUpdaterUnblinded finalizedUpdaterUnblinded();
+
+  @MustBeClosed
+  CombinedUpdaterUnblinded combinedUpdaterUnblinded();
+
+  Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamHotBlocks();
+
+  Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz();
+
+  Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
+
+  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
+
+  Optional<UInt64> getEarliestFinalizedBlockSlot();
+
+  Optional<SignedBeaconBlock> getEarliestFinalizedBlock();
+
+  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
+
+  List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(UInt64 slot);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
+
+  Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
+
+  void ingest(KvStoreCombinedDao dao, int batchSize, Consumer<String> logger);
 
   Optional<UInt64> getGenesisTime();
 
@@ -82,8 +122,6 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Set<Bytes32> getNonCanonicalBlockRootsAtSlot(UInt64 slot);
 
-  long countNonCanonicalSlots();
-
   Optional<UInt64> getOptimisticTransitionBlockSlot();
 
   Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
@@ -102,6 +140,34 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
 
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
+
+  interface CombinedUpdaterUnblinded
+      extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded, CombinedUpdaterCommon {}
+
+  interface HotUpdaterUnblinded extends HotUpdaterCommon {
+    void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
+
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
+      blocks.values().forEach(this::addHotBlock);
+    }
+
+    void deleteHotBlock(Bytes32 blockRoot);
+
+    void deleteUnblindedHotBlockOnly(Bytes32 blockRoot);
+  }
+
+  interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
+
+    void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addNonCanonicalBlock(final SignedBeaconBlock block);
+
+    void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
+
+    void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
+  }
 
   interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 

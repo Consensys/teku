@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
 public class CombinedKvStoreDao<S extends SchemaCombined>
-    implements KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
+    implements KvStoreCombinedDao, V4MigratableSourceDao {
   // Persistent data
   private final KvStoreAccessor db;
   private final S schema;
@@ -116,14 +116,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @MustBeClosed
   public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
     return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
-  }
-
-  @Override
-  public long countUnblindedHotBlocks() {
-    try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
-        db.streamRaw(schema.getColumnHotBlocksByRoot())) {
-      return rawEntries.count();
-    }
   }
 
   @Override
@@ -196,9 +188,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public void ingest(
-      final KvStoreCombinedDaoCommon sourceDao,
-      final int batchSize,
-      final Consumer<String> logger) {
+      final KvStoreCombinedDao sourceDao, final int batchSize, final Consumer<String> logger) {
     checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
     checkArgument(
         sourceDao instanceof V4MigratableSourceDao, "Expected instance of V4FinalizedKvStoreDao");
@@ -310,22 +300,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public long countNonCanonicalSlots() {
-    return db.size(schema.getColumnNonCanonicalRootsBySlot());
-  }
-
-  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
-    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
   }
 
   @Override

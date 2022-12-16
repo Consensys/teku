@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MAX_BLOCK_ROOT;
-import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MIN_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MAX_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MIN_BLOCK_ROOT;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
