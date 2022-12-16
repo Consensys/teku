@@ -92,7 +92,7 @@ public class SimpleHttpClient {
     if (!response.isSuccessful()) {
       LOG.debug("POST RESPONSE CODE: {}, BODY: {}", response.code(), responseBody.string());
     }
-    assertThat(response.isSuccessful()).isTrue();
+    assertThat(response.isSuccessful()).describedAs("Response is successful").isTrue();
     assertThat(responseBody).isNotNull();
     return responseBody.string();
   }
