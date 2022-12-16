@@ -304,7 +304,7 @@ public class TekuNode extends Node {
 
     if (!maybeEventStreamListener.get().isReady()) {
       fail(
-          "Event stream listener should have been started, but wasn't! Logs:\n"
+          "Event stream listener should have been ready, but wasn't! Logs:\n"
               + container.getLogs());
     }
 
