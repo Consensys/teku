@@ -89,15 +89,8 @@ public class V4HotKvStoreDao {
   }
 
   @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return streamRawColumn(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
-  }
-
-  public long countUnblindedHotBlocks() {
-    try (final Stream<ColumnEntry<Bytes, Bytes>> rawEntries =
-        db.streamRaw(schema.getColumnHotBlocksByRoot())) {
-      return rawEntries.count();
-    }
   }
 
   public Optional<BeaconState> getLatestFinalizedState() {
@@ -138,11 +131,6 @@ public class V4HotKvStoreDao {
 
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return db.get(schema.getVariableMinGenesisTimeBlock());
-  }
-
-  @MustBeClosed
-  public HotUpdater hotUpdaterUnblinded() {
-    return hotUpdater();
   }
 
   @MustBeClosed
@@ -283,7 +271,7 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void deleteUnblindedHotBlockOnly(final Bytes32 blockRoot) {
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
     }
 

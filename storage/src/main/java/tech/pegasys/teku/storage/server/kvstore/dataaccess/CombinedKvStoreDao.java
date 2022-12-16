@@ -113,7 +113,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
   }
 
@@ -166,12 +166,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public HotUpdater hotUpdaterUnblinded() {
+  public HotUpdater hotUpdater() {
     return combinedUpdater();
   }
 
   @Override
-  public FinalizedUpdater finalizedUpdaterUnblinded() {
+  public FinalizedUpdater finalizedUpdater() {
     return combinedUpdater();
   }
 
@@ -273,7 +273,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     final Optional<Set<Bytes32>> maybeRoots =
         db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
     return maybeRoots.stream()
@@ -294,7 +294,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
@@ -532,7 +532,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void deleteUnblindedHotBlockOnly(final Bytes32 blockRoot) {
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
     }
 
@@ -587,27 +587,28 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override
-    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+    public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
     }
 
     @Override
-    public void pruneFinalizedUnblindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
-        stream
-            .filter(
-                entry ->
-                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteUnblindedFinalizedBlock(entry.getValue(), entry.getKey()));
+    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+        try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
+                     db.stream(schema.getColumnSlotsByFinalizedRoot())) {
+          stream
+                  .filter(
+                          entry ->
+                                  entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
+                                          && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+                  .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
+        }
       }
     }
 

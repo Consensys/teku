@@ -42,10 +42,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
   @MustBeClosed
-  HotUpdater hotUpdaterUnblinded();
+  HotUpdater hotUpdater();
 
   @MustBeClosed
-  FinalizedUpdater finalizedUpdaterUnblinded();
+  FinalizedUpdater finalizedUpdater();
 
   @MustBeClosed
   CombinedUpdater combinedUpdater();
@@ -55,7 +55,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
-  Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz();
+  Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
 
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
 
@@ -67,10 +67,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(UInt64 slot);
+  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
 
   @MustBeClosed
-  Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+  Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
@@ -152,7 +152,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void deleteHotBlock(Bytes32 blockRoot);
 
-    void deleteUnblindedHotBlockOnly(Bytes32 blockRoot);
+    void deleteHotBlockOnly(Bytes32 blockRoot);
 
     void setGenesisTime(UInt64 genesisTime);
 
@@ -206,11 +206,11 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
-    void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+    void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
 
-    void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
+    void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
 
-    void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
+    void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 

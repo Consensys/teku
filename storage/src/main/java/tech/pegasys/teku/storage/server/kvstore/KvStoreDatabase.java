@@ -176,12 +176,12 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   protected HotUpdater hotUpdater() {
-    return dao.hotUpdaterUnblinded();
+    return dao.hotUpdater();
   }
 
   @MustBeClosed
   protected FinalizedUpdater finalizedUpdater() {
-    return dao.finalizedUpdaterUnblinded();
+    return dao.finalizedUpdater();
   }
 
   @Override
@@ -256,14 +256,14 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
-    return dao.streamUnblindedHotBlocksAsSsz();
+    return dao.streamHotBlocksAsSsz();
   }
 
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return dao.streamUnblindedFinalizedBlocks(startSlot, endSlot);
+    return dao.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   protected Map<Bytes32, StoredBlockMetadata> buildHotBlockMetadata() {
@@ -306,7 +306,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return dao.getNonCanonicalUnblindedBlocksAtSlot(slot);
+    return dao.getNonCanonicalBlocksAtSlot(slot);
   }
 
   protected void storeFinalizedBlocksToDao(final Collection<SignedBeaconBlock> blocks) {
@@ -344,7 +344,7 @@ public class KvStoreDatabase implements Database {
         batchStart.isLessThanOrEqualTo(lastSlotToPrune);
         batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        updater.pruneFinalizedUnblindedBlocks(
+        updater.pruneFinalizedBlocks(
             batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
         updater.commit();
       }

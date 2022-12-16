@@ -120,8 +120,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedHotBlocksAsSsz() {
-    return hotDao.streamUnblindedHotBlocksAsSsz();
+  public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
+    return hotDao.streamHotBlocksAsSsz();
   }
 
   @Override
@@ -131,7 +131,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public HotUpdater hotUpdaterUnblinded() {
+  public HotUpdater hotUpdater() {
     return hotDao.hotUpdater();
   }
 
@@ -142,7 +142,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public FinalizedUpdater finalizedUpdaterUnblinded() {
+  public FinalizedUpdater finalizedUpdater() {
     return finalizedDao.finalizedUpdater();
   }
 
@@ -167,7 +167,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public List<SignedBeaconBlock> getNonCanonicalUnblindedBlocksAtSlot(final UInt64 slot) {
+  public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
   }
 
@@ -183,7 +183,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public Stream<SignedBeaconBlock> streamUnblindedFinalizedBlocks(
+  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
   }
@@ -455,8 +455,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void deleteUnblindedHotBlockOnly(final Bytes32 blockRoot) {
-      hotUpdater.deleteUnblindedHotBlockOnly(blockRoot);
+    public void deleteHotBlockOnly(final Bytes32 blockRoot) {
+      hotUpdater.deleteHotBlockOnly(blockRoot);
     }
 
     @Override
@@ -475,19 +475,18 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
-      finalizedUpdater.deleteUnblindedFinalizedBlock(slot, blockRoot);
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+      finalizedUpdater.deleteFinalizedBlock(slot, blockRoot);
     }
 
     @Override
-    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
-      finalizedUpdater.deleteUnblindedNonCanonicalBlockOnly(blockRoot);
+    public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteNonCanonicalBlockOnly(blockRoot);
     }
 
     @Override
-    public void pruneFinalizedUnblindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      finalizedUpdater.pruneFinalizedUnblindedBlocks(firstSlotToPrune, lastSlotToPrune);
+    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+      finalizedUpdater.pruneFinalizedBlocks(firstSlotToPrune, lastSlotToPrune);
     }
 
     @Override

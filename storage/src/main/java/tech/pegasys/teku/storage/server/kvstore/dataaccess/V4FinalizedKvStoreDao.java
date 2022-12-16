@@ -84,17 +84,8 @@ public class V4FinalizedKvStoreDao {
         .collect(Collectors.toList());
   }
 
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
-    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
-  }
-
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
-  }
-
-  public long countNonCanonicalSlots() {
-    return db.size(schema.getColumnNonCanonicalRootsBySlot());
   }
 
   @MustBeClosed
@@ -244,27 +235,26 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override
-    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+    public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
     }
 
     @Override
-    public void pruneFinalizedUnblindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
       try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
+                   db.stream(schema.getColumnSlotsByFinalizedRoot())) {
         stream
-            .filter(
-                entry ->
-                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteUnblindedFinalizedBlock(entry.getValue(), entry.getKey()));
+                .filter(
+                        entry ->
+                                entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
+                                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+                .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
       }
     }
 
