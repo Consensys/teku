@@ -322,7 +322,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 5
+#    parallelism: 5
     executor: machine_executor_amd64
     steps:
       - prepare
@@ -529,151 +529,152 @@ jobs:
 workflows:
   circleci:
     jobs:
-      - assemble:
-          filters:
-            tags: &filters-release-tags
-              only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
-      - spotless:
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - windowsBuild:
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - referenceTestsPrep:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - referenceTests:
-          requires:
-            - assemble
-            - referenceTestsPrep
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - unitTests:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - propertyTests:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - integrationTests:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - acceptanceTests:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - extractAPISpec:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - publish-cloudsmith:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags:
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
-          context:
-            - cloudsmith-protocols
-      - publishDockerAmd64:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags:
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
-          context:
-            - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct         
-      - publishDockerArm64:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags:
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
-          context:
-            - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct      
-      - manifestDocker:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags:
-              <<: *filters-release-tags
-          requires:
-            - publishDockerArm64
-            - publishDockerAmd64
-          context:
-            - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct                               
-      - publishAPISpec:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags: # stable doc is published only on tags to prevent confusion on the doc site.
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
+      - acceptanceTests
+#      - assemble:
+#          filters:
+#            tags: &filters-release-tags
+#              only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+#      - spotless:
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - windowsBuild:
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - referenceTestsPrep:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - referenceTests:
+#          requires:
+#            - assemble
+#            - referenceTestsPrep
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - unitTests:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - propertyTests:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - integrationTests:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - acceptanceTests:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - extractAPISpec:
+#          requires:
+#            - assemble
+#          filters:
+#            tags:
+#              <<: *filters-release-tags
+#      - publish-cloudsmith:
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
+#            tags:
+#              <<: *filters-release-tags
+#          requires:
+#            - unitTests
+#            - propertyTests
+#            - integrationTests
+#            - acceptanceTests
+#            - referenceTests
+#            - extractAPISpec
+#            - spotless
+#            - windowsBuild
+#          context:
+#            - cloudsmith-protocols
+#      - publishDockerAmd64:
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
+#            tags:
+#              <<: *filters-release-tags
+#          requires:
+#            - unitTests
+#            - propertyTests
+#            - integrationTests
+#            - acceptanceTests
+#            - referenceTests
+#            - extractAPISpec
+#            - spotless
+#            - windowsBuild
+#          context:
+#            - dockerhub-quorumengineering-rw
+#            - dockerhub-opsquorum-dct
+#      - publishDockerArm64:
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
+#            tags:
+#              <<: *filters-release-tags
+#          requires:
+#            - unitTests
+#            - propertyTests
+#            - integrationTests
+#            - acceptanceTests
+#            - referenceTests
+#            - extractAPISpec
+#            - spotless
+#            - windowsBuild
+#          context:
+#            - dockerhub-quorumengineering-rw
+#            - dockerhub-opsquorum-dct
+#      - manifestDocker:
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
+#            tags:
+#              <<: *filters-release-tags
+#          requires:
+#            - publishDockerArm64
+#            - publishDockerAmd64
+#          context:
+#            - dockerhub-quorumengineering-rw
+#            - dockerhub-opsquorum-dct
+#      - publishAPISpec:
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
+#            tags: # stable doc is published only on tags to prevent confusion on the doc site.
+#              <<: *filters-release-tags
+#          requires:
+#            - unitTests
+#            - propertyTests
+#            - integrationTests
+#            - acceptanceTests
+#            - referenceTests
+#            - extractAPISpec
+#            - spotless
+#            - windowsBuild
   nightly:
     triggers:
       - schedule:
