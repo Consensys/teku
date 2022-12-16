@@ -20,6 +20,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -414,6 +416,45 @@ public class DoppelgangerDetectorTest {
         doppelgangerDetector.performDoppelgangerDetection(new HashSet<>());
     logCaptor.assertInfoLog("Skipping doppelganger detection: No public keys provided to check");
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
+  }
+
+  @Test
+  public void shouldCheckPreviousEpochAtFirstRun() {
+    when(genesisDataProvider.getGenesisTime())
+        .thenReturn(SafeFuture.completedFuture(UInt64.valueOf(0)));
+    timeProvider.advanceTimeBy(Duration.of(120, ChronoUnit.MINUTES));
+    UInt64 currentSlot = spec.getCurrentSlot(timeProvider.getTimeInSeconds(), UInt64.ZERO);
+    UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
+    when(validatorApiChannel.getValidatorsLiveness(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(new ArrayList<>())))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    List.of(
+                        new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
+                        new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
+                        new ValidatorLivenessAtEpoch(
+                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+    Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
+    SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
+        doppelgangerDetector.performDoppelgangerDetection(pubKeys);
+    asyncRunner.executeQueuedActions();
+    timeProvider.advanceTimeBySeconds(1);
+    asyncRunner.executeQueuedActions();
+    Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
+    verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(currentEpoch.minus(1).longValue(), pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(currentEpoch.longValue(), pubKeysStrings);
+    logCaptor.assertFatalLog(doppelgangerDetectedLog);
+    Map<UInt64, BLSPublicKey> doppelgangers =
+        Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));
+    verify(statusLog)
+        .validatorsDoppelgangersDetected(
+            doppelgangers.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+    assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
   private Stream<String> toAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {

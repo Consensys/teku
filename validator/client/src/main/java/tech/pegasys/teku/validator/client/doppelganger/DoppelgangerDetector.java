@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -116,6 +117,8 @@ public class DoppelgangerDetector {
     private final Set<BLSPublicKey> pubKeys;
     private Optional<UInt64> epochAtStart = Optional.empty();
 
+    private AtomicBoolean firstCheck = new AtomicBoolean(true);
+
     public DoppelgangerDetectionTask(final UInt64 startTime, final Set<BLSPublicKey> pubKeys) {
       this.startTime = startTime;
       this.pubKeys = pubKeys;
@@ -181,9 +184,14 @@ public class DoppelgangerDetector {
                       mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
                   return stopDoppelgangerDetectorTask(new HashMap<>());
                 } else {
-                  final UInt64 previousEpoch =
-                      currentEpoch.isZero() ? currentEpoch : currentEpoch.minus(UInt64.ONE);
-                  return checkDoppelgangersAtEpoch(pubKeys, previousEpoch);
+                  if (firstCheck.get()) {
+                    firstCheck.set(false);
+                    final UInt64 previousEpoch =
+                        currentEpoch.isZero() ? currentEpoch : currentEpoch.minus(UInt64.ONE);
+                    return checkDoppelgangersAtEpoch(pubKeys, previousEpoch);
+                  } else {
+                    return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
+                  }
                 }
               })
           .orTimeout(checkDelay)
