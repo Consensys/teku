@@ -166,15 +166,19 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  @MustBeClosed
   public HotUpdater hotUpdater() {
     return combinedUpdater();
   }
 
   @Override
+  @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return combinedUpdater();
   }
 
+  @Override
+  @MustBeClosed
   public CombinedUpdater combinedUpdater() {
     return new V4CombinedUpdater<>(db, schema, stateStorageLogic.updater());
   }

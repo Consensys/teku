@@ -61,10 +61,6 @@ public interface KvStoreSerializer<T> {
     return new SignedBeaconBlockSerializer(spec);
   }
 
-  static KvStoreSerializer<SignedBeaconBlock> createSignedBlindedBlockSerializer(final Spec spec) {
-    return new SignedBlindedBeaconBlockSerializer(spec);
-  }
-
   T deserialize(final byte[] data);
 
   byte[] serialize(final T value);

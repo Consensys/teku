@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -52,12 +53,15 @@ public class RocksDbInstanceFactory {
       final MetricsSystem metricsSystem,
       final MetricCategory metricCategory,
       final KvStoreConfiguration configuration,
-      final Collection<KvStoreColumn<?, ?>> columns)
+      final Collection<KvStoreColumn<?, ?>> columns,
+      final Collection<Bytes> deletedColumns)
       throws DatabaseStorageException {
     // Track resources that need to be closed
-
     checkArgument(
-        columns.stream().map(KvStoreColumn::getId).distinct().count() == columns.size(),
+        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
+                .distinct()
+                .count()
+            == columns.size() + deletedColumns.size(),
         "Column IDs are not distinct");
 
     // Create options
@@ -72,7 +76,7 @@ public class RocksDbInstanceFactory {
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(columns, columnFamilyOptions);
+        createColumnFamilyDescriptors(columns, deletedColumns, columnFamilyOptions);
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
@@ -157,11 +161,11 @@ public class RocksDbInstanceFactory {
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
       final Collection<KvStoreColumn<?, ?>> columns,
+      final Collection<Bytes> deletedColumns,
       final ColumnFamilyOptions columnFamilyOptions) {
     List<ColumnFamilyDescriptor> columnDescriptors =
-        columns.stream()
-            .map(
-                col -> new ColumnFamilyDescriptor(col.getId().toArrayUnsafe(), columnFamilyOptions))
+        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
+            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
             .collect(Collectors.toList());
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));

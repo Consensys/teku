@@ -56,15 +56,10 @@ public interface SchemaCombined extends Schema {
 
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
 
-  KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot();
-
-  KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot();
-
   KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot();
 
   KvStoreColumn<SlotAndBlockRoot, Void> getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot();
 
-  KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot();
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 

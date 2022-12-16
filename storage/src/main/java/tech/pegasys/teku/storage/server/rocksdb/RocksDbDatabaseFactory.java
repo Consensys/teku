@@ -45,13 +45,18 @@ public class RocksDbDatabaseFactory {
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
+            metricsSystem,
+            STORAGE_HOT_DB,
+            hotConfiguration,
+            schemaHot.getAllColumns(),
+            schemaHot.getDeletedColumnIds());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
-            schemaFinalized.getAllColumns());
+            schemaFinalized.getAllColumns(),
+            schemaFinalized.getDeletedColumnIds());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
@@ -74,7 +79,11 @@ public class RocksDbDatabaseFactory {
 
     final KvStoreAccessor db =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
+            metricsSystem,
+            STORAGE,
+            hotConfiguration,
+            schema.getAllColumns(),
+            schema.getDeletedColumnIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
         db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);

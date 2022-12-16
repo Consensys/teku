@@ -39,18 +39,6 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return snapshotDelegate.getColumnFinalizedStatesBySlot();
   }
 
-  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot() {
-    return delegate.getColumnBlindedBlocksByRoot();
-  }
-
-  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot() {
-    return delegate.getColumnFinalizedBlockRootBySlot();
-  }
-
-  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot() {
-    return delegate.getColumnExecutionPayloadByBlockRoot();
-  }
-
   public KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot() {
     return delegate.getColumnBlobsSidecarBySlotAndBlockRoot();
   }
@@ -68,9 +56,6 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
-        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
-        .put("EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot())
-        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .put("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", getColumnBlobsSidecarBySlotAndBlockRoot())
         .put(
             "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
@@ -84,6 +69,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
 
   public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
+  }
+
+  public Collection<Bytes> getDeletedColumnIds() {
+    return snapshotDelegate.getDeletedColumnIds();
   }
 
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {

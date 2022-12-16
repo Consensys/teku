@@ -14,7 +14,9 @@
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -139,5 +141,11 @@ public class SchemaHotAdapter implements Schema {
   @Override
   public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedColumnIds() {
+    // No hot db columns have been removed currently
+    return Collections.emptyList();
   }
 }
