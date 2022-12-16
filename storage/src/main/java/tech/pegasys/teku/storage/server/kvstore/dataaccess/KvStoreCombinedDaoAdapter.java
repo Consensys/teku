@@ -292,16 +292,9 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     finalizedDao.close();
   }
 
-  @Override
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public CombinedUpdater combinedUpdaterUnblinded() {
-    return combinedUpdater();
-  }
-
-  @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
-  private CombinedUpdaterAdapter combinedUpdater() {
+  public CombinedUpdater combinedUpdater() {
     return new CombinedUpdaterAdapter(hotDao.hotUpdater(), finalizedDao.finalizedUpdater());
   }
 

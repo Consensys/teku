@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -176,13 +175,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return combinedUpdater();
   }
 
-  @Override
-  public CombinedUpdater combinedUpdaterUnblinded() {
-    return combinedUpdater();
-  }
-
-  @NotNull
-  private V4CombinedUpdater<S> combinedUpdater() {
+  public CombinedUpdater combinedUpdater() {
     return new V4CombinedUpdater<>(db, schema, stateStorageLogic.updater());
   }
 

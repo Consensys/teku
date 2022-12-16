@@ -48,7 +48,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   FinalizedUpdater finalizedUpdaterUnblinded();
 
   @MustBeClosed
-  CombinedUpdater combinedUpdaterUnblinded();
+  CombinedUpdater combinedUpdater();
 
   Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
 

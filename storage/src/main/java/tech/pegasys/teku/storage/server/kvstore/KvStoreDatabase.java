@@ -171,7 +171,7 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   protected CombinedUpdater combinedUpdater() {
-    return dao.combinedUpdaterUnblinded();
+    return dao.combinedUpdater();
   }
 
   @MustBeClosed
