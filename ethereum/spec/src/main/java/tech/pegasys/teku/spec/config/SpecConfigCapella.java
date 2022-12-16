@@ -39,4 +39,6 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
   int getMaxBlsToExecutionChanges();
 
   int getMaxWithdrawalsPerPayload();
+
+  int getMaxValidatorsPerWithdrawalSweep();
 }

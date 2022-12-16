@@ -17,8 +17,11 @@ import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Eth2EventHandler implements EventHandler {
+  private static final Logger LOG = LogManager.getLogger();
   private final List<PackedMessage> eventList = new ArrayList<>();
 
   // Using this as a way to assert that our EventSubscriber is ready
@@ -28,7 +31,9 @@ public class Eth2EventHandler implements EventHandler {
   public void onOpen() {}
 
   @Override
-  public void onClosed() {}
+  public void onClosed() {
+    LOG.warn("Event stream closed");
+  }
 
   @Override
   public synchronized void onMessage(final String event, final MessageEvent messageEvent) {
@@ -40,18 +45,20 @@ public class Eth2EventHandler implements EventHandler {
   }
 
   @Override
-  public void onComment(final String comment) {
+  public synchronized void onComment(final String comment) {
     if (!hasReceivedReadyComment) {
       hasReceivedReadyComment = comment.equals("ready");
     }
   }
 
-  public boolean hasReceivedComment() {
+  public synchronized boolean hasReceivedComment() {
     return hasReceivedReadyComment;
   }
 
   @Override
-  public void onError(final Throwable t) {}
+  public void onError(final Throwable t) {
+    LOG.error("Event stream encountered an error!", t);
+  }
 
   public static class PackedMessage {
     private String event;
