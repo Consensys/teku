@@ -47,7 +47,9 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
 
   // Light client
   private Integer syncCommitteeBranchLength;
+  private Integer finalityBranchLength;
   private static final int SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT = 5;
+  private static final int FINALITY_BRANCH_LENGTH_DEFAULT = 6;
 
   AltairBuilder() {}
 
@@ -66,7 +68,8 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
         altairForkEpoch,
         minSyncCommitteeParticipants,
         updateTimeout,
-        syncCommitteeBranchLength);
+        syncCommitteeBranchLength,
+        finalityBranchLength);
   }
 
   @Override
@@ -96,6 +99,9 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     }
     if (syncCommitteeBranchLength == null) {
       syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
+    }
+    if (finalityBranchLength == null) {
+      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
     }
   }
 
@@ -176,6 +182,12 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   public AltairBuilder syncCommitteeBranchLength(final Integer syncCommitteeBranchLength) {
     checkNotNull(syncCommitteeBranchLength);
     this.syncCommitteeBranchLength = syncCommitteeBranchLength;
+    return this;
+  }
+
+  public AltairBuilder finalityBranchLength(final Integer finalityBranchLength) {
+    checkNotNull(finalityBranchLength);
+    this.finalityBranchLength = finalityBranchLength;
     return this;
   }
 }

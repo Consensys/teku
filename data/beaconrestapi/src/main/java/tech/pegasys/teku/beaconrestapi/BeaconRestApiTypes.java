@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOC
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
@@ -35,6 +36,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALID
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.START_PERIOD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SYNCING_STATUS;
@@ -103,6 +105,15 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<UInt64> SLOT_PARAMETER =
       new ParameterMetadata<>(
           SLOT, CoreTypes.UINT64_TYPE.withDescription("`uint64` value representing slot"));
+
+  public static final ParameterMetadata<UInt64> START_PERIOD_PARAMETER =
+      new ParameterMetadata<>(
+          START_PERIOD,
+          CoreTypes.UINT64_TYPE.withDescription("`uint64` value representing start_period"));
+
+  public static final ParameterMetadata<UInt64> COUNT_PARAMETER =
+      new ParameterMetadata<>(
+          COUNT, CoreTypes.UINT64_TYPE.withDescription("`uint64` value representing count"));
 
   public static final ParameterMetadata<UInt64> EPOCH_PARAMETER =
       new ParameterMetadata<>(
