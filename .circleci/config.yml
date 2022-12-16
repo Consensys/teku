@@ -174,7 +174,7 @@ jobs:
       - notify
       - save_cache:
           name: Caching gradle dependencies
-          key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+          key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - .gradle
             - ~/.gradle
