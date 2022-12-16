@@ -248,13 +248,13 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
       try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-                   db.stream(schema.getColumnSlotsByFinalizedRoot())) {
+          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
         stream
-                .filter(
-                        entry ->
-                                entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-                .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
+            .filter(
+                entry ->
+                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
+                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+            .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
       }
     }
 
