@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -213,11 +212,17 @@ public class ChainDataProvider {
                                 spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public List<Map<String, String>> getProtoArrayData() {
-    return recentChainData
-        .getForkChoiceStrategy()
-        .map(ReadOnlyForkChoiceStrategy::getNodeData)
-        .orElse(emptyList());
+  public ForkChoiceData getForkChoiceData() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    return new ForkChoiceData(
+        recentChainData.getJustifiedCheckpoint().orElseThrow(),
+        recentChainData.getFinalizedCheckpoint().orElseThrow(),
+        recentChainData
+            .getForkChoiceStrategy()
+            .map(ReadOnlyForkChoiceStrategy::getBlockData)
+            .orElse(emptyList()));
   }
 
   private Optional<Integer> validatorParameterToIndex(

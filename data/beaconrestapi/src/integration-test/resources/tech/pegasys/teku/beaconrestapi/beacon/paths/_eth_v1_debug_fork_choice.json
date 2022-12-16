@@ -1,0 +1,126 @@
+{
+  "get" : {
+    "tags" : [ "Debug" ],
+    "operationId" : "getDebugForkChoice",
+    "summary" : "Get fork choice array",
+    "description" : "Retrieves all current fork choice context.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "type" : "object",
+              "required" : [ "justified_checkpoint", "finalized_checkpoint", "fork_choice_nodes", "extra_data" ],
+              "properties" : {
+                "justified_checkpoint" : {
+                  "$ref" : "#/components/schemas/Checkpoint"
+                },
+                "finalized_checkpoint" : {
+                  "$ref" : "#/components/schemas/Checkpoint"
+                },
+                "fork_choice_nodes" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "required" : [ "slot", "block_root", "parent_root", "justified_epoch", "finalized_epoch", "weight", "validity", "execution_block_hash", "extra_data" ],
+                    "properties" : {
+                      "slot" : {
+                        "type" : "string",
+                        "description" : "The slot to which this block corresponds.",
+                        "example" : "1",
+                        "format" : "uint64"
+                      },
+                      "block_root" : {
+                        "type" : "string",
+                        "description" : "The signing merkle root of the `BeaconBlock`.",
+                        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                        "format" : "byte"
+                      },
+                      "parent_root" : {
+                        "type" : "string",
+                        "description" : "The signing merkle root of the parent `BeaconBlock`.",
+                        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                        "format" : "byte"
+                      },
+                      "justified_epoch" : {
+                        "type" : "string",
+                        "description" : "unsigned 64 bit integer",
+                        "example" : "1",
+                        "format" : "uint64"
+                      },
+                      "finalized_epoch" : {
+                        "type" : "string",
+                        "description" : "unsigned 64 bit integer",
+                        "example" : "1",
+                        "format" : "uint64"
+                      },
+                      "weight" : {
+                        "type" : "string",
+                        "description" : "unsigned 64 bit integer",
+                        "example" : "1",
+                        "format" : "uint64"
+                      },
+                      "validity" : {
+                        "type" : "string",
+                        "enum" : [ "VALID", "INVALID", "OPTIMISTIC" ]
+                      },
+                      "execution_block_hash" : {
+                        "type" : "string",
+                        "description" : "The `block_hash` from the `execution_payload` of the `BeaconBlock`",
+                        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+                        "format" : "byte"
+                      },
+                      "extra_data" : {
+                        "type" : "object",
+                        "additionalProperties" : {
+                          "type" : "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "extra_data" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

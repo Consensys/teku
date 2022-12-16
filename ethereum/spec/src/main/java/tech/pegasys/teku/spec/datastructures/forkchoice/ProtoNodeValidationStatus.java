@@ -11,22 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.teku;
+package tech.pegasys.teku.spec.datastructures.forkchoice;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-import java.util.Map;
-
-public class GetProtoArrayResponse {
-  private final List<Map<String, Object>> data;
-
-  @JsonCreator
-  public GetProtoArrayResponse(@JsonProperty("data") final List<Map<String, Object>> data) {
-    this.data = data;
-  }
-
-  public List<Map<String, Object>> getData() {
-    return data;
-  }
+public enum ProtoNodeValidationStatus {
+  VALID,
+  INVALID,
+  OPTIMISTIC
 }

@@ -401,18 +401,14 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void pruneFinalizedUnblindedBlocks(
         final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<UInt64, SignedBeaconBlock>> stream =
-          db.stream(schema.getColumnFinalizedBlocksBySlot(), firstSlotToPrune, lastSlotToPrune)) {
-        stream.forEach(
-            entry -> deleteUnblindedFinalizedBlock(entry.getKey(), entry.getValue().getRoot()));
-      }
-      try (final Stream<ColumnEntry<UInt64, Set<Bytes32>>> stream =
-          db.stream(schema.getColumnNonCanonicalRootsBySlot())) {
-        stream.forEach(
-            entry -> {
-              entry.getValue().forEach(this::deleteUnblindedNonCanonicalBlockOnly);
-              transaction.delete(schema.getColumnNonCanonicalRootsBySlot(), entry.getKey());
-            });
+      try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
+          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
+        stream
+            .filter(
+                entry ->
+                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
+                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+            .forEach(entry -> deleteUnblindedFinalizedBlock(entry.getValue(), entry.getKey()));
       }
     }
 
