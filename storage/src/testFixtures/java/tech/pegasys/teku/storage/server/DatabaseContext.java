@@ -70,21 +70,4 @@ public class DatabaseContext {
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .build();
   }
-
-  public Database createFileBasedStorageDatabaseOnly(
-      final Spec spec,
-      final Path tmpDir,
-      final StateStorageMode storageMode,
-      final StoreConfig storeConfig,
-      final boolean storeNonCanonicalBlocks) {
-    return FileBackedStorageSystemBuilder.create()
-        .specProvider(spec)
-        .dataDir(tmpDir)
-        .version(getDatabaseVersion())
-        .storageMode(storageMode)
-        .stateStorageFrequency(1L)
-        .storeConfig(storeConfig)
-        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-        .buildDatabaseOnly();
-  }
 }

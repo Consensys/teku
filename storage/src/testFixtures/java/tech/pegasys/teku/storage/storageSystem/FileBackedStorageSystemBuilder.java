@@ -51,7 +51,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   public StorageSystem build() {
-    final Database database = buildDatabaseOnly();
+    final Database database = buildDatabase();
 
     validate();
     return StorageSystem.create(
@@ -63,7 +63,7 @@ public class FileBackedStorageSystemBuilder {
         ChainBuilder.create(spec));
   }
 
-  public Database buildDatabaseOnly() {
+  private Database buildDatabase() {
     final Database database;
     switch (version) {
       case LEVELDB_TREE:

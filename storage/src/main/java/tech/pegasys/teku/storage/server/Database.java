@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -124,8 +123,6 @@ public interface Database extends AutoCloseable {
   Optional<Checkpoint> getFinalizedCheckpoint();
 
   Optional<Bytes32> getFinalizedBlockRootBySlot(UInt64 slot);
-
-  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, UInt64 slot);
 
   /**
    * Returns the latest finalized block at or prior to the given slot
