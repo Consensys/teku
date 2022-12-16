@@ -301,6 +301,9 @@ public class TekuNode extends Node {
       fail(
           "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
     }
+    assertThat(maybeEventStreamListener.get().isReady())
+        .describedAs("Event stream listener should have been started, but wasn't!")
+        .isTrue();
 
     waitFor(
         () -> {
