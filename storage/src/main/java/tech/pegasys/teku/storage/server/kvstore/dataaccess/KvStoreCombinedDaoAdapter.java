@@ -295,7 +295,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public CombinedUpdaterUnblinded combinedUpdaterUnblinded() {
+  public CombinedUpdater combinedUpdaterUnblinded() {
     return combinedUpdater();
   }
 
@@ -350,7 +350,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
   }
 
-  private static class CombinedUpdaterAdapter implements CombinedUpdaterUnblinded {
+  private static class CombinedUpdaterAdapter implements CombinedUpdater {
     private final V4HotUpdater hotUpdater;
     private final V4FinalizedUpdater finalizedUpdater;
 

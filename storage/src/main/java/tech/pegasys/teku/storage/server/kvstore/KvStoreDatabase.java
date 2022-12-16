@@ -72,7 +72,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
@@ -170,7 +170,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @MustBeClosed
-  protected CombinedUpdaterUnblinded combinedUpdater() {
+  protected CombinedUpdater combinedUpdater() {
     return dao.combinedUpdaterUnblinded();
   }
 
@@ -291,9 +291,7 @@ public class KvStoreDatabase implements Database {
   }
 
   protected void storeAnchorStateAndBlock(
-      final CombinedUpdaterUnblinded updater,
-      final BeaconState anchorState,
-      final SignedBeaconBlock block) {
+      final CombinedUpdater updater, final BeaconState anchorState, final SignedBeaconBlock block) {
     updater.addHotBlock(
         new BlockAndCheckpoints(
             block,
@@ -397,7 +395,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeInitialAnchor(final AnchorPoint anchor) {
-    try (final CombinedUpdaterUnblinded updater = combinedUpdater()) {
+    try (final CombinedUpdater updater = combinedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();

@@ -177,7 +177,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public CombinedUpdaterUnblinded combinedUpdaterUnblinded() {
+  public CombinedUpdater combinedUpdaterUnblinded() {
     return combinedUpdater();
   }
 
@@ -437,7 +437,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.get(schema.getVariableFinalizedDepositSnapshot());
   }
 
-  static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdaterUnblinded {
+  static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 
     private final KvStoreAccessor db;
