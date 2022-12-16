@@ -14,7 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -28,7 +28,8 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
 
-  @Test
+//  @Test
+  @RepeatedTest(10)
   void shouldUpdateWithdrawalCredentials() throws Exception {
     final int validatorIndex = 0;
     // Generating the same keypair that is used for interop validator index = 0
