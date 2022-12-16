@@ -174,7 +174,7 @@ jobs:
       - notify
       - save_cache:
           name: Caching gradle dependencies
-          key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+          key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - .gradle
             - ~/.gradle
@@ -622,7 +622,7 @@ workflows:
             - windowsBuild
           context:
             - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct         
+            - dockerhub-opsquorum-dct
       - publishDockerArm64:
           filters:
             branches:
@@ -642,7 +642,7 @@ workflows:
             - windowsBuild
           context:
             - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct      
+            - dockerhub-opsquorum-dct
       - manifestDocker:
           filters:
             branches:
@@ -656,7 +656,7 @@ workflows:
             - publishDockerAmd64
           context:
             - dockerhub-quorumengineering-rw
-            - dockerhub-opsquorum-dct                               
+            - dockerhub-opsquorum-dct
       - publishAPISpec:
           filters:
             branches:

@@ -26,18 +26,21 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
 
   private final int maxBlsToExecutionChanges;
   private final int maxWithdrawalsPerPayload;
+  private final int maxValidatorsPerWithdrawalSweep;
 
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
       final Bytes4 capellaForkVersion,
       final UInt64 capellaForkEpoch,
       final int maxBlsToExecutionChanges,
-      final int maxWithdrawalsPerPayload) {
+      final int maxWithdrawalsPerPayload,
+      final int maxValidatorsPerWithdrawalSweep) {
     super(specConfig);
     this.capellaForkVersion = capellaForkVersion;
     this.capellaForkEpoch = capellaForkEpoch;
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
+    this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
   }
 
   @Override
@@ -63,7 +66,8 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         && Objects.equals(capellaForkVersion, that.capellaForkVersion)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && maxBlsToExecutionChanges == that.maxBlsToExecutionChanges
-        && maxWithdrawalsPerPayload == that.maxWithdrawalsPerPayload;
+        && maxWithdrawalsPerPayload == that.maxWithdrawalsPerPayload
+        && maxValidatorsPerWithdrawalSweep == that.maxValidatorsPerWithdrawalSweep;
   }
 
   @Override
@@ -73,7 +77,8 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         capellaForkVersion,
         capellaForkEpoch,
         maxBlsToExecutionChanges,
-        maxWithdrawalsPerPayload);
+        maxWithdrawalsPerPayload,
+        maxValidatorsPerWithdrawalSweep);
   }
 
   @Override
@@ -84,6 +89,11 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   @Override
   public int getMaxWithdrawalsPerPayload() {
     return maxWithdrawalsPerPayload;
+  }
+
+  @Override
+  public int getMaxValidatorsPerWithdrawalSweep() {
+    return maxValidatorsPerWithdrawalSweep;
   }
 
   @Override

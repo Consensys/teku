@@ -87,7 +87,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
            We don't have a better way to know if the test case cares about a state root mismatch until this
            issue is resolved: https://github.com/ethereum/consensus-specs/issues/3122
           */
-          if (testDefinition.getTestName().contains("invalid_state_root")) {
+          if (testDefinition.getTestName().contains("invalid_incorrect_state_root")) {
             throwableAssert.hasMessageContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
           } else {
             throwableAssert
