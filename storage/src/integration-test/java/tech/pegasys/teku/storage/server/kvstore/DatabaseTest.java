@@ -84,7 +84,7 @@ import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
@@ -1360,7 +1360,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedState(newBlock.getRoot(), newBlock.getState()))
@@ -1369,7 +1369,7 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private FinalizedUpdaterCommon finalizedUpdater() {
+  private FinalizedUpdater finalizedUpdater() {
     return ((KvStoreDatabase) database).finalizedUpdater();
   }
 

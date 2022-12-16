@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
@@ -212,7 +212,7 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getKey);
   }
 
-  static class V4FinalizedUpdater implements FinalizedUpdaterUnblinded {
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalizedSnapshotStateAdapter schema;

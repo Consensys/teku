@@ -142,7 +142,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public FinalizedUpdaterUnblinded finalizedUpdaterUnblinded() {
+  public FinalizedUpdater finalizedUpdaterUnblinded() {
     return finalizedDao.finalizedUpdater();
   }
 

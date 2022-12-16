@@ -172,7 +172,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public FinalizedUpdaterUnblinded finalizedUpdaterUnblinded() {
+  public FinalizedUpdater finalizedUpdaterUnblinded() {
     return combinedUpdater();
   }
 

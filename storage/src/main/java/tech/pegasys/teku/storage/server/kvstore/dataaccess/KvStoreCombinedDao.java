@@ -45,7 +45,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   HotUpdater hotUpdaterUnblinded();
 
   @MustBeClosed
-  FinalizedUpdaterUnblinded finalizedUpdaterUnblinded();
+  FinalizedUpdater finalizedUpdaterUnblinded();
 
   @MustBeClosed
   CombinedUpdaterUnblinded combinedUpdaterUnblinded();
@@ -141,7 +141,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
-  interface CombinedUpdaterUnblinded extends HotUpdater, FinalizedUpdaterUnblinded {}
+  interface CombinedUpdaterUnblinded extends HotUpdater, FinalizedUpdater {}
 
   interface HotUpdater extends AutoCloseable {
     void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
@@ -200,7 +200,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeDepositsFromBlockEvent(UInt64 blockNumber);
   }
 
-  interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
+  interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
@@ -211,9 +211,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
 
     void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
-  }
-
-  interface FinalizedUpdaterCommon extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 

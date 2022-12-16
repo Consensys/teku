@@ -73,8 +73,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdaterUnblinded;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterCommon;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
@@ -181,7 +180,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @MustBeClosed
-  protected FinalizedUpdaterUnblinded finalizedUpdater() {
+  protected FinalizedUpdater finalizedUpdater() {
     return dao.finalizedUpdaterUnblinded();
   }
 
@@ -313,7 +312,7 @@ public class KvStoreDatabase implements Database {
   }
 
   protected void storeFinalizedBlocksToDao(final Collection<SignedBeaconBlock> blocks) {
-    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(updater::addFinalizedBlock);
       updater.commit();
     }
@@ -346,7 +345,7 @@ public class KvStoreDatabase implements Database {
     for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
         batchStart.isLessThanOrEqualTo(lastSlotToPrune);
         batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
-      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
         updater.pruneFinalizedUnblindedBlocks(
             batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
         updater.commit();
@@ -362,8 +361,7 @@ public class KvStoreDatabase implements Database {
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
   }
 
-  protected void addFinalizedBlock(
-      final SignedBeaconBlock block, final FinalizedUpdaterUnblinded updater) {
+  protected void addFinalizedBlock(final SignedBeaconBlock block, final FinalizedUpdater updater) {
     updater.addFinalizedBlock(block);
   }
 
@@ -380,7 +378,7 @@ public class KvStoreDatabase implements Database {
       while (it.hasNext()) {
         final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
         final int start = i;
-        try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
           while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
             final SignedBeaconBlock block = it.next();
             LOG.debug("Non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
@@ -491,7 +489,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {
-    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addFinalizedState(blockRoot, state);
       handleAddFinalizedStateRoot(state, updater);
     }
@@ -499,13 +497,13 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot) {
-    try (final FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addReconstructedFinalizedState(blockRoot, state);
       handleAddFinalizedStateRoot(state, updater);
     }
   }
 
-  private void handleAddFinalizedStateRoot(BeaconState state, FinalizedUpdaterCommon updater) {
+  private void handleAddFinalizedStateRoot(BeaconState state, FinalizedUpdater updater) {
     final Optional<BeaconState> maybeLastState =
         getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
     maybeLastState.ifPresentOrElse(
@@ -689,7 +687,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobsSidecar(blobsSidecar);
       updater.addUnconfirmedBlobsSidecar(blobsSidecar);
       updater.commit();
@@ -698,7 +696,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
       updater.commit();
     }
@@ -713,7 +711,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.removeBlobsSidecar(slotAndBlockRoot);
       updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
       updater.commit();
@@ -724,7 +722,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
     try (final Stream<BlobsSidecar> prunableBlobs =
             streamBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
-        final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+        final FinalizedUpdater updater = finalizedUpdater()) {
       final long pruned =
           prunableBlobs
               .limit(pruneLimit)
@@ -748,7 +746,7 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
             streamUnconfirmedBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
-        final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+        final FinalizedUpdater updater = finalizedUpdater()) {
       final long pruned =
           prunableUnconfirmed
               .limit(pruneLimit)
@@ -904,7 +902,7 @@ public class KvStoreDatabase implements Database {
     if (isFinalizedOptimisticBlockRootSet) {
       final Optional<SignedBeaconBlock> transitionBlock =
           finalizedOptimisticTransitionBlockRoot.flatMap(this::getHotBlock);
-      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
         updater.setOptimisticTransitionBlockSlot(transitionBlock.map(SignedBeaconBlock::getSlot));
         updater.commit();
       }
@@ -939,7 +937,7 @@ public class KvStoreDatabase implements Database {
     UInt64 lastSlot = baseBlock.getSlot();
     while (i < finalizedRoots.size()) {
       final int start = i;
-      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
         final StateRootRecorder recorder =
             new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot, spec);
 
@@ -986,7 +984,7 @@ public class KvStoreDatabase implements Database {
     final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
     int i = 0;
     while (i < finalizedRoots.size()) {
-      try (final FinalizedUpdaterUnblinded updater = finalizedUpdater()) {
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
         final int start = i;
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
@@ -1022,7 +1020,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void putFinalizedState(
-      FinalizedUpdaterCommon updater, final Bytes32 blockRoot, final BeaconState state) {
+      FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
     if (stateStorageMode.storesFinalizedStates()) {
       updater.addFinalizedState(blockRoot, state);
     }
