@@ -182,11 +182,10 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
-  public void doppelgangerCheck(long epoch, long slot, Set<String> publicKeys) {
+  public void doppelgangerCheck(long epoch, Set<String> publicKeys) {
     log.info(
-        "Performing doppelganger check. Epoch {}, Slot {}, Public keys {}",
+        "Performing doppelganger check. Epoch {}, Public keys {}",
         epoch,
-        slot,
         String.join(", ", publicKeys));
   }
 

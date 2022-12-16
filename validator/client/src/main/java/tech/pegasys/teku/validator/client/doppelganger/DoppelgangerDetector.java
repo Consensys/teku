@@ -183,7 +183,7 @@ public class DoppelgangerDetector {
                 } else {
                   final UInt64 previousEpoch =
                       currentEpoch.isZero() ? currentEpoch : currentEpoch.minus(UInt64.ONE);
-                  return checkDoppelgangersAtEpoch(pubKeys, currentSlot, previousEpoch);
+                  return checkDoppelgangersAtEpoch(pubKeys, previousEpoch);
                 }
               })
           .orTimeout(checkDelay)
@@ -198,11 +198,9 @@ public class DoppelgangerDetector {
     }
 
     private SafeFuture<Void> checkDoppelgangersAtEpoch(
-        final Set<BLSPublicKey> pubKeys, final UInt64 currentSlot, final UInt64 epoch) {
+        final Set<BLSPublicKey> pubKeys, final UInt64 epoch) {
       statusLog.doppelgangerCheck(
-          epoch.longValue(),
-          currentSlot.longValue(),
-          mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+          epoch.longValue(), mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
 
       return validatorApiChannel
           .getValidatorIndices(pubKeys)
