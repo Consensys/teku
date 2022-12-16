@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.HotUpdaterBlinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.HotUpdaterUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
@@ -142,11 +141,6 @@ public class V4HotKvStoreDao {
   }
 
   @MustBeClosed
-  public HotUpdaterBlinded hotUpdaterBlinded() {
-    return hotUpdater();
-  }
-
-  @MustBeClosed
   public HotUpdaterUnblinded hotUpdaterUnblinded() {
     return hotUpdater();
   }
@@ -192,7 +186,7 @@ public class V4HotKvStoreDao {
     return columnCounts;
   }
 
-  static class V4HotUpdater implements HotUpdaterBlinded, HotUpdaterUnblinded {
+  static class V4HotUpdater implements HotUpdaterUnblinded {
 
     private final KvStoreTransaction transaction;
     private final SchemaHotAdapter schema;
@@ -249,8 +243,7 @@ public class V4HotKvStoreDao {
       addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
     }
 
-    @Override
-    public void addHotBlockCheckpointEpochs(
+    private void addHotBlockCheckpointEpochs(
         final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
       transaction.put(
           schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, blockCheckpoints);
@@ -268,12 +261,6 @@ public class V4HotKvStoreDao {
           (stateRoot, slotAndBlockRoot) ->
               transaction.put(
                   schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot, slotAndBlockRoot));
-    }
-
-    @Override
-    public void pruneHotBlockContext(final Bytes32 blockRoot) {
-      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
-      deleteHotState(blockRoot);
     }
 
     @Override

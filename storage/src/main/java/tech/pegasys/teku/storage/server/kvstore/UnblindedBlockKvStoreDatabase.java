@@ -226,12 +226,6 @@ public class UnblindedBlockKvStoreDatabase
   @Override
   public void migrate() {}
 
-  @MustBeClosed
-  @Override
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return Stream.empty();
-  }
-
   @Override
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
     try (final HotUpdaterUnblinded updater = hotUpdater()) {

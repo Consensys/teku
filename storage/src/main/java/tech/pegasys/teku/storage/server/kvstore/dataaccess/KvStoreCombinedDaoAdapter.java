@@ -28,12 +28,10 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -45,7 +43,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class KvStoreCombinedDaoAdapter
-    implements KvStoreCombinedDaoBlinded, KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
+    implements KvStoreCombinedDaoUnblinded, V4MigratableSourceDao {
   private final V4HotKvStoreDao hotDao;
   private final V4FinalizedKvStoreDao finalizedDao;
 
@@ -128,20 +126,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamBlindedHotBlocksAsSsz() {
-    return hotDao
-        .streamBlockCheckpoints()
-        .map(Map.Entry::getKey)
-        .flatMap(
-            root ->
-                finalizedDao
-                    .getBlindedBlockAsSsz(root)
-                    .<Map.Entry<Bytes, Bytes>>map(block -> ColumnEntry.create(root, block))
-                    .stream());
-  }
-
-  @Override
   public long countUnblindedHotBlocks() {
     return hotDao.countUnblindedHotBlocks();
   }
@@ -153,12 +137,6 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   @MustBeClosed
-  public HotUpdaterBlinded hotUpdaterBlinded() {
-    return hotDao.hotUpdater();
-  }
-
-  @Override
-  @MustBeClosed
   public HotUpdaterUnblinded hotUpdaterUnblinded() {
     return hotDao.hotUpdater();
   }
@@ -166,12 +144,6 @@ public class KvStoreCombinedDaoAdapter
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return finalizedDao.getFinalizedBlock(root);
-  }
-
-  @Override
-  @MustBeClosed
-  public FinalizedUpdaterBlinded finalizedUpdaterBlinded() {
-    return finalizedDao.finalizedUpdater();
   }
 
   @Override
@@ -206,11 +178,6 @@ public class KvStoreCombinedDaoAdapter
   }
 
   @Override
-  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return finalizedDao.getBlindedNonCanonicalBlocksAtSlot(slot);
-  }
-
-  @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
   }
@@ -236,36 +203,6 @@ public class KvStoreCombinedDaoAdapter
   @MustBeClosed
   public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
     return finalizedDao.streamUnblindedFinalizedBlocksRaw();
-  }
-
-  @Override
-  public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
-    return finalizedDao.getBlindedBlock(root);
-  }
-
-  @Override
-  public Optional<Bytes> getExecutionPayload(final Bytes32 root) {
-    return finalizedDao.getExecutionPayload(root);
-  }
-
-  @Override
-  public Optional<UInt64> getEarliestBlindedBlockSlot() {
-    return finalizedDao.getEarliestBlindedBlockSlot();
-  }
-
-  @Override
-  public Optional<Bytes32> getFinalizedBlockRootAtSlot(final UInt64 slot) {
-    return finalizedDao.getFinalizedBlockRootAtSlot(slot);
-  }
-
-  @Override
-  public Optional<SignedBeaconBlock> getEarliestBlindedBlock() {
-    return finalizedDao.getEarliestBlindedBlock();
-  }
-
-  @Override
-  public Optional<SignedBeaconBlock> getLatestBlindedBlockAtSlot(final UInt64 slot) {
-    return finalizedDao.getLatestBlindedBlockAtSlot(slot);
   }
 
   @Override
@@ -333,32 +270,8 @@ public class KvStoreCombinedDaoAdapter
 
   @Override
   @MustBeClosed
-  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
-    return finalizedDao.streamFinalizedBlockRoots(startSlot, endSlot);
-  }
-
-  @Override
-  @MustBeClosed
   public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
     return finalizedDao.getFinalizedStateRoots();
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
-    return finalizedDao.streamUnblindedNonCanonicalBlocks();
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
-    return finalizedDao.streamUnblindedFinalizedBlockRoots();
-  }
-
-  @MustBeClosed
-  @Override
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return finalizedDao.streamBlindedBlocks();
   }
 
   @Override
@@ -394,13 +307,6 @@ public class KvStoreCombinedDaoAdapter
     hotDao.close();
     hotDao.close();
     finalizedDao.close();
-  }
-
-  @Override
-  @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
-  public CombinedUpdaterBlinded combinedUpdaterBlinded() {
-    return combinedUpdater();
   }
 
   @Override
@@ -461,8 +367,7 @@ public class KvStoreCombinedDaoAdapter
     }
   }
 
-  private static class CombinedUpdaterAdapter
-      implements CombinedUpdaterUnblinded, CombinedUpdaterBlinded {
+  private static class CombinedUpdaterAdapter implements CombinedUpdaterUnblinded {
     private final V4HotUpdater hotUpdater;
     private final V4FinalizedUpdater finalizedUpdater;
 
@@ -538,12 +443,6 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void addHotBlockCheckpointEpochs(
-        final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
-      hotUpdater.addHotBlockCheckpointEpochs(blockRoot, blockCheckpoints);
-    }
-
-    @Override
     public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
       hotUpdater.addHotState(blockRoot, state);
     }
@@ -570,11 +469,6 @@ public class KvStoreCombinedDaoAdapter
     }
 
     @Override
-    public void pruneHotBlockContext(final Bytes32 blockRoot) {
-      hotUpdater.pruneHotBlockContext(blockRoot);
-    }
-
-    @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       hotUpdater.pruneHotStateRoots(stateRoots);
     }
@@ -597,50 +491,6 @@ public class KvStoreCombinedDaoAdapter
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addFinalizedBlock(block);
-    }
-
-    @Override
-    public void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root) {
-      finalizedUpdater.addFinalizedBlockRootBySlot(slot, root);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlock(
-        final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
-      finalizedUpdater.addBlindedFinalizedBlock(block, root, spec);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlockRaw(
-        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
-      finalizedUpdater.addBlindedFinalizedBlockRaw(blockBytes, root, slot);
-    }
-
-    @Override
-    public void addBlindedBlock(
-        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
-      finalizedUpdater.addBlindedBlock(block, blockRoot, spec);
-    }
-
-    @Override
-    public void addExecutionPayload(final Bytes32 blockRoot, final ExecutionPayload payload) {
-      finalizedUpdater.addExecutionPayload(blockRoot, payload);
-    }
-
-    @Override
-    public void deleteBlindedBlock(final Bytes32 blockRoot) {
-      finalizedUpdater.deleteBlindedBlock(blockRoot);
-    }
-
-    @Override
-    public void deleteExecutionPayload(final Bytes32 blockRoot) {
-      finalizedUpdater.deleteExecutionPayload(blockRoot);
-    }
-
-    @Override
-    public void pruneFinalizedBlindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      finalizedUpdater.pruneFinalizedBlindedBlocks(firstSlotToPrune, lastSlotToPrune);
     }
 
     @Override

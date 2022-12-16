@@ -202,9 +202,6 @@ public interface Database extends AutoCloseable {
 
   Optional<Checkpoint> getAnchor();
 
-  @MustBeClosed
-  Stream<SignedBeaconBlock> streamBlindedBlocks();
-
   Optional<Checkpoint> getJustifiedCheckpoint();
 
   void deleteHotBlocks(Set<Bytes32> blockRootsToDelete);

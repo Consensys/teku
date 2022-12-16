@@ -253,12 +253,6 @@ public class NoOpDatabase implements Database {
     return Optional.empty();
   }
 
-  @MustBeClosed
-  @Override
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return Stream.empty();
-  }
-
   @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return Optional.empty();
