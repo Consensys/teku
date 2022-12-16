@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
@@ -57,34 +56,21 @@ public class ChainStorage
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
 
-  @SuppressWarnings("unused")
-  private final Optional<ExecutionLayerChannel> executionLayerChannel;
-
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
   private final Spec spec;
 
   private ChainStorage(
-      final Database database,
-      final FinalizedStateCache finalizedStateCache,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
-      final Spec spec) {
+      final Database database, final FinalizedStateCache finalizedStateCache, final Spec spec) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
     this.spec = spec;
-    this.executionLayerChannel = executionLayerChannel;
   }
 
-  public static ChainStorage create(
-      final Database database,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
-      final Spec spec) {
+  public static ChainStorage create(final Database database, final Spec spec) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        database,
-        new FinalizedStateCache(spec, database, finalizedStateCacheSize, true),
-        executionLayerChannel,
-        spec);
+        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true), spec);
   }
 
   private synchronized Optional<OnDiskStoreData> getStore() {

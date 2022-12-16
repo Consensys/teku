@@ -14,9 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 import java.nio.file.Path;
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -26,15 +23,10 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 public class DatabaseContext {
   private final DatabaseVersion databaseVersion;
 
-  private final BlockStorage blockStorage;
   private final boolean inMemoryStorage;
 
-  public DatabaseContext(
-      final DatabaseVersion databaseVersion,
-      final BlockStorage blockStorage,
-      final boolean inMemoryStorage) {
+  public DatabaseContext(final DatabaseVersion databaseVersion, final boolean inMemoryStorage) {
     this.databaseVersion = databaseVersion;
-    this.blockStorage = blockStorage;
     this.inMemoryStorage = inMemoryStorage;
   }
 
@@ -58,7 +50,6 @@ public class DatabaseContext {
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .build();
   }
 
@@ -75,10 +66,8 @@ public class DatabaseContext {
         .version(getDatabaseVersion())
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
-        .asyncRunner(Optional.of(new StubAsyncRunner()))
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .build();
   }
 
@@ -87,7 +76,6 @@ public class DatabaseContext {
       final Path tmpDir,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
-      final AsyncRunner asyncRunner,
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
         .specProvider(spec)
@@ -95,14 +83,8 @@ public class DatabaseContext {
         .version(getDatabaseVersion())
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
-        .asyncRunner(Optional.of(asyncRunner))
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
-        .storeBlockExecutionPayloadSeparately(isStoreExecutionPayloadSeparately())
         .buildDatabaseOnly();
-  }
-
-  private boolean isStoreExecutionPayloadSeparately() {
-    return blockStorage.equals(BlockStorage.BLINDED_BLOCK);
   }
 }

@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -65,7 +64,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                      Optional.of(storageAsyncRunner),
                       config);
               database = dbFactory.createDatabase();
 
@@ -81,13 +79,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getBlockPruningInterval()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
-              chainStorage =
-                  ChainStorage.create(
-                      database,
-                      Optional.of(
-                          eventChannels.getPublisher(
-                              ExecutionLayerChannel.class, storageAsyncRunner)),
-                      config.getSpec());
+              chainStorage = ChainStorage.create(database, config.getSpec());
               final DepositStorage depositStorage =
                   DepositStorage.create(
                       eventChannels.getPublisher(Eth1EventsChannel.class),

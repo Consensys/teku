@@ -17,9 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -40,10 +38,6 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
@@ -66,10 +60,6 @@ public class RocksDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -80,10 +70,6 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final KvStoreAccessor db =
@@ -91,15 +77,6 @@ public class RocksDbDatabaseFactory {
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        schema,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
-        spec);
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 }

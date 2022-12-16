@@ -70,36 +70,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean storeNonCanonicalBlocksEnabled =
       StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
 
-  @CommandLine.Option(
-      names = {"--Xdata-storage-store-payload-separately-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Store the execution payload of blocks separate to the rest of the block",
-      fallbackValue = "true",
-      hidden = true,
-      arity = "0..1")
-  private boolean storeBlockExecutionPayloadSeparately =
-      StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-
-  @CommandLine.Option(
-      names = {"--Xdata-storage-block-migrate-batch-size"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the batch size for migrating finalized blocks to blinded storage",
-      hidden = true,
-      arity = "1")
-  private int blockMigrationBatchSize = StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-
-  @CommandLine.Option(
-      names = {"--Xdata-storage-block-migrate-batch-delay-ms"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the delay time in millis to wait after committing a batch of blocks",
-      hidden = true,
-      arity = "1")
-  private int blockMigrationBatchDelayMillis =
-      StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
-
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
    * time. Not that states later in the chain with more validators have more branches so need a
@@ -150,9 +120,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
-                .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
-                .blockMigrationBatchSize(blockMigrationBatchSize)
-                .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
     builder.sync(
@@ -172,9 +139,5 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
           : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
-  }
-
-  public boolean isStoreBlockExecutionPayloadSeparately() {
-    return storeBlockExecutionPayloadSeparately;
   }
 }

@@ -15,15 +15,10 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
-import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
 
 import java.nio.file.Path;
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -40,9 +35,6 @@ public class FileBackedStorageSystemBuilder {
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
-  private Optional<AsyncRunner> asyncRunner = Optional.empty();
-
-  private Optional<ExecutionLayerChannel> executionLayerChannel = Optional.empty();
   private Spec spec;
 
   // Version-dependent fields
@@ -51,9 +43,6 @@ public class FileBackedStorageSystemBuilder {
   private Path archiveDir;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
-  private boolean storeBlockExecutionPayloadSeparately = false;
-  private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-  private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
 
   private FileBackedStorageSystemBuilder() {}
 
@@ -71,7 +60,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeConfig,
         spec,
-        executionLayerChannel,
         ChainBuilder.create(spec));
   }
 
@@ -108,10 +96,7 @@ public class FileBackedStorageSystemBuilder {
         .version(version)
         .dataDir(dataDir)
         .storageMode(storageMode)
-        .asyncRunner(asyncRunner)
         .stateStorageFrequency(stateStorageFrequency)
-        .executionLayerChannel(executionLayerChannel)
-        .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
         .storeConfig(storeConfig);
   }
 
@@ -126,26 +111,9 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
-  public FileBackedStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
-    this.asyncRunner = asyncRunner;
-    return this;
-  }
-
   public FileBackedStorageSystemBuilder storeNonCanonicalBlocks(
       final boolean storeNonCanonicalBlocks) {
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
-    return this;
-  }
-
-  public FileBackedStorageSystemBuilder executionLayerChannel(
-      final Optional<ExecutionLayerChannel> executionLayerChannel) {
-    this.executionLayerChannel = executionLayerChannel;
-    return this;
-  }
-
-  public FileBackedStorageSystemBuilder storeBlockExecutionPayloadSeparately(
-      final boolean storeBlockExecutionPayloadSeparately) {
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     return this;
   }
 
@@ -191,10 +159,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -209,10 +173,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -224,10 +184,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -238,11 +194,7 @@ public class FileBackedStorageSystemBuilder {
         configDefault.withDatabaseDir(hotDir),
         storageMode,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
         10_000,
-        asyncRunner,
         spec);
   }
 
@@ -254,10 +206,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -269,10 +217,6 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 }

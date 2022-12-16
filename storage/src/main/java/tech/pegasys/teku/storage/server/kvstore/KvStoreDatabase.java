@@ -42,7 +42,6 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -111,10 +110,6 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaFinalizedSnapshotStateAdapter>
         finalizedStateStorageLogic =
@@ -124,15 +119,6 @@ public abstract class KvStoreDatabase<
         new KvStoreCombinedDaoAdapter(
             hotDao,
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
-    if (storeBlockExecutionPayloadSeparately) {
-      return new BlindedBlockKvStoreDatabase(
-          dao,
-          new BlindedBlockMigration<>(
-              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
-          stateStorageMode,
-          storeNonCanonicalBlocks,
-          spec);
-    }
     return new UnblindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
@@ -142,25 +128,12 @@ public abstract class KvStoreDatabase<
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        db,
-        schema,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
-        spec,
-        finalizedStateStorageLogic);
+        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }
 
   public static Database createWithStateTree(
@@ -169,25 +142,12 @@ public abstract class KvStoreDatabase<
       final SchemaCombinedTreeState schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db,
-        schema,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
-        spec,
-        finalizedStateStorageLogic);
+        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
   }
 
   private static <S extends SchemaCombined> KvStoreDatabase<?, ?, ?, ?> create(
@@ -195,23 +155,10 @@ public abstract class KvStoreDatabase<
       final S schema,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
         new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
-    if (storeBlockExecutionPayloadSeparately) {
-      return new BlindedBlockKvStoreDatabase(
-          dao,
-          new BlindedBlockMigration<>(
-              spec, dao, blockMigrationBatchSize, blockMigrationBatchDelay, asyncRunner),
-          stateStorageMode,
-          storeNonCanonicalBlocks,
-          spec);
-    }
     return new UnblindedBlockKvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 

@@ -300,11 +300,7 @@ public class DebugDbCommand implements Runnable {
                 maybeFinalizedBlock.get().getRoot(), maybeFinalizedBlock.get().getSlot());
           }
         } else {
-          checkFinalizedIndices(
-              database,
-              beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately(),
-              currentBlock,
-              maybeParent.get());
+          checkFinalizedIndices(database, maybeParent.get());
           maybeFinalizedBlock = maybeParent;
         }
         counter++;
@@ -384,7 +380,7 @@ public class DebugDbCommand implements Runnable {
           final boolean deleteAll)
       throws Exception {
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
-    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions); ) {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<Checkpoint> justified = database.getJustifiedCheckpoint();
       if (justified.isEmpty()) {
         System.out.println(
@@ -412,7 +408,7 @@ public class DebugDbCommand implements Runnable {
               shouldDelete = true;
             }
           } else {
-            final boolean canParse = canParseBlock(beaconNodeDataOptions, spec, blockData);
+            final boolean canParse = canParseBlock(spec, blockData);
             if (!canParse && isJustifiedBlock) {
               System.out.printf(
                   "Block at slot %s is justified but cannot be parsed. Unable to recover this database.%n",
@@ -434,14 +430,9 @@ public class DebugDbCommand implements Runnable {
     return 0;
   }
 
-  private boolean canParseBlock(
-      final BeaconNodeDataOptions beaconNodeDataOptions, final Spec spec, final Bytes blockData) {
+  private boolean canParseBlock(final Spec spec, final Bytes blockData) {
     try {
-      if (beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately()) {
-        spec.deserializeSignedBlindedBeaconBlock(blockData);
-      } else {
-        spec.deserializeSignedBeaconBlock(blockData);
-      }
+      spec.deserializeSignedBeaconBlock(blockData);
       return true;
     } catch (final Exception e) {
       return false;
@@ -473,11 +464,7 @@ public class DebugDbCommand implements Runnable {
     return Optional.empty();
   }
 
-  private void checkFinalizedIndices(
-      final Database database,
-      final boolean blindedBlocksEnabled,
-      final SignedBeaconBlock currentBlock,
-      final SignedBeaconBlock parentBlock) {
+  private void checkFinalizedIndices(final Database database, final SignedBeaconBlock parentBlock) {
 
     UInt64 parentSlot = parentBlock.getSlot();
     Optional<UInt64> indexSlot = database.getSlotForFinalizedBlockRoot(parentBlock.getRoot());
@@ -485,24 +472,6 @@ public class DebugDbCommand implements Runnable {
       System.err.printf(
           "Finalized block index for root %s reports slot %s, expected slot %s%n",
           parentBlock.getRoot(), (indexSlot.isPresent() ? indexSlot.get() : "BLANK"), parentSlot);
-    } else {
-      if (blindedBlocksEnabled) {
-        // check for any finalized indexes in the gap
-        UInt64 counter = indexSlot.get();
-        counter = counter.increment();
-        while (counter.isLessThan(currentBlock.getSlot())) {
-          if (database.getFinalizedBlockRootBySlot(counter).isPresent()) {
-            System.err.printf(
-                "Found an unexpected block root at slot %s, should be no finalized blocks between %s (%s) and %s (%s)%n",
-                counter,
-                parentBlock.getRoot(),
-                parentSlot,
-                currentBlock.getRoot(),
-                currentBlock.getSlot());
-          }
-          counter = counter.increment();
-        }
-      }
     }
   }
 
@@ -519,10 +488,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
-            Optional.empty(),
             StorageConfiguration.builder()
-                .storeBlockExecutionPayloadSeparately(
-                    beaconNodeDataOptions.isStoreBlockExecutionPayloadSeparately())
                 .eth1DepositContract(
                     eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())
                 .specProvider(spec)
