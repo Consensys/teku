@@ -55,6 +55,8 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
     return executionEngineClient
         .getPayloadV2(executionPayloadContext.getPayloadId())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        // Note: Currently ignoring the returned blockValue but will eventually want to use it
+        .thenApply(response -> response.executionPayload)
         .thenCombine(
             SafeFuture.of(
                 () ->
