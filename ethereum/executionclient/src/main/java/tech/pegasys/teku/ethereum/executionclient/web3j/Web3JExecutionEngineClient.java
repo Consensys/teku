@@ -32,6 +32,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
@@ -41,15 +42,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private static final Duration EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT = Duration.ofSeconds(8);
 
   private final Web3JClient web3JClient;
+  private final Version engineVersion;
 
-  public Web3JExecutionEngineClient(final Web3JClient web3JClient) {
+  public Web3JExecutionEngineClient(final Web3JClient web3JClient, final Version engineVersion) {
     this.web3JClient = web3JClient;
+    this.engineVersion = engineVersion;
   }
 
   @Override
@@ -95,14 +99,33 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV2>> getPayloadV2(final Bytes8 payloadId) {
-    Request<?, ExecutionPayloadV2Web3jResponse> web3jRequest =
-        new Request<>(
-            "engine_getPayloadV2",
-            Collections.singletonList(payloadId.toHexString()),
-            web3JClient.getWeb3jService(),
-            ExecutionPayloadV2Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  public SafeFuture<Response<GetPayloadV2Response>> getPayloadV2(final Bytes8 payloadId) {
+    if (engineVersion != Version.NO_BLOCK_VALUE) {
+      Request<?, GetPayloadV2Web3jResponse> web3jRequest =
+          new Request<>(
+              "engine_getPayloadV2",
+              Collections.singletonList(payloadId.toHexString()),
+              web3JClient.getWeb3jService(),
+              GetPayloadV2Web3jResponse.class);
+      return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    } else {
+      Request<?, ExecutionPayloadV2Web3jResponse> web3jRequest =
+          new Request<>(
+              "engine_getPayloadV2",
+              Collections.singletonList(payloadId.toHexString()),
+              web3JClient.getWeb3jService(),
+              ExecutionPayloadV2Web3jResponse.class);
+      return web3JClient
+          .doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
+          .thenApply(
+              response -> {
+                if (response.isFailure()) {
+                  return Response.withErrorMessage(response.getErrorMessage());
+                }
+                return new Response<>(
+                    new GetPayloadV2Response(response.getPayload(), UInt256.ZERO));
+              });
+    }
   }
 
   @Override
@@ -179,6 +202,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
+  static class GetPayloadV2Web3jResponse
+      extends org.web3j.protocol.core.Response<GetPayloadV2Response> {}
+
   static class ExecutionPayloadV2Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV2> {}
 
@@ -201,9 +227,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
    */
   protected List<Object> list(final Object... items) {
     final List<Object> list = new ArrayList<>();
-    for (Object item : items) {
-      list.add(item);
-    }
+    Collections.addAll(list, items);
     return list;
   }
 }

@@ -18,11 +18,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -55,11 +57,13 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomForkChoiceState(false),
             dataStructureUtil.randomPayloadBuildingAttributes(false));
 
-    final SafeFuture<Response<ExecutionPayloadV2>> dummyResponse =
+    final SafeFuture<Response<GetPayloadV2Response>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
-                ExecutionPayloadV2.fromInternalExecutionPayload(
-                    dataStructureUtil.randomExecutionPayload())));
+                new GetPayloadV2Response(
+                    ExecutionPayloadV2.fromInternalExecutionPayload(
+                        dataStructureUtil.randomExecutionPayload()),
+                    UInt256.MAX_VALUE)));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
     handler.engineGetPayload(context, slot);

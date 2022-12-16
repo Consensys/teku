@@ -115,7 +115,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 
   enum Version {
-    KILNV2;
+    KILNV2,
+    NO_BLOCK_VALUE;
 
     public static final Version DEFAULT_VERSION = KILNV2;
   }
