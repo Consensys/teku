@@ -47,6 +47,11 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   }
 
   @Override
+  public int getMaxValidatorsPerWithdrawalSweep() {
+    return specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
+  }
+
+  @Override
   public int getMaxBlsToExecutionChanges() {
     return specConfigCapella.getMaxBlsToExecutionChanges();
   }
