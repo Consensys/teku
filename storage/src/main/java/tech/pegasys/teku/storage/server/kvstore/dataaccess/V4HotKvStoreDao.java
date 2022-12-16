@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
@@ -141,7 +141,7 @@ public class V4HotKvStoreDao {
   }
 
   @MustBeClosed
-  public HotUpdaterUnblinded hotUpdaterUnblinded() {
+  public HotUpdater hotUpdaterUnblinded() {
     return hotUpdater();
   }
 
@@ -186,7 +186,7 @@ public class V4HotKvStoreDao {
     return columnCounts;
   }
 
-  static class V4HotUpdater implements HotUpdaterUnblinded {
+  static class V4HotUpdater implements HotUpdater {
 
     private final KvStoreTransaction transaction;
     private final SchemaHotAdapter schema;

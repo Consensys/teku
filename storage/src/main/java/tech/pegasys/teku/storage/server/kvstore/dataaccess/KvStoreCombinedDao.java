@@ -42,7 +42,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
   @MustBeClosed
-  HotUpdaterUnblinded hotUpdaterUnblinded();
+  HotUpdater hotUpdaterUnblinded();
 
   @MustBeClosed
   FinalizedUpdaterUnblinded finalizedUpdaterUnblinded();
@@ -141,9 +141,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
-  interface CombinedUpdaterUnblinded extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded {}
+  interface CombinedUpdaterUnblinded extends HotUpdater, FinalizedUpdaterUnblinded {}
 
-  interface HotUpdaterUnblinded extends HotUpdaterCommon {
+  interface HotUpdater extends AutoCloseable {
     void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
 
     default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
@@ -153,22 +153,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void deleteHotBlock(Bytes32 blockRoot);
 
     void deleteUnblindedHotBlockOnly(Bytes32 blockRoot);
-  }
-
-  interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
-
-    void addFinalizedBlock(final SignedBeaconBlock block);
-
-    void addNonCanonicalBlock(final SignedBeaconBlock block);
-
-    void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
-
-    void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
-
-    void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
-  }
-
-  interface HotUpdaterCommon extends AutoCloseable {
 
     void setGenesisTime(UInt64 genesisTime);
 
@@ -214,6 +198,19 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
     void removeDepositsFromBlockEvent(UInt64 blockNumber);
+  }
+
+  interface FinalizedUpdaterUnblinded extends FinalizedUpdaterCommon {
+
+    void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addNonCanonicalBlock(final SignedBeaconBlock block);
+
+    void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot);
+
+    void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
   }
 
   interface FinalizedUpdaterCommon extends AutoCloseable {

@@ -131,7 +131,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   @MustBeClosed
-  public HotUpdaterUnblinded hotUpdaterUnblinded() {
+  public HotUpdater hotUpdaterUnblinded() {
     return hotDao.hotUpdater();
   }
 

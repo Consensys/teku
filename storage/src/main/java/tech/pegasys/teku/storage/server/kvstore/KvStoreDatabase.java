@@ -75,8 +75,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdaterUnblinded;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterCommon;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdaterUnblinded;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterCommon;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoAdapter;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
@@ -177,7 +176,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @MustBeClosed
-  protected HotUpdaterUnblinded hotUpdater() {
+  protected HotUpdater hotUpdater() {
     return dao.hotUpdaterUnblinded();
   }
 
@@ -334,7 +333,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
-    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       blockRootsToDelete.forEach(updater::deleteHotBlock);
       updater.commit();
     }
@@ -356,7 +355,7 @@ public class KvStoreDatabase implements Database {
   }
 
   protected void updateHotBlocks(
-      final HotUpdaterUnblinded updater,
+      final HotUpdater updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
       final Set<Bytes32> deletedHotBlockRoots) {
     updater.addHotBlocks(addedBlocks);
@@ -482,7 +481,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
-    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
       checkpoint.ifPresentOrElse(
           updater::setWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
@@ -633,7 +632,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void addHotStateRoots(
       final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
-    try (final HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       updater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
       updater.commit();
     }
@@ -641,7 +640,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-    try (final HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       updater.pruneHotStateRoots(stateRoots);
       updater.commit();
     }
@@ -666,7 +665,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-    try (final HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       updater.addMinGenesisTimeBlock(event);
       updater.commit();
     }
@@ -674,7 +673,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-    try (final HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       updater.addDepositsFromBlockEvent(event);
       updater.commit();
     }
@@ -682,7 +681,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {
-    try (final HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
       updater.commit();
     }
@@ -790,7 +789,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {
-    try (final HotUpdaterCommon hotUpdater = hotUpdater()) {
+    try (final HotUpdater hotUpdater = hotUpdater()) {
       hotUpdater.addVotes(votes);
       hotUpdater.commit();
     }
@@ -813,7 +812,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {
-    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       updater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
       updater.commit();
     }
@@ -837,7 +836,7 @@ public class KvStoreDatabase implements Database {
             update.getOptimisticTransitionBlockRoot());
     LOG.trace("Applying hot updates");
     long startTime = System.nanoTime();
-    try (final HotUpdaterUnblinded updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
       update

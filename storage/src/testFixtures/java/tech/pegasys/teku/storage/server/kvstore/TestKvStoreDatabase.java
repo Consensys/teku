@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 
 public class TestKvStoreDatabase {
   private final KvStoreDatabase db;
@@ -29,7 +29,7 @@ public class TestKvStoreDatabase {
   }
 
   @MustBeClosed
-  public HotUpdaterCommon hotUpdater() {
+  public HotUpdater hotUpdater() {
     return db.hotUpdater();
   }
 }
