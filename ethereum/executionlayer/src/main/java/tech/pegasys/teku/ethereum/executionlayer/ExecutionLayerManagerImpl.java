@@ -84,7 +84,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
    * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
    * we must call the builder to serve builderGetPayload later
    */
-  // FIXME: how it works on fork change???
   private final NavigableMap<UInt64, ExecutionPayloadContext> slotToLocalElFallbackData =
       new ConcurrentSkipListMap<>();
 
