@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 @AddLifecycleHook(KzgResolver.class)
 public class CKZG4844PropertyTest {
   @Property(tries = 100)
-  void computeAggregateKzgProofThrowsExpected(
+  void fuzzComputeAggregateKzgProof(
       final KZG kzg, @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs) {
     try {
       kzg.computeAggregateKzgProof(blobs);
@@ -42,7 +42,7 @@ public class CKZG4844PropertyTest {
   }
 
   @Property(tries = 100)
-  void verifyAggregateKzgProofThrowsExpected(
+  void fuzzVerifyAggregateKzgProof(
       final KZG kzg,
       @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
@@ -55,7 +55,7 @@ public class CKZG4844PropertyTest {
   }
 
   @Property(tries = 100)
-  void blobToKzgCommitmentThrowsExpected(
+  void fuzzBlobToKzgCommitment(
       final KZG kzg, @ForAll(supplier = BytesSupplier.class) final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);

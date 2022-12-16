@@ -43,7 +43,7 @@ public class MiscHelpersEip4844PropertyTest {
   private final MiscHelpersEip4844 miscHelpers = new MiscHelpersEip4844(specConfig);
 
   @Property(tries = 100)
-  void isDataAvailableThrowsExpected(
+  void fuzzIsDataAvailable(
       @ForAll(supplier = UInt64Supplier.class) final UInt64 slot,
       @ForAll(supplier = Bytes32Supplier.class) final Bytes32 beaconBlockRoot,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
@@ -56,13 +56,13 @@ public class MiscHelpersEip4844PropertyTest {
   }
 
   @Property
-  void kzgCommitmentToVersionedHashThrowsExpected(
+  void fuzzKzgCommitmentToVersionedHash(
       @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment) {
     miscHelpers.kzgCommitmentToVersionedHash(commitment);
   }
 
   @Property(tries = 100)
-  void txPeekBlobVersionedHashesThrowsExpected(
+  void fuzzTxPeekBlobVersionedHashes(
       @ForAll(supplier = TransactionSupplier.class) final Transaction transaction) {
     try {
       miscHelpers.txPeekBlobVersionedHashes(transaction);
@@ -76,7 +76,7 @@ public class MiscHelpersEip4844PropertyTest {
   }
 
   @Property(tries = 100)
-  void verifyKZGCommitmentsAgainstTransactionsThrowsExpected(
+  void fuzzVerifyKZGCommitmentsAgainstTransactions(
       @ForAll final List<@From(supplier = TransactionSupplier.class) Transaction> transactions,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments) {
     try {
