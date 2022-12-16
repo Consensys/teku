@@ -437,8 +437,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.get(schema.getVariableFinalizedDepositSnapshot());
   }
 
-  static class V4CombinedUpdater<S extends SchemaCombined>
-      implements CombinedUpdaterUnblinded, CombinedUpdaterCommon {
+  static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdaterUnblinded {
     private final KvStoreTransaction transaction;
 
     private final KvStoreAccessor db;

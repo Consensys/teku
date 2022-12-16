@@ -141,8 +141,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
-  interface CombinedUpdaterUnblinded
-      extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded, CombinedUpdaterCommon {}
+  interface CombinedUpdaterUnblinded extends HotUpdaterUnblinded, FinalizedUpdaterUnblinded {}
 
   interface HotUpdaterUnblinded extends HotUpdaterCommon {
     void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
@@ -168,8 +167,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void pruneFinalizedUnblindedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
   }
-
-  interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
 
   interface HotUpdaterCommon extends AutoCloseable {
 
