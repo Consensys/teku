@@ -84,7 +84,8 @@ import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -121,7 +122,7 @@ public class DatabaseTest {
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup() {
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -1132,17 +1133,17 @@ public class DatabaseTest {
   public void shouldRecreateGenesisStateOnRestart_archiveMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.ARCHIVE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
   @TestTemplate
   public void shouldRecreateGenesisStateOnRestart_pruneMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.PRUNE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
-  public void testShouldRecreateGenesisStateOnRestart() {
+  private void recreateGenesisStateOnRestart() {
     // Shutdown and restart
     restartStorage();
 
@@ -1255,7 +1256,7 @@ public class DatabaseTest {
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<OnDiskStoreData> maybeData =
-        ((KvStoreDatabase<?, ?, ?, ?>) database).createMemoryStore(() -> 0L);
+        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -1341,7 +1342,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       database.close();
       assertThatThrownBy(() -> updater.setGenesisTime(UInt64.ONE))
           .isInstanceOf(ShuttingDownException.class);
@@ -1349,8 +1350,8 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.HotUpdaterCommon hotUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).hotUpdater();
+  private HotUpdater hotUpdater() {
+    return ((KvStoreDatabase) database).hotUpdater();
   }
 
   @TestTemplate
@@ -1359,7 +1360,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedState(newBlock.getRoot(), newBlock.getState()))
@@ -1368,8 +1369,8 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.FinalizedUpdaterCommon finalizedUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).finalizedUpdater();
+  private FinalizedUpdater finalizedUpdater() {
+    return ((KvStoreDatabase) database).finalizedUpdater();
   }
 
   @TestTemplate
@@ -1378,7 +1379,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
@@ -1418,7 +1419,7 @@ public class DatabaseTest {
       createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+      try (final HotUpdater updater = hotUpdater()) {
         final Thread dbCloserThread =
             new Thread(
                 () -> {

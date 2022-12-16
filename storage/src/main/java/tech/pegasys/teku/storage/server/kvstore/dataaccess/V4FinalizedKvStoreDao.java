@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MAX_BLOCK_ROOT;
-import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.MIN_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MAX_BLOCK_ROOT;
+import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MIN_BLOCK_ROOT;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
@@ -29,18 +29,14 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoBlinded.FinalizedUpdaterBlinded;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoUnblinded.FinalizedUpdaterUnblinded;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
@@ -88,30 +84,8 @@ public class V4FinalizedKvStoreDao {
         .collect(Collectors.toList());
   }
 
-  public List<SignedBeaconBlock> getBlindedNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    final Optional<Set<Bytes32>> maybeRoots =
-        db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
-    return maybeRoots.stream()
-        .flatMap(Collection::stream)
-        .flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root).stream())
-        .collect(Collectors.toList());
-  }
-
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes, Bytes>> streamUnblindedFinalizedBlocksRaw() {
-    return db.streamRaw(schema.getColumnFinalizedBlocksBySlot()).map(entry -> entry);
-  }
-
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
-  }
-
-  public long countNonCanonicalSlots() {
-    return db.size(schema.getColumnNonCanonicalRootsBySlot());
-  }
-
-  public long countBlindedBlocks() {
-    return db.size(schema.getColumnBlindedBlocksByRoot());
   }
 
   @MustBeClosed
@@ -119,31 +93,6 @@ public class V4FinalizedKvStoreDao {
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedBlocksBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getValue);
-  }
-
-  public Optional<SignedBeaconBlock> getBlindedBlock(final Bytes32 root) {
-    return db.get(schema.getColumnBlindedBlocksByRoot(), root);
-  }
-
-  public Optional<Bytes> getExecutionPayload(final Bytes32 root) {
-    return db.get(schema.getColumnExecutionPayloadByBlockRoot(), root);
-  }
-
-  public Optional<UInt64> getEarliestBlindedBlockSlot() {
-    return db.getFirstEntry(schema.getColumnFinalizedBlockRootBySlot()).map(ColumnEntry::getKey);
-  }
-
-  public Optional<SignedBeaconBlock> getEarliestBlindedBlock() {
-    final Optional<Bytes32> maybeRoot =
-        db.getFirstEntry(schema.getColumnFinalizedBlockRootBySlot()).map(ColumnEntry::getValue);
-    return maybeRoot.flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root));
-  }
-
-  public Optional<SignedBeaconBlock> getLatestBlindedBlockAtSlot(final UInt64 slot) {
-    final Optional<Bytes32> maybeRoot =
-        db.getFloorEntry(schema.getColumnFinalizedBlockRootBySlot(), slot)
-            .map(ColumnEntry::getValue);
-    return maybeRoot.flatMap(root -> db.get(schema.getColumnBlindedBlocksByRoot(), root));
   }
 
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
@@ -229,16 +178,6 @@ public class V4FinalizedKvStoreDao {
     return schema.getVariableMap();
   }
 
-  public Optional<Bytes32> getFinalizedBlockRootAtSlot(final UInt64 slot) {
-    return db.get(schema.getColumnFinalizedBlockRootBySlot(), slot);
-  }
-
-  @MustBeClosed
-  public Stream<Bytes32> streamFinalizedBlockRoots(final UInt64 startSlot, final UInt64 endSlot) {
-    return db.stream(schema.getColumnFinalizedBlockRootBySlot(), startSlot, endSlot)
-        .map(ColumnEntry::getValue);
-  }
-
   @MustBeClosed
   public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
     return db.stream(schema.getColumnSlotsByFinalizedStateRoot()).map(entry -> entry);
@@ -259,31 +198,12 @@ public class V4FinalizedKvStoreDao {
   }
 
   @MustBeClosed
-  public Stream<Map.Entry<Bytes32, SignedBeaconBlock>> streamUnblindedNonCanonicalBlocks() {
-    return db.stream(schema.getColumnNonCanonicalBlocksByRoot()).map(entry -> entry);
-  }
-
-  @MustBeClosed
-  public Stream<Map.Entry<Bytes32, UInt64>> streamUnblindedFinalizedBlockRoots() {
-    return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
-  }
-
-  @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedStatesBySlot(), startSlot, endSlot)
         .map(ColumnEntry::getKey);
   }
 
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return db.stream(schema.getColumnBlindedBlocksByRoot()).map(ColumnEntry::getValue);
-  }
-
-  public Optional<Bytes> getBlindedBlockAsSsz(final Bytes32 blockRoot) {
-    return db.getRaw(schema.getColumnBlindedBlocksByRoot(), blockRoot);
-  }
-
-  static class V4FinalizedUpdater implements FinalizedUpdaterBlinded, FinalizedUpdaterUnblinded {
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalizedSnapshotStateAdapter schema;
@@ -310,97 +230,23 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addFinalizedBlockRootBySlot(final UInt64 slot, final Bytes32 root) {
-      transaction.put(schema.getColumnFinalizedBlockRootBySlot(), slot, root);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlock(
-        final SignedBeaconBlock block, final Bytes32 root, final Spec spec) {
-      addBlindedBlock(block, root, spec);
-      addFinalizedBlockRootBySlot(block.getSlot(), root);
-    }
-
-    @Override
-    public void addBlindedFinalizedBlockRaw(
-        final Bytes blockBytes, final Bytes32 root, final UInt64 slot) {
-      transaction.putRaw(schema.getColumnBlindedBlocksByRoot(), root, blockBytes);
-      addFinalizedBlockRootBySlot(slot, root);
-    }
-
-    @Override
-    public void addBlindedBlock(
-        final SignedBeaconBlock block, final Bytes32 blockRoot, final Spec spec) {
-      transaction.put(
-          schema.getColumnBlindedBlocksByRoot(),
-          blockRoot,
-          block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()));
-      final Optional<ExecutionPayload> maybePayload =
-          block.getMessage().getBody().getOptionalExecutionPayload();
-      maybePayload.ifPresent(payload -> addExecutionPayload(blockRoot, payload));
-    }
-
-    @Override
-    public void addExecutionPayload(final Bytes32 blockRoot, final ExecutionPayload payload) {
-      transaction.put(
-          schema.getColumnExecutionPayloadByBlockRoot(), blockRoot, payload.sszSerialize());
-    }
-
-    @Override
-    public void deleteBlindedBlock(final Bytes32 root) {
-      final Optional<SignedBeaconBlock> maybeBlock =
-          db.get(schema.getColumnBlindedBlocksByRoot(), root);
-      maybeBlock.ifPresent(
-          block -> {
-            transaction.delete(schema.getColumnBlindedBlocksByRoot(), root);
-            Optional<ExecutionPayloadHeader> maybeHeader =
-                block.getMessage().getBody().getOptionalExecutionPayloadHeader();
-            maybeHeader.ifPresent(header -> deleteExecutionPayload(header.hashTreeRoot()));
-          });
-    }
-
-    @Override
-    public void deleteExecutionPayload(final Bytes32 blockRoot) {
-      transaction.delete(schema.getColumnExecutionPayloadByBlockRoot(), blockRoot);
-    }
-
-    @Override
-    public void pruneFinalizedBlindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<UInt64, Bytes32>> stream =
-          db.stream(
-              schema.getColumnFinalizedBlockRootBySlot(), firstSlotToPrune, lastSlotToPrune)) {
-        stream.forEach(entry -> deleteBlindedBlock(entry.getValue()));
-      }
-      try (final Stream<ColumnEntry<UInt64, Set<Bytes32>>> stream =
-          db.stream(schema.getColumnNonCanonicalRootsBySlot())) {
-        stream.forEach(
-            entry -> {
-              entry.getValue().forEach(this::deleteBlindedBlock);
-              transaction.delete(schema.getColumnNonCanonicalRootsBySlot(), entry.getKey());
-            });
-      }
-    }
-
-    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
 
     @Override
-    public void deleteUnblindedFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
+    public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
     }
 
     @Override
-    public void deleteUnblindedNonCanonicalBlockOnly(final Bytes32 blockRoot) {
+    public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
     }
 
     @Override
-    public void pruneFinalizedUnblindedBlocks(
-        final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
+    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
       try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
           db.stream(schema.getColumnSlotsByFinalizedRoot())) {
         stream
@@ -408,7 +254,7 @@ public class V4FinalizedKvStoreDao {
                 entry ->
                     entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
                         && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteUnblindedFinalizedBlock(entry.getValue(), entry.getKey()));
+            .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
       }
     }
 

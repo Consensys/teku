@@ -23,10 +23,7 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
 
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
-  public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
-  public static final int DEFAULT_BLOCK_MIGRATION_BATCH_SIZE = 25;
-  public static final int DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS = 100;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofHours(1);
 
   private final Eth1Address eth1DepositContract;
@@ -34,9 +31,6 @@ public class StorageConfiguration {
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
-  private final int blockMigrationBatchSize;
-  private final int blockMigrationBatchDelay;
-  private boolean storeBlockExecutionPayloadSeparately;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
@@ -49,9 +43,6 @@ public class StorageConfiguration {
       final DatabaseVersion dataStorageCreateDbVersion,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
       final Duration blockPruningInterval,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
@@ -60,9 +51,6 @@ public class StorageConfiguration {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-    this.blockMigrationBatchSize = blockMigrationBatchSize;
-    this.blockMigrationBatchDelay = blockMigrationBatchDelay;
     this.blockPruningInterval = blockPruningInterval;
     this.spec = spec;
   }
@@ -95,18 +83,6 @@ public class StorageConfiguration {
     return maxKnownNodeCacheSize;
   }
 
-  public boolean isStoreBlockExecutionPayloadSeparately() {
-    return storeBlockExecutionPayloadSeparately;
-  }
-
-  public int getBlockMigrationBatchSize() {
-    return blockMigrationBatchSize;
-  }
-
-  public int getBlockMigrationBatchDelay() {
-    return blockMigrationBatchDelay;
-  }
-
   public Duration getBlockPruningInterval() {
     return blockPruningInterval;
   }
@@ -124,9 +100,6 @@ public class StorageConfiguration {
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
-    private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-    private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-    private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
 
     private Builder() {}
@@ -197,27 +170,8 @@ public class StorageConfiguration {
           dataStorageCreateDbVersion,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
           blockPruningInterval,
           spec);
-    }
-
-    public Builder storeBlockExecutionPayloadSeparately(
-        final boolean storeBlockExecutionPayloadSeparately) {
-      this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-      return this;
-    }
-
-    public Builder blockMigrationBatchSize(final int blockMigrationBatchSize) {
-      this.blockMigrationBatchSize = blockMigrationBatchSize;
-      return this;
-    }
-
-    public Builder blockMigrationBatchDelay(final int blockMigrationBatchDelay) {
-      this.blockMigrationBatchDelay = blockMigrationBatchDelay;
-      return this;
     }
   }
 }

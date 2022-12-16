@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -125,8 +124,6 @@ public interface Database extends AutoCloseable {
 
   Optional<Bytes32> getFinalizedBlockRootBySlot(UInt64 slot);
 
-  Optional<ExecutionPayload> getExecutionPayload(Bytes32 blockRoot, UInt64 slot);
-
   /**
    * Returns the latest finalized block at or prior to the given slot
    *
@@ -201,9 +198,6 @@ public interface Database extends AutoCloseable {
   void migrate();
 
   Optional<Checkpoint> getAnchor();
-
-  @MustBeClosed
-  Stream<SignedBeaconBlock> streamBlindedBlocks();
 
   Optional<Checkpoint> getJustifiedCheckpoint();
 

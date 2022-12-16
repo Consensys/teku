@@ -27,18 +27,58 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface KvStoreCombinedDaoCommon extends AutoCloseable {
+public interface KvStoreCombinedDao extends AutoCloseable {
+
   Bytes32 MIN_BLOCK_ROOT = Bytes32.ZERO;
   Bytes32 MAX_BLOCK_ROOT = Bytes32.ZERO.not();
 
-  void ingest(KvStoreCombinedDaoCommon dao, int batchSize, Consumer<String> logger);
+  @MustBeClosed
+  HotUpdater hotUpdater();
+
+  @MustBeClosed
+  FinalizedUpdater finalizedUpdater();
+
+  @MustBeClosed
+  CombinedUpdater combinedUpdater();
+
+  Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamHotBlocks();
+
+  Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
+
+  Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
+
+  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
+
+  Optional<UInt64> getEarliestFinalizedBlockSlot();
+
+  Optional<SignedBeaconBlock> getEarliestFinalizedBlock();
+
+  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
+
+  List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
+
+  Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
+
+  void ingest(KvStoreCombinedDao dao, int batchSize, Consumer<String> logger);
 
   Optional<UInt64> getGenesisTime();
 
@@ -82,8 +122,6 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Set<Bytes32> getNonCanonicalBlockRootsAtSlot(UInt64 slot);
 
-  long countNonCanonicalSlots();
-
   Optional<UInt64> getOptimisticTransitionBlockSlot();
 
   Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
@@ -103,9 +141,18 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
 
   Optional<DepositTreeSnapshot> getFinalizedDepositSnapshot();
 
-  interface CombinedUpdaterCommon extends HotUpdaterCommon, FinalizedUpdaterCommon {}
+  interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
-  interface HotUpdaterCommon extends AutoCloseable {
+  interface HotUpdater extends AutoCloseable {
+    void addHotBlock(BlockAndCheckpoints blockAndCheckpointEpochs);
+
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpoints> blocks) {
+      blocks.values().forEach(this::addHotBlock);
+    }
+
+    void deleteHotBlock(Bytes32 blockRoot);
+
+    void deleteHotBlockOnly(Bytes32 blockRoot);
 
     void setGenesisTime(UInt64 genesisTime);
 
@@ -153,7 +200,17 @@ public interface KvStoreCombinedDaoCommon extends AutoCloseable {
     void removeDepositsFromBlockEvent(UInt64 blockNumber);
   }
 
-  interface FinalizedUpdaterCommon extends AutoCloseable {
+  interface FinalizedUpdater extends AutoCloseable {
+
+    void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addNonCanonicalBlock(final SignedBeaconBlock block);
+
+    void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
+
+    void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 

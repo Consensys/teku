@@ -35,48 +35,32 @@ class TestDatabaseInvocationContextProvider implements TestTemplateInvocationCon
       final ExtensionContext extensionContext) {
     final Set<DatabaseVersion> databaseVersions =
         new HashSet<>(SupportedDatabaseVersionArgumentsProvider.supportedDatabaseVersions());
-    final Set<BlockStorage> blockStorageSet = Set.of(BlockStorage.values());
     final List<TestTemplateInvocationContext> configurations = new ArrayList<>();
 
     databaseVersions.stream()
-        .flatMap(
-            databaseVersion ->
-                blockStorageSet.stream()
-                    .map(
-                        blockStorageMode ->
-                            generateContext(databaseVersion, blockStorageMode, true)))
+        .map(databaseVersion -> generateContext(databaseVersion, true))
         .forEach(configurations::add);
 
     databaseVersions.stream()
-        .flatMap(
-            databaseVersion ->
-                blockStorageSet.stream()
-                    .map(
-                        blockStorageMode ->
-                            generateContext(databaseVersion, blockStorageMode, false)))
+        .map(databaseVersion -> generateContext(databaseVersion, false))
         .forEach(configurations::add);
 
     return configurations.stream();
   }
 
   private TestTemplateInvocationContext generateContext(
-      final DatabaseVersion databaseVersion,
-      final BlockStorage blockStorage,
-      final boolean inMemoryStorage) {
+      final DatabaseVersion databaseVersion, final boolean inMemoryStorage) {
     return new TestTemplateInvocationContext() {
       @Override
       public String getDisplayName(final int invocationIndex) {
-        return databaseVersion.name()
-            + "."
-            + blockStorage.name()
-            + (inMemoryStorage ? " (in-memory)" : " (file-storage)");
+        return databaseVersion.name() + (inMemoryStorage ? " (in-memory)" : " (file-storage)");
       }
 
       @Override
       public List<Extension> getAdditionalExtensions() {
         return List.of(
             new DatabaseVersionParameterResolver<>(
-                new DatabaseContext(databaseVersion, blockStorage, inMemoryStorage)));
+                new DatabaseContext(databaseVersion, inMemoryStorage)));
       }
     };
   }

@@ -17,9 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -40,10 +38,6 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
@@ -65,10 +59,6 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
         spec);
   }
 
@@ -78,10 +68,6 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     final KvStoreAccessor db =
@@ -89,16 +75,7 @@ public class LevelDbDatabaseFactory {
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        schema,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
-        asyncRunner,
-        spec);
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createLevelDbTree(
@@ -106,11 +83,7 @@ public class LevelDbDatabaseFactory {
       final KvStoreConfiguration hotConfiguration,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
       final int maxKnownNodeCacheSize,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
@@ -123,11 +96,7 @@ public class LevelDbDatabaseFactory {
         schema,
         stateStorageMode,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        blockMigrationBatchSize,
-        blockMigrationBatchDelay,
         maxKnownNodeCacheSize,
-        asyncRunner,
         spec);
   }
 }

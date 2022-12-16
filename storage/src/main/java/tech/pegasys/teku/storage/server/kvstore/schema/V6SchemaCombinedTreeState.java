@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn.asColumnId;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
@@ -44,14 +46,10 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<UInt64, Bytes32> finalizedStateRootsBySlot;
   private final KvStoreColumn<Bytes32, Bytes> finalizedStateTreeLeavesByRoot;
   private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
-  private final KvStoreColumn<Bytes32, SignedBeaconBlock> blindedBlocksByRoot;
-
-  private final KvStoreColumn<UInt64, Bytes32> finalizedBlockRootBySlot;
-
-  private final KvStoreColumn<Bytes32, Bytes> executionPayloadByBlockRoot;
 
   private final KvStoreColumn<SlotAndBlockRoot, Bytes> blobsSidecarBySlotAndBlockRoot;
   private final KvStoreColumn<SlotAndBlockRoot, Void> unconfirmedBlobsSidecarBySlotAndBlockRoot;
+  private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
     super(spec, V6_FINALIZED_OFFSET);
@@ -80,15 +78,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             V6_FINALIZED_OFFSET + 8,
             BYTES32_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
-    blindedBlocksByRoot =
-        KvStoreColumn.create(
-            V6_FINALIZED_OFFSET + 9,
-            BYTES32_SERIALIZER,
-            KvStoreSerializer.createSignedBlindedBlockSerializer(spec));
-    executionPayloadByBlockRoot =
-        KvStoreColumn.create(finalizedOffset + 10, BYTES32_SERIALIZER, BYTES_SERIALIZER);
-    finalizedBlockRootBySlot =
-        KvStoreColumn.create(finalizedOffset + 11, UINT64_SERIALIZER, BYTES32_SERIALIZER);
 
     blobsSidecarBySlotAndBlockRoot =
         KvStoreColumn.create(
@@ -96,6 +85,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     unconfirmedBlobsSidecarBySlotAndBlockRoot =
         KvStoreColumn.create(
             finalizedOffset + 13, SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER, VOID_SERIALIZER);
+    deletedColumnIds =
+        List.of(
+            asColumnId(finalizedOffset + 9),
+            asColumnId(finalizedOffset + 10),
+            asColumnId(finalizedOffset + 11));
   }
 
   @Override
@@ -136,21 +130,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
     return nonCanonicalBlockRootsBySlot;
-  }
-
-  @Override
-  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnBlindedBlocksByRoot() {
-    return blindedBlocksByRoot;
-  }
-
-  @Override
-  public KvStoreColumn<Bytes32, Bytes> getColumnExecutionPayloadByBlockRoot() {
-    return executionPayloadByBlockRoot;
-  }
-
-  @Override
-  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedBlockRootBySlot() {
-    return finalizedBlockRootBySlot;
   }
 
   @Override
@@ -197,9 +176,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
-        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
-        .put("EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot())
-        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
         .put("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", getColumnBlobsSidecarBySlotAndBlockRoot())
         .put(
             "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
@@ -215,5 +191,10 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   @Override
   public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedColumnIds() {
+    return deletedColumnIds;
   }
 }
