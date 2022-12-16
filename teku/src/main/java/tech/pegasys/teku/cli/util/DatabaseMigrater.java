@@ -46,17 +46,17 @@ public class DatabaseMigrater {
   private final StateStorageMode storageMode;
   final AsyncRunnerFactory asyncRunnerFactory =
       AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
-  private KvStoreDatabase<?, ?, ?, ?> originalDatabase;
+  private KvStoreDatabase originalDatabase;
 
-  KvStoreDatabase<?, ?, ?, ?> getOriginalDatabase() {
+  KvStoreDatabase getOriginalDatabase() {
     return originalDatabase;
   }
 
-  KvStoreDatabase<?, ?, ?, ?> getNewDatabase() {
+  KvStoreDatabase getNewDatabase() {
     return newDatabase;
   }
 
-  private KvStoreDatabase<?, ?, ?, ?> newDatabase;
+  private KvStoreDatabase newDatabase;
 
   private DatabaseMigrater(
       final DataDirLayout dataDirLayout,
@@ -176,8 +176,8 @@ public class DatabaseMigrater {
   }
 
   @VisibleForTesting
-  KvStoreDatabase<?, ?, ?, ?> createDatabase(
-      final Path databasePath, DatabaseVersion databaseVersion) throws DatabaseMigraterError {
+  KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion)
+      throws DatabaseMigraterError {
     final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
@@ -197,7 +197,7 @@ public class DatabaseMigrater {
               + databasePath.toFile()
               + " to be a KV store, but it was not, not able to migrate data.");
     }
-    return (KvStoreDatabase<?, ?, ?, ?>) database;
+    return (KvStoreDatabase) database;
   }
 
   public Path getMovedOldBeaconFolderPath() {

@@ -18,9 +18,9 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdaterCommon;
 
 public class TestKvStoreDatabase {
-  private final KvStoreDatabase<?, ?, ?, ?> db;
+  private final KvStoreDatabase db;
 
-  public TestKvStoreDatabase(final KvStoreDatabase<?, ?, ?, ?> db) {
+  public TestKvStoreDatabase(final KvStoreDatabase db) {
     this.db = db;
   }
 

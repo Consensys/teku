@@ -122,7 +122,7 @@ public class DatabaseTest {
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup() {
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -1133,17 +1133,17 @@ public class DatabaseTest {
   public void shouldRecreateGenesisStateOnRestart_archiveMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.ARCHIVE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
   @TestTemplate
   public void shouldRecreateGenesisStateOnRestart_pruneMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.PRUNE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
-  public void testShouldRecreateGenesisStateOnRestart() {
+  private void recreateGenesisStateOnRestart() {
     // Shutdown and restart
     restartStorage();
 
@@ -1256,7 +1256,7 @@ public class DatabaseTest {
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<OnDiskStoreData> maybeData =
-        ((KvStoreDatabase<?, ?, ?, ?>) database).createMemoryStore(() -> 0L);
+        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -1351,7 +1351,7 @@ public class DatabaseTest {
 
   @MustBeClosed
   private HotUpdaterCommon hotUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).hotUpdater();
+    return ((KvStoreDatabase) database).hotUpdater();
   }
 
   @TestTemplate
@@ -1370,7 +1370,7 @@ public class DatabaseTest {
 
   @MustBeClosed
   private FinalizedUpdaterCommon finalizedUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).finalizedUpdater();
+    return ((KvStoreDatabase) database).finalizedUpdater();
   }
 
   @TestTemplate
