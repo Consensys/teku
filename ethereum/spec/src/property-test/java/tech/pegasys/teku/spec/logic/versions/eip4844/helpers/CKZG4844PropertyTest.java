@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import net.jqwik.api.Disabled;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
@@ -55,6 +56,7 @@ public class CKZG4844PropertyTest {
   }
 
   @Property(tries = 100)
+  @Disabled("Enable once #6622 is fixed")
   void fuzzBlobToKzgCommitment(
       final KZG kzg, @ForAll(supplier = BytesSupplier.class) final Bytes blob) {
     try {
