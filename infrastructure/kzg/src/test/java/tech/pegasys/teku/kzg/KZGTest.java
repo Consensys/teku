@@ -19,7 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Resources;
 import ethereum.ckzg4844.CKZG4844JNI;
+import ethereum.ckzg4844.CKZGException;
+import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -120,7 +123,7 @@ public final class KZGTest {
   }
 
   @Test
-  public void testComputingProofWithZeroLengthBlobs() {
+  public void testComputingProofWithZeroLengthBlobsDoesNotCauseSegfault() {
     loadTrustedSetup();
     final List<Bytes> blobs =
         Stream.of(
@@ -129,8 +132,21 @@ public final class KZGTest {
                 "0x925668a49d06f4")
             .map(Bytes::fromHexString)
             .collect(Collectors.toList());
-    assertThat(kzg.computeAggregateKzgProof(blobs).getBytesCompressed())
-        .satisfies(proofBytes -> assertThat(proofBytes.isZero()).isFalse());
+
+    final KZGException kzgException =
+        assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(blobs));
+
+    assertThat(kzgException)
+        .cause()
+        .satisfies(
+            cause -> {
+              // non-canonical blobs
+              assertThat(cause).isInstanceOf(CKZGException.class);
+              final CKZGException cryptoException = (CKZGException) cause;
+              assertThat(cryptoException.getError()).isEqualTo(CKZGError.C_KZG_BADARGS);
+              assertThat(cryptoException.getErrorMessage())
+                  .isEqualTo("There was an error while computing aggregate kzg proof.");
+            });
   }
 
   private void loadTrustedSetup() {
@@ -146,7 +162,7 @@ public final class KZGTest {
   private Bytes getSampleBlob() {
     return IntStream.range(0, FIELD_ELEMENTS_PER_BLOB)
         .mapToObj(__ -> randomBLSFieldElement())
-        .map(fieldElement -> (Bytes) fieldElement.toBytes())
+        .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.LITTLE_ENDIAN)))
         .reduce(Bytes::wrap)
         .orElse(Bytes.EMPTY);
   }
