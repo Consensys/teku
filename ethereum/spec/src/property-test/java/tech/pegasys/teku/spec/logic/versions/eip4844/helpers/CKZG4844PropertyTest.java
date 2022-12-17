@@ -54,10 +54,11 @@ public class CKZG4844PropertyTest {
     }
   }
 
-  @Property(tries = 100)
+  @Property(tries = 1000)
   void fuzzBlobToKzgCommitment(
       final KZG kzg, @ForAll(supplier = BytesSupplier.class) final Bytes blob) {
     try {
+      System.out.println(blob.toHexString());
       kzg.blobToKzgCommitment(blob);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
