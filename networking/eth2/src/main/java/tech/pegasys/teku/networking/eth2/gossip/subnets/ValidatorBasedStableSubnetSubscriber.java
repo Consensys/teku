@@ -95,9 +95,10 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       UInt64 currentSlot, int validatorCount) {
 
     final int randomSubnetsPerValidator = ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR;
-    int totalNumberOfSubscriptions =
+    final int requiredSubnetSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
-    totalNumberOfSubscriptions = max(totalNumberOfSubscriptions, minimumSubnetSubscriptions);
+    final int totalNumberOfSubscriptions =
+        max(requiredSubnetSubscriptions, minimumSubnetSubscriptions);
 
     if (subnetSubscriptions.size() == totalNumberOfSubscriptions) {
       return emptySet();
@@ -106,7 +107,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
         "Updating number of persistent subnet subscriptions from {} to {}",
         subnetSubscriptions.size(),
         totalNumberOfSubscriptions);
-    Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
+    final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {
