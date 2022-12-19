@@ -714,17 +714,14 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
-    try (final Stream<BlobsSidecar> prunableBlobs =
-            streamBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
+    try (final Stream<SlotAndBlockRoot> prunableBlobsKeys =
+            streamBlobsSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
       final long pruned =
-          prunableBlobs
+          prunableBlobsKeys
               .limit(pruneLimit)
               .peek(
-                  blobsSidecar -> {
-                    final SlotAndBlockRoot slotAndBlockRoot =
-                        new SlotAndBlockRoot(
-                            blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
+                  slotAndBlockRoot -> {
                     updater.removeBlobsSidecar(slotAndBlockRoot);
                     updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
                   })
@@ -765,6 +762,13 @@ public class KvStoreDatabase implements Database {
                 spec.deserializeBlobsSidecar(
                     slotAndBlockRootBytesEntry.getValue(),
                     slotAndBlockRootBytesEntry.getKey().getSlot()));
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamBlobsSidecarKeys(startSlot, endSlot);
   }
 
   @MustBeClosed

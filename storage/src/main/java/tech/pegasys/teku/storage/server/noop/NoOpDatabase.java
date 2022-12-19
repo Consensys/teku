@@ -279,6 +279,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
   public Optional<UInt64> getEarliestBlobsSidecarSlot() {
     return Optional.empty();
   }
