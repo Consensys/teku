@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -236,10 +237,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, false)
+        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
         .thenPeek(__ -> recordExecutionPayloadSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
       final boolean isFallbackCall) {
@@ -297,7 +299,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
 
-    final SafeFuture<ExecutionPayload> localExecutionPayload =
+    final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload =
         engineGetPayload(executionPayloadContext, slot, true);
 
     final Optional<SignedValidatorRegistration> validatorRegistration =
@@ -333,6 +335,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
+    final SafeFuture<UInt256> localExecutionPayloadValue =
+        localExecutionPayload
+            .thenApply(ExecutionPayloadWithValue::getValue)
+            .exceptionally(__ -> UInt256.ZERO);
     return builderClient
         .orElseThrow()
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
@@ -345,14 +351,19 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     validatorPublicKey,
                     executionPayloadContext.getParentHash(),
                     signedBuilderBidMaybe))
-        .thenComposeChecked(
-            signedBuilderBidMaybe -> {
+        .thenComposeCombined(
+            localExecutionPayloadValue,
+            (signedBuilderBidMaybe, localPayloadValue) -> {
               if (signedBuilderBidMaybe.isEmpty()) {
                 return getHeaderFromLocalExecutionPayload(
                     localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               }
               final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
               logReceivedBuilderBid(signedBuilderBid.getMessage());
+              if (signedBuilderBid.getMessage().getValue().compareTo(localPayloadValue) <= 0) {
+                return getHeaderFromLocalExecutionPayload(
+                    localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
+              }
               final ExecutionPayloadHeader executionPayloadHeader =
                   builderBidValidator.validateAndGetPayloadHeader(
                       spec, signedBuilderBid, validatorRegistration.get(), state);
@@ -390,31 +401,31 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     final Optional<FallbackData> maybeLocalElFallbackData = maybeProcessedSlot.get();
 
-    if (maybeLocalElFallbackData.isEmpty()) {
-      return getPayloadFromBuilder(signedBlindedBeaconBlock);
-    }
-
-    return getPayloadFromFallbackData(maybeLocalElFallbackData.get());
+    return maybeLocalElFallbackData
+        .map(this::getPayloadFromFallbackData)
+        .orElseGet(() -> getPayloadFromBuilder(signedBlindedBeaconBlock));
   }
 
   private SafeFuture<ExecutionPayloadHeader> getHeaderFromLocalExecutionPayload(
-      final SafeFuture<ExecutionPayload> localExecutionPayload,
+      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload,
       final UInt64 slot,
       final FallbackReason reason) {
 
-    return localExecutionPayload.thenApply(
-        executionPayload -> {
-          // store the fallback payload for this slot
-          slotToLocalElFallbackData.put(
-              slot, Optional.of(new FallbackData(executionPayload, reason)));
+    return localExecutionPayload
+        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
+        .thenApply(
+            executionPayload -> {
+              // store the fallback payload for this slot
+              slotToLocalElFallbackData.put(
+                  slot, Optional.of(new FallbackData(executionPayload, reason)));
 
-          return spec.atSlot(slot)
-              .getSchemaDefinitions()
-              .toVersionBellatrix()
-              .orElseThrow()
-              .getExecutionPayloadHeaderSchema()
-              .createFromExecutionPayload(executionPayload);
-        });
+              return spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .toVersionBellatrix()
+                  .orElseThrow()
+                  .getExecutionPayloadHeaderSchema()
+                  .createFromExecutionPayload(executionPayload);
+            });
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
@@ -567,6 +578,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     BUILDER_NOT_AVAILABLE("builder_not_available"),
     BUILDER_NOT_CONFIGURED("builder_not_configured"),
     BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
+    LOCAL_BLOCK_VALUE_HIGHER("local_block_value_higher"),
     BUILDER_ERROR("builder_error"),
     NONE("");
 

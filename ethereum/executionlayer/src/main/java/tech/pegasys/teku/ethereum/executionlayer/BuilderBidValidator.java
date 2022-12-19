@@ -29,6 +29,5 @@ public interface BuilderBidValidator {
       final Spec spec,
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
-      final BeaconState state)
-      throws BuilderBidValidationException;
+      final BeaconState state);
 }
