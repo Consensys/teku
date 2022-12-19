@@ -13,40 +13,47 @@
 
 package tech.pegasys.teku.storage.server.pruner;
 
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class BlockPruner extends Service {
+public class BlobsPruner extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
+  private int pruneLimit;
+  private final TimeProvider timeProvider;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
+  private Optional<UInt64> genesisTime = Optional.empty();
 
-  public BlockPruner(
+  public BlobsPruner(
       final Spec spec,
       final Database database,
       final AsyncRunner asyncRunner,
-      final Duration pruneInterval) {
+      final TimeProvider timeProvider,
+      final Duration pruneInterval,
+      final int pruneLimit) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
+    this.pruneLimit = pruneLimit;
+    this.timeProvider = timeProvider;
   }
 
   @Override
@@ -54,10 +61,10 @@ public class BlockPruner extends Service {
     scheduledPruner =
         Optional.of(
             asyncRunner.runWithFixedDelay(
-                this::pruneBlocks,
+                this::pruneBlobs,
                 Duration.ZERO,
                 pruneInterval,
-                error -> LOG.error("Failed to prune old blocks", error)));
+                error -> LOG.error("Failed to prune old blobs", error)));
     return SafeFuture.COMPLETE;
   }
 
@@ -67,28 +74,42 @@ public class BlockPruner extends Service {
     return SafeFuture.COMPLETE;
   }
 
-  private void pruneBlocks() {
-    final Optional<Checkpoint> finalizedCheckpoint = database.getFinalizedCheckpoint();
-    if (finalizedCheckpoint.isEmpty()) {
-      LOG.debug("Not pruning as no finalized checkpoint is available.");
+  private void pruneBlobs() {
+    final Optional<UInt64> genesisTime = getGenesisTime();
+    if (genesisTime.isEmpty()) {
+      LOG.debug("Not pruning as no genesis time is available.");
       return;
     }
-    final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
-    final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(getEpochsToKeep(finalizedEpoch));
-    final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
-    if (earliestSlotToKeep.isZero()) {
-      LOG.debug("Not pruning as epochs to keep includes genesis");
+
+    final UInt64 currentSlot =
+        spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime.get());
+
+    final UInt64 earliestPrunableSlot = getEarliestPrunableSlot(currentSlot);
+
+    if (earliestPrunableSlot.isZero()) {
+      LOG.debug("Not pruning as slots to keep includes genesis.");
       return;
     }
-    LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
-    try {
-      database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
-    } catch (ShuttingDownException | RejectedExecutionException ex) {
-      LOG.debug("Shutting down", ex);
-    }
+    LOG.debug("Pruning blobs up to slot {}, limit {}", earliestPrunableSlot, pruneLimit);
+    final long start = System.currentTimeMillis();
+    final boolean limitReached = database.pruneOldestBlobsSidecar(earliestPrunableSlot, pruneLimit);
+    LOG.debug(
+        "Blobs pruning finished in {} ms. Limit reached: {}",
+        () -> System.currentTimeMillis() - start,
+        () -> limitReached);
   }
 
-  private int getEpochsToKeep(final UInt64 finalizedEpoch) {
-    return spec.getSpecConfig(finalizedEpoch).getMinEpochsForBlockRequests();
+  private Optional<UInt64> getGenesisTime() {
+    if (genesisTime.isPresent()) {
+      return genesisTime;
+    }
+    genesisTime = database.getGenesisTime();
+    return genesisTime;
+  }
+
+  private UInt64 getEarliestPrunableSlot(final UInt64 currentSlot) {
+    final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+
+    return currentSlot.minusMinZero((long) MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS * slotsPerEpoch);
   }
 }

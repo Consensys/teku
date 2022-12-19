@@ -158,6 +158,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.empty();
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return Stream.empty();
   }

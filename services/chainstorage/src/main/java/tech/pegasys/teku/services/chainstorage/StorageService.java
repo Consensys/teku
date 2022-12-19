@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.pruner.BlobsPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
@@ -43,6 +45,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
+  private volatile Optional<BlobsPruner> blobsPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
 
   public StorageService(
@@ -58,8 +61,8 @@ public class StorageService extends Service implements StorageServiceFacade {
   protected SafeFuture<?> doStart() {
     return SafeFuture.fromRunnable(
             () -> {
-              final AsyncRunner storageAsyncRunner =
-                  serviceConfig.createAsyncRunner("storageAsyncRunner");
+              final AsyncRunner storagePrunerAsyncRunner =
+                  serviceConfig.createAsyncRunner("storagePrunerAsyncRunner", 1);
               final VersionedDatabaseFactory dbFactory =
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
@@ -75,8 +78,19 @@ public class StorageService extends Service implements StorageServiceFacade {
                         new BlockPruner(
                             config.getSpec(),
                             database,
-                            storageAsyncRunner,
+                            storagePrunerAsyncRunner,
                             config.getBlockPruningInterval()));
+              }
+              if (config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)) {
+                blobsPruner =
+                    Optional.of(
+                        new BlobsPruner(
+                            config.getSpec(),
+                            database,
+                            storagePrunerAsyncRunner,
+                            serviceConfig.getTimeProvider(),
+                            config.getBlobsPruningInterval(),
+                            config.getBlobsPruningLimit()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());
@@ -110,6 +124,11 @@ public class StorageService extends Service implements StorageServiceFacade {
             __ ->
                 blockPruner
                     .map(BlockPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .thenCompose(
+            __ ->
+                blobsPruner
+                    .map(BlobsPruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 

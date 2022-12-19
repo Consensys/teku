@@ -626,6 +626,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getGenesisTime() {
+    return dao.getGenesisTime();
+  }
+
+  @Override
   public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
     try (final HotUpdater updater = hotUpdater()) {
       updater.pruneHotStateRoots(stateRoots);
