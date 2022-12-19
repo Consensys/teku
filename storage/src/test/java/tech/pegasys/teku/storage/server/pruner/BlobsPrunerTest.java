@@ -75,15 +75,15 @@ public class BlobsPrunerTest {
 
   @Test
   void shouldPrune() {
-    // set current time to 2 slots after the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS window
+    // set current time to MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS window + 2 slots
     final UInt64 currentSlot =
         UInt64.valueOf(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS)
             .times(spec.getGenesisSpecConfig().getSlotsPerEpoch())
             .plus(2);
-    final UInt64 time =
+    final UInt64 currentTime =
         currentSlot.times(spec.getGenesisSpecConfig().getSecondsPerSlot()).plus(genesisTime);
 
-    timeProvider.advanceTimeBy(Duration.ofSeconds(time.longValue()));
+    timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     when(database.getGenesisTime()).thenReturn(Optional.of(genesisTime));
 
