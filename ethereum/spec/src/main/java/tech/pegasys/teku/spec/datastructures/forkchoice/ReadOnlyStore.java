@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,7 +48,9 @@ public interface ReadOnlyStore {
 
   UInt64 getGenesisTime();
 
-  /** @return the genesis time in milliseconds */
+  /**
+   * @return the genesis time in milliseconds
+   */
   default UInt64 getGenesisTimeMillis() {
     return secondsToMillis(getGenesisTime());
   }
@@ -111,6 +114,9 @@ public interface ReadOnlyStore {
   }
 
   SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
+      Bytes32 blockRoot);
 
   SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot);
 
