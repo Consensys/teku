@@ -40,6 +40,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
       final String name,
       final int maxThreads,
       final int maxQueueSize,
+      final int threadPriority,
       final MetricTrackingExecutorFactory executorFactory) {
     final ScheduledExecutorService scheduler =
         Executors.newSingleThreadScheduledExecutor(
@@ -52,7 +53,11 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
             name,
             maxThreads,
             maxQueueSize,
-            new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(false).build());
+            new ThreadFactoryBuilder()
+                .setNameFormat(name + "-async-%d")
+                .setDaemon(false)
+                .setPriority(threadPriority)
+                .build());
 
     return new ScheduledExecutorAsyncRunner(scheduler, workerPool);
   }

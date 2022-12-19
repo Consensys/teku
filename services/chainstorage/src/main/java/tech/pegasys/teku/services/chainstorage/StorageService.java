@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.chainstorage;
 
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
 import java.util.Optional;
@@ -62,7 +63,11 @@ public class StorageService extends Service implements StorageServiceFacade {
     return SafeFuture.fromRunnable(
             () -> {
               final AsyncRunner storagePrunerAsyncRunner =
-                  serviceConfig.createAsyncRunner("storagePrunerAsyncRunner", 1);
+                  serviceConfig.createAsyncRunner(
+                      "storagePrunerAsyncRunner",
+                      1,
+                      DEFAULT_MAX_QUEUE_SIZE,
+                      Thread.NORM_PRIORITY - 1);
               final VersionedDatabaseFactory dbFactory =
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
