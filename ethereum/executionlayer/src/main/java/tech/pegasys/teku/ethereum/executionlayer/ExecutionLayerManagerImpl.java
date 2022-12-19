@@ -335,6 +335,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
+    // Treat the local block value as zero if getPayload fails so any builder bid will beat it
+    // Ensures we can still propose a builder block even if the local payload is unavailable
     final SafeFuture<UInt256> localExecutionPayloadValue =
         localExecutionPayload
             .thenApply(ExecutionPayloadWithValue::getValue)
