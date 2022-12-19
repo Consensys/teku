@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -27,10 +28,12 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class BlobsPruner extends Service {
+public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -42,6 +45,9 @@ public class BlobsPruner extends Service {
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
+
+  private AtomicReference<Optional<UInt64>> latestFinalizedSlot =
+      new AtomicReference<>(Optional.empty());
 
   public BlobsPruner(
       final Spec spec,
@@ -77,6 +83,36 @@ public class BlobsPruner extends Service {
   }
 
   private void pruneBlobs() {
+    pruneBlobsPriorToAvailabilityWindow();
+    pruneUnconfirmedBlobs();
+  }
+
+  private void pruneUnconfirmedBlobs() {
+    final Optional<UInt64> maybeLatestFinalizedSlot =
+        latestFinalizedSlot.getAndSet(Optional.empty());
+    if (maybeLatestFinalizedSlot.isEmpty()) {
+      LOG.debug("Not pruning unconfirmed blobs as no new finalized slot is available.");
+      return;
+    }
+
+    LOG.debug(
+        "Pruning unconfirmed blobs up to slot {}, limit {}",
+        maybeLatestFinalizedSlot.get(),
+        pruneLimit);
+    try {
+      final long start = System.currentTimeMillis();
+      final boolean limitReached =
+          database.pruneOldestUnconfirmedBlobsSidecar(maybeLatestFinalizedSlot.get(), pruneLimit);
+      LOG.debug(
+          "Unconfirmed blobs pruning finished in {} ms. Limit reached: {}",
+          () -> System.currentTimeMillis() - start,
+          () -> limitReached);
+    } catch (ShuttingDownException | RejectedExecutionException ex) {
+      LOG.debug("Shutting down", ex);
+    }
+  }
+
+  private void pruneBlobsPriorToAvailabilityWindow() {
     final Optional<UInt64> genesisTime = getGenesisTime();
     if (genesisTime.isEmpty()) {
       LOG.debug("Not pruning as no genesis time is available.");
@@ -104,6 +140,12 @@ public class BlobsPruner extends Service {
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    latestFinalizedSlot.set(Optional.of(checkpoint.getEpochStartSlot(spec)));
   }
 
   private Optional<UInt64> getGenesisTime() {

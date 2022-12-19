@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.Database;
 
 public class BlobsPrunerTest {
@@ -42,6 +44,7 @@ public class BlobsPrunerTest {
   private UInt64 genesisTime = UInt64.valueOf(100);
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
 
@@ -50,6 +53,7 @@ public class BlobsPrunerTest {
 
   @BeforeEach
   void setUp() {
+    when(database.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     assertThat(blobsPruner.start()).isCompleted();
   }
 
@@ -65,8 +69,6 @@ public class BlobsPrunerTest {
 
   @Test
   void shouldNotPrunePriorGenesis() {
-    when(database.getGenesisTime()).thenReturn(Optional.of(genesisTime));
-
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
@@ -85,9 +87,31 @@ public class BlobsPrunerTest {
 
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
-    when(database.getGenesisTime()).thenReturn(Optional.of(genesisTime));
-
     asyncRunner.executeDueActions();
     verify(database).pruneOldestBlobsSidecar(UInt64.valueOf(2), PRUNE_LIMIT);
+  }
+
+  @Test
+  void shouldNotPruneUnconfirmedBlobsWithoutFinalizedCheckpoint() {
+    asyncRunner.executeDueActions();
+
+    verify(database, never()).pruneOldestUnconfirmedBlobsSidecar(any(), anyInt());
+  }
+
+  @Test
+  void shouldPruneUnconfirmedBlobsWithFinalizedCheckpoint() {
+    blobsPruner.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(1), false);
+    asyncRunner.executeDueActions();
+
+    final UInt64 expectedLastSlotToPrune =
+        UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+
+    verify(database).pruneOldestUnconfirmedBlobsSidecar(expectedLastSlotToPrune, PRUNE_LIMIT);
+
+    timeProvider.advanceTimeBy(PRUNE_INTERVAL);
+    asyncRunner.executeDueActions();
+
+    verify(database, times(1))
+        .pruneOldestUnconfirmedBlobsSidecar(expectedLastSlotToPrune, PRUNE_LIMIT);
   }
 }
