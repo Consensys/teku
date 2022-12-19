@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class BlobsPruner extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -91,12 +93,17 @@ public class BlobsPruner extends Service {
       return;
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", earliestPrunableSlot, pruneLimit);
-    final long start = System.currentTimeMillis();
-    final boolean limitReached = database.pruneOldestBlobsSidecar(earliestPrunableSlot, pruneLimit);
-    LOG.debug(
-        "Blobs pruning finished in {} ms. Limit reached: {}",
-        () -> System.currentTimeMillis() - start,
-        () -> limitReached);
+    try {
+      final long start = System.currentTimeMillis();
+      final boolean limitReached =
+          database.pruneOldestBlobsSidecar(earliestPrunableSlot, pruneLimit);
+      LOG.debug(
+          "Blobs pruning finished in {} ms. Limit reached: {}",
+          () -> System.currentTimeMillis() - start,
+          () -> limitReached);
+    } catch (ShuttingDownException | RejectedExecutionException ex) {
+      LOG.debug("Shutting down", ex);
+    }
   }
 
   private Optional<UInt64> getGenesisTime() {
