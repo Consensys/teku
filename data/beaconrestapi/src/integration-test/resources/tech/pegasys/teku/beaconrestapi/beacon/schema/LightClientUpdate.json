@@ -35,7 +35,7 @@
     },
     "signature_slot" : {
       "type" : "string",
-      "description" : "`uint64` value representing signature_slot",
+      "description" : "unsigned 64 bit integer",
       "example" : "1",
       "format" : "uint64"
     }

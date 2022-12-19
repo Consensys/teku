@@ -31,7 +31,6 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "title" : "GetLightClientUpdatesByRangeResponse",
               "type" : "array",
               "items" : {
                 "type" : "object",
@@ -52,17 +51,21 @@
                 }
               }
             }
-          },
-          "application/octet-stream" : {
-            "schema" : {
-              "type" : "string",
-              "format" : "binary"
-            }
           }
         }
       },
       "406" : {
         "description" : "Not acceptable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "501" : {
+        "description" : "Not implemented",
         "content" : {
           "application/json" : {
             "schema" : {
