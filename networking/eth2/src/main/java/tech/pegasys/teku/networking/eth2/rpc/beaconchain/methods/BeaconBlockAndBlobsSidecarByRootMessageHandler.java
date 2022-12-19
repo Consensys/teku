@@ -87,6 +87,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
       final Optional<UInt64> requestedSlot = recentChainData.getSlotForBlockRoot(blockRoot.get());
       if (!verifyRequestedEpochIsInSupportedRange(requestedSlot, minimumRequestEpoch)) {
         requestCounter.labels("resource_unavailable").inc();
+        totalBlockAndBlobsSidecarRequestedCounter.inc(request.size());
         return Optional.of(
             new ResourceUnavailableException(
                 "Can't request block and blobs sidecar earlier than epoch " + minimumRequestEpoch));
