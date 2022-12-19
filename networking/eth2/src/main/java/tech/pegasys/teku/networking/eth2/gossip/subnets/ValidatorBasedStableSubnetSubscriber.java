@@ -59,7 +59,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     this.random = random;
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
     this.spec = spec;
-    this.minimumSubnetSubscriptions = minimumSubnetSubscriptions;
+    this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, ATTESTATION_SUBNET_COUNT);
   }
 
   @Override
