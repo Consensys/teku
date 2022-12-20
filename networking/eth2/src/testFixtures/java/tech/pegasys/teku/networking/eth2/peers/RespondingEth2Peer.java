@@ -262,7 +262,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   @SuppressWarnings("unused")
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
-      Bytes32 blockRoot) {
+      final Bytes32 blockRoot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
@@ -296,7 +296,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public boolean wantToReceiveBlockAndBlobsSidecars(
-      ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, long blocksCount) {
+      final ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, final long blocksCount) {
     return true;
   }
 
