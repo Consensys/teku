@@ -158,6 +158,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.empty();
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes32, BlockCheckpoints>> streamBlockCheckpoints() {
     return Stream.empty();
   }
@@ -270,6 +275,11 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot) {
     return Stream.empty();
   }
 

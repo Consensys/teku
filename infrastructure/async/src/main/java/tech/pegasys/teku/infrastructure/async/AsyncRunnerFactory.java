@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public interface AsyncRunnerFactory {
 
   int DEFAULT_MAX_QUEUE_SIZE = 5000;
+  int DEFAULT_THREAD_PRIORITY = Thread.NORM_PRIORITY;
   Pattern ASYNC_RUNNER_NAME_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9_]*");
 
   default AsyncRunner create(String name, int maxThreads) {
@@ -34,7 +35,11 @@ public interface AsyncRunnerFactory {
     }
   }
 
-  AsyncRunner create(String name, int maxThreads, int maxQueueSize);
+  default AsyncRunner create(String name, int maxThreads, int maxQueueSize) {
+    return create(name, maxThreads, maxQueueSize, DEFAULT_THREAD_PRIORITY);
+  }
+
+  AsyncRunner create(String name, int maxThreads, int maxQueueSize, int threadPriority);
 
   void shutdown();
 
