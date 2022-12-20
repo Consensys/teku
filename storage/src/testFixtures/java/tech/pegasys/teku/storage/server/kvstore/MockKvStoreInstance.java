@@ -148,12 +148,24 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> Stream<K> streamKeys(KvStoreColumn<K, V> column) {
+    return streamKeyRaw(column)
+        .map(entry -> column.getKeySerializer().deserialize(entry.toArrayUnsafe()));
+  }
+
+  @Override
   public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
     assertOpen();
     assertValidColumn(column);
     return columnData.get(column).entrySet().stream()
         .peek(value -> assertOpen())
         .map(entry -> columnEntry(entry));
+  }
+
+  public Stream<Bytes> streamKeyRaw(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    assertValidColumn(column);
+    return columnData.get(column).keySet().stream();
   }
 
   @Override
@@ -173,6 +185,19 @@ public class MockKvStoreInstance implements KvStoreAccessor {
         .stream()
         .peek(value -> assertOpen())
         .map(e -> columnEntry(column, e));
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> Stream<K> streamKeys(
+      KvStoreColumn<K, V> column, K from, K to) {
+    assertOpen();
+    return columnData
+        .get(column)
+        .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true)
+        .keySet()
+        .stream()
+        .peek(value -> assertOpen())
+        .map(e -> columnKey(column, e));
   }
 
   @Override

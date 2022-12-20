@@ -229,6 +229,15 @@ public class LevelDbInstance implements KvStoreAccessor {
 
   @Override
   @MustBeClosed
+  public <K, V> Stream<K> streamKeys(final KvStoreColumn<K, V> column) {
+    // Note that the "to" key is actually after the end of the column and iteration is inclusive.
+    // Fortunately, we know that the "to" key can't exist because it is just the column ID with an
+    // empty item key and empty item keys are not allowed.
+    return streamKeys(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column));
+  }
+
+  @Override
+  @MustBeClosed
   public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
     return streamRaw(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column))
         .map(entry -> ColumnEntry.create(Bytes.wrap(entry.getKey()), Bytes.wrap(entry.getValue())));
@@ -249,6 +258,15 @@ public class LevelDbInstance implements KvStoreAccessor {
     return stream(column, fromBytes, toBytes);
   }
 
+  @Override
+  @MustBeClosed
+  public <K extends Comparable<K>, V> Stream<K> streamKeys(
+      KvStoreColumn<K, V> column, K from, K to) {
+    final byte[] fromBytes = getColumnKey(column, from);
+    final byte[] toBytes = getColumnKey(column, to);
+    return streamKeys(column, fromBytes, toBytes);
+  }
+
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
@@ -261,12 +279,30 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @MustBeClosed
+  private <K, V> Stream<K> streamKeys(
+      final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
+    return streamKeysRaw(column, fromBytes, toBytes)
+        .map(entry -> column.getKeySerializer().deserialize(entry));
+  }
+
+  @MustBeClosed
   private Stream<ColumnEntry<byte[], byte[]>> streamRaw(
       final KvStoreColumn<?, ?> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
     final DBIterator iterator = createIterator();
     iterator.seek(fromBytes);
     return new LevelDbIterator<>(this, iterator, column, toBytes)
+        .toStream()
+        .onClose(() -> closeIterator(iterator));
+  }
+
+  @MustBeClosed
+  private Stream<byte[]> streamKeysRaw(
+      final KvStoreColumn<?, ?> column, final byte[] fromBytes, final byte[] toBytes) {
+    assertOpen();
+    final DBIterator iterator = createIterator();
+    iterator.seek(fromBytes);
+    return new LevelDbKeyIterator<>(this, iterator, column, toBytes)
         .toStream()
         .onClose(() -> closeIterator(iterator));
   }
