@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -48,28 +47,38 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder voluntaryExits(SszList<SignedVoluntaryExit> voluntaryExits);
 
-  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder syncAggregate(Supplier<SyncAggregate> syncAggregateSupplier);
+  default Boolean supportsSyncAggregate() {
+    return false;
+  }
 
-  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder executionPayload(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
+  BeaconBlockBodyBuilder syncAggregate(SyncAggregate syncAggregate);
 
-  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier);
-
-  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder blsToExecutionChanges(
-      Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges);
-
-  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyBuilder blobKzgCommitments(
-      Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments);
+  default Boolean supportsExecutionPayload() {
+    return false;
+  }
 
   default Boolean isBlinded() {
     return false;
   }
+
+  BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload);
+
+  BeaconBlockBodyBuilder executionPayloadHeader(
+      SafeFuture<ExecutionPayloadHeader> executionPayloadHeader);
+
+  default Boolean supportsBlsToExecutionChanges() {
+    return false;
+  }
+
+  BeaconBlockBodyBuilder blsToExecutionChanges(
+      SszList<SignedBlsToExecutionChange> blsToExecutionChanges);
+
+  default Boolean supportsKzgCommitments() {
+    return false;
+  }
+
+  BeaconBlockBodyBuilder blobKzgCommitments(
+      SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments);
 
   SafeFuture<? extends BeaconBlockBody> build();
 }

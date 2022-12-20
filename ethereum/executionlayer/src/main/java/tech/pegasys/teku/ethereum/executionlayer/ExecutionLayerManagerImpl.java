@@ -43,6 +43,7 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -84,7 +86,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
    * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
    * we must call the builder to serve builderGetPayload later
    */
-  private final NavigableMap<UInt64, ExecutionPayloadContext> slotToLocalElFallbackData =
+  private final NavigableMap<UInt64, Optional<FallbackData>> slotToLocalElFallbackData =
+      new ConcurrentSkipListMap<>();
+  // TODO: prune me
+  private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
 
   private final Optional<BuilderClient> builderClient;
@@ -247,6 +252,47 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         forkChoiceState, payloadBuildingAttributes);
   }
 
+  @Override
+  public Optional<ExecutionPayloadResult> getPayloadResult(final UInt64 slot) {
+    return Optional.ofNullable(executionResultCache.get(slot));
+  }
+
+  @Override
+  public ExecutionPayloadResult initiateBlockProduction(
+      final ExecutionPayloadContext context, final UInt64 slot, final boolean isBlind) {
+    // TODO: isBlind
+    final SafeFuture<ExecutionPayload> executionPayloadFuture = engineGetPayload(context, slot);
+    final ExecutionPayloadResult result =
+        new ExecutionPayloadResult(
+            context,
+            Optional.of(executionPayloadFuture),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty());
+    executionResultCache.put(slot, result);
+    return result;
+  }
+
+  @Override
+  public ExecutionPayloadResult initiateBlockAndBlobsProduction(
+      final ExecutionPayloadContext context, final UInt64 slot, final boolean isBlind) {
+    // TODO: isBlind
+    final SafeFuture<ExecutionPayload> executionPayloadFuture = engineGetPayload(context, slot);
+    final SafeFuture<BlobsBundle> blobsBundleFuture =
+        executionPayloadFuture.thenCompose(
+            executionPayload ->
+                engineGetBlobsBundle(slot, context.getPayloadId(), Optional.of(executionPayload)));
+    final ExecutionPayloadResult result =
+        new ExecutionPayloadResult(
+            context,
+            Optional.of(executionPayloadFuture),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.of(blobsBundleFuture));
+    executionResultCache.put(slot, result);
+    return result;
+  }
+
   // FIXME: from outside
   @Override
   public SafeFuture<ExecutionPayload> engineGetPayload(
@@ -268,11 +314,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
-    final SafeFuture<ExecutionPayload> executionPayloadFuture =
-        executionClientHandler.engineGetPayload(executionPayloadContext, slot);
-    slotToLocalElFallbackData.put(
-        slot, executionPayloadContext.withExecutionPayloadFuture(executionPayloadFuture));
-    return executionPayloadFuture;
+    return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
   @Override
@@ -288,39 +330,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final UInt64 slot) {
-    LOG.trace("calling engineGetBlobsBundle(slot={})", slot);
-    final Optional<ExecutionPayloadContext> executionPayloadContextOptional =
-        Optional.ofNullable(slotToLocalElFallbackData.get(slot));
-    if (executionPayloadContextOptional.isEmpty()) {
-      return SafeFuture.failedFuture(
-          new InvalidConfigurationException(
-              String.format("Missing execution payload context for slot %s", slot)));
-    }
-    final ExecutionPayloadContext executionPayloadContext = executionPayloadContextOptional.get();
-    if (executionPayloadContext.getBlobsBundleFuture().isPresent()) {
-      return executionPayloadContext.getBlobsBundleFuture().get();
-    }
-    final SafeFuture<BlobsBundle> blobsBundleFuture =
-        executionPayloadContext
-            .getExecutionPayloadFuture()
-            .orElseThrow()
-            .thenCompose(
-                executionPayload ->
-                    executionClientHandler
-                        .engineGetBlobsBundle(executionPayloadContext.getPayloadId(), slot)
-                        .thenApplyChecked(
-                            blobsBundle -> {
-                              blobsBundleValidator.validate(
-                                  blobsBundle,
-                                  // FIXME: do we get it always from fallbackData?
-                                  executionPayloadContext
-                                      .getFallbackData()
-                                      .map(FallbackData::getExecutionPayload));
-                              return blobsBundle;
-                            }));
-    slotToLocalElFallbackData.put(slot, executionPayloadContext.withBlobsBundle(blobsBundleFuture));
-    return blobsBundleFuture;
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      final UInt64 slot,
+      final Bytes8 payloadId,
+      Optional<ExecutionPayload> executionPayloadOptional) {
+    LOG.trace(
+        "calling engineGetBlobsBundle(slot={}, executionPayloadOptional={})",
+        slot,
+        executionPayloadOptional);
+    return executionClientHandler
+        .engineGetBlobsBundle(payloadId, slot)
+        .thenApplyChecked(
+            blobsBundle -> {
+              blobsBundleValidator.validate(blobsBundle, executionPayloadOptional);
+              return blobsBundle;
+            });
   }
 
   @Override
@@ -378,8 +402,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     }
 
     if (fallbackReason != null) {
-      return getHeaderFromLocalExecutionPayload(
-          executionPayloadContext, localExecutionPayload, slot, fallbackReason);
+      return getHeaderFromLocalExecutionPayload(localExecutionPayload, slot, fallbackReason);
     }
 
     final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
@@ -406,17 +429,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             signedBuilderBidMaybe -> {
               if (signedBuilderBidMaybe.isEmpty()) {
                 return getHeaderFromLocalExecutionPayload(
-                    executionPayloadContext,
-                    localExecutionPayload,
-                    slot,
-                    FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               }
               final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
               logReceivedBuilderBid(signedBuilderBid.getMessage());
               final ExecutionPayloadHeader executionPayloadHeader =
                   builderBidValidator.validateAndGetPayloadHeader(
                       spec, signedBuilderBid, validatorRegistration.get(), state);
-              slotToLocalElFallbackData.put(slot, executionPayloadContext);
+              slotToLocalElFallbackData.put(slot, Optional.empty());
               return SafeFuture.completedFuture(executionPayloadHeader);
             })
         .exceptionallyCompose(
@@ -425,10 +445,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                   "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
                   error);
               return getHeaderFromLocalExecutionPayload(
-                  executionPayloadContext,
-                  localExecutionPayload,
-                  slot,
-                  FallbackReason.BUILDER_ERROR);
+                  localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
             });
   }
 
@@ -442,7 +459,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
-    final Optional<ExecutionPayloadContext> maybeProcessedSlot =
+    final Optional<Optional<FallbackData>> maybeProcessedSlot =
         Optional.ofNullable(slotToLocalElFallbackData.get(slot));
 
     if (maybeProcessedSlot.isEmpty()) {
@@ -451,8 +468,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    final Optional<FallbackData> maybeLocalElFallbackData =
-        maybeProcessedSlot.get().getFallbackData();
+    final Optional<FallbackData> maybeLocalElFallbackData = maybeProcessedSlot.get();
 
     if (maybeLocalElFallbackData.isEmpty()) {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
@@ -462,7 +478,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   private SafeFuture<ExecutionPayloadHeader> getHeaderFromLocalExecutionPayload(
-      final ExecutionPayloadContext executionPayloadContext,
       final SafeFuture<ExecutionPayload> localExecutionPayload,
       final UInt64 slot,
       final FallbackReason reason) {
@@ -471,10 +486,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayload -> {
           // store the fallback payload for this slot
           slotToLocalElFallbackData.put(
-              slot,
-              executionPayloadContext
-                  .withExecutionPayloadFuture(localExecutionPayload)
-                  .withFallbackData(new FallbackData(executionPayload, reason)));
+              slot, Optional.of(new FallbackData(executionPayload, reason)));
 
           return spec.atSlot(slot)
               .getSchemaDefinitions()

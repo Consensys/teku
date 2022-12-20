@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -291,7 +292,25 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final UInt64 slot) {
+  public Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public ExecutionPayloadResult initiateBlockProduction(
+      ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+    return null;
+  }
+
+  @Override
+  public ExecutionPayloadResult initiateBlockAndBlobsProduction(
+      ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+    return null;
+  }
+
+  @Override
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
     final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
         spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
 

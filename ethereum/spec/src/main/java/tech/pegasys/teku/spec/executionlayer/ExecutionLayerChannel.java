@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -69,7 +71,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BlobsBundle> engineGetBlobsBundle(UInt64 slot) {
+        public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+            UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -91,6 +94,23 @@ public interface ExecutionLayerChannel extends ChannelInterface {
             SignedBeaconBlock signedBlindedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
+
+        @Override
+        public Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot) {
+          return Optional.empty();
+        }
+
+        @Override
+        public ExecutionPayloadResult initiateBlockProduction(
+            ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+          return null;
+        }
+
+        @Override
+        public ExecutionPayloadResult initiateBlockAndBlobsProduction(
+            ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+          return null;
+        }
       };
 
   // eth namespace
@@ -111,7 +131,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);
 
-  SafeFuture<BlobsBundle> engineGetBlobsBundle(UInt64 slot);
+  SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
 
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(
@@ -121,6 +142,15 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+
+  Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot);
+
+  // TODO: comment
+  ExecutionPayloadResult initiateBlockProduction(
+      ExecutionPayloadContext context, UInt64 slot, boolean isBlind);
+
+  ExecutionPayloadResult initiateBlockAndBlobsProduction(
+      ExecutionPayloadContext context, UInt64 slot, boolean isBlind);
 
   enum Version {
     KILNV2;

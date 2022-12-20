@@ -515,7 +515,10 @@ class ExecutionLayerManagerImplTest {
     when(executionClientHandler.engineGetBlobsBundle(executionPayloadContext.getPayloadId(), slot))
         .thenReturn(SafeFuture.completedFuture(blobsBundle));
 
-    assertThat(executionLayerManager.engineGetBlobsBundle(slot)).isCompletedWithValue(blobsBundle);
+    assertThat(
+            executionLayerManager.engineGetBlobsBundle(
+                slot, executionPayloadContext.getPayloadId(), Optional.empty()))
+        .isCompletedWithValue(blobsBundle);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);

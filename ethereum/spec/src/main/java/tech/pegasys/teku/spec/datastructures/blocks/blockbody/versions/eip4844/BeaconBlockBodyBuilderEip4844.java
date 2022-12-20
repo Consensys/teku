@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -50,9 +49,14 @@ public class BeaconBlockBodyBuilderEip4844 extends BeaconBlockBodyBuilderCapella
   }
 
   @Override
+  public Boolean supportsKzgCommitments() {
+    return true;
+  }
+
+  @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      final Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments) {
-    this.blobKzgCommitments = blobKzgCommitments.get();
+      final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    this.blobKzgCommitments = blobKzgCommitments;
     return this;
   }
 

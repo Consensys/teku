@@ -103,12 +103,11 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
         spec,
         (builder) -> {
           builder.executionPayload(
-              () -> SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
+              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
           builder.blsToExecutionChanges(
-              () ->
-                  this.blsToExecutionChanges.stream()
-                      .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
-                      .collect(blsToExecutionChangesSchema.collector()));
+              this.blsToExecutionChanges.stream()
+                  .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                  .collect(blsToExecutionChangesSchema.collector()));
         });
   }
 }

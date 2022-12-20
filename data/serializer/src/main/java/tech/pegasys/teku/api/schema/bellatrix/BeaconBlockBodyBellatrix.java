@@ -89,7 +89,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
         (builder) -> {
           builderRef.accept(builder);
           builder.executionPayload(
-              () -> SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
+              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
         });
   }
 }
