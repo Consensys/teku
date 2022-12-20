@@ -94,7 +94,7 @@ public class BeaconChainMethods {
       final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye,
       final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> beaconBlocksByRoot,
       final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> beaconBlocksByRange,
-      Optional<
+      final Optional<
               Eth2RpcMethod<
                   BeaconBlockAndBlobsSidecarByRootRequestMessage, SignedBeaconBlockAndBlobsSidecar>>
           beaconBlockAndBlobsSidecarByRoot,
