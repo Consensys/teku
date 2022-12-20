@@ -461,8 +461,9 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  @SuppressWarnings("unused")
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
-      Bytes32 blockRoot) {
+      final Bytes32 blockRoot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 

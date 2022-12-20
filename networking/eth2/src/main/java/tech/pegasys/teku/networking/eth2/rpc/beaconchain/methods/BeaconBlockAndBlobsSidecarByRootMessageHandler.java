@@ -105,6 +105,12 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
       final ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback) {
     LOG.trace("Peer {} requested BeaconBlockAndBlobsSidecar with roots: {}", peer.getId(), message);
 
+    if (!peer.wantToMakeRequest()
+        || !peer.wantToReceiveBlockAndBlobsSidecars(callback, message.size())) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
+
     requestCounter.labels("ok").inc();
     totalBlockAndBlobsSidecarRequestedCounter.inc(message.size());
 

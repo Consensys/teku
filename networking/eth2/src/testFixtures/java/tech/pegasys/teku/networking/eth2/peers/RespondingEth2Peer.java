@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -275,6 +276,12 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    return true;
+  }
+
+  @Override
+  public boolean wantToReceiveBlockAndBlobsSidecars(
+      ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, long blocksCount) {
     return true;
   }
 

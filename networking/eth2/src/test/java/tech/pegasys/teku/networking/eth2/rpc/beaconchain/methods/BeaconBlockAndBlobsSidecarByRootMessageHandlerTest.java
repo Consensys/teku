@@ -15,9 +15,12 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
@@ -30,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -43,8 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.S
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
@@ -62,7 +65,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final String protocolId =
       BeaconChainMethodIds.getBeaconBlockAndBlobsSidecarByRoot(1, RPC_ENCODING);
@@ -75,6 +78,8 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
 
   @BeforeEach
   public void setUp() {
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveBlockAndBlobsSidecars(any(), anyLong())).thenReturn(true);
     when(recentChainData.getStore()).thenReturn(store);
   }
 
@@ -84,7 +89,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
 
   final BeaconBlockAndBlobsSidecarByRootMessageHandler handler =
       new BeaconBlockAndBlobsSidecarByRootMessageHandler(
-          spec, eip4844ForkEpoch, storageSystem.getMetricsSystem(), recentChainData);
+          spec, eip4844ForkEpoch, metricsSystem, recentChainData);
 
   @Test
   public void validateRequest_resourceNotAvailableWhenNotInSupportedRange() {
@@ -113,6 +118,26 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
               assertThat(rpcException.getErrorMessageString())
                   .isEqualTo("Can't request block and blobs sidecar earlier than epoch 3");
             });
+
+    verifyRequestsMetric("resource_unavailable", 1);
+  }
+
+  @Test
+  public void onIncomingMessage_rateLimitedIfPeerDoesNotWantToMakeRequest() {
+    when(peer.wantToMakeRequest()).thenReturn(false);
+
+    handler.onIncomingMessage(protocolId, peer, createRandomRequest(), callback);
+    verifyRequestsMetric("rate_limited", 1);
+    verifyNoInteractions(recentChainData);
+  }
+
+  @Test
+  public void onIncomingMessage_rateLimitedIfPeerDoesNotWantToReceiveBlockAndBlobsSidecar() {
+    when(peer.wantToReceiveBlockAndBlobsSidecars(eq(callback), anyLong())).thenReturn(false);
+
+    handler.onIncomingMessage(protocolId, peer, createRandomRequest(), callback);
+    verifyRequestsMetric("rate_limited", 1);
+    verifyNoInteractions(recentChainData);
   }
 
   @Test
@@ -145,6 +170,34 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
     verify(callback).completeSuccessfully();
 
     assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+
+    verifyRequestsMetric("ok", 1);
+    verifyRequestedCounter(3);
+  }
+
+  private BeaconBlockAndBlobsSidecarByRootRequestMessage createRandomRequest() {
+    return new BeaconBlockAndBlobsSidecarByRootRequestMessage(
+        List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()));
+  }
+
+  private void verifyRequestsMetric(final String status, final long expectedCount) {
+    assertThat(
+            metricsSystem
+                .getCounter(
+                    TekuMetricCategory.NETWORK,
+                    "rpc_block_and_blobs_sidecar_by_root_requests_total")
+                .getValue(status))
+        .isEqualTo(expectedCount);
+  }
+
+  private void verifyRequestedCounter(final long expectedCount) {
+    assertThat(
+            metricsSystem
+                .getCounter(
+                    TekuMetricCategory.NETWORK,
+                    "rpc_block_and_blobs_sidecar_by_root_requested_total")
+                .getValue())
+        .isEqualTo(expectedCount);
   }
 
   private List<SignedBeaconBlockAndBlobsSidecar> mockBlocksAndBlobsSidecars(
