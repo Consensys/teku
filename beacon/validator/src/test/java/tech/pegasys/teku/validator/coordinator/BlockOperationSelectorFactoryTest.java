@@ -125,7 +125,7 @@ class BlockOperationSelectorFactoryTest {
           "bls_to_execution_Change",
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(
-              s -> s.toVersionCapella().get().getBlsToExecutionChangesSchema()),
+              s -> s.toVersionCapella().orElseThrow().getBlsToExecutionChangesSchema()),
           blsToExecutionChangeValidator);
   private final SyncCommitteeContributionPool contributionPool =
       new SyncCommitteeContributionPool(spec, contributionValidator);
@@ -487,36 +487,34 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockBodyBuilder syncAggregate(
-        final Supplier<SyncAggregate> syncAggregateSupplier) {
-      this.syncAggregate = syncAggregateSupplier.get();
+    public BeaconBlockBodyBuilder syncAggregate(final SyncAggregate syncAggregate) {
+      this.syncAggregate = syncAggregate;
       return this;
     }
 
     @Override
-    public BeaconBlockBodyBuilder executionPayload(
-        Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
-      this.executionPayload = safeJoin(executionPayloadSupplier.get());
+    public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
+      this.executionPayload = safeJoin(executionPayload);
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder executionPayloadHeader(
-        Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
-      this.executionPayloadHeader = safeJoin(executionPayloadHeaderSupplier.get());
+        SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
+      this.executionPayloadHeader = safeJoin(executionPayloadHeader);
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder blsToExecutionChanges(
-        Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
-      this.blsToExecutionChanges = blsToExecutionChanges.get();
+        SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+      this.blsToExecutionChanges = blsToExecutionChanges;
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
-        Supplier<SafeFuture<SszList<SszKZGCommitment>>> blobKzgCommitments) {
+        SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
       // do nothing
       return this;
     }
