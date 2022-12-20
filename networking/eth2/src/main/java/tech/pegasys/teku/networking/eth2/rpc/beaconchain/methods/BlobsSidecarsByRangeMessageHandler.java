@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -79,21 +77,6 @@ public class BlobsSidecarsByRangeMessageHandler
   }
 
   @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final BlobsSidecarsByRangeRequestMessage request) {
-    final UInt64 maxSlotRequested = request.getMaxSlot();
-    final SpecMilestone specMilestone =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(maxSlotRequested);
-    if (!specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              "Can't request blobs sidecars for slots before the EIP-4844 fork"));
-    }
-    return Optional.empty();
-  }
-
-  @Override
   protected void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
@@ -111,6 +94,7 @@ public class BlobsSidecarsByRangeMessageHandler
       requestCounter.labels("rate_limited").inc();
       return;
     }
+
     requestCounter.labels("ok").inc();
     totalBlobsSidecarsRequestedCounter.inc(message.getCount().longValue());
 
