@@ -27,13 +27,13 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloaHeaderdFuture;
   private final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture;
-  private final Optional<SafeFuture<FallbackData>> fallbackDataFuture;
+  private final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloaHeaderFuture,
-      final Optional<SafeFuture<FallbackData>> fallbackDataFuture,
+      final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture,
       final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
@@ -54,7 +54,16 @@ public class ExecutionPayloadResult {
     return executionPayloaHeaderdFuture;
   }
 
-  public Optional<SafeFuture<FallbackData>> getFallbackDataFuture() {
+  /**
+   * if we serve unblind production, external optional is empty
+   *
+   * <p>if we serve builderGetHeader using local execution engine, we store fallback in internal
+   * optional
+   *
+   * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() in internal
+   * optional to signal that we must call the builder to serve builderGetPayload later
+   */
+  public Optional<SafeFuture<Optional<FallbackData>>> getFallbackDataFuture() {
     return fallbackDataFuture;
   }
 

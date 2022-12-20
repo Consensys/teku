@@ -162,9 +162,9 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsExecutionPayload()) {
         if (!bodyBuilder.supportsKzgCommitments()) {
           if (bodyBuilder.isBlinded()) {
-            builderSetPayloadHeader(bodyBuilder, parentRoot, blockSlotState.getSlot());
+            builderSetPayloadHeader(bodyBuilder, parentRoot, blockSlotState);
           } else {
-            builderSetPayload(bodyBuilder, parentRoot, blockSlotState.getSlot());
+            builderSetPayload(bodyBuilder, parentRoot, blockSlotState);
           }
         } else {
           // Execution Payload / Execution Payload Header + KZG Commitments
@@ -175,7 +175,7 @@ public class BlockOperationSelectorFactory {
                       executionPayloadContextOptional ->
                           executionLayerChannel.initiateBlockAndBlobsProduction(
                               executionPayloadContextOptional.orElseThrow(),
-                              blockSlotState.getSlot(),
+                              blockSlotState,
                               bodyBuilder.isBlinded()));
           builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
           builderSetKzgCommitments(bodyBuilder, executionPayloadResultFuture);
@@ -201,24 +201,28 @@ public class BlockOperationSelectorFactory {
   }
 
   private void builderSetPayload(
-      final BeaconBlockBodyBuilder bodyBuilder, final Bytes32 parentRoot, final UInt64 slot) {
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState) {
     Supplier<SafeFuture<ExecutionPayload>> defaultPayload =
         () ->
             SafeFuture.completedFuture(
-                SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                SchemaDefinitionsBellatrix.required(
+                        spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                     .getExecutionPayloadSchema()
                     .getDefault());
 
     bodyBuilder.executionPayload(
         forkChoiceNotifier
-            .getPayloadId(parentRoot, slot)
+            .getPayloadId(parentRoot, blockSlotState.getSlot())
             .thenCompose(
                 executionPayloadContext -> {
                   if (executionPayloadContext.isEmpty()) {
                     return defaultPayload.get();
                   } else {
                     return executionLayerChannel
-                        .initiateBlockProduction(executionPayloadContext.get(), slot, true)
+                        .initiateBlockProduction(
+                            executionPayloadContext.get(), blockSlotState, true)
                         .getExecutionPayloadFuture()
                         .orElseThrow();
                   }
@@ -226,24 +230,28 @@ public class BlockOperationSelectorFactory {
   }
 
   private void builderSetPayloadHeader(
-      final BeaconBlockBodyBuilder bodyBuilder, final Bytes32 parentRoot, final UInt64 slot) {
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState) {
     Supplier<SafeFuture<ExecutionPayloadHeader>> defaultPayloadHeader =
         () ->
             SafeFuture.completedFuture(
-                SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                SchemaDefinitionsBellatrix.required(
+                        spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
                     .getExecutionPayloadHeaderSchema()
                     .getHeaderOfDefaultPayload());
 
     bodyBuilder.executionPayloadHeader(
         forkChoiceNotifier
-            .getPayloadId(parentRoot, slot)
+            .getPayloadId(parentRoot, blockSlotState.getSlot())
             .thenCompose(
                 executionPayloadContext -> {
                   if (executionPayloadContext.isEmpty()) {
                     return defaultPayloadHeader.get();
                   } else {
                     return executionLayerChannel
-                        .initiateBlockProduction(executionPayloadContext.get(), slot, true)
+                        .initiateBlockProduction(
+                            executionPayloadContext.get(), blockSlotState, true)
                         .getExecutionPayloaHeaderdFuture()
                         .orElseThrow();
                   }

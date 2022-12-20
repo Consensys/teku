@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
@@ -84,9 +83,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+        public ExecutionPayloadResult builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-          return SafeFuture.completedFuture(null);
+          return null;
         }
 
         @Override
@@ -102,13 +101,13 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public ExecutionPayloadResult initiateBlockProduction(
-            ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+            ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
           return null;
         }
 
         @Override
         public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-            ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+            ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
           return null;
         }
       };
@@ -123,6 +122,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
+  /**
+   * This is low level method, use {@link #initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
   SafeFuture<ExecutionPayload> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
@@ -131,6 +134,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);
 
+  /**
+   * This is low level method, use {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
   SafeFuture<BlobsBundle> engineGetBlobsBundle(
       UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
 
@@ -138,19 +145,39 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<Void> builderRegisterValidators(
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
-  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  /**
+   * This is low level method, use {@link #initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
+  ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 
   Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot);
 
-  // TODO: comment
+  /**
+   * Initiates block production flow with execution client or builder
+   *
+   * @param context Payload context
+   * @param blockSlotState pre state
+   * @param isBlind Block type. Use blind for builder building
+   * @return Container with filled Payload or Payload Header futures
+   */
   ExecutionPayloadResult initiateBlockProduction(
-      ExecutionPayloadContext context, UInt64 slot, boolean isBlind);
+      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
 
+  /**
+   * Initiates block and sidecar blobs production flow with execution client or builder. Use since
+   * EIP-4844.
+   *
+   * @param context Payload context
+   * @param blockSlotState pre state
+   * @param isBlind Block type. Use blind for builder building
+   * @return Container with filled Payload or Payload Header futures
+   */
   ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context, UInt64 slot, boolean isBlind);
+      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
 
   enum Version {
     KILNV2,

@@ -298,13 +298,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public ExecutionPayloadResult initiateBlockProduction(
-      ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
     return null;
   }
 
   @Override
   public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context, UInt64 slot, boolean isBlind) {
+      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
     return null;
   }
 
@@ -338,7 +338,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
     LOG.info(
@@ -346,22 +346,30 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         executionPayloadContext,
         slot);
 
-    return engineGetPayload(executionPayloadContext, slot)
-        .thenApply(
-            executionPayload -> {
-              LOG.info(
-                  "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-                  executionPayloadContext,
-                  slot,
-                  executionPayload.getBlockHash());
-              lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
-              return spec.atSlot(slot)
-                  .getSchemaDefinitions()
-                  .toVersionBellatrix()
-                  .orElseThrow()
-                  .getExecutionPayloadHeaderSchema()
-                  .createFromExecutionPayload(executionPayload);
-            });
+    SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
+        engineGetPayload(executionPayloadContext, slot)
+            .thenApply(
+                executionPayload -> {
+                  LOG.info(
+                      "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
+                      executionPayloadContext,
+                      slot,
+                      executionPayload.getBlockHash());
+                  lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
+                  return spec.atSlot(slot)
+                      .getSchemaDefinitions()
+                      .toVersionBellatrix()
+                      .orElseThrow()
+                      .getExecutionPayloadHeaderSchema()
+                      .createFromExecutionPayload(executionPayload);
+                });
+
+    return new ExecutionPayloadResult(
+        executionPayloadContext,
+        Optional.empty(),
+        Optional.of(payloadHeaderFuture),
+        Optional.empty(),
+        Optional.empty());
   }
 
   @Override
