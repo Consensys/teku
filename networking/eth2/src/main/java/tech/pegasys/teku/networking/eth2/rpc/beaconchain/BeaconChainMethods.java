@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -112,6 +113,7 @@ public class BeaconChainMethods {
     this.allMethods =
         new ArrayList<>(
             List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping));
+    beaconBlockAndBlobsSidecarByRoot().ifPresent(allMethods::add);
     blobsSidecarsByRange.ifPresent(allMethods::add);
   }
 
@@ -485,7 +487,7 @@ public class BeaconChainMethods {
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {
-    return allMethods;
+    return Collections.unmodifiableCollection(allMethods);
   }
 
   public Eth2RpcMethod<StatusMessage, StatusMessage> status() {
