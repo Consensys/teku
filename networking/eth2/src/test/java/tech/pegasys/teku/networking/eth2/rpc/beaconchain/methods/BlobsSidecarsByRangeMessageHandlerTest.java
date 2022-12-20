@@ -89,7 +89,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final BlobsSidecarsByRangeMessageHandler handler =
       new BlobsSidecarsByRangeMessageHandler(
-          spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+          eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
 
   @BeforeEach
   public void setUp() {
@@ -126,11 +126,6 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldSendResourcesUnavailableWhenPreEip4844() {
-    final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(ONE);
-    final BlobsSidecarsByRangeMessageHandler handler =
-        new BlobsSidecarsByRangeMessageHandler(
-            spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
-
     when(combinedChainDataClient.getBestBlockRoot())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     // no sidecars in database
@@ -138,7 +133,6 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     // current epoch before EIP-4844
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.minus(1));
-    when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
     final BlobsSidecarsByRangeRequestMessage request =
         new BlobsSidecarsByRangeRequestMessage(ONE, ONE.plus(1));

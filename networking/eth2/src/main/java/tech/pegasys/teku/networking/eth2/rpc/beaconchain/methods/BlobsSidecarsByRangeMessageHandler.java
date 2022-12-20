@@ -35,7 +35,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -46,7 +45,6 @@ public class BlobsSidecarsByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final UInt64 eip4844ForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
@@ -54,12 +52,10 @@ public class BlobsSidecarsByRangeMessageHandler
   private final Counter totalBlobsSidecarsRequestedCounter;
 
   public BlobsSidecarsByRangeMessageHandler(
-      final Spec spec,
       final UInt64 eip4844ForkEpoch,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize) {
-    this.spec = spec;
     this.eip4844ForkEpoch = eip4844ForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
