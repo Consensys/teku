@@ -85,7 +85,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private int maxKnownNodeCacheSize = StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
   @CommandLine.Option(
-      names = {"--Xreconstruct-historic-states"},
+      names = {"--reconstruct-historic-states"},
       paramLabel = "<BOOLEAN>",
       description = "",
       arity = "0..1",

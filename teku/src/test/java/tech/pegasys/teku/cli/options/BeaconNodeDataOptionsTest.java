@@ -140,9 +140,9 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments(
             "--data-storage-mode",
             "ARCHIVE",
-            "--Xgenesis-state",
+            "--genesis-state",
             GENESIS_STATE,
-            "--Xreconstruct-historic-states",
+            "--reconstruct-historic-states",
             "true");
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
     assertThat(
@@ -176,7 +176,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             "ARCHIVE",
             "--network",
             "mainnet",
-            "--Xreconstruct-historic-states",
+            "--reconstruct-historic-states",
             "true");
 
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
