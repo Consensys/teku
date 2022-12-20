@@ -38,6 +38,9 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Counter publishSuccessCounter;
   private final Counter publishFailureCounter;
 
+  private final GossipFailureLogger gossipFailureLogger =
+      new GossipFailureLogger("sync committee message");
+
   public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -106,8 +109,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
               publishSuccessCounter.inc();
             },
             error -> {
-              LOG.trace(
-                  "Failed to publish sync committee message for slot {}", message.getSlot(), error);
+              gossipFailureLogger.logWithSuppression(error, message.getSlot());
               publishFailureCounter.inc();
             });
   }

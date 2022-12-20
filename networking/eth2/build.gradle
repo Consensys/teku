@@ -28,6 +28,7 @@ dependencies {
   testImplementation project(':ethereum:networks')
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:collections'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':networking:p2p'))
   testImplementation testFixtures(project(':storage'))
