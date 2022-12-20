@@ -45,7 +45,7 @@ public class Eth2NetworkOptions {
   private String initialState;
 
   @Option(
-      names = {"--Xgenesis-state"},
+      names = {"--genesis-state"},
       hidden = true,
       paramLabel = "<STRING>",
       description =
