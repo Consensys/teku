@@ -83,6 +83,11 @@ public class ServiceConfig {
     return asyncRunnerFactory.create(name, maxThreads, maxQueueSize);
   }
 
+  public AsyncRunner createAsyncRunner(
+      final String name, final int maxThreads, final int maxQueueSize, final int threadPriority) {
+    return asyncRunnerFactory.create(name, maxThreads, maxQueueSize, threadPriority);
+  }
+
   public AsyncRunnerFactory getAsyncRunnerFactory() {
     return asyncRunnerFactory;
   }

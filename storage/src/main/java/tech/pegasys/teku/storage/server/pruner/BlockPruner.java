@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.pruner;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class BlockPruner extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -79,7 +81,11 @@ public class BlockPruner extends Service {
       return;
     }
     LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
-    database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
+    try {
+      database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
+    } catch (ShuttingDownException | RejectedExecutionException ex) {
+      LOG.debug("Shutting down", ex);
+    }
   }
 
   private int getEpochsToKeep(final UInt64 finalizedEpoch) {

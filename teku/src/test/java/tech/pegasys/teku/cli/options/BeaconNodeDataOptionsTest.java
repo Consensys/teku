@@ -140,9 +140,9 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments(
             "--data-storage-mode",
             "ARCHIVE",
-            "--Xgenesis-state",
+            "--genesis-state",
             GENESIS_STATE,
-            "--Xreconstruct-historic-states",
+            "--reconstruct-historic-states",
             "true");
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
     assertThat(
@@ -176,7 +176,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             "ARCHIVE",
             "--network",
             "mainnet",
-            "--Xreconstruct-historic-states",
+            "--reconstruct-historic-states",
             "true");
 
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
@@ -216,6 +216,23 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                 .storageConfiguration(
                     b -> b.dataStorageMode(MINIMAL).blockPruningInterval(Duration.ofSeconds(150)))
                 .sync(b -> b.fetchAllHistoricBlocks(false))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
+  void shouldSetBlobsPruningOptions() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xdata-storage-blobs-pruning-interval=55", "--Xdata-storage-blobs-pruning-limit=10");
+    assertThat(config.storageConfiguration().getBlobsPruningInterval())
+        .isEqualTo(Duration.ofSeconds(55));
+    assertThat(config.storageConfiguration().getBlobsPruningLimit()).isEqualTo(10);
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(
+                    b -> b.blobsPruningInterval(Duration.ofSeconds(55)).blobsPruningLimit(10))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
